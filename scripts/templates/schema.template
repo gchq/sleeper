@@ -1,0 +1,20 @@
+{
+  "rowKeyFields": [ 
+    {
+      "name": "key",
+      "type": "StringType"
+    }
+  ],
+  "sortKeyFields": [
+    {
+      "name": "timestamp",
+      "type": "LongType"
+    }
+  ],
+  "valueFields": [
+    {
+      "name": "value",
+      "type": "StringType"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "rowKeyFields": [
+    {
+      "name": "a",
+      "type": "StringType"
+    },
+    {
+      "name": "b",
+      "type": "LongType"
+    }
+  ],
+  "sortKeyFields": [
+    {
+      "name": "c",
+      "type": "IntType"
+    },
+    {
+      "name": "d",
+      "type": "ByteArrayType"
+    }
+  ],
+  "valueFields": [
+    {
+      "name": "e",
+      "type": "IntType"
+    },
+    {
+      "name": "f",
+      "type": "LongType"
+    },
+    {
+      "name": "g",
+      "type": {
+        "MapType": {
+          "keyType": "IntType",
+          "valueType": "StringType"
+        }
+      }
+    },
+    {
+      "name": "h",
+      "type": {
+        "ListType": {
+          "elementType": "IntType"
+        }
+      }
+    }
+  ]
+}

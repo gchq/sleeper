@@ -1,0 +1,28 @@
+#################################################################################
+#                           SLEEPER TABLE PROPERTIES                            #
+#################################################################################
+
+###################
+# Template Values #
+###################
+
+# The name of the table
+sleeper.table.name=changeme
+
+# A JSON file containing the schema for this table
+sleeper.table.schema.file=changeme
+
+# The size of the row group in the Parquet files
+sleeper.table.rowgroup.size=4194304
+
+# The size of the pages in the Parquet files
+sleeper.table.page.size=1048576
+
+# The compression codec to use in the Parquet files
+sleeper.table.compression.codec=zstd
+
+# The minimum time, in seconds, after a file is marked as ready for garbage collection before it can be deleted
+sleeper.gc.delay.seconds=60
+
+# The name of the class used for the metadata store
+sleeper.table.statestore.classname=sleeper.statestore.dynamodb.DynamoDBStateStore

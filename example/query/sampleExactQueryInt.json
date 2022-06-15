@@ -1,0 +1,8 @@
+{
+  "queryId": "id",
+  "tableName": "my-table",
+  "type": "Query",
+  "keys": [
+  	{"field1": 10}
+  ]
+}

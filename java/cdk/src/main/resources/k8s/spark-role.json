@@ -1,0 +1,15 @@
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1",
+  "kind": "Role",
+  "metadata": {
+    "name": "spark",
+    "namespace": "namespace-placeholder"
+  },
+  "rules": [
+    {
+      "apiGroups": [""],
+      "resources": ["pods", "configmaps"],
+      "verbs": ["*"]
+    }
+  ]
+}

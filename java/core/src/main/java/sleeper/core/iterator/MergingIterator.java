@@ -1,0 +1,110 @@
+/*
+ * Copyright 2022 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.core.iterator;
+
+import sleeper.core.record.Record;
+import sleeper.core.record.RecordComparator;
+import sleeper.core.schema.Schema;
+
+import java.io.IOException;
+import java.util.Comparator;
+import java.util.List;
+import java.util.PriorityQueue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Given a {@link List} of sorted {@link CloseableIterator} of {@link Record}s,
+ * merges them together into one sorted {@link CloseableIterator} of
+ * {@link Record}s. This is done by using a {@link PriorityQueue} where the
+ * smallest record is returned first.
+ * 
+ * Note: for performance reasons this does not check that the given iterators
+ * are sorted. As this closed is only used internally it should never be called
+ * with non-sorted iterators.
+ */
+public class MergingIterator implements CloseableIterator<Record> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(MergingIterator.class);
+    
+    private final List<CloseableIterator<Record>> inputIterators;
+    private final PriorityQueue<RecordIteratorPair> queue;
+    private long recordsRead;
+    
+    public MergingIterator(Schema schema, List<CloseableIterator<Record>> inputIterators) {
+        this.inputIterators = inputIterators;
+        this.recordsRead = 0L;
+        this.queue = new PriorityQueue<>(new RecordIteratorPairComparator(schema));
+        for (CloseableIterator<Record> iterator : inputIterators) {
+            if (iterator.hasNext()) {
+                queue.add(new RecordIteratorPair(iterator.next(), iterator));
+                this.recordsRead++;
+            }
+        }
+    }
+
+    @Override
+    public boolean hasNext() {
+        return !queue.isEmpty();
+    }
+
+    @Override
+    public Record next() {
+        RecordIteratorPair pair = queue.poll();
+        if (pair.iterator.hasNext()) {
+            RecordIteratorPair newPair = new RecordIteratorPair(pair.iterator.next(), pair.iterator);
+            queue.add(newPair);
+            recordsRead++;
+            if (0 == recordsRead % 1_000_000) {
+                LOGGER.info("Read {} records", recordsRead);
+            }
+        }
+        return pair.record;
+    }
+
+    @Override
+    public void close() throws IOException {
+        for (CloseableIterator<Record> iterator : inputIterators) {
+            iterator.close();
+        }
+    }
+    
+    public long getNumberOfRecordsRead() {
+        return recordsRead;
+    }
+    
+    private static class RecordIteratorPair {
+        private final Record record;
+        private final CloseableIterator<Record> iterator;
+        
+        RecordIteratorPair(Record record, CloseableIterator<Record> iterator) {
+            this.record = record;
+            this.iterator = iterator;
+        }
+    }
+    
+    private static class RecordIteratorPairComparator implements Comparator<RecordIteratorPair> {
+        private final RecordComparator recordComparator;
+
+        RecordIteratorPairComparator(Schema schema) {
+            this.recordComparator = new RecordComparator(schema);
+        }
+        
+        @Override
+        public int compare(RecordIteratorPair pair1, RecordIteratorPair pair2) {
+            return recordComparator.compare(pair1.record, pair2.record);
+        }
+    }
+}

@@ -1,0 +1,15 @@
+{
+  "queryId": "id",
+  "tableName": "my-table",
+  "type": "Query",
+  "ranges": 
+	[
+		{
+			"min": {"key": 1},
+			"minInclusive": true,
+			"max": {"key": 2},
+			"maxInclusive" : false
+		}
+	],
+  "requestedValueFields": ["value1"]
+}

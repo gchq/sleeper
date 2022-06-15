@@ -1,0 +1,191 @@
+#################################################################################
+#                           SLEEPER INSTANCE PROPERTIES                         #
+#################################################################################
+
+###################
+# Template Values #
+###################
+
+# AWS account number
+sleeper.account=changeme
+
+# AWS region to deploy to
+sleeper.region=changeme
+
+# A string to uniquely identify this deployment
+sleeper.id=changeme
+
+# The version of Sleeper to use. This property is used to identify the correct jars in the S3JarsBucket to use and to
+# select the correct tag in the ECR repositories to use.
+sleeper.version=changeme
+
+# The S3 bucket containing your jar files
+sleeper.jars.bucket=changeme
+
+# The name of the repository for the compaction container. The Docker image from the compaction-job-execution module
+# should have been uploaded to an ECR repository of this name in this account.
+sleeper.compaction.repo=changeme
+
+# The name of the repository for the ingest container. The Docker image from the ingest module should have been
+# uploaded to an ECR repository of this name in this account.
+sleeper.ingest.repo=changeme
+
+# The name of the bulk import repo containing spark and bulk import code
+sleeper.bulk.import.eks.repo=changeme
+
+# The id of the VPC to deploy to
+sleeper.vpc=changeme
+
+# The subnet to deploy tasks to
+sleeper.subnet=changeme
+
+# A file of key-value tags. These will be added to all the resources in this deployment.
+sleeper.tags.file=changeme
+
+# A csv separated list of files of table properties
+sleeper.table.properties=changeme
+
+##################
+# Default Values #
+##################
+
+# Logging level for sleeper classes
+sleeper.logging.level=debug
+
+# The optional stacks to deploy - DataAndMetadata & Topic are also included.
+sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,EmrBulkImportStack
+
+# Whether to keep the sleeper table bucket, Dynamo tables related to tables and query results bucket or not.
+sleeper.retain.infra.after.destroy=true
+
+# Whether to create the bucket for the bulk import code
+sleeper.bulk.import.emr.bucket.create=true
+
+# The maximum number of concurrent compaction tasks to run
+sleeper.compaction.max.concurrent.tasks=300
+
+# Partitions with more than the following number of records in will be split
+sleeper.default.partition.splitting.threshold=100000000
+
+# How often partition splitting should happen
+sleeper.partition.splitting.period.minutes=10
+
+# The maximum number of files in a partition splitting job
+sleeper.partition.splitting.files.maximum=50
+
+# The frequency with which the garbage collector is run
+sleeper.gc.period.minutes=5
+
+# The size of the batch of files that are ready for garbage collection requested from the State Store
+sleeper.gc.batch.size=2000
+
+# The length of time after a message is consumed from a queue before it becomes visible again
+sleeper.queue.visibility.timeout.seconds=900
+
+# The frequency with which a compaction job sends keep alive messages to the job queue
+sleeper.compaction.keepalive.period.seconds=600
+
+# The rate at which the compaction job creation lambda runs (in minutes, must be >=1)
+sleeper.compaction.job.creation.period.minutes=1
+
+# The rate at which a check to see if compaction ECS tasks need to be created is made (in minutes, must be >= 1)
+sleeper.compaction.task.creation.period.minutes=1
+
+# The amount of memory for the lambda that creates compaction jobs
+sleeper.compaction.job.creation.memory=1024
+
+# The amount of memory for the lambda that runs ECS tasks to execute compaction jobs
+sleeper.task.runner.memory=1024
+
+# The timeout for the lambda that creates compaction jobs in seconds
+sleeper.compaction.job.creation.timeout.seconds=900
+
+# The timeout for the lambda that creates compaction jobs in seconds
+sleeper.task.runner.timeout.seconds=900
+
+# The cpu and memory for a compaction task. See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.
+sleeper.compaction.task.cpu=2048
+sleeper.compaction.task.memory=4096
+
+# The retention period for CloudWatch logs. See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html for valid options.
+# Use -1 to indicate infinite retention.
+sleeper.log.retention.days=30
+
+# The amount of memory in MB for the lambda that garbage collects old files
+sleeper.gc.memory=1024
+
+# The amount of memory in MB for the lambda that identifies partitions that need splitting
+sleeper.partition.splitting.finder.memory=2048
+
+# The timeout for the lambda that identifies partitions that need splitting in seconds
+sleeper.partition.splitting.finder.timeout.seconds=900
+
+# The amount of memory for the lambda that splits partitions
+sleeper.partition.splitting.memory=2048
+
+# The timeout for the lambda that splits partitions in seconds
+sleeper.partition.splitting.timeout.seconds=900
+
+# The amount of memory in MB for the lambda that executes queries
+sleeper.query.processor.memory=2048
+
+# The timeout for the lambda that executes queries in seconds
+sleeper.query.processor.timeout.seconds=900
+
+# The maximum number of simultaneous connections to S3 from a single client
+sleeper.s3.max-connections=25
+
+# The frequency with which the query processing lambda refreshes its knowledge of the system state
+# (i.e. the partitions and the mapping from partition to files), in seconds.
+sleeper.query.processor.state.refresh.period.seconds=60
+
+# The maximum number of records to include in a batch of query results send to
+# the results queue from the query processing lambda.
+sleeper.query.processor.results.batch.size=2000
+
+# Fargate version
+sleeper.fargate.version=1.4.0
+
+# The frequency with which the WriteData class refreshes the list of partitions from the state store
+# (NB Refreshes only happen once a batch of data has been written so this is a lower bound
+# on the refresh frequency.)
+sleeper.ingest.partition.refresh.period=120
+
+# The frequency with which the lambda that checks whether ingest tasks need creating runs (in minutes).
+sleeper.ingest.task.creation.period.minutes=1
+
+# The number of files to read in a compaction job. Note that the state store
+# must support atomic updates for this many files. For the DynamoDBStateStore this
+# is 11.
+# (NB This does not apply to splitting jobs which will run even if there is only 1 file.)
+sleeper.compaction.files.batch.size=11
+
+# The way in which records are held in memory before they are written to a local store
+# Valid values are 'arraylist' and 'arrow'
+sleeper.ingest.record.batch.type=arraylist
+
+# The way in which partition files are written to the main Sleeper store
+# Valid values are 'direct' (which writes using the s3a Hadoop file system) and 'async' (which writes locally and then
+# copies the completed Parquet file asynchronously into S3)
+sleeper.ingest.partition.file.writer.type=direct
+
+# The maximum number of records that the ingest process writes to the local file (arraylist only)
+sleeper.ingest.max.local.records=100000000
+
+# The maximum number of records that the ingest process loads into memory at one time (arraylist only)
+sleeper.ingest.memory.max.batch.size=1000000
+
+# The number of bytes to allocate to the Arrow working buffer, which is used for sorting and other sundry activities
+# (arrow only) [128MB]
+sleeper.ingest.arrow.working.buffer.bytes=134217728
+
+# The number of bytes to allocate to the Arrow batch buffer, which is used to hold the records (arrow only) [1GB]
+sleeper.ingest.arrow.batch.buffer.bytes=1073741824
+
+# The maximum number of bytes to store on the local disk before uploading to the main Sleeper store (arrow only) [16GB]
+sleeper.ingest.arrow.max.local.store.bytes=17179869184
+
+# The number of bytes to write at once into an Arrow file in the local store. A single Arrow file will be written to
+# multiple times and so this parameter does not affect the final size of the Arrow file (arrow only) [64K]
+sleeper.ingest.arrow.max.single.write.to.file.bytes=65536
+

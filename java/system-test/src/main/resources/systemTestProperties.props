@@ -1,0 +1,61 @@
+# Copyright 2022 Crown Copyright
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#################################################################################
+# The following properties are specific to the system tests. These should be added
+# to the end of a standard properties file.
+
+# The ingest mode to write random data. This should be either 'direct' or 'queue'.
+# 'Direct' means that the data is written directly. 'Queue' means that the data
+# is written to a Parquet file and an ingest job is created and posted to the
+# ingest queue.
+ingestMode=direct
+
+# The number of containers that write random data
+numberOfWriters=1
+
+# The number of random records that each container should write
+numberOfRecordsPerWriter=500000000
+
+# The amount of CPU and memory for the containers that write random data
+systemTestTaskCPUAndMemory=1024-4096
+
+# The minimum value of integers generated randomly during random record generation
+minRandomInt=0
+
+# The maximum value of integers generated randomly during random record generation
+maxRandomInt=100000000
+
+# The minimum value of longs generated randomly during random record generation
+minRandomLong=0
+
+# The maximum value of longs generated randomly during random record generation
+maxRandomLong=10000000000
+
+# The length of strings generated randomly during random record generation
+randomStringLength=10
+
+# The length of byte arrays generated randomly during random record generation
+randomByteArrayLength=10
+
+# The maximum number of entries in maps generated randomly during random record generation
+# (the number of entries in the map will range randomly from 0 to this number)
+maxEntriesRandomMap=10
+
+# The maximum number of entries in lists generated randomly during random record generation
+# (the number of entries in the list will range randomly from 0 to this number)
+maxEntriesRandomList=10
+
+# The image in ECR used for writing random data to the system
+systemTestECRImage=sleeper-systemtest

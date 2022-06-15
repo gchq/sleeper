@@ -1,0 +1,8 @@
+{
+  "id": "id1",
+  "tableName": "my-table",
+  "files": [
+    "databucket/file1.parquet",
+    "databucket/file2.parquet"
+  ]
+}

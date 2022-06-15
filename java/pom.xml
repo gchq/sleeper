@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2022 Crown Copyright
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>sleeper</groupId>
+    <artifactId>aws</artifactId>
+    <packaging>pom</packaging>
+    <version>0.11.0</version>
+
+    <modules>
+        <module>core</module>
+        <module>ingest</module>
+        <module>parquet</module>
+        <module>clients</module>
+        <module>statestore</module>
+        <module>configuration</module>
+        <module>compaction-job-creation</module>
+        <module>compaction-job-execution</module>
+        <module>query</module>
+        <module>system-test</module>
+        <module>garbage-collector</module>
+        <module>splitter</module>
+        <module>cdk</module>
+        <module>sketches</module>
+        <module>tables</module>
+        <module>athena</module>
+        <module>common-job</module>
+        <module>bulk-import</module>
+        <module>cdk-custom-resources</module>
+        <module>metrics</module>
+        <module>distribution</module>
+    </modules>
+
+    <properties>
+        <java.version>1.8</java.version>
+        <scala.version>2.12</scala.version>
+        <spark.version>3.1.2</spark.version>
+        <aws-java-sdk.version>1.11.1034</aws-java-sdk.version>
+        <aws-java-sdk-v2.version>2.17.136</aws-java-sdk-v2.version>
+        <aws-lambda-java-events.version>3.7.0</aws-lambda-java-events.version>
+        <aws-lambda-java-core.version>1.2.0</aws-lambda-java-core.version>
+        <aws-lambda-powertools.version>1.10.2</aws-lambda-powertools.version>
+        <hadoop.version>3.2.1</hadoop.version>
+        <parquet-hadoop.version>1.12.2</parquet-hadoop.version>
+        <commons-lang3.version>3.8.1</commons-lang3.version>
+        <commons-codec.version>1.11</commons-codec.version>
+        <commons-io.version>2.11.0</commons-io.version>
+        <jackson.version>2.11.4</jackson.version>
+        <facebook.collections.version>0.1.32</facebook.collections.version>
+        <testcontainers.version>1.16.2</testcontainers.version>
+        <cdk.version>2.24.1</cdk.version>
+        <apigatewayv2.version>2.24.1-alpha.0</apigatewayv2.version>
+        <constructs.version>10.1.10</constructs.version>
+        <gson.version>2.7</gson.version>
+        <datasketches.version>3.1.0</datasketches.version>
+        <slf4j.version>1.7.36</slf4j.version>
+        <reload4j.version>1.2.20</reload4j.version>
+        <java-websocket.version>1.5.2</java-websocket.version>
+        <arrow.version>8.0.0</arrow.version>
+        <!-- Testing -->
+        <junit.version>4.13</junit.version>
+        <mockito.version>3.3.3</mockito.version>
+        <testcontainers.version>1.16.2</testcontainers.version>
+        <wiremock.version>2.32.0</wiremock.version>
+        <!-- Maven plugins -->
+        <release.plugin.version>3.0.0-M4</release.plugin.version>
+        <surefire.plugin.version>3.0.0-M5</surefire.plugin.version>
+        <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
+        <shade.plugin.version>3.3.0</shade.plugin.version>
+        <jar.plugin.version>3.2.0</jar.plugin.version>
+        <compiler.plugin.version>3.8.1</compiler.plugin.version>
+        <enforcer.plugin.version>3.0.0</enforcer.plugin.version>
+        <distribution.format>dir</distribution.format>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- AWS CDK -->
+            <dependency>
+                <groupId>software.amazon.awscdk</groupId>
+                <artifactId>aws-cdk-lib</artifactId>
+                <version>${cdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awscdk</groupId>
+                <artifactId>apigatewayv2-alpha</artifactId>
+                <version>${apigatewayv2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.constructs</groupId>
+                <artifactId>constructs</artifactId>
+                <version>${constructs.version}</version>
+            </dependency>
+            <!-- Apache commons -->
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>${commons-codec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
+            </dependency>
+            <!-- GSON -->
+            <dependency>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>${gson.version}</version>
+            </dependency>
+            <!-- Logging -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.reload4j</groupId>
+                <artifactId>reload4j</artifactId>
+                <version>${reload4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-reload4j</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <!-- Test Dependencies -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>localstack</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>${release.plugin.version}</version>
+                <configuration>
+                    <arguments>-Pquick</arguments>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${jar.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${surefire.plugin.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${failsafe.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${enforcer.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>enforce-banned-dependencies</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <rules>
+                        <bannedDependencies>
+                            <excludes>
+                                <exclude>*log4j*:*log4j*</exclude>
+                                <exclude>org.slf4j:slf4j-log4j12</exclude>
+                            </excludes>
+                            <message>Log4j conflicts with reload4j, add an exclusion</message>
+                        </bannedDependencies>
+                    </rules>
+                </configuration>
+            </plugin>
+        </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${shade.plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>shade</goal>
+                            </goals>
+                            <configuration>
+                                <shadedArtifactAttached>true</shadedArtifactAttached>
+                                <shadedClassifierName>utility</shadedClassifierName>
+                                <artifactSet>
+                                    <excludes>
+                                    </excludes>
+                                </artifactSet>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${compiler.plugin.version}</version>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+    <profiles>
+        <profile>
+            <id>quick</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <skipITs>true</skipITs>
+            </properties>
+        </profile>
+    </profiles>
+</project>

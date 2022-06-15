@@ -1,0 +1,17 @@
+.idea/
+*.iml
+target/
+.DS_Store
+dependency-reduced-pom.xml
+*.jar
+*.classpath
+*.settings
+*.project
+.vscode
+cdk.context.json
+cdk.out/
+generated/
+scripts/jars/
+scripts/docker/
+scripts/templates/version.txt
+__pycache__
