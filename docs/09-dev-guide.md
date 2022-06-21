@@ -86,7 +86,7 @@ See the [deployment guide](02-deployment-guide.md) for notes on how to deploy Sl
    [12-performance-test.md](./12-performance-test.md) file. Commit 
    this change locally on master.
    
-2. Set the new version number, e.g. `mvn versions:set -DnewVersion=0.10.0`, create a tag for that
+2. Set the new version number using `./scripts/dev/updateVersionNumber.sh`, create a tag for that
 version and then push to the repo.
 
 If you are storing versions of the code in an AWS account then upload the jars and push the Docker
