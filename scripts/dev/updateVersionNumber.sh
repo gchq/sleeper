@@ -34,7 +34,7 @@ popd
 # Update the version number in the Python module
 sed \
   -i "" \
-  -e "s|^    version=.*|    version='${NEW_VERSION}'|" \
+  -e "s|^    version=.*|    version='${NEW_VERSION}',|" \
   python/setup.py
 
 # Update the version numbers in the example property files
