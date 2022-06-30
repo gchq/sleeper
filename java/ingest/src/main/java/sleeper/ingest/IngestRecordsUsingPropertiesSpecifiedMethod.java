@@ -150,7 +150,6 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
      * @param sleeperIteratorClassName The name of the Sleeper iterator to apply
      * @param sleeperIteratorConfig    The configuration of the iterator
      * @return The relevant ingest coordinator
-     * @throws StateStoreException -
      */
     public static IngestCoordinator<Record> createIngestCoordinatorFromProperties(
             ObjectFactory objectFactory,
@@ -162,7 +161,7 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
             S3AsyncClient s3AsyncClient,
             Configuration hadoopConfiguration,
             String sleeperIteratorClassName,
-            String sleeperIteratorConfig) throws StateStoreException {
+            String sleeperIteratorConfig) {
         Schema sleeperSchema = tableProperties.getSchema();
         Supplier<RecordBatch<Record>> recordBatchFactoryFn;
         Function<Partition, PartitionFileWriter> partitionFileFactoryFn;
@@ -200,7 +199,7 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
                                 instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES),
                                 instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES),
                                 instanceProperties.getLong(ARROW_INGEST_MAX_LOCAL_STORE_BYTES),
-                                instanceProperties.getInt(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_BYTES));
+                                instanceProperties.getInt(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS));
                 break;
             default:
                 throw new UnsupportedOperationException(String.format("Record batch type %s not supported", instanceProperties.get(INGEST_RECORD_BATCH_TYPE)));

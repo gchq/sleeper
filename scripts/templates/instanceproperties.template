@@ -185,7 +185,7 @@ sleeper.ingest.arrow.batch.buffer.bytes=1073741824
 # The maximum number of bytes to store on the local disk before uploading to the main Sleeper store (arrow only) [16GB]
 sleeper.ingest.arrow.max.local.store.bytes=17179869184
 
-# The number of bytes to write at once into an Arrow file in the local store. A single Arrow file will be written to
-# multiple times and so this parameter does not affect the final size of the Arrow file (arrow only) [64K]
-sleeper.ingest.arrow.max.single.write.to.file.bytes=65536
+# The number of records to write at once into an Arrow file in the local store. A single Arrow file will be written to
+# multiple times and so this parameter does not affect the final size of the Arrow file (arrow only) [1K]
+sleeper.ingest.arrow.max.single.write.to.file.records=1024
 

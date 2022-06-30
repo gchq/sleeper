@@ -160,7 +160,7 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
      * @param sourceVectorSchemaRoot                 The {@link VectorSchemaRoot} containing the rows to be written
      * @param localArrowFileName                     The name of the file to write the Arrow data to
      * @param maxNoOfRecordsToWriteToArrowFileAtOnce The Arrow file writing process writes multiple small batches of
-     *                                               data of this size into a single file, to reduced the memory
+     *                                               data of this size into a single file, to reduce the memory
      *                                               footprint
      * @return Number of bytes written
      * @throws IOException -
