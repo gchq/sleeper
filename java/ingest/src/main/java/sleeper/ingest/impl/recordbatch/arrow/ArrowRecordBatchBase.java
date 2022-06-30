@@ -179,6 +179,7 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
         long bytesWritten;
         Path arrowFilePath = Paths.get(localArrowFileName);
         Files.createDirectories(arrowFilePath.getParent());
+        LOGGER.debug("Determining sort order and opening local arrow file");
         try (IntVector wholeFileSortOrderVector = ArrowIngestSupport.createSortOrderVector(temporaryBufferAllocator, sleeperSchema, sourceVectorSchemaRoot);
              VectorSchemaRoot smallBatchVectorSchemaRoot = VectorSchemaRoot.create(sourceVectorSchemaRoot.getSchema(), temporaryBufferAllocator);
              FileChannel outputFileChannel = FileChannel.open(arrowFilePath, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
@@ -189,7 +190,11 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
             arrowStreamWriter.start();
             // Write a slice of maxNoOfRecordsToWriteToArrowFileAtOnce rows at a time
             int sliceStart = 0;
+            int sliceNo = 0;
             while (sliceStart < sourceVectorSize) {
+                if (sliceNo % 100 == 0) {
+                    LOGGER.debug(String.format("Writing slice number %05d (starting at row number %09d of %09d)", sliceNo, sliceStart, sourceVectorSize));
+                }
                 // Calculate the bounds for the current slice
                 int sliceEnd = sliceStart + maxNoOfRecordsToWriteToArrowFileAtOnce;
                 if (sliceEnd > sourceVectorSize) {
@@ -211,10 +216,12 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
                 arrowStreamWriter.writeBatch();
                 // Prepare for the next batch
                 sliceStart = sliceEnd;
+                sliceNo++;
             }
             bytesWritten = arrowStreamWriter.bytesWritten();
             // The sort vector, smallBatchVectorSchemaRoot, channel and writer are auto-closed at the end of the try block
         }
+        LOGGER.debug(String.format("Written %09d bytes", bytesWritten));
         return bytesWritten;
     }
 
