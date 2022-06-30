@@ -26,10 +26,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 
@@ -53,6 +54,8 @@ import static java.util.Objects.requireNonNull;
  * @param <INCOMINGDATATYPE> The type of data that can be appended to this record batch
  */
 public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBatch<INCOMINGDATATYPE> {
+    public static final String MAP_KEY_FIELD_NAME = "key";
+    public static final String MAP_VALUE_FIELD_NAME = "value";
     private static final Logger LOGGER = LoggerFactory.getLogger(ArrowRecordBatchBase.class);
     private static final int INITIAL_ARROW_VECTOR_CAPACITY = 1024;
 
@@ -144,7 +147,7 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
             try {
                 this.close();
             } catch (Exception e2) {
-                LOGGER.error("Error closing ArrowRecordBatchBase", e2);
+                e1.addSuppressed(e2);
             }
             throw e1;
         }
@@ -210,14 +213,15 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
                         ValueVector dstVector = smallBatchVectorSchemaRoot.getVector(fieldNo);
                         dstVector.copyFromSafe(readIndex, sliceIndex, srcVector);
                     }
+                    smallBatchVectorSchemaRoot.setRowCount(sliceIndex + 1);
                 }
-                // Ensure the smallBatchVectorSchemaRoot capacity is set correctly and write the batch
-                smallBatchVectorSchemaRoot.setRowCount(sliceLength);
+                // Write the batch
                 arrowStreamWriter.writeBatch();
                 // Prepare for the next batch
                 sliceStart = sliceEnd;
                 sliceNo++;
             }
+            arrowStreamWriter.end();
             bytesWritten = arrowStreamWriter.bytesWritten();
             // The sort vector, smallBatchVectorSchemaRoot, channel and writer are auto-closed at the end of the try block
         }
@@ -244,31 +248,83 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
     }
 
     /**
-     * Create an Arrow Schema from a Sleeper Schema. An additional sort-order vector is included.
-     * <p>
-     * The order of the fields in each Schema is retained.
+     * Create an Arrow Schema from a Sleeper Schema. The order of the fields in each Schema is retained.
      *
      * @param sleeperSchema The Sleeper {@link Schema}
      * @return The Arrow {@link org.apache.arrow.vector.types.pojo.Schema}
      */
     private static org.apache.arrow.vector.types.pojo.Schema convertSleeperSchemaToArrowSchema(Schema sleeperSchema) {
         List<org.apache.arrow.vector.types.pojo.Field> arrowFields =
-                sleeperSchema.getAllFields().stream().map(field -> {
-                    String fieldName = field.getName();
-                    Type sleeperType = field.getType();
-                    if (sleeperType instanceof IntType) {
-                        return org.apache.arrow.vector.types.pojo.Field.notNullable(fieldName, new ArrowType.Int(32, true));
-                    } else if (sleeperType instanceof LongType) {
-                        return org.apache.arrow.vector.types.pojo.Field.notNullable(fieldName, new ArrowType.Int(64, true));
-                    } else if (sleeperType instanceof StringType) {
-                        return org.apache.arrow.vector.types.pojo.Field.notNullable(fieldName, new ArrowType.Utf8());
-                    } else if (sleeperType instanceof ByteArrayType) {
-                        return org.apache.arrow.vector.types.pojo.Field.notNullable(fieldName, new ArrowType.Binary());
-                    } else {
-                        throw new UnsupportedOperationException("Sleeper column type " + sleeperType.toString() + " is not handled");
-                    }
-                }).collect(Collectors.toList());
+                sleeperSchema.getAllFields().stream()
+                        .map(ArrowRecordBatchBase::convertSleeperFieldToArrowField)
+                        .collect(Collectors.toList());
         return new org.apache.arrow.vector.types.pojo.Schema(arrowFields);
+    }
+
+    private static org.apache.arrow.vector.types.pojo.Field convertSleeperFieldToArrowField(Field sleeperField) {
+        String fieldName = sleeperField.getName();
+        Type sleeperType = sleeperField.getType();
+        if (sleeperType instanceof IntType ||
+                sleeperType instanceof LongType ||
+                sleeperType instanceof StringType ||
+                sleeperType instanceof ByteArrayType) {
+            // Where the Sleeper field type is a straightforward primitive type, the corresponding Arrow type is used
+            return convertSleeperPrimitiveFieldToArrowField(sleeperField);
+        } else if (sleeperType instanceof ListType) {
+            // Where the Sleeper field type is a list, the Arrow field type is also a list. The elements of the
+            // Arrow list are chosen to match the (primitive) type of the elements in the Sleeper list
+            Type elementSleeperType = ((ListType) sleeperType).getElementType();
+            Field elementSleeperField = new Field("element", elementSleeperType);
+            org.apache.arrow.vector.types.pojo.Field elementArrowField = convertSleeperPrimitiveFieldToArrowField(elementSleeperField);
+            return new org.apache.arrow.vector.types.pojo.Field(
+                    fieldName,
+                    new org.apache.arrow.vector.types.pojo.FieldType(false, new ArrowType.List(), null),
+                    Collections.singletonList(elementArrowField));
+        } else if (sleeperType instanceof MapType) {
+            // Where the Sleeper field type is a map, the Arrow field type is a list. Each element of the list is an
+            // Arrow struct with two members: key and value. The types of the key and value are chosen to match the
+            // (primitive) type of the elements in the Sleeper list.
+            // This implementation does not use the Arrow 'map' field type, as we were unable to make this approach work
+            // in our experiments.
+            Type keySleeperType = ((MapType) sleeperType).getKeyType();
+            Type valueSleeperType = ((MapType) sleeperType).getValueType();
+            Field keySleeperField = new Field(MAP_KEY_FIELD_NAME, keySleeperType);
+            Field valueSleeperField = new Field(MAP_VALUE_FIELD_NAME, valueSleeperType);
+            org.apache.arrow.vector.types.pojo.Field keyArrowField = convertSleeperPrimitiveFieldToArrowField(keySleeperField);
+            org.apache.arrow.vector.types.pojo.Field valueArrowField = convertSleeperPrimitiveFieldToArrowField(valueSleeperField);
+            org.apache.arrow.vector.types.pojo.Field elementArrowStructField = new org.apache.arrow.vector.types.pojo.Field(
+                    fieldName + "-key-value-struct",
+                    new org.apache.arrow.vector.types.pojo.FieldType(false, new ArrowType.Struct(), null),
+                    Stream.of(keyArrowField, valueArrowField).collect(Collectors.toList()));
+            return new org.apache.arrow.vector.types.pojo.Field(
+                    fieldName,
+                    new org.apache.arrow.vector.types.pojo.FieldType(false, new ArrowType.List(), null),
+                    Collections.singletonList(elementArrowStructField));
+        } else {
+            throw new UnsupportedOperationException("Sleeper column type " + sleeperType.toString() + " is not handled");
+        }
+    }
+
+    /**
+     * Convert a primitive Sleeper field into an Arrow field.
+     *
+     * @param sleeperField The Sleeper field to be converted
+     * @return The corresponding Arrow field
+     */
+    private static org.apache.arrow.vector.types.pojo.Field convertSleeperPrimitiveFieldToArrowField(Field sleeperField) {
+        String fieldName = sleeperField.getName();
+        Type sleeperType = sleeperField.getType();
+        if (sleeperType instanceof IntType) {
+            return org.apache.arrow.vector.types.pojo.Field.notNullable(fieldName, new ArrowType.Int(32, true));
+        } else if (sleeperType instanceof LongType) {
+            return org.apache.arrow.vector.types.pojo.Field.notNullable(fieldName, new ArrowType.Int(64, true));
+        } else if (sleeperType instanceof StringType) {
+            return org.apache.arrow.vector.types.pojo.Field.notNullable(fieldName, new ArrowType.Utf8());
+        } else if (sleeperType instanceof ByteArrayType) {
+            return org.apache.arrow.vector.types.pojo.Field.notNullable(fieldName, new ArrowType.Binary());
+        } else {
+            throw new AssertionError("Sleeper column type " + sleeperType.toString() + " is not a primitive inside convertSleeperPrimitiveFieldToArrowField()");
+        }
     }
 
     /**
@@ -326,7 +382,6 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
         String localFileName = constructLocalFileNameForBatch(currentBatchNo);
         // Follow the Arrow pattern of create > allocate > mutate > set value count > access > clear
         // Here we do the set value count > access > clear
-        vectorSchemaRoot.setRowCount(currentInsertIndex);
         long time1 = System.currentTimeMillis();
         LOGGER.debug(String.format("Writing %s records to local Arrow file %s", currentInsertIndex, localFileName));
         long bytesWrittenToLocalFile;
@@ -378,9 +433,13 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
         try {
             internalSortedRecordIterator = createSortedRecordIterator();
             return internalSortedRecordIterator;
-        } catch (Exception e) {
-            close();
-            throw e;
+        } catch (Exception e1) {
+            try {
+                close();
+            } catch (Exception e2) {
+                e1.addSuppressed(e2);
+            }
+            throw e1;
         }
     }
 
@@ -423,8 +482,7 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
                 try {
                     iterator.close();
                 } catch (Exception e2) {
-                    // Log the error during closing but carry on to close the other iterators
-                    LOGGER.error(Arrays.toString(e2.getStackTrace()));
+                    e1.addSuppressed(e2);
                 }
             });
             throw e1;

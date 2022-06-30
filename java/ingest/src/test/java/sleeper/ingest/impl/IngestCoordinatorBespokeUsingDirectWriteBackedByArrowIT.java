@@ -85,9 +85,9 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                 keyAndDimensionToSplitOnInOrder,
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
-                1024 * 1024L,
-                1024 * 1024L,
-                16 * 1024 * 1024L);
+                16 * 1024 * 1024L,
+                4 * 1024 * 1024L,
+                128 * 1024 * 1024L);
     }
 
     @Test
@@ -107,9 +107,9 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                 keyAndDimensionToSplitOnInOrder,
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
-                1024 * 1024L,
-                512 * 1024L,
-                2 * 1024 * 1024L);
+                16 * 1024 * 1024L,
+                4 * 1024 * 1024L,
+                16 * 1024 * 1024L);
     }
 
     @Test

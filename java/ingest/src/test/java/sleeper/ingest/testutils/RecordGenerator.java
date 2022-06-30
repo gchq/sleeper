@@ -28,7 +28,9 @@ public class RecordGenerator {
                 new Field("intValue", new IntType()),
                 new Field("longValue", new LongType()),
                 new Field("stringValue", new StringType()),
-                new Field("byteArrayValue", new ByteArrayType()));
+                new Field("byteArrayValue", new ByteArrayType()),
+                new Field("listOfStringsValue", new ListType(new StringType())),
+                new Field("mapFromLongToStringValue", new MapType(new LongType(), new StringType())));
         List<Record> recordList = IntStream.range(0, noOfRecords)
                 .mapToObj(i -> {
                     Record record = new Record();
@@ -37,6 +39,17 @@ public class RecordGenerator {
                     record.put(sleeperSchema.getValueFieldNames().get(1), valueRandom.nextLong());
                     record.put(sleeperSchema.getValueFieldNames().get(2), randomStringGenerator.generate(valueRandom.nextInt(50)));
                     record.put(sleeperSchema.getValueFieldNames().get(3), randomStringGenerator.generate(valueRandom.nextInt(50)).getBytes(StandardCharsets.UTF_8));
+                    record.put(
+                            sleeperSchema.getValueFieldNames().get(4),
+                            IntStream.range(0, valueRandom.nextInt(10))
+                                    .mapToObj(dummy -> randomStringGenerator.generate(valueRandom.nextInt(50)))
+                                    .collect(Collectors.toList()));
+                    record.put(
+                            sleeperSchema.getValueFieldNames().get(5),
+                            IntStream.range(0, valueRandom.nextInt(10)).boxed()
+                                    .collect(Collectors.toMap(
+                                            dummy -> valueRandom.nextLong(),
+                                            dummy -> randomStringGenerator.generate(valueRandom.nextInt(50)))));
                     return record;
                 }).collect(Collectors.toList());
         Collections.shuffle(recordList, new Random(0));
@@ -63,7 +76,9 @@ public class RecordGenerator {
                 new Field("intValue", new IntType()),
                 new Field("longValue", new LongType()),
                 new Field("stringValue", new StringType()),
-                new Field("byteArrayValue", new ByteArrayType()));
+                new Field("byteArrayValue", new ByteArrayType()),
+                new Field("listOfStringsValue", new ListType(new StringType())),
+                new Field("mapFromLongToStringValue", new MapType(new LongType(), new StringType())));
         List<Record> recordList = IntStream.range(0, noOfRecords)
                 .mapToObj(i -> {
                     Record record = new Record();
@@ -73,6 +88,17 @@ public class RecordGenerator {
                     record.put(sleeperSchema.getValueFieldNames().get(1), valueRandom.nextLong());
                     record.put(sleeperSchema.getValueFieldNames().get(2), randomStringGenerator.generate(valueRandom.nextInt(50)));
                     record.put(sleeperSchema.getValueFieldNames().get(3), randomStringGenerator.generate(valueRandom.nextInt(50)).getBytes(StandardCharsets.UTF_8));
+                    record.put(
+                            sleeperSchema.getValueFieldNames().get(4),
+                            IntStream.range(0, valueRandom.nextInt(10))
+                                    .mapToObj(dummy -> randomStringGenerator.generate(valueRandom.nextInt(50)))
+                                    .collect(Collectors.toList()));
+                    record.put(
+                            sleeperSchema.getValueFieldNames().get(5),
+                            IntStream.range(0, valueRandom.nextInt(10)).boxed()
+                                    .collect(Collectors.toMap(
+                                            dummy -> valueRandom.nextLong(),
+                                            dummy -> randomStringGenerator.generate(valueRandom.nextInt(50)))));
                     return record;
                 }).collect(Collectors.toList());
         Collections.shuffle(recordList, new Random(0));
@@ -98,7 +124,9 @@ public class RecordGenerator {
                 new Field("intValue", new IntType()),
                 new Field("longValue", new LongType()),
                 new Field("stringValue", new StringType()),
-                new Field("byteArrayValue", new ByteArrayType()));
+                new Field("byteArrayValue", new ByteArrayType()),
+                new Field("listOfStringsValue", new ListType(new StringType())),
+                new Field("mapFromLongToStringValue", new MapType(new LongType(), new StringType())));
         List<Record> recordList = IntStream.range(0, noOfRecords)
                 .mapToObj(i -> {
                     Record record = new Record();
@@ -108,6 +136,17 @@ public class RecordGenerator {
                     record.put(sleeperSchema.getValueFieldNames().get(1), valueRandom.nextLong());
                     record.put(sleeperSchema.getValueFieldNames().get(2), randomStringGenerator.generate(valueRandom.nextInt(50)));
                     record.put(sleeperSchema.getValueFieldNames().get(3), randomStringGenerator.generate(valueRandom.nextInt(50)).getBytes(StandardCharsets.UTF_8));
+                    record.put(
+                            sleeperSchema.getValueFieldNames().get(4),
+                            IntStream.range(0, valueRandom.nextInt(10))
+                                    .mapToObj(dummy -> randomStringGenerator.generate(valueRandom.nextInt(50)))
+                                    .collect(Collectors.toList()));
+                    record.put(
+                            sleeperSchema.getValueFieldNames().get(5),
+                            IntStream.range(0, valueRandom.nextInt(10)).boxed()
+                                    .collect(Collectors.toMap(
+                                            dummy -> valueRandom.nextLong(),
+                                            dummy -> randomStringGenerator.generate(valueRandom.nextInt(50)))));
                     return record;
                 }).collect(Collectors.toList());
         Collections.shuffle(recordList, new Random(0));
