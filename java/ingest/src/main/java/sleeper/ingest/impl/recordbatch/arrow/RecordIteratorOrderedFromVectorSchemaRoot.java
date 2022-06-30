@@ -1,10 +1,8 @@
 package sleeper.ingest.impl.recordbatch.arrow;
 
 import org.apache.arrow.memory.BufferAllocator;
-import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.util.Text;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
@@ -46,18 +44,9 @@ class RecordIteratorOrderedFromVectorSchemaRoot implements CloseableIterator<Rec
         if (!hasNext()) {
             throw new NoSuchElementException();
         }
-        // Read the value from each field at row sortOrder(currentRecordNo) and use these values to construct a Record object.
-        int noOfFields = vectorSchemaRoot.getSchema().getFields().size();
+        // Read the value from row sortOrder(currentRecordNo) and use that row to construct a Record object.
         int rowNoToRead = sortOrder.get(currentRecordNo);
-        Record record = new Record();
-        for (int fieldNo = 0; fieldNo < noOfFields; fieldNo++) {
-            FieldVector fieldVector = vectorSchemaRoot.getVector(fieldNo);
-            Object value = fieldVector.getObject(rowNoToRead);
-            if (value instanceof Text) {
-                value = value.toString();
-            }
-            record.put(fieldVector.getName(), value);
-        }
+        Record record = ArrowToRecordConversionUtils.convertVectorSchemaRootToRecord(vectorSchemaRoot, rowNoToRead);
         currentRecordNo++;
         return record;
     }

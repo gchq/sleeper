@@ -1,9 +1,7 @@
 package sleeper.ingest.impl.recordbatch.arrow;
 
-import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
-import org.apache.arrow.vector.util.Text;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
 
@@ -61,19 +59,10 @@ class RecordIteratorFromArrowStreamReader implements CloseableIterator<Record> {
             throw new NoSuchElementException();
         }
         try {
-            // Retrieve the current small batch from within the ArrowStreamReader, read the value from each field
-            // at row currentRecordNoInBatch and use these values to construct a Record object.
+            // Retrieve the current small batch from within the ArrowStreamReader, read the value from
+            // row currentRecordNoInBatch and use these values to construct a Record object.
             VectorSchemaRoot smallBatchVectorSchemaRoot = arrowStreamReader.getVectorSchemaRoot();
-            int noOfFields = smallBatchVectorSchemaRoot.getSchema().getFields().size();
-            Record record = new Record();
-            for (int fieldNo = 0; fieldNo < noOfFields; fieldNo++) {
-                FieldVector fieldVector = smallBatchVectorSchemaRoot.getVector(fieldNo);
-                Object value = fieldVector.getObject(currentRecordNoInBatch);
-                if (value instanceof Text) {
-                    value = value.toString();
-                }
-                record.put(fieldVector.getName(), value);
-            }
+            Record record = ArrowToRecordConversionUtils.convertVectorSchemaRootToRecord(smallBatchVectorSchemaRoot, currentRecordNoInBatch);
             currentRecordNoInBatch++;
             totalNoOfRecordsRead++;
             // Load a new batch when this one has been read fully

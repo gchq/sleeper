@@ -13,8 +13,6 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.ListType;
-import sleeper.core.schema.type.MapType;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriter;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriter;
@@ -166,19 +164,8 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
         Schema sleeperSchema = tableProperties.getSchema();
         Supplier<RecordBatch<Record>> recordBatchFactoryFn;
         Function<Partition, PartitionFileWriter> partitionFileFactoryFn;
-        // The arrow-based RecordBatch does not currently support lists or maps and so fall-back to arraylist
-        // if the schema contains any fields of these types
-        boolean fallBackRequired = sleeperSchema.getAllFields().stream()
-                .anyMatch(field ->
-                        field.getType() instanceof MapType ||
-                                field.getType() instanceof ListType);
         // Define a factory function for record batches
-        String recordBatchType = instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
-        if (fallBackRequired && recordBatchType.equals("arrow")) {
-            LOGGER.warn("Schema contains Map or List types. These are not supported by the Arrow record batch type. Falling back to an arraylist record batch.");
-            recordBatchType = "arraylist";
-        }
-        switch (recordBatchType) {
+        switch (instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT)) {
             case "arraylist":
                 recordBatchFactoryFn = () -> new ArrayListRecordBatchAcceptingRecords(
                         sleeperSchema,

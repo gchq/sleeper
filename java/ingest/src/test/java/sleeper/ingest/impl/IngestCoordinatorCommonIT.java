@@ -153,9 +153,9 @@ public class IngestCoordinatorCommonIT {
                     filePathPrefix,
                     bufferAllocator,
                     128,
-                    1024 * 1024L,
-                    1024 * 1024L,
-                    1024 * 1024L,
+                    16 * 1024 * 1024L,
+                    16 * 1024 * 1024L,
+                    16 * 1024 * 1024L,
                     512 * 1024 * 1024L);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -189,9 +189,9 @@ public class IngestCoordinatorCommonIT {
                     AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
                     bufferAllocator,
                     10,
-                    1024 * 1024L,
-                    1024 * 1024L,
-                    1024 * 1024L,
+                    16 * 1024 * 1024L,
+                    16 * 1024 * 1024L,
+                    16 * 1024 * 1024L,
                     16 * 1024 * 1024L);
         } catch (Exception e) {
             throw new RuntimeException(e);
