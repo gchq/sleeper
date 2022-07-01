@@ -39,7 +39,7 @@ public class ArrowRecordBatchAcceptingRecords extends ArrowRecordBatchBase<Recor
      * @param maxBatchArrowBufferAllocatorBytes      -
      * @param maxNoOfBytesToWriteLocally             -
      * @param maxNoOfRecordsToWriteToArrowFileAtOnce The Arrow file writing process writes multiple small batches of
-     *                                               data of this size into a single file, to reduced the memory
+     *                                               data of this size into a single file, to reduce the memory
      *                                               footprint
      */
     public ArrowRecordBatchAcceptingRecords(BufferAllocator arrowBufferAllocator,
