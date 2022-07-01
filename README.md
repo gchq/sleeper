@@ -65,6 +65,10 @@ size or it can use EMR managed scaling.
 The following functionality is experimental:
 
 - Athena: There is experimental integration with Athena to allow SQL analytics to be run against a table.
+- Trino: There is a plugin for Trino that allows SQL select, join and insert statements to be run against multiple
+  Sleeper tables. It returns results quickly and it is particularly suitable for interactive queries which retrieve just a
+  few rows from the underlying Sleeper instance, such as SELECT * FROM t1 INNER JOIN t2 USING (keycol) WHERE t1.name =
+  "Fred Jones"
 - Bulk import using Spark running on EKS: This stack allows data to be ingested by running Spark on EKS. Currently
 this runs the Spark executors in Fargate. Further work is required to enable the executors to be run on an ECS cluster
 consisting of EC2 instances.
@@ -103,3 +107,4 @@ See the documentation contained in the docs folder:
 10. [Design](docs/10-design.md)
 11. [Common problems and their solutions](docs/11-common-problems-and-their-solutions.md)
 12. [Performance test](docs/12-performance-test.md)
+13. [Trino](docs/13-trino.md)

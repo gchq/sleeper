@@ -44,6 +44,7 @@
         <module>cdk-custom-resources</module>
         <module>metrics</module>
         <module>distribution</module>
+        <module>trino</module>
     </modules>
 
     <properties>
@@ -72,6 +73,7 @@
         <reload4j.version>1.2.20</reload4j.version>
         <java-websocket.version>1.5.2</java-websocket.version>
         <arrow.version>8.0.0</arrow.version>
+        <trino.version>385</trino.version>
         <!-- Testing -->
         <junit.version>4.13</junit.version>
         <mockito.version>3.3.3</mockito.version>
