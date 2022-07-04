@@ -108,14 +108,22 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
                 .instanceCount(instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_NUMBER_OF_EXECUTORS))
                 .instanceType(instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPE))
                 .build();
-        JobFlowInstancesConfigProperty jobFlowInstancesConfigProperty = JobFlowInstancesConfigProperty.builder()
-                .ec2KeyName(instanceProperties.get(UserDefinedInstanceProperty.BULK_IMPORT_EC2_KEY_NAME))
+        JobFlowInstancesConfigProperty.Builder jobFlowInstancesConfigPropertyBuilder = JobFlowInstancesConfigProperty.builder()
                 .ec2SubnetId(subnet)
-                .additionalMasterSecurityGroups(Collections.singletonList(
-                        instanceProperties.get(UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP)))
                 .masterInstanceGroup(masterInstanceGroupConfigProperty)
-                .coreInstanceGroup(coreInstanceGroupConfigProperty)
-                .build();
+                .coreInstanceGroup(coreInstanceGroupConfigProperty);
+        
+        String ec2KeyName = instanceProperties.get(UserDefinedInstanceProperty.BULK_IMPORT_EC2_KEY_NAME);
+        if (null != ec2KeyName && !ec2KeyName.isEmpty()) {
+            jobFlowInstancesConfigPropertyBuilder = jobFlowInstancesConfigPropertyBuilder.ec2KeyName(ec2KeyName);
+        }
+        String emrMasterAdditionalSecurityGroup = instanceProperties
+                .get(UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP);
+        if (null != emrMasterAdditionalSecurityGroup && !emrMasterAdditionalSecurityGroup.isEmpty()) {
+            jobFlowInstancesConfigPropertyBuilder = jobFlowInstancesConfigPropertyBuilder
+                    .additionalMasterSecurityGroups(Collections.singletonList(emrMasterAdditionalSecurityGroup));
+        }
+        JobFlowInstancesConfigProperty jobFlowInstancesConfigProperty = jobFlowInstancesConfigPropertyBuilder.build();
         
         Map<String, String> props = new HashMap<>();
         props.put("maximizeResourceAllocation", "true");
