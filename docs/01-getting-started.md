@@ -4,7 +4,7 @@ Getting started
 The easiest way to deploy an instance of Sleeper and interact with it is to use the "system test" functionality. This deploys
 a Sleeper instance with a simple schema, and writes some random data into a table in the instance. You can then use the status
 scripts to see how much data is in the system, run some example queries, and view logs to help understand what the system is
-doing.
+doing. It is best to do this from an EC2 instance as a significant amount of code needs to be uploaded to AWS.
 
 Before running this demo functionality, you will need the following intalled (see the [deployment guide](02-deployment-guide)
 for more information on getting set up correctly) and you will need your CLI to be logged into your AWS account:
