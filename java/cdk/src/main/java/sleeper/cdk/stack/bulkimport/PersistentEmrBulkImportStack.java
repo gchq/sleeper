@@ -28,7 +28,9 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSI
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import sleeper.cdk.stack.StateStoreStack;
@@ -38,6 +40,7 @@ import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import software.amazon.awscdk.CfnTag;
 import software.amazon.awscdk.services.emr.CfnCluster;
 import software.amazon.awscdk.services.emr.CfnCluster.BootstrapActionConfigProperty;
+import software.amazon.awscdk.services.emr.CfnCluster.ConfigurationProperty;
 import software.amazon.awscdk.services.emr.CfnCluster.HadoopJarStepConfigProperty;
 import software.amazon.awscdk.services.emr.CfnCluster.InstanceGroupConfigProperty;
 import software.amazon.awscdk.services.emr.CfnCluster.JobFlowInstancesConfigProperty;
@@ -114,6 +117,13 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
                 .coreInstanceGroup(coreInstanceGroupConfigProperty)
                 .build();
         
+        Map<String, String> props = new HashMap<>();
+        props.put("maximizeResourceAllocation", "true");
+        ConfigurationProperty configuration = ConfigurationProperty.builder()
+                .classification("spark")
+                .configurationProperties(props)
+                .build();
+        
         CfnClusterProps.Builder propsBuilder = CfnClusterProps.builder()
                 .name(String.join("-", "sleeper", instanceId))
                 .visibleToAllUsers(true)
@@ -127,6 +137,7 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
                 .serviceRole(instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME))
                 .jobFlowRole(instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME))
                 .bootstrapActions(Arrays.asList(bootstrapActionConfigProperty))
+                .configurations(Arrays.asList(configuration))
                 .steps(Arrays.asList(stepConfigProperty))
                 .tags(instanceProperties.getTags().entrySet().stream()
                         .map(entry -> CfnTag.builder().key(entry.getKey()).value(entry.getValue()).build())
