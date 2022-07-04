@@ -39,16 +39,13 @@ export AWS_REGION=eu-west-2
 ```
 
 ### Bootstrapping CDK
-If you are installing Sleeper into your own account you will need to bootstrap CDK, if
-you haven't already done this in your AWS account. Bootstrapping installs all the resources
-that CDK needs to do deployments into your account. 
-See [this link](https://docs.aws.amazon.com/cdk/latest/guide/bootstrapping.html).
-
-You can do this by running the following command `cdk bootstrap aws://ACCOUNT-NUMBER-1/REGION-1`, e.g.:
-
-```bash
-cdk bootstrap aws://123456789012/eu-west-2
-```
+To deploy Sleeper into your AWS account you will need to have bootstrapped CDK in the
+account. Bootstrapping installs all the resources that CDK needs to do deployments. Note
+that bootstrapping CDK is a one-time action for the account that is nothing to do with
+Sleeper itself. See
+[this link](https://docs.aws.amazon.com/cdk/latest/guide/bootstrapping.html) for guidance
+on how to bootstrap CDK in your account. Note that the `cdk bootstrap` command should
+not be run from inside the sleeper directory.
 
 ### Lambda Reserved Concurrency
 When deploying Sleeper, depending on the stacks you need, it will deploy a few Lambda
