@@ -36,7 +36,7 @@ import sleeper.configuration.properties.table.TableProperty;
 public abstract class Executor {
     private static final Logger LOGGER = LoggerFactory.getLogger(Executor.class);
     private static final Predicate<String> LOWER_ALPHANUMERICS_AND_DASHES = Pattern.compile("^[a-z0-9-]+$").asPredicate();
-    protected static final String DEFAULT_CLASS = "sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeRunner";
+    protected static final String DEFAULT_CLASS = "sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDRunner";
 
     protected final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
