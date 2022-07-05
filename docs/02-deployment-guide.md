@@ -180,18 +180,7 @@ aws s3api create-bucket --acl private --bucket ${SLEEPER_JARS} --region ${REGION
 
 rm -rf temp-jars
 mkdir -p temp-jars
-cp compaction-job-creation/target/compaction-job-creation-${VERSION}-utility.jar temp-jars/lambda-jobSpecCreationLambda-${VERSION}.jar
-cp compaction-job-execution/target/compaction-job-execution-${VERSION}-utility.jar temp-jars/runningjobs-${VERSION}.jar
-cp garbage-collector/target/garbage-collector-${VERSION}-utility.jar temp-jars/lambda-garbagecollector-${VERSION}.jar
-cp splitter/target/splitter-${VERSION}-utility.jar temp-jars/lambda-splitter-${VERSION}.jar
-cp query/target/query-${VERSION}-utility.jar temp-jars/query-${VERSION}.jar
-cp ingest/target/ingest-${VERSION}-utility.jar temp-jars/ingest-${VERSION}.jar
-cp metrics/target/metrics-${VERSION}-utility.jar temp-jars/metrics-${VERSION}.jar
-cp athena/target/athena-${VERSION}-utility.jar temp-jars/athena-${VERSION}.jar
-cp cdk/target/cdk-${VERSION}-utility.jar temp-jars/cdk-${VERSION}.jar
-cp cdk-custom-resources/target/cdk-custom-resources-${VERSION}-utility.jar temp-jars/cdk-custom-resources-${VERSION}.jar
-cp bulk-import/bulk-import-starter/target/bulk-import-starter-${VERSION}-utility.jar temp-jars/bulk-import-starter-${VERSION}.jar
-cp bulk-import/bulk-import-runner/target/bulk-import-runner-${VERSION}-utility.jar temp-jars/bulk-import-runner-${VERSION}.jar
+cp distribution/target/distribution-${VERSION}-bin/scripts/jars/* temp-jars/
 aws s3 sync --size-only temp-jars s3://${SLEEPER_JARS}
 rm -rf temp-jars
 cd ..
