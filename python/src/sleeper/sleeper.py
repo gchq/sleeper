@@ -255,6 +255,7 @@ class SleeperClient:
         :return: an object for use with context managers
         """
         # Create a temporary file to write data to as it is batched
+        num_records = 0
         with tempfile.NamedTemporaryFile() as fp:
             try:
                 parquet_file = ParquetSerialiser(fp)
@@ -262,14 +263,14 @@ class SleeperClient:
 
                 class RecordWriter:
                     def __init__(self):
-                        self.num_records = 0
+                        pass
 
                     def write(self, records: List[Dict]):
                         for record in records:
                             parquet_file.write_record(record)
 
                         # Keep num records updated
-                        self.num_records += len(records)
+                        num_records += len(records)
 
                 writer = RecordWriter()
 
@@ -284,8 +285,8 @@ class SleeperClient:
                 databucket: str = _make_ingest_bucket_name(
                     self._basename, table_name)
                 s3_filename: str = _make_ingest_s3_name(databucket)
-                bucket: str = s3_filename.lsplit('/', 1)[0]
-                key: str = s3_filename.lsplit('/', 1)[1]
+                bucket: str = s3_filename.split('/', 1)[0]
+                key: str = s3_filename.split('/', 1)[1]
 
                 # Perform upload
                 _s3.upload_file(fp.name, bucket, key)
@@ -502,7 +503,7 @@ def _make_ingest_bucket_name(basename: str, table_name: str) -> str:
 
     :return: S3 bucket name
     """
-    return f"sleeper-{basename}-{table_name}"
+    return f"sleeper-{basename}-table-{table_name}"
 
 
 def _make_ingest_s3_name(bucket: str) -> str:
