@@ -6,14 +6,23 @@ a Sleeper instance with a simple schema, and writes some random data into a tabl
 scripts to see how much data is in the system, run some example queries, and view logs to help understand what the system is
 doing. It is best to do this from an EC2 instance as a significant amount of code needs to be uploaded to AWS.
 
-Before running this demo functionality, you will need the following intalled (see the [deployment guide](02-deployment-guide)
+Before running this demo functionality, you will need the following intalled (see the [deployment guide](02-deployment-guide.md)
 for more information on getting set up correctly) and you will need your CLI to be logged into your AWS account:
 
-- Maven
-- The AWS CLI
-- CDK
-- Docker
-- Java
+* [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html)
+* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html): v2
+* [Bash](https://www.gnu.org/software/bash/): At least version 4: use `bash --version`.  The default version on a Mac is 3.2, which is too old.
+* [Docker](https://docs.docker.com/get-docker/)
+* [Java 8](https://openjdk.java.net/install/)
+* [Maven](https://maven.apache.org/): Tested with 3.8.6.
+* [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating)
+
+First run (note this command cannot be run from the `sleeper` directory directly as the Java CDK classes are not yet compiled into the JAR named in `cdk.json`):
+
+```sh
+mkdir tmp
+pushd tmp && cdk bootstrap aws://ACCOUNT-NUMBER/REGION && popd
+```
 
 To run the system test, set the environment variable ID to be a globally unique string. This is the instance id. It will
 be used as part of the name of various AWS resources, such as an S3 bucket, lambdas, etc., and therefore should conform to
@@ -23,7 +32,12 @@ deployed within each service (go to the service in the AWS console and type the 
 
 Create an environment variable called VPC which is the id of the VPC you want to deploy Sleeper to, and create an
 environment variable called SUBNET with the id of the subnet you wish to deploy Sleeper to (note that this is only relevant
-to the ephemeral parts of Sleeper - all of the main components use services which naturally span availability zones). Then run:
+to the ephemeral parts of Sleeper - all of the main components use services which naturally span availability zones). 
+
+The VPC _must_ have an S3 Gateway endpoint associated with it otherwise the `cdk deploy` step will fail.
+
+Then run:
+
 ```bash
 ./scripts/test/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
 ```

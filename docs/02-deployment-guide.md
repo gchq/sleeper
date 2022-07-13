@@ -165,7 +165,7 @@ docker push ${REPO_PREFIX}/bulk-import-runner:${VERSION}
 cd ..
 ```
 
-#### Upload the bars to a bucket
+#### Upload the jars to a bucket
 We need to upload jars to a S3 bucket so that they can be used by various resources. The code
 below assumes you start in the project root directory.
 
