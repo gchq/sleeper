@@ -156,7 +156,7 @@ public class PartitionsFromSplitPoints {
             rangesForThisRegion.addAll(ranges);
             Region region = new Region(rangesForThisRegion);
             partition.setRegion(region);
-            partition.setId(partitionBoundaries.get(i) + "---" + partitionBoundaries.get(i + 1));
+            partition.setId(UUID.randomUUID().toString());
             partition.setLeafPartition(true);
             partition.setParentPartitionId(null);
             partition.setChildPartitionIds(new ArrayList<>());
