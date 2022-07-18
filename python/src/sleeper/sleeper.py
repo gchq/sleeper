@@ -292,7 +292,7 @@ class SleeperClient:
                 logger.debug(f"Uploaded {writer.num_records} records to S3")
 
                 # Notify Sleeper
-                _ingest(table_name, s3_filename, self._ingest_queue)
+                _ingest(table_name, [s3_filename], self._ingest_queue)
 
 def _get_resource_names(configbucket: str) -> Tuple[str, str, str, str, str, str, str]:
     """
@@ -426,6 +426,7 @@ def _bulk_import(table_name: str, files_to_ingest: list,
 
     # Converts bulk import message to json and sends to the SQS queue
     bulk_import_message_json = json.dumps(bulk_import_message)
+    logger.debug(f"Sending JSON message to queue {bulk_import_message_json}")
     bulk_import_queue_sqs = _sqs.get_queue_by_name(QueueName = queue)
     bulk_import_queue_sqs.send_message(MessageBody = bulk_import_message_json)
 
