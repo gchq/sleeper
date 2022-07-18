@@ -140,7 +140,8 @@ The bulk import using EMR approach has the following configuration options in th
 used unless they are overridden by either the table properties or the specification in the bulk import job specification.
 
 ```properties
-sleeper.bulk.import.keypair.name=my-key # An EC2 keypair to use for the EC2 instances. Specifying this will allow you to SSH to the nodes in the cluster while it's running. (NB. This cannot be overriden by a table property or by the specification in the bulk import job specification.)
+sleeper.bulk.import.emr.keypair.name=my-key # An EC2 keypair to use for the EC2 instances. Specifying this will allow you to SSH to the nodes in the cluster while it's running. (NB. This 
+cannot be overriden by a table property or by the specification in the bulk import job specification.)
 sleeper.default.bulk.import.emr.release.label=emr-6.4.0 # The EMR release label to be used when creating an EMR cluster for bulk importing data using Spark running on EMR. This default can be overridden by a table property or by a property in the bulk import job specification.
 sleeper.default.bulk.import.emr.master.instance.type=m5.xlarge # The EC2 instance type to be used for the master node of the EMR cluster.
 sleeper.default.bulk.import.emr.executor.instance.type=m5.4xlarge # The EC2 instance type to be used for the executor nodes of the EMR cluster.
