@@ -195,7 +195,7 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
             int sliceStart = 0;
             int sliceNo = 0;
             while (sliceStart < sourceVectorSize) {
-                if (sliceNo % 100 == 0) {
+                if (sliceNo % 1000 == 0) {
                     LOGGER.debug(String.format("Writing slice number %05d (starting at row number %09d of %09d)", sliceNo, sliceStart, sourceVectorSize));
                 }
                 // Calculate the bounds for the current slice
