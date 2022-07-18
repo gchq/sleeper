@@ -17,12 +17,10 @@ for more information on getting set up correctly) and you will need your CLI to 
 * [Maven](https://maven.apache.org/): Tested with 3.8.6.
 * [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-First run (note this command cannot be run from the `sleeper` directory directly as the Java CDK classes are not yet compiled into the JAR named in `cdk.json`):
-
-```sh
-mkdir tmp
-pushd tmp && cdk bootstrap aws://ACCOUNT-NUMBER/REGION && popd
-```
+If CDK has not previously been bootstrapped in this account, then it needs bootstrapping. The `cdk bootstrap ...` command
+cannot be run from the `sleeper` directory directly as the Java CDK classes are not yet compiled into the JAR named in 
+`cdk.json`.  See [this link](https://docs.aws.amazon.com/cdk/latest/guide/bootstrapping.html) for guidance on how to 
+bootstrap CDK in your account.
 
 To run the system test, set the environment variable ID to be a globally unique string. This is the instance id. It will
 be used as part of the name of various AWS resources, such as an S3 bucket, lambdas, etc., and therefore should conform to
