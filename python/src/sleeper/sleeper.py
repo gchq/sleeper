@@ -262,7 +262,7 @@ class SleeperClient:
 
                 class RecordWriter:
                     def __init__(self):
-                        self.num_records = 0
+                        self.num_records: int = 0
 
                     def write(self, records: List[Dict]):
                         for record in records:
@@ -284,15 +284,15 @@ class SleeperClient:
                 databucket: str = _make_ingest_bucket_name(
                     self._basename, table_name)
                 s3_filename: str = _make_ingest_s3_name(databucket)
-                bucket: str = s3_filename.lsplit('/', 1)[0]
-                key: str = s3_filename.lsplit('/', 1)[1]
+                bucket: str = s3_filename.split('/', 1)[0]
+                key: str = s3_filename.split('/', 1)[1]
 
                 # Perform upload
                 _s3.upload_file(fp.name, bucket, key)
-                logger.debug(f"Uploaded {num_records} records to S3")
+                logger.debug(f"Uploaded {writer.num_records} records to S3")
 
                 # Notify Sleeper
-                _ingest(table_name, s3_filename, self._ingest_queue)
+                _ingest(table_name, [s3_filename], self._ingest_queue)
 
 def _get_resource_names(configbucket: str) -> Tuple[str, str, str, str, str, str, str]:
     """
@@ -426,6 +426,7 @@ def _bulk_import(table_name: str, files_to_ingest: list,
 
     # Converts bulk import message to json and sends to the SQS queue
     bulk_import_message_json = json.dumps(bulk_import_message)
+    logger.debug(f"Sending JSON message to queue {bulk_import_message_json}")
     bulk_import_queue_sqs = _sqs.get_queue_by_name(QueueName = queue)
     bulk_import_queue_sqs.send_message(MessageBody = bulk_import_message_json)
 
@@ -502,7 +503,7 @@ def _make_ingest_bucket_name(basename: str, table_name: str) -> str:
 
     :return: S3 bucket name
     """
-    return f"sleeper-{basename}-{table_name}"
+    return f"sleeper-{basename}-table-{table_name}"
 
 
 def _make_ingest_s3_name(bucket: str) -> str:
