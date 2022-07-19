@@ -32,17 +32,17 @@ public class SleeperColumnHandle implements ColumnHandle {
 
     @JsonProperty
     public String getColumnName() {
-        return this.columnName;
+        return columnName;
     }
 
     @JsonProperty
     public Type getColumnTrinoType() {
-        return this.columnTrinoType;
+        return columnTrinoType;
     }
 
     @JsonProperty
     public SleeperColumnHandle.SleeperColumnCategory getColumnCategory() {
-        return this.columnCategory;
+        return columnCategory;
     }
 
     /**
@@ -52,10 +52,10 @@ public class SleeperColumnHandle implements ColumnHandle {
      */
     public ColumnMetadata toColumnMetadata() {
         return ColumnMetadata.builder()
-                .setName(this.columnName)
-                .setType(this.columnTrinoType)
+                .setName(columnName)
+                .setType(columnTrinoType)
                 .setNullable(false) // Sleeper columns cannot contain null, although the value of this field does not seem to be reflected by Trino during a SHOW COLUMNS statement.
-                .setComment(Optional.of(this.columnCategory.name()))
+                .setComment(Optional.of(columnCategory.name()))
                 .build();
     }
 

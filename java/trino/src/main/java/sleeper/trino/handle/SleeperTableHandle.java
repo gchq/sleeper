@@ -37,17 +37,17 @@ public class SleeperTableHandle implements ConnectorTableHandle {
 
     @JsonProperty
     public SchemaTableName getSchemaTableName() {
-        return this.schemaTableName;
+        return schemaTableName;
     }
 
     @JsonProperty
     public List<SleeperColumnHandle> getSleeperColumnHandleListInOrder() {
-        return this.sleeperColumnHandleListInOrder;
+        return sleeperColumnHandleListInOrder;
     }
 
     @JsonProperty
     public TupleDomain<ColumnHandle> getTupleDomain() {
-        return this.tupleDomain;
+        return tupleDomain;
     }
 
     /**
@@ -68,7 +68,7 @@ public class SleeperTableHandle implements ConnectorTableHandle {
      * @return The {@link TableColumnsMetadata} object.
      */
     public TableColumnsMetadata toTableColumnsMetadata() {
-        return TableColumnsMetadata.forTable(this.schemaTableName, this.toConnectorTableMetadata().getColumns());
+        return TableColumnsMetadata.forTable(schemaTableName, toConnectorTableMetadata().getColumns());
     }
 
     /**

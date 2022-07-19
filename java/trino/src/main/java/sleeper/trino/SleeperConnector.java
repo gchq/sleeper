@@ -19,7 +19,6 @@ import static java.util.Objects.requireNonNull;
  * management and provider classes.
  */
 public class SleeperConnector implements Connector {
-
     private final SleeperConnectionAsTrino sleeperConnectionAsTrino;
     private final SleeperMetadata sleeperMetadata;
     private final SleeperSplitManager sleeperSplitManager;
@@ -65,7 +64,7 @@ public class SleeperConnector implements Connector {
      */
     @Override
     public ConnectorMetadata getMetadata(ConnectorTransactionHandle transactionHandle) {
-        return this.sleeperMetadata;
+        return sleeperMetadata;
     }
 
     /**
@@ -76,7 +75,7 @@ public class SleeperConnector implements Connector {
      */
     @Override
     public ConnectorSplitManager getSplitManager() {
-        return this.sleeperSplitManager;
+        return sleeperSplitManager;
     }
 
     /**
@@ -87,7 +86,7 @@ public class SleeperConnector implements Connector {
      */
     @Override
     public ConnectorRecordSetProvider getRecordSetProvider() {
-        return this.sleeperRecordSetProvider;
+        return sleeperRecordSetProvider;
     }
 
     /**
@@ -98,7 +97,7 @@ public class SleeperConnector implements Connector {
      */
     @Override
     public ConnectorPageSinkProvider getPageSinkProvider() {
-        return this.sleeperPageSinkProvider;
+        return sleeperPageSinkProvider;
     }
 
     /**
@@ -111,7 +110,7 @@ public class SleeperConnector implements Connector {
     public Set<SystemTable> getSystemTables() {
         return ImmutableSet.of(
                 new SleeperSystemTableRandom(),
-                new SleeperSystemTablePartitions(this.sleeperConnectionAsTrino));
+                new SleeperSystemTablePartitions(sleeperConnectionAsTrino));
     }
 
     /**

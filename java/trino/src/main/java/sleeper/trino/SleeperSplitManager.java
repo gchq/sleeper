@@ -56,6 +56,6 @@ public class SleeperSplitManager implements ConnectorSplitManager {
                 (SleeperTransactionHandle) transactionHandle,
                 (SleeperTableHandle) tableHandle,
                 dynamicFilter,
-                this.maxSplitBatchSize);
+                maxSplitBatchSize);
     }
 }

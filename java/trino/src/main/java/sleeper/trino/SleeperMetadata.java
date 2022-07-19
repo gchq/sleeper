@@ -32,7 +32,7 @@ import static java.util.Objects.requireNonNull;
  * This class also handles the application of static filters to tables, and the resolution of indexes.
  */
 public class SleeperMetadata implements ConnectorMetadata {
-    private static final Logger LOG = Logger.get(SleeperMetadata.class);
+    private static final Logger LOGGER = Logger.get(SleeperMetadata.class);
 
     private final SleeperConfig sleeperConfig;
     private final SleeperConnectionAsTrino sleeperConnectionAsTrino;
@@ -71,8 +71,8 @@ public class SleeperMetadata implements ConnectorMetadata {
      */
     @Override
     public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> trinoSchemaNameOpt) {
-        String trinoSchemaName = trinoSchemaNameOpt.orElse(this.sleeperConnectionAsTrino.getDefaultTrinoSchemaName());
-        return this.sleeperConnectionAsTrino.getAllSchemaTableNamesInTrinoSchema(trinoSchemaName).stream()
+        String trinoSchemaName = trinoSchemaNameOpt.orElse(sleeperConnectionAsTrino.getDefaultTrinoSchemaName());
+        return sleeperConnectionAsTrino.getAllSchemaTableNamesInTrinoSchema(trinoSchemaName).stream()
                 .sorted(Comparator.comparing(SchemaTableName::getSchemaName).thenComparing(SchemaTableName::getTableName))
                 .collect(ImmutableList.toImmutableList());
     }
@@ -86,7 +86,7 @@ public class SleeperMetadata implements ConnectorMetadata {
      */
     @Override
     public ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName schemaTableName) {
-        return this.sleeperConnectionAsTrino.getSleeperTableHandle(schemaTableName);
+        return sleeperConnectionAsTrino.getSleeperTableHandle(schemaTableName);
     }
 
     /**
@@ -112,7 +112,7 @@ public class SleeperMetadata implements ConnectorMetadata {
      */
     @Override
     public Stream<TableColumnsMetadata> streamTableColumns(ConnectorSession session, SchemaTablePrefix prefix) {
-        return this.listTables(session, prefix.getSchema()).stream()
+        return listTables(session, prefix.getSchema()).stream()
                 .filter(prefix::matches)
                 .map(schemaTableName -> (SleeperTableHandle) this.getTableHandle(session, schemaTableName))
                 .map(SleeperTableHandle::toTableColumnsMetadata);
@@ -167,7 +167,7 @@ public class SleeperMetadata implements ConnectorMetadata {
      */
     @Override
     public ConnectorTableProperties getTableProperties(ConnectorSession session, ConnectorTableHandle tableHandle) {
-        if (this.sleeperConfig.isEnableTrinoPartitioning()) {
+        if (sleeperConfig.isEnableTrinoPartitioning()) {
             SleeperTableHandle sleeperTableHandle = (SleeperTableHandle) tableHandle;
             List<ColumnHandle> keyColumnHandles = sleeperTableHandle.getColumnHandlesInCategoryInOrder(SleeperColumnHandle.SleeperColumnCategory.ROWKEY).stream()
                     .map(ColumnHandle.class::cast)
@@ -222,7 +222,7 @@ public class SleeperMetadata implements ConnectorMetadata {
                                                                                    ConnectorTableHandle connectorTableHandle,
                                                                                    Constraint additionalConstraint) {
         SleeperTableHandle sleeperTableHandle = (SleeperTableHandle) connectorTableHandle;
-        LOG.debug("applyFilter on %s: %s", sleeperTableHandle.getSchemaTableName(), additionalConstraint.getSummary().getDomains());
+        LOGGER.debug("applyFilter on %s: %s", sleeperTableHandle.getSchemaTableName(), additionalConstraint.getSummary().getDomains());
 
         Set<SleeperColumnHandle> rowKeyColumnHandlesSet = ImmutableSet.copyOf(
                 sleeperTableHandle.getColumnHandlesInCategoryInOrder(SleeperColumnHandle.SleeperColumnCategory.ROWKEY));
@@ -230,7 +230,7 @@ public class SleeperMetadata implements ConnectorMetadata {
         Optional<Map<ColumnHandle, Domain>> additionalConstraintColumnHandleToDomainMapOpt =
                 additionalConstraint.getSummary().getDomains();
         if (additionalConstraintColumnHandleToDomainMapOpt.isEmpty()) {
-            LOG.debug("No domains were provided in the constraint");
+            LOGGER.debug("No domains were provided in the constraint");
             return Optional.empty();
         }
         Map<ColumnHandle, Domain> additionalConstraintColumnHandleToDomainMap =
@@ -241,7 +241,7 @@ public class SleeperMetadata implements ConnectorMetadata {
                         .filter(entry -> rowKeyColumnHandlesSet.contains((SleeperColumnHandle) entry.getKey()))
                         .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
         if (rowKeyConstraintsColumnHandleToDomainMap.isEmpty()) {
-            LOG.debug("No row key domains were provided in the constraint");
+            LOGGER.debug("No row key domains were provided in the constraint");
             return Optional.empty();
         }
         TupleDomain<ColumnHandle> rowKeyConstraintsTupleDomain = TupleDomain.withColumnDomains(rowKeyConstraintsColumnHandleToDomainMap);
@@ -255,12 +255,12 @@ public class SleeperMetadata implements ConnectorMetadata {
         TupleDomain<ColumnHandle> originalTableTupleDomain = sleeperTableHandle.getTupleDomain();
         TupleDomain<ColumnHandle> rowKeyConstrainedTableTupleDomain = originalTableTupleDomain.intersect(rowKeyConstraintsTupleDomain);
         if (originalTableTupleDomain.equals(rowKeyConstrainedTableTupleDomain)) {
-            LOG.debug("New row key domains did not change the overall tuple domain");
+            LOGGER.debug("New row key domains did not change the overall tuple domain");
             return Optional.empty();
         }
 
-        LOG.debug("New domain is %s", rowKeyConstrainedTableTupleDomain);
-        LOG.debug("Remaining domain is %s", remainingConstraintsTupleDomain);
+        LOGGER.debug("New domain is %s", rowKeyConstrainedTableTupleDomain);
+        LOGGER.debug("Remaining domain is %s", remainingConstraintsTupleDomain);
         return Optional.of(new ConstraintApplicationResult<>(sleeperTableHandle.withTupleDomain(rowKeyConstrainedTableTupleDomain),
                 remainingConstraintsTupleDomain,
                 false));

@@ -171,10 +171,10 @@ class SleeperRawAwsConnection implements AutoCloseable {
     @Override
     public void close() {
         LOG.info("Closing AWS clients");
-        this.s3Client.shutdown();
-        this.s3AsyncClient.close();
-        this.dynamoDbClient.shutdown();
-        this.rootBufferAllocator.close();
+        s3Client.shutdown();
+        s3AsyncClient.close();
+        dynamoDbClient.shutdown();
+        rootBufferAllocator.close();
         LOG.info("AWS clients closed");
     }
 
@@ -185,7 +185,7 @@ class SleeperRawAwsConnection implements AutoCloseable {
      * @return A set of the names of all of the Sleeper tables.
      */
     public Set<String> getAllSleeperTableNames() {
-        return this.tableNameToSleeperTablePropertiesMap.keySet();
+        return tableNameToSleeperTablePropertiesMap.keySet();
     }
 
     /**
@@ -195,7 +195,7 @@ class SleeperRawAwsConnection implements AutoCloseable {
      * @return The Sleeper schema.
      */
     public Schema getSleeperSchema(String tableName) {
-        return this.tableNameToSleeperTablePropertiesMap.get(tableName).getSchema();
+        return tableNameToSleeperTablePropertiesMap.get(tableName).getSchema();
     }
 
     /**

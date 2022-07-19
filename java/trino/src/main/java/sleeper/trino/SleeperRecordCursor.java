@@ -28,7 +28,7 @@ import static java.util.Objects.requireNonNull;
  * A record cursor that is provided with a stream of result rows and returns the rows one by one.
  */
 public class SleeperRecordCursor implements RecordCursor {
-    private static final Logger LOG = Logger.get(SleeperRecordCursor.class);
+    private static final Logger LOGGER = Logger.get(SleeperRecordCursor.class);
 
     private final String queryId;
     private final List<Type> columnTrinoTypesInOrder;
@@ -71,34 +71,34 @@ public class SleeperRecordCursor implements RecordCursor {
 
     @Override
     public Type getType(int fieldIndex) {
-        checkArgument(fieldIndex < this.noOfColumns, "Invalid field index");
-        return this.columnTrinoTypesInOrder.get(fieldIndex);
+        checkArgument(fieldIndex < noOfColumns, "Invalid field index");
+        return columnTrinoTypesInOrder.get(fieldIndex);
     }
 
     @Override
     public boolean advanceNextPosition() {
-        if (!this.resultRowIterator.hasNext()) {
-            this.currentRow = null;
+        if (!resultRowIterator.hasNext()) {
+            currentRow = null;
             return false;
         }
-        this.currentRow = this.resultRowIterator.next();
-        if (this.totalNoOfRowsReturned == 0) {
-            LOG.debug("Advanced to first row of record cursor %s", queryId);
+        currentRow = resultRowIterator.next();
+        if (totalNoOfRowsReturned == 0) {
+            LOGGER.debug("Advanced to first row of record cursor %s", queryId);
         }
-        this.totalNoOfRowsReturned++;
+        totalNoOfRowsReturned++;
         return true;
     }
 
     @Override
     public boolean getBoolean(int fieldIndex) {
         checkFieldType(fieldIndex, ImmutableList.of(BOOLEAN));
-        return (Boolean) this.currentRow.get(fieldIndex);
+        return (Boolean) currentRow.get(fieldIndex);
     }
 
     @Override
     public long getLong(int fieldIndex) {
         checkFieldType(fieldIndex, ImmutableList.of(BIGINT, INTEGER));
-        Object value = this.currentRow.get(fieldIndex);
+        Object value = currentRow.get(fieldIndex);
         if (value instanceof Integer) {
             return Long.valueOf((Integer) value);
         } else {
@@ -109,13 +109,13 @@ public class SleeperRecordCursor implements RecordCursor {
     @Override
     public double getDouble(int fieldIndex) {
         checkFieldType(fieldIndex, ImmutableList.of(DOUBLE));
-        return (Double) this.currentRow.get(fieldIndex);
+        return (Double) currentRow.get(fieldIndex);
     }
 
     @Override
     public Slice getSlice(int fieldIndex) {
         checkFieldType(fieldIndex, ImmutableList.of(VARCHAR));
-        String str = (String) this.currentRow.get(fieldIndex);
+        String str = (String) currentRow.get(fieldIndex);
         return Slices.utf8Slice(str);
     }
 
@@ -127,8 +127,8 @@ public class SleeperRecordCursor implements RecordCursor {
      */
     @Override
     public Object getObject(int fieldIndex) {
-        Type fieldType = this.getType(fieldIndex);
-        Object value = this.currentRow.get(fieldIndex);
+        Type fieldType = getType(fieldIndex);
+        Object value = currentRow.get(fieldIndex);
         // This feels like problematic code and so watch for unexpected errors
         if (fieldType instanceof ArrayType) {
             Type elementType = ((ArrayType) fieldType).getElementType();
@@ -144,17 +144,17 @@ public class SleeperRecordCursor implements RecordCursor {
     @Override
     public boolean isNull(int fieldIndex) {
         checkArgument(fieldIndex < this.noOfColumns, "Invalid field index");
-        return this.currentRow.get(fieldIndex) == null;
+        return currentRow.get(fieldIndex) == null;
     }
 
     @Override
     public void close() {
-        this.resultRowStream.close();
-        LOG.debug("Record cursor for query %s returned %d rows", this.queryId, this.totalNoOfRowsReturned);
+        resultRowStream.close();
+        LOGGER.debug("Record cursor for query %s returned %d rows", queryId, totalNoOfRowsReturned);
     }
 
     private void checkFieldType(int fieldIndex, List<Type> expectedTypes) {
-        Type actualType = this.columnTrinoTypesInOrder.get(fieldIndex);
+        Type actualType = columnTrinoTypesInOrder.get(fieldIndex);
         if (expectedTypes.contains(actualType)) {
             return;
         }

@@ -50,7 +50,7 @@ public class SleeperRecordSetProvider implements ConnectorRecordSetProvider {
                 .collect(ImmutableList.toImmutableList());
 
         return new SleeperRecordSet(
-                this.sleeperConnectionAsTrino,
+                sleeperConnectionAsTrino,
                 (SleeperTransactionHandle) transactionHandle,
                 (SleeperSplit) split,
                 sleeperColumnHandles);

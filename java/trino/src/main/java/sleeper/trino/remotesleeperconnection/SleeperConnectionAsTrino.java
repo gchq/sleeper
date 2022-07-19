@@ -149,7 +149,7 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
      */
     public Set<SchemaTableName> getAllSchemaTableNamesInTrinoSchema(String trinoSchema) {
         assert trinoSchema.equals(DEFAULT_TRINO_SCHEMA_NAME);
-        return this.tableHandleMap.keySet().stream()
+        return tableHandleMap.keySet().stream()
                 .map(tableName -> new SchemaTableName(DEFAULT_TRINO_SCHEMA_NAME, tableName))
                 .collect(ImmutableSet.toImmutableSet());
     }
@@ -162,7 +162,7 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
      */
     public SleeperTableHandle getSleeperTableHandle(SchemaTableName schemaTableName) {
         assert schemaTableName.getSchemaName().equals(DEFAULT_TRINO_SCHEMA_NAME);
-        return this.tableHandleMap.get(schemaTableName.getTableName());
+        return tableHandleMap.get(schemaTableName.getTableName());
     }
 
     /**
@@ -209,7 +209,7 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
     public Stream<Partition> streamPartitions(SchemaTableName schemaTableName) {
         assert schemaTableName.getSchemaName().equals(DEFAULT_TRINO_SCHEMA_NAME);
         try {
-            return this.sleeperRawAwsConnection.getSleeperTablePartitionStructure(
+            return sleeperRawAwsConnection.getSleeperTablePartitionStructure(
                     schemaTableName.getTableName(),
                     Instant.now()).getAllPartitions().stream();
         } catch (StateStoreException e) {
@@ -280,7 +280,7 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
         SleeperColumnHandle rowKeySleeperColumnHandle = rowKeySleeperColumnHandlesInOrder.get(0);
 
         // Convert the Trino Range objects into Sleeper Range objects
-        Schema sleeperSchema = this.sleeperRawAwsConnection.getSleeperSchema(sleeperTableHandle.getSchemaTableName().getTableName());
+        Schema sleeperSchema = sleeperRawAwsConnection.getSleeperSchema(sleeperTableHandle.getSchemaTableName().getTableName());
         sleeper.core.range.Range.RangeFactory rangeFactory = new sleeper.core.range.Range.RangeFactory(sleeperSchema);
         List<Region> sleeperRegionList = trinoRangeList.stream().map(
                         trinoRange -> rangeFactory.createRange(

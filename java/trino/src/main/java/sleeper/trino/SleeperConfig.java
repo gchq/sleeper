@@ -23,7 +23,7 @@ public class SleeperConfig {
      */
     @NotNull
     public String getConfigBucket() {
-        return this.configBucket;
+        return configBucket;
     }
 
     @Config("sleeper.config-bucket")
@@ -51,7 +51,7 @@ public class SleeperConfig {
      */
     @NotNull
     public int getMaxSplitBatchSize() {
-        return this.maxSplitBatchSize;
+        return maxSplitBatchSize;
     }
 
     @Config("sleeper.max-split-batch-size")
@@ -70,7 +70,7 @@ public class SleeperConfig {
      */
     @NotNull
     public boolean isEnableTrinoPartitioning() {
-        return this.enableTrinoPartitioning;
+        return enableTrinoPartitioning;
     }
 
     @Config("sleeper.enable-trino-partitioning")
@@ -88,7 +88,7 @@ public class SleeperConfig {
      */
     @NotNull
     public long getMaxArrowRootAllocatorBytes() {
-        return this.maxArrowRootAllocatorBytes;
+        return maxArrowRootAllocatorBytes;
     }
 
     @Config("sleeper.max-arrow-root-allocator-bytes")

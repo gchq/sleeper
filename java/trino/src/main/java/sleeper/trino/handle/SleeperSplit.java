@@ -59,27 +59,27 @@ public class SleeperSplit implements ConnectorSplit {
 
     @JsonProperty
     public String getTableName() {
-        return this.getLeafPartitionQuery().getTableName();
+        return getLeafPartitionQuery().getTableName();
     }
 
     public Schema getSleeperSchema() {
-        return this.sleeperSchema;
+        return sleeperSchema;
     }
 
     @JsonProperty
     public String getSleeperSchemaAsString() {
         SchemaSerDe schemaSerDe = new SchemaSerDe();
-        return schemaSerDe.toJson(this.getSleeperSchema());
+        return schemaSerDe.toJson(getSleeperSchema());
     }
 
     public LeafPartitionQuery getLeafPartitionQuery() {
-        return this.leafPartitionQuery;
+        return leafPartitionQuery;
     }
 
     @JsonProperty
     public String getLeafPartitionQueryAsString() {
-        QuerySerDe querySerDe = new QuerySerDe(ImmutableMap.of(this.getTableName(), this.getSleeperSchema()));
-        return querySerDe.toJson(this.getLeafPartitionQuery());
+        QuerySerDe querySerDe = new QuerySerDe(ImmutableMap.of(getTableName(), getSleeperSchema()));
+        return querySerDe.toJson(getLeafPartitionQuery());
     }
 
     /**

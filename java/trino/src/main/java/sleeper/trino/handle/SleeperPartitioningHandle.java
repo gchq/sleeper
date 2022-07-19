@@ -119,7 +119,7 @@ public class SleeperPartitioningHandle implements ConnectorPartitioningHandle {
 
     @JsonProperty
     public String getPartitionMinKeysAsString() {
-        return encodeKeyListToString(this.getPartitionMinKeysInOrder());
+        return encodeKeyListToString(getPartitionMinKeysInOrder());
     }
 
     public int getPartitionNo(Key key) {

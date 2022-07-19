@@ -23,7 +23,7 @@ import static java.util.Objects.requireNonNull;
  * so this record set can perform highly-selective scans as well as broader scans.
  */
 public class SleeperRecordSet implements RecordSet {
-    private static final Logger LOG = Logger.get(SleeperRecordSet.class);
+    private static final Logger LOGGER = Logger.get(SleeperRecordSet.class);
 
     private final SleeperSplit sleeperSplit;
     private final List<SleeperColumnHandle> outputSleeperColumnHandlesInOrder;
@@ -76,7 +76,7 @@ public class SleeperRecordSet implements RecordSet {
      */
     @Override
     public RecordCursor cursor() {
-        LOG.debug("Record set is creating a record cursor for query %s", sleeperSplit.getLeafPartitionQuery().getQueryId());
-        return new SleeperRecordCursor(sleeperSplit.getLeafPartitionQuery().getQueryId(), getColumnTypes(), this.resultRowStream);
+        LOGGER.debug("Record set is creating a record cursor for query %s", sleeperSplit.getLeafPartitionQuery().getQueryId());
+        return new SleeperRecordCursor(sleeperSplit.getLeafPartitionQuery().getQueryId(), getColumnTypes(), resultRowStream);
     }
 }

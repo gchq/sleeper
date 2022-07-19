@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
  * The error handling is limited within this class.
  */
 public class SleeperPageSink implements ConnectorPageSink {
-    private static final Logger LOG = Logger.get(SleeperPageSink.class);
+    private static final Logger LOGGER = Logger.get(SleeperPageSink.class);
 
     private final IngestCoordinator<Page> ingestRecordsPageAsync;
     private final List<SleeperColumnHandle> sleeperColumnHandlesInOrder;
@@ -42,7 +42,7 @@ public class SleeperPageSink implements ConnectorPageSink {
     public SleeperPageSink(SleeperConnectionAsTrino sleeperConnectionAsTrino,
                            SchemaTableName schemaTableName,
                            List<SleeperColumnHandle> sleeperColumnHandlesInOrder) {
-        LOG.debug("Creating a SleeperPageSink for %s", schemaTableName.getTableName());
+        LOGGER.debug("Creating a SleeperPageSink for %s", schemaTableName.getTableName());
         this.ingestRecordsPageAsync = sleeperConnectionAsTrino.createIngestCoordinator(schemaTableName);
         this.sleeperColumnHandlesInOrder = sleeperColumnHandlesInOrder;
     }
@@ -60,9 +60,9 @@ public class SleeperPageSink implements ConnectorPageSink {
     @Override
     public CompletableFuture<?> appendPage(Page page) {
         try {
-            this.noOfAppends++;
-            this.noOfPositionsWritten += page.getPositionCount();
-            this.ingestRecordsPageAsync.write(page);
+            noOfAppends++;
+            noOfPositionsWritten += page.getPositionCount();
+            ingestRecordsPageAsync.write(page);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -80,11 +80,11 @@ public class SleeperPageSink implements ConnectorPageSink {
      */
     @Override
     public CompletableFuture<Collection<Slice>> finish() {
-        LOG.debug(String.format(
+        LOGGER.debug(String.format(
                 "SleeperPageSink is finishing: %d positions written in %d appends, mean %.1f positions per append",
-                this.noOfPositionsWritten, this.noOfAppends, ((float) this.noOfPositionsWritten) / this.noOfAppends));
+                noOfPositionsWritten, noOfAppends, ((float) noOfPositionsWritten) / noOfAppends));
         try {
-            return this.ingestRecordsPageAsync.asyncCloseReturningFileInfoList().thenApply(dummy -> ImmutableList.of());
+            return ingestRecordsPageAsync.asyncCloseReturningFileInfoList().thenApply(dummy -> ImmutableList.of());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -95,6 +95,6 @@ public class SleeperPageSink implements ConnectorPageSink {
      */
     @Override
     public void abort() {
-        this.ingestRecordsPageAsync.abort();
+        ingestRecordsPageAsync.abort();
     }
 }

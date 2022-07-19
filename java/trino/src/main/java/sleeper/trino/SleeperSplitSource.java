@@ -30,7 +30,7 @@ import static java.util.Objects.requireNonNull;
  * are read from this split source.
  */
 public class SleeperSplitSource implements ConnectorSplitSource {
-    private static final Logger LOG = Logger.get(SleeperSplitSource.class);
+    private static final Logger LOGGER = Logger.get(SleeperSplitSource.class);
 
     private final SleeperConnectionAsTrino sleeperConnectionAsTrino;
     private final SleeperTransactionHandle sleeperTransactionHandle;
@@ -162,22 +162,22 @@ public class SleeperSplitSource implements ConnectorSplitSource {
             // The iterator is initialised once, then stored, and splits are removed from it as required
             // It is held as an iterator and not a stream because a stream must be processed in one go whereas an iterator
             // maintains its state as entries are retrieved from it
-            if (this.sleeperSplitIterator == null) {
-                this.sleeperSplitIterator = generateSleeperSplits(
-                        this.sleeperConnectionAsTrino,
-                        this.sleeperTransactionHandle,
-                        this.sleeperTableHandle,
-                        this.dynamicFilter.getCurrentPredicate()).iterator();
+            if (sleeperSplitIterator == null) {
+                sleeperSplitIterator = generateSleeperSplits(
+                        sleeperConnectionAsTrino,
+                        sleeperTransactionHandle,
+                        sleeperTableHandle,
+                        dynamicFilter.getCurrentPredicate()).iterator();
             }
             // Retrieve the next batch of splits from the iterator
             // This streaming construct is a convenient way to express this logic
             List<ConnectorSplit> splitsInNextBatch = StreamSupport.stream(
-                            Spliterators.spliteratorUnknownSize(this.sleeperSplitIterator, Spliterator.NONNULL | Spliterator.IMMUTABLE),
+                            Spliterators.spliteratorUnknownSize(sleeperSplitIterator, Spliterator.NONNULL | Spliterator.IMMUTABLE),
                             false)
                     .limit(Math.min(this.maxBatchSize, maxBatchSize))
                     .collect(ImmutableList.toImmutableList());
             // Return the batch
-            LOG.debug("SleeperSplitSource generating a batch of %d splits", splitsInNextBatch.size());
+            LOGGER.debug("SleeperSplitSource generating a batch of %d splits", splitsInNextBatch.size());
             return new ConnectorSplitBatch(splitsInNextBatch, isFinished());
         });
     }
@@ -189,7 +189,7 @@ public class SleeperSplitSource implements ConnectorSplitSource {
      */
     @Override
     public boolean isFinished() {
-        return this.sleeperSplitIterator != null && !this.sleeperSplitIterator.hasNext();
+        return sleeperSplitIterator != null && !sleeperSplitIterator.hasNext();
     }
 
     /**
@@ -197,7 +197,7 @@ public class SleeperSplitSource implements ConnectorSplitSource {
      */
     @Override
     public void close() {
-        this.sleeperSplitIterator = null;
+        sleeperSplitIterator = null;
     }
 }
 
