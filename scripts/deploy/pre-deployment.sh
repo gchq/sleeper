@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2022 Crown Copyright
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -106,7 +106,7 @@ sed \
 	-e "s|^sleeper.subnet=.*|sleeper.subnet=${SUBNET}|" \
 	-e "s|^sleeper.tags.file=.*|sleeper.tags.file=${TAGS}|" \
 	-e "s|^sleeper.table.properties=.*|sleeper.table.properties=${TABLE_PROPERTIES}|" \
-	-i ${INSTANCE_PROPERTIES}
+	-i "" ${INSTANCE_PROPERTIES}
 
 ###################################
 # Build and publish Docker images #
