@@ -43,12 +43,10 @@ echo "BASE_DOCKERFILE_DIR: ${BASE_DOCKERFILE_DIR}"
 echo "REPO_PREFIX: ${REPO_PREFIX}"
 echo "VERSION: ${VERSION}"
 
-declare -A LOOKUP
-LOOKUP=( \
-["CompactionStack"]="compaction-job-execution" \
-["IngestStack"]="ingest" \
-["SystemTestStack"]="system-test" \
-["EksBulkImportStack"]="bulk-import-runner")
+Stacks_CompactionStack="compaction-job-execution"
+Stacks_IngestStack="ingest"
+Stacks_SystemTestStack="system-test"
+Stacks_EksBulkImportStack="bulk-import-runner"
 
 echo "Beginning docker build and push of images for the following stacks: ${STACKS}"
 
@@ -56,7 +54,9 @@ aws ecr get-login-password --region ${REGION} | docker login --username AWS --pa
 
 for stack in ${STACKS}; do
 
-    DIR=${LOOKUP[${stack}]}
+    Key=Stacks_${stack}
+    DIR=${!Key}
+    
     if [[ ! -z "${DIR}" ]]; then
   	  echo "Building Stack: $stack"
   	  pushd ${BASE_DOCKERFILE_DIR}/${DIR}
