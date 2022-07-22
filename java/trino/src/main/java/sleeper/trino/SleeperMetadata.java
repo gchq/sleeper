@@ -108,14 +108,15 @@ public class SleeperMetadata implements ConnectorMetadata {
      *
      * @param session The current session. This makes no difference at present.
      * @param prefix  The prefix to use to filter the tables.
-     * @return A stream of {@link TableColumnsMetadata} objects.
+     * @return An iterator of {@link TableColumnsMetadata} objects.
      */
     @Override
-    public Stream<TableColumnsMetadata> streamTableColumns(ConnectorSession session, SchemaTablePrefix prefix) {
+    public Iterator<TableColumnsMetadata> streamTableColumns(ConnectorSession session, SchemaTablePrefix prefix) {
         return listTables(session, prefix.getSchema()).stream()
                 .filter(prefix::matches)
                 .map(schemaTableName -> (SleeperTableHandle) this.getTableHandle(session, schemaTableName))
-                .map(SleeperTableHandle::toTableColumnsMetadata);
+                .map(SleeperTableHandle::toTableColumnsMetadata)
+                .iterator();
     }
 
     /**

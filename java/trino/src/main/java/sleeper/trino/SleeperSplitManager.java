@@ -40,17 +40,17 @@ public class SleeperSplitManager implements ConnectorSplitManager {
      * @param session                 The session that these splits are to work under.
      * @param tableHandle             The table that these splits are to be generated for, which includes a static
      *                                filter.
-     * @param splitSchedulingStrategy The split scheduling strategy. This is ignored.
      * @param dynamicFilter           The dynamic filter waits until it is fully-narrowed and then combined with the
      *                                static filter.
+     * @param constraint              Currently ignored.
      * @return The {@link ConnectorSplitSource}.
      */
     @Override
     public ConnectorSplitSource getSplits(ConnectorTransactionHandle transactionHandle,
                                           ConnectorSession session,
                                           ConnectorTableHandle tableHandle,
-                                          SplitSchedulingStrategy splitSchedulingStrategy,
-                                          DynamicFilter dynamicFilter) {
+                                          DynamicFilter dynamicFilter,
+                                          Constraint constraint) {
         return new SleeperSplitSource(
                 sleeperConnectionAsTrino,
                 (SleeperTransactionHandle) transactionHandle,

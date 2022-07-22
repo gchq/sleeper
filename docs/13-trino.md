@@ -53,18 +53,22 @@ place in parallel across multiple servers.
 
 ### Build the plugin
 
-All of the Sleeper-Trino plugin code is contained in the trino directory. Run Maven in the root directory of this
-package:
-> cd sleeper/java/trino
->
-> mvn clean package
+This plugin has been built and tested against Trino 390. This version of Trino requires Java 17, so ensure that you have
+Java 17 installed. Amazon Corretto seems to work perfectly well.
 
-This will download the required dependencies and build a shaded jar called 'target/sleeper-trino-plugin-XXX.jar'.
+All of the Sleeper-Trino plugin code is contained in the trino subdirectory. It depends on other parts of the Sleeper
+codebase and it will be built at the same time as the rest of Sleeper:
+> cd sleeper/java
+>
+> mvn clean package -Pquick
+
+This will download the required dependencies and build all of Sleeper. It will generate a shaded jar called
+'sleeper/java/trino/target/trino-XXXXXX-utility.jar'.
 
 In later steps, a symbolic link will be made to the JAR file, so that Trino always has access to the latest version.
 This makes it easy to modify, rebuild and test any changes to the plugin during development.
 
-Note that the trino module requires Java 11 whereas other parts of Sleeper require Java 8. The Maven POM explicitly
+Note that the trino module requires Java 17 whereas other parts of Sleeper require Java 8. The Maven POM explicitly
 states that the trino module is different. Maven handles this need for multiple JDKs successfully.
 
 ### Install trino
@@ -72,17 +76,14 @@ states that the trino module is different. Maven handles this need for multiple 
 The standard Trino installation instructions are available
 here: https://trino.io/docs/current/installation/deployment.html
 
-Read through the instructions and then perform the following steps:
-
-- Ensure that you have Java 11 installed. Amazon Corretto seems to work perfectly well. Trino requires Java 11.
-- Download trino-server-XXX.tar.gz and unpack it.
+Read through the instructions and then download trino-server-YYY.tar.gz and unpack it.
 
 Trino requires some configuration. The standard Trino instructions provide a great deal of detail about how to do this,
 and the instructions below should be sufficient to get you started.
 
 Run the following commands to make three plugins available to Trino: _Sleeper_, _TPCH_ (to provide sample data) and
 _memory_ (to demonstrate joins between different data sources):
-> cd trino-server-XXX
+> cd trino-server-YYY
 >
 > mv plugin plugin.all # Back up all of the existing plugins
 >
@@ -94,10 +95,10 @@ _memory_ (to demonstrate joins between different data sources):
 >
 > mkdir plugin/sleeper
 >
-> ln -s sleeper/java/trino/target/sleeper-trino-plugin-XXX.jar plugin/sleeper/sleeper-trino-plugin.jar # Makes latest plugin JAR available to Trino
+> ln -s <SLEEPER_SOURCE_DIR>/java/trino/target/trino-XXXXXX-utility.jar plugin/sleeper/sleeper-trino-plugin.jar # Makes latest plugin JAR available to Trino
 
 Trino stores most of its configuration files in its _etc_ directory. There is an example available:
-> cp -r sleeper/java/example.trino.etc.dir etc
+> cp -r <SLEEPER_SOURCE_DIR>/java/trino/example.trino.etc.dir etc
 
 Edit the following files and make changes if needed:
 
@@ -116,6 +117,20 @@ If everything has been installed correctly, then this command will generate a fe
 STARTED'. Somewhere in the final few log rows will be information about the Sleeper plugin configuration and how many
 Sleeper tables it has found. This should reassure you that it has connected to Sleeper and is ready for use.
 
+If this fails, look in the error messages for the following:
+
+- AmazonS3Exception: Access Denied - your AWS credentials may be invalid. Check by running _aws s3 ls_.
+- AmazonS3Exception: The specified bucket does not exist - the config bucket named in etc/catalog/sleeper.properties is
+  incorrect.
+
+### Important JVM flags
+
+There is a conflict between Apache Arrow 8.0.0 and Java 17, which causes errors such as "module java.base does not "opens java.nio" to unnamed module."
+To avoid these errors, add the following flag to the JVM command line:
+
+> --add-opens=java.base/java.nio=ALL-UNNAMED
+
+This flag has already been added to the example etc/jvm.config file.
 ### Install a SQL client and connect to the Trino server
 
 Trino uses a standard JDBC connection and there are several suitable sophisticated SQL clients available for free.

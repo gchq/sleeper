@@ -73,7 +73,7 @@
         <reload4j.version>1.2.20</reload4j.version>
         <java-websocket.version>1.5.2</java-websocket.version>
         <arrow.version>8.0.0</arrow.version>
-        <trino.version>385</trino.version>
+        <trino.version>390</trino.version>
         <!-- Testing -->
         <junit.version>4.13</junit.version>
         <mockito.version>3.3.3</mockito.version>
@@ -207,6 +207,14 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire.plugin.version}</version>
+                <configuration>
+                    <!--
+                    This flag avoids an error in Arrow 8.0.0 on Java 17: see https://arrow.apache.org/docs/java/install.html
+                    "When using Java 17 or later, some JDK internals must be exposed by adding - - add-opens=java.base/java.nio=ALL-UNNAMED.
+                    Otherwise, you may see errors like module java.base does not "opens java.nio" to unnamed module."
+                    -->
+                    <argLine>--add-opens=java.base/java.nio=ALL-UNNAMED</argLine>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
