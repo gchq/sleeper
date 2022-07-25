@@ -80,6 +80,6 @@ for stack in ${STACKS}; do
       echo "Building and Pushing Docker image ${REPO} to repository ${INSTANCE_ID}/${REPO}"
       docker build -t ${REPO_PREFIX}/${REPO}:${VERSION} ./
       docker push ${REPO_PREFIX}/${REPO}:${VERSION}
-	    popd
+      popd
 	fi
 done
