@@ -33,16 +33,16 @@ popd
 
 # Update the version number in the Python module
 sed \
-  -i "" \
+  -i"" \
   -e "s|^    version=.*|    version='${NEW_VERSION}',|" \
   python/setup.py
 
 # Update the version numbers in the example property files
 sed \
-  -i "" \
+  -i"" \
   -e "s|^sleeper.version=.*|sleeper.version=${NEW_VERSION}|"\
   example/basic/instance.properties
 sed \
-  -i "" \
+  -i"" \
   -e "s|^sleeper.version=.*|sleeper.version=${NEW_VERSION}|"\
   example/full/instance.properties
