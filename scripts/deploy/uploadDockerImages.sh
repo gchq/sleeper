@@ -58,16 +58,28 @@ for stack in ${STACKS}; do
     DIR=${!Key}
     
     if [[ ! -z "${DIR}" ]]; then
-  	  echo "Building Stack: $stack"
-  	  pushd ${BASE_DOCKERFILE_DIR}/${DIR}
-  	  REPO=${DIR}
-  	  echo "Pushing Docker image ${REPO} to repository ${INSTANCE_ID}/${REPO}"
-  	  aws ecr describe-repositories --repository-names ${INSTANCE_ID}/${REPO} --no-cli-pager \
-	      || aws ecr create-repository --repository-name ${INSTANCE_ID}/${REPO} \
-	      --image-scanning-configuration scanOnPush=true --no-cli-pager
+      echo "Building Stack: $stack"
+      REPO=${DIR}
 
-	    docker build -t ${REPO_PREFIX}/${REPO}:${VERSION} ./
-	    docker push ${REPO_PREFIX}/${REPO}:${VERSION}
-	    popd
-	  fi
+      # Check the return code
+      # Do not fail the script, this creates the repository if needed
+      set +e
+      aws ecr describe-repositories --repository-names ${INSTANCE_ID}/${REPO} --no-cli-pager >/dev/null 2>&1
+      STATUS=$?
+      set -e
+
+      # Create the docker repository if required
+      if [ $STATUS -ne 0 ]; then
+        echo "Creating repository ${INSTANCE_ID}/${REPO}"
+        aws ecr create-repository --repository-name ${INSTANCE_ID}/${REPO} \
+	      --image-scanning-configuration scanOnPush=true --no-cli-pager
+      fi
+
+      pushd ${BASE_DOCKERFILE_DIR}/${DIR}
+
+      echo "Building and Pushing Docker image ${REPO} to repository ${INSTANCE_ID}/${REPO}"
+      docker build -t ${REPO_PREFIX}/${REPO}:${VERSION} ./
+      docker push ${REPO_PREFIX}/${REPO}:${VERSION}
+      popd
+	fi
 done
