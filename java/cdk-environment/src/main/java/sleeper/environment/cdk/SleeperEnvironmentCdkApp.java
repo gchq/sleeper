@@ -15,15 +15,23 @@
  */
 package sleeper.environment.cdk;
 
-import sleeper.environment.cdk.stack.VpcSetupStack;
+import sleeper.environment.cdk.stack.NetworkingStack;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Environment;
+import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.constructs.Construct;
 
 /**
  * The {@link App} that sets up an environment for deploying Sleeper.
  */
-public class SleeperEnvironmentCdkApp {
+public class SleeperEnvironmentCdkApp extends Stack {
+
+    public SleeperEnvironmentCdkApp(Construct scope, StackProps props) {
+        super(scope, props.getStackName(), props);
+
+        new NetworkingStack(this);
+    }
 
     public static void main(String[] args) {
         App app = new App();
@@ -34,9 +42,7 @@ public class SleeperEnvironmentCdkApp {
                         .region(System.getenv("CDK_DEFAULT_REGION"))
                         .build())
                 .build();
-
-        new VpcSetupStack(app, props);
-
+        new SleeperEnvironmentCdkApp(app, props);
         app.synth();
     }
 }
