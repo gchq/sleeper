@@ -43,7 +43,7 @@ public class BuildEC2Stack extends NestedStack {
                         .name("ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*")
                         .owners(Collections.singletonList("099720109477"))
                         .build()))
-                .instanceType(InstanceType.of(InstanceClass.STANDARD3, InstanceSize.LARGE))
+                .instanceType(InstanceType.of(InstanceClass.T3, InstanceSize.LARGE))
                 .vpcSubnets(SubnetSelection.builder().subnetType(SubnetType.PUBLIC).build())
                 .userData(UserData.custom(LoadUserDataUtil.base64(params)))
                 .userDataCausesReplacement(true)
