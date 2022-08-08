@@ -17,6 +17,7 @@ package sleeper.environment.cdk.buildec2;
 
 import sleeper.environment.cdk.util.AppContext;
 import sleeper.environment.cdk.util.MyIpUtil;
+import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.ec2.*;
 import software.constructs.Construct;
@@ -36,7 +37,7 @@ public class BuildEC2Stack extends NestedStack {
                 .build();
         allowSsh.addIngressRule(Peer.ipv4(MyIpUtil.findMyIp() + "/32"), Port.tcp(22));
 
-        Instance.Builder.create(this, "EC2")
+        Instance instance = Instance.Builder.create(this, "EC2")
                 .vpc(vpc)
                 .securityGroup(allowSsh)
                 .machineImage(MachineImage.lookup(LookupMachineImageProps.builder()
@@ -47,6 +48,12 @@ public class BuildEC2Stack extends NestedStack {
                 .vpcSubnets(SubnetSelection.builder().subnetType(SubnetType.PUBLIC).build())
                 .userData(UserData.custom(LoadUserDataUtil.base64(params)))
                 .userDataCausesReplacement(true)
+                .build();
+
+        CfnOutput.Builder.create(this, "ConnectCommand")
+                .value("ssh ubuntu@" + instance.getInstancePublicIp())
+                .description("Command to connect to EC2")
+                .exportName("connectCommand")
                 .build();
     }
 
