@@ -48,6 +48,11 @@ public class BuildEC2Stack extends NestedStack {
                 .vpcSubnets(SubnetSelection.builder().subnetType(SubnetType.PUBLIC).build())
                 .userData(UserData.custom(LoadUserDataUtil.base64(params)))
                 .userDataCausesReplacement(true)
+                .blockDevices(Collections.singletonList(BlockDevice.builder()
+                        .deviceName("/dev/sda1")
+                        .volume(BlockDeviceVolume.ebs(200,
+                                EbsDeviceOptions.builder().volumeType(EbsDeviceVolumeType.GP3).build()))
+                        .build()))
                 .build();
 
         CfnOutput.Builder.create(this, "ConnectCommand")
