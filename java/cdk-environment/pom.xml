@@ -36,8 +36,8 @@
             <artifactId>constructs</artifactId>
         </dependency>
         <dependency>
-            <groupId>software.amazon.awscdk</groupId>
-            <artifactId>apigatewayv2-alpha</artifactId>
+            <groupId>io.github.cdklabs.cdk_cloudformation</groupId>
+            <artifactId>tf-aws-keypair</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>

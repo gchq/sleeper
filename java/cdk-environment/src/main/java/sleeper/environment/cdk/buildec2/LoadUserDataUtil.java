@@ -19,17 +19,12 @@ import org.apache.commons.io.IOUtils;
 
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.util.Base64;
 import java.util.Objects;
 
 class LoadUserDataUtil {
 
     private LoadUserDataUtil() {
         // Prevent instantiation
-    }
-
-    static String base64(BuildEC2Params params) {
-        return Base64.getEncoder().encodeToString(userData(params).getBytes());
     }
 
     static String userData(BuildEC2Params params) {

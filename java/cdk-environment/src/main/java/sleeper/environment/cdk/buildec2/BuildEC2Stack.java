@@ -22,7 +22,9 @@ import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.ec2.*;
 import software.constructs.Construct;
 
+import java.security.KeyPair;
 import java.util.Collections;
+import java.util.UUID;
 
 public class BuildEC2Stack extends NestedStack {
 
@@ -37,6 +39,13 @@ public class BuildEC2Stack extends NestedStack {
                 .build();
         allowSsh.addIngressRule(Peer.ipv4(MyIpUtil.findMyIp() + "/32"), Port.tcp(22));
 
+        KeyPair keyPair = KeyPairUtil.generate();
+        KeyPairUtil.writePrivateToFile(keyPair, "BuildEC2.pem");
+        CfnKeyPair key = CfnKeyPair.Builder.create(this, "KeyPair")
+                .keyName("BuildEC2-" + UUID.randomUUID())
+                .publicKeyMaterial(KeyPairUtil.publicBase64(keyPair))
+                .build();
+
         Instance instance = Instance.Builder.create(this, "EC2")
                 .vpc(vpc)
                 .securityGroup(allowSsh)
@@ -46,17 +55,19 @@ public class BuildEC2Stack extends NestedStack {
                         .build()))
                 .instanceType(InstanceType.of(InstanceClass.T3, InstanceSize.LARGE))
                 .vpcSubnets(SubnetSelection.builder().subnetType(SubnetType.PUBLIC).build())
-                .userData(UserData.custom(LoadUserDataUtil.base64(params)))
+                .userData(UserData.custom(LoadUserDataUtil.userData(params)))
                 .userDataCausesReplacement(true)
+                .keyName(key.getKeyName())
                 .blockDevices(Collections.singletonList(BlockDevice.builder()
                         .deviceName("/dev/sda1")
                         .volume(BlockDeviceVolume.ebs(200,
                                 EbsDeviceOptions.builder().volumeType(EbsDeviceVolumeType.GP3).build()))
                         .build()))
                 .build();
+        instance.getInstance().addDependsOn(key);
 
         CfnOutput.Builder.create(this, "ConnectCommand")
-                .value("ssh ubuntu@" + instance.getInstancePublicIp())
+                .value("ssh -i BuildEC2.pem ubuntu@" + instance.getInstancePublicIp())
                 .description("Command to connect to EC2")
                 .exportName("connectCommand")
                 .build();

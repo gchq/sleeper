@@ -23,14 +23,10 @@ public class LoadUserDataUtilTest {
 
     @Test
     public void can_load_user_data() {
-        assertThat(LoadUserDataUtil.base64(BuildEC2ParamsTest.params().build()))
-                .startsWith("Q29udGVudC1UeXBlOiBtdWx0aXBhcnQvbWl4ZWQ7IGJvdW5kYXJ5PSIvLyIKTUlNR");
-    }
-
-    @Test
-    public void can_fill_parameters() {
         assertThat(LoadUserDataUtil.userData(BuildEC2Params.builder()
                 .branch("feature/something").fork("a-fork").repository("a-repo").build()))
+                .startsWith("Content-Type: multipart/mixed;")
                 .contains("git clone -b feature/something https://github.com/a-fork/a-repo.git");
     }
+
 }
