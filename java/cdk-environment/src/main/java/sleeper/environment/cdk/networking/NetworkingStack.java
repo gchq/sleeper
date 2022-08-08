@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.environment.cdk.stack;
+package sleeper.environment.cdk.networking;
 
-import sleeper.environment.cdk.Utils;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.ec2.*;
 import software.constructs.Construct;
@@ -25,10 +24,12 @@ import java.util.Collections;
 
 public class NetworkingStack extends NestedStack {
 
+    private final Vpc vpc;
+
     public NetworkingStack(Construct scope) {
         super(scope, "Networking");
 
-        Vpc vpc = Vpc.Builder.create(this, "Vpc")
+        vpc = Vpc.Builder.create(this, "Vpc")
                 .cidr("10.150.0.0/16")
                 .maxAzs(1)
                 .subnetConfiguration(Arrays.asList(
@@ -39,14 +40,6 @@ public class NetworkingStack extends NestedStack {
                                 .subnetType(SubnetType.PRIVATE_WITH_NAT)
                                 .cidrMask(24).build()))
                 .build();
-
-        SecurityGroup allowSsh = SecurityGroup.Builder.create(this, "AllowSsh")
-                .vpc(vpc)
-                .description("Allow SSH inbound traffic")
-                .allowAllOutbound(true)
-                .build();
-
-        allowSsh.addIngressRule(Peer.ipv4(Utils.findMyIp() + "/32"), Port.tcp(22));
 
         GatewayVpcEndpoint.Builder.create(this, "S3").vpc(vpc)
                 .service(GatewayVpcEndpointAwsService.S3)
@@ -59,5 +52,9 @@ public class NetworkingStack extends NestedStack {
                 .subnets(Collections.singletonList(SubnetSelection.builder()
                         .subnetType(SubnetType.PRIVATE_WITH_NAT).build()))
                 .build();
+    }
+
+    public IVpc getVpc() {
+        return vpc;
     }
 }

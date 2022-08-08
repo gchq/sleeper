@@ -1,0 +1,57 @@
+Content-Type: multipart/mixed; boundary="//"
+MIME-Version: 1.0
+
+--//
+Content-Type: text/cloud-config; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="cloud-config.txt"
+
+#cloud-config
+cloud_final_modules:
+- [scripts-user, always]
+
+--//
+Content-Type: text/x-shellscript; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="userdata.txt"
+
+#!/bin/bash
+set -e # Exit on error
+set -u # Treat unset variable as error
+set -x # Trace commands
+set -o pipefail
+
+LOGIN_USER=ubuntu
+LOGIN_HOME=/home/$LOGIN_USER
+
+# Get Updates
+export DEBIAN_FRONTEND=noninteractive
+sudo apt update && sudo apt -y dist-upgrade
+
+# Install AWS tools
+sudo apt install -y docker.io unzip htop
+curl -sS "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
+unzip -qq "/tmp/awscliv2.zip" -d "/tmp" && sh /tmp/aws/install --update && rm -rf "/tmp/awscliv2.zip" "/tmp/aws"
+
+# Allow user to access docker socket
+usermod -aG docker $LOGIN_USER
+
+# Install JDK & Maven
+sudo apt install -y maven
+
+# Install CDK
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install -y nodejs
+sudo npm install -g npm
+sudo npm install -g aws-cdk
+
+# Check out code
+if [ ! -d $LOGIN_HOME/${repository} ]; then
+  runuser -u $LOGIN_USER -- git clone -b ${branch} https://github.com/${fork}/${repository}.git $LOGIN_HOME/${repository}
+fi
+
+if [ -f /var/run/reboot-required ]; then
+  /sbin/shutdown -r now && exit
+fi

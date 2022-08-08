@@ -15,7 +15,9 @@
  */
 package sleeper.environment.cdk;
 
-import sleeper.environment.cdk.stack.NetworkingStack;
+import sleeper.environment.cdk.buildec2.BuildEC2Stack;
+import sleeper.environment.cdk.networking.NetworkingStack;
+import sleeper.environment.cdk.util.AppContext;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
@@ -27,10 +29,11 @@ import software.constructs.Construct;
  */
 public class SleeperEnvironmentCdkApp extends Stack {
 
-    public SleeperEnvironmentCdkApp(Construct scope, StackProps props) {
+    public SleeperEnvironmentCdkApp(Construct scope, StackProps props, AppContext app) {
         super(scope, props.getStackName(), props);
 
-        new NetworkingStack(this);
+        NetworkingStack vpc = new NetworkingStack(this);
+        new BuildEC2Stack(this, vpc.getVpc(), app);
     }
 
     public static void main(String[] args) {
@@ -42,7 +45,7 @@ public class SleeperEnvironmentCdkApp extends Stack {
                         .region(System.getenv("CDK_DEFAULT_REGION"))
                         .build())
                 .build();
-        new SleeperEnvironmentCdkApp(app, props);
+        new SleeperEnvironmentCdkApp(app, props, AppContext.of(app));
         app.synth();
     }
 }
