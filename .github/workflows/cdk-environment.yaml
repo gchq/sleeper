@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - 'java/cdk-environment/**'
+      - 'java/pom.xml'
 
 jobs:
   build:
