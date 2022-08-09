@@ -2,6 +2,7 @@ name: Environment CDK Stack
 on:
   push:
     paths:
+      - '.github/workflows/cdk-environment.yaml'
       - 'java/cdk-environment/**'
       - 'java/pom.xml'
 
