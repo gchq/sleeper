@@ -17,5 +17,8 @@ jobs:
           distribution: 'adopt'
           cache: 'maven'
       - name: Build with Maven
-        run: mvn --batch-mode package
+        run: mvn --batch-mode verify
         working-directory: ./java/cdk-environment
+      - name: Publish Test Report
+        if: ${{ always() }}
+        uses: scacap/action-surefire-report@v1
