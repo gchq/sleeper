@@ -62,6 +62,11 @@ and you will have to see if you can adjust your existing lambdas to free some up
 
 You're now ready to build and deploy Sleeper.
 
+### Deployment environment
+
+See [getting started](01-getting-started.md) for information on setting up a VPC and EC2 instance to deploy Sleeper.
+You may want to follow the remaining instructions from within the EC2 instance.
+
 ## Building
 The first step is to build Sleeper. We have a section in our 
 [developer guide](./09-dev-guide.md#Building) for how to do that but the easiest way is:
