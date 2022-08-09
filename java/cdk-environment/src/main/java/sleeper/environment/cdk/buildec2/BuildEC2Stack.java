@@ -39,6 +39,7 @@ public class BuildEC2Stack extends NestedStack {
                 .build();
         allowSsh.addIngressRule(Peer.ipv4(MyIpUtil.findMyIp() + "/32"), Port.tcp(22));
 
+        // Create a new SSH key every time the CDK is run
         KeyPair keyPair = KeyPairUtil.generate();
         KeyPairUtil.writePrivateToFile(keyPair, "BuildEC2.pem");
         CfnKeyPair key = CfnKeyPair.Builder.create(this, "KeyPair")
