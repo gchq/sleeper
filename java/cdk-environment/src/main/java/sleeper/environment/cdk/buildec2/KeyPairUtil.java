@@ -28,6 +28,11 @@ import java.util.Base64;
 import java.util.Collections;
 
 public class KeyPairUtil {
+
+    private KeyPairUtil() {
+        // Prevent instantiation
+    }
+
     public static KeyPair generate() {
         try {
             KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
