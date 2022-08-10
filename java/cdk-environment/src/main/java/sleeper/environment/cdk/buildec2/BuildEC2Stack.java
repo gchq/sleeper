@@ -71,7 +71,6 @@ public class BuildEC2Stack extends Stack {
         CfnOutput.Builder.create(this, "ConnectCommand")
                 .value("ssh -i BuildEC2.pem ubuntu@" + instance.getInstancePublicIp())
                 .description("Command to connect to EC2")
-                .exportName("connectCommand")
                 .build();
     }
 
