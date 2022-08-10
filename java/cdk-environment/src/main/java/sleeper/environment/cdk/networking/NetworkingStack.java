@@ -35,10 +35,10 @@ public class NetworkingStack extends NestedStack {
                 .subnetConfiguration(Arrays.asList(
                         SubnetConfiguration.builder().name("public")
                                 .subnetType(SubnetType.PUBLIC)
-                                .cidrMask(24).build(),
+                                .cidrMask(26).build(),
                         SubnetConfiguration.builder().name("private")
                                 .subnetType(SubnetType.PRIVATE_WITH_NAT)
-                                .cidrMask(24).build()))
+                                .cidrMask(19).build()))
                 .build();
 
         GatewayVpcEndpoint.Builder.create(this, "S3").vpc(vpc)
