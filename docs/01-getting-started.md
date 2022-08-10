@@ -55,12 +55,24 @@ tail /var/log/cloud-init-output.log
 
 Once it's finished the instance might restart. The Sleeper Git repository will be checked out at `~/sleeper`.
 
-You can also deploy either the VPC or the EC2 independently, and specify an instance ID when deploying multiple
-instances, or a particular VPC to deploy the EC2 to:
+#### Managing environments
+
+You can deploy either the VPC or the EC2 independently, and specify an instance ID when deploying multiple
+instances, or an existing VPC to deploy the EC2 to:
 
 ```bash
+cdk deploy -c instanceId=MyEnvironment --all
 cdk deploy -c instanceId=EmptyEnvironment "*-Networking"
 cdk deploy -c instanceId=MyEnvironment -c vpcId=[vpc-id] "*-BuildEC2"
+```
+
+You can tear down the deployed environment with `cdk destroy`. If you used an instanceId or only deployed certain
+parts, you'll need to specify those. Here are some examples:
+
+```bash
+cdk destroy --all
+cdk destroy -c instanceId=MyEnvironment --all
+cdk destroy -c instanceId=EmptyEnvironment "*-Networking"
 ```
 
 ### System test
