@@ -30,7 +30,7 @@ public class NetworkingStack extends NestedStack {
         super(scope, "Networking");
 
         vpc = Vpc.Builder.create(this, "Vpc")
-                .cidr("10.150.0.0/16")
+                .cidr("10.0.0.0/16")
                 .maxAzs(1)
                 .subnetConfiguration(Arrays.asList(
                         SubnetConfiguration.builder().name("public")
