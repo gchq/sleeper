@@ -86,14 +86,18 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
                 .instanceCount(instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_NUMBER_OF_INSTANCES))
                 .instanceType(instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPE))
                 .build();
-        JobFlowInstancesConfigProperty jobFlowInstancesConfigProperty = JobFlowInstancesConfigProperty.builder()
+
+        JobFlowInstancesConfigProperty.Builder jobFlowInstancesConfigPropertyBuilder = JobFlowInstancesConfigProperty.builder()
                 .ec2KeyName(instanceProperties.get(BULK_IMPORT_EC2_KEY_NAME))
                 .ec2SubnetId(subnet)
-                .additionalMasterSecurityGroups(Collections.singletonList(
-                        instanceProperties.get(BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP)))
                 .masterInstanceGroup(masterInstanceGroupConfigProperty)
-                .coreInstanceGroup(coreInstanceGroupConfigProperty)
-                .build();
+                .coreInstanceGroup(coreInstanceGroupConfigProperty);
+        if (null != instanceProperties.get(BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP)
+                        && !instanceProperties.get(BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP).isEmpty()) {
+                jobFlowInstancesConfigPropertyBuilder.additionalMasterSecurityGroups(Collections.singletonList(
+                        instanceProperties.get(BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP)));
+        }
+        JobFlowInstancesConfigProperty jobFlowInstancesConfigProperty = jobFlowInstancesConfigPropertyBuilder.build();
         
         CfnClusterProps.Builder propsBuilder = CfnClusterProps.builder()
                 .name(String.join("-", "sleeper", instanceId, "persistentEMR"))
