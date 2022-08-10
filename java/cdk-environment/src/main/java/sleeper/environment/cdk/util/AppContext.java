@@ -22,6 +22,10 @@ public interface AppContext {
 
     Object get(String key);
 
+    default String getInstanceId() {
+        return getStringOrDefault("instanceId", "SleeperEnvironment");
+    }
+
     default String getStringOrDefault(String key, String defaultValue) {
         Object object = get(key);
         if (object instanceof String) {

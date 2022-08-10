@@ -15,19 +15,21 @@
  */
 package sleeper.environment.cdk.networking;
 
-import software.amazon.awscdk.NestedStack;
+import sleeper.environment.cdk.util.AppContext;
+import software.amazon.awscdk.Stack;
+import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.ec2.*;
 import software.constructs.Construct;
 
 import java.util.Arrays;
 import java.util.Collections;
 
-public class NetworkingStack extends NestedStack {
+public class NetworkingStack extends Stack {
 
     private final Vpc vpc;
 
-    public NetworkingStack(Construct scope) {
-        super(scope, "Networking");
+    public NetworkingStack(Construct scope, StackProps props, AppContext context) {
+        super(scope, context.getInstanceId() + "-Networking", props);
 
         vpc = Vpc.Builder.create(this, "Vpc")
                 .cidr("10.0.0.0/16")

@@ -20,32 +20,24 @@ import sleeper.environment.cdk.networking.NetworkingStack;
 import sleeper.environment.cdk.util.AppContext;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Environment;
-import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
-import software.constructs.Construct;
 
 /**
  * The {@link App} that sets up an environment for deploying Sleeper.
  */
-public class SleeperEnvironmentCdkApp extends Stack {
-
-    public SleeperEnvironmentCdkApp(Construct scope, StackProps props, AppContext app) {
-        super(scope, props.getStackName(), props);
-
-        NetworkingStack networking = new NetworkingStack(this);
-        new BuildEC2Stack(this, networking.getVpc(), app);
-    }
+public class SleeperEnvironmentCdkApp {
 
     public static void main(String[] args) {
         App app = new App();
         StackProps props = StackProps.builder()
-                .stackName("SleeperEnvironment")
                 .env(Environment.builder()
                         .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
                         .region(System.getenv("CDK_DEFAULT_REGION"))
                         .build())
                 .build();
-        new SleeperEnvironmentCdkApp(app, props, AppContext.of(app));
+        AppContext context = AppContext.of(app);
+        NetworkingStack networking = new NetworkingStack(app, props, context);
+        new BuildEC2Stack(app, props, context, networking.getVpc());
         app.synth();
     }
 }

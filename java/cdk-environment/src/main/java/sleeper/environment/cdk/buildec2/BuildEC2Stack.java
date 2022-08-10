@@ -18,7 +18,8 @@ package sleeper.environment.cdk.buildec2;
 import sleeper.environment.cdk.util.AppContext;
 import sleeper.environment.cdk.util.MyIpUtil;
 import software.amazon.awscdk.CfnOutput;
-import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.Stack;
+import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.ec2.*;
 import software.constructs.Construct;
 
@@ -26,11 +27,11 @@ import java.security.KeyPair;
 import java.util.Collections;
 import java.util.UUID;
 
-public class BuildEC2Stack extends NestedStack {
+public class BuildEC2Stack extends Stack {
 
-    public BuildEC2Stack(Construct scope, IVpc vpc, AppContext app) {
-        super(scope, "BuildEC2");
-        BuildEC2Params params = BuildEC2Params.from(app);
+    public BuildEC2Stack(Construct scope, StackProps props, AppContext context, IVpc vpc) {
+        super(scope, context.getInstanceId() + "-BuildEC2", props);
+        BuildEC2Params params = BuildEC2Params.from(context);
 
         SecurityGroup allowSsh = SecurityGroup.Builder.create(this, "AllowSsh")
                 .vpc(vpc)
