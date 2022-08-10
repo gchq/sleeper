@@ -32,8 +32,8 @@ public class SleeperEnvironmentCdkApp extends Stack {
     public SleeperEnvironmentCdkApp(Construct scope, StackProps props, AppContext app) {
         super(scope, props.getStackName(), props);
 
-        NetworkingStack vpc = new NetworkingStack(this);
-        new BuildEC2Stack(this, vpc.getVpc(), app);
+        NetworkingStack networking = new NetworkingStack(this);
+        new BuildEC2Stack(this, networking.getVpc(), app);
     }
 
     public static void main(String[] args) {
