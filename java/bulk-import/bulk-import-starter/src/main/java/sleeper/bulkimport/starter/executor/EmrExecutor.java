@@ -57,7 +57,6 @@ public class EmrExecutor extends Executor {
     @Override
     public void runJobOnPlatform(BulkImportJob bulkImportJob) {
         Map<String, String> platformSpec = bulkImportJob.getPlatformSpec();
-        InstanceProperties instanceProperties = getInstanceProperties();
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName());
         String bulkImportBucket = instanceProperties.get(UserDefinedInstanceProperty.BULK_IMPORT_EMR_BUCKET);
         String logUri = null == bulkImportBucket ? null : "s3://" + bulkImportBucket + "/logs";
@@ -107,7 +106,7 @@ public class EmrExecutor extends Executor {
 
     private JobFlowInstancesConfig createConfig(BulkImportJob bulkImportJob, TableProperties tableProperties) {
         JobFlowInstancesConfig config = new JobFlowInstancesConfig()
-                .withEc2SubnetId(getInstanceProperties().get(UserDefinedInstanceProperty.SUBNET));
+                .withEc2SubnetId(instanceProperties.get(UserDefinedInstanceProperty.SUBNET));
 
         Map<String, String> platformSpec = bulkImportJob.getPlatformSpec();
         String driverInstanceType = getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE, platformSpec, tableProperties);
@@ -133,7 +132,7 @@ public class EmrExecutor extends Executor {
                         .withInstanceCount(1)
         ));
 
-        String keyName = getInstanceProperties().get(UserDefinedInstanceProperty.BULK_IMPORT_EC2_KEY_NAME);
+        String keyName = instanceProperties.get(UserDefinedInstanceProperty.BULK_IMPORT_EC2_KEY_NAME);
         if (null != keyName) {
             config.setEc2KeyName(keyName);
         }
@@ -147,7 +146,7 @@ public class EmrExecutor extends Executor {
         defaultConfig.put("spark.shuffle.mapStatus.compression.codec", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC, platformSpec, tableProperties));
         defaultConfig.put("spark.speculation", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SPECULATION, platformSpec, tableProperties));
         defaultConfig.put("spark.speculation.quantile", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SPECULATION_QUANTILE, platformSpec, tableProperties));
-        defaultConfig.put("spark.hadoop.fs.s3a.connection.maximum", getInstanceProperties().get(UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3));
+        defaultConfig.put("spark.hadoop.fs.s3a.connection.maximum", instanceProperties.get(UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3));
         return defaultConfig;
     }
 
@@ -163,8 +162,8 @@ public class EmrExecutor extends Executor {
     @Override
     protected String getJarLocation() {
         return "s3a://"
-                + getInstanceProperties().get(UserDefinedInstanceProperty.JARS_BUCKET)
+                + instanceProperties.get(UserDefinedInstanceProperty.JARS_BUCKET)
                 + "/bulk-import-runner-"
-                + getInstanceProperties().get(UserDefinedInstanceProperty.VERSION) + ".jar";
+                + instanceProperties.get(UserDefinedInstanceProperty.VERSION) + ".jar";
     }
 }

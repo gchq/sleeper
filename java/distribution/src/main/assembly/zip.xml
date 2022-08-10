@@ -128,16 +128,6 @@
             <destName>bulk-import-starter-${project.version}.jar</destName>
         </file>
         <file>
-            <source>${project.basedir}/../bulk-import/bulk-import-starter/src/main/resources/bulk_import_job_starter.sh</source>
-            <outputDirectory>scripts/jars</outputDirectory>
-            <destName>bulk_import_job_starter_${project.version}.sh</destName>
-        </file>
-        <file>
-            <source>${project.basedir}/../bulk-import/bulk-import-starter/src/main/resources/bulk_import_job_starter_file_copy.sh</source>
-            <outputDirectory>scripts/jars</outputDirectory>
-            <destName>bulk_import_job_starter_file_copy_${project.version}.sh</destName>
-        </file>
-        <file>
             <source>${project.basedir}/../bulk-import/bulk-import-runner/target/bulk-import-runner-${project.version}-utility.jar</source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>bulk-import-runner-${project.version}.jar</destName>

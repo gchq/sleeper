@@ -90,14 +90,13 @@ public class StateMachineExecutor extends Executor {
 
         stepFunctions.startExecution(
                 new StartExecutionRequest()
-                        .withStateMachineArn(getInstanceProperties().get(BULK_IMPORT_EKS_STATE_MACHINE_ARN))
-                        .withName(String.join("-", "sleeper", getInstanceProperties().get(ID), bulkImportJob.getTableName(), bulkImportJob.getId()))
+                        .withStateMachineArn(instanceProperties.get(BULK_IMPORT_EKS_STATE_MACHINE_ARN))
+                        .withName(String.join("-", "sleeper", instanceProperties.get(ID), bulkImportJob.getTableName(), bulkImportJob.getId()))
                         .withInput(new Gson().toJson(input)));
     }
 
     @Override
     protected Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties) {
-        InstanceProperties instanceProperties = getInstanceProperties();
         Map<String, String> defaultConfig = new HashMap<>(DEFAULT_CONFIG);
         String imageName = instanceProperties.get(ACCOUNT) + ".dkr.ecr." +
                 instanceProperties.get(REGION) + ".amazonaws.com/" +

@@ -39,8 +39,8 @@ public abstract class Executor {
     protected static final String DEFAULT_CLASS = "sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDRunner";
 
     protected final InstanceProperties instanceProperties;
-    private final TablePropertiesProvider tablePropertiesProvider;
-    private final AmazonS3 s3Client;
+    protected final TablePropertiesProvider tablePropertiesProvider;
+    protected final AmazonS3 s3Client;
 
     public Executor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AmazonS3 amazonS3Client) {
         this.instanceProperties = instanceProperties;
@@ -65,10 +65,6 @@ public abstract class Executor {
     protected abstract Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties);
 
     protected abstract String getJarLocation();
-
-    public InstanceProperties getInstanceProperties() {
-        return instanceProperties;
-    }
 
     protected List<String> constructArgs(BulkImportJob bulkImportJob) {
         Map<String, String> config = getDefaultSparkConfig(bulkImportJob, bulkImportJob.getPlatformSpec(), tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName()));
