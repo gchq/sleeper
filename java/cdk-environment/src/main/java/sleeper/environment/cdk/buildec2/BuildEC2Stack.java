@@ -44,9 +44,9 @@ public class BuildEC2Stack extends Stack {
 
         // Create a new SSH key every time the CDK is run
         KeyPair keyPair = KeyPairUtil.generate();
-        KeyPairUtil.writePrivateToFile(keyPair, "BuildEC2.pem");
+        KeyPairUtil.writePrivateToFile(keyPair, props.getStackName() + ".pem");
         CfnKeyPair key = CfnKeyPair.Builder.create(this, "KeyPair")
-                .keyName("BuildEC2-" + UUID.randomUUID())
+                .keyName(props.getStackName() + "-" + UUID.randomUUID())
                 .publicKeyMaterial(KeyPairUtil.publicBase64(keyPair))
                 .build();
 
