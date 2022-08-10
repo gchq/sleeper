@@ -151,7 +151,7 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
                 .functionName(functionName)
                 .description("Function to start " + shortId + " bulk import jobs")
                 .memorySize(1024)
-                .timeout(Duration.seconds(60))
+                .timeout(Duration.seconds(20))
                 .environment(env)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_8)
                 .handler("sleeper.bulkimport.starter.BulkImportStarter")
