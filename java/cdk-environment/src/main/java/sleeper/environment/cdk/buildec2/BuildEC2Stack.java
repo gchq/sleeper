@@ -42,7 +42,10 @@ public class BuildEC2Stack extends Stack {
                 .build();
         allowSsh.addIngressRule(Peer.ipv4(MyIpUtil.findMyIp() + "/32"), Port.tcp(22));
 
-        // Create a new SSH key every time the CDK is run
+        // Create a new SSH key every time the CDK is run.
+        // A UUID is appended to the key name to ensure that the key is deleted and recreated every time the stack is
+        // deployed. This is because AWS does not permit updating key pairs in-place, and the library we're using does
+        // not handle that.
         KeyPair keyPair = KeyPairUtil.generate();
         KeyPairUtil.writePrivateToFile(keyPair, props.getStackName() + ".pem");
         CfnKeyPair key = CfnKeyPair.Builder.create(this, "KeyPair")
