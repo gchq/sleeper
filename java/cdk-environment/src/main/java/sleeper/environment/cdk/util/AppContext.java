@@ -16,6 +16,14 @@
 package sleeper.environment.cdk.util;
 
 import software.amazon.awscdk.App;
+import software.amazon.awscdk.Stack;
+import software.amazon.awscdk.services.ec2.IVpc;
+import software.amazon.awscdk.services.ec2.Vpc;
+import software.amazon.awscdk.services.ec2.VpcLookupOptions;
+import software.constructs.Construct;
+import software.constructs.Node;
+
+import java.util.Optional;
 
 @FunctionalInterface
 public interface AppContext {
@@ -24,6 +32,12 @@ public interface AppContext {
 
     default String getInstanceId() {
         return getStringOrDefault("instanceId", "SleeperEnvironment");
+    }
+
+    default IVpc getVpcOrDefault(Construct scope, IVpc defaultVpc) {
+        return getStringOpt("vpcId")
+                .map(id -> Vpc.fromLookup(scope, "Vpc", VpcLookupOptions.builder().vpcId(id).build()))
+                .orElse(defaultVpc);
     }
 
     default String getStringOrDefault(String key, String defaultValue) {
@@ -35,7 +49,19 @@ public interface AppContext {
         }
     }
 
+    default Optional<String> getStringOpt(String key) {
+        return Optional.ofNullable(getStringOrDefault(key, null));
+    }
+
     static AppContext of(App app) {
-        return app.getNode()::tryGetContext;
+        return of(app.getNode());
+    }
+
+    static AppContext of(Stack stack) {
+        return of(stack.getNode());
+    }
+
+    static AppContext of(Node node) {
+        return node::tryGetContext;
     }
 }

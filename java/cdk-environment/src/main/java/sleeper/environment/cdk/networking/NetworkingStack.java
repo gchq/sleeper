@@ -15,7 +15,6 @@
  */
 package sleeper.environment.cdk.networking;
 
-import sleeper.environment.cdk.util.AppContext;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.services.ec2.*;
@@ -28,8 +27,8 @@ public class NetworkingStack extends Stack {
 
     private final Vpc vpc;
 
-    public NetworkingStack(Construct scope, StackProps props, AppContext context) {
-        super(scope, context.getInstanceId() + "-Networking", props);
+    public NetworkingStack(Construct scope, StackProps props) {
+        super(scope, props.getStackName(), props);
 
         vpc = Vpc.Builder.create(this, "Vpc")
                 .cidr("10.0.0.0/16")

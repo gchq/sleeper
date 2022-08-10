@@ -29,15 +29,16 @@ public class SleeperEnvironmentCdkApp {
 
     public static void main(String[] args) {
         App app = new App();
-        StackProps props = StackProps.builder()
-                .env(Environment.builder()
-                        .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
-                        .region(System.getenv("CDK_DEFAULT_REGION"))
-                        .build())
+        Environment environment = Environment.builder()
+                .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
+                .region(System.getenv("CDK_DEFAULT_REGION"))
                 .build();
         AppContext context = AppContext.of(app);
-        NetworkingStack networking = new NetworkingStack(app, props, context);
-        new BuildEC2Stack(app, props, context, networking.getVpc());
+        NetworkingStack networking = new NetworkingStack(app,
+                StackProps.builder().stackName(context.getInstanceId() + "-Networking").env(environment).build());
+        new BuildEC2Stack(app,
+                StackProps.builder().stackName(context.getInstanceId() + "-BuildEC2").env(environment).build(),
+                networking.getVpc());
         app.synth();
     }
 }

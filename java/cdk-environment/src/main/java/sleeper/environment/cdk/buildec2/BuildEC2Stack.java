@@ -29,9 +29,11 @@ import java.util.UUID;
 
 public class BuildEC2Stack extends Stack {
 
-    public BuildEC2Stack(Construct scope, StackProps props, AppContext context, IVpc vpc) {
-        super(scope, context.getInstanceId() + "-BuildEC2", props);
+    public BuildEC2Stack(Construct scope, StackProps props, IVpc inheritVpc) {
+        super(scope, props.getStackName(), props);
+        AppContext context = AppContext.of(this);
         BuildEC2Params params = BuildEC2Params.from(context);
+        IVpc vpc = context.getVpcOrDefault(this, inheritVpc);
 
         SecurityGroup allowSsh = SecurityGroup.Builder.create(this, "AllowSsh")
                 .vpc(vpc)
