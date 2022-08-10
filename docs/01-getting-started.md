@@ -30,15 +30,14 @@ deploy the environment:
 
 ```bash
 mvn clean install
-cdk deploy
-aws cloudformation describe-stacks --query "Stacks[*].Outputs[?OutputKey=='ConnectCommand'].OutputValue" --output text
+cdk deploy --all
 ```
 
 This will create an SSH key locally, and output a command to connect to the EC2 instance with that key. It should look
 like this:
 
 ```bash
-ssh -i BuildEC2.pem ubuntu@[ec2-public-ip]
+ssh -i SleeperEnvironment-BuildEC2.pem ubuntu@[ec2-public-ip]
 ```
 
 Immediately after it's deployed, commands will run on this instance to install development tools. Once you're connected,
@@ -55,6 +54,14 @@ tail /var/log/cloud-init-output.log
 ```
 
 Once it's finished the instance might restart. The Sleeper Git repository will be checked out at `~/sleeper`.
+
+You can also deploy either the VPC or the EC2 independently, and specify an instance ID when deploying multiple
+instances, or a particular VPC to deploy the EC2 to:
+
+```bash
+cdk deploy -c instanceId=EmptyEnvironment "*-Networking"
+cdk deploy -c instanceId=MyEnvironment -c vpcId=[vpc-id] "*-BuildEC2"
+```
 
 ### System test
 
