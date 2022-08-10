@@ -27,13 +27,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class KeyPairUtilTest {
 
     @Test
-    public void can_get_public_key_base64() {
+    public void canGetPublicKeyInBase64() {
         assertThat(KeyPairUtil.publicBase64(KeyPairUtil.generate()))
                 .hasSize(392);
     }
 
     @Test
-    public void can_get_private_key_pem_string() {
+    public void canGetPrivateKeyAsPemString() {
         assertThat(KeyPairUtil.privatePem(KeyPairUtil.generate()))
                 .startsWith("-----BEGIN RSA PRIVATE KEY-----\n")
                 .endsWith("\n-----END RSA PRIVATE KEY-----\n")
@@ -42,7 +42,7 @@ public class KeyPairUtilTest {
     }
 
     @Test
-    public void can_write_private_key_file() throws Exception {
+    public void canWritePrivateKeyFile() throws Exception {
         Path expectedPath = Paths.get("test.pem");
         try {
             KeyPairUtil.writePrivateToFile(KeyPairUtil.generate(), "test.pem");
@@ -54,7 +54,7 @@ public class KeyPairUtilTest {
     }
 
     @Test
-    public void can_overwrite_private_key_file() throws Exception {
+    public void canOverwritePrivateKeyFile() throws Exception {
         Path path = Paths.get("test.pem");
         Files.createFile(path);
         try {

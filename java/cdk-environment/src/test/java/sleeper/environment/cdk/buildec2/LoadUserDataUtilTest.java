@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class LoadUserDataUtilTest {
 
     @Test
-    public void can_load_user_data() {
+    public void canLoadUserData() {
         assertThat(LoadUserDataUtil.userData(BuildEC2Params.builder()
                 .branch("feature/something").fork("a-fork").repository("a-repo").build()))
                 .startsWith("Content-Type: multipart/mixed;")

@@ -34,26 +34,26 @@ public class BuildEC2ParamsTest {
     }
 
     @Test
-    public void can_fill_template() {
+    public void canFillTemplate() {
         assertThat(params().build().fillUserDataTemplate("git clone -b ${branch} https://github.com/${fork}/${repository}.git"))
                 .isEqualTo("git clone -b feature/test https://github.com/test-fork/test-project.git");
     }
 
     @Test
-    public void template_can_contain_same_key_multiple_times() {
+    public void templateCanContainSameKeyMultipleTimes() {
         assertThat(params().repository("repeated-repo").build()
                 .fillUserDataTemplate("[ ! -d ~/${repository} ] && mkdir ~/${repository}"))
                 .isEqualTo("[ ! -d ~/repeated-repo ] && mkdir ~/repeated-repo");
     }
 
     @Test
-    public void refuse_empty_string() {
+    public void refuseEmptyString() {
         assertThatThrownBy(params().repository("")::build)
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("repository");
     }
 
     @Test
-    public void can_build_from_context_function() {
+    public void canBuildParamsFromAContextFunction() {
         Map<String, Object> context = new HashMap<>();
         context.put("repository", "some-repo");
         context.put("fork", "some-fork");
@@ -69,7 +69,7 @@ public class BuildEC2ParamsTest {
     }
 
     @Test
-    public void set_default_parameters_for_empty_context() {
+    public void setDefaultParametersWhenUsingEmptyContext() {
         assertThat(BuildEC2Params.from(Collections.emptyMap()::get))
                 .usingRecursiveComparison()
                 .isEqualTo(BuildEC2Params.builder()
