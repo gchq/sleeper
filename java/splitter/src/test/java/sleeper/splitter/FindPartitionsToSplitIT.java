@@ -51,9 +51,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 
 public class FindPartitionsToSplitIT {
@@ -173,14 +176,14 @@ public class FindPartitionsToSplitIT {
 
         // Then
         List<Message> messages = sqsClient.receiveMessage(queue.getQueueUrl()).getMessages();
-        assertEquals(1, messages.size());
+        assertThat(messages.size()).isEqualTo(1);
 
         SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
                 .fromJson(messages.get(0).getBody());
 
-        assertEquals(10, job.getFileNames().size());
-        assertEquals("test", job.getTableName());
-        assertEquals(stateStore.getAllPartitions().get(0), job.getPartition());
+        assertThat(job.getFileNames().size()).isEqualTo(10);
+        assertThat(job.getTableName()).isEqualTo("test");
+        assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
     }
 
     @Test
@@ -201,7 +204,7 @@ public class FindPartitionsToSplitIT {
 
         // Then
         List<Message> messages = sqsClient.receiveMessage(queue.getQueueUrl()).getMessages();
-        assertEquals(0, messages.size());
+        assertThat(messages.size()).isEqualTo(0);
     }
 
     @Test
@@ -222,14 +225,14 @@ public class FindPartitionsToSplitIT {
 
         // Then
         List<Message> messages = sqsClient.receiveMessage(queue.getQueueUrl()).getMessages();
-        assertEquals(1, messages.size());
+        assertThat(messages.size()).isEqualTo(1);
 
         SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
                 .fromJson(messages.get(0).getBody());
 
-        assertEquals(5, job.getFileNames().size());
-        assertEquals("test", job.getTableName());
-        assertEquals(stateStore.getAllPartitions().get(0), job.getPartition());
+        assertThat(job.getFileNames().size()).isEqualTo(5);
+        assertThat(job.getTableName()).isEqualTo("test");
+        assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
     }
 
     @Test
@@ -250,14 +253,14 @@ public class FindPartitionsToSplitIT {
 
         // Then
         List<Message> messages = sqsClient.receiveMessage(queue.getQueueUrl()).getMessages();
-        assertEquals(1, messages.size());
+        assertThat(messages.size()).isEqualTo(1);
 
         SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
                 .fromJson(messages.get(0).getBody());
 
-        assertEquals(5, job.getFileNames().size());
-        assertEquals("test", job.getTableName());
-        assertEquals(stateStore.getAllPartitions().get(0), job.getPartition());
+        assertThat(job.getFileNames().size()).isEqualTo(5);
+        assertThat(job.getTableName()).isEqualTo("test");
+        assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
 
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         Optional<Long> numberOfRecords = job.getFileNames().stream().flatMap(fileName -> activeFiles.stream()
@@ -265,23 +268,23 @@ public class FindPartitionsToSplitIT {
                 .map(FileInfo::getNumberOfRecords)).reduce(Long::sum);
 
         // 109 + 108 + 107 + 106 + 105 = 535
-        assertEquals(new Long(535), numberOfRecords.get());
+        assertThat(numberOfRecords.get()).isEqualTo(new Long(535));
     }
-    
+
     public static class TestTablePropertiesProvider extends TablePropertiesProvider {
         private final Schema schema;
         private final long splitThreshold;
-        
+
         TestTablePropertiesProvider(Schema schema, long splitThreshold) {
             super(null, null);
             this.schema = schema;
             this.splitThreshold = splitThreshold;
         }
-        
+
         TestTablePropertiesProvider(Schema schema) {
             this(schema, 1_000_000_000L);
         }
-        
+
         @Override
         public TableProperties getTableProperties(String tableName) {
             TableProperties tableProperties = new TableProperties(new InstanceProperties());

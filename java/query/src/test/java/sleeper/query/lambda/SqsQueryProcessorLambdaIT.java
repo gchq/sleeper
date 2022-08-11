@@ -52,6 +52,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 import org.apache.hadoop.conf.Configuration;
@@ -81,10 +83,12 @@ import sleeper.query.tracker.exception.QueryTrackerException;
 
 import static sleeper.query.tracker.QueryState.COMPLETED;
 import static sleeper.query.tracker.QueryState.IN_PROGRESS;
+
 import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
+
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
@@ -99,13 +103,16 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNE
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.range.Range;
@@ -134,7 +141,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+
 import java.util.Arrays;
+
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 
@@ -187,8 +196,8 @@ public class SqsQueryProcessorLambdaIT {
                 .query(new QueryRequest(instanceProperties.get(QUERY_TRACKER_TABLE_NAME))
                         .withKeyConditions(keyCondition)
                 );
-        assertEquals(1, response.getCount().intValue());
-        assertEquals(COMPLETED, QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTracker.LAST_KNOWN_STATE).getS()));
+        assertThat(response.getCount().intValue()).isEqualTo(1);
+        assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTracker.LAST_KNOWN_STATE).getS())).isEqualTo(COMPLETED);
     }
 
     @Test
@@ -219,7 +228,7 @@ public class SqsQueryProcessorLambdaIT {
                         .withKeyConditions(keyCondition)
                 );
         //  - Expect 4 plus the original
-        assertEquals(5, response.getCount().intValue());
+        assertThat(response.getCount().intValue()).isEqualTo(5);
     }
 
     @Test
@@ -255,14 +264,14 @@ public class SqsQueryProcessorLambdaIT {
                 .query(new QueryRequest(instanceProperties.get(QUERY_TRACKER_TABLE_NAME))
                         .withKeyConditions(keyCondition)
                 );
-        assertEquals(1, response.getCount().intValue());
-        assertEquals(IN_PROGRESS, QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTracker.LAST_KNOWN_STATE).getS()));
+        assertThat(response.getCount().intValue()).isEqualTo(1);
+        assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTracker.LAST_KNOWN_STATE).getS())).isEqualTo(IN_PROGRESS);
         ReceiveMessageRequest request = new ReceiveMessageRequest(instanceProperties.get(QUERY_QUEUE_URL))
-                    .withMaxNumberOfMessages(1);
+                .withMaxNumberOfMessages(1);
         SqsQueryProcessorLambda queryProcessorLambda = new SqsQueryProcessorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
         for (int i = 0; i < 4; i++) {
             ReceiveMessageResult result = sqsClient.receiveMessage(request);
-            assertEquals(1, result.getMessages().size());
+            assertThat(result.getMessages().size()).isEqualTo(1);
             SQSEvent event = new SQSEvent();
             SQSMessage sqsMessage = new SQSEvent.SQSMessage();
             sqsMessage.setBody(result.getMessages().get(0).getBody());
@@ -271,18 +280,18 @@ public class SqsQueryProcessorLambdaIT {
             ));
             queryProcessorLambda.handleRequest(event, null);
             response = dynamoClient
-                .query(new QueryRequest(instanceProperties.get(QUERY_TRACKER_TABLE_NAME))
-                        .withKeyConditions(keyCondition)
-                );
-            assertEquals(1, response.getCount().intValue());
+                    .query(new QueryRequest(instanceProperties.get(QUERY_TRACKER_TABLE_NAME))
+                            .withKeyConditions(keyCondition)
+                    );
+            assertThat(response.getCount().intValue()).isEqualTo(1);
             if (i <= 2) {
-                assertEquals(IN_PROGRESS, QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTracker.LAST_KNOWN_STATE).getS()));
+                assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTracker.LAST_KNOWN_STATE).getS())).isEqualTo(IN_PROGRESS);
             } else {
-                assertEquals(COMPLETED, QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTracker.LAST_KNOWN_STATE).getS()));
+                assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTracker.LAST_KNOWN_STATE).getS())).isEqualTo(COMPLETED);
             }
         }
         ReceiveMessageResult result = sqsClient.receiveMessage(request);
-        assertEquals(0, result.getMessages().size());
+        assertThat(result.getMessages().size()).isEqualTo(0);
     }
 
     @Test
@@ -316,8 +325,8 @@ public class SqsQueryProcessorLambdaIT {
                 .query(new QueryRequest(instanceProperties.get(QUERY_TRACKER_TABLE_NAME))
                         .withKeyConditions(keyCondition)
                 );
-        assertEquals(1, response.getCount().intValue());
-        assertEquals(COMPLETED, QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTracker.LAST_KNOWN_STATE).getS()));
+        assertThat(response.getCount().intValue()).isEqualTo(1);
+        assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTracker.LAST_KNOWN_STATE).getS())).isEqualTo(COMPLETED);
     }
 
     @Test
@@ -344,9 +353,9 @@ public class SqsQueryProcessorLambdaIT {
 
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
-        assertEquals(COMPLETED, status.getLastKnownState());
-        assertEquals(28, status.getRecordCount().longValue());
-        assertEquals(status.getRecordCount().longValue(), this.getNumberOfRecordsInFileOutput(instanceProperties, query));
+        assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
+        assertThat(status.getRecordCount().longValue()).isEqualTo(28);
+        assertThat(this.getNumberOfRecordsInFileOutput(instanceProperties, query)).isEqualTo(status.getRecordCount().longValue());
     }
 
     @Test
@@ -372,15 +381,15 @@ public class SqsQueryProcessorLambdaIT {
         resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, S3ResultsOutput.S3);
         resultsPublishConfig.put(S3ResultsOutput.S3_BUCKET, instanceProperties.get(QUERY_RESULTS_BUCKET));
         Query query = new Query.Builder(timeSeriesTable.get(TABLE_NAME), "abc", Arrays.asList(region1, region2))
-            .setResultsPublisherConfig(resultsPublishConfig)
-            .build();
+                .setResultsPublisherConfig(resultsPublishConfig)
+                .build();
         this.processQuery(query, instanceProperties);
 
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
-        assertEquals(COMPLETED, status.getLastKnownState());
-        assertEquals(28, status.getRecordCount().longValue());
-        assertEquals(status.getRecordCount().longValue(), this.getNumberOfRecordsInFileOutput(instanceProperties, query));
+        assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
+        assertThat(status.getRecordCount().longValue()).isEqualTo(28);
+        assertThat(this.getNumberOfRecordsInFileOutput(instanceProperties, query)).isEqualTo(status.getRecordCount().longValue());
     }
 
     @Test
@@ -407,15 +416,15 @@ public class SqsQueryProcessorLambdaIT {
         resultsPublishConfig.put(SQSResultsOutput.SQS_RESULTS_URL, instanceProperties.get(QUERY_RESULTS_QUEUE_URL));
         resultsPublishConfig.put(SQSResultsOutput.BATCH_SIZE, "1");
         Query query = new Query.Builder(timeSeriesTable.get(TABLE_NAME), "abc", Arrays.asList(region1, region2))
-            .setResultsPublisherConfig(resultsPublishConfig)
-            .build();
+                .setResultsPublisherConfig(resultsPublishConfig)
+                .build();
         this.processQuery(query, instanceProperties);
 
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
-        assertEquals(COMPLETED, status.getLastKnownState());
-        assertEquals(28, status.getRecordCount().longValue());
-        assertEquals(status.getRecordCount().longValue(), this.getNumberOfRecordsInSqsOutput(instanceProperties));
+        assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
+        assertThat(status.getRecordCount().longValue()).isEqualTo(28);
+        assertThat(this.getNumberOfRecordsInSqsOutput(instanceProperties)).isEqualTo(status.getRecordCount().longValue());
     }
 
     @Test
@@ -451,16 +460,16 @@ public class SqsQueryProcessorLambdaIT {
         resultsPublishConfig.put(WebSocketResultsOutput.ACCESS_KEY, "accessKey");
         resultsPublishConfig.put(WebSocketResultsOutput.SECRET_KEY, "secretKey");
         Query query = new Query.Builder(timeSeriesTable.get(TABLE_NAME), "abc", Arrays.asList(region1, region2))
-            .setResultsPublisherConfig(resultsPublishConfig)
-            .build();
+                .setResultsPublisherConfig(resultsPublishConfig)
+                .build();
 
         try {
             this.processQuery(query, instanceProperties);
 
             // Then
             TrackedQuery status = queryTracker.getStatus(query.getQueryId());
-            assertEquals(COMPLETED, status.getLastKnownState());
-            assertEquals(28, status.getRecordCount().longValue());
+            assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
+            assertThat(status.getRecordCount().longValue()).isEqualTo(28);
             wireMockServer.verify(28, postRequestedFor(url));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(containing("\"day\":2,")));
         } finally {
@@ -502,16 +511,16 @@ public class SqsQueryProcessorLambdaIT {
         resultsPublishConfig.put(WebSocketResultsOutput.ACCESS_KEY, "accessKey");
         resultsPublishConfig.put(WebSocketResultsOutput.SECRET_KEY, "secretKey");
         Query query = new Query.Builder(timeSeriesTable.get(TABLE_NAME), "abc", Arrays.asList(region1, region2))
-            .setResultsPublisherConfig(resultsPublishConfig)
-            .build();
+                .setResultsPublisherConfig(resultsPublishConfig)
+                .build();
 
         try {
             this.processQuery(query, instanceProperties);
 
             // Then
             TrackedQuery status = queryTracker.getStatus(query.getQueryId());
-            assertEquals(COMPLETED, status.getLastKnownState());
-            assertEquals(28, status.getRecordCount().longValue());
+            assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
+            assertThat(status.getRecordCount().longValue()).isEqualTo(28);
             wireMockServer.verify(4, postRequestedFor(url)); // 4 batches containing max 8 records each
         } finally {
             wireMockServer.stop();
@@ -549,17 +558,17 @@ public class SqsQueryProcessorLambdaIT {
         statusReportDestination.put(WebSocketResultsOutput.ACCESS_KEY, "accessKey");
         statusReportDestination.put(WebSocketResultsOutput.SECRET_KEY, "secretKey");
         Query query = new Query.Builder(timeSeriesTable.get(TABLE_NAME), "abc", Arrays.asList(region1, region2))
-            .setStatusReportDestinations(Lists.newArrayList(statusReportDestination))
-            .build();
+                .setStatusReportDestinations(Lists.newArrayList(statusReportDestination))
+                .build();
 
         try {
             this.processQuery(query, instanceProperties);
 
             // Then
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
-                matchingJsonPath("$.queryId", equalTo("abc"))
-                .and(matchingJsonPath("$.message", equalTo("completed")))
-                .and(matchingJsonPath("$.recordCount", equalTo("28")))
+                    matchingJsonPath("$.queryId", equalTo("abc"))
+                            .and(matchingJsonPath("$.message", equalTo("completed")))
+                            .and(matchingJsonPath("$.recordCount", equalTo("28")))
             ));
         } finally {
             wireMockServer.stop();
@@ -599,8 +608,8 @@ public class SqsQueryProcessorLambdaIT {
         statusReportDestination.put(WebSocketResultsOutput.ACCESS_KEY, "accessKey");
         statusReportDestination.put(WebSocketResultsOutput.SECRET_KEY, "secretKey");
         Query query = new Query.Builder(timeSeriesTable.get(TABLE_NAME), "abc", Arrays.asList(region1, region2))
-            .setStatusReportDestinations(Lists.newArrayList(statusReportDestination))
-            .build();
+                .setStatusReportDestinations(Lists.newArrayList(statusReportDestination))
+                .build();
 
         try {
             // Process Query
@@ -619,17 +628,17 @@ public class SqsQueryProcessorLambdaIT {
 
             // Then
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
-                matchingJsonPath("$.queryId", equalTo("abc"))
-                .and(matchingJsonPath("$.message", equalTo("subqueries")))
-                .and(matchingJsonPath("$.queryIds"))
+                    matchingJsonPath("$.queryId", equalTo("abc"))
+                            .and(matchingJsonPath("$.message", equalTo("subqueries")))
+                            .and(matchingJsonPath("$.queryIds"))
             ));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
-                matchingJsonPath("$.message", equalTo("completed"))
-                .and(matchingJsonPath("$.recordCount", equalTo("3")))
+                    matchingJsonPath("$.message", equalTo("completed"))
+                            .and(matchingJsonPath("$.recordCount", equalTo("3")))
             ));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
-                matchingJsonPath("$.message", equalTo("completed"))
-                .and(matchingJsonPath("$.recordCount", equalTo("25")))
+                    matchingJsonPath("$.message", equalTo("completed"))
+                            .and(matchingJsonPath("$.recordCount", equalTo("25")))
             ));
         } finally {
             wireMockServer.stop();
@@ -640,7 +649,7 @@ public class SqsQueryProcessorLambdaIT {
         long recordCount = 0;
         AmazonSQS sqsClient = this.createSqsClient();
         ReceiveMessageRequest request = new ReceiveMessageRequest(instanceProperties.get(QUERY_RESULTS_QUEUE_URL))
-            .withMaxNumberOfMessages(1);
+                .withMaxNumberOfMessages(1);
         int lastReceiveCount = -1;
         while (lastReceiveCount != 0) {
             ReceiveMessageResult response = sqsClient.receiveMessage(request);
@@ -704,7 +713,8 @@ public class SqsQueryProcessorLambdaIT {
                     null,
                     10
             ).write();
-        } catch (IOException | StateStoreException | InterruptedException | IteratorException | ObjectFactoryException e) {
+        } catch (IOException | StateStoreException | InterruptedException | IteratorException |
+                 ObjectFactoryException e) {
             throw new RuntimeException("Failed to Ingest data", e);
         } finally {
             dynamoClient.shutdown();

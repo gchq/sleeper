@@ -6,15 +6,20 @@ import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.UUID;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -22,17 +27,21 @@ import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import sleeper.configuration.properties.InstanceProperties;
+
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+
 import sleeper.core.CommonTestConstants;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
@@ -196,7 +205,7 @@ public class GarbageCollectorIT {
         stateStore.addFile(fileInfo3);
 
         Configuration conf = new Configuration();
-        GarbageCollector garbageCollector = new GarbageCollector(conf, tableLister, tablePropertiesProvider, stateStoreProvider,10);
+        GarbageCollector garbageCollector = new GarbageCollector(conf, tableLister, tablePropertiesProvider, stateStoreProvider, 10);
 
         // When
         Thread.sleep(1000L);
@@ -204,13 +213,13 @@ public class GarbageCollectorIT {
 
         // Then
         //  - There should be no more files currently ready for garbage collection
-        assertFalse(stateStore.getReadyForGCFiles().hasNext());
+        assertThat(stateStore.getReadyForGCFiles().hasNext()).isFalse();
         //  - File1 should have been deleted
-        assertFalse(Files.exists(new File(file1).toPath()));
+        assertThat(Files.exists(new File(file1).toPath())).isFalse();
         //  - The active file should still be there
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertEquals(1, activeFiles.size());
-        assertEquals(fileInfo2, activeFiles.get(0));
+        assertThat(activeFiles.size()).isEqualTo(1);
+        assertThat(activeFiles.get(0)).isEqualTo(fileInfo2);
         //  - The ready for GC table should still have 1 item in (but it's not returned by getReadyForGCFiles()
         //      because it is less than 10 seconds since it was marked as ready for GC). As the StateStore API
         //      does not have a method to return all values in the ready for gc table, we query the table
@@ -219,8 +228,8 @@ public class GarbageCollectorIT {
                 .withTableName(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME))
                 .withConsistentRead(true);
         ScanResult scanResult = dynamoDBClient.scan(scanRequest);
-        assertEquals(1, scanResult.getItems().size());
-        assertEquals(file3, scanResult.getItems().get(0).get(DynamoDBStateStore.FILE_NAME).getS());
+        assertThat(scanResult.getItems().size()).isEqualTo(1);
+        assertThat(scanResult.getItems().get(0).get(DynamoDBStateStore.FILE_NAME).getS()).isEqualTo(file3);
 
         s3Client.shutdown();
         dynamoDBClient.shutdown();

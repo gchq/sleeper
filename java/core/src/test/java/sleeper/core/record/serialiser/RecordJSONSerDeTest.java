@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 public class RecordJSONSerDeTest {
@@ -51,7 +52,7 @@ public class RecordJSONSerDeTest {
         Record deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(record));
 
         // Then
-        assertEquals(record, deserialised);
+        assertThat(deserialised).isEqualTo(record);
     }
 
     @Test
@@ -71,7 +72,7 @@ public class RecordJSONSerDeTest {
         Record deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(record));
 
         // Then
-        assertEquals(record, deserialised);
+        assertThat(deserialised).isEqualTo(record);
     }
 
     @Test
@@ -91,7 +92,7 @@ public class RecordJSONSerDeTest {
         Record deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(record));
 
         // Then
-        assertEquals(record, deserialised);
+        assertThat(deserialised).isEqualTo(record);
     }
 
     @Test
@@ -115,6 +116,6 @@ public class RecordJSONSerDeTest {
         Record deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(record));
 
         // Then
-        assertEquals(record, deserialised);
+        assertThat(deserialised).isEqualTo(record);
     }
 }

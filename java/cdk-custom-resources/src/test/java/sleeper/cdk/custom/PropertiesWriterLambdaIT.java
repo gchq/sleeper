@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -91,7 +92,7 @@ public class PropertiesWriterLambdaIT {
         // Then
         InstanceProperties loadedProperties = new InstanceProperties();
         loadedProperties.loadFromS3(client, bucketName);
-        assertEquals("foo", loadedProperties.get(ACCOUNT));
+        assertThat(loadedProperties.get(ACCOUNT)).isEqualTo("foo");
 
         client.shutdown();
 
@@ -123,7 +124,7 @@ public class PropertiesWriterLambdaIT {
         // Then
         InstanceProperties loadedProperties = new InstanceProperties();
         loadedProperties.loadFromS3(client, bucketName);
-        assertEquals("bar", loadedProperties.get(ACCOUNT));
+        assertThat(loadedProperties.get(ACCOUNT)).isEqualTo("bar");
 
         client.shutdown();
     }
@@ -155,7 +156,7 @@ public class PropertiesWriterLambdaIT {
         // Then
         InstanceProperties loadedProperties = new InstanceProperties();
         loadedProperties.loadFromS3(client, alternativeBucket);
-        assertEquals("foo", loadedProperties.get(ACCOUNT));
+        assertThat(loadedProperties.get(ACCOUNT)).isEqualTo("foo");
 
         client.shutdown();
     }
@@ -183,7 +184,7 @@ public class PropertiesWriterLambdaIT {
         lambda.handleEvent(event, null);
 
         // Then
-        assertEquals(0, client.listObjects(bucketName).getObjectSummaries().size());
+        assertThat(client.listObjects(bucketName).getObjectSummaries().size()).isEqualTo(0);
         client.shutdown();
     }
 }

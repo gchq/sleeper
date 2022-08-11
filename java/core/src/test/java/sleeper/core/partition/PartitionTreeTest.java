@@ -19,8 +19,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
 import sleeper.core.key.Key;
 import sleeper.core.range.Range;
@@ -41,7 +44,7 @@ public class PartitionTreeTest {
     private final static String L3_LEFT_OF_L2_LEFT_OF_L1_LEFT = "l3_left_of_l2_left_of_l1_left";
     private final static String L3_RIGHT_OF_L2_LEFT_OF_L1_LEFT = "l3_right_of_l2_left_of_l1_left";
     private final static List<PrimitiveType> LONG_TYPE = Collections.singletonList(new LongType());
-    
+
     @Test
     public void shouldReturnCorrectChildren() {
         // Given
@@ -62,7 +65,7 @@ public class PartitionTreeTest {
         Partition l2LeftOfL1R = new Partition(LONG_TYPE, l2LeftOfL1RRegion, L2_LEFT_OF_L1R, true, L1_RIGHT, null, -1);
         Region l2RightOfL1RRegion = new Region(rangeFactory.createRange("id", 123456789L, true, null, false));
         Partition l2RightOfL1R = new Partition(LONG_TYPE, l2RightOfL1RRegion, L2_RIGHT_OF_L1R, true, L1_RIGHT, null, -1);
-        
+
         List<Partition> partitions = new ArrayList<>();
         partitions.add(root);
         partitions.add(l1Left);
@@ -72,16 +75,16 @@ public class PartitionTreeTest {
         partitions.add(l2LeftOfL1R);
         partitions.add(l2RightOfL1R);
         PartitionTree partitionTree = new PartitionTree(schema, partitions);
-        
+
         // When
         List<String> children1 = partitionTree.getChildIds(ROOT);
         List<String> children2 = partitionTree.getChildIds(L1_RIGHT);
-        
+
         // Then
-        assertEquals(Arrays.asList(L1_LEFT, L1_RIGHT), children1);
-        assertEquals(Arrays.asList(L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R), children2);
+        assertThat(children1).isEqualTo(Arrays.asList(L1_LEFT, L1_RIGHT));
+        assertThat(children2).isEqualTo(Arrays.asList(L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R));
     }
-    
+
     @Test
     public void shouldReturnCorrectAncestors() {
         // Given
@@ -102,7 +105,7 @@ public class PartitionTreeTest {
         Partition l2LeftOfL1R = new Partition(LONG_TYPE, l2LeftOfL1RRegion, L2_LEFT_OF_L1R, true, L1_RIGHT, null, -1);
         Region l2RightOfL1RRegion = new Region(rangeFactory.createRange("id", 123456789L, true, null, false));
         Partition l2RightOfL1R = new Partition(LONG_TYPE, l2RightOfL1RRegion, L2_RIGHT_OF_L1R, true, L1_RIGHT, null, -1);
-        
+
         List<Partition> partitions = new ArrayList<>();
         partitions.add(root);
         partitions.add(l1Left);
@@ -112,18 +115,18 @@ public class PartitionTreeTest {
         partitions.add(l2LeftOfL1R);
         partitions.add(l2RightOfL1R);
         PartitionTree partitionTree = new PartitionTree(schema, partitions);
-        
+
         // When
         List<Partition> ancestorsOfRoot = partitionTree.getAllAncestors(ROOT);
         List<String> ancestorsOfRootIds = partitionTree.getAllAncestorIds(ROOT);
         List<Partition> ancestorsOfL2LOfL1L = partitionTree.getAllAncestors(L2_LEFT_OF_L1L);
         List<String> ancestorsOfL2LOfL1LIds = partitionTree.getAllAncestorIds(L2_LEFT_OF_L1L);
-        
+
         // Then
-        assertEquals(Collections.emptyList(), ancestorsOfRoot);
-        assertEquals(Collections.emptyList(), ancestorsOfRootIds);
-        assertEquals(Arrays.asList(l1Left, root), ancestorsOfL2LOfL1L);
-        assertEquals(Arrays.asList(l1Left.getId(), root.getId()), ancestorsOfL2LOfL1LIds);
+        assertThat(ancestorsOfRoot).isEqualTo(Collections.emptyList());
+        assertThat(ancestorsOfRootIds).isEqualTo(Collections.emptyList());
+        assertThat(ancestorsOfL2LOfL1L).isEqualTo(Arrays.asList(l1Left, root));
+        assertThat(ancestorsOfL2LOfL1LIds).isEqualTo(Arrays.asList(l1Left.getId(), root.getId()));
     }
 
     @Test
@@ -132,7 +135,7 @@ public class PartitionTreeTest {
         Schema schema = new Schema();
         schema.setRowKeyFields(new Field("id", new LongType()));
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
-        
+
         Region region = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
         Partition root = new Partition(LONG_TYPE, region, ROOT, true, null, Arrays.asList(L1_LEFT, L1_RIGHT), -1);
         PartitionTree partitionTree = new PartitionTree(schema, Collections.singletonList(root));
@@ -141,8 +144,8 @@ public class PartitionTreeTest {
         Partition partition = partitionTree.getLeafPartition(Key.create(10L));
 
         // Then 1
-        assertTrue(partition.isRowKeyInPartition(schema, Key.create(10L)));
-        assertEquals(root, partition);
+        assertThat(partition.isRowKeyInPartition(schema, Key.create(10L))).isTrue();
+        assertThat(partition).isEqualTo(root);
     }
 
     @Test
@@ -165,7 +168,7 @@ public class PartitionTreeTest {
         Partition l2LeftOfL1R = new Partition(LONG_TYPE, l2LeftOfL1RRegion, L2_LEFT_OF_L1R, true, L1_RIGHT, null, -1);
         Region l2RightOfL1RRegion = new Region(rangeFactory.createRange("id", 123456789L, true, null, false));
         Partition l2RightOfL1R = new Partition(LONG_TYPE, l2RightOfL1RRegion, L2_RIGHT_OF_L1R, true, L1_RIGHT, null, -1);
-        
+
         List<Partition> partitions = new ArrayList<>();
         partitions.add(root);
         partitions.add(l1Left);
@@ -180,15 +183,15 @@ public class PartitionTreeTest {
         Partition partition = partitionTree.getLeafPartition(Key.create(10L));
 
         // Then 1
-        assertTrue(partition.isRowKeyInPartition(schema, Key.create(10L)));
-        assertEquals(l2LeftOfL1R, partition);
+        assertThat(partition.isRowKeyInPartition(schema, Key.create(10L))).isTrue();
+        assertThat(partition).isEqualTo(l2LeftOfL1R);
 
         // When 2
         partition = partitionTree.getLeafPartition(Key.create(Long.MIN_VALUE));
 
         // Then 2
-        assertTrue(partition.isRowKeyInPartition(schema, Key.create(Long.MIN_VALUE)));
-        assertEquals(l2LeftOfL1L, partition);
+        assertThat(partition.isRowKeyInPartition(schema, Key.create(Long.MIN_VALUE))).isTrue();
+        assertThat(partition).isEqualTo(l2LeftOfL1L);
     }
 
     @Test
@@ -215,7 +218,7 @@ public class PartitionTreeTest {
         Partition l3LeftOfL2LoL1L = new Partition(LONG_TYPE, l3LeftOfL2LoL1LRegion, L3_LEFT_OF_L2_LEFT_OF_L1_LEFT, true, L2_LEFT_OF_L1L, null, -1);
         Region l3RightOfL2LoL1LRegion = new Region(rangeFactory.createRange("id", -9000000L, true, -1000000L, false));
         Partition l3RightOfL2LoL1L = new Partition(LONG_TYPE, l3RightOfL2LoL1LRegion, L3_RIGHT_OF_L2_LEFT_OF_L1_LEFT, true, L2_LEFT_OF_L1L, null, -1);
-        
+
         List<Partition> partitions = new ArrayList<>();
         partitions.add(root);
         partitions.add(l1Left);
@@ -232,14 +235,14 @@ public class PartitionTreeTest {
         Partition partition = partitionTree.getLeafPartition(Key.create(123456789L));
 
         // Then 1
-        assertTrue(partition.isRowKeyInPartition(schema, Key.create(123456789L)));
-        assertEquals(l2RightOfL1R, partition);
+        assertThat(partition.isRowKeyInPartition(schema, Key.create(123456789L))).isTrue();
+        assertThat(partition).isEqualTo(l2RightOfL1R);
 
         // When 2
         partition = partitionTree.getLeafPartition(Key.create(Long.MIN_VALUE));
 
         // Then 2
-        assertTrue(partition.isRowKeyInPartition(schema, Key.create(Long.MIN_VALUE)));
-        assertEquals(l3LeftOfL2LoL1L, partition);
+        assertThat(partition.isRowKeyInPartition(schema, Key.create(Long.MIN_VALUE))).isTrue();
+        assertThat(partition).isEqualTo(l3LeftOfL2LoL1L);
     }
 }

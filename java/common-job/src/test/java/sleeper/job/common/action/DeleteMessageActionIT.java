@@ -21,10 +21,14 @@ import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -32,7 +36,7 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.core.CommonTestConstants;
 
 public class DeleteMessageActionIT {
-    
+
     @ClassRule
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
             LocalStackContainer.Service.SQS
@@ -53,7 +57,7 @@ public class DeleteMessageActionIT {
                 .withAttributes(attributes);
         return sqs.createQueue(createQueueRequest).getQueueUrl();
     }
-    
+
     @Test
     public void shouldChangeMessageVisibilityTimeout() throws InterruptedException, ActionException {
         // Given
@@ -71,14 +75,14 @@ public class DeleteMessageActionIT {
                 .withQueueUrl(queueUrl)
                 .withMaxNumberOfMessages(1);
         ReceiveMessageResult result = sqs.receiveMessage(receiveMessageRequest);
-        assertEquals(1, result.getMessages().size());
+        assertThat(result.getMessages().size()).isEqualTo(1);
         String receiptHandle = result.getMessages().get(0).getReceiptHandle();
-        
+
         // When
         //  - Delete the message
         DeleteMessageAction action = new DeleteMessageAction(sqs, queueUrl, "test", receiptHandle);
         action.call();
-        
+
         // Then
         // - Sleep for 6 seconds, then check that message has not reappeared
         Thread.sleep(6000L);
@@ -87,8 +91,8 @@ public class DeleteMessageActionIT {
                 .withMaxNumberOfMessages(1)
                 .withWaitTimeSeconds(0);
         result = sqs.receiveMessage(receiveMessageRequest);
-        assertEquals(0, result.getMessages().size());
-        
+        assertThat(result.getMessages().size()).isEqualTo(0);
+
         sqs.shutdown();
     }
 }

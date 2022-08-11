@@ -26,6 +26,7 @@ import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 public class RecordSerialiserTest {
@@ -45,11 +46,11 @@ public class RecordSerialiserTest {
         record.put("column5", new byte[]{4, 5, 6, 7});
         record.put("column6", new byte[]{8, 9, 10, 11, 12});
         RecordSerialiser serialiser = new RecordSerialiser(schema);
-        
+
         // When
         Record deserialised = serialiser.deserialise(serialiser.serialise(record));
-        
+
         // Then
-        assertEquals(record, deserialised);
+        assertThat(deserialised).isEqualTo(record);
     }
 }

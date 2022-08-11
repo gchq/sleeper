@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -52,7 +53,7 @@ public class ParquetReaderIteratorTest {
         schema.setValueFields(new Field("column3", new LongType()));
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
-            .build();
+                .build();
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", 1L);
         map1.put("column2", 2L);
@@ -72,15 +73,15 @@ public class ParquetReaderIteratorTest {
         ParquetReaderIterator iterator = new ParquetReaderIterator(reader);
 
         // Then
-        assertTrue(iterator.hasNext());
-        assertEquals(record1, iterator.next());
-        assertTrue(iterator.hasNext());
-        assertEquals(record2, iterator.next());
-        assertEquals(2L, iterator.getNumberOfRecordsRead());
+        assertThat(iterator.hasNext()).isTrue();
+        assertThat(iterator.next()).isEqualTo(record1);
+        assertThat(iterator.hasNext()).isTrue();
+        assertThat(iterator.next()).isEqualTo(record2);
+        assertThat(iterator.getNumberOfRecordsRead()).isEqualTo(2L);
 
         iterator.close();
     }
-    
+
     @Test
     public void shouldReturnCorrectIteratorWhenNoRecordsInReader() throws IOException {
         // Given
@@ -90,7 +91,7 @@ public class ParquetReaderIteratorTest {
         schema.setValueFields(new Field("column3", new LongType()));
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
-            .build();
+                .build();
         writer.close();
         ParquetReader<Record> reader = new ParquetRecordReader.Builder(path, schema).build();
 
@@ -98,9 +99,9 @@ public class ParquetReaderIteratorTest {
         ParquetReaderIterator iterator = new ParquetReaderIterator(reader);
 
         // Then
-        assertFalse(iterator.hasNext());
-        assertEquals(0L, iterator.getNumberOfRecordsRead());
-        
+        assertThat(iterator.hasNext()).isFalse();
+        assertThat(iterator.getNumberOfRecordsRead()).isEqualTo(0L);
+
         iterator.close();
     }
 }

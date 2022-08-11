@@ -32,6 +32,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -55,8 +56,8 @@ public class WebSocketResultsOutputIT {
         String connectionId = "connection1";
         UrlPattern url = urlEqualTo("/@connections/" + connectionId);
         wireMock.stubFor(post(url).willReturn(aResponse()
-            .withStatus(410)
-            .withHeader("x-amzn-ErrorType", "GoneException")));
+                .withStatus(410)
+                .withHeader("x-amzn-ErrorType", "GoneException")));
 
         Query query = new Query("table1", "query1", Collections.emptyList());
 
@@ -81,11 +82,11 @@ public class WebSocketResultsOutputIT {
 
         // Then
         wireMock.verify(1, postRequestedFor(url).withRequestBody(
-            matchingJsonPath("$.queryId", equalTo("query1"))
-            .and(matchingJsonPath("$.message", equalTo("records")))
+                matchingJsonPath("$.queryId", equalTo("query1"))
+                        .and(matchingJsonPath("$.message", equalTo("records")))
         ));
-        assertEquals(0, result.getRecordCount());
-        assertTrue(result.getError().getMessage().contains("GoneException"));
+        assertThat(result.getRecordCount()).isEqualTo(0);
+        assertThat(result.getError().getMessage().contains("GoneException")).isTrue();
     }
 
     @Test
@@ -118,8 +119,8 @@ public class WebSocketResultsOutputIT {
 
         // Then
         wireMock.verify(records.size(), postRequestedFor(url).withRequestBody(
-            matchingJsonPath("$.queryId", equalTo("query1"))
-            .and(matchingJsonPath("$.message", equalTo("records")))
+                matchingJsonPath("$.queryId", equalTo("query1"))
+                        .and(matchingJsonPath("$.message", equalTo("records")))
         ));
     }
 }

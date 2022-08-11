@@ -16,12 +16,17 @@
 package sleeper.configuration.properties;
 
 import com.google.common.collect.Lists;
+
 import java.util.List;
 import java.util.Properties;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+
 import org.junit.Test;
+
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.USER_JARS;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
@@ -37,7 +42,7 @@ public class SleeperPropertiesTest {
         testSleeperProperties.set(PAGE_SIZE, "5");
 
         // Then
-        assertEquals("5", testSleeperProperties.get(PAGE_SIZE));
+        assertThat(testSleeperProperties.get(PAGE_SIZE)).isEqualTo("5");
     }
 
     @Test
@@ -49,7 +54,7 @@ public class SleeperPropertiesTest {
         testSleeperProperties.setNumber(PAGE_SIZE, 2.504);
 
         // Then
-        assertEquals("2.504", testSleeperProperties.get(PAGE_SIZE));
+        assertThat(testSleeperProperties.get(PAGE_SIZE)).isEqualTo("2.504");
     }
 
     @Test
@@ -61,7 +66,7 @@ public class SleeperPropertiesTest {
         testSleeperProperties.set(PAGE_SIZE, "5");
 
         // Then
-        assertEquals(new Long(5), testSleeperProperties.getLong(PAGE_SIZE));
+        assertThat(testSleeperProperties.getLong(PAGE_SIZE)).isEqualTo(new Long(5));
     }
 
     @Test
@@ -73,7 +78,7 @@ public class SleeperPropertiesTest {
         testSleeperProperties.set(PAGE_SIZE, "5");
 
         // Then
-        assertEquals(new Integer(5), testSleeperProperties.getInt(PAGE_SIZE));
+        assertThat(testSleeperProperties.getInt(PAGE_SIZE)).isEqualTo(new Integer(5));
     }
 
     @Test
@@ -86,7 +91,7 @@ public class SleeperPropertiesTest {
         testSleeperProperties.setNumber(PAGE_SIZE, null);
 
         // Then
-        assertEquals(new Integer(5), testSleeperProperties.getInt(PAGE_SIZE));
+        assertThat(testSleeperProperties.getInt(PAGE_SIZE)).isEqualTo(new Integer(5));
     }
 
     @Test
@@ -99,7 +104,7 @@ public class SleeperPropertiesTest {
         testSleeperProperties.set(PAGE_SIZE, null);
 
         // Then
-        assertEquals(new Integer(5), testSleeperProperties.getInt(PAGE_SIZE));
+        assertThat(testSleeperProperties.getInt(PAGE_SIZE)).isEqualTo(new Integer(5));
     }
 
     @Test
@@ -113,7 +118,7 @@ public class SleeperPropertiesTest {
         TestSleeperProperties duplicate = new TestSleeperProperties(properties);
 
         // Then
-        assertEquals(testSleeperProperties, duplicate);
+        assertThat(duplicate).isEqualTo(testSleeperProperties);
     }
 
     @Test
@@ -130,7 +135,7 @@ public class SleeperPropertiesTest {
         TestSleeperProperties duplicate = new TestSleeperProperties(differentProperties);
 
         // Then
-        assertNotEquals(testSleeperProperties, duplicate);
+        assertThat(duplicate).isNotEqualTo(testSleeperProperties);
     }
 
     @Test
@@ -143,7 +148,7 @@ public class SleeperPropertiesTest {
         List<String> list = testSleeperProperties.getList(OPTIONAL_STACKS);
 
         // Then
-        assertEquals(Lists.newArrayList("a", "b", "c"), list);
+        assertThat(list).isEqualTo(Lists.newArrayList("a", "b", "c"));
     }
 
     @Test
@@ -155,7 +160,7 @@ public class SleeperPropertiesTest {
         List<String> list = testSleeperProperties.getList(USER_JARS);
 
         // Then
-        assertNull(list);
+        assertThat(list).isNull();
     }
 
     private static class TestSleeperProperties extends SleeperProperties<SleeperProperty> {
@@ -163,7 +168,7 @@ public class SleeperPropertiesTest {
         public TestSleeperProperties() {
             this(new Properties());
         }
-        
+
         public TestSleeperProperties(Properties properties) {
             super(properties);
         }

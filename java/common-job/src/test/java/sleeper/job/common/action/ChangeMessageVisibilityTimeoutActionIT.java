@@ -21,14 +21,18 @@ import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import sleeper.core.CommonTestConstants;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 public class ChangeMessageVisibilityTimeoutActionIT {
@@ -53,7 +57,7 @@ public class ChangeMessageVisibilityTimeoutActionIT {
                 .withAttributes(attributes);
         return sqs.createQueue(createQueueRequest).getQueueUrl();
     }
-    
+
     @Test
     public void shouldChangeMessageVisibilityTimeout() throws InterruptedException, ActionException {
         // Given
@@ -71,18 +75,18 @@ public class ChangeMessageVisibilityTimeoutActionIT {
                 .withQueueUrl(queueUrl)
                 .withMaxNumberOfMessages(1);
         ReceiveMessageResult result = sqs.receiveMessage(receiveMessageRequest);
-        assertEquals(1, result.getMessages().size());
+        assertThat(result.getMessages().size()).isEqualTo(1);
         //  - Sleep for 2.5 seconds, then check that message has reappeared
         Thread.sleep(2500L);
         result = sqs.receiveMessage(receiveMessageRequest);
-        assertEquals(1, result.getMessages().size());
+        assertThat(result.getMessages().size()).isEqualTo(1);
         String receiptHandle = result.getMessages().get(0).getReceiptHandle();
-        
+
         // When
         //  - Extend the message visibility timeout to 10 seconds
         ChangeMessageVisibilityTimeoutAction action = new ChangeMessageVisibilityTimeoutAction(sqs, queueUrl, "test", receiptHandle, 10);
         action.call();
-        
+
         // Then
         // - Sleep for 5 seconds, then check that message has not reappeared
         Thread.sleep(5000L);
@@ -91,12 +95,12 @@ public class ChangeMessageVisibilityTimeoutActionIT {
                 .withMaxNumberOfMessages(1)
                 .withWaitTimeSeconds(0);
         result = sqs.receiveMessage(receiveMessageRequest);
-        assertEquals(0, result.getMessages().size());
+        assertThat(result.getMessages().size()).isEqualTo(0);
         // - Sleep for a further 6 seconds, then check that message has reappeared
         Thread.sleep(6000L);
         result = sqs.receiveMessage(receiveMessageRequest);
-        assertEquals(1, result.getMessages().size());
-        
+        assertThat(result.getMessages().size()).isEqualTo(1);
+
         sqs.shutdown();
     }
 }

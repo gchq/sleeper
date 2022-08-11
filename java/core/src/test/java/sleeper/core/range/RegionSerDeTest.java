@@ -17,7 +17,10 @@ package sleeper.core.range;
 
 import java.util.Arrays;
 import java.util.HashSet;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -40,13 +43,13 @@ public class RegionSerDeTest {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
                 Range range = new Range(field, 1, minInclusive, 10, maxInclusive);
                 Region region = new Region(range);
-                
+
                 // When
                 String serialisedRegion = regionSerDe.toJson(region);
                 Region deserialisedRegion = regionSerDe.fromJson(serialisedRegion);
 
                 // Then
-                assertEquals(region, deserialisedRegion);
+                assertThat(deserialisedRegion).isEqualTo(region);
             }
         }
     }
@@ -63,13 +66,13 @@ public class RegionSerDeTest {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
                 Range range = new Range(field, 1, minInclusive, null, maxInclusive);
                 Region region = new Region(range);
-                
+
                 // When
                 String serialisedRegion = regionSerDe.toJson(region);
                 Region deserialisedRegion = regionSerDe.fromJson(serialisedRegion);
 
                 // Then
-                assertEquals(region, deserialisedRegion);
+                assertThat(deserialisedRegion).isEqualTo(region);
             }
         }
     }
@@ -86,13 +89,13 @@ public class RegionSerDeTest {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
                 Range range = new Range(field, 1L, minInclusive, 10L, maxInclusive);
                 Region region = new Region(range);
-                
+
                 // When
                 String serialisedRegion = regionSerDe.toJson(region);
                 Region deserialisedRegion = regionSerDe.fromJson(serialisedRegion);
 
                 // Then
-                assertEquals(region, deserialisedRegion);
+                assertThat(deserialisedRegion).isEqualTo(region);
             }
         }
     }
@@ -115,7 +118,7 @@ public class RegionSerDeTest {
                 Region deserialisedRegion = regionSerDe.fromJson(serialisedRegion);
 
                 // Then
-                assertEquals(region, deserialisedRegion);
+                assertThat(deserialisedRegion).isEqualTo(region);
             }
         }
     }
@@ -138,7 +141,7 @@ public class RegionSerDeTest {
                 Region deserialisedRegion = regionSerDe.fromJson(serialisedRegion);
 
                 // Then
-                assertEquals(region, deserialisedRegion);
+                assertThat(deserialisedRegion).isEqualTo(region);
             }
         }
     }
@@ -158,7 +161,7 @@ public class RegionSerDeTest {
         // Then
         Range expectedRange = new Range(field, "A", false, "B", false);
         Region expectedRegion = new Region(expectedRange);
-        assertEquals(expectedRegion, region);
+        assertThat(region).isEqualTo(expectedRegion);
     }
 
     @Test
@@ -179,7 +182,7 @@ public class RegionSerDeTest {
                 Region deserialisedRegion = regionSerDe.fromJson(serialisedRegion);
 
                 // Then
-                assertEquals(region, deserialisedRegion);
+                assertThat(deserialisedRegion).isEqualTo(region);
             }
         }
     }
@@ -196,13 +199,13 @@ public class RegionSerDeTest {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
                 Range range = new Range(field, new byte[]{10, 11, 12}, minInclusive, new byte[]{15}, maxInclusive);
                 Region region = new Region(range);
-                
+
                 // When
                 String serialisedRegion = regionSerDe.toJson(region);
                 Region deserialisedRegion = regionSerDe.fromJson(serialisedRegion);
 
                 // Then
-                assertEquals(region, deserialisedRegion);
+                assertThat(deserialisedRegion).isEqualTo(region);
             }
         }
     }
@@ -219,17 +222,17 @@ public class RegionSerDeTest {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
                 Range range = new Range(field, new byte[]{10, 11, 12}, minInclusive, null, maxInclusive);
                 Region region = new Region(range);
-                
+
                 // When
                 String serialisedRegion = regionSerDe.toJson(region);
                 Region deserialisedRegion = regionSerDe.fromJson(serialisedRegion);
 
                 // Then
-                assertEquals(region, deserialisedRegion);
+                assertThat(deserialisedRegion).isEqualTo(region);
             }
         }
     }
-    
+
     @Test
     public void shouldSerDeCorrectlyMultipleRanges() {
         // Given
@@ -251,6 +254,6 @@ public class RegionSerDeTest {
         Region deserialisedRegion = regionSerDe.fromJson(serialisedRegion);
 
         // Then
-        assertEquals(region, deserialisedRegion);
+        assertThat(deserialisedRegion).isEqualTo(region);
     }
 }

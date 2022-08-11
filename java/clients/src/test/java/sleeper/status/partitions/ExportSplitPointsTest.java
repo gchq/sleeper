@@ -5,13 +5,18 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+
 import org.junit.AfterClass;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -57,7 +62,7 @@ public class ExportSplitPointsTest {
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(id, schema, 10000, dynamoDBClient);
         return dynamoDBStateStoreCreator.create();
     }
-    
+
     @Test
     public void shouldExportCorrectSplitPointsIntType() throws StateStoreException {
         // Given
@@ -72,14 +77,14 @@ public class ExportSplitPointsTest {
         InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, stateStore, splitPoints);
         initialiseStateStore.run();
         ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, schema);
-        
+
         // When
         List<Object> exportedSplitPoints = exportSplitPoints.getSplitPoints();
-        
+
         // Then
-        assertEquals(Arrays.asList(-10, 1000), exportedSplitPoints);
+        assertThat(exportedSplitPoints).isEqualTo(Arrays.asList(-10, 1000));
     }
-    
+
     @Test
     public void shouldExportCorrectSplitPointsLongType() throws StateStoreException {
         // Given
@@ -94,14 +99,14 @@ public class ExportSplitPointsTest {
         InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, stateStore, splitPoints);
         initialiseStateStore.run();
         ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, schema);
-        
+
         // When
         List<Object> exportedSplitPoints = exportSplitPoints.getSplitPoints();
-        
+
         // Then
-        assertEquals(Arrays.asList(-10L, 1000L), exportedSplitPoints);
+        assertThat(exportedSplitPoints).isEqualTo(Arrays.asList(-10L, 1000L));
     }
-    
+
     @Test
     public void shouldExportCorrectSplitPointsStringType() throws StateStoreException {
         // Given
@@ -116,14 +121,14 @@ public class ExportSplitPointsTest {
         InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, stateStore, splitPoints);
         initialiseStateStore.run();
         ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, schema);
-        
+
         // When
         List<Object> exportedSplitPoints = exportSplitPoints.getSplitPoints();
-        
+
         // Then
-        assertEquals(Arrays.asList("A", "T"), exportedSplitPoints);
+        assertThat(exportedSplitPoints).isEqualTo(Arrays.asList("A", "T"));
     }
-    
+
     @Test
     public void shouldExportCorrectSplitPointsByteArrayType() throws StateStoreException {
         // Given
@@ -138,13 +143,13 @@ public class ExportSplitPointsTest {
         InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, stateStore, splitPoints);
         initialiseStateStore.run();
         ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, schema);
-        
+
         // When
         List<Object> exportedSplitPoints = exportSplitPoints.getSplitPoints();
-        
+
         // Then
-        assertEquals(2, exportedSplitPoints.size());
-        assertArrayEquals(new byte[]{10}, (byte[]) exportedSplitPoints.get(0));
-        assertArrayEquals(new byte[]{100}, (byte[]) exportedSplitPoints.get(1));
+        assertThat(exportedSplitPoints.size()).isEqualTo(2);
+        assertThat((byte[]) exportedSplitPoints.get(0)).containsExactly(new byte[]{10});
+        assertThat((byte[]) exportedSplitPoints.get(1)).containsExactly(new byte[]{100});
     }
 }

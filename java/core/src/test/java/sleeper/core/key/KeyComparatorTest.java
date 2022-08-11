@@ -24,6 +24,7 @@ import sleeper.core.schema.type.StringType;
 
 import java.util.Arrays;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class KeyComparatorTest {
@@ -32,16 +33,16 @@ public class KeyComparatorTest {
     public void shouldCompareIntKeysCorrectly() {
         // Given
         KeyComparator keyComparator = new KeyComparator(new IntType());
-        
+
         // When
         int comparison1 = keyComparator.compare(Key.create(1), Key.create(2));
         int comparison2 = keyComparator.compare(Key.create(1), Key.create(1));
         int comparison3 = keyComparator.compare(Key.create(2), Key.create(1));
 
         // Then
-        assertTrue(comparison1 < 0);
-        assertTrue(comparison2 == 0);
-        assertTrue(comparison3 > 0);
+        assertThat(comparison1 < 0).isTrue();
+        assertThat(comparison2 == 0).isTrue();
+        assertThat(comparison3 > 0).isTrue();
     }
 
     @Test
@@ -56,9 +57,9 @@ public class KeyComparatorTest {
         int comparison3 = keyComparator.compare(nullInt, nullInt);
 
         // Then
-        assertTrue(comparison1 < 0);
-        assertTrue(comparison2 > 0);
-        assertTrue(comparison3 == 0);
+        assertThat(comparison1 < 0).isTrue();
+        assertThat(comparison2 > 0).isTrue();
+        assertThat(comparison3 == 0).isTrue();
     }
 
     @Test
@@ -72,9 +73,9 @@ public class KeyComparatorTest {
         int comparison3 = keyComparator.compare(Key.create(2L), Key.create(1L));
 
         // Then
-        assertTrue(comparison1 < 0);
-        assertTrue(comparison2 == 0);
-        assertTrue(comparison3 > 0);
+        assertThat(comparison1 < 0).isTrue();
+        assertThat(comparison2 == 0).isTrue();
+        assertThat(comparison3 > 0).isTrue();
     }
 
     @Test
@@ -89,9 +90,9 @@ public class KeyComparatorTest {
         int comparison3 = keyComparator.compare(nullInt, nullInt);
 
         // Then
-        assertTrue(comparison1 < 0);
-        assertTrue(comparison2 > 0);
-        assertTrue(comparison3 == 0);
+        assertThat(comparison1 < 0).isTrue();
+        assertThat(comparison2 > 0).isTrue();
+        assertThat(comparison3 == 0).isTrue();
     }
 
     @Test
@@ -105,9 +106,9 @@ public class KeyComparatorTest {
         int comparison3 = keyComparator.compare(Key.create("2"), Key.create("1"));
 
         // Then
-        assertTrue(comparison1 < 0);
-        assertTrue(comparison2 == 0);
-        assertTrue(comparison3 > 0);
+        assertThat(comparison1 < 0).isTrue();
+        assertThat(comparison2 == 0).isTrue();
+        assertThat(comparison3 > 0).isTrue();
     }
 
     @Test
@@ -122,9 +123,9 @@ public class KeyComparatorTest {
         int comparison3 = keyComparator.compare(nullString, nullString);
 
         // Then
-        assertTrue(comparison1 < 0);
-        assertTrue(comparison2 > 0);
-        assertTrue(comparison3 == 0);
+        assertThat(comparison1 < 0).isTrue();
+        assertThat(comparison2 > 0).isTrue();
+        assertThat(comparison3 == 0).isTrue();
     }
 
     @Test
@@ -138,9 +139,9 @@ public class KeyComparatorTest {
         int comparison3 = keyComparator.compare(Key.create(new byte[]{2, 1}), Key.create(new byte[]{2, 0}));
 
         // Then
-        assertTrue(comparison1 < 0);
-        assertTrue(comparison2 == 0);
-        assertTrue(comparison3 > 0);
+        assertThat(comparison1 < 0).isTrue();
+        assertThat(comparison2 == 0).isTrue();
+        assertThat(comparison3 > 0).isTrue();
     }
 
     @Test
@@ -155,9 +156,9 @@ public class KeyComparatorTest {
         int comparison3 = keyComparator.compare(nullByteArray, nullByteArray);
 
         // Then
-        assertTrue(comparison1 < 0);
-        assertTrue(comparison2 > 0);
-        assertTrue(comparison3 == 0);
+        assertThat(comparison1 < 0).isTrue();
+        assertThat(comparison2 > 0).isTrue();
+        assertThat(comparison3 == 0).isTrue();
     }
 
     @Test
@@ -173,11 +174,11 @@ public class KeyComparatorTest {
         int comparison5 = keyComparator.compare(Key.create(Arrays.asList(1, 2)), Key.create(Arrays.asList(1, 1)));
 
         // Then
-        assertTrue(comparison1 < 0);
-        assertTrue(comparison2 < 0);
-        assertTrue(comparison3 == 0);
-        assertTrue(comparison4 > 0);
-        assertTrue(comparison5 > 0);
+        assertThat(comparison1 < 0).isTrue();
+        assertThat(comparison2 < 0).isTrue();
+        assertThat(comparison3 == 0).isTrue();
+        assertThat(comparison4 > 0).isTrue();
+        assertThat(comparison5 > 0).isTrue();
     }
 
     @Test
@@ -191,12 +192,12 @@ public class KeyComparatorTest {
         int comparison3 = keyComparator.compare(Key.create(Arrays.asList(1, "1")), Key.create(Arrays.asList(1, "1")));
         int comparison4 = keyComparator.compare(Key.create(Arrays.asList(2, "1")), Key.create(Arrays.asList(1, "1")));
         int comparison5 = keyComparator.compare(Key.create(Arrays.asList(1, "2")), Key.create(Arrays.asList(1, "1")));
-        
+
         // Then
-        assertTrue(comparison1 < 0);
-        assertTrue(comparison2 < 0);
-        assertTrue(comparison3 == 0);
-        assertTrue(comparison4 > 0);
-        assertTrue(comparison5 > 0);
+        assertThat(comparison1 < 0).isTrue();
+        assertThat(comparison2 < 0).isTrue();
+        assertThat(comparison3 == 0).isTrue();
+        assertThat(comparison4 > 0).isTrue();
+        assertThat(comparison5 > 0).isTrue();
     }
 }

@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
@@ -138,7 +139,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
             errorThrown = true;
             e.printStackTrace();
         }
-        assertTrue(errorThrown);
+        assertThat(errorThrown).isTrue();
     }
 
     private void ingestAndVerifyUsingDirectWriteBackedByArrow(

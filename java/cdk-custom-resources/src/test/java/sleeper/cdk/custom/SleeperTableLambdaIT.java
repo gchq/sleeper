@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.custom;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -118,12 +119,12 @@ public class SleeperTableLambdaIT {
         sleeperTableLambda.handleEvent(CloudFormationCustomResourceEvent.builder()
                 .withRequestType("Create")
                 .withResourceProperties(createInput(instanceProperties, tableProperties))
-                .build(),null);
+                .build(), null);
 
         // Then
         Integer count = dynamoClient.scan(new ScanRequest().withTableName(tableProperties.get(PARTITION_TABLENAME)))
                 .getCount();
-        assertEquals(new Integer(1), count);
+        assertThat(count).isEqualTo(new Integer(1));
         s3Client.shutdown();
         dynamoClient.shutdown();
     }
@@ -141,13 +142,13 @@ public class SleeperTableLambdaIT {
         sleeperTableLambda.handleEvent(CloudFormationCustomResourceEvent.builder()
                 .withRequestType("Create")
                 .withResourceProperties(createInput(instanceProperties, tableProperties))
-                .build(),null);
+                .build(), null);
 
         // Then
         List<S3ObjectSummary> tables = s3Client.listObjectsV2(instanceProperties.get(CONFIG_BUCKET), "tables")
                 .getObjectSummaries();
-        assertEquals(1, tables.size());
-        assertEquals("tables/" + tableProperties.get(TABLE_NAME), tables.get(0).getKey());
+        assertThat(tables.size()).isEqualTo(1);
+        assertThat(tables.get(0).getKey()).isEqualTo("tables/" + tableProperties.get(TABLE_NAME));
         s3Client.shutdown();
         dynamoClient.shutdown();
     }
@@ -167,12 +168,12 @@ public class SleeperTableLambdaIT {
         sleeperTableLambda.handleEvent(CloudFormationCustomResourceEvent.builder()
                 .withRequestType("Delete")
                 .withResourceProperties(createInput(instanceProperties, tableProperties))
-                .build(),null);
+                .build(), null);
 
         // Then
         List<S3ObjectSummary> tables = s3Client.listObjectsV2(instanceProperties.get(CONFIG_BUCKET), "tables")
                 .getObjectSummaries();
-        assertEquals(0, tables.size());
+        assertThat(tables.size()).isEqualTo(0);
         s3Client.shutdown();
         dynamoClient.shutdown();
     }
@@ -197,10 +198,10 @@ public class SleeperTableLambdaIT {
         // Then
         List<S3ObjectSummary> tables = s3Client.listObjectsV2(instanceProperties.get(CONFIG_BUCKET), "tables")
                 .getObjectSummaries();
-        assertEquals(1, tables.size());
+        assertThat(tables.size()).isEqualTo(1);
         TableProperties downloaded = new TableProperties(instanceProperties);
         downloaded.loadFromS3(s3Client, tableProperties.get(TABLE_NAME));
-        assertEquals(new Integer(20), downloaded.getInt(ROW_GROUP_SIZE));
+        assertThat(downloaded.getInt(ROW_GROUP_SIZE)).isEqualTo(new Integer(20));
         s3Client.shutdown();
         dynamoClient.shutdown();
     }
@@ -219,9 +220,9 @@ public class SleeperTableLambdaIT {
             sleeperTableLambda.handleEvent(CloudFormationCustomResourceEvent.builder()
                     .withRequestType("RANDOM")
                     .withResourceProperties(createInput(instanceProperties, tableProperties))
-                    .build(),null);
+                    .build(), null);
         } catch (Exception e) {
-            assertEquals("Invalid request type: RANDOM", e.getMessage());
+            assertThat(e.getMessage()).isEqualTo("Invalid request type: RANDOM");
         }
         s3Client.shutdown();
         dynamoClient.shutdown();

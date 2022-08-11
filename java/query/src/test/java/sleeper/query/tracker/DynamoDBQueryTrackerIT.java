@@ -33,8 +33,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -48,10 +51,13 @@ import static sleeper.query.tracker.QueryState.COMPLETED;
 import static sleeper.query.tracker.QueryState.FAILED;
 import static sleeper.query.tracker.QueryState.IN_PROGRESS;
 import static sleeper.query.tracker.QueryState.PARTIALLY_FAILED;
+
 import sleeper.query.tracker.exception.QueryTrackerException;
 import sleeper.configuration.properties.InstanceProperties;
+
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
+
 import sleeper.core.CommonTestConstants;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
@@ -98,7 +104,7 @@ public class DynamoDBQueryTrackerIT {
         DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
 
         // When / Then
-        assertNull(queryTracker.getStatus("non-existent"));
+        assertThat(queryTracker.getStatus("non-existent")).isNull();
     }
 
     @Test
@@ -111,8 +117,8 @@ public class DynamoDBQueryTrackerIT {
 
         // Then
         TrackedQuery status = queryTracker.getStatus("my-id");
-        assertEquals(COMPLETED, status.getLastKnownState());
-        assertEquals(Long.valueOf(10), status.getRecordCount());
+        assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
+        assertThat(status.getRecordCount()).isEqualTo(Long.valueOf(10));
     }
 
     @Test
@@ -124,7 +130,7 @@ public class DynamoDBQueryTrackerIT {
         queryTracker.queryInProgress(createQueryWithId("my-id"));
 
         // Then
-        assertEquals(IN_PROGRESS, queryTracker.getStatus("my-id").getLastKnownState());
+        assertThat(queryTracker.getStatus("my-id").getLastKnownState()).isEqualTo(IN_PROGRESS);
     }
 
     @Test
@@ -138,7 +144,7 @@ public class DynamoDBQueryTrackerIT {
         TrackedQuery status = queryTracker.getStatus("my-id");
 
         // Then
-        assertEquals(3 * 24 * 3600, status.getExpiryDate() - status.getLastUpdateTime());
+        assertThat(status.getExpiryDate() - status.getLastUpdateTime()).isEqualTo(3 * 24 * 3600);
     }
 
     @Test
@@ -151,7 +157,7 @@ public class DynamoDBQueryTrackerIT {
         queryTracker.queryFailed(createQueryWithId("my-id"), new Exception("fail"));
 
         // Then
-        assertEquals(FAILED, queryTracker.getStatus("my-id").getLastKnownState());
+        assertThat(queryTracker.getStatus("my-id").getLastKnownState()).isEqualTo(FAILED);
     }
 
     @Test
@@ -166,10 +172,10 @@ public class DynamoDBQueryTrackerIT {
         // Then
         TrackedQuery parent = queryTracker.getStatus("parent");
         TrackedQuery child = queryTracker.getStatus("parent", "my-id");
-        assertEquals(COMPLETED, parent.getLastKnownState());
-        assertEquals(COMPLETED, child.getLastKnownState());
-        assertEquals(Long.valueOf(10), parent.getRecordCount());
-        assertEquals(Long.valueOf(10), child.getRecordCount());
+        assertThat(parent.getLastKnownState()).isEqualTo(COMPLETED);
+        assertThat(child.getLastKnownState()).isEqualTo(COMPLETED);
+        assertThat(parent.getRecordCount()).isEqualTo(Long.valueOf(10));
+        assertThat(child.getRecordCount()).isEqualTo(Long.valueOf(10));
     }
 
     @Test
@@ -183,9 +189,9 @@ public class DynamoDBQueryTrackerIT {
         queryTracker.queryCompleted(createSubQueryWithId("parent", "my-other-id"), new ResultsOutputInfo(10, Collections.emptyList()));
 
         // Then
-        assertEquals(IN_PROGRESS, queryTracker.getStatus("parent").getLastKnownState());
-        assertEquals(COMPLETED, queryTracker.getStatus("parent", "my-other-id").getLastKnownState());
-        assertEquals(IN_PROGRESS, queryTracker.getStatus("parent", "my-id").getLastKnownState());
+        assertThat(queryTracker.getStatus("parent").getLastKnownState()).isEqualTo(IN_PROGRESS);
+        assertThat(queryTracker.getStatus("parent", "my-other-id").getLastKnownState()).isEqualTo(COMPLETED);
+        assertThat(queryTracker.getStatus("parent", "my-id").getLastKnownState()).isEqualTo(IN_PROGRESS);
     }
 
     @Test
@@ -199,9 +205,9 @@ public class DynamoDBQueryTrackerIT {
         queryTracker.queryFailed(createSubQueryWithId("parent", "my-other-id"), new Exception("Fail"));
 
         // Then
-        assertEquals(FAILED, queryTracker.getStatus("parent").getLastKnownState());
-        assertEquals(FAILED, queryTracker.getStatus("parent", "my-id").getLastKnownState());
-        assertEquals(FAILED, queryTracker.getStatus("parent", "my-other-id").getLastKnownState());
+        assertThat(queryTracker.getStatus("parent").getLastKnownState()).isEqualTo(FAILED);
+        assertThat(queryTracker.getStatus("parent", "my-id").getLastKnownState()).isEqualTo(FAILED);
+        assertThat(queryTracker.getStatus("parent", "my-other-id").getLastKnownState()).isEqualTo(FAILED);
     }
 
     @Test
@@ -215,9 +221,9 @@ public class DynamoDBQueryTrackerIT {
         queryTracker.queryFailed(createSubQueryWithId("parent", "my-other-id"), new Exception("Fail"));
 
         // Then
-        assertEquals(PARTIALLY_FAILED, queryTracker.getStatus("parent").getLastKnownState());
-        assertEquals(COMPLETED, queryTracker.getStatus("parent", "my-id").getLastKnownState());
-        assertEquals(FAILED, queryTracker.getStatus("parent", "my-other-id").getLastKnownState());
+        assertThat(queryTracker.getStatus("parent").getLastKnownState()).isEqualTo(PARTIALLY_FAILED);
+        assertThat(queryTracker.getStatus("parent", "my-id").getLastKnownState()).isEqualTo(COMPLETED);
+        assertThat(queryTracker.getStatus("parent", "my-other-id").getLastKnownState()).isEqualTo(FAILED);
     }
 
     @Test
@@ -231,12 +237,12 @@ public class DynamoDBQueryTrackerIT {
         queryTracker.queryCompleted(createSubQueryWithId("parent", "my-other-id"), new ResultsOutputInfo(25, Collections.emptyList()));
 
         // Then
-        assertEquals(COMPLETED, queryTracker.getStatus("parent").getLastKnownState());
-        assertEquals(COMPLETED, queryTracker.getStatus("parent", "my-id").getLastKnownState());
-        assertEquals(COMPLETED, queryTracker.getStatus("parent", "my-other-id").getLastKnownState());
-        assertEquals(Long.valueOf(35), queryTracker.getStatus("parent").getRecordCount());
-        assertEquals(Long.valueOf(10), queryTracker.getStatus("parent", "my-id").getRecordCount());
-        assertEquals(Long.valueOf(25), queryTracker.getStatus("parent", "my-other-id").getRecordCount());
+        assertThat(queryTracker.getStatus("parent").getLastKnownState()).isEqualTo(COMPLETED);
+        assertThat(queryTracker.getStatus("parent", "my-id").getLastKnownState()).isEqualTo(COMPLETED);
+        assertThat(queryTracker.getStatus("parent", "my-other-id").getLastKnownState()).isEqualTo(COMPLETED);
+        assertThat(queryTracker.getStatus("parent").getRecordCount()).isEqualTo(Long.valueOf(35));
+        assertThat(queryTracker.getStatus("parent", "my-id").getRecordCount()).isEqualTo(Long.valueOf(10));
+        assertThat(queryTracker.getStatus("parent", "my-other-id").getRecordCount()).isEqualTo(Long.valueOf(25));
     }
 
     private Collection<AttributeDefinition> createAttributeDefinitions() {

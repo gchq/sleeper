@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
@@ -60,7 +61,7 @@ public class SimpleMetadataHandlerIT extends AbstractMetadataHandlerIT {
 
         // Then
         Set<Split> splits = getSplitsResponse.getSplits();
-        assertEquals(2, splits.size());
+        assertThat(splits.size()).isEqualTo(2);
 
         List<String> files = splits.stream()
                 .map(Split::getProperties)
@@ -68,7 +69,7 @@ public class SimpleMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 .sorted()
                 .collect(Collectors.toList());
 
-        assertEquals(Lists.newArrayList("a/b/c.parquet", "d/e/f.parquet"), files);
+        assertThat(files).isEqualTo(Lists.newArrayList("a/b/c.parquet", "d/e/f.parquet"));
     }
 
     @Test
@@ -88,7 +89,7 @@ public class SimpleMetadataHandlerIT extends AbstractMetadataHandlerIT {
 
         // Then
         Set<Split> splits = getSplitsResponse.getSplits();
-        assertEquals(3, splits.size());
+        assertThat(splits.size()).isEqualTo(3);
 
         List<String> files = splits.stream()
                 .map(Split::getProperties)
@@ -96,7 +97,7 @@ public class SimpleMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 .sorted()
                 .collect(Collectors.toList());
 
-        assertEquals(Lists.newArrayList("a/b/c.parquet", "d/e/f.parquet", "g/h/i.parquet"), files);
+        assertThat(files).isEqualTo(Lists.newArrayList("a/b/c.parquet", "d/e/f.parquet", "g/h/i.parquet"));
     }
 
     private Block createPartitionsBlock(String... jsonSerialisedLists) {

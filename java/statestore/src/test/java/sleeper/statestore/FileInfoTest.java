@@ -17,6 +17,7 @@ package sleeper.statestore;
 
 import org.junit.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
@@ -33,11 +34,11 @@ public class FileInfoTest {
         fileInfo.setLastStateStoreUpdateTime(1_000_000L);
 
         // When / Then
-        assertEquals(FileInfo.FileStatus.ACTIVE, fileInfo.getFileStatus());
-        assertEquals("0", fileInfo.getPartitionId());
-        assertEquals("abc", fileInfo.getFilename());
-        assertEquals("Job1", fileInfo.getJobId());
-        assertEquals(1_000_000L, fileInfo.getLastStateStoreUpdateTime().longValue());
+        assertThat(fileInfo.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
+        assertThat(fileInfo.getPartitionId()).isEqualTo("0");
+        assertThat(fileInfo.getFilename()).isEqualTo("abc");
+        assertThat(fileInfo.getJobId()).isEqualTo("Job1");
+        assertThat(fileInfo.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
     }
 
     @Test
@@ -63,9 +64,9 @@ public class FileInfoTest {
         fileInfo3.setLastStateStoreUpdateTime(2_000_000L);
 
         // When / Then
-        assertEquals(fileInfo1, fileInfo2);
-        assertEquals(fileInfo1.hashCode(), fileInfo2.hashCode());
-        assertNotEquals(fileInfo1, fileInfo3);
-        assertNotEquals(fileInfo1.hashCode(), fileInfo3.hashCode());
+        assertThat(fileInfo2).isEqualTo(fileInfo1);
+        assertThat(fileInfo2.hashCode()).isEqualTo(fileInfo1.hashCode());
+        assertThat(fileInfo3).isNotEqualTo(fileInfo1);
+        assertThat(fileInfo3.hashCode()).isNotEqualTo(fileInfo1.hashCode());
     }
 }

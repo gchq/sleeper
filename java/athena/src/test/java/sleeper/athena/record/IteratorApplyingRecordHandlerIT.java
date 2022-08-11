@@ -60,6 +60,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -126,8 +127,8 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertTrue(response instanceof ReadRecordsResponse);
-        assertEquals(0, ((ReadRecordsResponse) response).getRecordCount());
+        assertThat(response instanceof ReadRecordsResponse).isTrue();
+        assertThat(((ReadRecordsResponse) response).getRecordCount()).isEqualTo(0);
     }
 
     @Test
@@ -184,9 +185,9 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertTrue(rawResponse instanceof ReadRecordsResponse);
+        assertThat(rawResponse instanceof ReadRecordsResponse).isTrue();
         ReadRecordsResponse response = (ReadRecordsResponse) rawResponse;
-        assertEquals(1, response.getRecordCount());
+        assertThat(response.getRecordCount()).isEqualTo(1);
         Block records = response.getRecords();
         assertRecordContainedDay(records, 0, 2018, Month.FEBRUARY, 28);
     }
@@ -243,9 +244,9 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertTrue(rawResponse instanceof ReadRecordsResponse);
+        assertThat(rawResponse instanceof ReadRecordsResponse).isTrue();
         ReadRecordsResponse response = (ReadRecordsResponse) rawResponse;
-        assertEquals(30, response.getRecordCount());
+        assertThat(response.getRecordCount()).isEqualTo(30);
         Block records = response.getRecords();
         assertRecordContainedDay(records, 0, 2018, Month.JUNE, 1);
         assertRecordContainedDay(records, 29, 2018, Month.JUNE, 30);
@@ -288,9 +289,9 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertTrue(rawResponse instanceof ReadRecordsResponse);
+        assertThat(rawResponse instanceof ReadRecordsResponse).isTrue();
         ReadRecordsResponse response = (ReadRecordsResponse) rawResponse;
-        assertEquals(0, response.getRecordCount());
+        assertThat(response.getRecordCount()).isEqualTo(0);
     }
 
     @Test
@@ -333,9 +334,9 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertTrue(rawResponse instanceof ReadRecordsResponse);
+        assertThat(rawResponse instanceof ReadRecordsResponse).isTrue();
         ReadRecordsResponse response = (ReadRecordsResponse) rawResponse;
-        assertEquals(0, response.getRecordCount());
+        assertThat(response.getRecordCount()).isEqualTo(0);
     }
 
     @Test
@@ -394,9 +395,9 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertTrue(rawResponse instanceof ReadRecordsResponse);
+        assertThat(rawResponse instanceof ReadRecordsResponse).isTrue();
         ReadRecordsResponse response = (ReadRecordsResponse) rawResponse;
-        assertEquals(3, response.getRecordCount());
+        assertThat(response.getRecordCount()).isEqualTo(3);
 
         Block records = response.getRecords();
 
@@ -405,7 +406,7 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         assertFieldContainedValue(records, 0, "count", firstCount);
 
         // Second should be the first plus second
-        long secondCount  = firstCount + 2018 * 3 * 7;
+        long secondCount = firstCount + 2018 * 3 * 7;
         assertFieldContainedValue(records, 1, "count", secondCount);
 
         // Third should be aggregated second plus third

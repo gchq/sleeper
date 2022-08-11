@@ -35,6 +35,7 @@ import sleeper.query.model.output.S3ResultsOutput;
 
 import java.util.*;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.*;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -102,13 +103,13 @@ public class QuerySerDeTest {
         if (!(query instanceof Query)) {
             fail("Query should be of class Query");
         }
-        assertEquals("my-query", query.getQueryId());
-        assertEquals("my-table", query.getTableName());
-        assertEquals(new HashMap<>(), query.getResultsPublisherConfig());
-        assertEquals(1, query.getRegions().size());
+        assertThat(query.getQueryId()).isEqualTo("my-query");
+        assertThat(query.getTableName()).isEqualTo("my-table");
+        assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
+        assertThat(query.getRegions().size()).isEqualTo(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, 1, true, 2, false));
-        assertEquals(expectedRegion, query.getRegions().get(0));
-        assertEquals(Collections.singletonList("value1"), query.getRequestedValueFields());
+        assertThat(query.getRegions().get(0)).isEqualTo(expectedRegion);
+        assertThat(query.getRequestedValueFields()).isEqualTo(Collections.singletonList("value1"));
     }
 
     @Test
@@ -148,13 +149,13 @@ public class QuerySerDeTest {
         if (!(query instanceof Query)) {
             fail("Query should be of class Query");
         }
-        assertEquals("my-query", query.getQueryId());
-        assertEquals("my-table", query.getTableName());
-        assertEquals(new HashMap<>(), query.getResultsPublisherConfig());
-        assertEquals(1, query.getRegions().size());
+        assertThat(query.getQueryId()).isEqualTo("my-query");
+        assertThat(query.getTableName()).isEqualTo("my-table");
+        assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
+        assertThat(query.getRegions().size()).isEqualTo(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, 1, true, 2, true));
-        assertEquals(expectedRegion, query.getRegions().get(0));
-        assertNull(query.getRequestedValueFields());
+        assertThat(query.getRegions().get(0)).isEqualTo(expectedRegion);
+        assertThat(query.getRequestedValueFields()).isNull();
     }
 
     @Test
@@ -194,13 +195,13 @@ public class QuerySerDeTest {
         if (!(query instanceof Query)) {
             fail("Query should be of class Query");
         }
-        assertEquals("my-query", query.getQueryId());
-        assertEquals("my-table", query.getTableName());
-        assertEquals(new HashMap<>(), query.getResultsPublisherConfig());
-        assertEquals(1, query.getRegions().size());
+        assertThat(query.getQueryId()).isEqualTo("my-query");
+        assertThat(query.getTableName()).isEqualTo("my-table");
+        assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
+        assertThat(query.getRegions().size()).isEqualTo(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, 1, false, 2, true));
-        assertEquals(expectedRegion, query.getRegions().get(0));
-        assertNull(query.getRequestedValueFields());
+        assertThat(query.getRegions().get(0)).isEqualTo(expectedRegion);
+        assertThat(query.getRequestedValueFields()).isNull();
     }
 
     @Test
@@ -240,13 +241,13 @@ public class QuerySerDeTest {
         if (!(query instanceof Query)) {
             fail("Query should be of class Query");
         }
-        assertEquals("my-query", query.getQueryId());
-        assertEquals("my-table", query.getTableName());
-        assertEquals(new HashMap<>(), query.getResultsPublisherConfig());
-        assertEquals(1, query.getRegions().size());
+        assertThat(query.getQueryId()).isEqualTo("my-query");
+        assertThat(query.getTableName()).isEqualTo("my-table");
+        assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
+        assertThat(query.getRegions().size()).isEqualTo(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, 1, false, 2, false));
-        assertEquals(expectedRegion, query.getRegions().get(0));
-        assertNull(query.getRequestedValueFields());
+        assertThat(query.getRegions().get(0)).isEqualTo(expectedRegion);
+        assertThat(query.getRequestedValueFields()).isNull();
     }
 
     @Test
@@ -287,13 +288,13 @@ public class QuerySerDeTest {
         if (!(query instanceof Query)) {
             fail("Query should be of class Query");
         }
-        assertEquals("my-query", query.getQueryId());
-        assertEquals("my-table", query.getTableName());
-        assertEquals(new HashMap<>(), query.getResultsPublisherConfig());
-        assertEquals(1, query.getRegions().size());
+        assertThat(query.getQueryId()).isEqualTo("my-query");
+        assertThat(query.getTableName()).isEqualTo("my-table");
+        assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
+        assertThat(query.getRegions().size()).isEqualTo(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, 1, false, null, false));
-        assertEquals(expectedRegion, query.getRegions().get(0));
-        assertNull(query.getRequestedValueFields());
+        assertThat(query.getRegions().get(0)).isEqualTo(expectedRegion);
+        assertThat(query.getRequestedValueFields()).isNull();
     }
 
     @Test
@@ -313,7 +314,7 @@ public class QuerySerDeTest {
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query, true));
 
         // Then
-        assertEquals(query, deserialisedQuery);
+        assertThat(deserialisedQuery).isEqualTo(query);
     }
 
     @Test
@@ -332,7 +333,7 @@ public class QuerySerDeTest {
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
 
         // Then
-        assertEquals(query, deserialisedQuery);
+        assertThat(deserialisedQuery).isEqualTo(query);
     }
 
     @Test
@@ -351,7 +352,7 @@ public class QuerySerDeTest {
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
 
         // Then
-        assertEquals(query, deserialisedQuery);
+        assertThat(deserialisedQuery).isEqualTo(query);
     }
 
     @Test
@@ -370,7 +371,7 @@ public class QuerySerDeTest {
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
 
         // Then
-        assertEquals(query, deserialisedQuery);
+        assertThat(deserialisedQuery).isEqualTo(query);
     }
 
     @Test
@@ -390,7 +391,7 @@ public class QuerySerDeTest {
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
 
         // Then
-        assertEquals(query, deserialisedQuery);
+        assertThat(deserialisedQuery).isEqualTo(query);
     }
 
     @Test
@@ -415,7 +416,7 @@ public class QuerySerDeTest {
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
 
         // Then
-        assertEquals(query, deserialisedQuery);
+        assertThat(deserialisedQuery).isEqualTo(query);
     }
 
     @Test
@@ -437,7 +438,7 @@ public class QuerySerDeTest {
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
 
         // Then
-        assertEquals(query, deserialisedQuery);
+        assertThat(deserialisedQuery).isEqualTo(query);
     }
 
     @Test
@@ -459,7 +460,7 @@ public class QuerySerDeTest {
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
 
         // Then
-        assertEquals(query, deserialisedQuery);
+        assertThat(deserialisedQuery).isEqualTo(query);
     }
 
     @Test
@@ -481,7 +482,7 @@ public class QuerySerDeTest {
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
 
         // Then
-        assertEquals(query, deserialisedQuery);
+        assertThat(deserialisedQuery).isEqualTo(query);
     }
 
     @Test
@@ -500,7 +501,7 @@ public class QuerySerDeTest {
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
 
         // Then
-        assertEquals(query, deserialisedQuery);
+        assertThat(deserialisedQuery).isEqualTo(query);
     }
 
     @Test
@@ -522,7 +523,7 @@ public class QuerySerDeTest {
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
 
         // Then
-        assertEquals(query, deserialisedQuery);
+        assertThat(deserialisedQuery).isEqualTo(query);
     }
 
     @Test
@@ -541,7 +542,7 @@ public class QuerySerDeTest {
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
 
         // Then
-        assertEquals(query, deserialisedQuery);
+        assertThat(deserialisedQuery).isEqualTo(query);
     }
 
     @Test
@@ -569,7 +570,7 @@ public class QuerySerDeTest {
         LeafPartitionQuery deserialisedQuery = (LeafPartitionQuery) querySerDe.fromJson(querySerDe.toJson(query));
 
         // Then
-        assertEquals(query, deserialisedQuery);
+        assertThat(deserialisedQuery).isEqualTo(query);
     }
 
     @Test
@@ -596,7 +597,7 @@ public class QuerySerDeTest {
         LeafPartitionQuery deserialisedQuery = (LeafPartitionQuery) querySerDe.fromJson(querySerDe.toJson(query));
 
         // Then
-        assertEquals(query, deserialisedQuery);
+        assertThat(deserialisedQuery).isEqualTo(query);
     }
 
     @Test
@@ -618,7 +619,7 @@ public class QuerySerDeTest {
         Query deserialisedQuery = querySerDe.fromJson(querySerDe.toJson(query));
 
         // Then
-        assertEquals(query, deserialisedQuery);
+        assertThat(deserialisedQuery).isEqualTo(query);
     }
 
     @Test
@@ -638,7 +639,7 @@ public class QuerySerDeTest {
             // When the QuerySerDe is created from a TablePropertiesProvider,
             // the TablePropertiesProvider will return TableProperties for a table with a null name.
             Exception exception = assertThrows(JsonParseException.class, () -> querySerDe.fromJson(querySerDe.toJson(query)));
-            assertEquals("tableName field must be provided", exception.getMessage());
+            assertThat(exception.getMessage()).isEqualTo("tableName field must be provided");
         } else {
             // When the QuerySerDe is created from a Map, a NullPointerException is thrown
             // when retrieving a table with a null name.
@@ -664,7 +665,7 @@ public class QuerySerDeTest {
 
         // When & Then
         Exception exception = assertThrows(JsonParseException.class, () -> querySerDe.fromJson(queryJson));
-        assertEquals("tableName field must be provided", exception.getMessage());
+        assertThat(exception.getMessage()).isEqualTo("tableName field must be provided");
     }
 
     private static class TestPropertiesProvider extends TablePropertiesProvider {

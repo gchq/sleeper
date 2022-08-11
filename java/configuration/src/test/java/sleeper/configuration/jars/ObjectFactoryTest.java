@@ -45,6 +45,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
@@ -84,26 +85,26 @@ public class ObjectFactoryTest {
         // Create a class implementing SortedRecordIterator
         String sourceCode =
                 "import sleeper.core.record.Record;\n" +
-                "import sleeper.core.schema.Schema;\n" +
-                "import sleeper.core.iterator.CloseableIterator;\n" +
-                "import sleeper.core.iterator.SortedRecordIterator;\n" +
-                "import java.util.List;\n" +
-                "\n" +
-                "public class MyIterator implements SortedRecordIterator {\n" +
-                "    public MyIterator() {}\n" +
-                "\n" +
-                "    @Override\n" +
-                "    public void init(String configString, Schema schema) {}\n" +
-                "\n" +
-                "    @Override\n" +
-                "    public CloseableIterator<Record> apply(CloseableIterator<Record> it) {return it;}\n" +
-                "\n" +
-                "    @Override\n" +
-                "    public String toString() {return \"MyIterator\";}\n" +
-                "\n" +
-                "    @Override\n" +
-                "    public List<String> getRequiredValueFields() { return null; }\n" +
-                "}\n";
+                        "import sleeper.core.schema.Schema;\n" +
+                        "import sleeper.core.iterator.CloseableIterator;\n" +
+                        "import sleeper.core.iterator.SortedRecordIterator;\n" +
+                        "import java.util.List;\n" +
+                        "\n" +
+                        "public class MyIterator implements SortedRecordIterator {\n" +
+                        "    public MyIterator() {}\n" +
+                        "\n" +
+                        "    @Override\n" +
+                        "    public void init(String configString, Schema schema) {}\n" +
+                        "\n" +
+                        "    @Override\n" +
+                        "    public CloseableIterator<Record> apply(CloseableIterator<Record> it) {return it;}\n" +
+                        "\n" +
+                        "    @Override\n" +
+                        "    public String toString() {return \"MyIterator\";}\n" +
+                        "\n" +
+                        "    @Override\n" +
+                        "    public List<String> getRequiredValueFields() { return null; }\n" +
+                        "}\n";
         MySimpleJavaFileObject fileObject = new MySimpleJavaFileObject("MyIterator", sourceCode);
         // Compile class and write to jar in temp directory
         ToolProvider.getSystemJavaCompiler()
@@ -120,7 +121,7 @@ public class ObjectFactoryTest {
         AmazonS3 s3Client = createS3Client();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         instanceProperties.set(USER_JARS, "iterator.jar");
-        PutObjectRequest pubObjectRequest = new PutObjectRequest(instanceProperties.get(JARS_BUCKET),"iterator.jar", new File(jarFileLocation));
+        PutObjectRequest pubObjectRequest = new PutObjectRequest(instanceProperties.get(JARS_BUCKET), "iterator.jar", new File(jarFileLocation));
         s3Client.putObject(pubObjectRequest);
         // Delete local class file
         Files.delete(new File("MyIterator.class").toPath());
@@ -128,7 +129,7 @@ public class ObjectFactoryTest {
         ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, folder.newFolder().getPath());
         SortedRecordIterator sri = objectFactory.getObject("MyIterator", SortedRecordIterator.class);
 
-        assertEquals("MyIterator", sri.toString());
+        assertThat(sri.toString()).isEqualTo("MyIterator");
     }
 
     public static class MySimpleJavaFileObject extends SimpleJavaFileObject {

@@ -17,7 +17,10 @@ package sleeper.statestore;
 
 import java.io.IOException;
 import java.util.Arrays;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
 import sleeper.core.key.Key;
 import sleeper.core.schema.type.ByteArrayType;
@@ -44,11 +47,11 @@ public class FileInfoSerDeTest {
         // When
         byte[] serialised = fileInfoSerDe.serialiseFileInfo(fileInfo);
         FileInfo deserialised = fileInfoSerDe.deserialiseFileInfo(serialised);
-        
+
         // Then
-        assertEquals(fileInfo, deserialised);
+        assertThat(deserialised).isEqualTo(fileInfo);
     }
-    
+
     @Test
     public void shouldSerialiseAndDeserialiseCorrectlyForLongKey() throws IOException {
         // Given
@@ -66,11 +69,11 @@ public class FileInfoSerDeTest {
         // When
         byte[] serialised = fileInfoSerDe.serialiseFileInfo(fileInfo);
         FileInfo deserialised = fileInfoSerDe.deserialiseFileInfo(serialised);
-        
+
         // Then
-        assertEquals(fileInfo, deserialised);
+        assertThat(deserialised).isEqualTo(fileInfo);
     }
-    
+
     @Test
     public void shouldSerialiseAndDeserialiseCorrectlyForStringKey() throws IOException {
         // Given
@@ -88,11 +91,11 @@ public class FileInfoSerDeTest {
         // When
         byte[] serialised = fileInfoSerDe.serialiseFileInfo(fileInfo);
         FileInfo deserialised = fileInfoSerDe.deserialiseFileInfo(serialised);
-        
+
         // Then
-        assertEquals(fileInfo, deserialised);
+        assertThat(deserialised).isEqualTo(fileInfo);
     }
-    
+
     @Test
     public void shouldSerialiseAndDeserialiseCorrectlyForByteArrayKey() throws IOException {
         // Given
@@ -110,11 +113,11 @@ public class FileInfoSerDeTest {
         // When
         byte[] serialised = fileInfoSerDe.serialiseFileInfo(fileInfo);
         FileInfo deserialised = fileInfoSerDe.deserialiseFileInfo(serialised);
-        
+
         // Then
-        assertEquals(fileInfo, deserialised);
+        assertThat(deserialised).isEqualTo(fileInfo);
     }
-    
+
     @Test
     public void shouldSerialiseAndDeserialiseCorrectlyForByteArrayAndStringKey() throws IOException {
         // Given
@@ -132,8 +135,8 @@ public class FileInfoSerDeTest {
         // When
         byte[] serialised = fileInfoSerDe.serialiseFileInfo(fileInfo);
         FileInfo deserialised = fileInfoSerDe.deserialiseFileInfo(serialised);
-        
+
         // Then
-        assertEquals(fileInfo, deserialised);
+        assertThat(deserialised).isEqualTo(fileInfo);
     }
 }

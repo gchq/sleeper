@@ -43,6 +43,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
@@ -78,8 +79,8 @@ public class S3ResultsOutputTest {
         //Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
-        assertEquals("Results list matches records", recordList, getRecordsFromOutput(pathToResultsFile));
-        assertEquals("There is only one block as rowGroup size is large", 1, numberOfBlocks);
+        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(recordList);
+        assertThat(numberOfBlocks).as("There is only one block as rowGroup size is large").isEqualTo(1);
     }
 
     @Test
@@ -97,8 +98,8 @@ public class S3ResultsOutputTest {
         //Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
-        assertEquals("Results list matches records", recordList, getRecordsFromOutput(pathToResultsFile));
-        assertTrue("There are several blocks as rowGroup size is small", numberOfBlocks > 10);
+        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(recordList);
+        assertThat(numberOfBlocks > 10).as("There are several blocks as rowGroup size is small").isTrue();
     }
 
     @Test
@@ -115,8 +116,8 @@ public class S3ResultsOutputTest {
         //Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
-        assertEquals("Results list matches records", recordList, getRecordsFromOutput(pathToResultsFile));
-        assertTrue("There are several blocks as rowGroup size is small", numberOfBlocks > 10);
+        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(recordList);
+        assertThat(numberOfBlocks > 10).as("There are several blocks as rowGroup size is small").isTrue();
     }
 
     private String getParquetFilesWithinDirPath(String dir) throws IOException {
@@ -129,7 +130,7 @@ public class S3ResultsOutputTest {
                     .filter(s -> s.endsWith(".parquet"))
                     .collect(Collectors.toList());
 
-            assertEquals("one results Parquet file in dir", 1, files.size());
+            assertThat(files.size()).as("one results Parquet file in dir").isEqualTo(1);
             return files.get(0);
         }
     }

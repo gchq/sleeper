@@ -53,6 +53,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.*;
 
 public class SplitPartitionIT {
@@ -134,11 +135,11 @@ public class SplitPartitionIT {
 
         // Then
         List<Partition> partitions = stateStore.getAllPartitions();
-        assertEquals(3, partitions.size());
+        assertThat(partitions.size()).isEqualTo(3);
         List<Partition> nonLeafPartitions = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .collect(Collectors.toList());
-        assertEquals(1, nonLeafPartitions.size());
+        assertThat(nonLeafPartitions.size()).isEqualTo(1);
         Set<Partition> leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toSet());
@@ -152,19 +153,19 @@ public class SplitPartitionIT {
         Integer maxRowKey2 = (Integer) leafPartition2.getRegion().getRange("key").getMax();
         if (minRowkey1 < minRowkey2) {
             splitPoint = maxRowKey1;
-            assertEquals(minRowkey1, -2147483648);
-            assertEquals((int) maxRowKey1, minRowkey2);
-            assertNull(maxRowKey2);
+            assertThat(minRowkey1).isEqualTo(-2147483648);
+            assertThat(minRowkey2).isEqualTo((int) maxRowKey1);
+            assertThat(maxRowKey2).isNull();
         } else {
             splitPoint = maxRowKey2;
-            assertEquals(minRowkey2, -2147483648);
-            assertEquals((int) maxRowKey2, minRowkey1);
-            assertNull(maxRowKey1);
+            assertThat(minRowkey2).isEqualTo(-2147483648);
+            assertThat(minRowkey1).isEqualTo((int) maxRowKey2);
+            assertThat(maxRowKey1).isNull();
         }
-        assertTrue(400 < splitPoint && splitPoint < 600);
-        leafPartitions.forEach(p -> assertEquals(p.getParentPartitionId(), rootPartition.getId()));
-        leafPartitions.forEach(p -> assertEquals(p.getChildPartitionIds(), new ArrayList<>()));
-        assertEquals(rootPartition, nonLeafPartitions.get(0));
+        assertThat(400 < splitPoint && splitPoint < 600).isTrue();
+        leafPartitions.forEach(p -> assertThat(rootPartition.getId()).isEqualTo(p.getParentPartitionId()));
+        leafPartitions.forEach(p -> assertThat(new ArrayList<>()).isEqualTo(p.getChildPartitionIds()));
+        assertThat(nonLeafPartitions.get(0)).isEqualTo(rootPartition);
     }
 
     @Test
@@ -269,8 +270,8 @@ public class SplitPartitionIT {
 
         // Then
         List<Partition> partitionsAfterSplit = stateStore.getAllPartitions();
-        assertEquals(partitions.size(), partitionsAfterSplit.size());
-        assertEquals(new HashSet<>(partitions), new HashSet<>(partitionsAfterSplit));
+        assertThat(partitionsAfterSplit.size()).isEqualTo(partitions.size());
+        assertThat(new HashSet<>(partitionsAfterSplit)).isEqualTo(new HashSet<>(partitions));
     }
 
     @Test
@@ -384,8 +385,8 @@ public class SplitPartitionIT {
 
         // Then
         List<Partition> partitionsAfterSplit = stateStore.getAllPartitions();
-        assertEquals(partitions.size(), partitionsAfterSplit.size());
-        assertEquals(new HashSet<>(partitions), new HashSet<>(partitionsAfterSplit));
+        assertThat(partitionsAfterSplit.size()).isEqualTo(partitions.size());
+        assertThat(new HashSet<>(partitionsAfterSplit)).isEqualTo(new HashSet<>(partitions));
     }
 
     @Test
@@ -436,14 +437,14 @@ public class SplitPartitionIT {
         // Then
         //  - There should be 3 partitions
         List<Partition> partitions = stateStore.getAllPartitions();
-        assertEquals(3, partitions.size());
+        assertThat(partitions.size()).isEqualTo(3);
         //  - There should be 1 non-leaf partition
         List<Partition> nonLeafPartitions = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .collect(Collectors.toList());
-        assertEquals(1, nonLeafPartitions.size());
+        assertThat(nonLeafPartitions.size()).isEqualTo(1);
         //  - The root partition should have been split on the first dimension
-        assertEquals(0, nonLeafPartitions.get(0).getDimension());
+        assertThat(nonLeafPartitions.get(0).getDimension()).isEqualTo(0);
         //  - The leaf partitions should have been split on a value which is between
         //      0 and 100.
         Set<Partition> leafPartitions = partitions.stream()
@@ -459,20 +460,20 @@ public class SplitPartitionIT {
         Integer maxRowKey2 = (Integer) leafPartition2.getRegion().getRange("key1").getMax();
         if (Integer.MIN_VALUE == minRowkey1) {
             splitPoint = maxRowKey1;
-            assertEquals(maxRowKey1.intValue(), minRowkey2);
-            assertNull(maxRowKey2);
+            assertThat(minRowkey2).isEqualTo(maxRowKey1.intValue());
+            assertThat(maxRowKey2).isNull();
         } else {
             splitPoint = maxRowKey2;
-            assertEquals(Integer.MIN_VALUE, minRowkey2);
-            assertEquals(maxRowKey2.intValue(), minRowkey1);
-            assertNull(maxRowKey1);
+            assertThat(minRowkey2).isEqualTo(Integer.MIN_VALUE);
+            assertThat(minRowkey1).isEqualTo(maxRowKey2.intValue());
+            assertThat(maxRowKey1).isNull();
         }
-        assertTrue(Integer.MIN_VALUE < splitPoint && splitPoint < 99);
+        assertThat(Integer.MIN_VALUE < splitPoint && splitPoint < 99).isTrue();
         //  - The leaf partitions should have the root partition as their parent
         //      and an empty array for the child partitions.
-        leafPartitions.forEach(p -> assertEquals(p.getParentPartitionId(), rootPartition.getId()));
-        leafPartitions.forEach(p -> assertEquals(p.getChildPartitionIds(), new ArrayList<>()));
-        assertEquals(rootPartition, nonLeafPartitions.get(0));
+        leafPartitions.forEach(p -> assertThat(rootPartition.getId()).isEqualTo(p.getParentPartitionId()));
+        leafPartitions.forEach(p -> assertThat(new ArrayList<>()).isEqualTo(p.getChildPartitionIds()));
+        assertThat(nonLeafPartitions.get(0)).isEqualTo(rootPartition);
     }
 
     @Test
@@ -523,14 +524,14 @@ public class SplitPartitionIT {
         // Then
         //  - There should be 3 partitions
         List<Partition> partitions = stateStore.getAllPartitions();
-        assertEquals(3, partitions.size());
+        assertThat(partitions.size()).isEqualTo(3);
         //  - There should be 1 non-leaf partition
         List<Partition> nonLeafPartitions = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .collect(Collectors.toList());
-        assertEquals(1, nonLeafPartitions.size());
+        assertThat(nonLeafPartitions.size()).isEqualTo(1);
         //  - The root partition should have been split on the second dimension
-        assertEquals(1, nonLeafPartitions.get(0).getDimension());
+        assertThat(nonLeafPartitions.get(0).getDimension()).isEqualTo(1);
         //  - The leaf partitions should have been split on a value which is between
         //      0 and 100.
         Set<Partition> leafPartitions = partitions.stream()
@@ -546,22 +547,22 @@ public class SplitPartitionIT {
         Integer maxRowKey2 = (Integer) leafPartition2.getRegion().getRange("key2").getMax();
         if (Integer.MIN_VALUE == minRowkey1) {
             splitPoint = maxRowKey1;
-            assertEquals(maxRowKey1.intValue(), minRowkey2);
-            assertNull(maxRowKey2);
+            assertThat(minRowkey2).isEqualTo(maxRowKey1.intValue());
+            assertThat(maxRowKey2).isNull();
         } else {
             splitPoint = maxRowKey2;
-            assertEquals(Integer.MIN_VALUE, minRowkey2);
-            assertEquals(maxRowKey2.intValue(), minRowkey1);
-            assertNull(maxRowKey1);
+            assertThat(minRowkey2).isEqualTo(Integer.MIN_VALUE);
+            assertThat(minRowkey1).isEqualTo(maxRowKey2.intValue());
+            assertThat(maxRowKey1).isNull();
         }
-        assertTrue(Integer.MIN_VALUE < splitPoint && splitPoint < 99);
+        assertThat(Integer.MIN_VALUE < splitPoint && splitPoint < 99).isTrue();
         //  - The leaf partitions should have the root partition as their parent
         //      and an empty array for the child partitions.
-        leafPartitions.forEach(p -> assertEquals(p.getParentPartitionId(), rootPartition.getId()));
-        leafPartitions.forEach(p -> assertEquals(p.getChildPartitionIds(), new ArrayList<>()));
-        assertEquals(rootPartition, nonLeafPartitions.get(0));
+        leafPartitions.forEach(p -> assertThat(rootPartition.getId()).isEqualTo(p.getParentPartitionId()));
+        leafPartitions.forEach(p -> assertThat(new ArrayList<>()).isEqualTo(p.getChildPartitionIds()));
+        assertThat(nonLeafPartitions.get(0)).isEqualTo(rootPartition);
     }
-    
+
     @Test
     public void shouldSplitPartitionForIntMultidimensionalKeyOnSecondDimensionCorrectlyWhenMinIsMedian()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
@@ -615,14 +616,14 @@ public class SplitPartitionIT {
         // Then
         //  - There should be 3 partitions
         List<Partition> partitions = stateStore.getAllPartitions();
-        assertEquals(3, partitions.size());
+        assertThat(partitions.size()).isEqualTo(3);
         //  - There should be 1 non-leaf partition
         List<Partition> nonLeafPartitions = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .collect(Collectors.toList());
-        assertEquals(1, nonLeafPartitions.size());
+        assertThat(nonLeafPartitions.size()).isEqualTo(1);
         //  - The root partition should have been split on the second dimension
-        assertEquals(1, nonLeafPartitions.get(0).getDimension());
+        assertThat(nonLeafPartitions.get(0).getDimension()).isEqualTo(1);
         //  - The leaf partitions should have been split on a value which is between
         //      0 and 100.
         Set<Partition> leafPartitions = partitions.stream()
@@ -638,20 +639,20 @@ public class SplitPartitionIT {
         Integer maxRowKey2 = (Integer) leafPartition2.getRegion().getRange("key2").getMax();
         if (Integer.MIN_VALUE == minRowkey1) {
             splitPoint = maxRowKey1;
-            assertEquals(maxRowKey1.intValue(), minRowkey2);
-            assertNull(maxRowKey2);
+            assertThat(minRowkey2).isEqualTo(maxRowKey1.intValue());
+            assertThat(maxRowKey2).isNull();
         } else {
             splitPoint = maxRowKey2;
-            assertEquals(Integer.MIN_VALUE, minRowkey2);
-            assertEquals(maxRowKey2.intValue(), minRowkey1);
-            assertNull(maxRowKey1);
+            assertThat(minRowkey2).isEqualTo(Integer.MIN_VALUE);
+            assertThat(minRowkey1).isEqualTo(maxRowKey2.intValue());
+            assertThat(maxRowKey1).isNull();
         }
-        assertTrue(Integer.MIN_VALUE < splitPoint && splitPoint < 99);
+        assertThat(Integer.MIN_VALUE < splitPoint && splitPoint < 99).isTrue();
         //  - The leaf partitions should have the root partition as their parent
         //      and an empty array for the child partitions.
-        leafPartitions.forEach(p -> assertEquals(p.getParentPartitionId(), rootPartition.getId()));
-        leafPartitions.forEach(p -> assertEquals(p.getChildPartitionIds(), new ArrayList<>()));
-        assertEquals(rootPartition, nonLeafPartitions.get(0));
+        leafPartitions.forEach(p -> assertThat(rootPartition.getId()).isEqualTo(p.getParentPartitionId()));
+        leafPartitions.forEach(p -> assertThat(new ArrayList<>()).isEqualTo(p.getChildPartitionIds()));
+        assertThat(nonLeafPartitions.get(0)).isEqualTo(rootPartition);
     }
 
     @Test
@@ -700,11 +701,11 @@ public class SplitPartitionIT {
 
         // Then
         List<Partition> partitions = stateStore.getAllPartitions();
-        assertEquals(3, partitions.size());
+        assertThat(partitions.size()).isEqualTo(3);
         List<Partition> nonLeafPartitions = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .collect(Collectors.toList());
-        assertEquals(1, nonLeafPartitions.size());
+        assertThat(nonLeafPartitions.size()).isEqualTo(1);
         Set<Partition> leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toSet());
@@ -718,19 +719,19 @@ public class SplitPartitionIT {
         Long maxRowKey2 = (Long) leafPartition2.getRegion().getRange("key").getMax();
         if (minRowkey1 < minRowkey2) {
             splitPoint = maxRowKey1;
-            assertEquals(minRowkey1, Long.MIN_VALUE);
-            assertEquals((long) maxRowKey1, minRowkey2);
-            assertNull(maxRowKey2);
+            assertThat(minRowkey1).isEqualTo(Long.MIN_VALUE);
+            assertThat(minRowkey2).isEqualTo((long) maxRowKey1);
+            assertThat(maxRowKey2).isNull();
         } else {
             splitPoint = maxRowKey2;
-            assertEquals(minRowkey2, Long.MIN_VALUE);
-            assertEquals((long) maxRowKey2, minRowkey1);
-            assertNull(maxRowKey1);
+            assertThat(minRowkey2).isEqualTo(Long.MIN_VALUE);
+            assertThat(minRowkey1).isEqualTo((long) maxRowKey2);
+            assertThat(maxRowKey1).isNull();
         }
-        assertTrue(400 < splitPoint && splitPoint < 600);
-        leafPartitions.forEach(p -> assertEquals(p.getParentPartitionId(), rootPartition.getId()));
-        leafPartitions.forEach(p -> assertEquals(p.getChildPartitionIds(), new ArrayList<>()));
-        assertEquals(rootPartition, nonLeafPartitions.get(0));
+        assertThat(400 < splitPoint && splitPoint < 600).isTrue();
+        leafPartitions.forEach(p -> assertThat(rootPartition.getId()).isEqualTo(p.getParentPartitionId()));
+        leafPartitions.forEach(p -> assertThat(new ArrayList<>()).isEqualTo(p.getChildPartitionIds()));
+        assertThat(nonLeafPartitions.get(0)).isEqualTo(rootPartition);
     }
 
     @Test
@@ -779,11 +780,11 @@ public class SplitPartitionIT {
 
         // Then
         List<Partition> partitions = stateStore.getAllPartitions();
-        assertEquals(3, partitions.size());
+        assertThat(partitions.size()).isEqualTo(3);
         List<Partition> nonLeafPartitions = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .collect(Collectors.toList());
-        assertEquals(1, nonLeafPartitions.size());
+        assertThat(nonLeafPartitions.size()).isEqualTo(1);
         Set<Partition> leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toSet());
@@ -797,18 +798,18 @@ public class SplitPartitionIT {
         String maxRowKey2 = (String) leafPartition2.getRegion().getRange("key").getMax();
         if ("".equals(minRowkey1)) {
             splitPoint = maxRowKey1;
-            assertEquals(maxRowKey1, minRowkey2);
-            assertNull(maxRowKey2);
+            assertThat(minRowkey2).isEqualTo(maxRowKey1);
+            assertThat(maxRowKey2).isNull();
         } else {
             splitPoint = maxRowKey2;
-            assertEquals("", minRowkey2);
-            assertEquals(maxRowKey2, minRowkey1);
-            assertNull(maxRowKey1);
+            assertThat(minRowkey2).isEqualTo("");
+            assertThat(minRowkey1).isEqualTo(maxRowKey2);
+            assertThat(maxRowKey1).isNull();
         }
-        assertTrue("A00".compareTo(splitPoint) < 0 && splitPoint.compareTo("A9100") < 0);
-        leafPartitions.forEach(p -> assertEquals(p.getParentPartitionId(), rootPartition.getId()));
-        leafPartitions.forEach(p -> assertEquals(p.getChildPartitionIds(), new ArrayList<>()));
-        assertEquals(rootPartition, nonLeafPartitions.get(0));
+        assertThat("A00".compareTo(splitPoint) < 0 && splitPoint.compareTo("A9100") < 0).isTrue();
+        leafPartitions.forEach(p -> assertThat(rootPartition.getId()).isEqualTo(p.getParentPartitionId()));
+        leafPartitions.forEach(p -> assertThat(new ArrayList<>()).isEqualTo(p.getChildPartitionIds()));
+        assertThat(nonLeafPartitions.get(0)).isEqualTo(rootPartition);
     }
 
     @Test
@@ -857,11 +858,11 @@ public class SplitPartitionIT {
 
         // Then
         List<Partition> partitions = stateStore.getAllPartitions();
-        assertEquals(3, partitions.size());
+        assertThat(partitions.size()).isEqualTo(3);
         List<Partition> nonLeafPartitions = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .collect(Collectors.toList());
-        assertEquals(1, nonLeafPartitions.size());
+        assertThat(nonLeafPartitions.size()).isEqualTo(1);
         Set<Partition> leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toSet());
@@ -875,19 +876,19 @@ public class SplitPartitionIT {
         byte[] maxRowKey2 = null == leafPartition2.getRegion().getRange("key").getMax() ? null : (byte[]) leafPartition2.getRegion().getRange("key").getMax();
         if (Arrays.equals(new byte[]{}, minRowkey1)) {
             splitPoint = maxRowKey1;
-            assertArrayEquals(maxRowKey1, minRowkey2);
-            assertNull(maxRowKey2);
+            assertThat(minRowkey2).containsExactly(maxRowKey1);
+            assertThat(maxRowKey2).isNull();
         } else {
             splitPoint = maxRowKey2;
-            assertArrayEquals(new byte[]{}, minRowkey2);
-            assertArrayEquals(maxRowKey2, minRowkey1);
-            assertNull(maxRowKey1);
+            assertThat(minRowkey2).containsExactly(new byte[]{});
+            assertThat(minRowkey1).containsExactly(maxRowKey2);
+            assertThat(maxRowKey1).isNull();
         }
         ByteArray splitPointBA = ByteArray.wrap(splitPoint);
-        assertTrue(ByteArray.wrap(new byte[]{}).compareTo(splitPointBA) < 0 && splitPointBA.compareTo(ByteArray.wrap(new byte[]{99})) < 0);
-        leafPartitions.forEach(p -> assertEquals(p.getParentPartitionId(), rootPartition.getId()));
-        leafPartitions.forEach(p -> assertEquals(p.getChildPartitionIds(), new ArrayList<>()));
-        assertEquals(rootPartition, nonLeafPartitions.get(0));
+        assertThat(ByteArray.wrap(new byte[]{}).compareTo(splitPointBA) < 0 && splitPointBA.compareTo(ByteArray.wrap(new byte[]{99})) < 0).isTrue();
+        leafPartitions.forEach(p -> assertThat(rootPartition.getId()).isEqualTo(p.getParentPartitionId()));
+        leafPartitions.forEach(p -> assertThat(new ArrayList<>()).isEqualTo(p.getChildPartitionIds()));
+        assertThat(nonLeafPartitions.get(0)).isEqualTo(rootPartition);
     }
 
     @Test
@@ -1011,8 +1012,8 @@ public class SplitPartitionIT {
 
         // Then
         List<Partition> partitionsAfterSplit = stateStore.getAllPartitions();
-        assertEquals(partitions.size(), partitionsAfterSplit.size());
-        assertEquals(new HashSet<>(partitions), new HashSet<>(partitionsAfterSplit));
+        assertThat(partitionsAfterSplit.size()).isEqualTo(partitions.size());
+        assertThat(new HashSet<>(partitionsAfterSplit)).isEqualTo(new HashSet<>(partitions));
     }
 
     @Test
@@ -1132,8 +1133,8 @@ public class SplitPartitionIT {
 
         // Then
         List<Partition> partitionsAfterSplit = stateStore.getAllPartitions();
-        assertEquals(partitions.size(), partitionsAfterSplit.size());
-        assertEquals(new HashSet<>(partitions), new HashSet<>(partitionsAfterSplit));
+        assertThat(partitionsAfterSplit.size()).isEqualTo(partitions.size());
+        assertThat(new HashSet<>(partitionsAfterSplit)).isEqualTo(new HashSet<>(partitions));
     }
 
     @Test
@@ -1184,14 +1185,14 @@ public class SplitPartitionIT {
         // Then
         //  - There should be 3 partitions
         List<Partition> partitions = stateStore.getAllPartitions();
-        assertEquals(3, partitions.size());
+        assertThat(partitions.size()).isEqualTo(3);
         //  - There should be 1 non-leaf partition
         List<Partition> nonLeafPartitions = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .collect(Collectors.toList());
-        assertEquals(1, nonLeafPartitions.size());
+        assertThat(nonLeafPartitions.size()).isEqualTo(1);
         //  - The root partition should have been split on the first dimension
-        assertEquals(0, nonLeafPartitions.get(0).getDimension());
+        assertThat(nonLeafPartitions.get(0).getDimension()).isEqualTo(0);
         //  - The leaf partitions should have been split on a value which is between
         //      0 and 100.
         Set<Partition> leafPartitions = partitions.stream()
@@ -1207,21 +1208,21 @@ public class SplitPartitionIT {
         byte[] maxRowKey2 = null == leafPartition2.getRegion().getRange("key1").getMax() ? null : (byte[]) leafPartition2.getRegion().getRange("key1").getMax();
         if (Arrays.equals(new byte[]{}, minRowkey1)) {
             splitPoint = maxRowKey1;
-            assertArrayEquals(maxRowKey1, minRowkey2);
-            assertNull(maxRowKey2);
+            assertThat(minRowkey2).containsExactly(maxRowKey1);
+            assertThat(maxRowKey2).isNull();
         } else {
             splitPoint = maxRowKey2;
-            assertArrayEquals(new byte[]{}, minRowkey2);
-            assertArrayEquals(maxRowKey2, minRowkey1);
-            assertNull(maxRowKey1);
+            assertThat(minRowkey2).containsExactly(new byte[]{});
+            assertThat(minRowkey1).containsExactly(maxRowKey2);
+            assertThat(maxRowKey1).isNull();
         }
         ByteArray splitPointBA = ByteArray.wrap(splitPoint);
-        assertTrue(ByteArray.wrap(new byte[]{}).compareTo(splitPointBA) < 0 && splitPointBA.compareTo(ByteArray.wrap(new byte[]{99})) < 0);
+        assertThat(ByteArray.wrap(new byte[]{}).compareTo(splitPointBA) < 0 && splitPointBA.compareTo(ByteArray.wrap(new byte[]{99})) < 0).isTrue();
         //  - The leaf partitions should have the root partition as their parent
         //      and an empty array for the child partitions.
-        leafPartitions.forEach(p -> assertEquals(p.getParentPartitionId(), rootPartition.getId()));
-        leafPartitions.forEach(p -> assertEquals(p.getChildPartitionIds(), new ArrayList<>()));
-        assertEquals(rootPartition, nonLeafPartitions.get(0));
+        leafPartitions.forEach(p -> assertThat(rootPartition.getId()).isEqualTo(p.getParentPartitionId()));
+        leafPartitions.forEach(p -> assertThat(new ArrayList<>()).isEqualTo(p.getChildPartitionIds()));
+        assertThat(nonLeafPartitions.get(0)).isEqualTo(rootPartition);
     }
 
     @Test
@@ -1271,12 +1272,12 @@ public class SplitPartitionIT {
 
         // Then
         List<Partition> partitions = stateStore.getAllPartitions();
-        assertEquals(3, partitions.size());
+        assertThat(partitions.size()).isEqualTo(3);
         List<Partition> nonLeafPartitions = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .collect(Collectors.toList());
-        assertEquals(1, nonLeafPartitions.size());
-        assertEquals(1, nonLeafPartitions.get(0).getDimension());
+        assertThat(nonLeafPartitions.size()).isEqualTo(1);
+        assertThat(nonLeafPartitions.get(0).getDimension()).isEqualTo(1);
         Set<Partition> leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toSet());
@@ -1290,18 +1291,18 @@ public class SplitPartitionIT {
         byte[] maxRowKey2 = null == leafPartition2.getRegion().getRange("key2").getMax() ? null : (byte[]) leafPartition2.getRegion().getRange("key2").getMax();
         if (Arrays.equals(new byte[]{}, minRowkey1)) {
             splitPoint = maxRowKey1;
-            assertArrayEquals(maxRowKey1, minRowkey2);
-            assertNull(maxRowKey2);
+            assertThat(minRowkey2).containsExactly(maxRowKey1);
+            assertThat(maxRowKey2).isNull();
         } else {
             splitPoint = maxRowKey2;
-            assertArrayEquals(new byte[]{}, minRowkey2);
-            assertArrayEquals(maxRowKey2, minRowkey1);
-            assertNull(maxRowKey1);
+            assertThat(minRowkey2).containsExactly(new byte[]{});
+            assertThat(minRowkey1).containsExactly(maxRowKey2);
+            assertThat(maxRowKey1).isNull();
         }
         ByteArray splitPointBA = ByteArray.wrap(splitPoint);
-        assertTrue(ByteArray.wrap(new byte[]{}).compareTo(splitPointBA) < 0 && splitPointBA.compareTo(ByteArray.wrap(new byte[]{99})) < 0);
-        leafPartitions.forEach(p -> assertEquals(p.getParentPartitionId(), rootPartition.getId()));
-        leafPartitions.forEach(p -> assertEquals(p.getChildPartitionIds(), new ArrayList<>()));
-        assertEquals(rootPartition, nonLeafPartitions.get(0));
+        assertThat(ByteArray.wrap(new byte[]{}).compareTo(splitPointBA) < 0 && splitPointBA.compareTo(ByteArray.wrap(new byte[]{99})) < 0).isTrue();
+        leafPartitions.forEach(p -> assertThat(rootPartition.getId()).isEqualTo(p.getParentPartitionId()));
+        leafPartitions.forEach(p -> assertThat(new ArrayList<>()).isEqualTo(p.getChildPartitionIds()));
+        assertThat(nonLeafPartitions.get(0)).isEqualTo(rootPartition);
     }
 }

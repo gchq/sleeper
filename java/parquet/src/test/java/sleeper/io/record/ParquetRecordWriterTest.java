@@ -37,11 +37,12 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 public class ParquetRecordWriterTest {
-   
+
     @Rule
     public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
 
@@ -53,7 +54,7 @@ public class ParquetRecordWriterTest {
         schema.setValueFields(new Field("column2", new StringType()));
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
-            .build();
+                .build();
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", "A");
         map1.put("column2", "B");
@@ -73,11 +74,11 @@ public class ParquetRecordWriterTest {
         Record readRecord3 = reader.read();
 
         // Then
-        assertEquals("A", readRecord1.get("column1"));
-        assertEquals("B", readRecord1.get("column2"));
-        assertEquals("C", readRecord2.get("column1"));
-        assertEquals("D", readRecord2.get("column2"));
-        assertNull(readRecord3);
+        assertThat(readRecord1.get("column1")).isEqualTo("A");
+        assertThat(readRecord1.get("column2")).isEqualTo("B");
+        assertThat(readRecord2.get("column1")).isEqualTo("C");
+        assertThat(readRecord2.get("column2")).isEqualTo("D");
+        assertThat(readRecord3).isNull();
     }
 
     @Test
@@ -89,7 +90,7 @@ public class ParquetRecordWriterTest {
         schema.setValueFields(new Field("column3", new LongType()));
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
-            .build();
+                .build();
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", 1L);
         map1.put("column2", 2L);
@@ -111,15 +112,15 @@ public class ParquetRecordWriterTest {
         Record readRecord3 = reader.read();
 
         // Then
-        assertEquals(1L, readRecord1.get("column1"));
-        assertEquals(2L, readRecord1.get("column2"));
-        assertEquals(3L, readRecord1.get("column3"));
-        assertEquals(4L, readRecord2.get("column1"));
-        assertEquals(5L, readRecord2.get("column2"));
-        assertEquals(6L, readRecord2.get("column3"));
-        assertNull(readRecord3);
+        assertThat(readRecord1.get("column1")).isEqualTo(1L);
+        assertThat(readRecord1.get("column2")).isEqualTo(2L);
+        assertThat(readRecord1.get("column3")).isEqualTo(3L);
+        assertThat(readRecord2.get("column1")).isEqualTo(4L);
+        assertThat(readRecord2.get("column2")).isEqualTo(5L);
+        assertThat(readRecord2.get("column3")).isEqualTo(6L);
+        assertThat(readRecord3).isNull();
     }
-    
+
     @Test
     public void shouldWriteRecordsCorrectlyForByteArraySchema() throws IOException {
         // Given
@@ -132,7 +133,7 @@ public class ParquetRecordWriterTest {
         schema.setValueFields(new Field("column2", new ByteArrayType()));
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
-            .build();
+                .build();
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", byteArray1);
         map1.put("column2", byteArray2);
@@ -152,10 +153,10 @@ public class ParquetRecordWriterTest {
         Record readRecord3 = reader.read();
 
         // Then
-        Assert.assertArrayEquals(byteArray1, (byte[]) readRecord1.get("column1"));
-        Assert.assertArrayEquals(byteArray2, (byte[]) readRecord1.get("column2"));
-        Assert.assertArrayEquals(byteArray3, (byte[]) readRecord2.get("column1"));
-        Assert.assertArrayEquals(byteArray4, (byte[]) readRecord2.get("column2"));
-        assertNull(readRecord3);
+        assertThat((byte[]) readRecord1.get("column1")).containsExactly(byteArray1);
+        assertThat((byte[]) readRecord1.get("column2")).containsExactly(byteArray2);
+        assertThat((byte[]) readRecord2.get("column1")).containsExactly(byteArray3);
+        assertThat((byte[]) readRecord2.get("column2")).containsExactly(byteArray4);
+        assertThat(readRecord3).isNull();
     }
 }

@@ -29,9 +29,12 @@ import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
+
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TablePropertiesIT {
@@ -73,7 +76,7 @@ public class TablePropertiesIT {
         validProperties.saveToS3(s3Client);
 
         // Then
-        assertTrue(s3Client.doesObjectExist("config", "tables/test"));
+        assertThat(s3Client.doesObjectExist("config", "tables/test")).isTrue();
     }
 
     @Test
@@ -91,6 +94,6 @@ public class TablePropertiesIT {
         tableProperties.loadFromS3(s3Client, "test");
 
         // Then
-        assertEquals(tableProperties, validProperties);
+        assertThat(validProperties).isEqualTo(tableProperties);
     }
 }

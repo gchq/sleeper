@@ -22,6 +22,7 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -50,8 +51,8 @@ public class SchemaTest {
         boolean test2 = schema1.equals(schema3);
 
         // Then
-        assertTrue(test1);
-        assertFalse(test2);
+        assertThat(test1).isTrue();
+        assertThat(test2).isFalse();
     }
 
     @Test(expected = IllegalArgumentException.class)

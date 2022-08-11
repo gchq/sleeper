@@ -21,6 +21,7 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.facebook.collections.ByteArray;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,11 +33,15 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.AfterClass;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -185,10 +190,10 @@ public class CompactSortedFilesIT {
             results.add(new Record(reader.next()));
         }
         reader.close();
-        assertEquals(data.values().size(), summary.getLinesRead());
-        assertEquals(data.values().size(), summary.getLinesWritten());
+        assertThat(summary.getLinesRead()).isEqualTo(data.values().size());
+        assertThat(summary.getLinesWritten()).isEqualTo(data.values().size());
         List<Record> expectedResults = new ArrayList<>(data.values());
-        assertEquals(expectedResults, results);
+        assertThat(results).isEqualTo(expectedResults);
         // - Check DynamoDBStateStore has correct ready for GC files
         List<FileInfo> readyForGCFiles = new ArrayList<>();
         dynamoStateStore.getReadyForGCFiles().forEachRemaining(readyForGCFiles::add);
@@ -196,22 +201,22 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertEquals(2, readyForGCFiles.size());
+        assertThat(readyForGCFiles.size()).isEqualTo(2);
 
-        assertEquals(fileInfo1.getFilename(), readyForGCFiles.get(0).getFilename());
-        assertEquals(fileInfo2.getFilename(), readyForGCFiles.get(1).getFilename());
-        assertEquals(fileInfo1.getRowKeyTypes(), readyForGCFiles.get(0).getRowKeyTypes());
-        assertEquals(fileInfo2.getRowKeyTypes(), readyForGCFiles.get(1).getRowKeyTypes());
-        assertEquals(fileInfo1.getPartitionId(), readyForGCFiles.get(0).getPartitionId());
-        assertEquals(fileInfo2.getPartitionId(), readyForGCFiles.get(1).getPartitionId());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(0).getFileStatus());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(1).getFileStatus());
+        assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
+        assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
+        assertThat(readyForGCFiles.get(0).getRowKeyTypes()).isEqualTo(fileInfo1.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(1).getRowKeyTypes()).isEqualTo(fileInfo2.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(0).getPartitionId()).isEqualTo(fileInfo1.getPartitionId());
+        assertThat(readyForGCFiles.get(1).getPartitionId()).isEqualTo(fileInfo2.getPartitionId());
+        assertThat(readyForGCFiles.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
+        assertThat(readyForGCFiles.get(1).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
         // - Check DynamoDBStateStore has correct active files
         List<FileInfo> activeFiles = dynamoStateStore.getActiveFiles()
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertEquals(1, activeFiles.size());
+        assertThat(activeFiles.size()).isEqualTo(1);
         FileInfo newFile = new FileInfo();
         newFile.setRowKeyTypes(new LongType());
         newFile.setFilename(outputFile);
@@ -229,7 +234,7 @@ public class CompactSortedFilesIT {
                 .get();
         newFile.setMaxRowKey(Key.create(maxKey));
         activeFiles.get(0).setLastStateStoreUpdateTime(null); // Set to null as we don't know what it should be
-        assertEquals(newFile, activeFiles.get(0));
+        assertThat(activeFiles.get(0)).isEqualTo(newFile);
     }
 
     @Test
@@ -324,7 +329,7 @@ public class CompactSortedFilesIT {
         }
         reader.close();
         List<Record> expectedResults = new ArrayList<>(data.values());
-        assertEquals(expectedResults, results);
+        assertThat(results).isEqualTo(expectedResults);
         // - Check DynamoDBStateStore has correct ready for GC files
         List<FileInfo> readyForGCFiles = new ArrayList<>();
         dynamoStateStore.getReadyForGCFiles().forEachRemaining(readyForGCFiles::add);
@@ -332,22 +337,23 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertEquals(2, readyForGCFiles.size());
+        assertThat(readyForGCFiles.size()).isEqualTo(2);
 
-        assertEquals(fileInfo1.getFilename(), readyForGCFiles.get(0).getFilename());
-        assertEquals(fileInfo2.getFilename(), readyForGCFiles.get(1).getFilename());
-        assertEquals(fileInfo1.getRowKeyTypes(), readyForGCFiles.get(0).getRowKeyTypes());
-        assertEquals(fileInfo2.getRowKeyTypes(), readyForGCFiles.get(1).getRowKeyTypes());
-        assertEquals(fileInfo1.getPartitionId(), readyForGCFiles.get(0).getPartitionId());
-        assertEquals(fileInfo2.getPartitionId(), readyForGCFiles.get(1).getPartitionId());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(0).getFileStatus());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(1).getFileStatus());
+        assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
+        assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
+        assertThat(readyForGCFiles.get(0).getRowKeyTypes()).isEqualTo(fileInfo1.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(1).getRowKeyTypes()).isEqualTo(fileInfo2.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(0).getPartitionId()).isEqualTo(fileInfo1.getPartitionId());
+        assertThat(readyForGCFiles.get(1).getPartitionId()).isEqualTo(fileInfo2.getPartitionId());
+        assertThat(readyForGCFiles.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
+        assertThat(readyForGCFiles.get(1).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
         // - Check DynamoDBStateStore has correct active files
         List<FileInfo> activeFiles = dynamoStateStore.getActiveFiles()
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
-                .collect(Collectors.toList());;
-        assertEquals(1, activeFiles.size());
+                .collect(Collectors.toList());
+        ;
+        assertThat(activeFiles.size()).isEqualTo(1);
         FileInfo newFile = new FileInfo();
         newFile.setRowKeyTypes(new StringType());
         newFile.setFilename(outputFile);
@@ -365,7 +371,7 @@ public class CompactSortedFilesIT {
                 .get();
         newFile.setMaxRowKey(Key.create(maxKey));
         activeFiles.get(0).setLastStateStoreUpdateTime(null); // Set to null as we don't know what it should be
-        assertEquals(newFile, activeFiles.get(0));
+        assertThat(activeFiles.get(0)).isEqualTo(newFile);
     }
 
     @Test
@@ -480,7 +486,7 @@ public class CompactSortedFilesIT {
                     return transformedRecord;
                 })
                 .collect(Collectors.toList());
-        assertEquals(expectedResults, results);
+        assertThat(results).isEqualTo(expectedResults);
         // - Check DynamoDBStateStore has correct ready for GC files
         List<FileInfo> readyForGCFiles = new ArrayList<>();
         dynamoStateStore.getReadyForGCFiles().forEachRemaining(readyForGCFiles::add);
@@ -488,22 +494,22 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertEquals(2, readyForGCFiles.size());
+        assertThat(readyForGCFiles.size()).isEqualTo(2);
 
-        assertEquals(fileInfo1.getFilename(), readyForGCFiles.get(0).getFilename());
-        assertEquals(fileInfo2.getFilename(), readyForGCFiles.get(1).getFilename());
-        assertEquals(fileInfo1.getRowKeyTypes(), readyForGCFiles.get(0).getRowKeyTypes());
-        assertEquals(fileInfo2.getRowKeyTypes(), readyForGCFiles.get(1).getRowKeyTypes());
-        assertEquals(fileInfo1.getPartitionId(), readyForGCFiles.get(0).getPartitionId());
-        assertEquals(fileInfo2.getPartitionId(), readyForGCFiles.get(1).getPartitionId());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(0).getFileStatus());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(1).getFileStatus());
+        assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
+        assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
+        assertThat(readyForGCFiles.get(0).getRowKeyTypes()).isEqualTo(fileInfo1.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(1).getRowKeyTypes()).isEqualTo(fileInfo2.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(0).getPartitionId()).isEqualTo(fileInfo1.getPartitionId());
+        assertThat(readyForGCFiles.get(1).getPartitionId()).isEqualTo(fileInfo2.getPartitionId());
+        assertThat(readyForGCFiles.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
+        assertThat(readyForGCFiles.get(1).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
         // - Check DynamoDBStateStore has correct active files
         List<FileInfo> activeFiles = dynamoStateStore.getActiveFiles()
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertEquals(1, activeFiles.size());
+        assertThat(activeFiles.size()).isEqualTo(1);
         FileInfo newFile = new FileInfo();
         newFile.setRowKeyTypes(new ByteArrayType());
         newFile.setFilename(outputFile);
@@ -523,7 +529,7 @@ public class CompactSortedFilesIT {
                 .get();
         newFile.setMaxRowKey(Key.create(maxKey));
         activeFiles.get(0).setLastStateStoreUpdateTime(null); // Set to null as we don't know what it should be
-        assertEquals(newFile, activeFiles.get(0));
+        assertThat(activeFiles.get(0)).isEqualTo(newFile);
     }
 
     @Test
@@ -602,7 +608,7 @@ public class CompactSortedFilesIT {
         }
         reader.close();
         List<Record> expectedResults = new ArrayList<>(data.values());
-        assertEquals(expectedResults, results);
+        assertThat(results).isEqualTo(expectedResults);
         // - Check DynamoDBStateStore has correct ready for GC files
         List<FileInfo> readyForGCFiles = new ArrayList<>();
         dynamoStateStore.getReadyForGCFiles().forEachRemaining(readyForGCFiles::add);
@@ -610,23 +616,23 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertEquals(2, readyForGCFiles.size());
+        assertThat(readyForGCFiles.size()).isEqualTo(2);
 
-        assertEquals(fileInfo1.getFilename(), readyForGCFiles.get(0).getFilename());
-        assertEquals(fileInfo2.getFilename(), readyForGCFiles.get(1).getFilename());
-        assertEquals(fileInfo1.getRowKeyTypes(), readyForGCFiles.get(0).getRowKeyTypes());
-        assertEquals(fileInfo2.getRowKeyTypes(), readyForGCFiles.get(1).getRowKeyTypes());
-        assertEquals(fileInfo1.getPartitionId(), readyForGCFiles.get(0).getPartitionId());
-        assertEquals(fileInfo2.getPartitionId(), readyForGCFiles.get(1).getPartitionId());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(0).getFileStatus());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(1).getFileStatus());
+        assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
+        assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
+        assertThat(readyForGCFiles.get(0).getRowKeyTypes()).isEqualTo(fileInfo1.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(1).getRowKeyTypes()).isEqualTo(fileInfo2.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(0).getPartitionId()).isEqualTo(fileInfo1.getPartitionId());
+        assertThat(readyForGCFiles.get(1).getPartitionId()).isEqualTo(fileInfo2.getPartitionId());
+        assertThat(readyForGCFiles.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
+        assertThat(readyForGCFiles.get(1).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
 
         // - Check DynamoDBStateStore has correct active files
         List<FileInfo> activeFiles = dynamoStateStore.getActiveFiles()
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertEquals(1, activeFiles.size());
+        assertThat(activeFiles.size()).isEqualTo(1);
         FileInfo newFile = new FileInfo();
         newFile.setRowKeyTypes(new LongType());
         newFile.setFilename(outputFile);
@@ -644,7 +650,7 @@ public class CompactSortedFilesIT {
                 .get();
         newFile.setMaxRowKey(Key.create(maxKey));
         activeFiles.get(0).setLastStateStoreUpdateTime(null); // Set to null as we don't know what it should be
-        assertEquals(newFile, activeFiles.get(0));
+        assertThat(activeFiles.get(0)).isEqualTo(newFile);
     }
 
     @Test
@@ -711,7 +717,7 @@ public class CompactSortedFilesIT {
         }
         reader.close();
         List<Record> expectedResults = new ArrayList<>(data.values());
-        assertEquals(expectedResults, results);
+        assertThat(results).isEqualTo(expectedResults);
         // - Check DynamoDBStateStore has correct ready for GC files
         List<FileInfo> readyForGCFiles = new ArrayList<>();
         dynamoStateStore.getReadyForGCFiles().forEachRemaining(readyForGCFiles::add);
@@ -719,22 +725,22 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertEquals(2, readyForGCFiles.size());
+        assertThat(readyForGCFiles.size()).isEqualTo(2);
 
-        assertEquals(fileInfo1.getFilename(), readyForGCFiles.get(0).getFilename());
-        assertEquals(fileInfo2.getFilename(), readyForGCFiles.get(1).getFilename());
-        assertEquals(fileInfo1.getRowKeyTypes(), readyForGCFiles.get(0).getRowKeyTypes());
-        assertEquals(fileInfo2.getRowKeyTypes(), readyForGCFiles.get(1).getRowKeyTypes());
-        assertEquals(fileInfo1.getPartitionId(), readyForGCFiles.get(0).getPartitionId());
-        assertEquals(fileInfo2.getPartitionId(), readyForGCFiles.get(1).getPartitionId());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(0).getFileStatus());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(1).getFileStatus());
+        assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
+        assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
+        assertThat(readyForGCFiles.get(0).getRowKeyTypes()).isEqualTo(fileInfo1.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(1).getRowKeyTypes()).isEqualTo(fileInfo2.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(0).getPartitionId()).isEqualTo(fileInfo1.getPartitionId());
+        assertThat(readyForGCFiles.get(1).getPartitionId()).isEqualTo(fileInfo2.getPartitionId());
+        assertThat(readyForGCFiles.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
+        assertThat(readyForGCFiles.get(1).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
         // - Check DynamoDBStateStore has correct active files
         List<FileInfo> activeFiles = dynamoStateStore.getActiveFiles()
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertEquals(1, activeFiles.size());
+        assertThat(activeFiles.size()).isEqualTo(1);
         FileInfo newFile = new FileInfo();
         newFile.setRowKeyTypes(new LongType());
         newFile.setFilename(outputFile);
@@ -744,7 +750,7 @@ public class CompactSortedFilesIT {
         newFile.setMinRowKey(null);
         newFile.setMaxRowKey(null);
         activeFiles.get(0).setLastStateStoreUpdateTime(null); // Set to null as we don't know what it should be
-        assertEquals(newFile, activeFiles.get(0));
+        assertThat(activeFiles.get(0)).isEqualTo(newFile);
     }
 
     @Test
@@ -814,7 +820,7 @@ public class CompactSortedFilesIT {
         rootPartition.setLeafPartition(false);
         Partition leftPartition = new Partition();
         leftPartition.setLeafPartition(true);
-        
+
         Range leftRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, 100L);
         leftPartition.setRegion(new Region(leftRange));
         leftPartition.setId(Long.MIN_VALUE + "---100");
@@ -866,11 +872,11 @@ public class CompactSortedFilesIT {
         List<Record> leftExpectedResults = data.values().stream()
                 .filter(r -> ((long) r.get("key")) < 100L)
                 .collect(Collectors.toList());
-        assertEquals(leftExpectedResults, leftResults);
+        assertThat(leftResults).isEqualTo(leftExpectedResults);
         List<Record> rightExpectedResults = data.values().stream()
                 .filter(r -> ((long) r.get("key")) >= 100L)
                 .collect(Collectors.toList());
-        assertEquals(rightExpectedResults, rightResults);
+        assertThat(rightResults).isEqualTo(rightExpectedResults);
         // - Check DynamoDBStateStore has correct ready for GC files
         List<FileInfo> readyForGCFiles = new ArrayList<>();
         dynamoStateStore.getReadyForGCFiles().forEachRemaining(readyForGCFiles::add);
@@ -878,22 +884,22 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertEquals(2, readyForGCFiles.size());
+        assertThat(readyForGCFiles.size()).isEqualTo(2);
 
-        assertEquals(fileInfo1.getFilename(), readyForGCFiles.get(0).getFilename());
-        assertEquals(fileInfo2.getFilename(), readyForGCFiles.get(1).getFilename());
-        assertEquals(fileInfo1.getRowKeyTypes(), readyForGCFiles.get(0).getRowKeyTypes());
-        assertEquals(fileInfo2.getRowKeyTypes(), readyForGCFiles.get(1).getRowKeyTypes());
-        assertEquals(fileInfo1.getPartitionId(), readyForGCFiles.get(0).getPartitionId());
-        assertEquals(fileInfo2.getPartitionId(), readyForGCFiles.get(1).getPartitionId());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(0).getFileStatus());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(1).getFileStatus());
+        assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
+        assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
+        assertThat(readyForGCFiles.get(0).getRowKeyTypes()).isEqualTo(fileInfo1.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(1).getRowKeyTypes()).isEqualTo(fileInfo2.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(0).getPartitionId()).isEqualTo(fileInfo1.getPartitionId());
+        assertThat(readyForGCFiles.get(1).getPartitionId()).isEqualTo(fileInfo2.getPartitionId());
+        assertThat(readyForGCFiles.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
+        assertThat(readyForGCFiles.get(1).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
         // - Check DynamoDBStateStore has correct active files
         List<FileInfo> activeFiles = dynamoStateStore.getActiveFiles()
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertEquals(2, activeFiles.size());
+        assertThat(activeFiles.size()).isEqualTo(2);
 
         FileInfo leftNewFile = new FileInfo();
         leftNewFile.setRowKeyTypes(new LongType());
@@ -912,7 +918,7 @@ public class CompactSortedFilesIT {
                 .get();
         leftNewFile.setMaxRowKey(Key.create(maxKeyLeft));
         activeFiles.get(0).setLastStateStoreUpdateTime(null); // Set to null as we don't know what it should be
-        assertEquals(leftNewFile, activeFiles.get(0));
+        assertThat(activeFiles.get(0)).isEqualTo(leftNewFile);
         FileInfo rightNewFile = new FileInfo();
         rightNewFile.setRowKeyTypes(new LongType());
         rightNewFile.setFilename(rightOutputFile);
@@ -930,7 +936,7 @@ public class CompactSortedFilesIT {
                 .get();
         rightNewFile.setMaxRowKey(Key.create(maxKeyRight));
         activeFiles.get(1).setLastStateStoreUpdateTime(null); // Set to null as we don't know what it should be
-        assertEquals(rightNewFile, activeFiles.get(1));
+        assertThat(activeFiles.get(1)).isEqualTo(rightNewFile);
     }
 
     @Test
@@ -1065,9 +1071,9 @@ public class CompactSortedFilesIT {
         }
         reader.close();
         List<Record> leftExpectedResults = leftPartitionRecords;
-        assertEquals(leftExpectedResults, leftResults);
+        assertThat(leftResults).isEqualTo(leftExpectedResults);
         List<Record> rightExpectedResults = rightPartitionRecords;
-        assertEquals(rightExpectedResults, rightResults);
+        assertThat(rightResults).isEqualTo(rightExpectedResults);
         // - Check DynamoDBStateStore has correct ready for GC files
         List<FileInfo> readyForGCFiles = new ArrayList<>();
         dynamoStateStore.getReadyForGCFiles().forEachRemaining(readyForGCFiles::add);
@@ -1075,22 +1081,22 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertEquals(2, readyForGCFiles.size());
+        assertThat(readyForGCFiles.size()).isEqualTo(2);
 
-        assertEquals(fileInfo1.getFilename(), readyForGCFiles.get(0).getFilename());
-        assertEquals(fileInfo2.getFilename(), readyForGCFiles.get(1).getFilename());
-        assertEquals(fileInfo1.getRowKeyTypes(), readyForGCFiles.get(0).getRowKeyTypes());
-        assertEquals(fileInfo2.getRowKeyTypes(), readyForGCFiles.get(1).getRowKeyTypes());
-        assertEquals(fileInfo1.getPartitionId(), readyForGCFiles.get(0).getPartitionId());
-        assertEquals(fileInfo2.getPartitionId(), readyForGCFiles.get(1).getPartitionId());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(0).getFileStatus());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(1).getFileStatus());
+        assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
+        assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
+        assertThat(readyForGCFiles.get(0).getRowKeyTypes()).isEqualTo(fileInfo1.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(1).getRowKeyTypes()).isEqualTo(fileInfo2.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(0).getPartitionId()).isEqualTo(fileInfo1.getPartitionId());
+        assertThat(readyForGCFiles.get(1).getPartitionId()).isEqualTo(fileInfo2.getPartitionId());
+        assertThat(readyForGCFiles.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
+        assertThat(readyForGCFiles.get(1).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
         // - Check DynamoDBStateStore has correct active files
         List<FileInfo> activeFiles = dynamoStateStore.getActiveFiles()
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertEquals(2, activeFiles.size());
+        assertThat(activeFiles.size()).isEqualTo(2);
         FileInfo leftNewFile = new FileInfo();
         leftNewFile.setRowKeyTypes(new LongType(), new StringType());
         leftNewFile.setFilename(leftOutputFile);
@@ -1100,7 +1106,7 @@ public class CompactSortedFilesIT {
         leftNewFile.setMinRowKey(Key.create(leftExpectedResults.get(0).get(schema.getRowKeyFieldNames().get(0))));
         leftNewFile.setMaxRowKey(Key.create(leftExpectedResults.get(leftExpectedResults.size() - 1).get(schema.getRowKeyFieldNames().get(0))));
         activeFiles.get(0).setLastStateStoreUpdateTime(null); // Set to null as we don't know what it should be
-        assertEquals(leftNewFile, activeFiles.get(0));
+        assertThat(activeFiles.get(0)).isEqualTo(leftNewFile);
         FileInfo rightNewFile = new FileInfo();
         rightNewFile.setRowKeyTypes(new LongType(), new StringType());
         rightNewFile.setFilename(rightOutputFile);
@@ -1110,7 +1116,7 @@ public class CompactSortedFilesIT {
         rightNewFile.setMinRowKey(Key.create(rightExpectedResults.get(0).get(schema.getRowKeyFieldNames().get(0))));
         rightNewFile.setMaxRowKey(Key.create(rightExpectedResults.get(rightExpectedResults.size() - 1).get(schema.getRowKeyFieldNames().get(0))));
         activeFiles.get(1).setLastStateStoreUpdateTime(null); // Set to null as we don't know what it should be
-        assertEquals(rightNewFile, activeFiles.get(1));
+        assertThat(activeFiles.get(1)).isEqualTo(rightNewFile);
     }
 
     @Test
@@ -1239,15 +1245,15 @@ public class CompactSortedFilesIT {
         }
         reader.close();
         List<Record> rightResults = new ArrayList<>();
-       reader = new ParquetReaderIterator(new ParquetRecordReader(new Path(rightOutputFile), schema));
+        reader = new ParquetReaderIterator(new ParquetRecordReader(new Path(rightOutputFile), schema));
         while (reader.hasNext()) {
             rightResults.add(new Record(reader.next()));
         }
         reader.close();
         List<Record> leftExpectedResults = leftPartitionRecords;
-        assertEquals(leftExpectedResults, leftResults);
+        assertThat(leftResults).isEqualTo(leftExpectedResults);
         List<Record> rightExpectedResults = rightPartitionRecords;
-        assertEquals(rightExpectedResults, rightResults);
+        assertThat(rightResults).isEqualTo(rightExpectedResults);
         // - Check DynamoDBStateStore has correct ready for GC files
         List<FileInfo> readyForGCFiles = new ArrayList<>();
         dynamoStateStore.getReadyForGCFiles().forEachRemaining(readyForGCFiles::add);
@@ -1255,22 +1261,22 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertEquals(2, readyForGCFiles.size());
+        assertThat(readyForGCFiles.size()).isEqualTo(2);
 
-        assertEquals(fileInfo1.getFilename(), readyForGCFiles.get(0).getFilename());
-        assertEquals(fileInfo2.getFilename(), readyForGCFiles.get(1).getFilename());
-        assertEquals(fileInfo1.getRowKeyTypes(), readyForGCFiles.get(0).getRowKeyTypes());
-        assertEquals(fileInfo2.getRowKeyTypes(), readyForGCFiles.get(1).getRowKeyTypes());
-        assertEquals(fileInfo1.getPartitionId(), readyForGCFiles.get(0).getPartitionId());
-        assertEquals(fileInfo2.getPartitionId(), readyForGCFiles.get(1).getPartitionId());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(0).getFileStatus());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(1).getFileStatus());
+        assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
+        assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
+        assertThat(readyForGCFiles.get(0).getRowKeyTypes()).isEqualTo(fileInfo1.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(1).getRowKeyTypes()).isEqualTo(fileInfo2.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(0).getPartitionId()).isEqualTo(fileInfo1.getPartitionId());
+        assertThat(readyForGCFiles.get(1).getPartitionId()).isEqualTo(fileInfo2.getPartitionId());
+        assertThat(readyForGCFiles.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
+        assertThat(readyForGCFiles.get(1).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
         // - Check DynamoDBStateStore has correct active files
         List<FileInfo> activeFiles = dynamoStateStore.getActiveFiles()
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertEquals(2, activeFiles.size());
+        assertThat(activeFiles.size()).isEqualTo(2);
         FileInfo leftNewFile = new FileInfo();
         leftNewFile.setRowKeyTypes(new LongType(), new StringType());
         leftNewFile.setFilename(leftOutputFile);
@@ -1280,7 +1286,7 @@ public class CompactSortedFilesIT {
         leftNewFile.setMinRowKey(Key.create(leftExpectedResults.get(0).get(schema.getRowKeyFieldNames().get(0))));
         leftNewFile.setMaxRowKey(Key.create(leftExpectedResults.get(leftExpectedResults.size() - 1).get(schema.getRowKeyFieldNames().get(0))));
         activeFiles.get(0).setLastStateStoreUpdateTime(null); // Set to null as we don't know what it should be
-        assertEquals(leftNewFile, activeFiles.get(0));
+        assertThat(activeFiles.get(0)).isEqualTo(leftNewFile);
         FileInfo rightNewFile = new FileInfo();
         rightNewFile.setRowKeyTypes(new LongType(), new StringType());
         rightNewFile.setFilename(rightOutputFile);
@@ -1290,7 +1296,7 @@ public class CompactSortedFilesIT {
         rightNewFile.setMinRowKey(Key.create(rightExpectedResults.get(0).get(schema.getRowKeyFieldNames().get(0))));
         rightNewFile.setMaxRowKey(Key.create(rightExpectedResults.get(rightExpectedResults.size() - 1).get(schema.getRowKeyFieldNames().get(0))));
         activeFiles.get(1).setLastStateStoreUpdateTime(null); // Set to null as we don't know what it should be
-        assertEquals(rightNewFile, activeFiles.get(1));
+        assertThat(activeFiles.get(1)).isEqualTo(rightNewFile);
     }
 
     @Test
@@ -1412,8 +1418,8 @@ public class CompactSortedFilesIT {
         List<Record> leftExpectedResults = data.values().stream()
                 .filter(r -> ((long) r.get("key")) < 100L)
                 .collect(Collectors.toList());
-        assertEquals(leftExpectedResults, leftResults);
-        assertEquals(Collections.emptyList(), rightResults);
+        assertThat(leftResults).isEqualTo(leftExpectedResults);
+        assertThat(rightResults).isEqualTo(Collections.emptyList());
         // - Check DynamoDBStateStore has correct ready for GC files
         List<FileInfo> readyForGCFiles = new ArrayList<>();
         dynamoStateStore.getReadyForGCFiles().forEachRemaining(readyForGCFiles::add);
@@ -1421,22 +1427,22 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertEquals(2, readyForGCFiles.size());
+        assertThat(readyForGCFiles.size()).isEqualTo(2);
 
-        assertEquals(fileInfo1.getFilename(), readyForGCFiles.get(0).getFilename());
-        assertEquals(fileInfo2.getFilename(), readyForGCFiles.get(1).getFilename());
-        assertEquals(fileInfo1.getRowKeyTypes(), readyForGCFiles.get(0).getRowKeyTypes());
-        assertEquals(fileInfo2.getRowKeyTypes(), readyForGCFiles.get(1).getRowKeyTypes());
-        assertEquals(fileInfo1.getPartitionId(), readyForGCFiles.get(0).getPartitionId());
-        assertEquals(fileInfo2.getPartitionId(), readyForGCFiles.get(1).getPartitionId());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(0).getFileStatus());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(1).getFileStatus());
+        assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
+        assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
+        assertThat(readyForGCFiles.get(0).getRowKeyTypes()).isEqualTo(fileInfo1.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(1).getRowKeyTypes()).isEqualTo(fileInfo2.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(0).getPartitionId()).isEqualTo(fileInfo1.getPartitionId());
+        assertThat(readyForGCFiles.get(1).getPartitionId()).isEqualTo(fileInfo2.getPartitionId());
+        assertThat(readyForGCFiles.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
+        assertThat(readyForGCFiles.get(1).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
         // - Check DynamoDBStateStore has correct active files
         List<FileInfo> activeFiles = dynamoStateStore.getActiveFiles()
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertEquals(2, activeFiles.size());
+        assertThat(activeFiles.size()).isEqualTo(2);
 
         FileInfo leftNewFile = new FileInfo();
         leftNewFile.setRowKeyTypes(new LongType());
@@ -1455,7 +1461,7 @@ public class CompactSortedFilesIT {
                 .get();
         leftNewFile.setMaxRowKey(Key.create(maxKeyLeft));
         activeFiles.get(0).setLastStateStoreUpdateTime(null); // Set to null as we don't know what it should be
-        assertEquals(leftNewFile, activeFiles.get(0));
+        assertThat(activeFiles.get(0)).isEqualTo(leftNewFile);
         FileInfo rightNewFile = new FileInfo();
         rightNewFile.setRowKeyTypes(new LongType());
         rightNewFile.setFilename(rightOutputFile);
@@ -1465,7 +1471,7 @@ public class CompactSortedFilesIT {
         rightNewFile.setMinRowKey(null);
         rightNewFile.setMaxRowKey(null);
         activeFiles.get(1).setLastStateStoreUpdateTime(null); // Set to null as we don't know what it should be
-        assertEquals(rightNewFile, activeFiles.get(1));
+        assertThat(activeFiles.get(1)).isEqualTo(rightNewFile);
     }
 
     @Test
@@ -1560,7 +1566,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .filter(r -> System.currentTimeMillis() - ((long) r.get("timestamp")) < 1000000)
                 .collect(Collectors.toList());
-        assertEquals(expectedResults, results);
+        assertThat(results).isEqualTo(expectedResults);
         // - Check DynamoDBStateStore has correct ready for GC files
         List<FileInfo> readyForGCFiles = new ArrayList<>();
         dynamoStateStore.getReadyForGCFiles().forEachRemaining(readyForGCFiles::add);
@@ -1568,22 +1574,23 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertEquals(2, readyForGCFiles.size());
+        assertThat(readyForGCFiles.size()).isEqualTo(2);
 
-        assertEquals(fileInfo1.getFilename(), readyForGCFiles.get(0).getFilename());
-        assertEquals(fileInfo2.getFilename(), readyForGCFiles.get(1).getFilename());
-        assertEquals(fileInfo1.getRowKeyTypes(), readyForGCFiles.get(0).getRowKeyTypes());
-        assertEquals(fileInfo2.getRowKeyTypes(), readyForGCFiles.get(1).getRowKeyTypes());
-        assertEquals(fileInfo1.getPartitionId(), readyForGCFiles.get(0).getPartitionId());
-        assertEquals(fileInfo2.getPartitionId(), readyForGCFiles.get(1).getPartitionId());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(0).getFileStatus());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(1).getFileStatus());
+        assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
+        assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
+        assertThat(readyForGCFiles.get(0).getRowKeyTypes()).isEqualTo(fileInfo1.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(1).getRowKeyTypes()).isEqualTo(fileInfo2.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(0).getPartitionId()).isEqualTo(fileInfo1.getPartitionId());
+        assertThat(readyForGCFiles.get(1).getPartitionId()).isEqualTo(fileInfo2.getPartitionId());
+        assertThat(readyForGCFiles.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
+        assertThat(readyForGCFiles.get(1).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
         // - Check DynamoDBStateStore has correct active files
         List<FileInfo> activeFiles = dynamoStateStore.getActiveFiles()
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
-                .collect(Collectors.toList());;
-        assertEquals(1, activeFiles.size());
+                .collect(Collectors.toList());
+        ;
+        assertThat(activeFiles.size()).isEqualTo(1);
         FileInfo newFile = new FileInfo();
         newFile.setRowKeyTypes(new LongType());
         newFile.setFilename(outputFile);
@@ -1601,7 +1608,7 @@ public class CompactSortedFilesIT {
                 .get();
         newFile.setMaxRowKey(Key.create(maxKey));
         activeFiles.get(0).setLastStateStoreUpdateTime(null); // Set to null as we don't know what it should be
-        assertEquals(newFile, activeFiles.get(0));
+        assertThat(activeFiles.get(0)).isEqualTo(newFile);
     }
 
     @Test
@@ -1725,12 +1732,12 @@ public class CompactSortedFilesIT {
                 .filter(r -> ((long) r.get("key")) < 100L)
                 .filter(r -> System.currentTimeMillis() - ((long) r.get("timestamp")) < 1000000)
                 .collect(Collectors.toList());
-        assertEquals(leftExpectedResults, leftResults);
+        assertThat(leftResults).isEqualTo(leftExpectedResults);
         List<Record> rightExpectedResults = data.values().stream()
                 .filter(r -> ((long) r.get("key")) >= 100L)
                 .filter(r -> System.currentTimeMillis() - ((long) r.get("timestamp")) < 1000000)
                 .collect(Collectors.toList());
-        assertEquals(rightExpectedResults, rightResults);
+        assertThat(rightResults).isEqualTo(rightExpectedResults);
         // - Check DynamoDBStateStore has correct ready for GC files
         List<FileInfo> readyForGCFiles = new ArrayList<>();
         dynamoStateStore.getReadyForGCFiles().forEachRemaining(readyForGCFiles::add);
@@ -1738,22 +1745,22 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertEquals(2, readyForGCFiles.size());
+        assertThat(readyForGCFiles.size()).isEqualTo(2);
 
-        assertEquals(fileInfo1.getFilename(), readyForGCFiles.get(0).getFilename());
-        assertEquals(fileInfo2.getFilename(), readyForGCFiles.get(1).getFilename());
-        assertEquals(fileInfo1.getRowKeyTypes(), readyForGCFiles.get(0).getRowKeyTypes());
-        assertEquals(fileInfo2.getRowKeyTypes(), readyForGCFiles.get(1).getRowKeyTypes());
-        assertEquals(fileInfo1.getPartitionId(), readyForGCFiles.get(0).getPartitionId());
-        assertEquals(fileInfo2.getPartitionId(), readyForGCFiles.get(1).getPartitionId());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(0).getFileStatus());
-        assertEquals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, readyForGCFiles.get(1).getFileStatus());
+        assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
+        assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
+        assertThat(readyForGCFiles.get(0).getRowKeyTypes()).isEqualTo(fileInfo1.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(1).getRowKeyTypes()).isEqualTo(fileInfo2.getRowKeyTypes());
+        assertThat(readyForGCFiles.get(0).getPartitionId()).isEqualTo(fileInfo1.getPartitionId());
+        assertThat(readyForGCFiles.get(1).getPartitionId()).isEqualTo(fileInfo2.getPartitionId());
+        assertThat(readyForGCFiles.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
+        assertThat(readyForGCFiles.get(1).getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
         // - Check DynamoDBStateStore has correct active files
         List<FileInfo> activeFiles = dynamoStateStore.getActiveFiles()
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertEquals(2, activeFiles.size());
+        assertThat(activeFiles.size()).isEqualTo(2);
 
         FileInfo leftNewFile = new FileInfo();
         leftNewFile.setRowKeyTypes(new LongType());
@@ -1772,7 +1779,7 @@ public class CompactSortedFilesIT {
                 .get();
         leftNewFile.setMaxRowKey(Key.create(maxKeyLeft));
         activeFiles.get(0).setLastStateStoreUpdateTime(null); // Set to null as we don't know what it should be
-        assertEquals(leftNewFile, activeFiles.get(0));
+        assertThat(activeFiles.get(0)).isEqualTo(leftNewFile);
         FileInfo rightNewFile = new FileInfo();
         rightNewFile.setRowKeyTypes(new LongType());
         rightNewFile.setFilename(rightOutputFile);
@@ -1790,6 +1797,6 @@ public class CompactSortedFilesIT {
                 .get();
         rightNewFile.setMaxRowKey(Key.create(maxKeyRight));
         activeFiles.get(1).setLastStateStoreUpdateTime(null); // Set to null as we don't know what it should be
-        assertEquals(rightNewFile, activeFiles.get(1));
+        assertThat(activeFiles.get(1)).isEqualTo(rightNewFile);
     }
 }

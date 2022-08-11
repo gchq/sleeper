@@ -15,6 +15,7 @@
  */
 package sleeper.bulkimport.job.runner;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -90,7 +91,7 @@ public class FileWritingIteratorTest {
                 new Configuration());
 
         // Then
-        assertFalse(fileWritingIterator.hasNext());
+        assertThat(fileWritingIterator.hasNext()).isFalse();
     }
 
     @Test
@@ -109,7 +110,7 @@ public class FileWritingIteratorTest {
                 new Configuration());
 
         // Then
-        assertTrue(fileWritingIterator.hasNext());
+        assertThat(fileWritingIterator.hasNext()).isTrue();
     }
 
     @Test
@@ -134,11 +135,11 @@ public class FileWritingIteratorTest {
         }
 
         // Then
-        assertEquals(2, rows.size());
-        assertEquals("a", rows.get(0).getString(0));
-        assertEquals(2L, rows.get(0).getLong(2));
-        assertEquals("b", rows.get(1).getString(0));
-        assertEquals(2L, rows.get(1).getLong(2));
+        assertThat(rows.size()).isEqualTo(2);
+        assertThat(rows.get(0).getString(0)).isEqualTo("a");
+        assertThat(rows.get(0).getLong(2)).isEqualTo(2L);
+        assertThat(rows.get(1).getString(0)).isEqualTo("b");
+        assertThat(rows.get(1).getLong(2)).isEqualTo(2L);
     }
 
     @Test
@@ -226,7 +227,7 @@ public class FileWritingIteratorTest {
             }
             reader.close();
 
-            assertEquals(expected, records);
+            assertThat(records).isEqualTo(expected);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }

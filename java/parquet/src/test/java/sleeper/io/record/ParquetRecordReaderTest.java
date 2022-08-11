@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -57,7 +58,7 @@ public class ParquetRecordReaderTest {
         schema.setValueFields(new Field("column2", new StringType()));
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
-            .build();
+                .build();
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", 5);
         map1.put("column2", "B");
@@ -77,11 +78,11 @@ public class ParquetRecordReaderTest {
         Record readRecord3 = reader.read();
 
         // Then
-        assertEquals(record1, readRecord1);
-        assertEquals(2, readRecord1.getKeys().size());
-        assertEquals(record2, readRecord2);
-        assertEquals(2, readRecord2.getKeys().size());
-        assertNull(readRecord3);
+        assertThat(readRecord1).isEqualTo(record1);
+        assertThat(readRecord1.getKeys().size()).isEqualTo(2);
+        assertThat(readRecord2).isEqualTo(record2);
+        assertThat(readRecord2.getKeys().size()).isEqualTo(2);
+        assertThat(readRecord3).isNull();
     }
 
     @Test
@@ -92,7 +93,7 @@ public class ParquetRecordReaderTest {
         schema.setValueFields(new Field("column2", new StringType()));
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
-            .build();
+                .build();
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", new byte[]{1, 2, 3});
         map1.put("column2", "B");
@@ -113,11 +114,11 @@ public class ParquetRecordReaderTest {
 
         // Then
         //  - Replace byte array field in record1 with wrapped version so that equals works
-        assertEquals(record1, readRecord1);
-        assertEquals(2, readRecord1.getKeys().size());
-        assertEquals(record2, readRecord2);
-        assertEquals(2, readRecord2.getKeys().size());
-        assertNull(readRecord3);
+        assertThat(readRecord1).isEqualTo(record1);
+        assertThat(readRecord1.getKeys().size()).isEqualTo(2);
+        assertThat(readRecord2).isEqualTo(record2);
+        assertThat(readRecord2.getKeys().size()).isEqualTo(2);
+        assertThat(readRecord3).isNull();
     }
 
     @Test
@@ -156,11 +157,11 @@ public class ParquetRecordReaderTest {
         Record readRecord3 = reader.read();
 
         // Then
-        assertEquals(record1, readRecord1);
-        assertEquals(3, readRecord1.getKeys().size());
-        assertEquals(record2, readRecord2);
-        assertEquals(3, readRecord2.getKeys().size());
-        assertNull(readRecord3);
+        assertThat(readRecord1).isEqualTo(record1);
+        assertThat(readRecord1.getKeys().size()).isEqualTo(3);
+        assertThat(readRecord2).isEqualTo(record2);
+        assertThat(readRecord2.getKeys().size()).isEqualTo(3);
+        assertThat(readRecord3).isNull();
     }
 
     @Test
@@ -199,11 +200,11 @@ public class ParquetRecordReaderTest {
         Record readRecord3 = reader.read();
 
         // Then
-        assertEquals(record1, readRecord1);
-        assertEquals(3, readRecord1.getKeys().size());
-        assertEquals(record2, readRecord2);
-        assertEquals(3, readRecord2.getKeys().size());
-        assertNull(readRecord3);
+        assertThat(readRecord1).isEqualTo(record1);
+        assertThat(readRecord1.getKeys().size()).isEqualTo(3);
+        assertThat(readRecord2).isEqualTo(record2);
+        assertThat(readRecord2.getKeys().size()).isEqualTo(3);
+        assertThat(readRecord3).isNull();
     }
 
     @Test
@@ -242,11 +243,11 @@ public class ParquetRecordReaderTest {
         Record readRecord3 = reader.read();
 
         // Then
-        assertEquals(record1, readRecord1);
-        assertEquals(3, readRecord1.getKeys().size());
-        assertEquals(record2, readRecord2);
-        assertEquals(3, readRecord2.getKeys().size());
-        assertNull(readRecord3);
+        assertThat(readRecord1).isEqualTo(record1);
+        assertThat(readRecord1.getKeys().size()).isEqualTo(3);
+        assertThat(readRecord2).isEqualTo(record2);
+        assertThat(readRecord2.getKeys().size()).isEqualTo(3);
+        assertThat(readRecord3).isNull();
     }
 
     @Test
@@ -285,11 +286,11 @@ public class ParquetRecordReaderTest {
         Record readRecord3 = reader.read();
 
         // Then
-        assertEquals(record1, readRecord1);
-        assertEquals(3, readRecord1.getKeys().size());
-        assertEquals(record2, readRecord2);
-        assertEquals(3, readRecord2.getKeys().size());
-        assertNull(readRecord3);
+        assertThat(readRecord1).isEqualTo(record1);
+        assertThat(readRecord1.getKeys().size()).isEqualTo(3);
+        assertThat(readRecord2).isEqualTo(record2);
+        assertThat(readRecord2.getKeys().size()).isEqualTo(3);
+        assertThat(readRecord3).isNull();
     }
 
     @Test
@@ -300,7 +301,7 @@ public class ParquetRecordReaderTest {
         writeSchema.setValueFields(new Field("column2", new StringType()));
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(writeSchema), writeSchema)
-            .build();
+                .build();
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", "A");
         map1.put("column2", "B");
@@ -322,10 +323,10 @@ public class ParquetRecordReaderTest {
         Record readRecord3 = reader.read();
 
         // Then
-        assertEquals("A", readRecord1.get("column1"));
-        assertEquals(1, readRecord1.getKeys().size());
-        assertEquals("C", readRecord2.get("column1"));
-        assertEquals(1, readRecord2.getKeys().size());
-        assertNull(readRecord3);
+        assertThat(readRecord1.get("column1")).isEqualTo("A");
+        assertThat(readRecord1.getKeys().size()).isEqualTo(1);
+        assertThat(readRecord2.get("column1")).isEqualTo("C");
+        assertThat(readRecord2.getKeys().size()).isEqualTo(1);
+        assertThat(readRecord3).isNull();
     }
 }
