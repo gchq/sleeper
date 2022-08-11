@@ -43,9 +43,9 @@ public class KeyPairUtilTest {
 
     @Test
     public void canWritePrivateKeyFile() throws Exception {
-        Path expectedPath = Paths.get("test.pem");
+        Path expectedPath = Paths.get("WriteKey.pem");
         try {
-            KeyPairUtil.writePrivateToFile(KeyPairUtil.generate(), "test.pem");
+            KeyPairUtil.writePrivateToFile(KeyPairUtil.generate(), "WriteKey.pem");
             assertThat(Files.getPosixFilePermissions(expectedPath))
                     .containsExactly(PosixFilePermission.OWNER_READ);
         } finally {
@@ -55,10 +55,10 @@ public class KeyPairUtilTest {
 
     @Test
     public void canOverwritePrivateKeyFile() throws Exception {
-        Path path = Paths.get("test.pem");
+        Path path = Paths.get("OverwriteKey.pem");
         Files.createFile(path);
         try {
-            KeyPairUtil.writePrivateToFile(KeyPairUtil.generate(), "test.pem");
+            KeyPairUtil.writePrivateToFile(KeyPairUtil.generate(), "OverwriteKey.pem");
             assertThat(Files.getPosixFilePermissions(path))
                     .containsExactly(PosixFilePermission.OWNER_READ);
         } finally {
