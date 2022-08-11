@@ -19,28 +19,22 @@ import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClient;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.stepfunctions.AWSStepFunctionsClient;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.utility.DockerImageName;
+import sleeper.core.CommonTestConstants;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Map;
 
-import org.junit.After;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.*;
-
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
-
-import static org.mockito.Mockito.*;
-
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
-
+import static org.junit.Assert.assertThrows;
+import static org.mockito.Mockito.mock;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-
-import sleeper.core.CommonTestConstants;
 
 public class ExecutorFactoryIT {
     @ClassRule
@@ -92,8 +86,7 @@ public class ExecutorFactoryIT {
         Executor executor = executorFactory.createExecutor();
 
         // Then
-        assertThat(executor).isNotNull();
-        assertThat(executor instanceof EmrExecutor).isTrue();
+        assertThat(executor).isInstanceOf(EmrExecutor.class);
 
         s3Client.shutdown();
     }
@@ -112,8 +105,7 @@ public class ExecutorFactoryIT {
         Executor executor = executorFactory.createExecutor();
 
         // Then
-        assertThat(executor).isNotNull();
-        assertThat(executor instanceof StateMachineExecutor).isTrue();
+        assertThat(executor).isInstanceOf(StateMachineExecutor.class);
 
         s3Client.shutdown();
     }

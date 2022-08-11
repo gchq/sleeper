@@ -19,11 +19,7 @@ import com.amazonaws.athena.connector.lambda.data.Block;
 import com.amazonaws.athena.connector.lambda.data.BlockAllocatorImpl;
 import com.amazonaws.athena.connector.lambda.domain.Split;
 import com.amazonaws.athena.connector.lambda.domain.TableName;
-import com.amazonaws.athena.connector.lambda.domain.predicate.Constraints;
-import com.amazonaws.athena.connector.lambda.domain.predicate.EquatableValueSet;
-import com.amazonaws.athena.connector.lambda.domain.predicate.Range;
-import com.amazonaws.athena.connector.lambda.domain.predicate.SortedRangeSet;
-import com.amazonaws.athena.connector.lambda.domain.predicate.ValueSet;
+import com.amazonaws.athena.connector.lambda.domain.predicate.*;
 import com.amazonaws.athena.connector.lambda.domain.spill.S3SpillLocation;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsRequest;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsResponse;
@@ -50,10 +46,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -103,7 +95,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertThat(response instanceof ReadRecordsResponse).isTrue();
+        assertThat(response).isInstanceOf(ReadRecordsResponse.class);
         assertThat(((ReadRecordsResponse) response).getRecordCount()).isEqualTo(0);
     }
 
@@ -144,7 +136,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertThat(response instanceof ReadRecordsResponse).isTrue();
+        assertThat(response).isInstanceOf(ReadRecordsResponse.class);
         assertThat(((ReadRecordsResponse) response).getRecordCount()).isEqualTo(0);
     }
 
@@ -196,7 +188,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertThat(response instanceof ReadRecordsResponse).isTrue();
+        assertThat(response).isInstanceOf(ReadRecordsResponse.class);
         assertThat(((ReadRecordsResponse) response).getRecordCount()).isEqualTo(61);
     }
 
@@ -244,7 +236,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertThat(response instanceof ReadRecordsResponse).isTrue();
+        assertThat(response).isInstanceOf(ReadRecordsResponse.class);
         assertThat(((ReadRecordsResponse) response).getRecordCount()).isEqualTo(6);
         Block records = ((ReadRecordsResponse) response).getRecords();
         assertFieldContainedValue(records, 0, "str", new Text("2018-01-05"));
@@ -290,7 +282,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         long numberOfRecords = parquetReaderIterator.getNumberOfRecordsRead();
 
-        assertThat(response instanceof ReadRecordsResponse).isTrue();
+        assertThat(response).isInstanceOf(ReadRecordsResponse.class);
         assertThat(((ReadRecordsResponse) response).getRecordCount()).isEqualTo(numberOfRecords);
     }
 
@@ -348,7 +340,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertThat(response instanceof ReadRecordsResponse).isTrue();
+        assertThat(response).isInstanceOf(ReadRecordsResponse.class);
         assertThat(((ReadRecordsResponse) response).getRecordCount()).isEqualTo(28);
         Block records = ((ReadRecordsResponse) response).getRecords();
         // Just to show the difference

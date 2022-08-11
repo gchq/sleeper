@@ -19,11 +19,7 @@ import com.amazonaws.athena.connector.lambda.data.Block;
 import com.amazonaws.athena.connector.lambda.data.BlockAllocatorImpl;
 import com.amazonaws.athena.connector.lambda.domain.Split;
 import com.amazonaws.athena.connector.lambda.domain.TableName;
-import com.amazonaws.athena.connector.lambda.domain.predicate.Constraints;
-import com.amazonaws.athena.connector.lambda.domain.predicate.EquatableValueSet;
-import com.amazonaws.athena.connector.lambda.domain.predicate.Range;
-import com.amazonaws.athena.connector.lambda.domain.predicate.SortedRangeSet;
-import com.amazonaws.athena.connector.lambda.domain.predicate.ValueSet;
+import com.amazonaws.athena.connector.lambda.domain.predicate.*;
 import com.amazonaws.athena.connector.lambda.domain.spill.S3SpillLocation;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsRequest;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsResponse;
@@ -51,22 +47,12 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.Month;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
-import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.MAX_ROW_KEY_PREFIX;
-import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.MIN_ROW_KEY_PREFIX;
-import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.RELEVANT_FILES_FIELD;
+import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.*;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -127,7 +113,7 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertThat(response instanceof ReadRecordsResponse).isTrue();
+        assertThat(response).isInstanceOf(ReadRecordsResponse.class);
         assertThat(((ReadRecordsResponse) response).getRecordCount()).isEqualTo(0);
     }
 
@@ -185,7 +171,7 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertThat(rawResponse instanceof ReadRecordsResponse).isTrue();
+        assertThat(rawResponse).isInstanceOf(ReadRecordsResponse.class);
         ReadRecordsResponse response = (ReadRecordsResponse) rawResponse;
         assertThat(response.getRecordCount()).isEqualTo(1);
         Block records = response.getRecords();
@@ -244,7 +230,7 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertThat(rawResponse instanceof ReadRecordsResponse).isTrue();
+        assertThat(rawResponse).isInstanceOf(ReadRecordsResponse.class);
         ReadRecordsResponse response = (ReadRecordsResponse) rawResponse;
         assertThat(response.getRecordCount()).isEqualTo(30);
         Block records = response.getRecords();
@@ -289,7 +275,7 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertThat(rawResponse instanceof ReadRecordsResponse).isTrue();
+        assertThat(rawResponse).isInstanceOf(ReadRecordsResponse.class);
         ReadRecordsResponse response = (ReadRecordsResponse) rawResponse;
         assertThat(response.getRecordCount()).isEqualTo(0);
     }
@@ -334,7 +320,7 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertThat(rawResponse instanceof ReadRecordsResponse).isTrue();
+        assertThat(rawResponse).isInstanceOf(ReadRecordsResponse.class);
         ReadRecordsResponse response = (ReadRecordsResponse) rawResponse;
         assertThat(response.getRecordCount()).isEqualTo(0);
     }
@@ -395,7 +381,7 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertThat(rawResponse instanceof ReadRecordsResponse).isTrue();
+        assertThat(rawResponse).isInstanceOf(ReadRecordsResponse.class);
         ReadRecordsResponse response = (ReadRecordsResponse) rawResponse;
         assertThat(response.getRecordCount()).isEqualTo(3);
 
