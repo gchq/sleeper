@@ -28,13 +28,13 @@ public class VpcParameter {
         this.vpcIdKey = vpcIdKey;
     }
 
-    public IVpc getOrDefault(AppContext context, Construct scope, IVpc defaultVpc) {
+    IVpc getOrDefault(AppContext context, Construct scope, IVpc defaultVpc) {
         return context.getStringOpt(vpcIdKey)
                 .map(vpcId -> Vpc.fromLookup(scope, "Vpc", VpcLookupOptions.builder().vpcId(vpcId).build()))
                 .orElse(defaultVpc);
     }
 
-    public static VpcParameter vpcIdKey(String vpcIdKey) {
+    static VpcParameter vpcIdKey(String vpcIdKey) {
         return new VpcParameter(vpcIdKey);
     }
 }

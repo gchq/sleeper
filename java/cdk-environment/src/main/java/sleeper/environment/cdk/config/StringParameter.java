@@ -25,11 +25,11 @@ public class StringParameter {
         this.defaultValue = defaultValue;
     }
 
-    public String get(AppContext context) {
+    String get(AppContext context) {
         return context.getStringOrDefault(key, defaultValue);
     }
 
-    public static StringParameter keyAndDefault(String key, String defaultValue) {
+    static StringParameter keyAndDefault(String key, String defaultValue) {
         return new StringParameter(key, defaultValue);
     }
 }
