@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package sleeper.status.update;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -8,37 +23,15 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.stream.Collectors;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.*;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.*;
-
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import sleeper.configuration.properties.InstanceProperties;
-
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.*;
-
 import sleeper.configuration.properties.table.TableProperties;
-
-import static sleeper.configuration.properties.table.TableProperties.TABLES_PREFIX;
-
 import sleeper.configuration.properties.table.TableProperty;
-
-import static sleeper.configuration.properties.table.TableProperty.*;
-
 import sleeper.core.CommonTestConstants;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
@@ -55,6 +48,19 @@ import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3StateStore;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertThrows;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.*;
+import static sleeper.configuration.properties.table.TableProperties.TABLES_PREFIX;
+import static sleeper.configuration.properties.table.TableProperty.*;
 import static sleeper.statestore.s3.S3StateStore.*;
 
 public class ReinitialiseTableIT {
@@ -293,8 +299,8 @@ public class ReinitialiseTableIT {
                 .stream()
                 .map(partition -> partition.getRegion().getRange("key").getMin().toString())
                 .collect(Collectors.toList());
-        assertThat(s3Keys.contains(SPLIT_PARTITION_STRING_1)).isTrue();
-        assertThat(s3Keys.contains(SPLIT_PARTITION_STRING_2)).isTrue();
+        assertThat(s3Keys).contains(SPLIT_PARTITION_STRING_1);
+        assertThat(s3Keys).contains(SPLIT_PARTITION_STRING_2);
 
         assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
     }
@@ -337,12 +343,9 @@ public class ReinitialiseTableIT {
         List<Partition> partitionsList = s3StateStore.getAllPartitions();
         assertThat(partitionsList.size()).isEqualTo(5);
         assertThat(s3StateStore.getLeafPartitions().size()).isEqualTo(3);
-        List<String> s3Keys = partitionsList
-                .stream()
-                .map(partition -> partition.getRegion().getRange("key").getMin().toString())
-                .collect(Collectors.toList());
-        assertThat(s3Keys.contains(SPLIT_PARTITION_STRING_1)).isTrue();
-        assertThat(s3Keys.contains(SPLIT_PARTITION_STRING_2)).isTrue();
+        assertThat(partitionsList)
+                .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
+                .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
 
         assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
     }
@@ -377,12 +380,9 @@ public class ReinitialiseTableIT {
         List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
         assertThat(partitionsList.size()).isEqualTo(5);
         assertThat(dynamoStateStore.getLeafPartitions().size()).isEqualTo(3);
-        List<String> s3Keys = partitionsList
-                .stream()
-                .map(partition -> partition.getRegion().getRange("key").getMin().toString())
-                .collect(Collectors.toList());
-        assertThat(s3Keys.contains(SPLIT_PARTITION_STRING_1)).isTrue();
-        assertThat(s3Keys.contains(SPLIT_PARTITION_STRING_2)).isTrue();
+        assertThat(partitionsList)
+                .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
+                .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
 
         assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
     }
@@ -425,12 +425,9 @@ public class ReinitialiseTableIT {
         List<Partition> partitionsList = s3StateStore.getAllPartitions();
         assertThat(partitionsList.size()).isEqualTo(5);
         assertThat(s3StateStore.getLeafPartitions().size()).isEqualTo(3);
-        List<String> s3Keys = partitionsList
-                .stream()
-                .map(partition -> partition.getRegion().getRange("key").getMin().toString())
-                .collect(Collectors.toList());
-        assertThat(s3Keys.contains(SPLIT_PARTITION_STRING_1)).isTrue();
-        assertThat(s3Keys.contains(SPLIT_PARTITION_STRING_2)).isTrue();
+        assertThat(partitionsList)
+                .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
+                .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
 
         assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
     }
@@ -558,13 +555,9 @@ public class ReinitialiseTableIT {
         ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(tableBucketName).withMaxKeys(10);
         ListObjectsV2Result result = s3Client.listObjectsV2(req);
         assertThat(result.getKeyCount()).isEqualTo(3);
-        List<String> s3Keys = result.getObjectSummaries()
-                .stream()
-                .map(S3ObjectSummary::getKey)
-                .collect(Collectors.toList());
-        assertThat(s3Keys.contains(FILE_SHOULD_NOT_BE_DELETED_1)).isTrue();
-        assertThat(s3Keys.contains(FILE_SHOULD_NOT_BE_DELETED_2)).isTrue();
-        assertThat(s3Keys.contains(FILE_SHOULD_NOT_BE_DELETED_3)).isTrue();
+        assertThat(result.getObjectSummaries())
+                .extracting(S3ObjectSummary::getKey)
+                .contains(FILE_SHOULD_NOT_BE_DELETED_1, FILE_SHOULD_NOT_BE_DELETED_2, FILE_SHOULD_NOT_BE_DELETED_3);
     }
 
     private void assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted(
@@ -572,15 +565,11 @@ public class ReinitialiseTableIT {
         ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(tableBucketName).withMaxKeys(10);
         ListObjectsV2Result result = s3Client.listObjectsV2(req);
         assertThat(result.getKeyCount()).isEqualTo(4);
-        List<String> s3Keys = result.getObjectSummaries()
-                .stream()
-                .map(S3ObjectSummary::getKey)
-                .collect(Collectors.toList());
-        assertThat(s3Keys.contains(FILE_SHOULD_NOT_BE_DELETED_1)).isTrue();
-        assertThat(s3Keys.contains(FILE_SHOULD_NOT_BE_DELETED_2)).isTrue();
-        assertThat(s3Keys.contains(FILE_SHOULD_NOT_BE_DELETED_3)).isTrue();
-        assertThat(s3Keys.contains(S3_STATE_STORE_PARTITIONS_FILENAME)).isTrue();
-        assertThat(s3Keys.contains(S3_STATE_STORE_FILES_FILENAME)).isFalse();
+        assertThat(result.getObjectSummaries())
+                .extracting(S3ObjectSummary::getKey)
+                .contains(FILE_SHOULD_NOT_BE_DELETED_1, FILE_SHOULD_NOT_BE_DELETED_2, FILE_SHOULD_NOT_BE_DELETED_3,
+                        S3_STATE_STORE_PARTITIONS_FILENAME)
+                .doesNotContain(S3_STATE_STORE_FILES_FILENAME);
     }
 
     private void setupS3buckets(String tableBucketName, boolean isS3StateStore) {

@@ -19,7 +19,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -35,12 +34,9 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
@@ -189,13 +185,10 @@ public class TableCreatorIT {
 
         // Then
         String instanceId = instanceProperties.get(ID);
-        List<String> expectedTables = Lists.newArrayList(
+        assertThat(dynamoClient.listTables().getTableNames()).contains(
                 "sleeper-" + instanceId + "-table-mytable-active-files",
                 "sleeper-" + instanceId + "-table-mytable-gc-files",
                 "sleeper-" + instanceId + "-table-mytable-partitions");
-        List<String> tableNames = dynamoClient.listTables().getTableNames();
-
-        assertThat(tableNames.containsAll(expectedTables)).isTrue();
     }
 
     @Test

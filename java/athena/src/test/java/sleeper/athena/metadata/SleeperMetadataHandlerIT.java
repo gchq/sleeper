@@ -20,21 +20,8 @@ import com.amazonaws.athena.connector.lambda.data.BlockAllocator;
 import com.amazonaws.athena.connector.lambda.data.BlockAllocatorImpl;
 import com.amazonaws.athena.connector.lambda.data.SchemaBuilder;
 import com.amazonaws.athena.connector.lambda.domain.TableName;
-import com.amazonaws.athena.connector.lambda.domain.predicate.Constraints;
-import com.amazonaws.athena.connector.lambda.domain.predicate.EquatableValueSet;
-import com.amazonaws.athena.connector.lambda.domain.predicate.Range;
-import com.amazonaws.athena.connector.lambda.domain.predicate.SortedRangeSet;
-import com.amazonaws.athena.connector.lambda.domain.predicate.ValueSet;
-import com.amazonaws.athena.connector.lambda.metadata.GetSplitsRequest;
-import com.amazonaws.athena.connector.lambda.metadata.GetSplitsResponse;
-import com.amazonaws.athena.connector.lambda.metadata.GetTableLayoutRequest;
-import com.amazonaws.athena.connector.lambda.metadata.GetTableLayoutResponse;
-import com.amazonaws.athena.connector.lambda.metadata.GetTableRequest;
-import com.amazonaws.athena.connector.lambda.metadata.GetTableResponse;
-import com.amazonaws.athena.connector.lambda.metadata.ListSchemasRequest;
-import com.amazonaws.athena.connector.lambda.metadata.ListSchemasResponse;
-import com.amazonaws.athena.connector.lambda.metadata.ListTablesRequest;
-import com.amazonaws.athena.connector.lambda.metadata.ListTablesResponse;
+import com.amazonaws.athena.connector.lambda.domain.predicate.*;
+import com.amazonaws.athena.connector.lambda.metadata.*;
 import com.amazonaws.athena.connector.lambda.security.EncryptionKeyFactory;
 import com.amazonaws.services.athena.AmazonAthena;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -54,17 +41,10 @@ import sleeper.splitter.SplitPartition;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -432,9 +412,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         ListSchemasResponse listSchemasResponse = sleeperMetadataHandler.doListSchemaNames(new BlockAllocatorImpl(), new ListSchemasRequest(TestUtils.createIdentity(), "abc", "def"));
 
         // Then
-        Collection<String> schemas = listSchemasResponse.getSchemas();
-        assertThat(schemas.size()).isEqualTo(1);
-        assertThat(schemas.contains(instance.get(ID))).isTrue();
+        assertThat(listSchemasResponse.getSchemas()).containsExactly(instance.get(ID));
     }
 
     @Test
@@ -477,14 +455,12 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 new ListTablesRequest(TestUtils.createIdentity(), "abc", "def", "mySchema", null, 1));
 
         // Then
-        Collection<TableName> tables = listTablesResponse.getTables();
-        assertThat(tables.size()).isEqualTo(1);
 
         // Order the tables
         List<String> sorted = Lists.newArrayList(table1, table2).stream().sorted().collect(Collectors.toList());
 
         assertThat(listTablesResponse.getNextToken()).isEqualTo("1");
-        assertThat(tables.contains(new TableName("mySchema", sorted.get(0)))).isTrue();
+        assertThat(listTablesResponse.getTables()).containsExactly(new TableName("mySchema", sorted.get(0)));
     }
 
     @Test
@@ -505,10 +481,8 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 new ListTablesRequest(TestUtils.createIdentity(), "abc", "def", "mySchema", "1", 1));
 
         // Then
-        Collection<TableName> tables = listTablesResponse.getTables();
         assertThat(listTablesResponse.getNextToken()).isNull();
-        assertThat(tables.size()).isEqualTo(1);
-        assertThat(tables.contains(new TableName("mySchema", sorted.get(1)))).isTrue();
+        assertThat(listTablesResponse.getTables()).containsExactly(new TableName("mySchema", sorted.get(1)));
     }
 
     @Test

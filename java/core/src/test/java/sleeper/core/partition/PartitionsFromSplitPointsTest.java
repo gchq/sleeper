@@ -15,26 +15,17 @@
  */
 package sleeper.core.partition;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import org.junit.Test;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class PartitionsFromSplitPointsTest {
 
@@ -305,9 +296,9 @@ public class PartitionsFromSplitPointsTest {
             Set<String> partitionIdsOfLevelBelow = levelToPartitionIds.get(level - 1);
             for (Partition partition : partitionsAtLevel) {
                 assertThat(partition.isLeafPartition()).isFalse();
-                assertThat(partitionIdsOfLevelAbove.contains(partition.getParentPartitionId())).isTrue();
-                assertThat(partitionIdsOfLevelBelow.contains(partition.getChildPartitionIds().get(0))).isTrue();
-                assertThat(partitionIdsOfLevelBelow.contains(partition.getChildPartitionIds().get(1))).isTrue();
+                assertThat(partitionIdsOfLevelAbove).contains(partition.getParentPartitionId());
+                assertThat(partitionIdsOfLevelBelow).contains(
+                        partition.getChildPartitionIds().get(0), partition.getChildPartitionIds().get(1));
             }
         }
     }

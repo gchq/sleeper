@@ -36,14 +36,11 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS;
+import static sleeper.configuration.properties.table.TableProperty.*;
 
 public class EmrExecutorTest {
     private AmazonElasticMapReduce emr;
@@ -260,6 +257,6 @@ public class EmrExecutorTest {
             }
         }
 
-        assertThat(conf.get("spark.hadoop.fs.s3a.connection.maximum")).isEqualTo("100");
+        assertThat(conf).containsEntry("spark.hadoop.fs.s3a.connection.maximum", "100");
     }
 }

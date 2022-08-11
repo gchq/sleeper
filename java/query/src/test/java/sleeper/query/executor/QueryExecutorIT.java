@@ -22,46 +22,15 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.junit.AfterClass;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.GenericContainer;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
-
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
@@ -87,6 +56,17 @@ import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
 public class QueryExecutorIT {
     protected static final int DYNAMO_PORT = 8000;
@@ -156,7 +136,7 @@ public class QueryExecutorIT {
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 3
-        assertThat(leafPartitionQueries.isEmpty()).isTrue();
+        assertThat(leafPartitionQueries).isEmpty();
     }
 
     @Test
@@ -1406,12 +1386,8 @@ public class QueryExecutorIT {
         CloseableIterator<Record> results = queryExecutor.execute(query);
 
         // Then
-        assertThat(results.hasNext()).isTrue();
-        Record result = results.next();
-        assertThat(results.hasNext()).isFalse();
-        assertThat(result.getKeys().contains("value1")).isFalse();
-        assertThat(result.getKeys().contains("key")).isTrue();
-        assertThat(result.getKeys().contains("value2")).isTrue();
+        assertThat(results).toIterable().hasSize(1)
+                .flatExtracting(Record::getKeys).doesNotContain("value1").contains("key", "value2");
     }
 
     @Test
@@ -1440,13 +1416,8 @@ public class QueryExecutorIT {
         CloseableIterator<Record> results = queryExecutor.execute(query);
 
         // Then
-        assertThat(results.hasNext()).isTrue();
-        while (results.hasNext()) {
-            Record result = results.next();
-            assertThat(result.getKeys().contains("key")).isTrue();
-            assertThat(result.getKeys().contains("value")).isTrue();
-            assertThat(result.getKeys().contains("securityLabel")).isTrue();
-        }
+        assertThat(results).hasNext().toIterable().allSatisfy(result ->
+                assertThat(result.getKeys()).contains("key", "value", "securityLabel"));
     }
 
     protected Schema getLongKeySchema() {
