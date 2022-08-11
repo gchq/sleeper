@@ -15,12 +15,21 @@
  */
 package sleeper.environment.cdk.config;
 
-public class AppParameters {
+import java.util.Optional;
 
-    public static StringParameter INSTANCE_ID = StringParameter.keyAndDefault("instanceId", "SleeperEnvironment");
-    public static OptionalStringParameter VPC_ID = OptionalStringParameter.key("vpcId");
+public class OptionalStringParameter {
 
-    public static StringParameter BUILD_REPOSITORY = StringParameter.keyAndDefault("repository", "sleeper");
-    public static StringParameter BUILD_FORK = StringParameter.keyAndDefault("fork", "gchq");
-    public static StringParameter BUILD_BRANCH = StringParameter.keyAndDefault("branch", "main");
+    private final String key;
+
+    private OptionalStringParameter(String key) {
+        this.key = key;
+    }
+
+    Optional<String> get(AppContext context) {
+        return context.getStringOpt(key);
+    }
+
+    static OptionalStringParameter key(String key) {
+        return new OptionalStringParameter(key);
+    }
 }

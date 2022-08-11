@@ -27,7 +27,7 @@ import java.security.KeyPair;
 import java.util.Collections;
 import java.util.UUID;
 
-import static sleeper.environment.cdk.config.AppParameters.VPC;
+import static sleeper.environment.cdk.config.AppParameters.VPC_ID;
 
 public class BuildEC2Stack extends Stack {
 
@@ -37,7 +37,9 @@ public class BuildEC2Stack extends Stack {
         super(scope, props.getStackName(), props);
         AppContext context = AppContext.of(this);
         BuildEC2Parameters params = BuildEC2Parameters.from(context);
-        vpc = context.getOrDefault(VPC, this, inheritVpc);
+        vpc = context.get(VPC_ID)
+                .map(vpcId -> Vpc.fromLookup(scope, "Vpc", VpcLookupOptions.builder().vpcId(vpcId).build()))
+                .orElse(inheritVpc);
 
         CfnKeyPair key = createSshKeyPair();
         SecurityGroup allowSsh = createAllowSshSecurityGroup();

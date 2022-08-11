@@ -17,8 +17,6 @@ package sleeper.environment.cdk.config;
 
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.services.ec2.IVpc;
-import software.constructs.Construct;
 import software.constructs.Node;
 
 import java.util.Optional;
@@ -32,8 +30,8 @@ public interface AppContext {
         return string.get(this);
     }
 
-    default IVpc getOrDefault(VpcParameter vpc, Construct scope, IVpc defaultVpc) {
-        return vpc.getOrDefault(this, scope, defaultVpc);
+    default Optional<String> get(OptionalStringParameter string) {
+        return string.get(this);
     }
 
     default String getStringOrDefault(String key, String defaultValue) {
