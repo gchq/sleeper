@@ -18,8 +18,6 @@ package sleeper.statestore;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 
 public class FileInfoTest {
 
@@ -64,8 +62,8 @@ public class FileInfoTest {
         fileInfo3.setLastStateStoreUpdateTime(2_000_000L);
 
         // When / Then
-        assertThat(fileInfo2).isEqualTo(fileInfo1);
-        assertThat(fileInfo2.hashCode()).isEqualTo(fileInfo1.hashCode());
+        assertThat(fileInfo2).isEqualTo(fileInfo1)
+                .hasSameHashCodeAs(fileInfo1);
         assertThat(fileInfo3).isNotEqualTo(fileInfo1);
         assertThat(fileInfo3.hashCode()).isNotEqualTo(fileInfo1.hashCode());
     }

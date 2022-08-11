@@ -32,7 +32,6 @@ import sleeper.core.iterator.SortedRecordIterator;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -46,12 +45,8 @@ import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.USER_JARS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.*;
 
 public class ObjectFactoryTest {
     @ClassRule
@@ -129,7 +124,7 @@ public class ObjectFactoryTest {
         ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, folder.newFolder().getPath());
         SortedRecordIterator sri = objectFactory.getObject("MyIterator", SortedRecordIterator.class);
 
-        assertThat(sri.toString()).isEqualTo("MyIterator");
+        assertThat(sri).hasToString("MyIterator");
     }
 
     public static class MySimpleJavaFileObject extends SimpleJavaFileObject {

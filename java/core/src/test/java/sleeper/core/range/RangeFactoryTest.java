@@ -15,17 +15,14 @@
  */
 package sleeper.core.range;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import org.junit.Test;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class RangeFactoryTest {
 
@@ -64,7 +61,7 @@ public class RangeFactoryTest {
         assertThat(range4.isMinInclusive()).isFalse();
         assertThat(range5.getMin()).isEqualTo(Integer.MIN_VALUE);
         assertThat(range5.isMinInclusive()).isTrue(); // If max is null, maxInclusive should be set to false
-        assertThat(range5.getMax()).isEqualTo(null);
+        assertThat(range5.getMax()).isNull();
         assertThat(range4.isMaxInclusive()).isFalse();
         assertThat(range6.getMin()).isEqualTo(1);
         assertThat(range6.isMinInclusive()).isTrue();

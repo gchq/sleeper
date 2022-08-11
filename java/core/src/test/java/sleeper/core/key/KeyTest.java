@@ -15,14 +15,11 @@
  */
 package sleeper.core.key;
 
+import org.junit.Test;
+
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-
-import org.junit.Test;
 
 public class KeyTest {
 
@@ -46,8 +43,8 @@ public class KeyTest {
         Key key3 = Key.create(Arrays.asList(1, 3));
 
         // When / Then
-        assertThat(key2).isEqualTo(key1);
-        assertThat(key2.hashCode()).isEqualTo(key1.hashCode());
+        assertThat(key2).isEqualTo(key1)
+                .hasSameHashCodeAs(key1);
         assertThat(key3).isNotEqualTo(key1);
         assertThat(key3.hashCode()).isNotEqualTo(key1.hashCode());
     }
@@ -60,8 +57,8 @@ public class KeyTest {
         Key key3 = Key.create(1);
 
         // When / Then
-        assertThat(key2).isEqualTo(key1);
-        assertThat(key2.hashCode()).isEqualTo(key1.hashCode());
+        assertThat(key2).isEqualTo(key1)
+                .hasSameHashCodeAs(key1);
         assertThat(key3).isNotEqualTo(key1);
         assertThat(key3.hashCode()).isNotEqualTo(key1.hashCode());
     }

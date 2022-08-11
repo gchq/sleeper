@@ -28,8 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 
 public class KeySerDeTest {
 
@@ -75,7 +73,7 @@ public class KeySerDeTest {
 
         // Then
         assertThat(deserialisedKey.size()).isEqualTo(1);
-        assertThat(deserialisedKey.get(0)).isEqualTo(null);
+        assertThat(deserialisedKey.get(0)).isNull();
     }
 
     @Test
@@ -92,7 +90,7 @@ public class KeySerDeTest {
 
         // Then
         assertThat(deserialisedKeys.size()).isEqualTo(1);
-        assertThat(deserialisedKeys.get(0)).isEqualTo(null);
+        assertThat(deserialisedKeys.get(0)).isNull();
     }
 
     @Test
@@ -109,7 +107,7 @@ public class KeySerDeTest {
 
         // Then
         assertThat(deserialisedKeys.size()).isEqualTo(1);
-        assertThat(deserialisedKeys.get(0)).isEqualTo(null);
+        assertThat(deserialisedKeys.get(0)).isNull();
     }
 
     @Test
@@ -126,7 +124,7 @@ public class KeySerDeTest {
 
         // Then
         assertThat(deserialisedKeys.size()).isEqualTo(1);
-        assertThat(deserialisedKeys.get(0)).isEqualTo(null);
+        assertThat(deserialisedKeys.get(0)).isNull();
     }
 
     @Test
