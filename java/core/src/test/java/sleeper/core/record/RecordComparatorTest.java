@@ -24,7 +24,6 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertTrue;
 
 public class RecordComparatorTest {
 
@@ -52,10 +51,10 @@ public class RecordComparatorTest {
         int comparison4 = comparator.compare(record1, record1);
 
         // Then
-        assertThat(comparison1 < 0).isTrue();
-        assertThat(comparison2 == 0).isTrue();
-        assertThat(comparison3 > 0).isTrue();
-        assertThat(comparison4 == 0).isTrue();
+        assertThat(comparison1).isLessThan(0);
+        assertThat(comparison2).isEqualTo(0);
+        assertThat(comparison3).isGreaterThan(0);
+        assertThat(comparison4).isEqualTo(0);
     }
 
     @Test
@@ -82,10 +81,10 @@ public class RecordComparatorTest {
         int comparison4 = comparator.compare(record1, record1);
 
         // Then
-        assertThat(comparison1 < 0).isTrue();
-        assertThat(comparison2 == 0).isTrue();
-        assertThat(comparison3 > 0).isTrue();
-        assertThat(comparison4 == 0).isTrue();
+        assertThat(comparison1).isLessThan(0);
+        assertThat(comparison2).isEqualTo(0);
+        assertThat(comparison3).isGreaterThan(0);
+        assertThat(comparison4).isEqualTo(0);
     }
 
     @Test
@@ -112,10 +111,10 @@ public class RecordComparatorTest {
         int comparison4 = comparator.compare(record1, record1);
 
         // Then
-        assertThat(comparison1 < 0).isTrue();
-        assertThat(comparison2 == 0).isTrue();
-        assertThat(comparison3 > 0).isTrue();
-        assertThat(comparison4 == 0).isTrue();
+        assertThat(comparison1).isLessThan(0);
+        assertThat(comparison2).isEqualTo(0);
+        assertThat(comparison3).isGreaterThan(0);
+        assertThat(comparison4).isEqualTo(0);
     }
 
     @Test
@@ -142,10 +141,10 @@ public class RecordComparatorTest {
         int comparison4 = comparator.compare(record1, record1);
 
         // Then
-        assertThat(comparison1 < 0).isTrue();
-        assertThat(comparison2 == 0).isTrue();
-        assertThat(comparison3 > 0).isTrue();
-        assertThat(comparison4 == 0).isTrue();
+        assertThat(comparison1).isLessThan(0);
+        assertThat(comparison2).isEqualTo(0);
+        assertThat(comparison3).isGreaterThan(0);
+        assertThat(comparison4).isEqualTo(0);
     }
 
     @Test
@@ -184,10 +183,10 @@ public class RecordComparatorTest {
         int comparison4 = comparator.compare(record4, record5);
 
         // Then
-        assertThat(comparison1 < 0).isTrue();
-        assertThat(comparison2 > 0).isTrue();
-        assertThat(comparison3 < 0).isTrue();
-        assertThat(comparison4 == 0).isTrue();
+        assertThat(comparison1).isLessThan(0);
+        assertThat(comparison2).isGreaterThan(0);
+        assertThat(comparison3).isLessThan(0);
+        assertThat(comparison4).isEqualTo(0);
     }
 
     @Test
@@ -226,10 +225,10 @@ public class RecordComparatorTest {
         int comparison4 = comparator.compare(record4, record5);
 
         // Then
-        assertThat(comparison1 < 0).isTrue();
-        assertThat(comparison2 < 0).isTrue();
-        assertThat(comparison3 > 0).isTrue();
-        assertThat(comparison4 == 0).isTrue();
+        assertThat(comparison1).isLessThan(0);
+        assertThat(comparison2).isLessThan(0);
+        assertThat(comparison3).isGreaterThan(0);
+        assertThat(comparison4).isEqualTo(0);
     }
 
     @Test
@@ -300,12 +299,12 @@ public class RecordComparatorTest {
         int comparison7 = comparator.compare(record7, record8);
 
         // Then
-        assertThat(comparison1 < 0).isTrue();
-        assertThat(comparison2 < 0).isTrue();
-        assertThat(comparison3 < 0).isTrue();
-        assertThat(comparison4 < 0).isTrue();
-        assertThat(comparison5 < 0).isTrue();
-        assertThat(comparison6 > 0).isTrue();
-        assertThat(comparison7 == 0).isTrue();
+        assertThat(comparison1).isLessThan(0);
+        assertThat(comparison2).isLessThan(0);
+        assertThat(comparison3).isLessThan(0);
+        assertThat(comparison4).isLessThan(0);
+        assertThat(comparison5).isLessThan(0);
+        assertThat(comparison6).isGreaterThan(0);
+        assertThat(comparison7).isEqualTo(0);
     }
 }

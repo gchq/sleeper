@@ -96,12 +96,12 @@ public class AdminClientIT {
         assertThat(outputStreamCaptor.toString().contains("sleeper.vpc: aVPC")).isTrue();
 
         // Then check the ordering of some property names are correct
-        assertThat(outputStreamCaptor.toString().indexOf("sleeper.account")
-                < outputStreamCaptor.toString().indexOf("sleeper.log.retention.days")).isTrue();
-        assertThat(outputStreamCaptor.toString().indexOf("sleeper.account")
-                < outputStreamCaptor.toString().indexOf("sleeper.vpc")).isTrue();
-        assertThat(outputStreamCaptor.toString().indexOf("sleeper.log.retention.days")
-                < outputStreamCaptor.toString().indexOf("sleeper.vpc")).isTrue();
+        assertThat(outputStreamCaptor.toString().indexOf("sleeper.account"))
+                .isLessThan(outputStreamCaptor.toString().indexOf("sleeper.log.retention.days"));
+        assertThat(outputStreamCaptor.toString().indexOf("sleeper.account"))
+                .isLessThan(outputStreamCaptor.toString().indexOf("sleeper.vpc"));
+        assertThat(outputStreamCaptor.toString().indexOf("sleeper.log.retention.days"))
+                .isLessThan(outputStreamCaptor.toString().indexOf("sleeper.vpc"));
     }
 
     @Test
@@ -135,12 +135,12 @@ public class AdminClientIT {
                 "\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}")).isTrue();
 
         // Then check the ordering of some property names are correct
-        assertThat(outputStreamCaptor.toString().indexOf("sleeper.table.encrypted")
-                < outputStreamCaptor.toString().indexOf("sleeper.table.name")).isTrue();
-        assertThat(outputStreamCaptor.toString().indexOf("sleeper.table.encrypted")
-                < outputStreamCaptor.toString().indexOf("sleeper.table.schema")).isTrue();
-        assertThat(outputStreamCaptor.toString().indexOf("sleeper.table.name")
-                < outputStreamCaptor.toString().indexOf("sleeper.table.schema")).isTrue();
+        assertThat(outputStreamCaptor.toString().indexOf("sleeper.table.encrypted"))
+                .isLessThan(outputStreamCaptor.toString().indexOf("sleeper.table.name"));
+        assertThat(outputStreamCaptor.toString().indexOf("sleeper.table.encrypted"))
+                .isLessThan(outputStreamCaptor.toString().indexOf("sleeper.table.schema"));
+        assertThat(outputStreamCaptor.toString().indexOf("sleeper.table.name"))
+                .isLessThan(outputStreamCaptor.toString().indexOf("sleeper.table.schema"));
     }
 
     @Test

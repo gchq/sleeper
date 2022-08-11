@@ -15,67 +15,24 @@
  */
 package sleeper.bulkimport.job.runner;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.google.common.collect.Lists;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
-
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.google.common.collect.Lists;
-
-import static org.junit.Assert.assertTrue;
-
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeRunner;
 import sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDRunner;
 import sleeper.configuration.properties.InstanceProperties;
-
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE;
-
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
@@ -84,11 +41,7 @@ import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.ListType;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.MapType;
-import sleeper.core.schema.type.StringType;
+import sleeper.core.schema.type.*;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriter;
 import sleeper.io.parquet.record.SchemaConverter;
@@ -97,6 +50,17 @@ import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.table.util.StateStoreProvider;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.*;
+import static sleeper.configuration.properties.table.TableProperty.*;
 
 @RunWith(Parameterized.class)
 public class BulkImportJobRunnerIT {
@@ -251,7 +215,7 @@ public class BulkImportJobRunnerIT {
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         //  - Currently only BulkImportJobDataframeRunner supports not coalescing to the number of leaf partitions
         if (runner instanceof BulkImportJobDataframeRunner) {
-            assertThat(activeFiles.size() > 1).isTrue();
+            assertThat(activeFiles.size()).isGreaterThan(1);
         } else {
             assertThat(activeFiles.size()).isEqualTo(1);
         }
@@ -343,7 +307,7 @@ public class BulkImportJobRunnerIT {
 
         //  - Currently only BulkImportJobDataframeRunner supports not coalescing to the number of leaf partitions
         if (runner instanceof BulkImportJobDataframeRunner) {
-            assertThat(activeFiles.size() > 1).isTrue();
+            assertThat(activeFiles.size()).isGreaterThan(1);
         } else {
             assertThat(activeFiles.size()).isEqualTo(1);
         }

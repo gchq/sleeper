@@ -44,8 +44,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.*;
 import static sleeper.query.model.output.S3ResultsOutput.PAGE_SIZE;
@@ -99,7 +97,7 @@ public class S3ResultsOutputTest {
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
         assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(recordList);
-        assertThat(numberOfBlocks > 10).as("There are several blocks as rowGroup size is small").isTrue();
+        assertThat(numberOfBlocks).as("There are several blocks as rowGroup size is small").isGreaterThan(10);
     }
 
     @Test
@@ -117,7 +115,7 @@ public class S3ResultsOutputTest {
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
         assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(recordList);
-        assertThat(numberOfBlocks > 10).as("There are several blocks as rowGroup size is small").isTrue();
+        assertThat(numberOfBlocks).as("There are several blocks as rowGroup size is small").isGreaterThan(10);
     }
 
     private String getParquetFilesWithinDirPath(String dir) throws IOException {

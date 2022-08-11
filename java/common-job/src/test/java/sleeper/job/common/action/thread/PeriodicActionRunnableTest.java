@@ -15,12 +15,10 @@
  */
 package sleeper.job.common.action.thread;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import org.junit.Test;
 import sleeper.job.common.action.Action;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class PeriodicActionRunnableTest {
 
@@ -36,7 +34,7 @@ public class PeriodicActionRunnableTest {
         runnable.stop();
 
         // Then
-        assertThat(keepAlive.getCount() >= 4).isTrue();
+        assertThat(keepAlive.getCount()).isGreaterThanOrEqualTo(4);
     }
 
     @Test
@@ -53,7 +51,7 @@ public class PeriodicActionRunnableTest {
 
         // Then
         assertThat(keepAlive.getCount()).isEqualTo(0);
-        assertThat(System.currentTimeMillis() - started < 2 * 1000).isTrue();
+        assertThat(System.currentTimeMillis() - started).isLessThan(2 * 1000);
     }
 
     private static class KeepAlive implements Action {
