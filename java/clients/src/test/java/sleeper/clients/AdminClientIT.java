@@ -83,22 +83,21 @@ public class AdminClientIT {
         AdminClient.printInstancePropertiesReport(getS3Client(), INSTANCE_ID);
 
         // Then check some default property values are present in the output, don't check values in case they change
-        assertThat(outputStreamCaptor.toString().contains("sleeper.athena.handler.memory")).isTrue();
-        assertThat(outputStreamCaptor.toString().contains("sleeper.bulk.import.emr.bucket.create")).isTrue();
-        assertThat(outputStreamCaptor.toString().contains("sleeper.bulk.import.emr.bucket.create")).isTrue();
-        assertThat(outputStreamCaptor.toString().contains("sleeper.default.page.size")).isTrue();
-        assertThat(outputStreamCaptor.toString().contains("sleeper.query.tracker.ttl.days")).isTrue();
-
-        // Then check some set property values are present in the output
-        assertThat(outputStreamCaptor.toString().contains("sleeper.account: 1234567890")).isTrue();
-        assertThat(outputStreamCaptor.toString().contains("sleeper.log.retention.days: 1")).isTrue();
-        assertThat(outputStreamCaptor.toString().contains("sleeper.tags: name,abc,project,test")).isTrue();
-        assertThat(outputStreamCaptor.toString().contains("sleeper.vpc: aVPC")).isTrue();
+        assertThat(outputStreamCaptor.toString())
+                .contains("sleeper.athena.handler.memory")
+                .contains("sleeper.bulk.import.emr.bucket.create")
+                .contains("sleeper.bulk.import.emr.bucket.create")
+                .contains("sleeper.default.page.size")
+                .contains("sleeper.query.tracker.ttl.days")
+                // Then check some set property values are present in the output
+                .contains("sleeper.account: 1234567890")
+                .contains("sleeper.log.retention.days: 1")
+                .contains("sleeper.tags: name,abc,project,test")
+                .contains("sleeper.vpc: aVPC");
 
         // Then check the ordering of some property names are correct
         assertThat(outputStreamCaptor.toString().indexOf("sleeper.account"))
-                .isLessThan(outputStreamCaptor.toString().indexOf("sleeper.log.retention.days"));
-        assertThat(outputStreamCaptor.toString().indexOf("sleeper.account"))
+                .isLessThan(outputStreamCaptor.toString().indexOf("sleeper.log.retention.days"))
                 .isLessThan(outputStreamCaptor.toString().indexOf("sleeper.vpc"));
         assertThat(outputStreamCaptor.toString().indexOf("sleeper.log.retention.days"))
                 .isLessThan(outputStreamCaptor.toString().indexOf("sleeper.vpc"));
@@ -122,22 +121,20 @@ public class AdminClientIT {
         AdminClient.printTablePropertiesReport(getS3Client(), INSTANCE_ID, TABLE_NAME_VALUE);
 
         // Then check some default table property values are present in the output, don't check values in case they change
-        assertThat(outputStreamCaptor.toString().contains("sleeper.table.splits.base64.encoded")).isTrue();
-        assertThat(outputStreamCaptor.toString().contains("sleeper.table.statestore.classname")).isTrue();
-        assertThat(outputStreamCaptor.toString().contains("sleeper.table.fs.s3a.readahead.range")).isTrue();
-
-        // Then check some set table property values are present in the output
-        assertThat(outputStreamCaptor.toString().contains("sleeper.table.name: test")).isTrue();
-        assertThat(outputStreamCaptor.toString().contains("sleeper.table.encrypted: false")).isTrue();
-        assertThat(outputStreamCaptor.toString().contains("sleeper.table.schema: " +
-                "{\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]," +
-                "\"sortKeyFields\":[]," +
-                "\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}")).isTrue();
+        assertThat(outputStreamCaptor.toString()).contains("sleeper.table.splits.base64.encoded")
+                .contains("sleeper.table.statestore.classname")
+                .contains("sleeper.table.fs.s3a.readahead.range")
+                // Then check some set table property values are present in the output
+                .contains("sleeper.table.name: test")
+                .contains("sleeper.table.encrypted: false")
+                .contains("sleeper.table.schema: " +
+                        "{\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]," +
+                        "\"sortKeyFields\":[]," +
+                        "\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}");
 
         // Then check the ordering of some property names are correct
         assertThat(outputStreamCaptor.toString().indexOf("sleeper.table.encrypted"))
-                .isLessThan(outputStreamCaptor.toString().indexOf("sleeper.table.name"));
-        assertThat(outputStreamCaptor.toString().indexOf("sleeper.table.encrypted"))
+                .isLessThan(outputStreamCaptor.toString().indexOf("sleeper.table.name"))
                 .isLessThan(outputStreamCaptor.toString().indexOf("sleeper.table.schema"));
         assertThat(outputStreamCaptor.toString().indexOf("sleeper.table.name"))
                 .isLessThan(outputStreamCaptor.toString().indexOf("sleeper.table.schema"));
@@ -164,8 +161,8 @@ public class AdminClientIT {
         AdminClient.printTablesReport(getS3Client(), INSTANCE_ID);
 
         // Then check some table names are present in the output
-        assertThat(outputStreamCaptor.toString().contains("test")).isTrue();
-        assertThat(outputStreamCaptor.toString().contains("test2")).isTrue();
+        assertThat(outputStreamCaptor.toString())
+                .contains("test").contains("test2");
     }
 
     @Test
@@ -216,7 +213,7 @@ public class AdminClientIT {
                 AdminClient.updateProperty(getS3Client(), INSTANCE_ID, LOG_RETENTION_IN_DAYS.getPropertyName(), "abc", null));
         // Then
         String expectedMessage = "Sleeper property: " + LOG_RETENTION_IN_DAYS.getPropertyName() + " is invalid";
-        assertThat(exception.getMessage().contains(expectedMessage)).isTrue();
+        assertThat(exception).hasMessageContaining(expectedMessage);
     }
 
     @Test
@@ -234,7 +231,7 @@ public class AdminClientIT {
                         "abc", TABLE_NAME_VALUE));
         // Then
         String expectedMessage = "Sleeper property: " + ENCRYPTED.getPropertyName() + " is invalid";
-        assertThat(exception.getMessage().contains(expectedMessage)).isTrue();
+        assertThat(exception).hasMessageContaining(expectedMessage);
     }
 
     @Test
@@ -250,7 +247,7 @@ public class AdminClientIT {
                         "sleeper.log.ret.day", "3", null));
         // Then
         String expectedMessage = "Sleeper property: sleeper.log.ret.day does not exist and cannot be updated";
-        assertThat(exception.getMessage().contains(expectedMessage)).isTrue();
+        assertThat(exception).hasMessageContaining(expectedMessage);
     }
 
     @Test
@@ -268,7 +265,7 @@ public class AdminClientIT {
                         "true", TABLE_NAME_VALUE));
         // Then
         String expectedMessage = "Sleeper property: sleeper.table.encrypt does not exist and cannot be updated";
-        assertThat(exception.getMessage().contains(expectedMessage)).isTrue();
+        assertThat(exception).hasMessageContaining(expectedMessage);
     }
 
     @Test
@@ -287,7 +284,7 @@ public class AdminClientIT {
         // Then
         String expectedMessage = "When a table property is being updated e.g. sleeper.table.* " +
                 "then a Table Name must be provided in the parameters";
-        assertThat(exception.getMessage().contains(expectedMessage)).isTrue();
+        assertThat(exception).hasMessageContaining(expectedMessage);
     }
 
     @After

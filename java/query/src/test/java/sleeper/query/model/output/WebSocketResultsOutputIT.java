@@ -17,30 +17,17 @@ package sleeper.query.model.output;
 
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
 import com.github.tomakehurst.wiremock.matching.UrlPattern;
-
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.query.model.Query;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import java.util.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class WebSocketResultsOutputIT {
 
@@ -86,7 +73,7 @@ public class WebSocketResultsOutputIT {
                         .and(matchingJsonPath("$.message", equalTo("records")))
         ));
         assertThat(result.getRecordCount()).isEqualTo(0);
-        assertThat(result.getError().getMessage().contains("GoneException")).isTrue();
+        assertThat(result.getError()).hasMessageContaining("GoneException");
     }
 
     @Test
