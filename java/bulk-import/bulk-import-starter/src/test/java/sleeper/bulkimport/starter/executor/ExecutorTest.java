@@ -216,7 +216,8 @@ public class ExecutorTest {
         }
 
         @Override
-        protected Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties) {
+        protected Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec,
+            TableProperties tableProperties, InstanceProperties instanceProperties) {
             return null;
         }
 

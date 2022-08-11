@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.*;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
@@ -77,6 +78,20 @@ public abstract class Executor {
         String className = bulkImportJob.getClassName() != null ? bulkImportJob.getClassName() : DEFAULT_CLASS;
 
         List<String> args = Lists.newArrayList("spark-submit", "--deploy-mode", "cluster", "--class", className);
+
+        // Specifying these explicitly rather than relying on the default config
+        // seems to be the only way to get YARN to know the number of cores being
+        // used by each Spark executor.
+        args.add("--executor-cores");
+        args.add("" + instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_CORES));
+        args.add("--driver-cores");
+        args.add("" + instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_CORES));
+        args.add("--executor-memory");
+        args.add("" + instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_MEMORY));
+        args.add("--driver-memory");
+        args.add("" + instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_MEMORY));
+        args.add("--num-executors");
+        args.add("" + instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_INSTANCES));
 
         for (Map.Entry<String, String> configurationItem : config.entrySet()) {
             args.add("--conf");
