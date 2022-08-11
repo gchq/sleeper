@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
 /**
  *
  */
-public class PersistentEmrExecutor extends Executor {
+public class PersistentEmrExecutor extends AbstractEmrExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(PersistentEmrExecutor.class);
 
     private final AmazonElasticMapReduce emrClient;
@@ -50,28 +50,6 @@ public class PersistentEmrExecutor extends Executor {
         super(instancePropeties, tablePropertiesProvider, amazonS3);
         this.emrClient = emrClient;
         this.clusterId = getClusterIdFromName(emrClient, instancePropeties.get(UserDefinedInstanceProperty.ID));
-    }
-    
-    private static String getClusterIdFromName(AmazonElasticMapReduce emrClient, String instanceId) {
-        ListClustersRequest listClustersRequest = new ListClustersRequest()
-            .withClusterStates(ClusterState.BOOTSTRAPPING.name(), ClusterState.RUNNING.name(), ClusterState.STARTING.name(), ClusterState.WAITING.name());
-        ListClustersResult result = emrClient.listClusters(listClustersRequest);
-        String clusterId = null;
-        String clusterName = String.join("-", "sleeper", instanceId, "persistentEMR");
-        LOGGER.debug("Searching for id of cluster with name {}", clusterName);
-        for (ClusterSummary cs : result.getClusters()) {
-            LOGGER.debug("Found cluster with name {}", cs.getName());
-            if (cs.getName().equals(clusterName)) {
-                clusterId = cs.getId();
-                break;
-            }
-        }
-        if (null != clusterId) {
-            LOGGER.info("Found cluster of name {} with id {}", clusterName, clusterId);
-        } else {
-            throw new IllegalArgumentException("Found no cluster with name " + clusterName);
-        }
-        return clusterId;
     }
     
     @Override
@@ -93,30 +71,26 @@ public class PersistentEmrExecutor extends Executor {
         LOGGER.info("Adding job flow step {}", addJobFlowStepsRequest.toString());
         emrClient.addJobFlowSteps(addJobFlowStepsRequest);
     }
-    
-    @Override
-    protected Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties) {
-        Map<String, String> defaultConfig = new HashMap<>();
-        defaultConfig.put("spark.shuffle.mapStatus.compression.codec", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC, platformSpec, tableProperties));
-        defaultConfig.put("spark.speculation", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SPECULATION, platformSpec, tableProperties));
-        defaultConfig.put("spark.speculation.quantile", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SPECULATION_QUANTILE, platformSpec, tableProperties));
-        defaultConfig.put("spark.hadoop.fs.s3a.connection.maximum", instanceProperties.get(UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3));
-        return defaultConfig;
-    }
-    
-    @Override
-    protected List<String> constructArgs(BulkImportJob bulkImportJob) {
-        List<String> args = super.constructArgs(bulkImportJob);
-        args.add(bulkImportJob.getId());
-        args.add(instanceProperties.get(CONFIG_BUCKET));
-        return args;
-    }
-    
-    @Override
-    protected String getJarLocation() {
-        return "s3a://"
-                + instanceProperties.get(UserDefinedInstanceProperty.JARS_BUCKET)
-                + "/bulk-import-runner-"
-                + instanceProperties.get(UserDefinedInstanceProperty.VERSION) + ".jar";
+
+    private static String getClusterIdFromName(AmazonElasticMapReduce emrClient, String instanceId) {
+        ListClustersRequest listClustersRequest = new ListClustersRequest()
+            .withClusterStates(ClusterState.BOOTSTRAPPING.name(), ClusterState.RUNNING.name(), ClusterState.STARTING.name(), ClusterState.WAITING.name());
+        ListClustersResult result = emrClient.listClusters(listClustersRequest);
+        String clusterId = null;
+        String clusterName = String.join("-", "sleeper", instanceId, "persistentEMR");
+        LOGGER.debug("Searching for id of cluster with name {}", clusterName);
+        for (ClusterSummary cs : result.getClusters()) {
+            LOGGER.debug("Found cluster with name {}", cs.getName());
+            if (cs.getName().equals(clusterName)) {
+                clusterId = cs.getId();
+                break;
+            }
+        }
+        if (null != clusterId) {
+            LOGGER.info("Found cluster of name {} with id {}", clusterName, clusterId);
+        } else {
+            throw new IllegalArgumentException("Found no cluster with name " + clusterName);
+        }
+        return clusterId;
     }
 }

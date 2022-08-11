@@ -96,7 +96,7 @@ public class StateMachineExecutor extends Executor {
     }
 
     @Override
-    protected Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties) {
+    protected Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties, InstanceProperties instanceProperties) {
         Map<String, String> defaultConfig = new HashMap<>(DEFAULT_CONFIG);
         String imageName = instanceProperties.get(ACCOUNT) + ".dkr.ecr." +
                 instanceProperties.get(REGION) + ".amazonaws.com/" +

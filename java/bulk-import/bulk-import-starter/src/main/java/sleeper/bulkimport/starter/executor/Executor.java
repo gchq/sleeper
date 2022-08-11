@@ -15,6 +15,7 @@
  */
 package sleeper.bulkimport.starter.executor;
 
+import com.amazonaws.auth.SdkClock.Instance;
 import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
@@ -60,12 +61,13 @@ public abstract class Executor {
 
     protected abstract void runJobOnPlatform(BulkImportJob bulkImportJob);
 
-    protected abstract Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties);
+    protected abstract Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties, InstanceProperties instanceProperties);
 
     protected abstract String getJarLocation();
 
     protected List<String> constructArgs(BulkImportJob bulkImportJob) {
-        Map<String, String> config = getDefaultSparkConfig(bulkImportJob, bulkImportJob.getPlatformSpec(), tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName()));
+        Map<String, String> config = getDefaultSparkConfig(bulkImportJob,
+            bulkImportJob.getPlatformSpec(), tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName()), instanceProperties);
         Map<String, String> userConfig = bulkImportJob.getSparkConf();
         if (null != userConfig) {
             config.putAll(userConfig);

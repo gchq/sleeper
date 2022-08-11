@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2022 Crown Copyright
  *
@@ -20,8 +19,6 @@ import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.model.*;
 import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.Lists;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -40,7 +37,7 @@ import sleeper.configuration.properties.table.TableProperty;
 /**
  * An {@link Executor} which runs a bulk import job on an EMR cluster.
  */
-public class EmrExecutor extends Executor {
+public class EmrExecutor extends AbstractEmrExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmrExecutor.class);
 
     private final TablePropertiesProvider tablePropertiesProvider;
@@ -145,32 +142,5 @@ public class EmrExecutor extends Executor {
         }
 
         return config;
-    }
-
-    @Override
-    protected Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties) {
-        Map<String, String> defaultConfig = new HashMap<>();
-        defaultConfig.put("spark.shuffle.mapStatus.compression.codec", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC, platformSpec, tableProperties));
-        defaultConfig.put("spark.speculation", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SPECULATION, platformSpec, tableProperties));
-        defaultConfig.put("spark.speculation.quantile", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SPECULATION_QUANTILE, platformSpec, tableProperties));
-        defaultConfig.put("spark.hadoop.fs.s3a.connection.maximum", instanceProperties.get(UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3));
-        return defaultConfig;
-    }
-
-    @Override
-    protected List<String> constructArgs(BulkImportJob bulkImportJob) {
-        List<String> args = super.constructArgs(bulkImportJob);
-        // Pretty printing it seems to force it to quote the job and handle it properly
-        args.add(bulkImportJob.getId());
-        args.add(instanceProperties.get(CONFIG_BUCKET));
-        return args;
-    }
-
-    @Override
-    protected String getJarLocation() {
-        return "s3a://"
-                + instanceProperties.get(UserDefinedInstanceProperty.JARS_BUCKET)
-                + "/bulk-import-runner-"
-                + instanceProperties.get(UserDefinedInstanceProperty.VERSION) + ".jar";
     }
 }
