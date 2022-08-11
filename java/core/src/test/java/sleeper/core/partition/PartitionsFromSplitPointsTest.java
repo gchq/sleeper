@@ -40,7 +40,7 @@ public class PartitionsFromSplitPointsTest {
         List<Partition> partitions = partitionsFromSplitPoints.construct();
 
         // Then
-        assertThat(partitions.size()).isEqualTo(1);
+        assertThat(partitions).hasSize(1);
         Partition expectedPartition = new Partition();
         expectedPartition.setId(partitions.get(0).getId());
         expectedPartition.setParentPartitionId(null);
@@ -52,7 +52,7 @@ public class PartitionsFromSplitPointsTest {
                 Long.MIN_VALUE, true, null, false);
         Region expectedRegion = new Region(expectedRange);
         expectedPartition.setRegion(expectedRegion);
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
@@ -67,17 +67,17 @@ public class PartitionsFromSplitPointsTest {
         List<Partition> partitions = partitionsFromSplitPoints.construct();
 
         // Then
-        assertThat(partitions.size()).isEqualTo(3);
+        assertThat(partitions).hasSize(3);
 
         List<Partition> rootPartitions = partitions.stream()
                 .filter(p -> null == p.getParentPartitionId())
                 .collect(Collectors.toList());
-        assertThat(rootPartitions.size()).isEqualTo(1);
+        assertThat(rootPartitions).hasSize(1);
         Partition rootPartition = rootPartitions.get(0);
         List<Partition> childPartitions = partitions.stream()
                 .filter(p -> null != p.getParentPartitionId())
                 .collect(Collectors.toList());
-        assertThat(childPartitions.size()).isEqualTo(2);
+        assertThat(childPartitions).hasSize(2);
 
         Partition expectedRootPartition = new Partition();
         expectedRootPartition.setId(rootPartition.getId());
@@ -106,7 +106,6 @@ public class PartitionsFromSplitPointsTest {
                 Long.MIN_VALUE, true, 0L, false);
         Region expectedLeftRegion = new Region(expectedLeftRange);
         expectedLeftPartition.setRegion(expectedLeftRegion);
-        assertThat(childPartitions.get(0)).isEqualTo(expectedLeftPartition);
 
         Partition expectedRightPartition = new Partition();
         expectedRightPartition.setId(childPartitions.get(1).getId());
@@ -119,7 +118,8 @@ public class PartitionsFromSplitPointsTest {
                 0L, true, null, false);
         Region expectedRightRegion = new Region(expectedRightRange);
         expectedRightPartition.setRegion(expectedRightRegion);
-        assertThat(childPartitions.get(1)).isEqualTo(expectedRightPartition);
+
+        assertThat(childPartitions).containsExactly(expectedLeftPartition, expectedRightPartition);
     }
 
     @Test
@@ -134,24 +134,24 @@ public class PartitionsFromSplitPointsTest {
         List<Partition> partitions = partitionsFromSplitPoints.construct();
 
         // Then
-        assertThat(partitions.size()).isEqualTo(5);
+        assertThat(partitions).hasSize(5);
 
         List<Partition> rootPartitions = partitions.stream()
                 .filter(p -> null == p.getParentPartitionId())
                 .collect(Collectors.toList());
-        assertThat(rootPartitions.size()).isEqualTo(1);
+        assertThat(rootPartitions).hasSize(1);
         Partition rootPartition = rootPartitions.get(0);
 
         List<Partition> leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toList());
-        assertThat(leafPartitions.size()).isEqualTo(3);
+        assertThat(leafPartitions).hasSize(3);
 
         List<Partition> internalPartitions = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .filter(p -> null != p.getParentPartitionId())
                 .collect(Collectors.toList());
-        assertThat(internalPartitions.size()).isEqualTo(1);
+        assertThat(internalPartitions).hasSize(1);
         Partition internalPartition = internalPartitions.get(0);
 
         Partition expectedRootPartition = new Partition();
@@ -191,7 +191,6 @@ public class PartitionsFromSplitPointsTest {
                 Long.MIN_VALUE, true, 0L, false);
         Region expectedLeafPartition0Region = new Region(expectedLeafPartition0Range);
         expectedLeafPartition0.setRegion(expectedLeafPartition0Region);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
 
         Partition expectedLeafPartition1 = new Partition();
         expectedLeafPartition1.setId(leafPartitions.get(1).getId());
@@ -204,7 +203,6 @@ public class PartitionsFromSplitPointsTest {
                 0L, true, 100L, false);
         Region expectedLeafPartition1Region = new Region(expectedLeafPartition1Range);
         expectedLeafPartition1.setRegion(expectedLeafPartition1Region);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
 
         Partition expectedLeafPartition2 = new Partition();
         expectedLeafPartition2.setId(leafPartitions.get(2).getId());
@@ -217,7 +215,9 @@ public class PartitionsFromSplitPointsTest {
                 100L, true, null, false);
         Region expectedLeafPartition2Region = new Region(expectedLeafPartition2Range);
         expectedLeafPartition2.setRegion(expectedLeafPartition2Region);
-        assertThat(leafPartitions.get(2)).isEqualTo(expectedLeafPartition2);
+
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2);
     }
 
     @Test
@@ -237,24 +237,24 @@ public class PartitionsFromSplitPointsTest {
         // Then
         //  - Number of partitions is 127
         //      (64 at bottom level, then 32, 16, 8, 4, 2, 1)
-        assertThat(partitions.size()).isEqualTo(127);
+        assertThat(partitions).hasSize(127);
 
         List<Partition> rootPartitions = partitions.stream()
                 .filter(p -> null == p.getParentPartitionId())
                 .collect(Collectors.toList());
-        assertThat(rootPartitions.size()).isEqualTo(1);
+        assertThat(rootPartitions).hasSize(1);
         Partition rootPartition = rootPartitions.get(0);
 
         List<Partition> leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toList());
-        assertThat(leafPartitions.size()).isEqualTo(64);
+        assertThat(leafPartitions).hasSize(64);
 
         List<Partition> internalPartitions = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .filter(p -> null != p.getParentPartitionId())
                 .collect(Collectors.toList());
-        assertThat(internalPartitions.size()).isEqualTo(62);
+        assertThat(internalPartitions).hasSize(62);
 
         Set<String> leafPartitionIds = leafPartitions.stream().map(Partition::getId).collect(Collectors.toSet());
         Map<Integer, List<Partition>> levelToPartitions = new HashMap<>();
@@ -271,11 +271,11 @@ public class PartitionsFromSplitPointsTest {
             levelToPartitionIds.put(level, partitionIdsAtLevel);
         }
 
-        assertThat(levelToPartitions.get(1).size()).isEqualTo(32);
-        assertThat(levelToPartitions.get(2).size()).isEqualTo(16);
-        assertThat(levelToPartitions.get(3).size()).isEqualTo(8);
-        assertThat(levelToPartitions.get(4).size()).isEqualTo(4);
-        assertThat(levelToPartitions.get(5).size()).isEqualTo(2);
+        assertThat(levelToPartitions.get(1)).hasSize(32);
+        assertThat(levelToPartitions.get(2)).hasSize(16);
+        assertThat(levelToPartitions.get(3)).hasSize(8);
+        assertThat(levelToPartitions.get(4)).hasSize(4);
+        assertThat(levelToPartitions.get(5)).hasSize(2);
 
         Partition expectedRootPartition = new Partition();
         expectedRootPartition.setId(rootPartition.getId());

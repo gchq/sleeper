@@ -32,7 +32,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 
 public class MergingIteratorTest {
 
@@ -84,22 +83,10 @@ public class MergingIteratorTest {
         CloseableIterator<Record> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
 
-        // When
-        List<Record> mergedIterable = new ArrayList<>();
-        while (mergingIterator.hasNext()) {
-            mergedIterable.add(mergingIterator.next());
-        }
-
         // Then
+        assertThat(mergingIterator).toIterable().containsExactly(
+                record1, record4, record2, record5, record3, record6, record7);
         assertThat(mergingIterator.getNumberOfRecordsRead()).isEqualTo(7L);
-        assertThat(mergedIterable.size()).isEqualTo(7);
-        assertThat(mergedIterable.get(0)).isEqualTo(record1);
-        assertThat(mergedIterable.get(1)).isEqualTo(record4);
-        assertThat(mergedIterable.get(2)).isEqualTo(record2);
-        assertThat(mergedIterable.get(3)).isEqualTo(record5);
-        assertThat(mergedIterable.get(4)).isEqualTo(record3);
-        assertThat(mergedIterable.get(5)).isEqualTo(record6);
-        assertThat(mergedIterable.get(6)).isEqualTo(record7);
     }
 
     @Test
@@ -150,22 +137,10 @@ public class MergingIteratorTest {
         CloseableIterator<Record> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
 
-        // When
-        List<Record> mergedIterable = new ArrayList<>();
-        while (mergingIterator.hasNext()) {
-            mergedIterable.add(mergingIterator.next());
-        }
-
         // Then
+        assertThat(mergingIterator).toIterable().containsExactly(
+                record1, record4, record2, record5, record3, record6, record7);
         assertThat(mergingIterator.getNumberOfRecordsRead()).isEqualTo(7L);
-        assertThat(mergedIterable.size()).isEqualTo(7);
-        assertThat(mergedIterable.get(0)).isEqualTo(record1);
-        assertThat(mergedIterable.get(1)).isEqualTo(record4);
-        assertThat(mergedIterable.get(2)).isEqualTo(record2);
-        assertThat(mergedIterable.get(3)).isEqualTo(record5);
-        assertThat(mergedIterable.get(4)).isEqualTo(record3);
-        assertThat(mergedIterable.get(5)).isEqualTo(record6);
-        assertThat(mergedIterable.get(6)).isEqualTo(record7);
     }
 
     @Test
@@ -216,22 +191,10 @@ public class MergingIteratorTest {
         CloseableIterator<Record> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
 
-        // When
-        List<Record> mergedIterable = new ArrayList<>();
-        while (mergingIterator.hasNext()) {
-            mergedIterable.add(mergingIterator.next());
-        }
-
         // Then
+        assertThat(mergingIterator).toIterable().containsExactly(
+                record1, record4, record2, record5, record3, record6, record7);
         assertThat(mergingIterator.getNumberOfRecordsRead()).isEqualTo(7L);
-        assertThat(mergedIterable.size()).isEqualTo(7);
-        assertThat(mergedIterable.get(0)).isEqualTo(record1);
-        assertThat(mergedIterable.get(1)).isEqualTo(record4);
-        assertThat(mergedIterable.get(2)).isEqualTo(record2);
-        assertThat(mergedIterable.get(3)).isEqualTo(record5);
-        assertThat(mergedIterable.get(4)).isEqualTo(record3);
-        assertThat(mergedIterable.get(5)).isEqualTo(record6);
-        assertThat(mergedIterable.get(6)).isEqualTo(record7);
     }
 
     @Test
@@ -282,22 +245,10 @@ public class MergingIteratorTest {
         CloseableIterator<Record> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
 
-        // When
-        List<Record> mergedIterable = new ArrayList<>();
-        while (mergingIterator.hasNext()) {
-            mergedIterable.add(mergingIterator.next());
-        }
-
         // Then
+        assertThat(mergingIterator).toIterable().containsExactly(
+                record1, record4, record2, record5, record3, record6, record7);
         assertThat(mergingIterator.getNumberOfRecordsRead()).isEqualTo(7L);
-        assertThat(mergedIterable.size()).isEqualTo(7);
-        assertThat(mergedIterable.get(0)).isEqualTo(record1);
-        assertThat(mergedIterable.get(1)).isEqualTo(record4);
-        assertThat(mergedIterable.get(2)).isEqualTo(record2);
-        assertThat(mergedIterable.get(3)).isEqualTo(record5);
-        assertThat(mergedIterable.get(4)).isEqualTo(record3);
-        assertThat(mergedIterable.get(5)).isEqualTo(record6);
-        assertThat(mergedIterable.get(6)).isEqualTo(record7);
     }
 
     @Test
@@ -340,22 +291,10 @@ public class MergingIteratorTest {
         CloseableIterator<Record> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
 
-        // When
-        List<Record> mergedIterable = new ArrayList<>();
-        while (mergingIterator.hasNext()) {
-            mergedIterable.add(mergingIterator.next());
-        }
-
         // Then
+        assertThat(mergingIterator).toIterable().containsExactly(
+                record1, record2, record4, record5, record3, record6, record7);
         assertThat(mergingIterator.getNumberOfRecordsRead()).isEqualTo(7L);
-        assertThat(mergedIterable.size()).isEqualTo(7);
-        assertThat(mergedIterable.get(0)).isEqualTo(record1);
-        assertThat(mergedIterable.get(1)).isEqualTo(record2);
-        assertThat(mergedIterable.get(2)).isEqualTo(record4);
-        assertThat(mergedIterable.get(3)).isEqualTo(record5);
-        assertThat(mergedIterable.get(4)).isEqualTo(record3);
-        assertThat(mergedIterable.get(5)).isEqualTo(record6);
-        assertThat(mergedIterable.get(6)).isEqualTo(record7);
     }
 
     @Test
@@ -382,17 +321,9 @@ public class MergingIteratorTest {
         CloseableIterator<Record> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
 
-        // When
-        List<Record> mergedIterable = new ArrayList<>();
-        while (mergingIterator.hasNext()) {
-            mergedIterable.add(mergingIterator.next());
-        }
-
         // Then
+        assertThat(mergingIterator).toIterable().containsExactly(
+                record1, record2, record3);
         assertThat(mergingIterator.getNumberOfRecordsRead()).isEqualTo(3L);
-        assertThat(mergedIterable.size()).isEqualTo(3);
-        assertThat(mergedIterable.get(0)).isEqualTo(record1);
-        assertThat(mergedIterable.get(1)).isEqualTo(record2);
-        assertThat(mergedIterable.get(2)).isEqualTo(record3);
     }
 }

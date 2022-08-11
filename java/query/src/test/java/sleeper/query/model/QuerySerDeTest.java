@@ -36,7 +36,8 @@ import sleeper.query.model.output.S3ResultsOutput;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.fail;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 @RunWith(Parameterized.class)
@@ -106,9 +107,8 @@ public class QuerySerDeTest {
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        assertThat(query.getRegions().size()).isEqualTo(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, 1, true, 2, false));
-        assertThat(query.getRegions().get(0)).isEqualTo(expectedRegion);
+        assertThat(query.getRegions()).containsExactly(expectedRegion);
         assertThat(query.getRequestedValueFields()).isEqualTo(Collections.singletonList("value1"));
     }
 
@@ -152,9 +152,8 @@ public class QuerySerDeTest {
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        assertThat(query.getRegions().size()).isEqualTo(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, 1, true, 2, true));
-        assertThat(query.getRegions().get(0)).isEqualTo(expectedRegion);
+        assertThat(query.getRegions()).containsExactly(expectedRegion);
         assertThat(query.getRequestedValueFields()).isNull();
     }
 
@@ -198,9 +197,8 @@ public class QuerySerDeTest {
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        assertThat(query.getRegions().size()).isEqualTo(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, 1, false, 2, true));
-        assertThat(query.getRegions().get(0)).isEqualTo(expectedRegion);
+        assertThat(query.getRegions()).containsExactly(expectedRegion);
         assertThat(query.getRequestedValueFields()).isNull();
     }
 
@@ -244,9 +242,8 @@ public class QuerySerDeTest {
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        assertThat(query.getRegions().size()).isEqualTo(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, 1, false, 2, false));
-        assertThat(query.getRegions().get(0)).isEqualTo(expectedRegion);
+        assertThat(query.getRegions()).containsExactly(expectedRegion);
         assertThat(query.getRequestedValueFields()).isNull();
     }
 
@@ -291,9 +288,8 @@ public class QuerySerDeTest {
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        assertThat(query.getRegions().size()).isEqualTo(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, 1, false, null, false));
-        assertThat(query.getRegions().get(0)).isEqualTo(expectedRegion);
+        assertThat(query.getRegions()).containsExactly(expectedRegion);
         assertThat(query.getRequestedValueFields()).isNull();
     }
 

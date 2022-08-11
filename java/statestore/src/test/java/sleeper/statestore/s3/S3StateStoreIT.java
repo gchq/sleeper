@@ -20,24 +20,18 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.BillingMode;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import com.amazonaws.services.dynamodbv2.model.*;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.GenericContainer;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
+import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -49,30 +43,13 @@ import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
-
-import sleeper.core.key.Key;
-import sleeper.core.range.Range;
-import sleeper.core.range.Range.RangeFactory;
-import sleeper.core.range.Region;
 
 public class S3StateStoreIT {
     private static final int DYNAMO_PORT = 8000;
@@ -168,9 +145,8 @@ public class S3StateStoreIT {
 
         // Then
         List<FileInfo> fileInfos = stateStore.getActiveFiles();
-        assertThat(fileInfos.size()).isEqualTo(1);
-        assertThat(fileInfos.get(0).getRowKeyTypes().size()).isEqualTo(1);
-        assertThat(fileInfos.get(0).getRowKeyTypes().get(0)).isEqualTo(new LongType());
+        assertThat(fileInfos).hasSize(1);
+        assertThat(fileInfos.get(0).getRowKeyTypes()).containsExactly(new LongType());
         assertThat(fileInfos.get(0).getFilename()).isEqualTo("abc");
         assertThat(fileInfos.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
         assertThat(fileInfos.get(0).getPartitionId()).isEqualTo("1");
@@ -200,9 +176,8 @@ public class S3StateStoreIT {
 
         // Then
         List<FileInfo> fileInfos = stateStore.getActiveFiles();
-        assertThat(fileInfos.size()).isEqualTo(1);
-        assertThat(fileInfos.get(0).getRowKeyTypes().size()).isEqualTo(1);
-        assertThat(fileInfos.get(0).getRowKeyTypes().get(0)).isEqualTo(new ByteArrayType());
+        assertThat(fileInfos).hasSize(1);
+        assertThat(fileInfos.get(0).getRowKeyTypes()).containsExactly(new ByteArrayType());
         assertThat(fileInfos.get(0).getFilename()).isEqualTo("abc");
         assertThat(fileInfos.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
         assertThat(fileInfos.get(0).getPartitionId()).isEqualTo("1");
@@ -234,10 +209,8 @@ public class S3StateStoreIT {
 
         // Then
         List<FileInfo> fileInfos = stateStore.getActiveFiles();
-        assertThat(fileInfos.size()).isEqualTo(1);
-        assertThat(fileInfos.get(0).getRowKeyTypes().size()).isEqualTo(2);
-        assertThat(fileInfos.get(0).getRowKeyTypes().get(0)).isEqualTo(new ByteArrayType());
-        assertThat(fileInfos.get(0).getRowKeyTypes().get(1)).isEqualTo(new ByteArrayType());
+        assertThat(fileInfos).hasSize(1);
+        assertThat(fileInfos.get(0).getRowKeyTypes()).containsExactly(new ByteArrayType(), new ByteArrayType());
         assertThat(fileInfos.get(0).getFilename()).isEqualTo("abc");
         assertThat(fileInfos.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
         assertThat(fileInfos.get(0).getPartitionId()).isEqualTo("1");
@@ -271,11 +244,9 @@ public class S3StateStoreIT {
 
         // Then
         List<FileInfo> fileInfos = stateStore.getActiveFiles();
-        assertThat(fileInfos.size()).isEqualTo(1);
+        assertThat(fileInfos).hasSize(1);
         assertThat(fileInfo.getFilename()).isEqualTo("abc");
-        assertThat(fileInfos.get(0).getRowKeyTypes().size()).isEqualTo(2);
-        assertThat(fileInfos.get(0).getRowKeyTypes().get(0)).isEqualTo(new LongType());
-        assertThat(fileInfos.get(0).getRowKeyTypes().get(1)).isEqualTo(new StringType());
+        assertThat(fileInfos.get(0).getRowKeyTypes()).containsExactly(new LongType(), new StringType());
         assertThat(fileInfos.get(0).getFilename()).isEqualTo("abc");
         assertThat(fileInfos.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
         assertThat(fileInfos.get(0).getPartitionId()).isEqualTo("1");
@@ -309,7 +280,7 @@ public class S3StateStoreIT {
         List<FileInfo> fileInfos = stateStore.getActiveFiles();
 
         // Then
-        assertThat(fileInfos.size()).isEqualTo(10000);
+        assertThat(fileInfos).hasSize(10000);
         assertThat(new HashSet<>(fileInfos)).isEqualTo(expected);
     }
 
@@ -412,7 +383,7 @@ public class S3StateStoreIT {
             retries++;
             activeFiles = stateStore.getActiveFiles();
         }
-        assertThat(activeFiles.size()).isEqualTo(20);
+        assertThat(activeFiles).hasSize(20);
         assertThat(new HashSet<>(activeFiles)).isEqualTo(new HashSet<>(files));
         executorService.shutdown();
     }
@@ -462,32 +433,16 @@ public class S3StateStoreIT {
 
         // When 1
         Iterator<FileInfo> readyForGCFilesIterator = stateStore.getReadyForGCFiles();
-        List<FileInfo> readyForGCFiles = new ArrayList<>();
-        while (readyForGCFilesIterator.hasNext()) {
-            readyForGCFiles.add(readyForGCFilesIterator.next());
-        }
 
         // Then 1
-        assertThat(readyForGCFiles.size()).isEqualTo(1);
-        assertThat(readyForGCFiles.get(0)).isEqualTo(fileInfo1);
+        assertThat(readyForGCFilesIterator).toIterable().containsExactly(fileInfo1);
 
         // When 2
         Thread.sleep(9000L);
         readyForGCFilesIterator = stateStore.getReadyForGCFiles();
-        readyForGCFiles.clear();
-        while (readyForGCFilesIterator.hasNext()) {
-            readyForGCFiles.add(readyForGCFilesIterator.next());
-        }
 
         // Then 2
-        assertThat(readyForGCFiles.size()).isEqualTo(2);
-        if (readyForGCFiles.get(0).getFilename().equals(fileInfo1.getFilename())) {
-            assertThat(readyForGCFiles.get(0)).isEqualTo(fileInfo1);
-            assertThat(readyForGCFiles.get(1)).isEqualTo(fileInfo3);
-        } else {
-            assertThat(readyForGCFiles.get(0)).isEqualTo(fileInfo3);
-            assertThat(readyForGCFiles.get(1)).isEqualTo(fileInfo1);
-        }
+        assertThat(readyForGCFilesIterator).toIterable().containsExactlyInAnyOrder(fileInfo1, fileInfo3);
     }
 
     @Test
@@ -532,11 +487,7 @@ public class S3StateStoreIT {
         List<FileInfo> fileInfos = stateStore.getActiveFilesWithNoJobId();
 
         // Then
-        assertThat(fileInfos.size()).isEqualTo(2);
-        List<FileInfo> expectedFileInfos = new ArrayList<>();
-        expectedFileInfos.add(fileInfo1);
-        expectedFileInfos.add(fileInfo2);
-        assertThat(fileInfos).isEqualTo(expectedFileInfos);
+        assertThat(fileInfos).containsExactly(fileInfo1, fileInfo2);
     }
 
     @Test
@@ -571,9 +522,8 @@ public class S3StateStoreIT {
         Iterator<FileInfo> readyForGC = stateStore.getReadyForGCFiles();
 
         // Then
-        assertThat(active.size()).isEqualTo(1);
         assertThat(readyForGC.hasNext()).isFalse();
-        assertThat(active.get(0)).isEqualTo(fileInfo1);
+        assertThat(active).containsExactly(fileInfo1);
     }
 
     @Test(expected = StateStoreException.class)
@@ -646,9 +596,8 @@ public class S3StateStoreIT {
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
 
         // Then
-        assertThat(filesReadyForGC.size()).isEqualTo(4);
-        assertThat(activeFiles.size()).isEqualTo(1);
-        assertThat(activeFiles.get(0)).isEqualTo(newFileInfo);
+        assertThat(filesReadyForGC).hasSize(4);
+        assertThat(activeFiles).containsExactly(newFileInfo);
     }
 
     @Test
@@ -703,10 +652,8 @@ public class S3StateStoreIT {
                 .collect(Collectors.toList());
 
         // Then
-        assertThat(filesReadyForGC.size()).isEqualTo(4);
-        assertThat(activeFiles.size()).isEqualTo(2);
-        assertThat(activeFiles.get(0)).isEqualTo(newLeftFileInfo);
-        assertThat(activeFiles.get(1)).isEqualTo(newRightFileInfo);
+        assertThat(filesReadyForGC).hasSize(4);
+        assertThat(activeFiles).containsExactly(newLeftFileInfo, newRightFileInfo);
     }
 
     @Test(expected = StateStoreException.class)
@@ -818,7 +765,7 @@ public class S3StateStoreIT {
 
         // Then
         Set<FileInfo> updatedFiles = new HashSet<>(stateStore.getActiveFiles());
-        assertThat(updatedFiles.size()).isEqualTo(4);
+        assertThat(updatedFiles).hasSize(4);
         Set<FileInfo> expectedFiles = files.stream()
                 .map(f -> {
                     f.setJobId(jobId);
@@ -826,7 +773,7 @@ public class S3StateStoreIT {
                 })
                 .collect(Collectors.toSet());
         assertThat(updatedFiles).isEqualTo(expectedFiles);
-        assertThat(stateStore.getReadyForGCFiles().hasNext()).isFalse();
+        assertThat(stateStore.getReadyForGCFiles()).isExhausted();
     }
 
     @Test(expected = StateStoreException.class)
@@ -988,9 +935,9 @@ public class S3StateStoreIT {
         Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
 
         // Then
-        assertThat(partitionToFileMapping.entrySet().size()).isEqualTo(5);
+        assertThat(partitionToFileMapping.entrySet()).hasSize(5);
         for (int i = 0; i < 5; i++) {
-            assertThat(partitionToFileMapping.get("" + i).size()).isEqualTo(2);
+            assertThat(partitionToFileMapping.get("" + i)).hasSize(2);
             Set<String> expected = new HashSet<>();
             expected.add(files.get(i).getFilename());
             expected.add(files.get(i + 5).getFilename());
@@ -1308,11 +1255,11 @@ public class S3StateStoreIT {
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
 
         // Then
-        assertThat(partitions.size()).isEqualTo(1);
+        assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, null));
         Partition expectedPartition = new Partition(schema.getRowKeyTypes(),
                 expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
@@ -1327,11 +1274,11 @@ public class S3StateStoreIT {
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
 
         // Then
-        assertThat(partitions.size()).isEqualTo(1);
+        assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null));
         Partition expectedPartition = new Partition(Collections.singletonList(new LongType()),
                 expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
@@ -1346,11 +1293,11 @@ public class S3StateStoreIT {
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
 
         // Then
-        assertThat(partitions.size()).isEqualTo(1);
+        assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, "", null));
         Partition expectedPartition = new Partition(Collections.singletonList(new StringType()),
                 expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
@@ -1365,10 +1312,10 @@ public class S3StateStoreIT {
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
 
         // Then
-        assertThat(partitions.size()).isEqualTo(1);
+        assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, new byte[]{}, null));
         Partition expectedPartition = new Partition(Collections.singletonList(new ByteArrayType()),
                 expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 }

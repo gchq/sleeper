@@ -171,7 +171,7 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertThat(resultsAsList.size()).isEqualTo(1);
+        assertThat(resultsAsList).hasSize(1);
         assertThat(resultsAsList.get(0)).isEqualTo(getRecords().get(0));
 
         // When 2
@@ -192,7 +192,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(1);
+        assertThat(resultsAsList).hasSize(1);
         assertThat(resultsAsList.get(0)).isEqualTo(getRecords().get(0));
 
         // When 4
@@ -209,7 +209,7 @@ public class QueryExecutorIT {
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 5
-        assertThat(leafPartitionQueries.size()).isEqualTo(1);
+        assertThat(leafPartitionQueries).hasSize(1);
         LeafPartitionQuery expectedLeafPartitionQuery = new LeafPartitionQuery
                 .Builder("myTable", "id", leafPartitionQueries.get(0).getSubQueryId(), region, "root", rootPartition.getRegion(), files)
                 .build();
@@ -248,7 +248,7 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertThat(resultsAsList.size()).isEqualTo(10);
+        assertThat(resultsAsList).hasSize(10);
         for (Record record : resultsAsList) {
             assertThat(record).isEqualTo(getRecords().get(0));
         }
@@ -271,7 +271,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(10);
+        assertThat(resultsAsList).hasSize(10);
         for (Record record : resultsAsList) {
             assertThat(record).isEqualTo(getRecords().get(0));
         }
@@ -282,7 +282,7 @@ public class QueryExecutorIT {
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 4
-        assertThat(leafPartitionQueries.size()).isEqualTo(1);
+        assertThat(leafPartitionQueries).hasSize(1);
         LeafPartitionQuery expectedLeafPartitionQuery = new LeafPartitionQuery
                 .Builder("myTable", "id", leafPartitionQueries.get(0).getSubQueryId(), region, "root", rootPartition.getRegion(), files)
                 .build();
@@ -323,7 +323,7 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertThat(resultsAsList.size()).isEqualTo(10);
+        assertThat(resultsAsList).hasSize(10);
         for (Record record : resultsAsList) {
             assertThat(record).isEqualTo(getRecords().get(0));
         }
@@ -346,7 +346,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(10);
+        assertThat(resultsAsList).hasSize(10);
         for (Record record : resultsAsList) {
             assertThat(record).isEqualTo(getRecords().get(0));
         }
@@ -357,7 +357,7 @@ public class QueryExecutorIT {
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 4
-        assertThat(leafPartitionQueries.size()).isEqualTo(1);
+        assertThat(leafPartitionQueries).hasSize(1);
         LeafPartitionQuery expectedLeafPartitionQuery = new LeafPartitionQuery
                 .Builder("myTable", "id", leafPartitionQueries.get(0).getSubQueryId(), region, "root", rootPartition.getRegion(), files)
                 .build();
@@ -398,7 +398,7 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertThat(resultsAsList.size()).isEqualTo(10);
+        assertThat(resultsAsList).hasSize(10);
         for (Record record : resultsAsList) {
             assertThat(record).isEqualTo(getMultipleRecords().get(0));
         }
@@ -414,7 +414,7 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertThat(resultsAsList.size()).isEqualTo(10);
+        assertThat(resultsAsList).hasSize(10);
         for (Record record : resultsAsList) {
             assertThat(record).isEqualTo(getMultipleRecords().get(4));
         }
@@ -437,7 +437,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(100);
+        assertThat(resultsAsList).hasSize(100);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords()));
 
         // When 5
@@ -450,7 +450,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(90);
+        assertThat(resultsAsList).hasSize(90);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords().stream()
                 .filter(r -> ((long) r.get("key")) >= 1L && ((long) r.get("key")) < 10L).collect(Collectors.toList())));
 
@@ -464,7 +464,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(80);
+        assertThat(resultsAsList).hasSize(80);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords().stream()
                 .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) < 10L).collect(Collectors.toList())));
 
@@ -478,7 +478,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(90);
+        assertThat(resultsAsList).hasSize(90);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords().stream()
                 .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) <= 10L).collect(Collectors.toList())));
 
@@ -492,7 +492,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(100);
+        assertThat(resultsAsList).hasSize(100);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords()));
 
         // When 9
@@ -505,7 +505,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(60);
+        assertThat(resultsAsList).hasSize(60);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords().stream().filter(r -> ((long) r.get("key")) >= 5L).collect(Collectors.toList())));
 
         // When 10
@@ -514,7 +514,7 @@ public class QueryExecutorIT {
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 10
-        assertThat(leafPartitionQueries.size()).isEqualTo(1);
+        assertThat(leafPartitionQueries).hasSize(1);
         LeafPartitionQuery expectedLeafPartitionQuery = new LeafPartitionQuery
                 .Builder("myTable", "id", leafPartitionQueries.get(0).getSubQueryId(), region, "root", rootPartition.getRegion(), files)
                 .build();
@@ -567,7 +567,7 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertThat(resultsAsList.size()).isEqualTo(10);
+        assertThat(resultsAsList).hasSize(10);
         for (Record record : resultsAsList) {
             assertThat(record).isEqualTo(getMultipleRecords().get(0));
         }
@@ -583,7 +583,7 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertThat(resultsAsList.size()).isEqualTo(10);
+        assertThat(resultsAsList).hasSize(10);
         for (Record record : resultsAsList) {
             assertThat(record).isEqualTo(getMultipleRecords().get(4));
         }
@@ -606,7 +606,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(100);
+        assertThat(resultsAsList).hasSize(100);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords()));
 
         // When 5
@@ -619,7 +619,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(60);
+        assertThat(resultsAsList).hasSize(60);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords().stream().filter(r -> ((long) r.get("key")) >= 5L).collect(Collectors.toList())));
 
         // When 6
@@ -628,7 +628,7 @@ public class QueryExecutorIT {
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 6
-        assertThat(leafPartitionQueries.size()).isEqualTo(2);
+        assertThat(leafPartitionQueries).hasSize(2);
         LeafPartitionQuery leftLeafPartitionQuery;
         LeafPartitionQuery rightLeafPartitionQuery;
         if (leafPartitionQueries.get(0).getLeafPartitionId().equals(leftPartition.getId())) {
@@ -699,7 +699,7 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertThat(resultsAsList.size()).isEqualTo(10);
+        assertThat(resultsAsList).hasSize(10);
         for (Record record : resultsAsList) {
             assertThat(record).isEqualTo(getMultipleRecordsMultidimRowKey().get(0));
         }
@@ -717,7 +717,7 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertThat(resultsAsList.size()).isEqualTo(10);
+        assertThat(resultsAsList).hasSize(10);
         for (Record record : resultsAsList) {
             assertThat(record).isEqualTo(getMultipleRecordsMultidimRowKey().get(4));
         }
@@ -745,7 +745,7 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertThat(resultsAsList.size()).isEqualTo(100);
+        assertThat(resultsAsList).hasSize(100);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecordsMultidimRowKey()));
 
         // When 5
@@ -761,7 +761,7 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertThat(resultsAsList.size()).isEqualTo(30);
+        assertThat(resultsAsList).hasSize(30);
         Set<Record> expectedResults = new HashSet<>(
                 getMultipleRecordsMultidimRowKey().stream()
                         .filter(r -> ((long) r.get("key1")) >= 2L && ((long) r.get("key1")) <= 5L)
@@ -779,7 +779,7 @@ public class QueryExecutorIT {
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 6
-        assertThat(leafPartitionQueries.size()).isEqualTo(2);
+        assertThat(leafPartitionQueries).hasSize(2);
         LeafPartitionQuery leftLeafPartitionQuery;
         LeafPartitionQuery rightLeafPartitionQuery;
         if (leafPartitionQueries.get(0).getLeafPartitionId().equals(leftPartition.getId())) {
@@ -927,7 +927,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(12); // 12 because the same data was added 3 times at different levels of the tree
+        assertThat(resultsAsList).hasSize(12); // 12 because the same data was added 3 times at different levels of the tree
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(records));
 
         // When 2 - query for range within partition 1
@@ -942,7 +942,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(3);
+        assertThat(resultsAsList).hasSize(3);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(Collections.singletonList(record1)));
 
         // When 3 - query for range within partition 1
@@ -957,7 +957,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(3);
+        assertThat(resultsAsList).hasSize(3);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(Collections.singletonList(record1)));
 
         // When 4 - query for range within partition 1
@@ -972,7 +972,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(3);
+        assertThat(resultsAsList).hasSize(3);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(Collections.singletonList(record1)));
 
         // When 5 - query for range within partition 1
@@ -987,7 +987,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(3);
+        assertThat(resultsAsList).hasSize(3);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(Collections.singletonList(record1)));
 
         // When 6 - query for range within partitions 1 and 2
@@ -1002,7 +1002,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(6);
+        assertThat(resultsAsList).hasSize(6);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(Arrays.asList(record1, record2)));
 
         // When 7 - query for range to the right of the data in partitions 2 and 4
@@ -1017,7 +1017,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(0);
+        assertThat(resultsAsList).isEmpty();
 
         // When 8 - query for a 1-dimensional range
         range1 = rangeFactory.createRange(field1, "J", true, "Z", true);
@@ -1030,7 +1030,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(6);
+        assertThat(resultsAsList).hasSize(6);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(Arrays.asList(record2, record4)));
 
         // When 9 - query for a range where the first dimension is constant
@@ -1045,7 +1045,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(3);
+        assertThat(resultsAsList).hasSize(3);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(Sets.newHashSet(record3));
 
         // When 10 - query for a range where the max equals record1 and max is not inclusive
@@ -1070,7 +1070,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(3);
+        assertThat(resultsAsList).hasSize(3);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(Sets.newHashSet(record1));
 
         // When 12 - query for a range where the boundaries cover all 4 records, min is inclusive, max is not inclusive
@@ -1086,7 +1086,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(9);
+        assertThat(resultsAsList).hasSize(9);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(Sets.newHashSet(record1, record2, record3));
 
         // When 13 - query for a range where the boundaries cover all 4 records, min is inclusive, and max is inclusive
@@ -1102,7 +1102,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(12);
+        assertThat(resultsAsList).hasSize(12);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(Sets.newHashSet(record1, record2, record3, record4));
 
         // When 14 - query for a range where the boundaries cover all 4 records, min is not inclusive, and max is not inclusive
@@ -1118,7 +1118,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(3);
+        assertThat(resultsAsList).hasSize(3);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(Sets.newHashSet(record1));
 
         // When 15 - query for a range where the boundaries cover all 4 records, min is not inclusive, and max is inclusive
@@ -1134,7 +1134,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertThat(resultsAsList.size()).isEqualTo(6);
+        assertThat(resultsAsList).hasSize(6);
         assertThat(new HashSet<>(resultsAsList)).isEqualTo(Sets.newHashSet(record1, record4));
 
         // When 16
@@ -1145,7 +1145,7 @@ public class QueryExecutorIT {
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         // Then 16
-        assertThat(leafPartitionQueries.size()).isEqualTo(4);
+        assertThat(leafPartitionQueries).hasSize(4);
         LeafPartitionQuery leafPartition1Query = leafPartitionQueries.stream()
                 .filter(p -> p.getLeafPartitionId().equals("P1"))
                 .findFirst()
@@ -1278,8 +1278,7 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertThat(resultsAsList.size()).isEqualTo(1);
-        assertThat(resultsAsList.get(0)).isEqualTo(records.get(0));
+        assertThat(resultsAsList).containsExactly(records.get(0));
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, "0"));
@@ -1316,8 +1315,7 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertThat(resultsAsList.size()).isEqualTo(1);
-        assertThat(resultsAsList.get(0)).isEqualTo(records.get(3));
+        assertThat(resultsAsList).containsExactly(records.get(3));
     }
 
     @Test
@@ -1354,10 +1352,10 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertThat(resultsAsList.size()).isEqualTo(5);
-        for (Record record : resultsAsList) {
-            assertThat(record).isEqualTo(getRecordsForQueryTimeIteratorTest("notsecret").get(0));
-        }
+
+        Record expected = getRecordsForQueryTimeIteratorTest("notsecret").get(0);
+        assertThat(resultsAsList).containsExactly(
+                expected, expected, expected, expected, expected);
     }
 
     @Test

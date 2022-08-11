@@ -41,7 +41,10 @@ import sleeper.splitter.SplitPartition;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -432,11 +435,10 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 new ListTablesRequest(TestUtils.createIdentity(), "abc", "def", "mySchema", "next", -1));
 
         // Then
-        Collection<TableName> tables = listTablesResponse.getTables();
-        assertThat(tables.size()).isEqualTo(3);
-
-        Lists.newArrayList(table1, table2, table3)
-                .forEach(tableName -> assertThat(tables.contains(new TableName("mySchema", tableName))).isTrue());
+        assertThat(listTablesResponse.getTables()).containsExactlyInAnyOrder(
+                new TableName("mySchema", table1),
+                new TableName("mySchema", table2),
+                new TableName("mySchema", table3));
     }
 
     @Test

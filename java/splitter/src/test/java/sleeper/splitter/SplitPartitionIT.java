@@ -54,7 +54,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.*;
 
 public class SplitPartitionIT {
     private static final int DYNAMO_PORT = 8000;
@@ -135,11 +134,11 @@ public class SplitPartitionIT {
 
         // Then
         List<Partition> partitions = stateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(3);
+        assertThat(partitions).hasSize(3);
         List<Partition> nonLeafPartitions = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .collect(Collectors.toList());
-        assertThat(nonLeafPartitions.size()).isEqualTo(1);
+        assertThat(nonLeafPartitions).hasSize(1);
         Set<Partition> leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toSet());
@@ -162,10 +161,12 @@ public class SplitPartitionIT {
             assertThat(minRowkey1).isEqualTo((int) maxRowKey2);
             assertThat(maxRowKey1).isNull();
         }
-        assertThat(400 < splitPoint && splitPoint < 600).isTrue();
-        leafPartitions.forEach(p -> assertThat(rootPartition.getId()).isEqualTo(p.getParentPartitionId()));
-        leafPartitions.forEach(p -> assertThat(new ArrayList<>()).isEqualTo(p.getChildPartitionIds()));
-        assertThat(nonLeafPartitions.get(0)).isEqualTo(rootPartition);
+        assertThat(splitPoint).isStrictlyBetween(400, 600);
+        assertThat(leafPartitions).allSatisfy(partition -> {
+            assertThat(partition.getParentPartitionId()).isEqualTo(rootPartition.getId());
+            assertThat(partition.getChildPartitionIds()).isEmpty();
+        });
+        assertThat(nonLeafPartitions).containsExactly(rootPartition);
     }
 
     @Test
@@ -270,7 +271,7 @@ public class SplitPartitionIT {
 
         // Then
         List<Partition> partitionsAfterSplit = stateStore.getAllPartitions();
-        assertThat(partitionsAfterSplit.size()).isEqualTo(partitions.size());
+        assertThat(partitionsAfterSplit).hasSameSizeAs(partitions);
         assertThat(new HashSet<>(partitionsAfterSplit)).isEqualTo(new HashSet<>(partitions));
     }
 
@@ -385,7 +386,7 @@ public class SplitPartitionIT {
 
         // Then
         List<Partition> partitionsAfterSplit = stateStore.getAllPartitions();
-        assertThat(partitionsAfterSplit.size()).isEqualTo(partitions.size());
+        assertThat(partitionsAfterSplit).hasSameSizeAs(partitions);
         assertThat(new HashSet<>(partitionsAfterSplit)).isEqualTo(new HashSet<>(partitions));
     }
 
@@ -437,14 +438,15 @@ public class SplitPartitionIT {
         // Then
         //  - There should be 3 partitions
         List<Partition> partitions = stateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(3);
+        assertThat(partitions).hasSize(3);
         //  - There should be 1 non-leaf partition
         List<Partition> nonLeafPartitions = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .collect(Collectors.toList());
-        assertThat(nonLeafPartitions.size()).isEqualTo(1);
         //  - The root partition should have been split on the first dimension
-        assertThat(nonLeafPartitions.get(0).getDimension()).isEqualTo(0);
+        assertThat(nonLeafPartitions).hasSize(1)
+                .extracting(Partition::getDimension)
+                .containsExactly(0);
         //  - The leaf partitions should have been split on a value which is between
         //      0 and 100.
         Set<Partition> leafPartitions = partitions.stream()
@@ -471,9 +473,11 @@ public class SplitPartitionIT {
         assertThat(Integer.MIN_VALUE < splitPoint && splitPoint < 99).isTrue();
         //  - The leaf partitions should have the root partition as their parent
         //      and an empty array for the child partitions.
-        leafPartitions.forEach(p -> assertThat(rootPartition.getId()).isEqualTo(p.getParentPartitionId()));
-        leafPartitions.forEach(p -> assertThat(new ArrayList<>()).isEqualTo(p.getChildPartitionIds()));
-        assertThat(nonLeafPartitions.get(0)).isEqualTo(rootPartition);
+        assertThat(leafPartitions).allSatisfy(partition -> {
+            assertThat(partition.getParentPartitionId()).isEqualTo(rootPartition.getId());
+            assertThat(partition.getChildPartitionIds()).isEmpty();
+        });
+        assertThat(nonLeafPartitions).containsExactly(rootPartition);
     }
 
     @Test
@@ -524,14 +528,15 @@ public class SplitPartitionIT {
         // Then
         //  - There should be 3 partitions
         List<Partition> partitions = stateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(3);
+        assertThat(partitions).hasSize(3);
         //  - There should be 1 non-leaf partition
         List<Partition> nonLeafPartitions = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .collect(Collectors.toList());
-        assertThat(nonLeafPartitions.size()).isEqualTo(1);
         //  - The root partition should have been split on the second dimension
-        assertThat(nonLeafPartitions.get(0).getDimension()).isEqualTo(1);
+        assertThat(nonLeafPartitions).hasSize(1)
+                .extracting(Partition::getDimension)
+                .containsExactly(1);
         //  - The leaf partitions should have been split on a value which is between
         //      0 and 100.
         Set<Partition> leafPartitions = partitions.stream()
@@ -558,9 +563,11 @@ public class SplitPartitionIT {
         assertThat(Integer.MIN_VALUE < splitPoint && splitPoint < 99).isTrue();
         //  - The leaf partitions should have the root partition as their parent
         //      and an empty array for the child partitions.
-        leafPartitions.forEach(p -> assertThat(rootPartition.getId()).isEqualTo(p.getParentPartitionId()));
-        leafPartitions.forEach(p -> assertThat(new ArrayList<>()).isEqualTo(p.getChildPartitionIds()));
-        assertThat(nonLeafPartitions.get(0)).isEqualTo(rootPartition);
+        assertThat(leafPartitions).allSatisfy(partition -> {
+            assertThat(partition.getParentPartitionId()).isEqualTo(rootPartition.getId());
+            assertThat(partition.getChildPartitionIds()).isEmpty();
+        });
+        assertThat(nonLeafPartitions).containsExactly(rootPartition);
     }
 
     @Test
@@ -616,14 +623,15 @@ public class SplitPartitionIT {
         // Then
         //  - There should be 3 partitions
         List<Partition> partitions = stateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(3);
+        assertThat(partitions).hasSize(3);
         //  - There should be 1 non-leaf partition
         List<Partition> nonLeafPartitions = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .collect(Collectors.toList());
-        assertThat(nonLeafPartitions.size()).isEqualTo(1);
         //  - The root partition should have been split on the second dimension
-        assertThat(nonLeafPartitions.get(0).getDimension()).isEqualTo(1);
+        assertThat(nonLeafPartitions).hasSize(1)
+                .extracting(Partition::getDimension)
+                .containsExactly(1);
         //  - The leaf partitions should have been split on a value which is between
         //      0 and 100.
         Set<Partition> leafPartitions = partitions.stream()
@@ -650,9 +658,11 @@ public class SplitPartitionIT {
         assertThat(Integer.MIN_VALUE < splitPoint && splitPoint < 99).isTrue();
         //  - The leaf partitions should have the root partition as their parent
         //      and an empty array for the child partitions.
-        leafPartitions.forEach(p -> assertThat(rootPartition.getId()).isEqualTo(p.getParentPartitionId()));
-        leafPartitions.forEach(p -> assertThat(new ArrayList<>()).isEqualTo(p.getChildPartitionIds()));
-        assertThat(nonLeafPartitions.get(0)).isEqualTo(rootPartition);
+        assertThat(leafPartitions).allSatisfy(partition -> {
+            assertThat(partition.getParentPartitionId()).isEqualTo(rootPartition.getId());
+            assertThat(partition.getChildPartitionIds()).isEmpty();
+        });
+        assertThat(nonLeafPartitions).containsExactly(rootPartition);
     }
 
     @Test
@@ -701,11 +711,11 @@ public class SplitPartitionIT {
 
         // Then
         List<Partition> partitions = stateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(3);
+        assertThat(partitions).hasSize(3);
         List<Partition> nonLeafPartitions = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .collect(Collectors.toList());
-        assertThat(nonLeafPartitions.size()).isEqualTo(1);
+        assertThat(nonLeafPartitions).hasSize(1);
         Set<Partition> leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toSet());
@@ -729,9 +739,11 @@ public class SplitPartitionIT {
             assertThat(maxRowKey1).isNull();
         }
         assertThat(400 < splitPoint && splitPoint < 600).isTrue();
-        leafPartitions.forEach(p -> assertThat(rootPartition.getId()).isEqualTo(p.getParentPartitionId()));
-        leafPartitions.forEach(p -> assertThat(new ArrayList<>()).isEqualTo(p.getChildPartitionIds()));
-        assertThat(nonLeafPartitions.get(0)).isEqualTo(rootPartition);
+        assertThat(leafPartitions).allSatisfy(partition -> {
+            assertThat(partition.getParentPartitionId()).isEqualTo(rootPartition.getId());
+            assertThat(partition.getChildPartitionIds()).isEmpty();
+        });
+        assertThat(nonLeafPartitions).containsExactly(rootPartition);
     }
 
     @Test
@@ -780,11 +792,11 @@ public class SplitPartitionIT {
 
         // Then
         List<Partition> partitions = stateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(3);
+        assertThat(partitions).hasSize(3);
         List<Partition> nonLeafPartitions = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .collect(Collectors.toList());
-        assertThat(nonLeafPartitions.size()).isEqualTo(1);
+        assertThat(nonLeafPartitions).hasSize(1);
         Set<Partition> leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toSet());
@@ -802,14 +814,16 @@ public class SplitPartitionIT {
             assertThat(maxRowKey2).isNull();
         } else {
             splitPoint = maxRowKey2;
-            assertThat(minRowkey2).isEqualTo("");
+            assertThat(minRowkey2).isEmpty();
             assertThat(minRowkey1).isEqualTo(maxRowKey2);
             assertThat(maxRowKey1).isNull();
         }
         assertThat("A00".compareTo(splitPoint) < 0 && splitPoint.compareTo("A9100") < 0).isTrue();
-        leafPartitions.forEach(p -> assertThat(rootPartition.getId()).isEqualTo(p.getParentPartitionId()));
-        leafPartitions.forEach(p -> assertThat(new ArrayList<>()).isEqualTo(p.getChildPartitionIds()));
-        assertThat(nonLeafPartitions.get(0)).isEqualTo(rootPartition);
+        assertThat(leafPartitions).allSatisfy(partition -> {
+            assertThat(partition.getParentPartitionId()).isEqualTo(rootPartition.getId());
+            assertThat(partition.getChildPartitionIds()).isEmpty();
+        });
+        assertThat(nonLeafPartitions).containsExactly(rootPartition);
     }
 
     @Test
@@ -858,11 +872,11 @@ public class SplitPartitionIT {
 
         // Then
         List<Partition> partitions = stateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(3);
+        assertThat(partitions).hasSize(3);
         List<Partition> nonLeafPartitions = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .collect(Collectors.toList());
-        assertThat(nonLeafPartitions.size()).isEqualTo(1);
+        assertThat(nonLeafPartitions).hasSize(1);
         Set<Partition> leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toSet());
@@ -886,9 +900,11 @@ public class SplitPartitionIT {
         }
         ByteArray splitPointBA = ByteArray.wrap(splitPoint);
         assertThat(ByteArray.wrap(new byte[]{}).compareTo(splitPointBA) < 0 && splitPointBA.compareTo(ByteArray.wrap(new byte[]{99})) < 0).isTrue();
-        leafPartitions.forEach(p -> assertThat(rootPartition.getId()).isEqualTo(p.getParentPartitionId()));
-        leafPartitions.forEach(p -> assertThat(new ArrayList<>()).isEqualTo(p.getChildPartitionIds()));
-        assertThat(nonLeafPartitions.get(0)).isEqualTo(rootPartition);
+        assertThat(leafPartitions).allSatisfy(partition -> {
+            assertThat(partition.getParentPartitionId()).isEqualTo(rootPartition.getId());
+            assertThat(partition.getChildPartitionIds()).isEmpty();
+        });
+        assertThat(nonLeafPartitions).containsExactly(rootPartition);
     }
 
     @Test
@@ -1012,7 +1028,7 @@ public class SplitPartitionIT {
 
         // Then
         List<Partition> partitionsAfterSplit = stateStore.getAllPartitions();
-        assertThat(partitionsAfterSplit.size()).isEqualTo(partitions.size());
+        assertThat(partitionsAfterSplit).hasSameSizeAs(partitions);
         assertThat(new HashSet<>(partitionsAfterSplit)).isEqualTo(new HashSet<>(partitions));
     }
 
@@ -1133,7 +1149,7 @@ public class SplitPartitionIT {
 
         // Then
         List<Partition> partitionsAfterSplit = stateStore.getAllPartitions();
-        assertThat(partitionsAfterSplit.size()).isEqualTo(partitions.size());
+        assertThat(partitionsAfterSplit).hasSameSizeAs(partitions);
         assertThat(new HashSet<>(partitionsAfterSplit)).isEqualTo(new HashSet<>(partitions));
     }
 
@@ -1185,14 +1201,15 @@ public class SplitPartitionIT {
         // Then
         //  - There should be 3 partitions
         List<Partition> partitions = stateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(3);
+        assertThat(partitions).hasSize(3);
         //  - There should be 1 non-leaf partition
         List<Partition> nonLeafPartitions = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .collect(Collectors.toList());
-        assertThat(nonLeafPartitions.size()).isEqualTo(1);
         //  - The root partition should have been split on the first dimension
-        assertThat(nonLeafPartitions.get(0).getDimension()).isEqualTo(0);
+        assertThat(nonLeafPartitions).hasSize(1)
+                .extracting(Partition::getDimension)
+                .containsExactly(0);
         //  - The leaf partitions should have been split on a value which is between
         //      0 and 100.
         Set<Partition> leafPartitions = partitions.stream()
@@ -1220,9 +1237,11 @@ public class SplitPartitionIT {
         assertThat(ByteArray.wrap(new byte[]{}).compareTo(splitPointBA) < 0 && splitPointBA.compareTo(ByteArray.wrap(new byte[]{99})) < 0).isTrue();
         //  - The leaf partitions should have the root partition as their parent
         //      and an empty array for the child partitions.
-        leafPartitions.forEach(p -> assertThat(rootPartition.getId()).isEqualTo(p.getParentPartitionId()));
-        leafPartitions.forEach(p -> assertThat(new ArrayList<>()).isEqualTo(p.getChildPartitionIds()));
-        assertThat(nonLeafPartitions.get(0)).isEqualTo(rootPartition);
+        assertThat(leafPartitions).allSatisfy(partition -> {
+            assertThat(partition.getParentPartitionId()).isEqualTo(rootPartition.getId());
+            assertThat(partition.getChildPartitionIds()).isEmpty();
+        });
+        assertThat(nonLeafPartitions).containsExactly(rootPartition);
     }
 
     @Test
@@ -1272,12 +1291,13 @@ public class SplitPartitionIT {
 
         // Then
         List<Partition> partitions = stateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(3);
+        assertThat(partitions).hasSize(3);
         List<Partition> nonLeafPartitions = partitions.stream()
                 .filter(p -> !p.isLeafPartition())
                 .collect(Collectors.toList());
-        assertThat(nonLeafPartitions.size()).isEqualTo(1);
-        assertThat(nonLeafPartitions.get(0).getDimension()).isEqualTo(1);
+        assertThat(nonLeafPartitions).hasSize(1)
+                .extracting(Partition::getDimension)
+                .containsExactly(1);
         Set<Partition> leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toSet());
@@ -1301,8 +1321,10 @@ public class SplitPartitionIT {
         }
         ByteArray splitPointBA = ByteArray.wrap(splitPoint);
         assertThat(ByteArray.wrap(new byte[]{}).compareTo(splitPointBA) < 0 && splitPointBA.compareTo(ByteArray.wrap(new byte[]{99})) < 0).isTrue();
-        leafPartitions.forEach(p -> assertThat(rootPartition.getId()).isEqualTo(p.getParentPartitionId()));
-        leafPartitions.forEach(p -> assertThat(new ArrayList<>()).isEqualTo(p.getChildPartitionIds()));
-        assertThat(nonLeafPartitions.get(0)).isEqualTo(rootPartition);
+        assertThat(leafPartitions).allSatisfy(partition -> {
+            assertThat(partition.getParentPartitionId()).isEqualTo(rootPartition.getId());
+            assertThat(partition.getChildPartitionIds()).isEmpty();
+        });
+        assertThat(nonLeafPartitions).containsExactly(rootPartition);
     }
 }

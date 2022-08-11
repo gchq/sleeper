@@ -215,9 +215,9 @@ public class BulkImportJobRunnerIT {
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         //  - Currently only BulkImportJobDataframeRunner supports not coalescing to the number of leaf partitions
         if (runner instanceof BulkImportJobDataframeRunner) {
-            assertThat(activeFiles.size()).isGreaterThan(1);
+            assertThat(activeFiles).hasSizeGreaterThan(1);
         } else {
-            assertThat(activeFiles.size()).isEqualTo(1);
+            assertThat(activeFiles).hasSize(1);
         }
 
         List<Record> readRecords = new ArrayList<>();
@@ -236,7 +236,7 @@ public class BulkImportJobRunnerIT {
                 assertThat(recordsInThisFile).isEqualTo(sortedRecordsInThisFile);
             }
         }
-        assertThat(readRecords.size()).isEqualTo(records.size());
+        assertThat(readRecords).hasSameSizeAs(records);
 
         List<Record> expectedRecords = new ArrayList<>();
         expectedRecords.addAll(records);
@@ -307,9 +307,9 @@ public class BulkImportJobRunnerIT {
 
         //  - Currently only BulkImportJobDataframeRunner supports not coalescing to the number of leaf partitions
         if (runner instanceof BulkImportJobDataframeRunner) {
-            assertThat(activeFiles.size()).isGreaterThan(1);
+            assertThat(activeFiles).hasSizeGreaterThan(1);
         } else {
-            assertThat(activeFiles.size()).isEqualTo(1);
+            assertThat(activeFiles).hasSize(1);
         }
 
         List<Record> readRecords = new ArrayList<>();
@@ -328,7 +328,7 @@ public class BulkImportJobRunnerIT {
                 assertThat(recordsInThisFile).isEqualTo(sortedRecordsInThisFile);
             }
         }
-        assertThat(readRecords.size()).isEqualTo(2 * records.size());
+        assertThat(readRecords).hasSize(2 * records.size());
 
         List<Record> expectedRecords = new ArrayList<>();
         expectedRecords.addAll(records);
@@ -386,7 +386,7 @@ public class BulkImportJobRunnerIT {
 
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles.size()).isEqualTo(2);
+        assertThat(activeFiles).hasSize(2);
         FileInfo fileInfo1 = activeFiles.get(0);
         assertThat((long) fileInfo1.getNumberOfRecords()).isEqualTo(50L);
         List<Record> readRecords1 = readRecords(fileInfo1.getFilename(), schema);
@@ -571,7 +571,7 @@ public class BulkImportJobRunnerIT {
 
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles.size()).isEqualTo(1);
+        assertThat(activeFiles).hasSize(1);
         FileInfo fileInfo = activeFiles.get(0);
         assertThat((long) fileInfo.getNumberOfRecords()).isEqualTo(100L);
         assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());

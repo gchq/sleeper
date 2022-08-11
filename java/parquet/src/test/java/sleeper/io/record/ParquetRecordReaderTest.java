@@ -79,9 +79,9 @@ public class ParquetRecordReaderTest {
 
         // Then
         assertThat(readRecord1).isEqualTo(record1);
-        assertThat(readRecord1.getKeys().size()).isEqualTo(2);
+        assertThat(readRecord1.getKeys()).hasSize(2);
         assertThat(readRecord2).isEqualTo(record2);
-        assertThat(readRecord2.getKeys().size()).isEqualTo(2);
+        assertThat(readRecord2.getKeys()).hasSize(2);
         assertThat(readRecord3).isNull();
     }
 
@@ -115,9 +115,9 @@ public class ParquetRecordReaderTest {
         // Then
         //  - Replace byte array field in record1 with wrapped version so that equals works
         assertThat(readRecord1).isEqualTo(record1);
-        assertThat(readRecord1.getKeys().size()).isEqualTo(2);
+        assertThat(readRecord1.getKeys()).hasSize(2);
         assertThat(readRecord2).isEqualTo(record2);
-        assertThat(readRecord2.getKeys().size()).isEqualTo(2);
+        assertThat(readRecord2.getKeys()).hasSize(2);
         assertThat(readRecord3).isNull();
     }
 
@@ -158,9 +158,9 @@ public class ParquetRecordReaderTest {
 
         // Then
         assertThat(readRecord1).isEqualTo(record1);
-        assertThat(readRecord1.getKeys().size()).isEqualTo(3);
+        assertThat(readRecord1.getKeys()).hasSize(3);
         assertThat(readRecord2).isEqualTo(record2);
-        assertThat(readRecord2.getKeys().size()).isEqualTo(3);
+        assertThat(readRecord2.getKeys()).hasSize(3);
         assertThat(readRecord3).isNull();
     }
 
@@ -201,9 +201,9 @@ public class ParquetRecordReaderTest {
 
         // Then
         assertThat(readRecord1).isEqualTo(record1);
-        assertThat(readRecord1.getKeys().size()).isEqualTo(3);
+        assertThat(readRecord1.getKeys()).hasSize(3);
         assertThat(readRecord2).isEqualTo(record2);
-        assertThat(readRecord2.getKeys().size()).isEqualTo(3);
+        assertThat(readRecord2.getKeys()).hasSize(3);
         assertThat(readRecord3).isNull();
     }
 
@@ -244,9 +244,9 @@ public class ParquetRecordReaderTest {
 
         // Then
         assertThat(readRecord1).isEqualTo(record1);
-        assertThat(readRecord1.getKeys().size()).isEqualTo(3);
+        assertThat(readRecord1.getKeys()).hasSize(3);
         assertThat(readRecord2).isEqualTo(record2);
-        assertThat(readRecord2.getKeys().size()).isEqualTo(3);
+        assertThat(readRecord2.getKeys()).hasSize(3);
         assertThat(readRecord3).isNull();
     }
 
@@ -287,9 +287,9 @@ public class ParquetRecordReaderTest {
 
         // Then
         assertThat(readRecord1).isEqualTo(record1);
-        assertThat(readRecord1.getKeys().size()).isEqualTo(3);
+        assertThat(readRecord1.getKeys()).hasSize(3);
         assertThat(readRecord2).isEqualTo(record2);
-        assertThat(readRecord2.getKeys().size()).isEqualTo(3);
+        assertThat(readRecord2.getKeys()).hasSize(3);
         assertThat(readRecord3).isNull();
     }
 
@@ -324,9 +324,9 @@ public class ParquetRecordReaderTest {
 
         // Then
         assertThat(readRecord1.get("column1")).isEqualTo("A");
-        assertThat(readRecord1.getKeys().size()).isEqualTo(1);
+        assertThat(readRecord1.getKeys()).hasSize(1);
         assertThat(readRecord2.get("column1")).isEqualTo("C");
-        assertThat(readRecord2.getKeys().size()).isEqualTo(1);
+        assertThat(readRecord2.getKeys()).hasSize(1);
         assertThat(readRecord3).isNull();
     }
 }

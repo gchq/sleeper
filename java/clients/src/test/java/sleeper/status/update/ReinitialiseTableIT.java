@@ -155,8 +155,8 @@ public class ReinitialiseTableIT {
 
         // Then
         assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
-        assertThat(dynamoStateStore.getAllPartitions().size()).isEqualTo(3);
-        assertThat(dynamoStateStore.getLeafPartitions().size()).isEqualTo(2);
+        assertThat(dynamoStateStore.getAllPartitions()).hasSize(3);
+        assertThat(dynamoStateStore.getLeafPartitions()).hasSize(2);
         assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
     }
 
@@ -190,9 +190,9 @@ public class ReinitialiseTableIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles.size()).isEqualTo(0);
-        assertThat(s3StateStore.getAllPartitions().size()).isEqualTo(3);
-        assertThat(s3StateStore.getLeafPartitions().size()).isEqualTo(2);
+        assertThat(activeFiles).isEmpty();
+        assertThat(s3StateStore.getAllPartitions()).hasSize(3);
+        assertThat(s3StateStore.getLeafPartitions()).hasSize(2);
         assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted(tableBucketName);
     }
 
@@ -222,8 +222,8 @@ public class ReinitialiseTableIT {
         // Then
         assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
         List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
-        assertThat(partitionsList.size()).isEqualTo(1);
-        assertThat(dynamoStateStore.getLeafPartitions().size()).isEqualTo(1);
+        assertThat(partitionsList).hasSize(1);
+        assertThat(dynamoStateStore.getLeafPartitions()).hasSize(1);
         assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
     }
 
@@ -258,9 +258,9 @@ public class ReinitialiseTableIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles.size()).isEqualTo(0);
-        assertThat(s3StateStore.getAllPartitions().size()).isEqualTo(1);
-        assertThat(s3StateStore.getLeafPartitions().size()).isEqualTo(1);
+        assertThat(activeFiles).isEmpty();
+        assertThat(s3StateStore.getAllPartitions()).hasSize(1);
+        assertThat(s3StateStore.getLeafPartitions()).hasSize(1);
 
         assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
     }
@@ -293,14 +293,11 @@ public class ReinitialiseTableIT {
         // Then
         assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
         List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
-        assertThat(partitionsList.size()).isEqualTo(5);
-        assertThat(dynamoStateStore.getLeafPartitions().size()).isEqualTo(3);
-        List<String> s3Keys = partitionsList
-                .stream()
-                .map(partition -> partition.getRegion().getRange("key").getMin().toString())
-                .collect(Collectors.toList());
-        assertThat(s3Keys).contains(SPLIT_PARTITION_STRING_1);
-        assertThat(s3Keys).contains(SPLIT_PARTITION_STRING_2);
+        assertThat(partitionsList).hasSize(5);
+        assertThat(dynamoStateStore.getLeafPartitions()).hasSize(3);
+        assertThat(partitionsList)
+                .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
+                .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
 
         assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
     }
@@ -338,11 +335,11 @@ public class ReinitialiseTableIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles.size()).isEqualTo(0);
+        assertThat(activeFiles).isEmpty();
 
         List<Partition> partitionsList = s3StateStore.getAllPartitions();
-        assertThat(partitionsList.size()).isEqualTo(5);
-        assertThat(s3StateStore.getLeafPartitions().size()).isEqualTo(3);
+        assertThat(partitionsList).hasSize(5);
+        assertThat(s3StateStore.getLeafPartitions()).hasSize(3);
         assertThat(partitionsList)
                 .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
                 .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
@@ -378,8 +375,8 @@ public class ReinitialiseTableIT {
         // Then
         assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
         List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
-        assertThat(partitionsList.size()).isEqualTo(5);
-        assertThat(dynamoStateStore.getLeafPartitions().size()).isEqualTo(3);
+        assertThat(partitionsList).hasSize(5);
+        assertThat(dynamoStateStore.getLeafPartitions()).hasSize(3);
         assertThat(partitionsList)
                 .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
                 .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
@@ -420,11 +417,11 @@ public class ReinitialiseTableIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles.size()).isEqualTo(0);
+        assertThat(activeFiles).isEmpty();
 
         List<Partition> partitionsList = s3StateStore.getAllPartitions();
-        assertThat(partitionsList.size()).isEqualTo(5);
-        assertThat(s3StateStore.getLeafPartitions().size()).isEqualTo(3);
+        assertThat(partitionsList).hasSize(5);
+        assertThat(s3StateStore.getLeafPartitions()).hasSize(3);
         assertThat(partitionsList)
                 .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
                 .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
@@ -460,8 +457,8 @@ public class ReinitialiseTableIT {
         // Then
         assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
         List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
-        assertThat(partitionsList.size()).isEqualTo(3);
-        assertThat(dynamoStateStore.getLeafPartitions().size()).isEqualTo(2);
+        assertThat(partitionsList).hasSize(3);
+        assertThat(dynamoStateStore.getLeafPartitions()).hasSize(2);
 
         assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
     }
@@ -499,11 +496,11 @@ public class ReinitialiseTableIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles.size()).isEqualTo(0);
+        assertThat(activeFiles).isEmpty();
 
         List<Partition> partitionsList = s3StateStore.getAllPartitions();
-        assertThat(partitionsList.size()).isEqualTo(3);
-        assertThat(s3StateStore.getLeafPartitions().size()).isEqualTo(2);
+        assertThat(partitionsList).hasSize(3);
+        assertThat(s3StateStore.getLeafPartitions()).hasSize(2);
 
         assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted(tableBucketName);
     }
@@ -514,13 +511,8 @@ public class ReinitialiseTableIT {
                 .withTableName(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME))
                 .withConsistentRead(true);
         ScanResult scanResult = dynamoDBClient.scan(scanRequest);
-        assertThat(scanResult.getItems().size()).isEqualTo(0);
-
-        List<FileInfo> activeFiles = dynamoStateStore.getActiveFiles()
-                .stream()
-                .sorted(Comparator.comparing(FileInfo::getFilename))
-                .collect(Collectors.toList());
-        assertThat(activeFiles.size()).isEqualTo(0);
+        assertThat(scanResult.getItems()).isEmpty();
+        assertThat(dynamoStateStore.getActiveFiles()).isEmpty();
     }
 
     private void assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(TableProperties tableProperties,
@@ -532,7 +524,7 @@ public class ReinitialiseTableIT {
                 .withTableName(tableProperties.get(REVISION_TABLENAME))
                 .withConsistentRead(true);
         ScanResult scanResult = dynamoDBClient.scan(scanRequest);
-        assertThat(scanResult.getItems().size()).isEqualTo(2);
+        assertThat(scanResult.getItems()).hasSize(2);
         String filesVersion = "";
         String partitionsVersion = "";
         String versionPrefix = "00000000000";
@@ -545,10 +537,8 @@ public class ReinitialiseTableIT {
             }
         }
 
-        assertThat(filesVersion.isEmpty()).isFalse();
-        assertThat(partitionsVersion.isEmpty()).isFalse();
-        assertThat(filesVersion.contains(versionPrefix + expectedFilesVersion)).isTrue();
-        assertThat(partitionsVersion.contains(versionPrefix + expectedPartitionsVersion)).isTrue();
+        assertThat(filesVersion).isNotEmpty().contains(versionPrefix + expectedFilesVersion);
+        assertThat(partitionsVersion).isNotEmpty().contains(versionPrefix + expectedPartitionsVersion);
     }
 
     private void assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(String tableBucketName) {
@@ -609,18 +599,18 @@ public class ReinitialiseTableIT {
                 .withTableName(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME))
                 .withConsistentRead(true);
         ScanResult scanResult = dynamoDBClient.scan(scanRequest);
-        assertThat(scanResult.getItems().size()).isEqualTo(1);
+        assertThat(scanResult.getItems()).hasSize(1);
 
         // - Check DynamoDBStateStore has correct active files
         List<FileInfo> activeFiles = dynamoDBStateStore.getActiveFiles()
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles.size()).isEqualTo(2);
+        assertThat(activeFiles).hasSize(2);
 
         // - Check DynamoDBStateStore has correct partitions
         List<Partition> partitionsList = dynamoDBStateStore.getAllPartitions();
-        assertThat(partitionsList.size()).isEqualTo(3);
+        assertThat(partitionsList).hasSize(3);
 
         return dynamoDBStateStore;
     }
@@ -643,15 +633,10 @@ public class ReinitialiseTableIT {
         assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(tableProperties, "2", "2");
 
         // - Check S3StateStore has correct active files
-        List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
-                .stream()
-                .sorted(Comparator.comparing(FileInfo::getFilename))
-                .collect(Collectors.toList());
-        assertThat(activeFiles.size()).isEqualTo(2);
+        assertThat(s3StateStore.getActiveFiles()).hasSize(2);
 
         // - Check S3StateStore has correct partitions
-        List<Partition> partitionsList = s3StateStore.getAllPartitions();
-        assertThat(partitionsList.size()).isEqualTo(3);
+        assertThat(s3StateStore.getAllPartitions()).hasSize(3);
 
         return s3StateStore;
     }

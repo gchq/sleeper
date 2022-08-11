@@ -21,20 +21,7 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.facebook.collections.ByteArray;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
 import org.junit.AfterClass;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -51,6 +38,11 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class InitialiseStateStoreIT {
     private static final int DYNAMO_PORT = 8000;
@@ -97,8 +89,6 @@ public class InitialiseStateStoreIT {
         initialiseStateStore.run();
 
         // Then
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(1);
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, null));
         Partition expectedPartition = new Partition(
                 schema.getRowKeyTypes(),
@@ -109,7 +99,7 @@ public class InitialiseStateStoreIT {
                 Collections.emptyList(),
                 -1
         );
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(dynamoDBStateStore.getAllPartitions()).containsExactly(expectedPartition);
     }
 
     @Test
@@ -130,7 +120,7 @@ public class InitialiseStateStoreIT {
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(3);
+        assertThat(partitions).hasSize(3);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
         List<Partition> leafPartitions = partitions.stream().filter(Partition::isLeafPartition).collect(Collectors.toList());
@@ -192,7 +182,7 @@ public class InitialiseStateStoreIT {
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(7);
+        assertThat(partitions).hasSize(7);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
         List<Partition> internalPartitions = partitions.stream()
@@ -306,7 +296,7 @@ public class InitialiseStateStoreIT {
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(7);
+        assertThat(partitions).hasSize(7);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
         List<Partition> internalPartitions = partitions.stream()
@@ -424,7 +414,7 @@ public class InitialiseStateStoreIT {
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(1);
+        assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, "", null));
         Partition expectedPartition = new Partition(
                 schema.getRowKeyTypes(),
@@ -435,7 +425,7 @@ public class InitialiseStateStoreIT {
                 Collections.emptyList(),
                 -1
         );
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
@@ -456,7 +446,7 @@ public class InitialiseStateStoreIT {
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(3);
+        assertThat(partitions).hasSize(3);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
         List<Partition> leafPartitions = partitions.stream().filter(Partition::isLeafPartition).collect(Collectors.toList());
@@ -518,7 +508,7 @@ public class InitialiseStateStoreIT {
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(7);
+        assertThat(partitions).hasSize(7);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
         List<Partition> internalPartitions = partitions.stream()
@@ -632,7 +622,7 @@ public class InitialiseStateStoreIT {
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(7);
+        assertThat(partitions).hasSize(7);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
         List<Partition> internalPartitions = partitions.stream()
@@ -726,12 +716,9 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(internalPartitions.get(0)).isEqualTo(expectedInternalPartition0);
-        assertThat(internalPartitions.get(1)).isEqualTo(expectedInternalPartition1);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
-        assertThat(leafPartitions.get(2)).isEqualTo(expectedLeafPartition2);
-        assertThat(leafPartitions.get(3)).isEqualTo(expectedLeafPartition3);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
     @Test
@@ -750,7 +737,7 @@ public class InitialiseStateStoreIT {
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(1);
+        assertThat(partitions).hasSize(1);
 
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, new byte[]{}, null));
         Partition expectedPartition = new Partition(
@@ -762,7 +749,7 @@ public class InitialiseStateStoreIT {
                 Collections.emptyList(),
                 -1
         );
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
@@ -783,7 +770,7 @@ public class InitialiseStateStoreIT {
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(3);
+        assertThat(partitions).hasSize(3);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
         List<Partition> leafPartitions = partitions.stream().filter(Partition::isLeafPartition).collect(Collectors.toList());
@@ -821,8 +808,7 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
+        assertThat(leafPartitions).containsExactly(expectedLeafPartition0, expectedLeafPartition1);
     }
 
     @Test
@@ -845,7 +831,7 @@ public class InitialiseStateStoreIT {
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(7);
+        assertThat(partitions).hasSize(7);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
         List<Partition> internalPartitions = partitions.stream()
@@ -934,12 +920,9 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(internalPartitions.get(0)).isEqualTo(expectedInternalPartition0);
-        assertThat(internalPartitions.get(1)).isEqualTo(expectedInternalPartition1);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
-        assertThat(leafPartitions.get(2)).isEqualTo(expectedLeafPartition2);
-        assertThat(leafPartitions.get(3)).isEqualTo(expectedLeafPartition3);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
     @Test
@@ -965,7 +948,7 @@ public class InitialiseStateStoreIT {
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertThat(partitions.size()).isEqualTo(7);
+        assertThat(partitions).hasSize(7);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
         List<Partition> internalPartitions = partitions.stream()
@@ -1059,12 +1042,9 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(internalPartitions.get(0)).isEqualTo(expectedInternalPartition0);
-        assertThat(internalPartitions.get(1)).isEqualTo(expectedInternalPartition1);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
-        assertThat(leafPartitions.get(2)).isEqualTo(expectedLeafPartition2);
-        assertThat(leafPartitions.get(3)).isEqualTo(expectedLeafPartition3);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
     @Test(expected = IllegalArgumentException.class)

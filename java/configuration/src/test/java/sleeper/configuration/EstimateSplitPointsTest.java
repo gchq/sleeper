@@ -117,7 +117,7 @@ public class EstimateSplitPointsTest {
         List<Object> expected = Arrays.asList(new byte[]{(byte) 10},
                 new byte[]{(byte) 20}, new byte[]{(byte) 30}, new byte[]{(byte) 40}, new byte[]{(byte) 50},
                 new byte[]{(byte) 60}, new byte[]{(byte) 70}, new byte[]{(byte) 80}, new byte[]{(byte) 90});
-        assertThat(splitPoints.size()).isEqualTo(expected.size());
+        assertThat(splitPoints).hasSameSizeAs(expected);
         for (int i = 0; i < expected.size(); i++) {
             assertThat((byte[]) splitPoints.get(i)).containsExactly((byte[]) expected.get(i));
         }

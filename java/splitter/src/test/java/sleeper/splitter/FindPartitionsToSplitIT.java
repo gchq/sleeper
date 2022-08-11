@@ -30,6 +30,8 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
@@ -45,18 +47,9 @@ import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 
 public class FindPartitionsToSplitIT {
@@ -176,12 +169,12 @@ public class FindPartitionsToSplitIT {
 
         // Then
         List<Message> messages = sqsClient.receiveMessage(queue.getQueueUrl()).getMessages();
-        assertThat(messages.size()).isEqualTo(1);
+        assertThat(messages).hasSize(1);
 
         SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
                 .fromJson(messages.get(0).getBody());
 
-        assertThat(job.getFileNames().size()).isEqualTo(10);
+        assertThat(job.getFileNames()).hasSize(10);
         assertThat(job.getTableName()).isEqualTo("test");
         assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
     }
@@ -204,7 +197,7 @@ public class FindPartitionsToSplitIT {
 
         // Then
         List<Message> messages = sqsClient.receiveMessage(queue.getQueueUrl()).getMessages();
-        assertThat(messages.size()).isEqualTo(0);
+        assertThat(messages).isEmpty();
     }
 
     @Test
@@ -225,12 +218,12 @@ public class FindPartitionsToSplitIT {
 
         // Then
         List<Message> messages = sqsClient.receiveMessage(queue.getQueueUrl()).getMessages();
-        assertThat(messages.size()).isEqualTo(1);
+        assertThat(messages).hasSize(1);
 
         SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
                 .fromJson(messages.get(0).getBody());
 
-        assertThat(job.getFileNames().size()).isEqualTo(5);
+        assertThat(job.getFileNames()).hasSize(5);
         assertThat(job.getTableName()).isEqualTo("test");
         assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
     }
@@ -253,12 +246,12 @@ public class FindPartitionsToSplitIT {
 
         // Then
         List<Message> messages = sqsClient.receiveMessage(queue.getQueueUrl()).getMessages();
-        assertThat(messages.size()).isEqualTo(1);
+        assertThat(messages).hasSize(1);
 
         SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
                 .fromJson(messages.get(0).getBody());
 
-        assertThat(job.getFileNames().size()).isEqualTo(5);
+        assertThat(job.getFileNames()).hasSize(5);
         assertThat(job.getTableName()).isEqualTo("test");
         assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
 
@@ -268,7 +261,7 @@ public class FindPartitionsToSplitIT {
                 .map(FileInfo::getNumberOfRecords)).reduce(Long::sum);
 
         // 109 + 108 + 107 + 106 + 105 = 535
-        assertThat(numberOfRecords.get()).isEqualTo(new Long(535));
+        assertThat(numberOfRecords).contains(new Long(535));
     }
 
     public static class TestTablePropertiesProvider extends TablePropertiesProvider {

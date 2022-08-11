@@ -21,31 +21,10 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.facebook.collections.ByteArray;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
-
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.junit.AfterClass;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.GenericContainer;
 import sleeper.compaction.job.CompactionJob;
@@ -75,6 +54,12 @@ import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class CompactSortedFilesIT {
     private static final int DYNAMO_PORT = 8000;
@@ -201,7 +186,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(readyForGCFiles.size()).isEqualTo(2);
+        assertThat(readyForGCFiles).hasSize(2);
 
         assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
         assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
@@ -216,7 +201,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles.size()).isEqualTo(1);
+        assertThat(activeFiles).hasSize(1);
         FileInfo newFile = new FileInfo();
         newFile.setRowKeyTypes(new LongType());
         newFile.setFilename(outputFile);
@@ -234,7 +219,7 @@ public class CompactSortedFilesIT {
                 .get();
         newFile.setMaxRowKey(Key.create(maxKey));
         activeFiles.get(0).setLastStateStoreUpdateTime(null); // Set to null as we don't know what it should be
-        assertThat(activeFiles.get(0)).isEqualTo(newFile);
+        assertThat(activeFiles).containsExactly(newFile);
     }
 
     @Test
@@ -337,7 +322,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(readyForGCFiles.size()).isEqualTo(2);
+        assertThat(readyForGCFiles).hasSize(2);
 
         assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
         assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
@@ -352,8 +337,8 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        ;
-        assertThat(activeFiles.size()).isEqualTo(1);
+
+        assertThat(activeFiles).hasSize(1);
         FileInfo newFile = new FileInfo();
         newFile.setRowKeyTypes(new StringType());
         newFile.setFilename(outputFile);
@@ -494,7 +479,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(readyForGCFiles.size()).isEqualTo(2);
+        assertThat(readyForGCFiles).hasSize(2);
 
         assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
         assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
@@ -509,7 +494,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles.size()).isEqualTo(1);
+        assertThat(activeFiles).hasSize(1);
         FileInfo newFile = new FileInfo();
         newFile.setRowKeyTypes(new ByteArrayType());
         newFile.setFilename(outputFile);
@@ -616,7 +601,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(readyForGCFiles.size()).isEqualTo(2);
+        assertThat(readyForGCFiles).hasSize(2);
 
         assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
         assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
@@ -632,7 +617,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles.size()).isEqualTo(1);
+        assertThat(activeFiles).hasSize(1);
         FileInfo newFile = new FileInfo();
         newFile.setRowKeyTypes(new LongType());
         newFile.setFilename(outputFile);
@@ -725,7 +710,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(readyForGCFiles.size()).isEqualTo(2);
+        assertThat(readyForGCFiles).hasSize(2);
 
         assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
         assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
@@ -740,7 +725,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles.size()).isEqualTo(1);
+        assertThat(activeFiles).hasSize(1);
         FileInfo newFile = new FileInfo();
         newFile.setRowKeyTypes(new LongType());
         newFile.setFilename(outputFile);
@@ -884,7 +869,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(readyForGCFiles.size()).isEqualTo(2);
+        assertThat(readyForGCFiles).hasSize(2);
 
         assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
         assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
@@ -899,7 +884,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles.size()).isEqualTo(2);
+        assertThat(activeFiles).hasSize(2);
 
         FileInfo leftNewFile = new FileInfo();
         leftNewFile.setRowKeyTypes(new LongType());
@@ -1081,7 +1066,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(readyForGCFiles.size()).isEqualTo(2);
+        assertThat(readyForGCFiles).hasSize(2);
 
         assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
         assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
@@ -1096,7 +1081,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles.size()).isEqualTo(2);
+        assertThat(activeFiles).hasSize(2);
         FileInfo leftNewFile = new FileInfo();
         leftNewFile.setRowKeyTypes(new LongType(), new StringType());
         leftNewFile.setFilename(leftOutputFile);
@@ -1261,7 +1246,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(readyForGCFiles.size()).isEqualTo(2);
+        assertThat(readyForGCFiles).hasSize(2);
 
         assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
         assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
@@ -1276,7 +1261,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles.size()).isEqualTo(2);
+        assertThat(activeFiles).hasSize(2);
         FileInfo leftNewFile = new FileInfo();
         leftNewFile.setRowKeyTypes(new LongType(), new StringType());
         leftNewFile.setFilename(leftOutputFile);
@@ -1427,7 +1412,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(readyForGCFiles.size()).isEqualTo(2);
+        assertThat(readyForGCFiles).hasSize(2);
 
         assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
         assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
@@ -1442,7 +1427,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles.size()).isEqualTo(2);
+        assertThat(activeFiles).hasSize(2);
 
         FileInfo leftNewFile = new FileInfo();
         leftNewFile.setRowKeyTypes(new LongType());
@@ -1574,7 +1559,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(readyForGCFiles.size()).isEqualTo(2);
+        assertThat(readyForGCFiles).hasSize(2);
 
         assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
         assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
@@ -1590,7 +1575,7 @@ public class CompactSortedFilesIT {
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
         ;
-        assertThat(activeFiles.size()).isEqualTo(1);
+        assertThat(activeFiles).hasSize(1);
         FileInfo newFile = new FileInfo();
         newFile.setRowKeyTypes(new LongType());
         newFile.setFilename(outputFile);
@@ -1745,7 +1730,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(readyForGCFiles.size()).isEqualTo(2);
+        assertThat(readyForGCFiles).hasSize(2);
 
         assertThat(readyForGCFiles.get(0).getFilename()).isEqualTo(fileInfo1.getFilename());
         assertThat(readyForGCFiles.get(1).getFilename()).isEqualTo(fileInfo2.getFilename());
@@ -1760,7 +1745,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        assertThat(activeFiles.size()).isEqualTo(2);
+        assertThat(activeFiles).hasSize(2);
 
         FileInfo leftNewFile = new FileInfo();
         leftNewFile.setRowKeyTypes(new LongType());

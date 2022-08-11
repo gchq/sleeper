@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -108,7 +108,7 @@ public class StateMachineExecutorTest {
                 .map(JsonElement::getAsString)
                 .filter(s -> s.equals("spark.app.name=my-job"))
                 .collect(Collectors.toList());
-        assertThat(appNameArgs.size()).isEqualTo(1);
+        assertThat(appNameArgs).hasSize(1);
     }
 
     @Test
@@ -179,8 +179,7 @@ public class StateMachineExecutorTest {
                 .map(JsonElement::getAsString)
                 .filter(s -> s.contains("spark.driver.memory="))
                 .collect(Collectors.toList());
-        assertThat(appNameArgs.size()).isEqualTo(1);
-        assertThat(appNameArgs.get(0)).isEqualTo("spark.driver.memory=10g");
+        assertThat(appNameArgs).containsExactly("spark.driver.memory=10g");
     }
 
     @Test
@@ -205,8 +204,7 @@ public class StateMachineExecutorTest {
                 .map(JsonElement::getAsString)
                 .filter(s -> s.contains("spark.driver.memory="))
                 .collect(Collectors.toList());
-        assertThat(appNameArgs.size()).isEqualTo(1);
-        assertThat(appNameArgs.get(0)).isEqualTo("spark.driver.memory=7g");
+        assertThat(appNameArgs).containsExactly("spark.driver.memory=7g");
     }
 
     @Test
@@ -302,8 +300,7 @@ public class StateMachineExecutorTest {
                 .map(JsonElement::getAsString)
                 .filter(s -> s.contains("spark.kubernetes.driver.pod.name="))
                 .collect(Collectors.toList());
-        assertThat(podNameArg.size()).isEqualTo(1);
-        assertThat(podNameArg.get(0)).isEqualTo("spark.kubernetes.driver.pod.name=my-job");
+        assertThat(podNameArg).containsExactly("spark.kubernetes.driver.pod.name=my-job");
     }
 
     private Stream<JsonElement> jsonArrayToStream(JsonArray argsArray) {

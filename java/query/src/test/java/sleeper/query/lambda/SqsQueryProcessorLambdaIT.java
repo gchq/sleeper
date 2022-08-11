@@ -271,7 +271,7 @@ public class SqsQueryProcessorLambdaIT {
         SqsQueryProcessorLambda queryProcessorLambda = new SqsQueryProcessorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
         for (int i = 0; i < 4; i++) {
             ReceiveMessageResult result = sqsClient.receiveMessage(request);
-            assertThat(result.getMessages().size()).isEqualTo(1);
+            assertThat(result.getMessages()).hasSize(1);
             SQSEvent event = new SQSEvent();
             SQSMessage sqsMessage = new SQSEvent.SQSMessage();
             sqsMessage.setBody(result.getMessages().get(0).getBody());
@@ -291,7 +291,7 @@ public class SqsQueryProcessorLambdaIT {
             }
         }
         ReceiveMessageResult result = sqsClient.receiveMessage(request);
-        assertThat(result.getMessages().size()).isEqualTo(0);
+        assertThat(result.getMessages()).isEmpty();
     }
 
     @Test

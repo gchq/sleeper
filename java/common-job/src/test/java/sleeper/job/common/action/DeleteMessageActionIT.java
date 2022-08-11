@@ -75,7 +75,7 @@ public class DeleteMessageActionIT {
                 .withQueueUrl(queueUrl)
                 .withMaxNumberOfMessages(1);
         ReceiveMessageResult result = sqs.receiveMessage(receiveMessageRequest);
-        assertThat(result.getMessages().size()).isEqualTo(1);
+        assertThat(result.getMessages()).hasSize(1);
         String receiptHandle = result.getMessages().get(0).getReceiptHandle();
 
         // When
@@ -91,7 +91,7 @@ public class DeleteMessageActionIT {
                 .withMaxNumberOfMessages(1)
                 .withWaitTimeSeconds(0);
         result = sqs.receiveMessage(receiveMessageRequest);
-        assertThat(result.getMessages().size()).isEqualTo(0);
+        assertThat(result.getMessages()).isEmpty();
 
         sqs.shutdown();
     }

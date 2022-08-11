@@ -272,7 +272,7 @@ public class IngestRecordsFromIteratorIT {
         assertThat(numWritten).isEqualTo(getRecords().size());
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles.size()).isEqualTo(1);
+        assertThat(activeFiles).hasSize(1);
         FileInfo fileInfo = activeFiles.get(0);
         assertThat((long) fileInfo.getMinRowKey().get(0)).isEqualTo(1L);
         assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(3L);
@@ -288,7 +288,7 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords.size()).isEqualTo(2);
+        assertThat(readRecords).hasSize(2);
         assertThat(readRecords.get(0)).isEqualTo(getRecords().get(0));
         assertThat(readRecords.get(1)).isEqualTo(getRecords().get(1));
         //  - Local files should have been deleted
@@ -368,7 +368,7 @@ public class IngestRecordsFromIteratorIT {
                 .stream()
                 .sorted((f1, f2) -> (int) (((long) f1.getMinRowKey().get(0)) - ((long) f2.getMinRowKey().get(0))))
                 .collect(Collectors.toList());
-        assertThat(activeFiles.size()).isEqualTo(2);
+        assertThat(activeFiles).hasSize(2);
         FileInfo fileInfo = activeFiles.get(0);
         assertThat((long) fileInfo.getMinRowKey().get(0)).isEqualTo(1L);
         assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(1L);
@@ -389,7 +389,7 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords.size()).isEqualTo(1);
+        assertThat(readRecords).hasSize(1);
         assertThat(readRecords.get(0)).isEqualTo(getRecords().get(0));
         reader = new ParquetRecordReader.Builder(new Path(activeFiles.get(1).getFilename()), schema).build();
         readRecords.clear();
@@ -399,7 +399,7 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords.size()).isEqualTo(1);
+        assertThat(readRecords).hasSize(1);
         assertThat(readRecords.get(0)).isEqualTo(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");
@@ -487,7 +487,7 @@ public class IngestRecordsFromIteratorIT {
         assertThat(numWritten).isEqualTo(getRecordsByteArrayKey().size());
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles.size()).isEqualTo(2);
+        assertThat(activeFiles).hasSize(2);
         //  - Sort by number of lines so that we know which file corresponds to
         //      which partition
         List<FileInfo> activeFilesSortedByNumberOfLines = activeFiles.stream()
@@ -514,7 +514,7 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords.size()).isEqualTo(2);
+        assertThat(readRecords).hasSize(2);
         assertThat(readRecords.get(0)).isEqualTo(getRecordsByteArrayKey().get(0));
         assertThat(readRecords.get(1)).isEqualTo(getRecordsByteArrayKey().get(1));
         reader = new ParquetRecordReader.Builder(
@@ -526,7 +526,7 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords.size()).isEqualTo(1);
+        assertThat(readRecords).hasSize(1);
         assertThat(readRecords.get(0)).isEqualTo(getRecordsByteArrayKey().get(2));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFilesSortedByNumberOfLines.get(1).getFilename().replace(".parquet", ".sketches");
@@ -621,7 +621,7 @@ public class IngestRecordsFromIteratorIT {
         assertThat(numWritten).isEqualTo(getRecords2DimByteArrayKey().size());
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles.size()).isEqualTo(2);
+        assertThat(activeFiles).hasSize(2);
         //  - Sort by number of lines so that we know which file corresponds to
         //      which partition
         List<FileInfo> activeFilesSortedByNumberOfLines = activeFiles.stream()
@@ -648,7 +648,7 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords.size()).isEqualTo(2);
+        assertThat(readRecords).hasSize(2);
         assertThat(readRecords.get(0)).isEqualTo(getRecords2DimByteArrayKey().get(0));
         assertThat(readRecords.get(1)).isEqualTo(getRecords2DimByteArrayKey().get(4));
         reader = new ParquetRecordReader.Builder(
@@ -660,7 +660,7 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords.size()).isEqualTo(3);
+        assertThat(readRecords).hasSize(3);
         assertThat(readRecords.get(0)).isEqualTo(getRecords2DimByteArrayKey().get(1));
         assertThat(readRecords.get(1)).isEqualTo(getRecords2DimByteArrayKey().get(2));
         assertThat(readRecords.get(2)).isEqualTo(getRecords2DimByteArrayKey().get(3));
@@ -752,7 +752,7 @@ public class IngestRecordsFromIteratorIT {
         assertThat(numWritten).isEqualTo(getRecordsInFirstPartitionOnly().size());
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles.size()).isEqualTo(1);
+        assertThat(activeFiles).hasSize(1);
         FileInfo fileInfo = activeFiles.get(0);
         assertThat((long) fileInfo.getMinRowKey().get(0)).isEqualTo(0L);
         assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(1L);
@@ -768,7 +768,7 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords.size()).isEqualTo(2);
+        assertThat(readRecords).hasSize(2);
         assertThat(readRecords.get(0)).isEqualTo(getRecordsInFirstPartitionOnly().get(1));
         assertThat(readRecords.get(1)).isEqualTo(getRecordsInFirstPartitionOnly().get(0));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
@@ -818,7 +818,7 @@ public class IngestRecordsFromIteratorIT {
         assertThat(numWritten).isEqualTo(2 * getRecords().size());
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles.size()).isEqualTo(1);
+        assertThat(activeFiles).hasSize(1);
         FileInfo fileInfo = activeFiles.get(0);
         assertThat((long) fileInfo.getMinRowKey().get(0)).isEqualTo(1L);
         assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(3L);
@@ -834,7 +834,7 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords.size()).isEqualTo(4);
+        assertThat(readRecords).hasSize(4);
         assertThat(readRecords.get(0)).isEqualTo(getRecords().get(0));
         assertThat(readRecords.get(1)).isEqualTo(getRecords().get(0));
         assertThat(readRecords.get(2)).isEqualTo(getRecords().get(1));
@@ -912,7 +912,7 @@ public class IngestRecordsFromIteratorIT {
         assertThat(numWritten).isEqualTo(records.size());
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles.size()).isEqualTo(2);
+        assertThat(activeFiles).hasSize(2);
 
         //  - Make sure the first file in the list is the one that belongs to the
         //      smallest partition
@@ -1089,8 +1089,8 @@ public class IngestRecordsFromIteratorIT {
         assertThat(numWritten).isEqualTo(records.size());
         //  - Check that the correct number of files have been written
         Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
-        assertThat(partitionToFileMapping.get(partition1.getId()).size()).isEqualTo(40);
-        assertThat(partitionToFileMapping.get(partition2.getId()).size()).isEqualTo(40);
+        assertThat(partitionToFileMapping.get(partition1.getId())).hasSize(40);
+        assertThat(partitionToFileMapping.get(partition2.getId())).hasSize(40);
         //  - Check that the files in each partition contain the correct data
         List<CloseableIterator<Record>> inputIterators = new ArrayList<>();
         for (String file : partitionToFileMapping.get(partition1.getId())) {
@@ -1192,7 +1192,7 @@ public class IngestRecordsFromIteratorIT {
         assertThat(numWritten).isEqualTo(getUnsortedRecords().size());
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles.size()).isEqualTo(1);
+        assertThat(activeFiles).hasSize(1);
         FileInfo fileInfo = activeFiles.get(0);
         assertThat((long) fileInfo.getMinRowKey().get(0)).isEqualTo(1L);
         assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(10L);
@@ -1259,7 +1259,7 @@ public class IngestRecordsFromIteratorIT {
         assertThat(numWritten).isEqualTo(0L);
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles.size()).isEqualTo(0);
+        assertThat(activeFiles).isEmpty();
     }
 
     @Test
@@ -1293,7 +1293,7 @@ public class IngestRecordsFromIteratorIT {
         assertThat(numWritten).isEqualTo(2L);
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles.size()).isEqualTo(1);
+        assertThat(activeFiles).hasSize(1);
         FileInfo fileInfo = activeFiles.get(0);
         assertThat((byte[]) fileInfo.getMinRowKey().get(0)).containsExactly(new byte[]{1, 1});
         assertThat((byte[]) fileInfo.getMaxRowKey().get(0)).containsExactly(new byte[]{11, 2});

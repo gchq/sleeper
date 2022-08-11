@@ -15,35 +15,6 @@
  */
 package sleeper.cdk.custom;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
-
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
@@ -51,7 +22,10 @@ import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResource
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.utility.DockerImageName;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
@@ -61,6 +35,17 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.*;
+import static sleeper.configuration.properties.table.TableProperty.*;
 
 public class SleeperTableLambdaIT {
     @ClassRule
@@ -147,8 +132,8 @@ public class SleeperTableLambdaIT {
         // Then
         List<S3ObjectSummary> tables = s3Client.listObjectsV2(instanceProperties.get(CONFIG_BUCKET), "tables")
                 .getObjectSummaries();
-        assertThat(tables.size()).isEqualTo(1);
-        assertThat(tables.get(0).getKey()).isEqualTo("tables/" + tableProperties.get(TABLE_NAME));
+        assertThat(tables).extracting(S3ObjectSummary::getKey)
+                .containsExactly("tables/" + tableProperties.get(TABLE_NAME));
         s3Client.shutdown();
         dynamoClient.shutdown();
     }
@@ -173,7 +158,7 @@ public class SleeperTableLambdaIT {
         // Then
         List<S3ObjectSummary> tables = s3Client.listObjectsV2(instanceProperties.get(CONFIG_BUCKET), "tables")
                 .getObjectSummaries();
-        assertThat(tables.size()).isEqualTo(0);
+        assertThat(tables).isEmpty();
         s3Client.shutdown();
         dynamoClient.shutdown();
     }
@@ -198,7 +183,7 @@ public class SleeperTableLambdaIT {
         // Then
         List<S3ObjectSummary> tables = s3Client.listObjectsV2(instanceProperties.get(CONFIG_BUCKET), "tables")
                 .getObjectSummaries();
-        assertThat(tables.size()).isEqualTo(1);
+        assertThat(tables).hasSize(1);
         TableProperties downloaded = new TableProperties(instanceProperties);
         downloaded.loadFromS3(s3Client, tableProperties.get(TABLE_NAME));
         assertThat(downloaded.getInt(ROW_GROUP_SIZE)).isEqualTo(new Integer(20));

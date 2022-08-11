@@ -184,7 +184,7 @@ public class PropertiesWriterLambdaIT {
         lambda.handleEvent(event, null);
 
         // Then
-        assertThat(client.listObjects(bucketName).getObjectSummaries().size()).isEqualTo(0);
+        assertThat(client.listObjects(bucketName).getObjectSummaries()).isEmpty();
         client.shutdown();
     }
 }

@@ -128,7 +128,7 @@ public class S3ResultsOutputTest {
                     .filter(s -> s.endsWith(".parquet"))
                     .collect(Collectors.toList());
 
-            assertThat(files.size()).as("one results Parquet file in dir").isEqualTo(1);
+            assertThat(files).as("one results Parquet file in dir").hasSize(1);
             return files.get(0);
         }
     }

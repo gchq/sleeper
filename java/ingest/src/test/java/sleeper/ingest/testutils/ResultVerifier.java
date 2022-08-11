@@ -102,7 +102,7 @@ public class ResultVerifier {
                 .flatMap(Function.identity())
                 .collect(Collectors.toSet());
 
-        assertThat(stateStore.getActiveFiles().size()).isEqualTo(expectedTotalNoOfFiles);
+        assertThat(stateStore.getActiveFiles()).hasSize(expectedTotalNoOfFiles);
         assertThat(allPartitionNoSet.stream().allMatch(partitionNoToExpectedNoOfFilesMap::containsKey)).isTrue();
 
         allPartitionNoSet.forEach(partitionNo -> verifyPartition(
@@ -124,7 +124,7 @@ public class ResultVerifier {
                 .collect(Collectors.toList());
         List<Record> savedRecordList = readMergedRecordsFromPartitionDataFiles(sleeperSchema, partitionFileInfoList, hadoopConfiguration);
 
-        assertThat(partitionFileInfoList.size()).isEqualTo(expectedNoOfFiles);
+        assertThat(partitionFileInfoList).hasSize(expectedNoOfFiles);
         assertListsIdentical(expectedSortedRecordList, savedRecordList);
 
         // In some situations, check that the file min and max match the min and max of dimension 0
@@ -185,7 +185,7 @@ public class ResultVerifier {
     }
 
     private static void assertListsIdentical(List<?> list1, List<?> list2) {
-        assertThat(list2.size()).isEqualTo(list1.size());
+        assertThat(list2).hasSameSizeAs(list1);
         IntStream.range(0, list1.size()).forEach(i ->
                 assertThat(list2.get(i)).as(String.format("First difference found at element %d (of %d)", i, list1.size())).isEqualTo(list1.get(i)));
     }

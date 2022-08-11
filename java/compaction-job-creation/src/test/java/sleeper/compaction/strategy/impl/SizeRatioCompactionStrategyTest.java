@@ -85,7 +85,7 @@ public class SizeRatioCompactionStrategyTest {
         List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, fileInfos, partitions);
 
         // Then
-        assertThat(compactionJobs.size()).isEqualTo(1);
+        assertThat(compactionJobs).hasSize(1);
 
         checkJob(compactionJobs.get(0), fileInfos.stream().map(FileInfo::getFilename).collect(Collectors.toList()), partition.getId(), instanceProperties.get(FILE_SYSTEM), tableProperties.get(DATA_BUCKET));
     }
@@ -125,7 +125,7 @@ public class SizeRatioCompactionStrategyTest {
         List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, fileInfos, partitions);
 
         // Then
-        assertThat(compactionJobs.size()).isEqualTo(0);
+        assertThat(compactionJobs).isEmpty();
     }
 
     @Test
@@ -171,7 +171,7 @@ public class SizeRatioCompactionStrategyTest {
         List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, shuffledFileInfos, partitions);
 
         // Then
-        assertThat(compactionJobs.size()).isEqualTo(2);
+        assertThat(compactionJobs).hasSize(2);
 
         List<String> filesForJob1 = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
@@ -232,7 +232,7 @@ public class SizeRatioCompactionStrategyTest {
         List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, shuffledFileInfos, partitions);
 
         // Then
-        assertThat(compactionJobs.size()).isEqualTo(3);
+        assertThat(compactionJobs).hasSize(3);
 
         List<String> filesForJob1 = new ArrayList<>();
         for (int i = 0; i < 5; i++) {

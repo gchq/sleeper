@@ -180,12 +180,12 @@ public class CreateJobsTest {
             assertThat(jobId).isNotNull();
             jobIds.add(jobId);
         }
-        assertThat(jobIds.size()).isEqualTo(1);
+        assertThat(jobIds).hasSize(1);
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .withMaxNumberOfMessages(10);
         ReceiveMessageResult receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
-        assertThat(receiveMessageResult.getMessages().size()).isEqualTo(1);
+        assertThat(receiveMessageResult.getMessages()).hasSize(1);
         Message message = receiveMessageResult.getMessages().get(0);
         CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         CompactionJob compactionJob = compactionJobSerDe.deserialiseFromString(message.getBody());
