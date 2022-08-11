@@ -24,10 +24,10 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class BuildEC2ParamsTest {
+public class BuildEC2ParametersTest {
 
-    public static BuildEC2Params.Builder params() {
-        return BuildEC2Params.builder()
+    public static BuildEC2Parameters.Builder params() {
+        return BuildEC2Parameters.builder()
                 .repository("test-project")
                 .fork("test-fork")
                 .branch("feature/test");
@@ -59,9 +59,9 @@ public class BuildEC2ParamsTest {
         context.put("fork", "some-fork");
         context.put("branch", "some-branch");
 
-        assertThat(BuildEC2Params.from(context::get))
+        assertThat(BuildEC2Parameters.from(context::get))
                 .usingRecursiveComparison()
-                .isEqualTo(BuildEC2Params.builder()
+                .isEqualTo(BuildEC2Parameters.builder()
                         .repository("some-repo")
                         .fork("some-fork")
                         .branch("some-branch")
@@ -70,9 +70,9 @@ public class BuildEC2ParamsTest {
 
     @Test
     public void setDefaultParametersWhenUsingEmptyContext() {
-        assertThat(BuildEC2Params.from(Collections.emptyMap()::get))
+        assertThat(BuildEC2Parameters.from(Collections.emptyMap()::get))
                 .usingRecursiveComparison()
-                .isEqualTo(BuildEC2Params.builder()
+                .isEqualTo(BuildEC2Parameters.builder()
                         .repository("sleeper")
                         .fork("gchq")
                         .branch("main")

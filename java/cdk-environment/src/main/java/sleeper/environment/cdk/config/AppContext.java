@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.environment.cdk.util;
+package sleeper.environment.cdk.config;
 
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.services.ec2.IVpc;
-import software.amazon.awscdk.services.ec2.Vpc;
-import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.constructs.Construct;
 import software.constructs.Node;
 
@@ -30,14 +28,12 @@ public interface AppContext {
 
     Object get(String key);
 
-    default String getInstanceId() {
-        return getStringOrDefault("instanceId", "SleeperEnvironment");
+    default String get(StringParameter string) {
+        return string.get(this);
     }
 
-    default IVpc getVpcOrDefault(Construct scope, IVpc defaultVpc) {
-        return getStringOpt("vpcId")
-                .map(id -> Vpc.fromLookup(scope, "Vpc", VpcLookupOptions.builder().vpcId(id).build()))
-                .orElse(defaultVpc);
+    default IVpc getOrDefault(VpcParameter vpc, Construct scope, IVpc defaultVpc) {
+        return vpc.getOrDefault(this, scope, defaultVpc);
     }
 
     default String getStringOrDefault(String key, String defaultValue) {

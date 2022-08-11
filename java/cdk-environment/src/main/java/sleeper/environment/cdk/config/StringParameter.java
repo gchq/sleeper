@@ -13,20 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.environment.cdk.buildec2;
+package sleeper.environment.cdk.config;
 
-import org.junit.Test;
+public class StringParameter {
 
-import static org.assertj.core.api.Assertions.assertThat;
+    private final String key;
+    private final String defaultValue;
 
-public class LoadUserDataUtilTest {
-
-    @Test
-    public void canLoadUserData() {
-        assertThat(LoadUserDataUtil.userData(BuildEC2Parameters.builder()
-                .branch("feature/something").fork("a-fork").repository("a-repo").build()))
-                .startsWith("Content-Type: multipart/mixed;")
-                .contains("git clone -b feature/something https://github.com/a-fork/a-repo.git");
+    private StringParameter(String key, String defaultValue) {
+        this.key = key;
+        this.defaultValue = defaultValue;
     }
 
+    public String get(AppContext context) {
+        return context.getStringOrDefault(key, defaultValue);
+    }
+
+    public static StringParameter keyAndDefault(String key, String defaultValue) {
+        return new StringParameter(key, defaultValue);
+    }
 }

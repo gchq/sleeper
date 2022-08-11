@@ -15,27 +15,29 @@
  */
 package sleeper.environment.cdk.buildec2;
 
-import sleeper.environment.cdk.util.AppContext;
+import sleeper.environment.cdk.config.AppContext;
 
 import java.util.Objects;
 
-public class BuildEC2Params {
+import static sleeper.environment.cdk.config.AppParameters.*;
+
+public class BuildEC2Parameters {
 
     private final String repository;
     private final String fork;
     private final String branch;
 
-    private BuildEC2Params(Builder builder) {
+    private BuildEC2Parameters(Builder builder) {
         repository = requireNonEmpty(builder.repository, "repository must not be empty");
         fork = requireNonEmpty(builder.fork, "fork must not be empty");
         branch = requireNonEmpty(builder.branch, "branch must not be empty");
     }
 
-    public static BuildEC2Params from(AppContext context) {
+    public static BuildEC2Parameters from(AppContext context) {
         return builder()
-                .repository(context.getStringOrDefault("repository", "sleeper"))
-                .fork(context.getStringOrDefault("fork", "gchq"))
-                .branch(context.getStringOrDefault("branch", "main"))
+                .repository(context.get(BUILD_REPOSITORY))
+                .fork(context.get(BUILD_FORK))
+                .branch(context.get(BUILD_BRANCH))
                 .build();
     }
 
@@ -80,8 +82,8 @@ public class BuildEC2Params {
             return this;
         }
 
-        public BuildEC2Params build() {
-            return new BuildEC2Params(this);
+        public BuildEC2Parameters build() {
+            return new BuildEC2Parameters(this);
         }
     }
 }

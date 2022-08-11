@@ -27,7 +27,7 @@ class LoadUserDataUtil {
         // Prevent instantiation
     }
 
-    static String userData(BuildEC2Params params) {
+    static String userData(BuildEC2Parameters params) {
         return params.fillUserDataTemplate(templateString());
     }
 
