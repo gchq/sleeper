@@ -261,7 +261,7 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
         configurations.add(mapRedSiteConfigurations);
 
         Map<String, String> hadoopEnvExportProperties = new HashMap<>();
-        hadoopEnvExportProperties.put("JAVA_HOME", "/usr/lib/jvm/java-1.8.0");
+        hadoopEnvExportProperties.put("JAVA_HOME", "/usr/lib/jvm/java-1.8.0-amazon-corretto.x86_64");
         CfnCluster.ConfigurationProperty hadoopEnvExportConfigurations = CfnCluster.ConfigurationProperty.builder()
                 .classification("export")
                 .configurationProperties(hadoopEnvExportProperties)
@@ -273,7 +273,7 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
         configurations.add(hadoopEnvConfigurations);
 
         Map<String, String> sparkEnvProperties = new HashMap<>();
-        sparkEnvProperties.put("JAVA_HOME", "/usr/lib/jvm/java-1.8.0");
+        sparkEnvProperties.put("JAVA_HOME", "/usr/lib/jvm/java-1.8.0-amazon-corretto.x86_64");
         CfnCluster.ConfigurationProperty sparkEnvExportConfigurations = CfnCluster.ConfigurationProperty.builder()
                 .classification("export")
                 .configurationProperties(sparkEnvProperties)
