@@ -49,16 +49,18 @@ public class PersistentEmrExecutor extends Executor {
                        AmazonS3 amazonS3) {
         super(instancePropeties, tablePropertiesProvider, amazonS3);
         this.emrClient = emrClient;
-        this.clusterId = getClusterIdFromName(instancePropeties.get(UserDefinedInstanceProperty.ID));
+        this.clusterId = getClusterIdFromName(emrClient, instancePropeties.get(UserDefinedInstanceProperty.ID));
     }
     
-    private String getClusterIdFromName(String instanceId) {
+    private static String getClusterIdFromName(AmazonElasticMapReduce emrClient, String instanceId) {
         ListClustersRequest listClustersRequest = new ListClustersRequest()
             .withClusterStates(ClusterState.BOOTSTRAPPING.name(), ClusterState.RUNNING.name(), ClusterState.STARTING.name());
         ListClustersResult result = emrClient.listClusters(listClustersRequest);
         String clusterId = null;
         String clusterName = String.join("-", "sleeper", instanceId, "persistentEMR");
+        LOGGER.debug("Searching for id of cluster with name {}", clusterName);
         for (ClusterSummary cs : result.getClusters()) {
+            LOGGER.debug("Found cluster with name {}", cs.getName());
             if (cs.getName().equals(clusterName)) {
                 clusterId = cs.getId();
                 break;
@@ -67,7 +69,7 @@ public class PersistentEmrExecutor extends Executor {
         if (null != clusterId) {
             LOGGER.info("Found cluster of name {} with id {}", clusterName, clusterId);
         } else {
-            LOGGER.error("Found no cluster with name {}", clusterName);
+            throw new IllegalArgumentException("Found no cluster with name " + clusterName);
         }
         return clusterId;
     }
