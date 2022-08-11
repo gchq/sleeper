@@ -17,6 +17,7 @@ package sleeper.environment.cdk.buildec2;
 
 import org.junit.Test;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,7 +44,7 @@ public class KeyPairUtilTest {
 
     @Test
     public void canWritePrivateKeyFile() throws Exception {
-        Path expectedPath = Paths.get("WriteKey.pem");
+        Path expectedPath = pathWithNoFile("WriteKey.pem");
         try {
             KeyPairUtil.writePrivateToFile(KeyPairUtil.generate(), "WriteKey.pem");
             assertThat(Files.getPosixFilePermissions(expectedPath))
@@ -55,7 +56,7 @@ public class KeyPairUtilTest {
 
     @Test
     public void canOverwritePrivateKeyFile() throws Exception {
-        Path path = Paths.get("OverwriteKey.pem");
+        Path path = pathWithNoFile("OverwriteKey.pem");
         Files.createFile(path);
         try {
             KeyPairUtil.writePrivateToFile(KeyPairUtil.generate(), "OverwriteKey.pem");
@@ -64,5 +65,11 @@ public class KeyPairUtilTest {
         } finally {
             Files.deleteIfExists(path);
         }
+    }
+
+    private static Path pathWithNoFile(String fileName) throws IOException {
+        Path path = Paths.get(fileName);
+        Files.deleteIfExists(path);
+        return path;
     }
 }
