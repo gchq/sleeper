@@ -26,9 +26,7 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
@@ -84,8 +82,6 @@ public abstract class Executor {
         }
 
         args.add(getJarLocation());
-        args.add(new BulkImportJobSerDe().toJson(bulkImportJob));
-        args.add(instanceProperties.get(CONFIG_BUCKET));
 
         return args;
     }

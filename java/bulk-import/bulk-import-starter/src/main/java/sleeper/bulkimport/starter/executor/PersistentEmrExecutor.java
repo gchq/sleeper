@@ -107,9 +107,8 @@ public class PersistentEmrExecutor extends Executor {
     @Override
     protected List<String> constructArgs(BulkImportJob bulkImportJob) {
         List<String> args = super.constructArgs(bulkImportJob);
-        // EMR doesn't seem to handle json very well - it cuts off the final "}}" characters. However
-        // Pretty printing it seems to force it to quote the job and handle it properly
-        args.set(args.size() - 2, bulkImportJob.getId()); // Changed to this as for persistent EMR we are putting the job in a JSON file in S3
+        args.add(bulkImportJob.getId());
+        args.add(instanceProperties.get(CONFIG_BUCKET));
         return args;
     }
     

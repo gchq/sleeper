@@ -107,7 +107,7 @@ public abstract class BulkImportJobRunner {
         SparkSession session = new SparkSession.Builder().config(sparkConf).getOrCreate();
         SparkContext sparkContext = session.sparkContext();
         JavaSparkContext javaSparkContext = JavaSparkContext.fromSparkContext(sparkContext);
-        LOGGER.info("Spark Initialised");
+        LOGGER.info("Spark initialised");
         
         // Load table information
         LOGGER.info("Loading table properties and schema for table {}", job.getTableName());
@@ -193,12 +193,18 @@ public abstract class BulkImportJobRunner {
     
     public static void start(String[] args, BulkImportJobRunner runner) throws Exception {
         if (args.length != 2) {
-            throw new IllegalArgumentException("Expected two arguments, the first with the json serialised job," +
+            throw new IllegalArgumentException("Expected two arguments, the first with the id of the bulk import job," +
                     " the second with the config bucket");
         }
+
+        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+        String jsonJob = s3.getObjectAsString(args[1], "bulk_import/" + args[0] + ".json");
+        LOGGER.info("Loaded bulk import job {}", jsonJob);
+        s3.shutdown();
+
         BulkImportJob bulkImportJob;
         try {
-            bulkImportJob = new BulkImportJobSerDe().fromJson(args[0]);
+            bulkImportJob = new BulkImportJobSerDe().fromJson(jsonJob);
         } catch (JsonSyntaxException e) {
             LOGGER.error("Json job was malformed: {}", args[0]);
             bulkImportJob = null;
