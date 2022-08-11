@@ -54,7 +54,7 @@ public class PersistentEmrExecutor extends Executor {
     
     private static String getClusterIdFromName(AmazonElasticMapReduce emrClient, String instanceId) {
         ListClustersRequest listClustersRequest = new ListClustersRequest()
-            .withClusterStates(ClusterState.BOOTSTRAPPING.name(), ClusterState.RUNNING.name(), ClusterState.STARTING.name());
+            .withClusterStates(ClusterState.BOOTSTRAPPING.name(), ClusterState.RUNNING.name(), ClusterState.STARTING.name(), ClusterState.WAITING.name());
         ListClustersResult result = emrClient.listClusters(listClustersRequest);
         String clusterId = null;
         String clusterName = String.join("-", "sleeper", instanceId, "persistentEMR");
