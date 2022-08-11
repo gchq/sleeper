@@ -109,17 +109,17 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     //      - Number of executors per instance = (number of vCPU per instance - 1) / spark.executors.cores = (16 - 1) / 5 = 3
     //      - Total executor memory = total RAM per instance / number of executors per instance = 64 / 3 = 21 (rounded down)
     //      - Assign 90% of the total executor memory to the executor and 10% to the overhead
-    //      - spark.executor.memory = 0.9 * 21 = 18.9GB
-    //      - spark.yarn.executor.memoryOverhead = 0.1 * 21 = 2.1GB
+    //      - spark.executor.memory = 0.9 * 21 = 19GB (memory must be an integer)
+    //      - spark.yarn.executor.memoryOverhead = 0.1 * 21 = 2GB
     //      - spark.driver.memory = spark.executor.memory
     //      - spark.driver.cores = spark.executor.core
     //      - spark.executor.instances = (number of executors per instance * number of core/task instances) - 1 = 3 * 10 - 1 = 29
     //      - spark.default.parallelism = spark.executor.instances * spark.executor.cores * 2 = 29 * 5 * 2 = 290
     //      - spark.sql.shuffle.partitions = spark.default.parallelism
-    BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_MEMORY("sleeper.bulk.import.persistent.emr.spark.executor.memory", "18.9g"),
+    BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_MEMORY("sleeper.bulk.import.persistent.emr.spark.executor.memory", "19g"),
     BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_MEMORY("sleeper.bulk.import.persistent.emr.spark.driver.memory", BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_MEMORY.getDefaultValue()),
     BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_INSTANCES("sleeper.bulk.import.persistent.emr.spark.executor.instances", "29"),
-    BULK_IMPORT_PERSISTENT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD("sleeper.bulk.import.persistent.emr.spark.yarn.executor.memory.overhead", "2.1g"),
+    BULK_IMPORT_PERSISTENT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD("sleeper.bulk.import.persistent.emr.spark.yarn.executor.memory.overhead", "2g"),
     BULK_IMPORT_PERSISTENT_EMR_SPARK_YARN_DRIVER_MEMORY_OVERHEAD("sleeper.bulk.import.persistent.emr.spark.yarn.executor.memory.overhead", BULK_IMPORT_PERSISTENT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD.getDefaultValue()),
     BULK_IMPORT_PERSISTENT_EMR_SPARK_DEFAULT_PARALLELISM("sleeper.bulk.import.persistent.emr.spark.default.parallelisn", "290"),
     //  - Properties that are independent of the instance type and number of instances:
