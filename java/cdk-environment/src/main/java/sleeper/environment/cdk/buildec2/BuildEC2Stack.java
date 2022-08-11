@@ -31,29 +31,16 @@ import static sleeper.environment.cdk.config.AppParameters.VPC;
 
 public class BuildEC2Stack extends Stack {
 
+    private final IVpc vpc;
+
     public BuildEC2Stack(Construct scope, StackProps props, IVpc inheritVpc) {
         super(scope, props.getStackName(), props);
         AppContext context = AppContext.of(this);
         BuildEC2Parameters params = BuildEC2Parameters.from(context);
-        IVpc vpc = context.getOrDefault(VPC, this, inheritVpc);
+        vpc = context.getOrDefault(VPC, this, inheritVpc);
 
-        SecurityGroup allowSsh = SecurityGroup.Builder.create(this, "AllowSsh")
-                .vpc(vpc)
-                .description("Allow SSH inbound traffic")
-                .allowAllOutbound(true)
-                .build();
-        allowSsh.addIngressRule(Peer.ipv4(MyIpUtil.findMyIp() + "/32"), Port.tcp(22));
-
-        // Create a new SSH key every time the CDK is run.
-        // A UUID is appended to the key name to ensure that the key is deleted and recreated every time the stack is
-        // deployed. This is because AWS does not permit updating key pairs in-place, and the library we're using does
-        // not handle that.
-        KeyPair keyPair = KeyPairUtil.generate();
-        KeyPairUtil.writePrivateToFile(keyPair, props.getStackName() + ".pem");
-        CfnKeyPair key = CfnKeyPair.Builder.create(this, "KeyPair")
-                .keyName(props.getStackName() + "-" + UUID.randomUUID())
-                .publicKeyMaterial(KeyPairUtil.publicBase64(keyPair))
-                .build();
+        CfnKeyPair key = createSshKeyPair();
+        SecurityGroup allowSsh = createAllowSshSecurityGroup();
 
         Instance instance = Instance.Builder.create(this, "EC2")
                 .vpc(vpc)
@@ -79,6 +66,29 @@ public class BuildEC2Stack extends Stack {
                 .value("ssh -i BuildEC2.pem ubuntu@" + instance.getInstancePublicIp())
                 .description("Command to connect to EC2")
                 .build();
+    }
+
+    private CfnKeyPair createSshKeyPair() {
+        // Create a new SSH key every time the CDK is run.
+        // A UUID is appended to the key name to ensure that the key is deleted and recreated every time the stack is
+        // deployed. This is because AWS does not permit updating key pairs in-place, and the library we're using does
+        // not handle that.
+        KeyPair keyPair = KeyPairUtil.generate();
+        KeyPairUtil.writePrivateToFile(keyPair, getStackName() + ".pem");
+        return CfnKeyPair.Builder.create(this, "KeyPair")
+                .keyName(getStackName() + "-" + UUID.randomUUID())
+                .publicKeyMaterial(KeyPairUtil.publicBase64(keyPair))
+                .build();
+    }
+
+    private SecurityGroup createAllowSshSecurityGroup() {
+        SecurityGroup allowSsh = SecurityGroup.Builder.create(this, "AllowSsh")
+                .vpc(vpc)
+                .description("Allow SSH inbound traffic")
+                .allowAllOutbound(true)
+                .build();
+        allowSsh.addIngressRule(Peer.ipv4(MyIpUtil.findMyIp() + "/32"), Port.tcp(22));
+        return allowSsh;
     }
 
 }
