@@ -49,7 +49,7 @@ public class BuildEC2Parameters {
 
     private static String requireNonEmpty(String value, String message) {
         Objects.requireNonNull(value, message);
-        if (value.length() < 1) {
+        if (value.isEmpty()) {
             throw new IllegalArgumentException(message);
         }
         return value;
