@@ -219,7 +219,6 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
         Map<String, String> yarnProps = new HashMap<>();
         yarnProps.put("yarn.nodemanager.vmem-check-enabled", "false");
         yarnProps.put("yarn.nodemanager.pmem-check-enabled", "false");
-        yarnProps.put("yarn.scheduler.capacity.resource-calculator", "org.apache.hadoop.yarn.util.resource.DominantResourceCalculator");
         CfnCluster.ConfigurationProperty yarnConfigurations = CfnCluster.ConfigurationProperty.builder()
                 .classification("yarn-site")
                 .configurationProperties(yarnProps)
