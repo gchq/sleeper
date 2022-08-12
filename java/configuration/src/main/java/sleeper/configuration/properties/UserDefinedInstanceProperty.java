@@ -104,19 +104,20 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     //  - Properties that depend on the instance type and number of instances:
     //      - Theses are based on this blog
     //      https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/
-    //      - Our default core/task instance type is m5.4xlarge. These have 64GB of RAM and 16 vCPU.
+    //      - Our default core/task instance type is m5.4xlarge. These have 64GB of RAM and 16 vCPU. The amount of
+    //          usable RAM is 56GB.
     //      - The recommended value of spark.executor.cores is 5, irrespective of the number of servers or their specs.
     //      - Number of executors per instance = (number of vCPU per instance - 1) / spark.executors.cores = (16 - 1) / 5 = 3
-    //      - Total executor memory = total RAM per instance / number of executors per instance = 64 / 3 = 21 (rounded down)
+    //      - Total executor memory = total RAM per instance / number of executors per instance = 56 / 3 = 18 (rounded down)
     //      - Assign 90% of the total executor memory to the executor and 10% to the overhead
-    //      - spark.executor.memory = 0.9 * 21 = 19GB (memory must be an integer)
-    //      - spark.yarn.executor.memoryOverhead = 0.1 * 21 = 2GB
+    //      - spark.executor.memory = 0.9 * 18 = 16GB (memory must be an integer)
+    //      - spark.yarn.executor.memoryOverhead = 0.1 * 18 = 2GB
     //      - spark.driver.memory = spark.executor.memory
     //      - spark.driver.cores = spark.executor.core
-    //      - spark.executor.instances = (number of executors per instance * number of core/task instances) - 1 = 3 * 10 - 1 = 29
+    //      - spark.executor.instances = (number of executors per instance * number of core&task instances) - 1 = 3 * 10 - 1 = 29
     //      - spark.default.parallelism = spark.executor.instances * spark.executor.cores * 2 = 29 * 5 * 2 = 290
     //      - spark.sql.shuffle.partitions = spark.default.parallelism
-    BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_MEMORY("sleeper.bulk.import.persistent.emr.spark.executor.memory", "19g"),
+    BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_MEMORY("sleeper.bulk.import.persistent.emr.spark.executor.memory", "16g"),
     BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_MEMORY("sleeper.bulk.import.persistent.emr.spark.driver.memory", BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_MEMORY.getDefaultValue()),
     BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_INSTANCES("sleeper.bulk.import.persistent.emr.spark.executor.instances", "29"),
     BULK_IMPORT_PERSISTENT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD("sleeper.bulk.import.persistent.emr.spark.yarn.executor.memory.overhead", "2g"),
