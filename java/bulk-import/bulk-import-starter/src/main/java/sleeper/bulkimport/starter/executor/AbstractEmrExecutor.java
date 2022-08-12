@@ -38,22 +38,17 @@ import sleeper.configuration.properties.table.TableProperty;
 
 public abstract class AbstractEmrExecutor extends Executor {
 
-	public AbstractEmrExecutor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-			AmazonS3 amazonS3Client) {
-		super(instanceProperties, tablePropertiesProvider, amazonS3Client);
-	}
+    public AbstractEmrExecutor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+          AmazonS3 amazonS3Client) {
+        super(instanceProperties, tablePropertiesProvider, amazonS3Client);
+    }
     
     @Override
     protected Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties, InstanceProperties instanceProperties) {
         Map<String, String> defaultConfig = new HashMap<>();
-        // defaultConfig.put("spark.executor.memory", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_MEMORY));
-        // defaultConfig.put("spark.driver.memory", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_MEMORY));
-        // defaultConfig.put("spark.executor.instances", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_INSTANCES));
         defaultConfig.put("spark.yarn.executor.memoryOverhead", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD));
         defaultConfig.put("spark.yarn.driver.memoryOverhead", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_YARN_DRIVER_MEMORY_OVERHEAD));
         defaultConfig.put("spark.default.parallelism", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_DEFAULT_PARALLELISM));
-        // defaultConfig.put("spark.executor.cores", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_CORES));
-        // defaultConfig.put("spark.driver.cores", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_CORES));
         defaultConfig.put("spark.network.timeout", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_NETWORK_TIMEOUT));
         defaultConfig.put("spark.executor.heartbeatInterval", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_HEARTBEAT_INTERVAL));
         defaultConfig.put("spark.dynamicAllocation.enabled", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_DYNAMIC_ALLOCATION_ENABLED));
@@ -66,9 +61,6 @@ public abstract class AbstractEmrExecutor extends Executor {
         defaultConfig.put("spark.rdd.compress", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_RDD_COMPRESS));
         defaultConfig.put("spark.shuffle.compress", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_SHUFFLE_COMPRESS));
         defaultConfig.put("spark.shuffle.spill.compress", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_SHUFFLE_SPILL_COMPRESS));
-
-
-        
         defaultConfig.put("spark.shuffle.mapStatus.compression.codec", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC, platformSpec, tableProperties));
         defaultConfig.put("spark.speculation", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SPECULATION, platformSpec, tableProperties));
         defaultConfig.put("spark.speculation.quantile", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SPECULATION_QUANTILE, platformSpec, tableProperties));
