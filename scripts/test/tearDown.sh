@@ -44,8 +44,9 @@ echo "Pausing the system"
 java -cp java/clients/target/clients-*-utility.jar "sleeper.status.update.PauseSystem" ${INSTANCE_ID}
 
 if [[ "${RETAIN_INFRA,,}" == "false" ]]; then
-  echo "Removing all data from table and query results buckets"
+  echo "Removing all data from config, table and query results buckets"
   # Don't fail script if buckets don't exist
+  aws s3 rm s3://${CONFIG_BUCKET} --recursive || true
   aws s3 rm s3://${TABLE_BUCKET} --recursive || true
   aws s3 rm s3://${QUERY_BUCKET} --recursive || true
 fi

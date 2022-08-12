@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2022 Crown Copyright
  *
@@ -20,8 +19,6 @@ import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.model.*;
 import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.Lists;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -31,6 +28,7 @@ import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -39,7 +37,7 @@ import sleeper.configuration.properties.table.TableProperty;
 /**
  * An {@link Executor} which runs a bulk import job on an EMR cluster.
  */
-public class EmrExecutor extends Executor {
+public class EmrExecutor extends AbstractEmrExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmrExecutor.class);
 
     private final TablePropertiesProvider tablePropertiesProvider;
@@ -57,10 +55,15 @@ public class EmrExecutor extends Executor {
     @Override
     public void runJobOnPlatform(BulkImportJob bulkImportJob) {
         Map<String, String> platformSpec = bulkImportJob.getPlatformSpec();
-        InstanceProperties instanceProperties = getInstanceProperties();
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName());
         String bulkImportBucket = instanceProperties.get(UserDefinedInstanceProperty.BULK_IMPORT_EMR_BUCKET);
         String logUri = null == bulkImportBucket ? null : "s3://" + bulkImportBucket + "/logs";
+
+        String configBucket = instanceProperties.get(CONFIG_BUCKET);
+        String key = "bulk_import/" + bulkImportJob.getId() + ".json";
+        String bulkImportJobJSON = new BulkImportJobSerDe().toJson(bulkImportJob);
+        s3Client.putObject(configBucket, key, bulkImportJobJSON);
+        LOGGER.info("Put object for job {} to key {} in bucket {}", bulkImportJob.getId(), key, configBucket);
 
         Integer maxNumberOfExecutors = Integer.max(
                 Integer.parseInt(getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, platformSpec, tableProperties)),
@@ -107,7 +110,7 @@ public class EmrExecutor extends Executor {
 
     private JobFlowInstancesConfig createConfig(BulkImportJob bulkImportJob, TableProperties tableProperties) {
         JobFlowInstancesConfig config = new JobFlowInstancesConfig()
-                .withEc2SubnetId(getInstanceProperties().get(UserDefinedInstanceProperty.SUBNET));
+                .withEc2SubnetId(instanceProperties.get(UserDefinedInstanceProperty.SUBNET));
 
         Map<String, String> platformSpec = bulkImportJob.getPlatformSpec();
         String driverInstanceType = getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE, platformSpec, tableProperties);
@@ -133,38 +136,11 @@ public class EmrExecutor extends Executor {
                         .withInstanceCount(1)
         ));
 
-        String keyName = getInstanceProperties().get(UserDefinedInstanceProperty.BULK_IMPORT_EC2_KEY_NAME);
+        String keyName = instanceProperties.get(UserDefinedInstanceProperty.BULK_IMPORT_EC2_KEY_NAME);
         if (null != keyName) {
             config.setEc2KeyName(keyName);
         }
 
         return config;
-    }
-
-    @Override
-    protected Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties) {
-        Map<String, String> defaultConfig = new HashMap<>();
-        defaultConfig.put("spark.shuffle.mapStatus.compression.codec", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC, platformSpec, tableProperties));
-        defaultConfig.put("spark.speculation", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SPECULATION, platformSpec, tableProperties));
-        defaultConfig.put("spark.speculation.quantile", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SPECULATION_QUANTILE, platformSpec, tableProperties));
-        defaultConfig.put("spark.hadoop.fs.s3a.connection.maximum", getInstanceProperties().get(UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3));
-        return defaultConfig;
-    }
-
-    @Override
-    protected List<String> constructArgs(BulkImportJob bulkImportJob) {
-        List<String> args = super.constructArgs(bulkImportJob);
-        // EMR doesn't seem to handle json very well - it cuts off the final "}}" characters. However
-        // Pretty printing it seems to force it to quote the job and handle it properly
-        args.set(args.size() - 2, new BulkImportJobSerDe().toPrettyJson(bulkImportJob));
-        return args;
-    }
-
-    @Override
-    protected String getJarLocation() {
-        return "s3a://"
-                + getInstanceProperties().get(UserDefinedInstanceProperty.JARS_BUCKET)
-                + "/bulk-import-runner-"
-                + getInstanceProperties().get(UserDefinedInstanceProperty.VERSION) + ".jar";
     }
 }

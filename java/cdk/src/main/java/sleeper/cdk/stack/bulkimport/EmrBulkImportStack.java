@@ -87,7 +87,7 @@ public class EmrBulkImportStack extends AbstractEmrBulkImportStack {
                 .events(Lists.newArrayList(new SqsEventSource(jobQueue)))
                 .build();
 
-        configBucket.grantRead(bulkImportJobStarter);
+        configBucket.grantReadWrite(bulkImportJobStarter);
         if (importBucket != null) {
             importBucket.grantRead(bulkImportJobStarter);
         }
