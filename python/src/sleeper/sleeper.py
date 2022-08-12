@@ -99,7 +99,7 @@ class SleeperClient:
 
 
     def bulk_import_parquet_files_from_s3(self, table_name: str, files: list,
-        id: str = str(uuid.uuid4()), platform: str = "EMR", platform_spec: dict = None):
+        id: str = None, platform: str = "EMR", platform_spec: dict = None):
         """
         Ingests the data in the given files to the Sleeper table with name table_name using the bulk
         import method. This is done by posting a message containing the list of files to the bulk
@@ -109,7 +109,7 @@ class SleeperClient:
 
         :param table_name: the table name to write to
         :param files: list of the files containing the records to ingest
-        :param id: the id of the bulk import job
+        :param id: the id of the bulk import job - if one is not provided then a UUID will be assigned
         :param platform: the platform to use - either "EMR" or "PersistentEMR" or "EKS"
         :param platform_spec: a dict containing details of the platform to use - see docs/python-api.md
         """
@@ -372,7 +372,7 @@ def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str):
     if ingest_queue == None:
         raise Exception("Ingest queue is not defined - was the Ingest Stack deployed?")
 
-    # Creates the ingest message and generates and ID
+    # Creates the ingest message and generates an ID
     ingest_message = {
         "id": str(uuid.uuid4()),
         "tableName": table_name,
@@ -414,6 +414,9 @@ def _bulk_import(table_name: str, files_to_ingest: list,
         if eks_bulk_import_queue == None:
             raise Exception("EKS bulk import queue is not defined - was the EksBulkImportStack deployed?")
         queue = eks_bulk_import_queue
+
+    if id == None:
+        id = str(uuid.uuid4())
 
     # Creates the ingest message and generates and ID
     bulk_import_message = {
