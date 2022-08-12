@@ -66,31 +66,6 @@ public class EmrExecutorTest {
     }
 
     @Test
-    public void shouldPrettyPrintTheJobToAvoidEmrBug() {
-        // Given
-        EmrExecutor emrExecutor = new EmrExecutor(emr, new InstanceProperties(), tablePropertiesProvider, amazonS3);
-        BulkImportJob myJob = new BulkImportJob.Builder()
-                .tableName("myTable")
-                .id("my-job")
-                .files(Lists.newArrayList("file1.parquet"))
-                .build();
-
-        // When
-        emrExecutor.runJob(myJob);
-
-        // Then
-        List<String> args = requested.get().getSteps().get(0).getHadoopJarStep().getArgs();
-        String jobArg = args.get(args.size() - 2);
-        assertEquals("{\n"
-                + "  \"files\": [\n"
-                + "    \"file1.parquet\"\n"
-                + "  ],\n"
-                + "  \"id\": \"my-job\",\n"
-                + "  \"tableName\": \"myTable\"\n"
-                + "}", jobArg);
-    }
-
-    @Test
     public void shouldCreateAClusterOfThreeMachinesByDefault() {
         // Given
         EmrExecutor emrExecutor = new EmrExecutor(emr, new InstanceProperties(), tablePropertiesProvider, amazonS3);
