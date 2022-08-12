@@ -33,6 +33,7 @@ import java.util.Map;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -56,7 +57,7 @@ public class StateMachineExecutor extends Executor {
         Map<String, String> defaultConf = new HashMap<>();
         defaultConf.put("spark.executor.instances", "3");
         // Default Memory requests are overwritten because Fargate doesn't work with
-        // spark's default values
+        // Spark's default values
         defaultConf.put("spark.driver.memory", "7g");
         defaultConf.put("spark.executor.memory", "7g");
         // Fargate provides extra memory so no need to include extra which also messes
@@ -112,6 +113,14 @@ public class StateMachineExecutor extends Executor {
         defaultConfig.put("spark.speculation.quantile", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SPECULATION_QUANTILE, platformSpec, tableProperties));
 
         return defaultConfig;
+    }
+
+    @Override
+    protected List<String> constructArgs(BulkImportJob bulkImportJob) {
+        List<String> args = super.constructArgs(bulkImportJob);
+        args.add(bulkImportJob.getId());
+        args.add(instanceProperties.get(CONFIG_BUCKET));
+        return args;
     }
 
     @Override

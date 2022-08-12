@@ -77,9 +77,6 @@ public abstract class Executor {
 
         List<String> args = Lists.newArrayList("spark-submit", "--deploy-mode", "cluster", "--class", className);
 
-        // Specifying these explicitly rather than relying on the default config
-        // seems to be the only way to get YARN to know the number of cores being
-        // used by each Spark executor.
         args.add("--executor-cores");
         args.add("" + instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_CORES));
         args.add("--driver-cores");

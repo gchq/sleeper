@@ -210,31 +210,6 @@ public class StateMachineExecutorTest {
     }
 
     @Test
-    public void shouldPassJsonSerialisedJobToSparkArgs() {
-        // Given
-        StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(stepFunctions, new InstanceProperties(), tablePropertiesProvider, amazonS3);
-        BulkImportJob myJob = new BulkImportJob.Builder()
-                .tableName("myTable")
-                .id("my-job")
-                .files(Lists.newArrayList("file1.parquet"))
-                .build();
-
-        // When
-        stateMachineExecutor.runJob(myJob);
-
-        // Then
-        String input = requested.get().getInput();
-        JsonElement parsed = new JsonParser().parse(input);
-        JsonArray argsArray = parsed.getAsJsonObject().getAsJsonArray("args");
-        List<String> appNameArgs = jsonArrayToStream(argsArray)
-                .filter(JsonElement::isJsonPrimitive) // Filters out the null reference caused by the null config bucket
-                .map(JsonElement::getAsString)
-                .collect(Collectors.toList());
-        String finalNonNullArg = appNameArgs.get(appNameArgs.size() - 1);
-        assertEquals("{\"files\":[\"file1.parquet\"],\"id\":\"my-job\",\"tableName\":\"myTable\"}", finalNonNullArg);
-    }
-
-    @Test
     public void shouldSetJobIdToUUIDIfNotSetByUser() {
         // Given
         StateMachineExecutor stateMachineExecutor = new StateMachineExecutor(stepFunctions, new InstanceProperties(), tablePropertiesProvider, amazonS3);
