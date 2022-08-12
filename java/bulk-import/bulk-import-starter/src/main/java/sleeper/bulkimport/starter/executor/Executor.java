@@ -15,7 +15,6 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.auth.SdkClock.Instance;
 import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
@@ -36,7 +35,6 @@ import sleeper.configuration.properties.table.TableProperty;
 public abstract class Executor {
     private static final Logger LOGGER = LoggerFactory.getLogger(Executor.class);
     private static final Predicate<String> LOWER_ALPHANUMERICS_AND_DASHES = Pattern.compile("^[a-z0-9-]+$").asPredicate();
-    protected static final String DEFAULT_CLASS = "sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDRunner";
 
     protected final InstanceProperties instanceProperties;
     protected final TablePropertiesProvider tablePropertiesProvider;
@@ -75,7 +73,7 @@ public abstract class Executor {
         }
         LOGGER.info("Using Spark config {}", config);
 
-        String className = bulkImportJob.getClassName() != null ? bulkImportJob.getClassName() : DEFAULT_CLASS;
+        String className = bulkImportJob.getClassName() != null ? bulkImportJob.getClassName() : instanceProperties.get(BULK_IMPORT_CLASS_NAME);
 
         List<String> args = Lists.newArrayList("spark-submit", "--deploy-mode", "cluster", "--class", className);
 
