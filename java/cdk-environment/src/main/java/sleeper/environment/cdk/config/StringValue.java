@@ -28,7 +28,7 @@ public class StringValue {
         this.value = value;
     }
 
-    static Map<String, String> map(StringValue... values) {
+    static Map<String, String> mapOf(StringValue... values) {
         Map<String, String> map = new HashMap<>();
         for (StringValue value : values) {
             map.putIfAbsent(value.key, value.value);

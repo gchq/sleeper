@@ -48,7 +48,7 @@ public interface AppContext {
 
     // Use this for tests, since App and Stack are slow to instantiate
     static AppContext of(StringValue... values) {
-        return StringValue.map(values)::get;
+        return StringValue.mapOf(values)::get;
     }
 
     static AppContext empty() {
