@@ -297,8 +297,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         String file = stateStore.getLeafPartitions().stream()
                 .map(Partition::getId)
                 .map(partitionToActiveFilesMap::get)
-                .filter(list -> list.size() == 1)   // Ensure the partition has a single file, otherwise the file might
-                // not contain the entirety of Feb
+                // Ensure the partition has a single file, otherwise the file might not contain the entirety of Feb
+                .filter(list -> list.size() == 1)
                 .flatMap(List::stream)
                 .findAny()
                 .orElseThrow(RuntimeException::new);
