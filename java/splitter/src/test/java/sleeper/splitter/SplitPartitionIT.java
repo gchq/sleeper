@@ -65,11 +65,12 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 public class SplitPartitionIT {
     private static final int DYNAMO_PORT = 8000;
     @ClassRule
-    public static GenericContainer dynamoDb = new GenericContainer(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
+    public static GenericContainer<?> dynamoDb = new GenericContainer<>(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
             .withExposedPorts(DYNAMO_PORT);
     private static AmazonDynamoDB dynamoDBClient;
     @Rule
@@ -892,25 +893,16 @@ public class SplitPartitionIT {
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toSet());
         Iterator<Partition> it = leafPartitions.iterator();
-        Partition leafPartition1 = it.next();
-        Partition leafPartition2 = it.next();
-        byte[] splitPoint;
-        byte[] minRowkey1 = (byte[]) leafPartition1.getRegion().getRange("key").getMin();
-        byte[] minRowkey2 = (byte[]) leafPartition2.getRegion().getRange("key").getMin();
-        byte[] maxRowKey1 = null == leafPartition1.getRegion().getRange("key").getMax() ? null : (byte[]) leafPartition1.getRegion().getRange("key").getMax();
-        byte[] maxRowKey2 = null == leafPartition2.getRegion().getRange("key").getMax() ? null : (byte[]) leafPartition2.getRegion().getRange("key").getMax();
-        if (Arrays.equals(new byte[]{}, minRowkey1)) {
-            splitPoint = maxRowKey1;
-            assertThat(minRowkey2).containsExactly(maxRowKey1);
-            assertThat(maxRowKey2).isNull();
-        } else {
-            splitPoint = maxRowKey2;
-            assertThat(minRowkey2).containsExactly(new byte[]{});
-            assertThat(minRowkey1).containsExactly(maxRowKey2);
-            assertThat(maxRowKey1).isNull();
-        }
-        ByteArray splitPointBA = ByteArray.wrap(splitPoint);
-        assertThat(ByteArray.wrap(new byte[]{}).compareTo(splitPointBA) < 0 && splitPointBA.compareTo(ByteArray.wrap(new byte[]{99})) < 0).isTrue();
+        byte[] splitPoint = splitPointBytes(it.next(), it.next(), "key");
+        assertThat(leafPartitions)
+                .extracting(partition -> partition.getRegion().getRange("key"))
+                .extracting(Range::getMin, Range::getMax)
+                .containsExactlyInAnyOrder(
+                        tuple(new byte[]{}, splitPoint),
+                        tuple(splitPoint, null));
+        assertThat(ByteArray.wrap(splitPoint)).isBetween(
+                ByteArray.wrap(new byte[]{}),
+                ByteArray.wrap(new byte[]{99}));
         assertThat(leafPartitions).allSatisfy(partition -> {
             assertThat(partition.getParentPartitionId()).isEqualTo(rootPartition.getId());
             assertThat(partition.getChildPartitionIds()).isEmpty();
@@ -1227,25 +1219,16 @@ public class SplitPartitionIT {
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toSet());
         Iterator<Partition> it = leafPartitions.iterator();
-        Partition leafPartition1 = it.next();
-        Partition leafPartition2 = it.next();
-        byte[] splitPoint;
-        byte[] minRowkey1 = (byte[]) leafPartition1.getRegion().getRange("key1").getMin();
-        byte[] minRowkey2 = (byte[]) leafPartition2.getRegion().getRange("key1").getMin();
-        byte[] maxRowKey1 = null == leafPartition1.getRegion().getRange("key1").getMax() ? null : (byte[]) leafPartition1.getRegion().getRange("key1").getMax();
-        byte[] maxRowKey2 = null == leafPartition2.getRegion().getRange("key1").getMax() ? null : (byte[]) leafPartition2.getRegion().getRange("key1").getMax();
-        if (Arrays.equals(new byte[]{}, minRowkey1)) {
-            splitPoint = maxRowKey1;
-            assertThat(minRowkey2).containsExactly(maxRowKey1);
-            assertThat(maxRowKey2).isNull();
-        } else {
-            splitPoint = maxRowKey2;
-            assertThat(minRowkey2).containsExactly(new byte[]{});
-            assertThat(minRowkey1).containsExactly(maxRowKey2);
-            assertThat(maxRowKey1).isNull();
-        }
-        ByteArray splitPointBA = ByteArray.wrap(splitPoint);
-        assertThat(ByteArray.wrap(new byte[]{}).compareTo(splitPointBA) < 0 && splitPointBA.compareTo(ByteArray.wrap(new byte[]{99})) < 0).isTrue();
+        byte[] splitPoint = splitPointBytes(it.next(), it.next(), "key1");
+        assertThat(leafPartitions)
+                .extracting(partition -> partition.getRegion().getRange("key1"))
+                .extracting(Range::getMin, Range::getMax)
+                .containsExactlyInAnyOrder(
+                        tuple(new byte[]{}, splitPoint),
+                        tuple(splitPoint, null));
+        assertThat(ByteArray.wrap(splitPoint)).isBetween(
+                ByteArray.wrap(new byte[]{}),
+                ByteArray.wrap(new byte[]{99}));
         //  - The leaf partitions should have the root partition as their parent
         //      and an empty array for the child partitions.
         assertThat(leafPartitions).allSatisfy(partition -> {
@@ -1313,29 +1296,30 @@ public class SplitPartitionIT {
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toSet());
         Iterator<Partition> it = leafPartitions.iterator();
-        Partition leafPartition1 = it.next();
-        Partition leafPartition2 = it.next();
-        byte[] splitPoint;
-        byte[] minRowkey1 = (byte[]) leafPartition1.getRegion().getRange("key2").getMin();
-        byte[] minRowkey2 = (byte[]) leafPartition2.getRegion().getRange("key2").getMin();
-        byte[] maxRowKey1 = null == leafPartition1.getRegion().getRange("key2").getMax() ? null : (byte[]) leafPartition1.getRegion().getRange("key2").getMax();
-        byte[] maxRowKey2 = null == leafPartition2.getRegion().getRange("key2").getMax() ? null : (byte[]) leafPartition2.getRegion().getRange("key2").getMax();
-        if (Arrays.equals(new byte[]{}, minRowkey1)) {
-            splitPoint = maxRowKey1;
-            assertThat(minRowkey2).containsExactly(maxRowKey1);
-            assertThat(maxRowKey2).isNull();
-        } else {
-            splitPoint = maxRowKey2;
-            assertThat(minRowkey2).containsExactly(new byte[]{});
-            assertThat(minRowkey1).containsExactly(maxRowKey2);
-            assertThat(maxRowKey1).isNull();
-        }
-        ByteArray splitPointBA = ByteArray.wrap(splitPoint);
-        assertThat(ByteArray.wrap(new byte[]{}).compareTo(splitPointBA) < 0 && splitPointBA.compareTo(ByteArray.wrap(new byte[]{99})) < 0).isTrue();
+        byte[] splitPoint = splitPointBytes(it.next(), it.next(), "key2");
+        assertThat(leafPartitions)
+                .extracting(partition -> partition.getRegion().getRange("key2"))
+                .extracting(Range::getMin, Range::getMax)
+                .containsExactlyInAnyOrder(
+                        tuple(new byte[]{}, splitPoint),
+                        tuple(splitPoint, null));
+        assertThat(ByteArray.wrap(splitPoint)).isBetween(
+                ByteArray.wrap(new byte[]{}),
+                ByteArray.wrap(new byte[]{99}));
         assertThat(leafPartitions).allSatisfy(partition -> {
             assertThat(partition.getParentPartitionId()).isEqualTo(rootPartition.getId());
             assertThat(partition.getChildPartitionIds()).isEmpty();
         });
         assertThat(nonLeafPartitions).containsExactly(rootPartition);
+    }
+
+    private static byte[] splitPointBytes(Partition partition1, Partition partition2, String key) {
+        Range range1 = partition1.getRegion().getRange(key);
+        Range range2 = partition2.getRegion().getRange(key);
+        if (Arrays.equals((byte[]) range1.getMin(), (byte[]) range2.getMax())) {
+            return (byte[]) range1.getMin();
+        } else {
+            return (byte[]) range1.getMax();
+        }
     }
 }
