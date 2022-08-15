@@ -26,7 +26,7 @@ public class OptionalStringParameter {
     }
 
     Optional<String> get(AppContext context) {
-        return context.getStringOpt(key);
+        return Optional.ofNullable(StringParameter.getStringOrDefault(context, key, null));
     }
 
     public StringValue value(String value) {

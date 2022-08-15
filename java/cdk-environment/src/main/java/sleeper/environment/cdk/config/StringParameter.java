@@ -26,7 +26,7 @@ public class StringParameter {
     }
 
     String get(AppContext context) {
-        return context.getStringOrDefault(key, defaultValue);
+        return getStringOrDefault(context, key, defaultValue);
     }
 
     public StringValue value(String value) {
@@ -35,5 +35,17 @@ public class StringParameter {
 
     static StringParameter keyAndDefault(String key, String defaultValue) {
         return new StringParameter(key, defaultValue);
+    }
+
+    static String getStringOrDefault(AppContext context, String key, String defaultValue) {
+        Object object = context.get(key);
+        if (object instanceof String) {
+            if ("".equals(object)) {
+                throw new IllegalArgumentException(key + " must not be an empty string");
+            }
+            return (String) object;
+        } else {
+            return defaultValue;
+        }
     }
 }

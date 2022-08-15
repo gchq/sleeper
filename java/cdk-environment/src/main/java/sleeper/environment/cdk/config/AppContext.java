@@ -35,22 +35,6 @@ public interface AppContext {
         return string.get(this);
     }
 
-    default String getStringOrDefault(String key, String defaultValue) {
-        Object object = get(key);
-        if (object instanceof String) {
-            if ("".equals(object)) {
-                throw new IllegalArgumentException(key + " must not be an empty string");
-            }
-            return (String) object;
-        } else {
-            return defaultValue;
-        }
-    }
-
-    default Optional<String> getStringOpt(String key) {
-        return Optional.ofNullable(getStringOrDefault(key, null));
-    }
-
     static AppContext of(App app) {
         return of(app.getNode());
     }
