@@ -1307,18 +1307,16 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords.size()).isEqualTo(2L);
 
         Record expectedRecord1 = new Record();
         expectedRecord1.put("key", new byte[]{1, 1});
         expectedRecord1.put("sort", 2L);
         expectedRecord1.put("value", 7L);
-        assertThat(readRecords.get(0)).isEqualTo(expectedRecord1);
         Record expectedRecord2 = new Record();
         expectedRecord2.put("key", new byte[]{11, 2});
         expectedRecord2.put("sort", 1L);
         expectedRecord2.put("value", 4L);
-        assertThat(readRecords.get(1)).isEqualTo(expectedRecord2);
+        assertThat(readRecords).containsExactly(expectedRecord1, expectedRecord2);
 
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");
