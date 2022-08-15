@@ -16,13 +16,13 @@
 package sleeper.environment.cdk.buildec2;
 
 import org.junit.Test;
+import sleeper.environment.cdk.config.AppContext;
 
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.environment.cdk.config.AppParameters.*;
 
 public class BuildEC2ParametersTest {
 
@@ -47,19 +47,13 @@ public class BuildEC2ParametersTest {
     }
 
     @Test
-    public void refuseEmptyString() {
-        assertThatThrownBy(params().repository("")::build)
-                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("repository");
-    }
+    public void canBuildParamsFromAppContext() {
+        AppContext context = AppContext.of(
+                BUILD_REPOSITORY.value("some-repo"),
+                BUILD_FORK.value("some-fork"),
+                BUILD_BRANCH.value("some-branch"));
 
-    @Test
-    public void canBuildParamsFromAContextFunction() {
-        Map<String, Object> context = new HashMap<>();
-        context.put("repository", "some-repo");
-        context.put("fork", "some-fork");
-        context.put("branch", "some-branch");
-
-        assertThat(BuildEC2Parameters.from(context::get))
+        assertThat(BuildEC2Parameters.from(context))
                 .usingRecursiveComparison()
                 .isEqualTo(BuildEC2Parameters.builder()
                         .repository("some-repo")
@@ -77,5 +71,12 @@ public class BuildEC2ParametersTest {
                         .fork("gchq")
                         .branch("main")
                         .build());
+    }
+
+    @Test
+    public void refuseEmptyString() {
+        AppContext context = AppContext.of(BUILD_REPOSITORY.value(""));
+        assertThatThrownBy(() -> BuildEC2Parameters.from(context))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("repository");
     }
 }

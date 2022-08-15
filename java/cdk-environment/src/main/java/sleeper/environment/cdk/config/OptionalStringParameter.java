@@ -29,6 +29,10 @@ public class OptionalStringParameter {
         return context.getStringOpt(key);
     }
 
+    public StringValue value(String value) {
+        return new StringValue(key, value);
+    }
+
     static OptionalStringParameter key(String key) {
         return new OptionalStringParameter(key);
     }

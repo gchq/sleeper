@@ -15,25 +15,23 @@
  */
 package sleeper.environment.cdk.config;
 
-public class StringParameter {
+import java.util.Objects;
+
+public class StringValue {
 
     private final String key;
-    private final String defaultValue;
+    private final String value;
 
-    private StringParameter(String key, String defaultValue) {
+    StringValue(String key, String value) {
         this.key = key;
-        this.defaultValue = defaultValue;
+        this.value = value;
     }
 
-    String get(AppContext context) {
-        return context.getStringOrDefault(key, defaultValue);
+    boolean hasKey(String key) {
+        return Objects.equals(this.key, key);
     }
 
-    public StringValue value(String value) {
-        return new StringValue(key, value);
-    }
-
-    static StringParameter keyAndDefault(String key, String defaultValue) {
-        return new StringParameter(key, defaultValue);
+    String getValue() {
+        return value;
     }
 }

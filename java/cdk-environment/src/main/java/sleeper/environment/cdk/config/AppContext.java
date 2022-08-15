@@ -19,6 +19,7 @@ import software.amazon.awscdk.App;
 import software.amazon.awscdk.Stack;
 import software.constructs.Node;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 @FunctionalInterface
@@ -57,5 +58,12 @@ public interface AppContext {
 
     static AppContext of(Node node) {
         return node::tryGetContext;
+    }
+
+    static AppContext of(StringValue... values) {
+        return key -> Arrays.stream(values)
+                .filter(value -> value.hasKey(key))
+                .map(StringValue::getValue)
+                .findFirst().orElse(null);
     }
 }
