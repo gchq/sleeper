@@ -15,32 +15,25 @@
  */
 package sleeper.environment.cdk.buildec2;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Test;
 import sleeper.environment.cdk.config.AppContext;
-import sleeper.environment.cdk.config.StringValue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.*;
 
 public class BuildEC2ParametersTest {
 
-    public static AppContext context(StringValue... overrides) {
-        return AppContext.of(ArrayUtils.addAll(overrides,
-                REPOSITORY.value("test-project"),
-                FORK.value("test-fork"),
-                BRANCH.value("feature/test")));
-    }
-
     @Test
     public void canFillTemplate() {
-        assertThat(BuildEC2Parameters.from(context()).fillUserDataTemplate("git clone -b ${branch} https://github.com/${fork}/${repository}.git"))
+        assertThat(BuildEC2Parameters.from(AppContext.of(
+                        BRANCH.value("feature/test"), FORK.value("test-fork"), REPOSITORY.value("test-project")))
+                .fillUserDataTemplate("git clone -b ${branch} https://github.com/${fork}/${repository}.git"))
                 .isEqualTo("git clone -b feature/test https://github.com/test-fork/test-project.git");
     }
 
     @Test
     public void templateCanContainSameKeyMultipleTimes() {
-        assertThat(BuildEC2Parameters.from(context(REPOSITORY.value("repeated-repo")))
+        assertThat(BuildEC2Parameters.from(AppContext.of(REPOSITORY.value("repeated-repo")))
                 .fillUserDataTemplate("[ ! -d ~/${repository} ] && mkdir ~/${repository}"))
                 .isEqualTo("[ ! -d ~/repeated-repo ] && mkdir ~/repeated-repo");
     }
