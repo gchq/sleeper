@@ -15,67 +15,51 @@
  */
 package sleeper.environment.cdk.buildec2;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Test;
 import sleeper.environment.cdk.config.AppContext;
+import sleeper.environment.cdk.config.StringValue;
 
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.environment.cdk.config.AppParameters.*;
+import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.*;
+import static sleeper.environment.cdk.config.AppParameters.BUILD_REPOSITORY;
 
 public class BuildEC2ParametersTest {
 
-    public static BuildEC2Parameters.Builder params() {
-        return BuildEC2Parameters.builder()
-                .repository("test-project")
-                .fork("test-fork")
-                .branch("feature/test");
+    public static AppContext context(StringValue... overrides) {
+        return AppContext.of(ArrayUtils.addAll(overrides,
+                REPOSITORY.value("test-project"),
+                FORK.value("test-fork"),
+                BRANCH.value("feature/test")));
     }
 
     @Test
     public void canFillTemplate() {
-        assertThat(params().build().fillUserDataTemplate("git clone -b ${branch} https://github.com/${fork}/${repository}.git"))
+        assertThat(BuildEC2Parameters.from(context()).fillUserDataTemplate("git clone -b ${branch} https://github.com/${fork}/${repository}.git"))
                 .isEqualTo("git clone -b feature/test https://github.com/test-fork/test-project.git");
     }
 
     @Test
     public void templateCanContainSameKeyMultipleTimes() {
-        assertThat(params().repository("repeated-repo").build()
+        assertThat(BuildEC2Parameters.from(context(REPOSITORY.value("repeated-repo")))
                 .fillUserDataTemplate("[ ! -d ~/${repository} ] && mkdir ~/${repository}"))
                 .isEqualTo("[ ! -d ~/repeated-repo ] && mkdir ~/repeated-repo");
-    }
-
-    @Test
-    public void canBuildParamsFromAppContext() {
-        AppContext context = AppContext.of(
-                BUILD_REPOSITORY.value("some-repo"),
-                BUILD_FORK.value("some-fork"),
-                BUILD_BRANCH.value("some-branch"));
-
-        assertThat(BuildEC2Parameters.from(context))
-                .usingRecursiveComparison()
-                .isEqualTo(BuildEC2Parameters.builder()
-                        .repository("some-repo")
-                        .fork("some-fork")
-                        .branch("some-branch")
-                        .build());
     }
 
     @Test
     public void setDefaultParametersWhenUsingEmptyContext() {
         assertThat(BuildEC2Parameters.from(Collections.emptyMap()::get))
                 .usingRecursiveComparison()
-                .isEqualTo(BuildEC2Parameters.builder()
-                        .repository("sleeper")
-                        .fork("gchq")
-                        .branch("main")
-                        .build());
+                .isEqualTo(BuildEC2Parameters.from(AppContext.of(
+                        REPOSITORY.value("sleeper"), FORK.value("gchq"), BRANCH.value("main"))));
     }
 
     @Test
     public void refuseEmptyString() {
-        AppContext context = AppContext.of(BUILD_REPOSITORY.value(""));
+        AppContext context = context(BUILD_REPOSITORY.value(""));
         assertThatThrownBy(() -> BuildEC2Parameters.from(context))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("repository");
     }

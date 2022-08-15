@@ -16,15 +16,17 @@
 package sleeper.environment.cdk.buildec2;
 
 import org.junit.Test;
+import sleeper.environment.cdk.config.AppContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.*;
 
 public class LoadUserDataUtilTest {
 
     @Test
     public void canLoadUserData() {
-        assertThat(LoadUserDataUtil.userData(BuildEC2Parameters.builder()
-                .branch("feature/something").fork("a-fork").repository("a-repo").build()))
+        assertThat(LoadUserDataUtil.userData(BuildEC2Parameters.from(AppContext.of(
+                BRANCH.value("feature/something"), FORK.value("a-fork"), REPOSITORY.value("a-repo")))))
                 .startsWith("Content-Type: multipart/mixed;")
                 .contains("git clone -b feature/something https://github.com/a-fork/a-repo.git");
     }

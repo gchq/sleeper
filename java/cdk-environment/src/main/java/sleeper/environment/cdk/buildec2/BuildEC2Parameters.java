@@ -16,12 +16,16 @@
 package sleeper.environment.cdk.buildec2;
 
 import sleeper.environment.cdk.config.AppContext;
+import sleeper.environment.cdk.config.AppParameters;
+import sleeper.environment.cdk.config.StringParameter;
 
 import java.util.Objects;
 
-import static sleeper.environment.cdk.config.AppParameters.*;
-
 public class BuildEC2Parameters {
+
+    public static StringParameter REPOSITORY = AppParameters.BUILD_REPOSITORY;
+    public static StringParameter FORK = AppParameters.BUILD_FORK;
+    public static StringParameter BRANCH = AppParameters.BUILD_BRANCH;
 
     private final String repository;
     private final String fork;
@@ -35,9 +39,9 @@ public class BuildEC2Parameters {
 
     public static BuildEC2Parameters from(AppContext context) {
         return builder()
-                .repository(context.get(BUILD_REPOSITORY))
-                .fork(context.get(BUILD_FORK))
-                .branch(context.get(BUILD_BRANCH))
+                .repository(context.get(REPOSITORY))
+                .fork(context.get(FORK))
+                .branch(context.get(BRANCH))
                 .build();
     }
 
