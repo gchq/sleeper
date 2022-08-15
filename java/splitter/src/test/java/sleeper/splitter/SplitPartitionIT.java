@@ -60,6 +60,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -155,25 +156,14 @@ public class SplitPartitionIT {
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toSet());
         Iterator<Partition> it = leafPartitions.iterator();
-        Partition leafPartition1 = it.next();
-        Partition leafPartition2 = it.next();
-        int splitPoint;
-        int minRowkey1 = (int) leafPartition1.getRegion().getRange("key").getMin();
-        int minRowkey2 = (int) leafPartition2.getRegion().getRange("key").getMin();
-        Integer maxRowKey1 = (Integer) leafPartition1.getRegion().getRange("key").getMax();
-        Integer maxRowKey2 = (Integer) leafPartition2.getRegion().getRange("key").getMax();
-        if (minRowkey1 < minRowkey2) {
-            splitPoint = maxRowKey1;
-            assertThat(minRowkey1).isEqualTo(-2147483648);
-            assertThat(minRowkey2).isEqualTo((int) maxRowKey1);
-            assertThat(maxRowKey2).isNull();
-        } else {
-            splitPoint = maxRowKey2;
-            assertThat(minRowkey2).isEqualTo(-2147483648);
-            assertThat(minRowkey1).isEqualTo((int) maxRowKey2);
-            assertThat(maxRowKey1).isNull();
-        }
-        assertThat(splitPoint).isStrictlyBetween(400, 600);
+        Object splitPoint = splitPoint(it.next(), it.next(), "key");
+        assertThat(leafPartitions)
+                .extracting(partition -> partition.getRegion().getRange("key"))
+                .extracting(Range::getMin, Range::getMax)
+                .containsExactlyInAnyOrder(
+                        tuple(Integer.MIN_VALUE, splitPoint),
+                        tuple(splitPoint, null));
+        assertThat((int) splitPoint).isStrictlyBetween(400, 600);
         assertThat(leafPartitions).allSatisfy(partition -> {
             assertThat(partition.getParentPartitionId()).isEqualTo(rootPartition.getId());
             assertThat(partition.getChildPartitionIds()).isEmpty();
@@ -465,24 +455,14 @@ public class SplitPartitionIT {
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toSet());
         Iterator<Partition> it = leafPartitions.iterator();
-        Partition leafPartition1 = it.next();
-        Partition leafPartition2 = it.next();
-        int splitPoint;
-        int minRowkey1 = (int) leafPartition1.getRegion().getRange("key1").getMin();
-        int minRowkey2 = (int) leafPartition2.getRegion().getRange("key1").getMin();
-        Integer maxRowKey1 = (Integer) leafPartition1.getRegion().getRange("key1").getMax();
-        Integer maxRowKey2 = (Integer) leafPartition2.getRegion().getRange("key1").getMax();
-        if (Integer.MIN_VALUE == minRowkey1) {
-            splitPoint = maxRowKey1;
-            assertThat(minRowkey2).isEqualTo(maxRowKey1.intValue());
-            assertThat(maxRowKey2).isNull();
-        } else {
-            splitPoint = maxRowKey2;
-            assertThat(minRowkey2).isEqualTo(Integer.MIN_VALUE);
-            assertThat(minRowkey1).isEqualTo(maxRowKey2.intValue());
-            assertThat(maxRowKey1).isNull();
-        }
-        assertThat(Integer.MIN_VALUE < splitPoint && splitPoint < 99).isTrue();
+        Object splitPoint = splitPoint(it.next(), it.next(), "key1");
+        assertThat(leafPartitions)
+                .extracting(partition -> partition.getRegion().getRange("key1"))
+                .extracting(Range::getMin, Range::getMax)
+                .containsExactlyInAnyOrder(
+                        tuple(Integer.MIN_VALUE, splitPoint),
+                        tuple(splitPoint, null));
+        assertThat((int) splitPoint).isStrictlyBetween(Integer.MIN_VALUE, 99);
         //  - The leaf partitions should have the root partition as their parent
         //      and an empty array for the child partitions.
         assertThat(leafPartitions).allSatisfy(partition -> {
@@ -555,24 +535,14 @@ public class SplitPartitionIT {
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toSet());
         Iterator<Partition> it = leafPartitions.iterator();
-        Partition leafPartition1 = it.next();
-        Partition leafPartition2 = it.next();
-        int splitPoint;
-        int minRowkey1 = (int) leafPartition1.getRegion().getRange("key2").getMin();
-        int minRowkey2 = (int) leafPartition2.getRegion().getRange("key2").getMin();
-        Integer maxRowKey1 = (Integer) leafPartition1.getRegion().getRange("key2").getMax();
-        Integer maxRowKey2 = (Integer) leafPartition2.getRegion().getRange("key2").getMax();
-        if (Integer.MIN_VALUE == minRowkey1) {
-            splitPoint = maxRowKey1;
-            assertThat(minRowkey2).isEqualTo(maxRowKey1.intValue());
-            assertThat(maxRowKey2).isNull();
-        } else {
-            splitPoint = maxRowKey2;
-            assertThat(minRowkey2).isEqualTo(Integer.MIN_VALUE);
-            assertThat(minRowkey1).isEqualTo(maxRowKey2.intValue());
-            assertThat(maxRowKey1).isNull();
-        }
-        assertThat(Integer.MIN_VALUE < splitPoint && splitPoint < 99).isTrue();
+        Object splitPoint = splitPoint(it.next(), it.next(), "key2");
+        assertThat(leafPartitions)
+                .extracting(partition -> partition.getRegion().getRange("key2"))
+                .extracting(Range::getMin, Range::getMax)
+                .containsExactlyInAnyOrder(
+                        tuple(Integer.MIN_VALUE, splitPoint),
+                        tuple(splitPoint, null));
+        assertThat((int) splitPoint).isStrictlyBetween(Integer.MIN_VALUE, 99);
         //  - The leaf partitions should have the root partition as their parent
         //      and an empty array for the child partitions.
         assertThat(leafPartitions).allSatisfy(partition -> {
@@ -650,24 +620,14 @@ public class SplitPartitionIT {
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toSet());
         Iterator<Partition> it = leafPartitions.iterator();
-        Partition leafPartition1 = it.next();
-        Partition leafPartition2 = it.next();
-        int splitPoint;
-        int minRowkey1 = (int) leafPartition1.getRegion().getRange("key2").getMin();
-        int minRowkey2 = (int) leafPartition2.getRegion().getRange("key2").getMin();
-        Integer maxRowKey1 = (Integer) leafPartition1.getRegion().getRange("key2").getMax();
-        Integer maxRowKey2 = (Integer) leafPartition2.getRegion().getRange("key2").getMax();
-        if (Integer.MIN_VALUE == minRowkey1) {
-            splitPoint = maxRowKey1;
-            assertThat(minRowkey2).isEqualTo(maxRowKey1.intValue());
-            assertThat(maxRowKey2).isNull();
-        } else {
-            splitPoint = maxRowKey2;
-            assertThat(minRowkey2).isEqualTo(Integer.MIN_VALUE);
-            assertThat(minRowkey1).isEqualTo(maxRowKey2.intValue());
-            assertThat(maxRowKey1).isNull();
-        }
-        assertThat(Integer.MIN_VALUE < splitPoint && splitPoint < 99).isTrue();
+        Object splitPoint = splitPoint(it.next(), it.next(), "key2");
+        assertThat(leafPartitions)
+                .extracting(partition -> partition.getRegion().getRange("key2"))
+                .extracting(Range::getMin, Range::getMax)
+                .containsExactlyInAnyOrder(
+                        tuple(Integer.MIN_VALUE, splitPoint),
+                        tuple(splitPoint, null));
+        assertThat((int) splitPoint).isStrictlyBetween(Integer.MIN_VALUE, 99);
         //  - The leaf partitions should have the root partition as their parent
         //      and an empty array for the child partitions.
         assertThat(leafPartitions).allSatisfy(partition -> {
@@ -732,25 +692,14 @@ public class SplitPartitionIT {
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toSet());
         Iterator<Partition> it = leafPartitions.iterator();
-        Partition leafPartition1 = it.next();
-        Partition leafPartition2 = it.next();
-        long splitPoint;
-        long minRowkey1 = (long) leafPartition1.getRegion().getRange("key").getMin();
-        long minRowkey2 = (long) leafPartition2.getRegion().getRange("key").getMin();
-        Long maxRowKey1 = (Long) leafPartition1.getRegion().getRange("key").getMax();
-        Long maxRowKey2 = (Long) leafPartition2.getRegion().getRange("key").getMax();
-        if (minRowkey1 < minRowkey2) {
-            splitPoint = maxRowKey1;
-            assertThat(minRowkey1).isEqualTo(Long.MIN_VALUE);
-            assertThat(minRowkey2).isEqualTo((long) maxRowKey1);
-            assertThat(maxRowKey2).isNull();
-        } else {
-            splitPoint = maxRowKey2;
-            assertThat(minRowkey2).isEqualTo(Long.MIN_VALUE);
-            assertThat(minRowkey1).isEqualTo((long) maxRowKey2);
-            assertThat(maxRowKey1).isNull();
-        }
-        assertThat(400 < splitPoint && splitPoint < 600).isTrue();
+        Object splitPoint = splitPoint(it.next(), it.next(), "key");
+        assertThat(leafPartitions)
+                .extracting(partition -> partition.getRegion().getRange("key"))
+                .extracting(Range::getMin, Range::getMax)
+                .containsExactlyInAnyOrder(
+                        tuple(Long.MIN_VALUE, splitPoint),
+                        tuple(splitPoint, null));
+        assertThat((long) splitPoint).isStrictlyBetween(400L, 600L);
         assertThat(leafPartitions).allSatisfy(partition -> {
             assertThat(partition.getParentPartitionId()).isEqualTo(rootPartition.getId());
             assertThat(partition.getChildPartitionIds()).isEmpty();
@@ -900,7 +849,7 @@ public class SplitPartitionIT {
                 .containsExactlyInAnyOrder(
                         tuple(new byte[]{}, splitPoint),
                         tuple(splitPoint, null));
-        assertThat(ByteArray.wrap(splitPoint)).isBetween(
+        assertThat(ByteArray.wrap(splitPoint)).isStrictlyBetween(
                 ByteArray.wrap(new byte[]{}),
                 ByteArray.wrap(new byte[]{99}));
         assertThat(leafPartitions).allSatisfy(partition -> {
@@ -1226,7 +1175,7 @@ public class SplitPartitionIT {
                 .containsExactlyInAnyOrder(
                         tuple(new byte[]{}, splitPoint),
                         tuple(splitPoint, null));
-        assertThat(ByteArray.wrap(splitPoint)).isBetween(
+        assertThat(ByteArray.wrap(splitPoint)).isStrictlyBetween(
                 ByteArray.wrap(new byte[]{}),
                 ByteArray.wrap(new byte[]{99}));
         //  - The leaf partitions should have the root partition as their parent
@@ -1303,7 +1252,7 @@ public class SplitPartitionIT {
                 .containsExactlyInAnyOrder(
                         tuple(new byte[]{}, splitPoint),
                         tuple(splitPoint, null));
-        assertThat(ByteArray.wrap(splitPoint)).isBetween(
+        assertThat(ByteArray.wrap(splitPoint)).isStrictlyBetween(
                 ByteArray.wrap(new byte[]{}),
                 ByteArray.wrap(new byte[]{99}));
         assertThat(leafPartitions).allSatisfy(partition -> {
@@ -1320,6 +1269,16 @@ public class SplitPartitionIT {
             return (byte[]) range1.getMin();
         } else {
             return (byte[]) range1.getMax();
+        }
+    }
+
+    private static Object splitPoint(Partition partition1, Partition partition2, String key) {
+        Range range1 = partition1.getRegion().getRange(key);
+        Range range2 = partition2.getRegion().getRange(key);
+        if (Objects.equals(range1.getMin(), range2.getMax())) {
+            return range1.getMin();
+        } else {
+            return range1.getMax();
         }
     }
 }
