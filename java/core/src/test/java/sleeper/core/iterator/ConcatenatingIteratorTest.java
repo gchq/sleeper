@@ -17,6 +17,9 @@ package sleeper.core.iterator;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.junit.Before;
+import org.junit.Test;
+import sleeper.core.record.Record;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,15 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import org.junit.Before;
-import org.junit.Test;
-import sleeper.core.record.Record;
 
 public class ConcatenatingIteratorTest {
 

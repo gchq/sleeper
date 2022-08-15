@@ -15,25 +15,22 @@
  */
 package sleeper.cdk.custom;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.junit.Test;
-import org.mockito.Mockito;
-
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.DescribeVpcEndpointsRequest;
 import com.amazonaws.services.ec2.model.DescribeVpcEndpointsResult;
 import com.amazonaws.services.ec2.model.VpcEndpoint;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class VpcCheckLambdaTest {
 

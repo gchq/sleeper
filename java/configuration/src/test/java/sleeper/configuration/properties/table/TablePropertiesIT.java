@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -30,11 +31,6 @@ import sleeper.core.schema.type.StringType;
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
-
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TablePropertiesIT {

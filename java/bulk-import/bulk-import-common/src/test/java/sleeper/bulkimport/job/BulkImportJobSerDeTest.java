@@ -15,14 +15,12 @@
  */
 package sleeper.bulkimport.job;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
+import com.google.common.collect.Lists;
+import org.junit.Test;
 
 import java.util.HashMap;
 
-import org.junit.Test;
-
-import com.google.common.collect.Lists;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class BulkImportJobSerDeTest {
 

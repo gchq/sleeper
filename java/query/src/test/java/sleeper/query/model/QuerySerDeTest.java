@@ -33,7 +33,14 @@ import sleeper.core.schema.type.StringType;
 import sleeper.query.model.output.ResultsOutputConstants;
 import sleeper.query.model.output.S3ResultsOutput;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertThrows;

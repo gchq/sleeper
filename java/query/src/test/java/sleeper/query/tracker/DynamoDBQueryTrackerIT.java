@@ -27,6 +27,23 @@ import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.google.common.collect.Lists;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.testcontainers.containers.GenericContainer;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.core.CommonTestConstants;
+import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
+import sleeper.core.range.Region;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.IntType;
+import sleeper.query.model.LeafPartitionQuery;
+import sleeper.query.model.Query;
+import sleeper.query.model.output.ResultsOutputInfo;
+import sleeper.query.tracker.exception.QueryTrackerException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,36 +52,12 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.testcontainers.containers.GenericContainer;
-import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
-import sleeper.query.model.output.ResultsOutputInfo;
-
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
 import static sleeper.query.tracker.QueryState.COMPLETED;
 import static sleeper.query.tracker.QueryState.FAILED;
 import static sleeper.query.tracker.QueryState.IN_PROGRESS;
 import static sleeper.query.tracker.QueryState.PARTIALLY_FAILED;
-
-import sleeper.query.tracker.exception.QueryTrackerException;
-import sleeper.configuration.properties.InstanceProperties;
-
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
-
-import sleeper.core.CommonTestConstants;
-import sleeper.core.range.Range;
-import sleeper.core.range.Range.RangeFactory;
-import sleeper.core.range.Region;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.IntType;
 
 public class DynamoDBQueryTrackerIT {
     private static final int DYNAMO_PORT = 8000;

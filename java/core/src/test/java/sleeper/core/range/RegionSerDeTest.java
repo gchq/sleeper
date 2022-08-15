@@ -15,12 +15,6 @@
  */
 package sleeper.core.range;
 
-import java.util.Arrays;
-import java.util.HashSet;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-
 import org.junit.Test;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -28,6 +22,11 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+
+import java.util.Arrays;
+import java.util.HashSet;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class RegionSerDeTest {
 

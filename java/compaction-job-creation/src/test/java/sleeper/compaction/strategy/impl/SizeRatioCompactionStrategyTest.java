@@ -15,6 +15,15 @@
  */
 package sleeper.compaction.strategy.impl;
 
+import org.junit.Test;
+import sleeper.compaction.job.CompactionJob;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.key.Key;
+import sleeper.core.partition.Partition;
+import sleeper.core.schema.type.IntType;
+import sleeper.statestore.FileInfo;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,26 +32,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-
-import org.junit.Test;
-import sleeper.compaction.job.CompactionJob;
-import sleeper.configuration.properties.InstanceProperties;
-
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
-
-import sleeper.configuration.properties.table.TableProperties;
-
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.SIZE_RATIO_COMPACTION_STRATEGY_RATIO;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-
-import sleeper.core.key.Key;
-import sleeper.core.partition.Partition;
-import sleeper.core.schema.type.IntType;
-import sleeper.statestore.FileInfo;
 
 public class SizeRatioCompactionStrategyTest {
 

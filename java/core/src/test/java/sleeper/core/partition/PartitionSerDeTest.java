@@ -15,13 +15,6 @@
  */
 package sleeper.core.partition;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-
 import org.junit.Test;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
@@ -31,6 +24,12 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class PartitionSerDeTest {
 

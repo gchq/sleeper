@@ -44,7 +44,6 @@ import sleeper.core.schema.type.StringType;
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 
 public abstract class AbstractRecordHandlerIT {
 

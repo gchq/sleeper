@@ -40,22 +40,6 @@ import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.matching.UrlPattern;
 import com.google.common.collect.Lists;
-
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
@@ -68,27 +52,67 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
-
+import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.CommonTestConstants;
+import sleeper.core.iterator.IteratorException;
+import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
+import sleeper.core.range.Region;
+import sleeper.core.record.Record;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.ListType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.MapType;
+import sleeper.core.schema.type.StringType;
+import sleeper.ingest.IngestRecordsFromIterator;
+import sleeper.io.parquet.record.ParquetReaderIterator;
+import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.model.output.ResultsOutputConstants;
 import sleeper.query.model.output.S3ResultsOutput;
 import sleeper.query.model.output.SQSResultsOutput;
 import sleeper.query.model.output.WebSocketResultsOutput;
+import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.QueryState;
 import sleeper.query.tracker.QueryStatusReportListener;
 import sleeper.query.tracker.TrackedQuery;
 import sleeper.query.tracker.WebSocketQueryStatusReportDestination;
 import sleeper.query.tracker.exception.QueryTrackerException;
+import sleeper.statestore.InitialiseStateStore;
+import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
+import sleeper.table.job.TableCreator;
+import sleeper.table.util.StateStoreProvider;
 
-import static sleeper.query.tracker.QueryState.COMPLETED;
-import static sleeper.query.tracker.QueryState.IN_PROGRESS;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
-import sleeper.query.tracker.DynamoDBQueryTracker;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.InstanceProperties;
-
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
@@ -103,49 +127,13 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNE
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
-
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-
-import sleeper.core.CommonTestConstants;
-import sleeper.core.iterator.IteratorException;
-import sleeper.core.range.Range;
-import sleeper.core.record.Record;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.ListType;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.MapType;
-import sleeper.core.schema.type.StringType;
-import sleeper.ingest.IngestRecordsFromIterator;
-import sleeper.io.parquet.record.ParquetReaderIterator;
-import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.statestore.InitialiseStateStore;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.table.job.TableCreator;
-import sleeper.table.util.StateStoreProvider;
-
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.containing;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-
-import java.util.Arrays;
-
-import sleeper.core.range.Range.RangeFactory;
-import sleeper.core.range.Region;
+import static sleeper.query.tracker.QueryState.COMPLETED;
+import static sleeper.query.tracker.QueryState.IN_PROGRESS;
 
 public class SqsQueryProcessorLambdaIT {
     @ClassRule

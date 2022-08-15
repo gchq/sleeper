@@ -20,7 +20,6 @@ import org.junit.Test;
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 
 public class IngestJobSerDeTest {
 

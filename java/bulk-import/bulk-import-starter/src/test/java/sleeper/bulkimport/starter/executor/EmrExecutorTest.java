@@ -16,7 +16,13 @@
 package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.model.*;
+import com.amazonaws.services.elasticmapreduce.model.ComputeLimitsUnitType;
+import com.amazonaws.services.elasticmapreduce.model.InstanceGroupConfig;
+import com.amazonaws.services.elasticmapreduce.model.InstanceRoleType;
+import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
+import com.amazonaws.services.elasticmapreduce.model.ManagedScalingPolicy;
+import com.amazonaws.services.elasticmapreduce.model.RunJobFlowRequest;
+import com.amazonaws.services.elasticmapreduce.model.RunJobFlowResult;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.google.common.collect.ImmutableMap;
@@ -40,7 +46,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static sleeper.configuration.properties.table.TableProperty.*;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS;
 
 public class EmrExecutorTest {
     private AmazonElasticMapReduce emr;
