@@ -63,6 +63,7 @@ public interface AppContext {
         return node::tryGetContext;
     }
 
+    // Use this for tests, since App and Stack are slow to instantiate
     static AppContext of(StringValue... values) {
         return key -> Arrays.stream(values)
                 .filter(value -> value.hasKey(key))
