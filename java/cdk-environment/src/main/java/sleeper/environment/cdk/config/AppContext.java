@@ -19,7 +19,6 @@ import software.amazon.awscdk.App;
 import software.amazon.awscdk.Stack;
 import software.constructs.Node;
 
-import java.util.Arrays;
 import java.util.Optional;
 
 @FunctionalInterface
@@ -49,10 +48,7 @@ public interface AppContext {
 
     // Use this for tests, since App and Stack are slow to instantiate
     static AppContext of(StringValue... values) {
-        return key -> Arrays.stream(values)
-                .filter(value -> value.hasKey(key))
-                .map(StringValue::getValue)
-                .findFirst().orElse(null);
+        return StringValue.map(values)::get;
     }
 
     static AppContext empty() {

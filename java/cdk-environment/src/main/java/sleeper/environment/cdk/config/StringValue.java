@@ -15,7 +15,8 @@
  */
 package sleeper.environment.cdk.config;
 
-import java.util.Objects;
+import java.util.HashMap;
+import java.util.Map;
 
 public class StringValue {
 
@@ -27,11 +28,11 @@ public class StringValue {
         this.value = value;
     }
 
-    boolean hasKey(String key) {
-        return Objects.equals(this.key, key);
-    }
-
-    String getValue() {
-        return value;
+    static Map<String, String> map(StringValue... values) {
+        Map<String, String> map = new HashMap<>();
+        for (StringValue value : values) {
+            map.putIfAbsent(value.key, value.value);
+        }
+        return map;
     }
 }

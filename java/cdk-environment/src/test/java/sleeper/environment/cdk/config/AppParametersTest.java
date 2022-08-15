@@ -61,6 +61,12 @@ public class AppParametersTest {
     @Test
     public void canSetValueForDefaultedParameter() {
         AppContext context = AppContext.of(INSTANCE_ID.value("some-test-id"));
-        assertThat(context.get(INSTANCE_ID)).contains("some-test-id");
+        assertThat(context.get(INSTANCE_ID)).isEqualTo("some-test-id");
+    }
+
+    @Test
+    public void takeFirstValueWhenSpecifiedMultipleTimes() {
+        AppContext context = AppContext.of(INSTANCE_ID.value("id-1"), INSTANCE_ID.value("id-2"));
+        assertThat(context.get(INSTANCE_ID)).isEqualTo("id-1");
     }
 }
