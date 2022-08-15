@@ -680,7 +680,6 @@ public class CompactSortedFilesIT {
         fileInfos.add(fileInfo1);
         fileInfos.add(fileInfo2);
         String outputFile = folderName + "/file3.parquet";
-        SortedMap<Long, Record> data = new TreeMap<>();
         ParquetRecordWriter writer1 = new ParquetRecordWriter(new Path(file1), SchemaConverter.getSchema(schema), schema);
         writer1.close();
         ParquetRecordWriter writer2 = new ParquetRecordWriter(new Path(file2), SchemaConverter.getSchema(schema), schema);
@@ -713,8 +712,7 @@ public class CompactSortedFilesIT {
             results.add(new Record(reader.next()));
         }
         reader.close();
-        List<Record> expectedResults = new ArrayList<>(data.values());
-        assertThat(results).isEqualTo(expectedResults);
+        assertThat(results).isEmpty();
         // - Check DynamoDBStateStore has correct ready for GC files
         List<FileInfo> readyForGCFiles = new ArrayList<>();
         dynamoStateStore.getReadyForGCFiles().forEachRemaining(readyForGCFiles::add);
@@ -1586,7 +1584,7 @@ public class CompactSortedFilesIT {
                 .stream()
                 .sorted(Comparator.comparing(FileInfo::getFilename))
                 .collect(Collectors.toList());
-        ;
+
         assertThat(activeFiles).hasSize(1);
         FileInfo newFile = new FileInfo();
         newFile.setRowKeyTypes(new LongType());
