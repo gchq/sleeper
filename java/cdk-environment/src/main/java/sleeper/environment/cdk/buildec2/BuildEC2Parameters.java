@@ -19,8 +19,6 @@ import sleeper.environment.cdk.config.AppContext;
 import sleeper.environment.cdk.config.AppParameters;
 import sleeper.environment.cdk.config.StringParameter;
 
-import java.util.Objects;
-
 public class BuildEC2Parameters {
 
     public static StringParameter REPOSITORY = AppParameters.BUILD_REPOSITORY;
@@ -31,18 +29,14 @@ public class BuildEC2Parameters {
     private final String fork;
     private final String branch;
 
-    private BuildEC2Parameters(Builder builder) {
-        repository = requireNonEmpty(builder.repository, "repository must not be empty");
-        fork = requireNonEmpty(builder.fork, "fork must not be empty");
-        branch = requireNonEmpty(builder.branch, "branch must not be empty");
+    private BuildEC2Parameters(AppContext context) {
+        repository = context.get(REPOSITORY);
+        fork = context.get(FORK);
+        branch = context.get(BRANCH);
     }
 
     public static BuildEC2Parameters from(AppContext context) {
-        return builder()
-                .repository(context.get(REPOSITORY))
-                .fork(context.get(FORK))
-                .branch(context.get(BRANCH))
-                .build();
+        return new BuildEC2Parameters(context);
     }
 
     String fillUserDataTemplate(String template) {
@@ -51,43 +45,4 @@ public class BuildEC2Parameters {
                 .replace("${branch}", branch);
     }
 
-    private static String requireNonEmpty(String value, String message) {
-        Objects.requireNonNull(value, message);
-        if (value.isEmpty()) {
-            throw new IllegalArgumentException(message);
-        }
-        return value;
-    }
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public static final class Builder {
-        private String repository;
-        private String fork;
-        private String branch;
-
-        private Builder() {
-        }
-
-        public Builder repository(String repository) {
-            this.repository = repository;
-            return this;
-        }
-
-        public Builder fork(String fork) {
-            this.fork = fork;
-            return this;
-        }
-
-        public Builder branch(String branch) {
-            this.branch = branch;
-            return this;
-        }
-
-        public BuildEC2Parameters build() {
-            return new BuildEC2Parameters(this);
-        }
-    }
 }

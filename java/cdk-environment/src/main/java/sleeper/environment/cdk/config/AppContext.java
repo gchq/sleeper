@@ -38,6 +38,9 @@ public interface AppContext {
     default String getStringOrDefault(String key, String defaultValue) {
         Object object = get(key);
         if (object instanceof String) {
+            if ("".equals(object)) {
+                throw new IllegalArgumentException(key + " must not be an empty string");
+            }
             return (String) object;
         } else {
             return defaultValue;
@@ -65,5 +68,9 @@ public interface AppContext {
                 .filter(value -> value.hasKey(key))
                 .map(StringValue::getValue)
                 .findFirst().orElse(null);
+    }
+
+    static AppContext empty() {
+        return key -> null;
     }
 }

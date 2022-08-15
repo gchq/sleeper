@@ -20,8 +20,6 @@ import org.junit.Test;
 import sleeper.environment.cdk.config.AppContext;
 import sleeper.environment.cdk.config.StringValue;
 
-import java.util.Collections;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.*;
@@ -51,7 +49,7 @@ public class BuildEC2ParametersTest {
 
     @Test
     public void setDefaultParametersWhenUsingEmptyContext() {
-        assertThat(BuildEC2Parameters.from(Collections.emptyMap()::get))
+        assertThat(BuildEC2Parameters.from(AppContext.empty()))
                 .usingRecursiveComparison()
                 .isEqualTo(BuildEC2Parameters.from(AppContext.of(
                         REPOSITORY.value("sleeper"), FORK.value("gchq"), BRANCH.value("main"))));
