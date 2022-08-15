@@ -21,9 +21,7 @@ import sleeper.environment.cdk.config.AppContext;
 import sleeper.environment.cdk.config.StringValue;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.*;
-import static sleeper.environment.cdk.config.AppParameters.BUILD_REPOSITORY;
 
 public class BuildEC2ParametersTest {
 
@@ -55,10 +53,4 @@ public class BuildEC2ParametersTest {
                         REPOSITORY.value("sleeper"), FORK.value("gchq"), BRANCH.value("main"))));
     }
 
-    @Test
-    public void refuseEmptyString() {
-        AppContext context = context(BUILD_REPOSITORY.value(""));
-        assertThatThrownBy(() -> BuildEC2Parameters.from(context))
-                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("repository");
-    }
 }
