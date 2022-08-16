@@ -49,15 +49,15 @@ public class BulkImportJobSerDeTest {
                 .build();
 
         // When
-        BulkImportJob bulkImportJob = new BulkImportJobSerDe().fromJson(
+        BulkImportJob bulkImportJob = new BulkImportJobSerDe().fromJson("" +
                 "{" +
-                        "   \"id\": \"myJob\"," +
-                        "   \"className\": \"com.example.MyClass\"," +
-                        "   \"files\": [ \"a/b/c.parquet\" ]," +
-                        "   \"sparkConf\": {" +
-                        "       \"key\": \"value\"" +
-                        "   }" +
-                        "}");
+                "   \"id\": \"myJob\"," +
+                "   \"className\": \"com.example.MyClass\"," +
+                "   \"files\": [ \"a/b/c.parquet\" ]," +
+                "   \"sparkConf\": {" +
+                "       \"key\": \"value\"" +
+                "   }" +
+                "}");
 
         // Then
         assertThat(bulkImportJob).isEqualTo(expected);
@@ -91,15 +91,15 @@ public class BulkImportJobSerDeTest {
         String serialised = new BulkImportJobSerDe().toJson(fullJob);
 
         // Then
-        String expected =
+        String expected = "" +
                 "{" +
-                        "\"className\":\"com.example.MyClass\"," +
-                        "\"files\":[\"a/b/c.parquet\"]," +
-                        "\"id\":\"myJob\"," +
-                        "\"sparkConf\":{" +
-                        "\"key\":\"value\"" +
-                        "}" +
-                        "}";
+                "    \"className\":\"com.example.MyClass\"," +
+                "    \"files\":[\"a/b/c.parquet\"]," +
+                "    \"id\":\"myJob\"," +
+                "    \"sparkConf\":{" +
+                "        \"key\":\"value\"" +
+                "    }" +
+                "}";
         assertThat(serialised).isEqualTo(expected);
     }
 
