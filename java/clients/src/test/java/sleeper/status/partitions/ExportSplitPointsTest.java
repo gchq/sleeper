@@ -38,7 +38,6 @@ import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -93,7 +92,7 @@ public class ExportSplitPointsTest {
         List<Object> exportedSplitPoints = exportSplitPoints.getSplitPoints();
 
         // Then
-        assertThat(exportedSplitPoints).isEqualTo(Arrays.asList(-10, 1000));
+        assertThat(exportedSplitPoints).containsExactly(-10, 1000);
     }
 
     @Test
@@ -115,7 +114,7 @@ public class ExportSplitPointsTest {
         List<Object> exportedSplitPoints = exportSplitPoints.getSplitPoints();
 
         // Then
-        assertThat(exportedSplitPoints).isEqualTo(Arrays.asList(-10L, 1000L));
+        assertThat(exportedSplitPoints).containsExactly(-10L, 1000L);
     }
 
     @Test
@@ -137,7 +136,7 @@ public class ExportSplitPointsTest {
         List<Object> exportedSplitPoints = exportSplitPoints.getSplitPoints();
 
         // Then
-        assertThat(exportedSplitPoints).isEqualTo(Arrays.asList("A", "T"));
+        assertThat(exportedSplitPoints).containsExactly("A", "T");
     }
 
     @Test
