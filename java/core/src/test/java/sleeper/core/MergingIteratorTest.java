@@ -29,6 +29,7 @@ import sleeper.core.schema.type.StringType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -79,6 +80,8 @@ public class MergingIteratorTest {
         list2.add(record5);
         list2.add(record6);
         list2.add(record7);
+
+        // When
         CloseableIterator<Record> iterator1 = new WrappedIterator<>(list1.iterator());
         CloseableIterator<Record> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
@@ -133,6 +136,8 @@ public class MergingIteratorTest {
         list2.add(record5);
         list2.add(record6);
         list2.add(record7);
+
+        // When
         CloseableIterator<Record> iterator1 = new WrappedIterator<>(list1.iterator());
         CloseableIterator<Record> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
@@ -187,6 +192,8 @@ public class MergingIteratorTest {
         list2.add(record5);
         list2.add(record6);
         list2.add(record7);
+
+        // When
         CloseableIterator<Record> iterator1 = new WrappedIterator<>(list1.iterator());
         CloseableIterator<Record> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
@@ -241,6 +248,8 @@ public class MergingIteratorTest {
         list2.add(record5);
         list2.add(record6);
         list2.add(record7);
+
+        // When
         CloseableIterator<Record> iterator1 = new WrappedIterator<>(list1.iterator());
         CloseableIterator<Record> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
@@ -287,6 +296,8 @@ public class MergingIteratorTest {
         list2.add(record5);
         list2.add(record6);
         list2.add(record7);
+
+        // When
         CloseableIterator<Record> iterator1 = new WrappedIterator<>(list1.iterator());
         CloseableIterator<Record> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
@@ -316,9 +327,10 @@ public class MergingIteratorTest {
         list1.add(record1);
         list1.add(record2);
         list1.add(record3);
-        List<Record> list2 = new ArrayList<>();
+
+        // When
         CloseableIterator<Record> iterator1 = new WrappedIterator<>(list1.iterator());
-        CloseableIterator<Record> iterator2 = new WrappedIterator<>(list2.iterator());
+        CloseableIterator<Record> iterator2 = new WrappedIterator<>(Collections.emptyIterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
 
         // Then
