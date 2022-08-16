@@ -37,11 +37,10 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -107,12 +106,10 @@ public class StateMachineExecutorTest {
         String input = requested.get().getInput();
         JsonElement parsed = new JsonParser().parse(input);
         JsonArray argsArray = parsed.getAsJsonObject().getAsJsonArray("args");
-        List<String> appNameArgs = jsonArrayToStream(argsArray)
+        assertThat(jsonArrayToStream(argsArray)
                 .filter(JsonElement::isJsonPrimitive) // Filters out the null reference caused by the null config bucket
-                .map(JsonElement::getAsString)
-                .filter(s -> s.equals("spark.app.name=my-job"))
-                .collect(Collectors.toList());
-        assertThat(appNameArgs).hasSize(1);
+                .map(JsonElement::getAsString))
+                .containsOnlyOnce("spark.app.name=my-job");
     }
 
     @Test
@@ -132,12 +129,10 @@ public class StateMachineExecutorTest {
         String input = requested.get().getInput();
         JsonElement parsed = new JsonParser().parse(input);
         JsonArray argsArray = parsed.getAsJsonObject().getAsJsonArray("args");
-        long numberOfDefaultConfItems = jsonArrayToStream(argsArray)
+        assertThat(jsonArrayToStream(argsArray)
                 .filter(JsonElement::isJsonPrimitive) // Filters out the null reference caused by the null config bucket
-                .map(JsonElement::getAsString)
-                .filter(s -> s.equals("--conf"))
-                .count();
-        assertThat(numberOfDefaultConfItems).isNotEqualTo(0L);
+                .map(JsonElement::getAsString))
+                .contains("--conf");
     }
 
     @Test
@@ -150,14 +145,11 @@ public class StateMachineExecutorTest {
                 .build();
 
         // When / Then
-        try {
-            stateMachineExecutor.runJob(myJob);
-            fail("Exception expected");
-        } catch (IllegalArgumentException e) {
-            String expectedMessage = "The bulk import job failed validation with the following checks failing: \n"
-                    + "The input files must be set to a non-null and non-empty value.";
-            assertThat(e.getMessage()).isEqualTo(expectedMessage);
-        }
+        String expectedMessage = "The bulk import job failed validation with the following checks failing: \n"
+                + "The input files must be set to a non-null and non-empty value.";
+        assertThatThrownBy(() -> stateMachineExecutor.runJob(myJob))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(expectedMessage);
     }
 
     @Test
@@ -178,12 +170,11 @@ public class StateMachineExecutorTest {
         String input = requested.get().getInput();
         JsonElement parsed = new JsonParser().parse(input);
         JsonArray argsArray = parsed.getAsJsonObject().getAsJsonArray("args");
-        List<String> appNameArgs = jsonArrayToStream(argsArray)
+        assertThat(jsonArrayToStream(argsArray)
                 .filter(JsonElement::isJsonPrimitive) // Filters out the null reference caused by the null config bucket
                 .map(JsonElement::getAsString)
-                .filter(s -> s.contains("spark.driver.memory="))
-                .collect(Collectors.toList());
-        assertThat(appNameArgs).containsExactly("spark.driver.memory=10g");
+                .filter(s -> s.contains("spark.driver.memory=")))
+                .containsExactly("spark.driver.memory=10g");
     }
 
     @Test
@@ -203,12 +194,11 @@ public class StateMachineExecutorTest {
         String input = requested.get().getInput();
         JsonElement parsed = new JsonParser().parse(input);
         JsonArray argsArray = parsed.getAsJsonObject().getAsJsonArray("args");
-        List<String> appNameArgs = jsonArrayToStream(argsArray)
+        assertThat(jsonArrayToStream(argsArray)
                 .filter(JsonElement::isJsonPrimitive) // Filters out the null reference caused by the null config bucket
                 .map(JsonElement::getAsString)
-                .filter(s -> s.contains("spark.driver.memory="))
-                .collect(Collectors.toList());
-        assertThat(appNameArgs).containsExactly("spark.driver.memory=7g");
+                .filter(s -> s.contains("spark.driver.memory=")))
+                .containsExactly("spark.driver.memory=7g");
     }
 
     @Test
@@ -250,11 +240,9 @@ public class StateMachineExecutorTest {
         String input = requested.get().getInput();
         JsonElement parsed = new JsonParser().parse(input);
         JsonArray argsArray = parsed.getAsJsonObject().getAsJsonArray("args");
-        List<String> appNameArgs = jsonArrayToStream(argsArray)
-                .map(JsonElement::getAsString)
-                .collect(Collectors.toList());
-        String finalNonNullArg = appNameArgs.get(appNameArgs.size() - 1);
-        assertThat(finalNonNullArg).isEqualTo("myBucket");
+        assertThat(jsonArrayToStream(argsArray)
+                .map(JsonElement::getAsString))
+                .last().isEqualTo("myBucket");
     }
 
     @Test
@@ -274,12 +262,11 @@ public class StateMachineExecutorTest {
         String input = requested.get().getInput();
         JsonElement parsed = new JsonParser().parse(input);
         JsonArray argsArray = parsed.getAsJsonObject().getAsJsonArray("args");
-        List<String> podNameArg = jsonArrayToStream(argsArray)
+        assertThat(jsonArrayToStream(argsArray)
                 .filter(JsonElement::isJsonPrimitive) // Filters out the null reference caused by the null config bucket
                 .map(JsonElement::getAsString)
-                .filter(s -> s.contains("spark.kubernetes.driver.pod.name="))
-                .collect(Collectors.toList());
-        assertThat(podNameArg).containsExactly("spark.kubernetes.driver.pod.name=my-job");
+                .filter(s -> s.contains("spark.kubernetes.driver.pod.name=")))
+                .containsExactly("spark.kubernetes.driver.pod.name=my-job");
     }
 
     private Stream<JsonElement> jsonArrayToStream(JsonArray argsArray) {
