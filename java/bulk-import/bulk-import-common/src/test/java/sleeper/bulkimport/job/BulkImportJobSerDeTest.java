@@ -17,6 +17,8 @@ package sleeper.bulkimport.job;
 
 import com.google.common.collect.Lists;
 import org.junit.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
+import org.skyscreamer.jsonassert.JSONCompareMode;
 
 import java.util.HashMap;
 
@@ -76,7 +78,7 @@ public class BulkImportJobSerDeTest {
     }
 
     @Test
-    public void shouldSerialiseFullJob() {
+    public void shouldSerialiseFullJob() throws Exception {
         // Given
         HashMap<String, String> sparkConf = new HashMap<>();
         sparkConf.put("key", "value");
@@ -100,7 +102,7 @@ public class BulkImportJobSerDeTest {
                 "        \"key\":\"value\"" +
                 "    }" +
                 "}";
-        assertThat(serialised).isEqualTo(expected);
+        JSONAssert.assertEquals(expected, serialised, JSONCompareMode.STRICT);
     }
 
     @Test

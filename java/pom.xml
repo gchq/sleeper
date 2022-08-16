@@ -80,6 +80,7 @@
         <testcontainers.version>1.16.2</testcontainers.version>
         <wiremock.version>2.32.0</wiremock.version>
         <assertj.version>3.23.1</assertj.version>
+        <jsonassert.version>1.5.1</jsonassert.version>
         <!-- Maven plugins -->
         <release.plugin.version>3.0.0-M4</release.plugin.version>
         <surefire.plugin.version>3.0.0-M5</surefire.plugin.version>
@@ -171,6 +172,12 @@
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
                 <version>${assertj.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.skyscreamer</groupId>
+                <artifactId>jsonassert</artifactId>
+                <version>${jsonassert.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
