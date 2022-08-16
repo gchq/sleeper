@@ -77,6 +77,14 @@ Mockito (org.mockito:mockito-core:3.3.3):
 
 - MIT License
 
+AssertJ (org.assertj:assertj-core:3.23.1):
+
+- Apache License, Version 2.0
+
+JSONAssert (org.skyscreamer:jsonassert:1.5.1):
+
+- Apache License, Version 2.0
+
 SLF4J (org.slf4j:slf4j-api:1.7.36, org.slf4j:slf4j-reload4j:1.7.36):
 
 - MIT License
