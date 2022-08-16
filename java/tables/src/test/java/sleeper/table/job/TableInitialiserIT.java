@@ -106,7 +106,8 @@ public class TableInitialiserIT {
 
         // Then
         assertThat(dynamoClient.scan(
-                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount()).isEqualTo(new Integer(1));
+                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount())
+                .isEqualTo(new Integer(1));
     }
 
     @Test
@@ -138,7 +139,8 @@ public class TableInitialiserIT {
 
         // Then
         assertThat(dynamoClient.scan(
-                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount()).isEqualTo(Integer.valueOf(7));
+                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount())
+                .isEqualTo(Integer.valueOf(7));
         validateSplits(tableProperties, "key", "", dynamoClient, "a", "b", "c");
     }
 
@@ -175,7 +177,8 @@ public class TableInitialiserIT {
 
         // Then
         assertThat(dynamoClient.scan(
-                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount()).isEqualTo(Integer.valueOf(7));
+                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount())
+                .isEqualTo(Integer.valueOf(7));
         validateSplits(tableProperties, "key", "", dynamoClient, "a", "b", "c");
     }
 
@@ -211,7 +214,8 @@ public class TableInitialiserIT {
 
         // Then
         assertThat(dynamoClient.scan(
-                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount()).isEqualTo(Integer.valueOf(7));
+                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount())
+                .isEqualTo(Integer.valueOf(7));
         validateSplits(tableProperties, "key", Long.MIN_VALUE, dynamoClient, 1000L, 1_000_000L, 1_000_000_000L);
     }
 
@@ -247,7 +251,8 @@ public class TableInitialiserIT {
 
         // Then
         assertThat(dynamoClient.scan(
-                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount()).isEqualTo(Integer.valueOf(7));
+                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount())
+                .isEqualTo(Integer.valueOf(7));
         validateSplits(tableProperties, "key", Integer.MIN_VALUE, dynamoClient, 100, 1000, 10000);
     }
 
