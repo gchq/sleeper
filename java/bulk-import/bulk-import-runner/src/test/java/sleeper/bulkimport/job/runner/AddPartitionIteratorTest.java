@@ -54,14 +54,9 @@ public class AddPartitionIteratorTest {
         AddPartitionIterator addPartitionIterator = new AddPartitionIterator(rows, schema, partitionTree);
 
         // When / Then
-        assertThat(addPartitionIterator.hasNext()).isTrue();
-        Row readRow1 = addPartitionIterator.next();
         Row expectedRow1 = RowFactory.create(1, 2L, "3", partition1);
-        assertThat(readRow1).isEqualTo(expectedRow1);
-        assertThat(addPartitionIterator.hasNext()).isTrue();
-        Row readRow2 = addPartitionIterator.next();
         Row expectedRow2 = RowFactory.create(4, 5L, "6", partition2);
-        assertThat(readRow2).isEqualTo(expectedRow2);
-        assertThat(addPartitionIterator.hasNext()).isFalse();
+        assertThat(addPartitionIterator).toIterable()
+                .containsExactly(expectedRow1, expectedRow2);
     }
 }
