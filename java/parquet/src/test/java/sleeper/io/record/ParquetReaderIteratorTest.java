@@ -70,10 +70,7 @@ public class ParquetReaderIteratorTest {
         ParquetReaderIterator iterator = new ParquetReaderIterator(reader);
 
         // Then
-        assertThat(iterator.hasNext()).isTrue();
-        assertThat(iterator.next()).isEqualTo(record1);
-        assertThat(iterator.hasNext()).isTrue();
-        assertThat(iterator.next()).isEqualTo(record2);
+        assertThat(iterator).toIterable().containsExactly(record1, record2);
         assertThat(iterator.getNumberOfRecordsRead()).isEqualTo(2L);
 
         iterator.close();
@@ -96,7 +93,7 @@ public class ParquetReaderIteratorTest {
         ParquetReaderIterator iterator = new ParquetReaderIterator(reader);
 
         // Then
-        assertThat(iterator.hasNext()).isFalse();
+        assertThat(iterator).isExhausted();
         assertThat(iterator.getNumberOfRecordsRead()).isEqualTo(0L);
 
         iterator.close();
