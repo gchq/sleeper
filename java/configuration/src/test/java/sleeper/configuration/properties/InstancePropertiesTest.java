@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.fail;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
@@ -122,8 +123,7 @@ public class InstancePropertiesTest {
     @Test
     public void shouldBeAbleToUseStandardGetMethod() {
         InstanceProperties instanceProperties = getSleeperProperties();
-        String expectedAccount = "1234567890";
-        assertThat(instanceProperties.get(ACCOUNT)).isEqualTo(expectedAccount);
+        assertThat(instanceProperties.get(ACCOUNT)).isEqualTo("1234567890");
     }
 
     @Test
@@ -198,12 +198,9 @@ public class InstancePropertiesTest {
         String serialised = instanceProperties.saveAsString();
 
         // Then
-        try {
-            new InstanceProperties().loadFromString(serialised);
-            fail("Exception expected");
-        } catch (Exception e) {
-            assertThat(e.getMessage()).isNotNull();
-        }
+        InstanceProperties properties = new InstanceProperties();
+        assertThatThrownBy(() -> properties.loadFromString(serialised))
+                .hasMessageContaining(MAXIMUM_CONNECTIONS_TO_S3.getPropertyName());
     }
 
     private static InstanceProperties getSleeperProperties() {
