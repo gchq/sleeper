@@ -56,7 +56,7 @@ public class KeySerDeTest {
         assertThat(deserialisedKey.get(0)).isEqualTo(1);
         assertThat(deserialisedKey.get(1)).isEqualTo(10L);
         assertThat(deserialisedKey.get(2)).isEqualTo("abc");
-        assertThat((byte[]) deserialisedKey.get(3)).containsExactly(new byte[]{1, 2, 3});
+        assertThat((byte[]) deserialisedKey.get(3)).containsExactly(1, 2, 3);
     }
 
     @Test
@@ -170,7 +170,7 @@ public class KeySerDeTest {
         assertThat(deserialisedKey1.get(0)).isEqualTo(1);
         assertThat(deserialisedKey1.get(1)).isEqualTo(10L);
         assertThat(deserialisedKey1.get(2)).isEqualTo("abc");
-        assertThat((byte[]) deserialisedKey1.get(3)).containsExactly(new byte[]{1, 2, 3});
+        assertThat((byte[]) deserialisedKey1.get(3)).containsExactly(1, 2, 3);
         assertThat(deserialisedKey2.size()).isEqualTo(3);
         assertThat(deserialisedKey2.get(0)).isEqualTo(1);
         assertThat(deserialisedKey2.get(1)).isEqualTo(10L);
