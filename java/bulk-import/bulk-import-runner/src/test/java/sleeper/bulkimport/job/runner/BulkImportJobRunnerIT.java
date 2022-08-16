@@ -73,6 +73,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE;
@@ -368,8 +369,7 @@ public class BulkImportJobRunnerIT {
     }
 
     @Test
-    public void shouldImportDataMultiplePartitions() throws IOException, StateStoreException,
-            ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public void shouldImportDataMultiplePartitions() throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -414,14 +414,6 @@ public class BulkImportJobRunnerIT {
         runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles).tableName(tableName).build());
 
         // Then
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles).hasSize(2);
-        FileInfo fileInfo1 = activeFiles.get(0);
-        assertThat((long) fileInfo1.getNumberOfRecords()).isEqualTo(50L);
-        List<Record> readRecords1 = readRecords(fileInfo1.getFilename(), schema);
-        FileInfo fileInfo2 = activeFiles.get(1);
-        assertThat((long) fileInfo2.getNumberOfRecords()).isEqualTo(50L);
-        List<Record> readRecords2 = readRecords(fileInfo2.getFilename(), schema);
         List<Record> leftPartition = records.stream()
                 .filter(record -> ((int) record.get("key")) < 50)
                 .sorted((record1, record2) -> {
@@ -438,13 +430,12 @@ public class BulkImportJobRunnerIT {
                     return key1 - key2;
                 })
                 .collect(Collectors.toList());
-        if (((int) readRecords1.get(0).get("key")) < 50) {
-            assertThat(readRecords1).isEqualTo(leftPartition);
-            assertThat(readRecords2).isEqualTo(rightPartition);
-        } else {
-            assertThat(readRecords1).isEqualTo(rightPartition);
-            assertThat(readRecords2).isEqualTo(leftPartition);
-        }
+        assertThat(stateStore.getActiveFiles())
+                .extracting(FileInfo::getNumberOfRecords,
+                        file -> readRecordsOrThrow(file.getFilename(), schema))
+                .containsExactlyInAnyOrder(
+                        tuple(50L, leftPartition),
+                        tuple(50L, rightPartition));
     }
 
     @Test
@@ -618,6 +609,14 @@ public class BulkImportJobRunnerIT {
             return key1 - key2;
         });
         assertThat(readRecords).isEqualTo(records);
+    }
+
+    private List<Record> readRecordsOrThrow(String filename, Schema schema) {
+        try {
+            return readRecords(filename, schema);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed reading records", e);
+        }
     }
 
     private List<Record> readRecords(String filename, Schema schema) throws IOException {
