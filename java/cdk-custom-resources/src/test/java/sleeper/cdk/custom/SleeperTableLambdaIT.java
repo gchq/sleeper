@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -121,7 +122,7 @@ public class SleeperTableLambdaIT {
         // Then
         Integer count = dynamoClient.scan(new ScanRequest().withTableName(tableProperties.get(PARTITION_TABLENAME)))
                 .getCount();
-        assertThat(count).isEqualTo(new Integer(1));
+        assertThat(count).isEqualTo(1);
         s3Client.shutdown();
         dynamoClient.shutdown();
     }
@@ -198,7 +199,7 @@ public class SleeperTableLambdaIT {
         assertThat(tables).hasSize(1);
         TableProperties downloaded = new TableProperties(instanceProperties);
         downloaded.loadFromS3(s3Client, tableProperties.get(TABLE_NAME));
-        assertThat(downloaded.getInt(ROW_GROUP_SIZE)).isEqualTo(new Integer(20));
+        assertThat(downloaded.getInt(ROW_GROUP_SIZE)).isEqualTo(20);
         s3Client.shutdown();
         dynamoClient.shutdown();
     }
@@ -213,14 +214,12 @@ public class SleeperTableLambdaIT {
         SleeperTableLambda sleeperTableLambda = new SleeperTableLambda(s3Client, dynamoClient);
 
         // When / Then
-        try {
-            sleeperTableLambda.handleEvent(CloudFormationCustomResourceEvent.builder()
-                    .withRequestType("RANDOM")
-                    .withResourceProperties(createInput(instanceProperties, tableProperties))
-                    .build(), null);
-        } catch (Exception e) {
-            assertThat(e.getMessage()).isEqualTo("Invalid request type: RANDOM");
-        }
+        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                .withRequestType("RANDOM")
+                .withResourceProperties(createInput(instanceProperties, tableProperties))
+                .build();
+        assertThatThrownBy(() -> sleeperTableLambda.handleEvent(event, null))
+                .hasMessage("Invalid request type: RANDOM");
         s3Client.shutdown();
         dynamoClient.shutdown();
     }
