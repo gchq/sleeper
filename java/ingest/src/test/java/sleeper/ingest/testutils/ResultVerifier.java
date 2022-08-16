@@ -109,7 +109,7 @@ public class ResultVerifier {
                 .collect(Collectors.toSet());
 
         assertThat(stateStore.getActiveFiles()).hasSize(expectedTotalNoOfFiles);
-        assertThat(allPartitionNoSet.stream().allMatch(partitionNoToExpectedNoOfFilesMap::containsKey)).isTrue();
+        assertThat(allPartitionNoSet).allMatch(partitionNoToExpectedNoOfFilesMap::containsKey);
 
         allPartitionNoSet.forEach(partitionNo -> verifyPartition(
                 sleeperSchema,
