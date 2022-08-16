@@ -18,17 +18,19 @@ package sleeper.cdk.custom;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.DescribeVpcEndpointsRequest;
 import com.amazonaws.services.ec2.model.DescribeVpcEndpointsResult;
+import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.ec2.model.VpcEndpoint;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -44,14 +46,12 @@ public class VpcCheckLambdaTest {
         when(mockEc2.describeVpcEndpoints(Mockito.any())).thenReturn(new DescribeVpcEndpointsResult());
 
         // Then
-        try {
-            vpcCheckLambda.handleEvent(CloudFormationCustomResourceEvent.builder()
-                    .withRequestType("Create")
-                    .withResourceProperties(new HashMap<>()).build(), null);
-            fail("Exception expected");
-        } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage()).isNotNull();
-        }
+        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                .withRequestType("Create")
+                .withResourceProperties(new HashMap<>()).build();
+        assertThatThrownBy(() -> vpcCheckLambda.handleEvent(event, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("endpoint");
     }
 
     @Test
@@ -95,10 +95,8 @@ public class VpcCheckLambdaTest {
                 .withRequestType("Create")
                 .withResourceProperties(properties).build(), null);
 
-        DescribeVpcEndpointsRequest request = requestReference.get();
-        assertThat(request.getFilters().get(0).getName()).isEqualTo("vpc-id");
-        assertThat(request.getFilters().get(0).getValues().get(0)).isEqualTo("myVpc");
-        assertThat(request.getFilters().get(1).getName()).isEqualTo("service-name");
-        assertThat(request.getFilters().get(1).getValues().get(0)).isEqualTo("com.amazonaws.my-region-1.s3");
+        assertThat(requestReference.get().getFilters()).containsExactly(
+                new Filter("vpc-id", Collections.singletonList("myVpc")),
+                new Filter("service-name", Collections.singletonList("com.amazonaws.my-region-1.s3")));
     }
 }
