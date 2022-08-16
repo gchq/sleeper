@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -65,10 +66,11 @@ public class VpcCheckLambdaTest {
                 .withVpcEndpoints(new VpcEndpoint()));
 
         // Then
-        vpcCheckLambda.handleEvent(CloudFormationCustomResourceEvent.builder()
+        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
                 .withRequestType("Create")
-                .withResourceProperties(new HashMap<>()).build(), null);
-        // no exceptions
+                .withResourceProperties(new HashMap<>()).build();
+        assertThatCode(() -> vpcCheckLambda.handleEvent(event, null))
+                .doesNotThrowAnyException();
     }
 
     @Test
