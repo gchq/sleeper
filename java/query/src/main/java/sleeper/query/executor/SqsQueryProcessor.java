@@ -73,12 +73,12 @@ public class SqsQueryProcessor {
     private SqsQueryProcessor(Builder builder) throws ObjectFactoryException {
         sqsClient = builder.sqsClient;
         instanceProperties = builder.instanceProperties;
+        tablePropertiesProvider = builder.tablePropertiesProvider;
         executorService = Executors.newFixedThreadPool(10);
         queryConfiguration = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties);
         objectFactory = new ObjectFactory(instanceProperties, builder.s3Client, "/tmp");
         queryTracker = new DynamoDBQueryTracker(instanceProperties, builder.dynamoClient);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties);
-        tablePropertiesProvider = new TablePropertiesProvider(builder.s3Client, instanceProperties);
         stateStoreProvider = new StateStoreProvider(builder.dynamoClient, instanceProperties, conf);
     }
 
@@ -179,6 +179,7 @@ public class SqsQueryProcessor {
         private AmazonS3 s3Client;
         private AmazonDynamoDB dynamoClient;
         private InstanceProperties instanceProperties;
+        private TablePropertiesProvider tablePropertiesProvider;
 
         private Builder() {
         }
@@ -200,6 +201,11 @@ public class SqsQueryProcessor {
 
         public Builder instanceProperties(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
+            return this;
+        }
+
+        public Builder tablePropertiesProvider(TablePropertiesProvider tablePropertiesProvider) {
+            this.tablePropertiesProvider = tablePropertiesProvider;
             return this;
         }
 

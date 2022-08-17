@@ -109,10 +109,11 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
             throw new RuntimeException("Error: can't find S3 bucket from environment variable");
         }
         instanceProperties = loadInstanceProperties(s3Client, configBucket);
-        serde = new QuerySerDe(new TablePropertiesProvider(s3Client, instanceProperties));
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        serde = new QuerySerDe(tablePropertiesProvider);
         processor = SqsQueryProcessor.builder()
                 .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)
-                .instanceProperties(instanceProperties)
+                .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider)
                 .build();
         lastUpdateTime = System.currentTimeMillis();
     }
