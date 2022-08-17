@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
@@ -56,9 +57,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_QUEUE_URL;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
 
 public class SqsQueryProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsQueryProcessorLambda.class);
+
+    private static final UserDefinedInstanceProperty EXECUTOR_POOL_THREADS = QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
 
     private final ExecutorService executorService;
     private final InstanceProperties instanceProperties;
@@ -74,7 +78,7 @@ public class SqsQueryProcessor {
         sqsClient = builder.sqsClient;
         instanceProperties = builder.instanceProperties;
         tablePropertiesProvider = builder.tablePropertiesProvider;
-        executorService = Executors.newFixedThreadPool(10);
+        executorService = Executors.newFixedThreadPool(instanceProperties.getInt(EXECUTOR_POOL_THREADS));
         queryConfiguration = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties);
         objectFactory = new ObjectFactory(instanceProperties, builder.s3Client, "/tmp");
         queryTracker = new DynamoDBQueryTracker(instanceProperties, builder.dynamoClient);
