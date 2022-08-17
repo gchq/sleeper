@@ -31,7 +31,6 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.query.executor.QueryExecutor;
-import sleeper.query.executor.SqsQueryProcessor;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 

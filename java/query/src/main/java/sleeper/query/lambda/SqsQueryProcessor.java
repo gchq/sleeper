@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.executor;
+package sleeper.query.lambda;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
@@ -30,7 +30,7 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.query.QueryException;
-import sleeper.query.lambda.SqsQueryProcessorLambda;
+import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
