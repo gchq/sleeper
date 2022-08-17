@@ -103,23 +103,28 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
     }
 
     private void updateProperties(String configBucket) throws ObjectFactoryException {
-        processor = SqsQueryProcessor.builder()
-                .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient).configBucket(configBucket)
-                .build();
         // Refresh properties and caches
         if (null == configBucket) {
             LOGGER.error("Config Bucket was null. Was an environment variable missing?");
             throw new RuntimeException("Error: can't find S3 bucket from environment variable");
         }
-        instanceProperties = new InstanceProperties();
+        instanceProperties = loadInstanceProperties(s3Client, configBucket);
+        serde = new QuerySerDe(new TablePropertiesProvider(s3Client, instanceProperties));
+        processor = SqsQueryProcessor.builder()
+                .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)
+                .instanceProperties(instanceProperties)
+                .build();
+        lastUpdateTime = System.currentTimeMillis();
+    }
+
+    private static InstanceProperties loadInstanceProperties(AmazonS3 s3Client, String configBucket) {
+        InstanceProperties properties = new InstanceProperties();
         try {
-            instanceProperties.loadFromS3(s3Client, configBucket);
+            properties.loadFromS3(s3Client, configBucket);
         } catch (IOException e) {
             throw new RuntimeException("Failed to load instance properties");
         }
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        serde = new QuerySerDe(tablePropertiesProvider);
-        lastUpdateTime = System.currentTimeMillis();
+        return properties;
     }
 
 }

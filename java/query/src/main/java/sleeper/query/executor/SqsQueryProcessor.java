@@ -61,50 +61,29 @@ public class SqsQueryProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsQueryProcessorLambda.class);
 
     private final ExecutorService executorService;
-    private InstanceProperties instanceProperties;
+    private final InstanceProperties instanceProperties;
     private final AmazonSQS sqsClient;
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoClient;
-    private TablePropertiesProvider tablePropertiesProvider;
-    private StateStoreProvider stateStoreProvider;
-    private ObjectFactory objectFactory;
-    private Configuration queryConfiguration;
-    private DynamoDBQueryTracker queryTracker;
+    private final TablePropertiesProvider tablePropertiesProvider;
+    private final StateStoreProvider stateStoreProvider;
+    private final ObjectFactory objectFactory;
+    private final Configuration queryConfiguration;
+    private final DynamoDBQueryTracker queryTracker;
     private final Map<String, QueryExecutor> queryExecutorCache = new HashMap<>();
 
     private SqsQueryProcessor(Builder builder) throws ObjectFactoryException {
         sqsClient = builder.sqsClient;
-        s3Client = builder.s3Client;
-        dynamoClient = builder.dynamoClient;
+        instanceProperties = builder.instanceProperties;
         executorService = Executors.newFixedThreadPool(10);
-        updateProperties(builder.configBucket);
+        queryConfiguration = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties);
+        objectFactory = new ObjectFactory(instanceProperties, builder.s3Client, "/tmp");
+        queryTracker = new DynamoDBQueryTracker(instanceProperties, builder.dynamoClient);
+        Configuration conf = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties);
+        tablePropertiesProvider = new TablePropertiesProvider(builder.s3Client, instanceProperties);
+        stateStoreProvider = new StateStoreProvider(builder.dynamoClient, instanceProperties, conf);
     }
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    private void updateProperties(String configBucket) throws ObjectFactoryException {
-        // Refresh properties and caches
-        if (null == configBucket) {
-            LOGGER.error("Config Bucket was null. Was an environment variable missing?");
-            throw new RuntimeException("Error: can't find S3 bucket from environment variable");
-        }
-        instanceProperties = new InstanceProperties();
-        try {
-            instanceProperties.loadFromS3(s3Client, configBucket);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load instance properties");
-        }
-        queryConfiguration = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties);
-        if (null == objectFactory) {
-            objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
-        }
-        queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
-        Configuration conf = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties);
-        tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties, conf);
-        queryExecutorCache.clear();
     }
 
     public void processQuery(Query query) {
@@ -203,7 +182,7 @@ public class SqsQueryProcessor {
         private AmazonSQS sqsClient;
         private AmazonS3 s3Client;
         private AmazonDynamoDB dynamoClient;
-        private String configBucket;
+        private InstanceProperties instanceProperties;
 
         private Builder() {
         }
@@ -223,8 +202,8 @@ public class SqsQueryProcessor {
             return this;
         }
 
-        public Builder configBucket(String configBucket) {
-            this.configBucket = configBucket;
+        public Builder instanceProperties(InstanceProperties instanceProperties) {
+            this.instanceProperties = instanceProperties;
             return this;
         }
 
