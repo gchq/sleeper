@@ -25,44 +25,20 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.google.gson.JsonParseException;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_QUEUE_URL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
-import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
-import sleeper.query.model.LeafPartitionQuery;
+import sleeper.query.executor.SqsQueryProcessor;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
-import sleeper.query.model.output.ResultsOutputConstants;
-import sleeper.query.model.output.ResultsOutputInfo;
-import sleeper.query.model.output.S3ResultsOutput;
-import sleeper.query.model.output.SQSResultsOutput;
-import sleeper.query.model.output.WebSocketResultsOutput;
-import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
-import sleeper.query.tracker.DynamoDBQueryTracker;
-import sleeper.query.tracker.QueryStatusReportListeners;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
-import sleeper.table.util.StateStoreProvider;
-import sleeper.utils.HadoopConfigurationProvider;
+
+import java.io.IOException;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS;
 
 /**
  * A lambda that is triggered when a serialised query arrives on an SQS queue. It executes the request using a
@@ -73,20 +49,14 @@ import sleeper.utils.HadoopConfigurationProvider;
 @SuppressWarnings("unused")
 public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsQueryProcessorLambda.class);
-    
-    private final ExecutorService executorService;
+
     private long lastUpdateTime;
     private InstanceProperties instanceProperties;
     private final AmazonSQS sqsClient;
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoClient;
-    private TablePropertiesProvider tablePropertiesProvider;
-    private StateStoreProvider stateStoreProvider;
-    private ObjectFactory objectFactory;
-    private Configuration queryConfiguration;
-    private DynamoDBQueryTracker queryTracker;
-    private final Map<String, QueryExecutor> queryExecutorCache = new HashMap<>();
     private QuerySerDe serde;
+    private SqsQueryProcessor processor;
 
     public SqsQueryProcessorLambda() throws ObjectFactoryException {
         this(AmazonS3ClientBuilder.defaultClient(), AmazonSQSClientBuilder.defaultClient(),
@@ -97,7 +67,6 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
         this.s3Client = s3Client;
         this.sqsClient = sqsClient;
         this.dynamoClient = dynamoClient;
-        this.executorService = Executors.newFixedThreadPool(10);
         updateProperties(configBucket);
     }
 
@@ -119,7 +88,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
                 LOGGER.error("JSONParseException deserialsing query from JSON {}", message.getBody());
                 continue;
             }
-            processQuery(query);
+            processor.processQuery(query);
         }
         return null;
     }
@@ -134,6 +103,9 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
     }
 
     private void updateProperties(String configBucket) throws ObjectFactoryException {
+        processor = SqsQueryProcessor.builder()
+                .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient).configBucket(configBucket)
+                .build();
         // Refresh properties and caches
         if (null == configBucket) {
             LOGGER.error("Config Bucket was null. Was an environment variable missing?");
@@ -145,109 +117,9 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
         } catch (IOException e) {
             throw new RuntimeException("Failed to load instance properties");
         }
-        queryConfiguration = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties);
-        if (null == objectFactory) {
-            objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
-        }
-        queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
-        Configuration conf = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties);
-        tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        serde = new QuerySerDe(this.tablePropertiesProvider);
-        stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties, conf);
-        queryExecutorCache.clear();
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        serde = new QuerySerDe(tablePropertiesProvider);
         lastUpdateTime = System.currentTimeMillis();
-    }
-    
-    private void processQuery(Query query) {
-        QueryStatusReportListeners queryTrackers = QueryStatusReportListeners.fromConfig(query.getStatusReportDestinations());
-        if (queryTracker != null) {
-            queryTrackers.add(queryTracker);
-        }
-
-        CloseableIterator<Record> results;
-        try {
-            queryTrackers.queryInProgress(query);
-            if (query instanceof LeafPartitionQuery) {
-                results = processLeafPartitionQuery((LeafPartitionQuery) query, tablePropertiesProvider.getTableProperties(query.getTableName()));
-            } else if (query instanceof Query) {
-                results = processRangeQuery(query, queryTrackers);
-            } else {
-                throw new IllegalArgumentException("Found query of unknown type " + query.getClass());
-            }
-            if (null != results) {
-                publishResults(results, query, queryTrackers);
-            }
-        } catch (StateStoreException | QueryException e) {
-            LOGGER.error("Exception thrown executing query", e);
-            queryTrackers.queryFailed(query, e);
-        }
-    }
-
-    private CloseableIterator<Record> processRangeQuery(Query query, QueryStatusReportListeners queryTrackers) throws StateStoreException, QueryException {
-        // Split query over leaf partitions
-        if (!queryExecutorCache.containsKey(query.getTableName())) {
-            TableProperties tableProperties = tablePropertiesProvider.getTableProperties(query.getTableName());
-            StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-            QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStore, queryConfiguration, executorService);
-            queryExecutor.init();
-            queryExecutorCache.put(query.getTableName(), queryExecutor);
-        }
-        QueryExecutor queryExecutor = queryExecutorCache.get(query.getTableName());
-        List<LeafPartitionQuery> subQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
-
-        if (subQueries.size() > 1) {
-            // Put these subqueries back onto the queue so that they
-            // can be processed independently
-            String sqsQueryQueueURL = instanceProperties.get(QUERY_QUEUE_URL);
-            for (LeafPartitionQuery subQuery : subQueries) {
-                String serialisedQuery = new QuerySerDe(tablePropertiesProvider).toJson(subQuery);
-                sqsClient.sendMessage(sqsQueryQueueURL, serialisedQuery);
-            }
-            queryTrackers.subQueriesCreated(query, subQueries);
-            LOGGER.info("Submitted {} subqueries to queue", subQueries.size());
-            return null;
-        } else if (subQueries.isEmpty()) {
-            LOGGER.error("Query led to no sub queries");
-            /*
-             * Not setting the state to failed because the table may not have contained any data.
-             */
-            queryTrackers.queryCompleted(query, new ResultsOutputInfo(0, Collections.emptyList()));
-            return null;
-        } else {
-            // If only 1 subquery then execute now
-            return queryExecutor.execute(query);
-        }
-    }
-
-    private CloseableIterator<Record> processLeafPartitionQuery(LeafPartitionQuery leafPartitionQuery, TableProperties tableProperties)
-            throws QueryException {
-        LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(executorService, objectFactory, queryConfiguration, tableProperties);
-        return leafPartitionQueryExecutor.getRecords(leafPartitionQuery);
-    }
-
-    private void publishResults(CloseableIterator<Record> results, Query query, QueryStatusReportListeners queryTrackers) {
-        Schema schema = tablePropertiesProvider.getTableProperties(query.getTableName()).getSchema();
-
-        try {
-            ResultsOutputInfo outputInfo;
-            if (null == query.getResultsPublisherConfig() || query.getResultsPublisherConfig().isEmpty()) {
-                outputInfo = new S3ResultsOutput(instanceProperties, schema, new HashMap<>()).publish(query, results);
-            } else if (SQSResultsOutput.SQS.equals(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION))) {
-                outputInfo = new SQSResultsOutput(instanceProperties, sqsClient, schema, query.getResultsPublisherConfig()).publish(query, results);
-            } else if (S3ResultsOutput.S3.equals(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION))) {
-                outputInfo = new S3ResultsOutput(instanceProperties, schema, query.getResultsPublisherConfig()).publish(query, results);
-            } else if (WebSocketResultsOutput.DESTINATION_NAME.equals(query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION))) {
-                outputInfo = new WebSocketResultsOutput(query.getResultsPublisherConfig()).publish(query, results);
-            } else {
-                LOGGER.info("Unknown results publisher from config " + query.getResultsPublisherConfig());
-                outputInfo = new ResultsOutputInfo(0, Collections.emptyList(), new IOException("Unknown results publisher from config " + query.getResultsPublisherConfig()));
-            }
-
-            queryTrackers.queryCompleted(query, outputInfo);
-        } catch (Exception e) {
-            LOGGER.error("Error publishing results", e);
-            queryTrackers.queryFailed(query, e);
-        }
     }
 
 }
