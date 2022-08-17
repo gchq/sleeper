@@ -78,8 +78,7 @@ public class SqsQueryProcessor {
         queryConfiguration = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties);
         objectFactory = new ObjectFactory(instanceProperties, builder.s3Client, "/tmp");
         queryTracker = new DynamoDBQueryTracker(instanceProperties, builder.dynamoClient);
-        Configuration conf = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties);
-        stateStoreProvider = new StateStoreProvider(builder.dynamoClient, instanceProperties, conf);
+        stateStoreProvider = new StateStoreProvider(builder.dynamoClient, instanceProperties, queryConfiguration);
     }
 
     public static Builder builder() {
