@@ -88,19 +88,15 @@ public class SqsQueryProcessor {
 
     public void processQuery(Query query) {
         QueryStatusReportListeners queryTrackers = QueryStatusReportListeners.fromConfig(query.getStatusReportDestinations());
-        if (queryTracker != null) {
-            queryTrackers.add(queryTracker);
-        }
+        queryTrackers.add(queryTracker);
 
         CloseableIterator<Record> results;
         try {
             queryTrackers.queryInProgress(query);
             if (query instanceof LeafPartitionQuery) {
                 results = processLeafPartitionQuery((LeafPartitionQuery) query, tablePropertiesProvider.getTableProperties(query.getTableName()));
-            } else if (query instanceof Query) {
-                results = processRangeQuery(query, queryTrackers);
             } else {
-                throw new IllegalArgumentException("Found query of unknown type " + query.getClass());
+                results = processRangeQuery(query, queryTrackers);
             }
             if (null != results) {
                 publishResults(results, query, queryTrackers);
