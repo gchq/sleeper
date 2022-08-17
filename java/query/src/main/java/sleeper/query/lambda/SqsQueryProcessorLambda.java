@@ -41,10 +41,10 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CON
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS;
 
 /**
- * A lambda that is triggered when a serialised query arrives on an SQS queue. It executes the request using a
+ * A lambda that is triggered when a serialised query arrives on an SQS queue. A processor executes the request using a
  * {@link QueryExecutor} and publishes the results to either SQS or S3 based on the configuration of the query.
- * It caches the mapping from partitions to files in those partitions in a variable. This is reused by subsequent
- * calls to the lambda if the AWS runtime chooses to reuse the instance.
+ * The processor contains a cache that includes mappings from partitions to files in those partitions. This is reused by
+ * subsequent calls to the lambda if the AWS runtime chooses to reuse the instance.
  */
 @SuppressWarnings("unused")
 public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
