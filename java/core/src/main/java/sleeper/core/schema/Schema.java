@@ -55,7 +55,6 @@ public class Schema {
         return new Builder();
     }
 
-    // TODO Should check that names are unique
     public void setRowKeyFields(List<Field> rowKeyFields) {
         validateRowKeys(rowKeyFields);
         this.rowKeyFields.clear();
