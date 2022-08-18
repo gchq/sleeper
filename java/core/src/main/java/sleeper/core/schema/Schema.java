@@ -203,14 +203,19 @@ public class Schema {
         }
 
         private List<Field> validSortKeyFields() {
-            return Optional.ofNullable(sortKeyFields)
-                    .map(Schema::validateSortKeys)
-                    .orElseGet(Collections::emptyList);
+            if (sortKeyFields == null) {
+                return Collections.emptyList();
+            } else {
+                return validateSortKeys(sortKeyFields);
+            }
         }
 
         private List<Field> validValueFields() {
-            return Optional.ofNullable(valueFields)
-                    .orElseGet(Collections::emptyList);
+            if (valueFields == null) {
+                return Collections.emptyList();
+            } else {
+                return valueFields;
+            }
         }
     }
 
