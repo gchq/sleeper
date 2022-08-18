@@ -37,6 +37,16 @@ public class Schema {
         this.valueFields = new ArrayList<>();
     }
 
+    private Schema(Builder builder) {
+        rowKeyFields = new ArrayList<>(builder.rowKeyFields);
+        sortKeyFields = new ArrayList<>(builder.sortKeyFields);
+        valueFields = new ArrayList<>(builder.valueFields);
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
     // TODO Should check that names are unique
     public void setRowKeyFields(List<Field> rowKeyFields) {
         for (Field field : rowKeyFields) {
@@ -167,5 +177,33 @@ public class Schema {
     @Override
     public int hashCode() {
         return Objects.hash(rowKeyFields, sortKeyFields, valueFields);
+    }
+
+    public static final class Builder {
+        private List<Field> rowKeyFields;
+        private List<Field> sortKeyFields;
+        private List<Field> valueFields;
+
+        private Builder() {
+        }
+
+        public Builder rowKeyFields(List<Field> rowKeyFields) {
+            this.rowKeyFields = rowKeyFields;
+            return this;
+        }
+
+        public Builder sortKeyFields(List<Field> sortKeyFields) {
+            this.sortKeyFields = sortKeyFields;
+            return this;
+        }
+
+        public Builder valueFields(List<Field> valueFields) {
+            this.valueFields = valueFields;
+            return this;
+        }
+
+        public Schema build() {
+            return new Schema(this);
+        }
     }
 }
