@@ -18,6 +18,7 @@ package sleeper.core.schema;
 import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -192,14 +193,26 @@ public class Schema {
             return this;
         }
 
+        public Builder rowKeyFields(Field... rowKeyFields) {
+            return rowKeyFields(Arrays.asList(rowKeyFields));
+        }
+
         public Builder sortKeyFields(List<Field> sortKeyFields) {
             this.sortKeyFields = sortKeyFields;
             return this;
         }
 
+        public Builder sortKeyFields(Field... sortKeyFields) {
+            return sortKeyFields(Arrays.asList(sortKeyFields));
+        }
+
         public Builder valueFields(List<Field> valueFields) {
             this.valueFields = valueFields;
             return this;
+        }
+
+        public Builder valueFields(Field... valueFields) {
+            return valueFields(Arrays.asList(valueFields));
         }
 
         public Schema build() {
