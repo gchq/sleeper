@@ -39,8 +39,8 @@ public class Schema {
     }
 
     private Schema(Builder builder) {
-        rowKeyFields = new ArrayList<>(builder.rowKeyFields);
-        sortKeyFields = new ArrayList<>(builder.sortKeyFields);
+        rowKeyFields = new ArrayList<>(validateRowKeys(builder.rowKeyFields));
+        sortKeyFields = new ArrayList<>(validateSortKeys(builder.sortKeyFields));
         valueFields = new ArrayList<>(builder.valueFields);
     }
 
@@ -50,25 +50,13 @@ public class Schema {
 
     // TODO Should check that names are unique
     public void setRowKeyFields(List<Field> rowKeyFields) {
-        for (Field field : rowKeyFields) {
-            if (!(field.getType() instanceof PrimitiveType)) {
-                throw new IllegalArgumentException("Row key fields must have a primitive type");
-            }
-        }
+        validateRowKeys(rowKeyFields);
         this.rowKeyFields.clear();
         this.rowKeyFields.addAll(rowKeyFields);
     }
 
     public void setRowKeyFields(Field... rowKeyFields) {
-        for (Field field : rowKeyFields) {
-            if (!(field.getType() instanceof PrimitiveType)) {
-                throw new IllegalArgumentException("Row key fields must have a primitive type");
-            }
-        }
-        this.rowKeyFields.clear();
-        for (Field field : rowKeyFields) {
-            this.rowKeyFields.add(field);
-        }
+        setRowKeyFields(Arrays.asList(rowKeyFields));
     }
 
     public List<Field> getRowKeyFields() {
@@ -80,25 +68,13 @@ public class Schema {
     }
 
     public void setSortKeyFields(List<Field> sortKeyFields) {
-        for (Field field : sortKeyFields) {
-            if (!(field.getType() instanceof PrimitiveType)) {
-                throw new IllegalArgumentException("Sort key fields must have a primitive type");
-            }
-        }
+        validateSortKeys(sortKeyFields);
         this.sortKeyFields.clear();
         this.sortKeyFields.addAll(sortKeyFields);
     }
 
     public void setSortKeyFields(Field... sortKeyFields) {
-        for (Field field : sortKeyFields) {
-            if (!(field.getType() instanceof PrimitiveType)) {
-                throw new IllegalArgumentException("Sort key fields must have a primitive type");
-            }
-        }
-        this.sortKeyFields.clear();
-        for (Field field : sortKeyFields) {
-            this.sortKeyFields.add(field);
-        }
+        setSortKeyFields(Arrays.asList(sortKeyFields));
     }
 
     public List<Field> getSortKeyFields() {
@@ -115,10 +91,7 @@ public class Schema {
     }
 
     public void setValueFields(Field... valueFields) {
-        this.valueFields.clear();
-        for (Field field : valueFields) {
-            this.valueFields.add(field);
-        }
+        setValueFields(Arrays.asList(valueFields));
     }
 
     public List<Field> getValueFields() {
@@ -218,5 +191,19 @@ public class Schema {
         public Schema build() {
             return new Schema(this);
         }
+    }
+
+    private static List<Field> validateRowKeys(List<Field> fields) {
+        if (fields.stream().anyMatch(field -> !(field.getType() instanceof PrimitiveType))) {
+            throw new IllegalArgumentException("Row key fields must have a primitive type");
+        }
+        return fields;
+    }
+
+    private static List<Field> validateSortKeys(List<Field> fields) {
+        if (fields.stream().anyMatch(field -> !(field.getType() instanceof PrimitiveType))) {
+            throw new IllegalArgumentException("Sort key fields must have a primitive type");
+        }
+        return fields;
     }
 }
