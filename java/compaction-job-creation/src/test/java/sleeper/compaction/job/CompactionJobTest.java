@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class CompactionJobTest {
 
@@ -201,19 +202,18 @@ public class CompactionJobTest {
         assertThat(hashCode3).isNotEqualTo(hashCode1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testShouldThrowOnDuplicateNames() {
         // Given
         CompactionJob job = new CompactionJob("table", "job-1");
         List<String> names = Arrays.asList("file1", "file2", "file3", "file1");
 
-        // When
-        job.setInputFiles(names);
-
-        // Then - throws
+        // When / Then
+        assertThatThrownBy(() -> job.setInputFiles(names))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testShouldThrowOnDuplicateNulls() {
         // Given
         CompactionJob job = new CompactionJob("table", "job-1");
@@ -221,9 +221,8 @@ public class CompactionJobTest {
         names.add(null);
         names.add(null);
 
-        // When
-        job.setInputFiles(names);
-
-        // Then - throws
+        // When / Then
+        assertThatThrownBy(() -> job.setInputFiles(names))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

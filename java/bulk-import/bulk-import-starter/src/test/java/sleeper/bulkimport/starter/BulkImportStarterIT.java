@@ -22,10 +22,8 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.stepfunctions.AWSStepFunctions;
 import com.google.common.collect.Lists;
-import java.io.IOException;
 import org.junit.ClassRule;
 import org.junit.Test;
-import static org.mockito.Mockito.*;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import sleeper.bulkimport.job.BulkImportJob;
@@ -33,11 +31,19 @@ import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.Executor;
 import sleeper.core.CommonTestConstants;
 
+import java.io.IOException;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 public class BulkImportStarterIT {
     @ClassRule
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3);
-    
+
     private AmazonS3 createS3Client() {
         return AmazonS3ClientBuilder.standard()
                 .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
@@ -45,9 +51,16 @@ public class BulkImportStarterIT {
                 .build();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldNotCreateAImportStarterWithoutConfig() throws IOException {
-        new BulkImportStarter(createS3Client(), mock(AmazonElasticMapReduce.class), mock(AWSStepFunctions.class));
+        // Given
+        AmazonS3 s3Client = createS3Client();
+        AmazonElasticMapReduce emrClient = mock(AmazonElasticMapReduce.class);
+        AWSStepFunctions stepFunctionsClient = mock(AWSStepFunctions.class);
+
+        // When / Then
+        assertThatThrownBy(() -> new BulkImportStarter(s3Client, emrClient, stepFunctionsClient))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
