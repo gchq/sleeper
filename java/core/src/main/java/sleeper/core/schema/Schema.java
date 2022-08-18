@@ -24,13 +24,13 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Describes the fields for a particular instance of a Sleeper database.
+ * A Schema describes the fields found in a particular table in a Sleeper instance.
  */
 public class Schema {
     private final List<Field> rowKeyFields;
     private final List<Field> sortKeyFields;
     private final List<Field> valueFields;
-    
+
     public Schema() {
         this.rowKeyFields = new ArrayList<>();
         this.sortKeyFields = new ArrayList<>();
@@ -47,7 +47,7 @@ public class Schema {
         this.rowKeyFields.clear();
         this.rowKeyFields.addAll(rowKeyFields);
     }
-    
+
     public void setRowKeyFields(Field... rowKeyFields) {
         for (Field field : rowKeyFields) {
             if (!(field.getType() instanceof PrimitiveType)) {
@@ -59,11 +59,11 @@ public class Schema {
             this.rowKeyFields.add(field);
         }
     }
-    
+
     public List<Field> getRowKeyFields() {
         return rowKeyFields;
     }
-    
+
     public List<PrimitiveType> getRowKeyTypes() {
         return rowKeyFields.stream().map(Field::getType).map(t -> (PrimitiveType) t).collect(Collectors.toList());
     }
@@ -77,7 +77,7 @@ public class Schema {
         this.sortKeyFields.clear();
         this.sortKeyFields.addAll(sortKeyFields);
     }
-    
+
     public void setSortKeyFields(Field... sortKeyFields) {
         for (Field field : sortKeyFields) {
             if (!(field.getType() instanceof PrimitiveType)) {
@@ -89,7 +89,7 @@ public class Schema {
             this.sortKeyFields.add(field);
         }
     }
-    
+
     public List<Field> getSortKeyFields() {
         return sortKeyFields;
     }
@@ -97,19 +97,19 @@ public class Schema {
     public List<PrimitiveType> getSortKeyTypes() {
         return sortKeyFields.stream().map(Field::getType).map(t -> (PrimitiveType) t).collect(Collectors.toList());
     }
-    
+
     public void setValueFields(List<Field> valueFields) {
         this.valueFields.clear();
         this.valueFields.addAll(valueFields);
     }
-    
+
     public void setValueFields(Field... valueFields) {
         this.valueFields.clear();
         for (Field field : valueFields) {
             this.valueFields.add(field);
         }
     }
-    
+
     public List<Field> getValueFields() {
         return valueFields;
     }
@@ -117,15 +117,15 @@ public class Schema {
     public List<String> getRowKeyFieldNames() {
         return rowKeyFields.stream().map(Field::getName).collect(Collectors.toList());
     }
-    
+
     public List<String> getSortKeyFieldNames() {
         return sortKeyFields.stream().map(Field::getName).collect(Collectors.toList());
     }
-    
+
     public List<String> getValueFieldNames() {
         return valueFields.stream().map(Field::getName).collect(Collectors.toList());
     }
-    
+
     public List<String> getAllFieldNames() {
         List<String> allFieldNames = new ArrayList<>();
         allFieldNames.addAll(getRowKeyFieldNames());
@@ -133,7 +133,7 @@ public class Schema {
         allFieldNames.addAll(getValueFieldNames());
         return allFieldNames;
     }
-    
+
     public List<Field> getAllFields() {
         List<Field> allFields = new ArrayList<>();
         allFields.addAll(rowKeyFields);
@@ -147,7 +147,7 @@ public class Schema {
                 .filter(f -> f.getName().equals(fieldName))
                 .findFirst();
     }
-    
+
     @Override
     public String toString() {
         return "Schema{" + "rowKeyFields=" + rowKeyFields + ", sortKeyFields=" + sortKeyFields + ", valueFields=" + valueFields + '}';
