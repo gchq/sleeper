@@ -23,6 +23,7 @@ import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -129,5 +130,63 @@ public class SchemaTest {
         assertThatThrownBy(builder::build)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContainingAll("Sort key", "type");
+    }
+
+    @Test
+    public void refuseNoKeyFields() {
+        // Given
+        Schema.Builder builder = Schema.builder()
+                .rowKeyFields()
+                .sortKeyFields(new Field("column1", new IntType()))
+                .valueFields(new Field("column2", new StringType()));
+
+        // When / Then
+        assertThatThrownBy(builder::build)
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    public void refuseNullKeyFields() {
+        // Given
+        Schema.Builder builder = Schema.builder()
+                .rowKeyFields((List<Field>) null)
+                .sortKeyFields(new Field("column1", new IntType()))
+                .valueFields(new Field("column2", new StringType()));
+
+        // When / Then
+        assertThatThrownBy(builder::build)
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    public void setNoSortKeysByDefault() {
+        // Given
+        Field rowKeyField = new Field("column1", new IntType());
+        Field valueField = new Field("column2", new StringType());
+
+        // When / Then
+        assertThat(Schema.builder()
+                .rowKeyFields(rowKeyField).valueFields(valueField)
+                .build())
+                .isEqualTo(Schema.builder()
+                        .rowKeyFields(rowKeyField).valueFields(valueField)
+                        .sortKeyFields(Collections.emptyList())
+                        .build());
+    }
+
+    @Test
+    public void setNoValueFieldsByDefault() {
+        // Given
+        Field rowKeyField = new Field("column1", new IntType());
+        Field sortKeyField = new Field("column2", new StringType());
+
+        // When / Then
+        assertThat(Schema.builder()
+                .rowKeyFields(rowKeyField).sortKeyFields(sortKeyField)
+                .build())
+                .isEqualTo(Schema.builder()
+                        .rowKeyFields(rowKeyField).sortKeyFields(sortKeyField)
+                        .valueFields(Collections.emptyList())
+                        .build());
     }
 }

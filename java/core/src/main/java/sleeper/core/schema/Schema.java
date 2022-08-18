@@ -19,6 +19,7 @@ import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -39,9 +40,9 @@ public class Schema {
     }
 
     private Schema(Builder builder) {
-        rowKeyFields = new ArrayList<>(validateRowKeys(builder.rowKeyFields));
-        sortKeyFields = new ArrayList<>(validateSortKeys(builder.sortKeyFields));
-        valueFields = new ArrayList<>(builder.valueFields);
+        rowKeyFields = new ArrayList<>(builder.validRowKeyFields());
+        sortKeyFields = new ArrayList<>(builder.validSortKeyFields());
+        valueFields = new ArrayList<>(builder.validValueFields());
     }
 
     public static Builder builder() {
@@ -191,9 +192,27 @@ public class Schema {
         public Schema build() {
             return new Schema(this);
         }
+
+        private List<Field> validRowKeyFields() {
+            return validateRowKeys(rowKeyFields);
+        }
+
+        private List<Field> validSortKeyFields() {
+            return Optional.ofNullable(sortKeyFields)
+                    .map(Schema::validateSortKeys)
+                    .orElseGet(Collections::emptyList);
+        }
+
+        private List<Field> validValueFields() {
+            return Optional.ofNullable(valueFields)
+                    .orElseGet(Collections::emptyList);
+        }
     }
 
     private static List<Field> validateRowKeys(List<Field> fields) {
+        if (fields == null || fields.isEmpty()) {
+            throw new IllegalArgumentException("Must have at least one row key field");
+        }
         if (fields.stream().anyMatch(field -> !(field.getType() instanceof PrimitiveType))) {
             throw new IllegalArgumentException("Row key fields must have a primitive type");
         }
