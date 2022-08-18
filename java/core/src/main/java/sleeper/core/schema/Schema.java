@@ -20,10 +20,14 @@ import sleeper.core.schema.type.PrimitiveType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A Schema describes the fields found in a particular table in a Sleeper instance.
@@ -43,6 +47,8 @@ public class Schema {
         rowKeyFields = new ArrayList<>(builder.validRowKeyFields());
         sortKeyFields = new ArrayList<>(builder.validSortKeyFields());
         valueFields = new ArrayList<>(builder.validValueFields());
+        validateNoDuplicates(Stream.concat(rowKeyFields.stream(),
+                Stream.concat(sortKeyFields.stream(), valueFields.stream())));
     }
 
     public static Builder builder() {
@@ -224,5 +230,19 @@ public class Schema {
             throw new IllegalArgumentException("Sort key fields must have a primitive type");
         }
         return fields;
+    }
+
+    private static void validateNoDuplicates(Stream<Field> fields) {
+        Set<String> foundNames = new HashSet<>();
+        Set<String> duplicates = new TreeSet<>();
+        fields.forEach(field -> {
+            boolean isNew = foundNames.add(field.getName());
+            if (!isNew) {
+                duplicates.add(field.getName());
+            }
+        });
+        if (!duplicates.isEmpty()) {
+            throw new IllegalArgumentException("Found duplicate field names: " + duplicates);
+        }
     }
 }
