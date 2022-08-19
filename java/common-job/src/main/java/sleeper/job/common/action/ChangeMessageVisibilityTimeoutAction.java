@@ -37,7 +37,8 @@ public class ChangeMessageVisibilityTimeoutAction implements Action {
     private final String messageReceiptHandle;
     private final int messageVisibilityTimeout;
 
-    public ChangeMessageVisibilityTimeoutAction(AmazonSQS sqsClient,
+    public ChangeMessageVisibilityTimeoutAction(
+            AmazonSQS sqsClient,
             String sqsJobQueueUrl,
             String description,
             String messageReceiptHandle,
@@ -46,6 +47,14 @@ public class ChangeMessageVisibilityTimeoutAction implements Action {
         this.sqsJobQueueUrl = sqsJobQueueUrl;
         this.description = description;
         this.messageReceiptHandle = messageReceiptHandle;
+        this.messageVisibilityTimeout = messageVisibilityTimeout;
+    }
+
+    public ChangeMessageVisibilityTimeoutAction(MessageReference message, int messageVisibilityTimeout) {
+        sqsClient = message.getSqsClient();
+        sqsJobQueueUrl = message.getSqsJobQueueUrl();
+        description = message.getJobDescription();
+        messageReceiptHandle = message.getReceiptHandle();
         this.messageVisibilityTimeout = messageVisibilityTimeout;
     }
 

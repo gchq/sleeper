@@ -44,6 +44,13 @@ public class DeleteMessageAction implements Action {
         this.messageReceiptHandle = messageReceiptHandle;
     }
 
+    public DeleteMessageAction(MessageReference message) {
+        sqsClient = message.getSqsClient();
+        sqsJobQueueUrl = message.getSqsJobQueueUrl();
+        description = message.getJobDescription();
+        messageReceiptHandle = message.getReceiptHandle();
+    }
+
     @Override
     public void call() throws ActionException {
         DeleteMessageRequest deleteMessageRequest = new DeleteMessageRequest()
