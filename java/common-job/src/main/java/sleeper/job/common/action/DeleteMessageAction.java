@@ -37,13 +37,6 @@ public class DeleteMessageAction implements Action {
     private final String description;
     private static final Logger LOGGER = LoggerFactory.getLogger(DeleteMessageAction.class);
 
-    public DeleteMessageAction(AmazonSQS sqsClient, String sqsJobQueueUrl, String jobId, String messageReceiptHandle) {
-        this.sqsClient = sqsClient;
-        this.sqsJobQueueUrl = sqsJobQueueUrl;
-        this.description = "Compaction job " + jobId;
-        this.messageReceiptHandle = messageReceiptHandle;
-    }
-
     public DeleteMessageAction(MessageReference message) {
         sqsClient = message.getSqsClient();
         sqsJobQueueUrl = message.getSqsJobQueueUrl();
