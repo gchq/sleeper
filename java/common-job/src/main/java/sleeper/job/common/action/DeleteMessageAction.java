@@ -34,13 +34,13 @@ public class DeleteMessageAction implements Action {
     private final AmazonSQS sqsClient;
     private final String sqsJobQueueUrl;
     private final String messageReceiptHandle;
-    private final String jobId;
+    private final String description;
     private static final Logger LOGGER = LoggerFactory.getLogger(DeleteMessageAction.class);
 
     public DeleteMessageAction(AmazonSQS sqsClient, String sqsJobQueueUrl, String jobId, String messageReceiptHandle) {
         this.sqsClient = sqsClient;
         this.sqsJobQueueUrl = sqsJobQueueUrl;
-        this.jobId = jobId;
+        this.description = "Compaction job " + jobId;
         this.messageReceiptHandle = messageReceiptHandle;
     }
 
@@ -54,8 +54,8 @@ public class DeleteMessageAction implements Action {
         while (count < 3) {
             try {
                 DeleteMessageResult result = sqsClient.deleteMessage(deleteMessageRequest);
-                LOGGER.info("Compaction job {}: Deleted message with receipt handle {} with result {}",
-                        jobId, messageReceiptHandle, result);
+                LOGGER.info("{}: Deleted message with receipt handle {} with result {}",
+                        description, messageReceiptHandle, result);
                 return;
             } catch (AmazonSQSException e) {
                 count++;
@@ -64,8 +64,8 @@ public class DeleteMessageAction implements Action {
                         .stream(exception.getStackTrace())
                         .map(StackTraceElement::toString)
                         .collect(Collectors.joining("\n"));
-                LOGGER.info("Compaction job {}: AmazonSQSException deleting message with receipt handle {} (Exception message {}, stacktrace {})",
-                        jobId, messageReceiptHandle, exception.getMessage(), stackTrace);
+                LOGGER.info("{}: AmazonSQSException deleting message with receipt handle {} (Exception message {}, stacktrace {})",
+                        description, messageReceiptHandle, exception.getMessage(), stackTrace);
                 try {
                     Thread.sleep(MILLISECONDS_TO_SLEEP[count - 1]);
                 } catch (InterruptedException interruptedException) {
@@ -73,6 +73,6 @@ public class DeleteMessageAction implements Action {
                 }
             }
         }
-        throw new ActionException("Compaction job " + jobId + ": AmazonSQSException deleting message", exception);
+        throw new ActionException(description + ": AmazonSQSException deleting message", exception);
     }
 }
