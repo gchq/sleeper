@@ -21,14 +21,16 @@ import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import sleeper.core.CommonTestConstants;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import static org.junit.Assert.assertEquals;
 
 public class ChangeMessageVisibilityTimeoutActionIT {
@@ -53,7 +55,7 @@ public class ChangeMessageVisibilityTimeoutActionIT {
                 .withAttributes(attributes);
         return sqs.createQueue(createQueueRequest).getQueueUrl();
     }
-    
+
     @Test
     public void shouldChangeMessageVisibilityTimeout() throws InterruptedException, ActionException {
         // Given
@@ -77,12 +79,13 @@ public class ChangeMessageVisibilityTimeoutActionIT {
         result = sqs.receiveMessage(receiveMessageRequest);
         assertEquals(1, result.getMessages().size());
         String receiptHandle = result.getMessages().get(0).getReceiptHandle();
-        
+
         // When
         //  - Extend the message visibility timeout to 10 seconds
-        ChangeMessageVisibilityTimeoutAction action = new ChangeMessageVisibilityTimeoutAction(sqs, queueUrl, "test", receiptHandle, 10);
+        ChangeMessageVisibilityTimeoutAction action = new MessageReference(sqs, queueUrl, "test", receiptHandle)
+                .changeVisibilityTimeoutAction(10);
         action.call();
-        
+
         // Then
         // - Sleep for 5 seconds, then check that message has not reappeared
         Thread.sleep(5000L);
@@ -96,7 +99,7 @@ public class ChangeMessageVisibilityTimeoutActionIT {
         Thread.sleep(6000L);
         result = sqs.receiveMessage(receiveMessageRequest);
         assertEquals(1, result.getMessages().size());
-        
+
         sqs.shutdown();
     }
 }

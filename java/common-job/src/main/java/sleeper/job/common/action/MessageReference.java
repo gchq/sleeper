@@ -35,7 +35,7 @@ public class MessageReference {
         return new DeleteMessageAction(this);
     }
 
-    public ChangeMessageVisibilityTimeoutAction changeMessageVisibilityTimeoutAction(int messageVisibilityTimeout) {
+    public ChangeMessageVisibilityTimeoutAction changeVisibilityTimeoutAction(int messageVisibilityTimeout) {
         return new ChangeMessageVisibilityTimeoutAction(this, messageVisibilityTimeout);
     }
 
