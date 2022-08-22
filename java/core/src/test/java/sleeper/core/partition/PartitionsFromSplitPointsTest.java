@@ -16,11 +16,14 @@
 package sleeper.core.partition;
 
 import org.junit.Test;
+import sleeper.core.key.Key;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.PrimitiveType;
+import sleeper.core.schema.type.StringType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -306,5 +309,37 @@ public class PartitionsFromSplitPointsTest {
                 assertThat(partitionIdsOfLevelBelow).contains(partition.getChildPartitionIds().get(0), partition.getChildPartitionIds().get(1));
             }
         }
+    }
+
+    @Test
+    public void canGeneratePartitionIdsSequentiallyForTests() {
+        // Given
+        Field field = new Field("key1", new StringType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        List<Object> splitPoints = Arrays.asList("abc", "def");
+
+        // When
+        List<Partition> partitions = PartitionsFromSplitPoints.sequentialIds(schema, splitPoints);
+
+        // Then
+        List<PrimitiveType> rowKeyTypes = Collections.singletonList(new StringType());
+        assertThat(partitions).containsExactly(
+                new Partition(rowKeyTypes, new Region(new Range(field, "", "abc")),
+                        "A", true, "D", Collections.emptyList(), -1),
+                new Partition(rowKeyTypes, new Region(new Range(field, "abc", "def")),
+                        "B", true, "D", Collections.emptyList(), -1),
+                new Partition(rowKeyTypes, new Region(new Range(field, "def", null)),
+                        "C", true, "E", Collections.emptyList(), -1),
+                new Partition(rowKeyTypes, new Region(new Range(field, "", "def")),
+                        "D", false, "E", Arrays.asList("A", "B"), 0),
+                new Partition(rowKeyTypes, new Region(new Range(field, "", null)),
+                        "E", false, null, Arrays.asList("D", "C"), 0));
+        PartitionTree tree = new PartitionTree(schema, partitions);
+        assertThat(tree.getLeafPartition(Key.create("aardvark")))
+                .extracting(Partition::getId)
+                .isEqualTo("A");
+        assertThat(tree.getLeafPartition(Key.create("beeblebrox")))
+                .extracting(Partition::getId)
+                .isEqualTo("B");
     }
 }
