@@ -20,7 +20,26 @@ import sleeper.environment.cdk.util.MyIpUtil;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
-import software.amazon.awscdk.services.ec2.*;
+import software.amazon.awscdk.services.ec2.BlockDevice;
+import software.amazon.awscdk.services.ec2.BlockDeviceVolume;
+import software.amazon.awscdk.services.ec2.CfnKeyPair;
+import software.amazon.awscdk.services.ec2.EbsDeviceOptions;
+import software.amazon.awscdk.services.ec2.EbsDeviceVolumeType;
+import software.amazon.awscdk.services.ec2.IVpc;
+import software.amazon.awscdk.services.ec2.Instance;
+import software.amazon.awscdk.services.ec2.InstanceClass;
+import software.amazon.awscdk.services.ec2.InstanceSize;
+import software.amazon.awscdk.services.ec2.InstanceType;
+import software.amazon.awscdk.services.ec2.LookupMachineImageProps;
+import software.amazon.awscdk.services.ec2.MachineImage;
+import software.amazon.awscdk.services.ec2.Peer;
+import software.amazon.awscdk.services.ec2.Port;
+import software.amazon.awscdk.services.ec2.SecurityGroup;
+import software.amazon.awscdk.services.ec2.SubnetSelection;
+import software.amazon.awscdk.services.ec2.SubnetType;
+import software.amazon.awscdk.services.ec2.UserData;
+import software.amazon.awscdk.services.ec2.Vpc;
+import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.constructs.Construct;
 
 import java.security.KeyPair;
@@ -41,7 +60,8 @@ public class BuildEC2Stack extends Stack {
                 .map(vpcId -> Vpc.fromLookup(scope, "Vpc", VpcLookupOptions.builder().vpcId(vpcId).build()))
                 .orElse(inheritVpc);
 
-        CfnKeyPair key = createSshKeyPair();
+        String keyFile = getStackName() + ".pem";
+        CfnKeyPair key = createSshKeyPair(keyFile);
         SecurityGroup allowSsh = createAllowSshSecurityGroup();
 
         Instance instance = Instance.Builder.create(this, "EC2")
@@ -65,18 +85,18 @@ public class BuildEC2Stack extends Stack {
         instance.getInstance().addDependsOn(key);
 
         CfnOutput.Builder.create(this, "ConnectCommand")
-                .value("ssh -i BuildEC2.pem ubuntu@" + instance.getInstancePublicIp())
+                .value("ssh -i " + keyFile + " ubuntu@" + instance.getInstancePublicIp())
                 .description("Command to connect to EC2")
                 .build();
     }
 
-    private CfnKeyPair createSshKeyPair() {
+    private CfnKeyPair createSshKeyPair(String keyFile) {
         // Create a new SSH key every time the CDK is run.
         // A UUID is appended to the key name to ensure that the key is deleted and recreated every time the stack is
         // deployed. This is because AWS does not permit updating key pairs in-place, and the library we're using does
         // not handle that.
         KeyPair keyPair = KeyPairUtil.generate();
-        KeyPairUtil.writePrivateToFile(keyPair, getStackName() + ".pem");
+        KeyPairUtil.writePrivateToFile(keyPair, keyFile);
         return CfnKeyPair.Builder.create(this, "KeyPair")
                 .keyName(getStackName() + "-" + UUID.randomUUID())
                 .publicKeyMaterial(KeyPairUtil.publicBase64(keyPair))
