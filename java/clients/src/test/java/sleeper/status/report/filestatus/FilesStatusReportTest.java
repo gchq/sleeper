@@ -34,10 +34,10 @@ import static com.google.common.io.Resources.getResource;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class FileStatusReportTest {
+public class FilesStatusReportTest {
 
     @Test
-    public void shouldCollectFileStatusForOneActiveFilePerLeafPartition() throws Exception {
+    public void shouldReportFilesStatusGivenOneActiveFilePerLeafPartition() throws Exception {
         // Given
         Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
@@ -68,7 +68,7 @@ public class FileStatusReportTest {
     }
 
     @Test
-    public void shouldCollectFileStatusForFileInLeafAndMiddlePartition() throws Exception {
+    public void shouldReportFilesStatusGivenActiveFileInLeafAndMiddlePartition() throws Exception {
         // Given
         Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
