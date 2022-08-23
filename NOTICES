@@ -21,7 +21,7 @@ Facebook Jcommon collections (com.facebook.jcommon:collections::0.1.32):
 
 - Apache License, Version 2.0
 
-Fasterxml (com.fasterxml.jackson.core:jackson-annotations:2.13.3, com.fasterxml.jackson.core:jackson-databind:2.13.3, com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.13.3)
+Fasterxml (com.fasterxml.jackson.core:jackson-annotations:2.11.4, com.fasterxml.jackson.core:jackson-databind:2.11.4, com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.11.4)
 
 - Apache License, Version 2.0
 
@@ -81,7 +81,7 @@ AssertJ (org.assertj:assertj-core:3.23.1):
 
 - Apache License, Version 2.0
 
-JSONAssert (org.skyscreamer:jsonassert:1.5.1):
+JsonUnit (net.javacrumbs.json-unit:json-unit-assertj:2.22.1):
 
 - Apache License, Version 2.0
 
