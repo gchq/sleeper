@@ -17,11 +17,10 @@ package sleeper.bulkimport.job;
 
 import com.google.common.collect.Lists;
 import org.junit.Test;
-import org.skyscreamer.jsonassert.JSONAssert;
-import org.skyscreamer.jsonassert.JSONCompareMode;
 
 import java.util.HashMap;
 
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class BulkImportJobSerDeTest {
@@ -93,7 +92,7 @@ public class BulkImportJobSerDeTest {
         String serialised = new BulkImportJobSerDe().toJson(fullJob);
 
         // Then
-        String expected = "" +
+        assertThatJson(serialised).isEqualTo("" +
                 "{" +
                 "    \"className\":\"com.example.MyClass\"," +
                 "    \"files\":[\"a/b/c.parquet\"]," +
@@ -101,8 +100,7 @@ public class BulkImportJobSerDeTest {
                 "    \"sparkConf\":{" +
                 "        \"key\":\"value\"" +
                 "    }" +
-                "}";
-        JSONAssert.assertEquals(expected, serialised, JSONCompareMode.STRICT);
+                "}");
     }
 
     @Test

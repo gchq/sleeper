@@ -62,7 +62,7 @@
         <commons-lang3.version>3.8.1</commons-lang3.version>
         <commons-codec.version>1.11</commons-codec.version>
         <commons-io.version>2.11.0</commons-io.version>
-        <jackson.version>2.11.4</jackson.version>
+        <jackson.version>2.13.3</jackson.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <testcontainers.version>1.16.2</testcontainers.version>
         <cdk.version>2.24.1</cdk.version>
@@ -80,7 +80,7 @@
         <testcontainers.version>1.16.2</testcontainers.version>
         <wiremock.version>2.32.0</wiremock.version>
         <assertj.version>3.23.1</assertj.version>
-        <jsonassert.version>1.5.1</jsonassert.version>
+        <jsonunit.version>2.35.0</jsonunit.version>
         <!-- Maven plugins -->
         <release.plugin.version>3.0.0-M4</release.plugin.version>
         <surefire.plugin.version>3.0.0-M5</surefire.plugin.version>
@@ -121,11 +121,16 @@
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons-lang3.version}</version>
             </dependency>
-            <!-- GSON -->
+            <!-- JSON -->
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
                 <version>${gson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
             </dependency>
             <!-- Logging -->
             <dependency>
@@ -175,9 +180,9 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.skyscreamer</groupId>
-                <artifactId>jsonassert</artifactId>
-                <version>${jsonassert.version}</version>
+                <groupId>net.javacrumbs.json-unit</groupId>
+                <artifactId>json-unit-assertj</artifactId>
+                <version>${jsonunit.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
