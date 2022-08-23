@@ -15,6 +15,7 @@
  */
 package sleeper.core.partition;
 
+import sleeper.core.key.Key;
 import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
@@ -22,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import sleeper.core.key.Key;
 
 /**
  * This represents a tree of {@link Partition}s. It can be used to find all
@@ -128,5 +128,20 @@ public class PartitionTree {
             return child;
         }
         return descend(child, key);
+    }
+
+    public Partition getRootPartition() {
+        return rootPartition;
+    }
+
+    public Partition getNearestCommonAncestor(Key a, Key b) {
+        return getNearestCommonAncestor(getLeafPartition(a), getLeafPartition(b));
+    }
+
+    public Partition getNearestCommonAncestor(Partition a, Partition b) {
+        if (a.getId().equals(b.getId())) {
+            return a;
+        }
+        return getRootPartition();
     }
 }
