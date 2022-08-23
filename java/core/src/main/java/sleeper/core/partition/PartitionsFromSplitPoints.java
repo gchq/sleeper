@@ -55,7 +55,7 @@ public class PartitionsFromSplitPoints {
         this(schema, splitPoints, () -> UUID.randomUUID().toString());
     }
 
-    public PartitionsFromSplitPoints(
+    private PartitionsFromSplitPoints(
             Schema schema, List<Object> splitPoints, Supplier<String> idSupplier) {
         this.schema = schema;
         this.rowKeyFields = schema.getRowKeyFields();
