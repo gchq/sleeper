@@ -54,7 +54,7 @@ public class FileStatusCollectorTest {
                 .build());
 
         // Then
-        assertThat(StandardFileStatusReporter.asString(status))
+        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
                 .isEqualTo(example("reports/standard/oneActiveFilePerLeaf.txt"));
     }
 
