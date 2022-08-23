@@ -47,14 +47,14 @@ public class FileStatusCollectorTest {
                 Arrays.asList("aaa", "bbb", "ccc", "ddd", "eee", "fff", "ggg"));
         FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
         List<FileInfo> activeFiles = Arrays.asList(
-                fileInfoFactory.file(50000000, "123", "456"),
-                fileInfoFactory.file(50000000, "abc", "az"),
-                fileInfoFactory.file(50000000, "bcd", "bz"),
-                fileInfoFactory.file(50000000, "cde", "cz"),
-                fileInfoFactory.file(50000000, "def", "dz"),
-                fileInfoFactory.file(50000000, "efg", "ez"),
-                fileInfoFactory.file(50000000, "fgh", "fz"),
-                fileInfoFactory.file(50000000, "ghi", "gz"));
+                fileInfoFactory.leafFile(50000001, "123", "456"),
+                fileInfoFactory.leafFile(50000002, "abc", "az"),
+                fileInfoFactory.leafFile(50000003, "bcd", "bz"),
+                fileInfoFactory.leafFile(50000004, "cde", "cz"),
+                fileInfoFactory.leafFile(50000005, "def", "dz"),
+                fileInfoFactory.leafFile(50000006, "efg", "ez"),
+                fileInfoFactory.leafFile(50000007, "fgh", "fz"),
+                fileInfoFactory.leafFile(50000008, "ghi", "gz"));
 
         // When
         FileStatus status = FileStatusCollector.run(StateStoreFiles.builder()
@@ -84,7 +84,7 @@ public class FileStatusCollectorTest {
             partitionTree = new PartitionTree(schema, partitions);
         }
 
-        private FileInfo file(long records, Object min, Object max) {
+        private FileInfo leafFile(long records, Object min, Object max) {
             Partition partition = partitionTree.getLeafPartition(Key.create(min));
             if (!partition.isRowKeyInPartition(schema, Key.create(max))) {
                 throw new IllegalArgumentException("Not in same leaf partition: " + min + ", " + max);

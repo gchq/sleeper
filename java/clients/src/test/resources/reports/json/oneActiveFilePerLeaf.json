@@ -1,6 +1,6 @@
 {
-  "totalRecords": 400000000,
-  "totalRecordsInLeafPartitions": 400000000,
+  "totalRecords": 400000036,
+  "totalRecordsInLeafPartitions": 400000036,
   "reachedMax": true,
   "leafPartitionCount": 8,
   "nonLeafPartitionCount": 7,
@@ -32,7 +32,7 @@
       },
       "filename": "A.parquet",
       "partitionId": "A",
-      "numberOfRecords": 50000000,
+      "numberOfRecords": 50000001,
       "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001
     },
@@ -49,7 +49,7 @@
       },
       "filename": "B.parquet",
       "partitionId": "B",
-      "numberOfRecords": 50000000,
+      "numberOfRecords": 50000002,
       "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001
     },
@@ -66,7 +66,7 @@
       },
       "filename": "C.parquet",
       "partitionId": "C",
-      "numberOfRecords": 50000000,
+      "numberOfRecords": 50000003,
       "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001
     },
@@ -83,7 +83,7 @@
       },
       "filename": "D.parquet",
       "partitionId": "D",
-      "numberOfRecords": 50000000,
+      "numberOfRecords": 50000004,
       "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001
     },
@@ -100,7 +100,7 @@
       },
       "filename": "E.parquet",
       "partitionId": "E",
-      "numberOfRecords": 50000000,
+      "numberOfRecords": 50000005,
       "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001
     },
@@ -117,7 +117,7 @@
       },
       "filename": "F.parquet",
       "partitionId": "F",
-      "numberOfRecords": 50000000,
+      "numberOfRecords": 50000006,
       "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001
     },
@@ -134,7 +134,7 @@
       },
       "filename": "G.parquet",
       "partitionId": "G",
-      "numberOfRecords": 50000000,
+      "numberOfRecords": 50000007,
       "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001
     },
@@ -151,7 +151,7 @@
       },
       "filename": "H.parquet",
       "partitionId": "H",
-      "numberOfRecords": 50000000,
+      "numberOfRecords": 50000008,
       "fileStatus": "ACTIVE",
       "lastStateStoreUpdateTime": 1661178000001
     }
