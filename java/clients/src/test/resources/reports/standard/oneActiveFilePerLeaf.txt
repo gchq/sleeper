@@ -10,14 +10,14 @@ Number of files in leaf partitions: min = 1, max = 1, average = 1.0
 No files in non-leaf partitions
 Ready_to_be_garbage_collected:
 Active:
-FileInfo{rowKeyTypes=[StringType{}], filename='A.parquet', partition='A', numberOfRecords=50000000, minKey=Key{[]}, maxKey=Key{[aaa]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
-FileInfo{rowKeyTypes=[StringType{}], filename='B.parquet', partition='B', numberOfRecords=50000000, minKey=Key{[aaa]}, maxKey=Key{[bbb]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
-FileInfo{rowKeyTypes=[StringType{}], filename='C.parquet', partition='C', numberOfRecords=50000000, minKey=Key{[bbb]}, maxKey=Key{[ccc]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
-FileInfo{rowKeyTypes=[StringType{}], filename='D.parquet', partition='D', numberOfRecords=50000000, minKey=Key{[ccc]}, maxKey=Key{[ddd]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
-FileInfo{rowKeyTypes=[StringType{}], filename='E.parquet', partition='E', numberOfRecords=50000000, minKey=Key{[ddd]}, maxKey=Key{[eee]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
-FileInfo{rowKeyTypes=[StringType{}], filename='F.parquet', partition='F', numberOfRecords=50000000, minKey=Key{[eee]}, maxKey=Key{[fff]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
-FileInfo{rowKeyTypes=[StringType{}], filename='G.parquet', partition='G', numberOfRecords=50000000, minKey=Key{[fff]}, maxKey=Key{[ggg]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
-FileInfo{rowKeyTypes=[StringType{}], filename='H.parquet', partition='H', numberOfRecords=50000000, minKey=Key{[ggg]}, maxKey=Key{[null]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
+FileInfo{rowKeyTypes=[StringType{}], filename='A.parquet', partition='A', numberOfRecords=50000000, minKey=Key{[123]}, maxKey=Key{[456]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
+FileInfo{rowKeyTypes=[StringType{}], filename='B.parquet', partition='B', numberOfRecords=50000000, minKey=Key{[abc]}, maxKey=Key{[az]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
+FileInfo{rowKeyTypes=[StringType{}], filename='C.parquet', partition='C', numberOfRecords=50000000, minKey=Key{[bcd]}, maxKey=Key{[bz]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
+FileInfo{rowKeyTypes=[StringType{}], filename='D.parquet', partition='D', numberOfRecords=50000000, minKey=Key{[cde]}, maxKey=Key{[cz]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
+FileInfo{rowKeyTypes=[StringType{}], filename='E.parquet', partition='E', numberOfRecords=50000000, minKey=Key{[def]}, maxKey=Key{[dz]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
+FileInfo{rowKeyTypes=[StringType{}], filename='F.parquet', partition='F', numberOfRecords=50000000, minKey=Key{[efg]}, maxKey=Key{[ez]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
+FileInfo{rowKeyTypes=[StringType{}], filename='G.parquet', partition='G', numberOfRecords=50000000, minKey=Key{[fgh]}, maxKey=Key{[fz]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
+FileInfo{rowKeyTypes=[StringType{}], filename='H.parquet', partition='H', numberOfRecords=50000000, minKey=Key{[ghi]}, maxKey=Key{[gz]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
 Total number of records in all active files = 400000000
 Total number of records in leaf partitions = 400000000
 Percentage of records in leaf partitions = 100.0
