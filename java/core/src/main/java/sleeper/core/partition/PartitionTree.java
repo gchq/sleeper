@@ -20,8 +20,10 @@ import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -141,6 +143,12 @@ public class PartitionTree {
     public Partition getNearestCommonAncestor(Partition a, Partition b) {
         if (a.getId().equals(b.getId())) {
             return a;
+        }
+        Set<String> ancestorsB = new HashSet<>(getAllAncestorIds(b.getId()));
+        for (String ancestorA : getAllAncestorIds(a.getId())) {
+            if (ancestorsB.contains(ancestorA)) {
+                return getPartition(ancestorA);
+            }
         }
         return getRootPartition();
     }
