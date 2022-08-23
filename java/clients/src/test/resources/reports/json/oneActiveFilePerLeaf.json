@@ -1,0 +1,184 @@
+{
+  "totalRecords": 400000000,
+  "totalRecordsInLeafPartitions": 400000000,
+  "reachedMax": true,
+  "leafPartitionCount": 8,
+  "nonLeafPartitionCount": 7,
+  "readyForGCFilesInLeafPartitions": 0,
+  "readyForGCInNonLeafPartitions": 0,
+  "activeFilesCount": 8,
+  "activeFilesInLeafPartitions": 8,
+  "activeFilesInNonLeafPartitions": 0,
+  "leafPartitionStats": {
+    "minSize": 1,
+    "maxMax": 1,
+    "averageSize": 1.0,
+    "total": 8
+  },
+  "nonLeafPartitionStats": {
+    "total": 0
+  },
+  "activeFiles": [
+    {
+      "rowKeyTypes": [
+        {}
+      ],
+      "minRowKey": {
+        "key": [
+          ""
+        ]
+      },
+      "maxRowKey": {
+        "key": [
+          "aaa"
+        ]
+      },
+      "filename": "A.parquet",
+      "partitionId": "A",
+      "numberOfRecords": 50000000,
+      "fileStatus": "ACTIVE",
+      "lastStateStoreUpdateTime": 1661178000001
+    },
+    {
+      "rowKeyTypes": [
+        {}
+      ],
+      "minRowKey": {
+        "key": [
+          "aaa"
+        ]
+      },
+      "maxRowKey": {
+        "key": [
+          "bbb"
+        ]
+      },
+      "filename": "B.parquet",
+      "partitionId": "B",
+      "numberOfRecords": 50000000,
+      "fileStatus": "ACTIVE",
+      "lastStateStoreUpdateTime": 1661178000001
+    },
+    {
+      "rowKeyTypes": [
+        {}
+      ],
+      "minRowKey": {
+        "key": [
+          "bbb"
+        ]
+      },
+      "maxRowKey": {
+        "key": [
+          "ccc"
+        ]
+      },
+      "filename": "C.parquet",
+      "partitionId": "C",
+      "numberOfRecords": 50000000,
+      "fileStatus": "ACTIVE",
+      "lastStateStoreUpdateTime": 1661178000001
+    },
+    {
+      "rowKeyTypes": [
+        {}
+      ],
+      "minRowKey": {
+        "key": [
+          "ccc"
+        ]
+      },
+      "maxRowKey": {
+        "key": [
+          "ddd"
+        ]
+      },
+      "filename": "D.parquet",
+      "partitionId": "D",
+      "numberOfRecords": 50000000,
+      "fileStatus": "ACTIVE",
+      "lastStateStoreUpdateTime": 1661178000001
+    },
+    {
+      "rowKeyTypes": [
+        {}
+      ],
+      "minRowKey": {
+        "key": [
+          "ddd"
+        ]
+      },
+      "maxRowKey": {
+        "key": [
+          "eee"
+        ]
+      },
+      "filename": "E.parquet",
+      "partitionId": "E",
+      "numberOfRecords": 50000000,
+      "fileStatus": "ACTIVE",
+      "lastStateStoreUpdateTime": 1661178000001
+    },
+    {
+      "rowKeyTypes": [
+        {}
+      ],
+      "minRowKey": {
+        "key": [
+          "eee"
+        ]
+      },
+      "maxRowKey": {
+        "key": [
+          "fff"
+        ]
+      },
+      "filename": "F.parquet",
+      "partitionId": "F",
+      "numberOfRecords": 50000000,
+      "fileStatus": "ACTIVE",
+      "lastStateStoreUpdateTime": 1661178000001
+    },
+    {
+      "rowKeyTypes": [
+        {}
+      ],
+      "minRowKey": {
+        "key": [
+          "fff"
+        ]
+      },
+      "maxRowKey": {
+        "key": [
+          "ggg"
+        ]
+      },
+      "filename": "G.parquet",
+      "partitionId": "G",
+      "numberOfRecords": 50000000,
+      "fileStatus": "ACTIVE",
+      "lastStateStoreUpdateTime": 1661178000001
+    },
+    {
+      "rowKeyTypes": [
+        {}
+      ],
+      "minRowKey": {
+        "key": [
+          "ggg"
+        ]
+      },
+      "maxRowKey": {
+        "key": [
+          null
+        ]
+      },
+      "filename": "H.parquet",
+      "partitionId": "H",
+      "numberOfRecords": 50000000,
+      "fileStatus": "ACTIVE",
+      "lastStateStoreUpdateTime": 1661178000001
+    }
+  ],
+  "gcFiles": []
+}

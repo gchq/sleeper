@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.google.common.io.Resources.getResource;
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FileStatusCollectorTest {
@@ -56,6 +57,8 @@ public class FileStatusCollectorTest {
         // Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
                 .isEqualTo(example("reports/standard/oneActiveFilePerLeaf.txt"));
+        assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
+                .isEqualTo(example("reports/json/oneActiveFilePerLeaf.json"));
     }
 
     private static List<FileInfo> oneFilePerLeafPartition(Schema schema, List<Partition> partitions, long recordsPerFile, Instant lastStateStoreUpdate) {

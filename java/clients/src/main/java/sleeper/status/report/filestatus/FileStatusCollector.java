@@ -129,7 +129,14 @@ public class FileStatusCollector {
             total += size;
             count++;
         }
-        double average = total / (double) count;
-        return new FileStatus.PartitionStats(min, max, average, files.size());
+        return new FileStatus.PartitionStats(min, max, average(total, count), files.size());
+    }
+
+    private static Double average(int total, int count) {
+        if (count == 0) {
+            return null;
+        } else {
+            return total / (double) count;
+        }
     }
 }
