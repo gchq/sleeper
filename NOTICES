@@ -89,6 +89,10 @@ Reload4j (ch.qos.reload4j:reload4j:1.2.20):
 
 - Apache License, Version 2.0
 
+Bouncy Castle (org.bouncycastle:bcpkix-jdk18on:1.71.1):
+
+- Bouncy Castle License
+
 Testcontainers (org.testcontainers:localstack:1.16.2, org.testcontainers:testcontainers:1.16.2):
 
 - MIT License
