@@ -76,6 +76,7 @@
         <reload4j.version>1.2.20</reload4j.version>
         <java-websocket.version>1.5.2</java-websocket.version>
         <arrow.version>8.0.0</arrow.version>
+        <bouncycastle.version>1.71.1</bouncycastle.version>
         <!-- Testing -->
         <junit.version>4.13</junit.version>
         <mockito.version>3.3.3</mockito.version>
@@ -153,6 +154,12 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-reload4j</artifactId>
                 <version>${slf4j.version}</version>
+            </dependency>
+            <!-- Cryptography -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
             </dependency>
             <!-- Test Dependencies -->
             <dependency>

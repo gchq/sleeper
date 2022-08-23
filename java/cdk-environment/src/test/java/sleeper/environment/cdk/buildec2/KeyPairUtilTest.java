@@ -15,38 +15,51 @@
  */
 package sleeper.environment.cdk.buildec2;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
+import java.security.KeyPair;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class KeyPairUtilTest {
 
     @Test
-    public void canGetPublicKeyInBase64() {
-        assertThat(KeyPairUtil.publicBase64(KeyPairUtil.generate()))
-                .hasSize(392);
+    public void canGenerateKeyPairAndReconstructFromPem() throws Exception {
+        KeyPair pair = KeyPairUtil.generate();
+        String pem = KeyPairUtil.privatePem(pair);
+        KeyPair found = KeyPairUtil.readPrivatePem(pem);
+        assertThat(found.getPublic().getEncoded()).isEqualTo(pair.getPublic().getEncoded());
+        assertThat(found.getPrivate().getEncoded()).isEqualTo(pair.getPrivate().getEncoded());
     }
 
     @Test
-    public void canGetPrivateKeyAsPemString() {
-        assertThat(KeyPairUtil.privatePem(KeyPairUtil.generate()))
-                .startsWith("-----BEGIN RSA PRIVATE KEY-----\n")
-                .endsWith("\n-----END RSA PRIVATE KEY-----\n")
-                .hasLineCount(28)
-                .hasSizeGreaterThan(1700);
+    public void canGetPublicKeyInBase64() throws Exception {
+        assertThat(KeyPairUtil.publicBase64(exampleKeyPair("examples/private.pem")))
+                .isEqualTo(exampleString("examples/public.base64"));
+    }
+
+    @Test
+    public void canBuildPemStringFromKeyPair() throws Exception {
+        assertThat(KeyPairUtil.privatePem(exampleKeyPair("examples/private.pem")))
+                .isEqualTo(exampleString("examples/private.pem"));
     }
 
     @Test
     public void canWritePrivateKeyFile() throws Exception {
         Path expectedPath = pathWithNoFile("WriteKey.pem");
         try {
-            KeyPairUtil.writePrivateToFile(KeyPairUtil.generate(), "WriteKey.pem");
+            KeyPairUtil.writePrivateToFile(exampleKeyPair("examples/private.pem"),
+                    "WriteKey.pem");
             assertThat(Files.getPosixFilePermissions(expectedPath))
                     .containsExactly(PosixFilePermission.OWNER_READ);
         } finally {
@@ -59,7 +72,8 @@ public class KeyPairUtilTest {
         Path path = pathWithNoFile("OverwriteKey.pem");
         Files.createFile(path);
         try {
-            KeyPairUtil.writePrivateToFile(KeyPairUtil.generate(), "OverwriteKey.pem");
+            KeyPairUtil.writePrivateToFile(exampleKeyPair("examples/private.pem"),
+                    "OverwriteKey.pem");
             assertThat(Files.getPosixFilePermissions(path))
                     .containsExactly(PosixFilePermission.OWNER_READ);
         } finally {
@@ -71,5 +85,19 @@ public class KeyPairUtilTest {
         Path path = Paths.get(fileName);
         Files.deleteIfExists(path);
         return path;
+    }
+
+    private static KeyPair exampleKeyPair(String path) throws IOException {
+        try (InputStream is = exampleResource(path).openStream()) {
+            return KeyPairUtil.readPrivatePem(new InputStreamReader(is));
+        }
+    }
+
+    private static String exampleString(String path) throws IOException {
+        return IOUtils.toString(exampleResource(path), Charset.forName("UTF-8"));
+    }
+
+    private static URL exampleResource(String path) {
+        return KeyPairUtilTest.class.getClassLoader().getResource(path);
     }
 }

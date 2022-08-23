@@ -15,7 +15,15 @@
  */
 package sleeper.environment.cdk.buildec2;
 
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+
 import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -60,17 +68,21 @@ public class KeyPairUtil {
         return Base64.getEncoder().encodeToString(pair.getPublic().getEncoded());
     }
 
-    public static String privatePem(KeyPair pair) {
-        String base64 = Base64.getEncoder().encodeToString(pair.getPrivate().getEncoded());
-        return "-----BEGIN RSA PRIVATE KEY-----\n" + addNewLines(base64) + "-----END RSA PRIVATE KEY-----\n";
+    public static String privatePem(KeyPair pair) throws IOException {
+        StringWriter stringWriter = new StringWriter();
+        JcaPEMWriter w = new JcaPEMWriter(stringWriter);
+        w.writeObject(pair);
+        w.flush();
+        return stringWriter.toString();
     }
 
-    private static String addNewLines(String base64) {
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < base64.length(); i += 64) {
-            builder.append(base64, i, Math.min(i + 64, base64.length()));
-            builder.append('\n');
-        }
-        return builder.toString();
+    public static KeyPair readPrivatePem(String pem) throws IOException {
+        return readPrivatePem(new StringReader(pem));
+    }
+
+    public static KeyPair readPrivatePem(Reader reader) throws IOException {
+        PEMParser parser = new PEMParser(reader);
+        JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
+        return converter.getKeyPair((PEMKeyPair) parser.readObject());
     }
 }
