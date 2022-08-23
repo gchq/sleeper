@@ -69,6 +69,31 @@ public class FileStatusCollectorTest {
                 .isEqualTo(example("reports/json/oneActiveFilePerLeaf.json"));
     }
 
+    @Test
+    public void shouldCollectFileStatusForFileInLeafAndMiddlePartition() throws Exception {
+        // Given
+        Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
+        Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
+        List<Partition> partitions = PartitionsFromSplitPoints.sequentialIds(schema,
+                Arrays.asList("beeblebrox", "wowbagger"));
+        FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
+        List<FileInfo> activeFiles = Arrays.asList(
+                fileInfoFactory.leafFile(50000001, "aardvark", "arthur"),
+                fileInfoFactory.middleFile(50000002, "arthur dent", "beeblebrox, zaphod"));
+
+        // When
+        FileStatus status = FileStatusCollector.run(StateStoreFiles.builder()
+                .partitions(partitions).active(activeFiles)
+                .readyForGC(StateStoreReadyForGC.none())
+                .build());
+
+        // Then
+        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+                .isEqualTo(example("reports/standard/leafAndMiddleFile.txt"));
+        assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
+                .isEqualTo(example("reports/json/leafAndMiddleFile.json"));
+    }
+
     private static String example(String path) throws IOException {
         return Resources.toString(getResource(path), Charset.defaultCharset());
     }
@@ -88,6 +113,17 @@ public class FileStatusCollectorTest {
             Partition partition = partitionTree.getLeafPartition(Key.create(min));
             if (!partition.isRowKeyInPartition(schema, Key.create(max))) {
                 throw new IllegalArgumentException("Not in same leaf partition: " + min + ", " + max);
+            }
+            return fileForPartition(partition, records, min, max);
+        }
+
+        private FileInfo middleFile(long records, Object min, Object max) {
+            Partition partition = partitionTree.getNearestCommonAncestor(Key.create(min), Key.create(max));
+            if (partition.isLeafPartition()) {
+                throw new IllegalArgumentException("In same leaf partition: " + min + ", " + max);
+            }
+            if (partition.getParentPartitionId() == null) {
+                throw new IllegalArgumentException("Nearest common ancestor is root partition: " + min + ", " + max);
             }
             return fileForPartition(partition, records, min, max);
         }
