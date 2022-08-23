@@ -15,6 +15,7 @@
  */
 package sleeper.status.report.filestatus;
 
+import com.google.common.io.Resources;
 import org.junit.Test;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
@@ -24,31 +25,37 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.FileInfo;
-import sleeper.statestore.StateStoreException;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.google.common.io.Resources.getResource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FileStatusCollectorTest {
 
     @Test
-    public void canCollectFileStatus() throws StateStoreException {
+    public void shouldCollectFileStatusForOneActiveFilePerLeafPartition() throws Exception {
+        // Given
         Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
         List<Partition> partitions = PartitionsFromSplitPoints.sequentialIds(schema,
                 Arrays.asList("aaa", "bbb", "ccc", "ddd", "eee", "fff", "ggg"));
         List<FileInfo> activeFiles = oneFilePerLeafPartition(schema, partitions, 50000000, lastStateStoreUpdate);
 
-        FileStatus report = FileStatusCollector.run(StateStoreFiles.builder()
+        // When
+        FileStatus status = FileStatusCollector.run(StateStoreFiles.builder()
                 .partitions(partitions).active(activeFiles)
                 .readyForGC(StateStoreReadyForGC.none())
                 .build());
 
-        assertThat(report).isNotNull();
+        // Then
+        assertThat(StandardFileStatusReporter.asString(status))
+                .isEqualTo(example("reports/standard/oneActiveFilePerLeaf.txt"));
     }
 
     private static List<FileInfo> oneFilePerLeafPartition(Schema schema, List<Partition> partitions, long recordsPerFile, Instant lastStateStoreUpdate) {
@@ -83,5 +90,9 @@ public class FileStatusCollectorTest {
         return Key.create(schema.getRowKeyFieldNames().stream()
                 .map(field -> region.getRange(field).getMax())
                 .collect(Collectors.toList()));
+    }
+
+    private static String example(String path) throws IOException {
+        return Resources.toString(getResource(path), Charset.defaultCharset());
     }
 }

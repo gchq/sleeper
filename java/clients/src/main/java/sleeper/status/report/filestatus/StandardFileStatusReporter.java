@@ -17,6 +17,7 @@ package sleeper.status.report.filestatus;
 
 import sleeper.statestore.FileInfo;
 
+import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.List;
 
@@ -29,7 +30,11 @@ public class StandardFileStatusReporter implements FileStatusReporter {
     private final PrintStream out;
 
     public StandardFileStatusReporter() {
-        out = System.out;
+        this(System.out);
+    }
+
+    private StandardFileStatusReporter(PrintStream out) {
+        this.out = out;
     }
 
     @Override
@@ -68,5 +73,12 @@ public class StandardFileStatusReporter implements FileStatusReporter {
     private void printFileInfoList(String type, List<FileInfo> strings) {
         out.println(type + ":");
         strings.forEach(out::println);
+    }
+
+    public static String asString(FileStatus status) {
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        new StandardFileStatusReporter(new PrintStream(os))
+                .report(status, true);
+        return os.toString();
     }
 }
