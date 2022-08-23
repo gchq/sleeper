@@ -82,11 +82,11 @@ public class StandardFileStatusReporter implements FileStatusReporter {
         if (records < K_COUNT) {
             return "" + records;
         } else if (records < M_COUNT) {
-            return records / K_COUNT + "K (" + records + ")";
+            return Math.round((double) records / K_COUNT) + "K (" + records + ")";
         } else if (records < G_COUNT) {
-            return records / M_COUNT + "M (" + records + ")";
+            return Math.round((double) records / M_COUNT) + "M (" + records + ")";
         } else {
-            return records / G_COUNT + "G (" + records + ")";
+            return Math.round((double) records / G_COUNT) + "G (" + records + ")";
         }
     }
 

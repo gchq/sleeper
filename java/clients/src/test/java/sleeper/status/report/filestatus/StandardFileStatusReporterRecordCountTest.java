@@ -76,11 +76,41 @@ public class StandardFileStatusReporterRecordCountTest {
     @Test
     public void shouldReportGCountWhenHigherThan1000G() throws Exception {
         // Given
-        FileStatus status = statusWithRecordCount(1234567890123L);
+        FileStatus status = statusWithRecordCount(1234123456789L);
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 1234G (1234567890123)" + System.lineSeparator());
+                .contains("Total number of records in all active files = 1234G (1234123456789)" + System.lineSeparator());
+    }
+
+    @Test
+    public void shouldRoundUpKCount() throws Exception {
+        // Given
+        FileStatus status = statusWithRecordCount(123500);
+
+        // When / Then
+        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+                .contains("Total number of records in all active files = 124K (123500)" + System.lineSeparator());
+    }
+
+    @Test
+    public void shouldRoundUpMCount() throws Exception {
+        // Given
+        FileStatus status = statusWithRecordCount(123500000);
+
+        // When / Then
+        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+                .contains("Total number of records in all active files = 124M (123500000)" + System.lineSeparator());
+    }
+
+    @Test
+    public void shouldRoundUpGCount() throws Exception {
+        // Given
+        FileStatus status = statusWithRecordCount(123500000000L);
+
+        // When / Then
+        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+                .contains("Total number of records in all active files = 124G (123500000000)" + System.lineSeparator());
     }
 
     private static FileStatus statusWithRecordCount(long recordCount) throws StateStoreException {
