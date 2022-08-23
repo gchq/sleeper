@@ -17,9 +17,7 @@ package sleeper.status.report.filestatus;
 
 import com.google.common.io.Resources;
 import org.junit.Test;
-import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -36,7 +34,7 @@ import static com.google.common.io.Resources.getResource;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class FileStatusCollectorTest {
+public class FileStatusReportTest {
 
     @Test
     public void shouldCollectFileStatusForOneActiveFilePerLeafPartition() throws Exception {
@@ -96,50 +94,6 @@ public class FileStatusCollectorTest {
 
     private static String example(String path) throws IOException {
         return Resources.toString(getResource(path), Charset.defaultCharset());
-    }
-
-    private static class FileInfoFactory {
-        private final Schema schema;
-        private final PartitionTree partitionTree;
-        private final Instant lastStateStoreUpdate;
-
-        private FileInfoFactory(Schema schema, List<Partition> partitions, Instant lastStateStoreUpdate) {
-            this.schema = schema;
-            this.lastStateStoreUpdate = lastStateStoreUpdate;
-            partitionTree = new PartitionTree(schema, partitions);
-        }
-
-        private FileInfo leafFile(long records, Object min, Object max) {
-            Partition partition = partitionTree.getLeafPartition(Key.create(min));
-            if (!partition.isRowKeyInPartition(schema, Key.create(max))) {
-                throw new IllegalArgumentException("Not in same leaf partition: " + min + ", " + max);
-            }
-            return fileForPartition(partition, records, min, max);
-        }
-
-        private FileInfo middleFile(long records, Object min, Object max) {
-            Partition partition = partitionTree.getNearestCommonAncestor(Key.create(min), Key.create(max));
-            if (partition.isLeafPartition()) {
-                throw new IllegalArgumentException("In same leaf partition: " + min + ", " + max);
-            }
-            if (partition.getParentPartitionId() == null) {
-                throw new IllegalArgumentException("Nearest common ancestor is root partition: " + min + ", " + max);
-            }
-            return fileForPartition(partition, records, min, max);
-        }
-
-        private FileInfo fileForPartition(Partition partition, long records, Object min, Object max) {
-            FileInfo file = new FileInfo();
-            file.setRowKeyTypes(partition.getRowKeyTypes());
-            file.setMinRowKey(Key.create(min));
-            file.setMaxRowKey(Key.create(max));
-            file.setFilename(partition.getId() + ".parquet");
-            file.setPartitionId(partition.getId());
-            file.setNumberOfRecords(records);
-            file.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            file.setLastStateStoreUpdateTime(lastStateStoreUpdate.toEpochMilli());
-            return file;
-        }
     }
 
 }

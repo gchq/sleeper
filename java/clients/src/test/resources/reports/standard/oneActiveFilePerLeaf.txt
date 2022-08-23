@@ -18,6 +18,6 @@ FileInfo{rowKeyTypes=[StringType{}], filename='E.parquet', partition='E', number
 FileInfo{rowKeyTypes=[StringType{}], filename='F.parquet', partition='F', numberOfRecords=50000006, minKey=Key{[efg]}, maxKey=Key{[ez]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
 FileInfo{rowKeyTypes=[StringType{}], filename='G.parquet', partition='G', numberOfRecords=50000007, minKey=Key{[fgh]}, maxKey=Key{[fz]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
 FileInfo{rowKeyTypes=[StringType{}], filename='H.parquet', partition='H', numberOfRecords=50000008, minKey=Key{[ghi]}, maxKey=Key{[gz]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
-Total number of records in all active files = 400000036
-Total number of records in leaf partitions = 400000036
+Total number of records in all active files = 400M (400000036)
+Total number of records in leaf partitions = 400M (400000036)
 Percentage of records in leaf partitions = 100.0

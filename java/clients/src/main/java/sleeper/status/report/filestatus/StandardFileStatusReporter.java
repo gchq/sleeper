@@ -52,8 +52,8 @@ public class StandardFileStatusReporter implements FileStatusReporter {
             printFileInfoList("Ready_to_be_garbage_collected", fileStatusReport.getGcFiles());
             printFileInfoList("Active", fileStatusReport.getActiveFiles());
         }
-        out.println("Total number of records in all active files = " + fileStatusReport.getTotalRecords());
-        out.println("Total number of records in leaf partitions = " + fileStatusReport.getTotalRecordsInLeafPartitions());
+        out.println("Total number of records in all active files = " + abbreviatedRecordCount(fileStatusReport.getTotalRecords()));
+        out.println("Total number of records in leaf partitions = " + abbreviatedRecordCount(fileStatusReport.getTotalRecordsInLeafPartitions()));
         out.println("Percentage of records in leaf partitions = " + (fileStatusReport.getTotalRecordsInLeafPartitions() / (double) fileStatusReport.getTotalRecords()) * 100.0);
 
     }
@@ -72,6 +72,22 @@ public class StandardFileStatusReporter implements FileStatusReporter {
     private void printFileInfoList(String type, List<FileInfo> strings) {
         out.println(type + ":");
         strings.forEach(out::println);
+    }
+
+    private static final long K_COUNT = 1000;
+    private static final long M_COUNT = 1000000;
+    private static final long G_COUNT = 1000000000;
+
+    private static String abbreviatedRecordCount(long records) {
+        if (records < K_COUNT) {
+            return "" + records;
+        } else if (records < M_COUNT) {
+            return records / K_COUNT + "K (" + records + ")";
+        } else if (records < G_COUNT) {
+            return records / M_COUNT + "M (" + records + ")";
+        } else {
+            return records / G_COUNT + "G (" + records + ")";
+        }
     }
 
 }
