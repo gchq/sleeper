@@ -44,6 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.core.schema.Schema;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.FileInfoStore;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
@@ -62,9 +63,9 @@ import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.LAST_UPDATE_TIM
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_STATUS;
 
-public class DynamoDBFilesStore {
+public class DynamoDBFileInfoStore implements FileInfoStore {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBFilesStore.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBFileInfoStore.class);
 
     private final AmazonDynamoDB dynamoDB;
     private final Schema schema;
@@ -74,7 +75,7 @@ public class DynamoDBFilesStore {
     private final int garbageCollectorDelayBeforeDeletionInSeconds;
     private final DynamoDBFileInfoFormat fileInfoFormat;
 
-    private DynamoDBFilesStore(Builder builder) {
+    private DynamoDBFileInfoStore(Builder builder) {
         dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
         schema = Objects.requireNonNull(builder.schema, "schema must not be null");
         activeTablename = Objects.requireNonNull(builder.activeTablename, "activeTablename must not be null");
@@ -88,6 +89,7 @@ public class DynamoDBFilesStore {
         return new Builder();
     }
 
+    @Override
     public void addFile(FileInfo fileInfo) throws StateStoreException {
         if (null == fileInfo.getFilename()
                 || null == fileInfo.getFileStatus()
@@ -111,12 +113,14 @@ public class DynamoDBFilesStore {
         }
     }
 
+    @Override
     public void addFiles(List<FileInfo> fileInfos) throws StateStoreException {
         for (FileInfo fileInfo : fileInfos) {
             addFile(fileInfo);
         }
     }
 
+    @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(
             List<FileInfo> filesToBeMarkedReadyForGC,
             FileInfo newActiveFile) throws StateStoreException {
@@ -161,6 +165,7 @@ public class DynamoDBFilesStore {
         }
     }
 
+    @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
             List<FileInfo> filesToBeMarkedReadyForGC, FileInfo leftFileInfo, FileInfo rightFileInfo) throws StateStoreException {
         // Delete record for file for current status
@@ -213,6 +218,7 @@ public class DynamoDBFilesStore {
      * Atomically updates the job field of the given files to the given id, as long as
      * the compactionJob field is currently null.
      */
+    @Override
     public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> files)
             throws StateStoreException {
         List<TransactWriteItem> writes = new ArrayList<>();
@@ -245,6 +251,7 @@ public class DynamoDBFilesStore {
         }
     }
 
+    @Override
     public void deleteReadyForGCFile(FileInfo fileInfo) throws StateStoreException {
         // Delete record for file for current status
         Map<String, AttributeValue> key = new HashMap<>();
@@ -259,6 +266,7 @@ public class DynamoDBFilesStore {
                 fileInfo.getFilename(), consumedCapacity.getCapacityUnits());
     }
 
+    @Override
     public List<FileInfo> getActiveFiles() throws StateStoreException {
         try {
             double totalCapacity = 0.0D;
@@ -365,10 +373,12 @@ public class DynamoDBFilesStore {
         }
     }
 
+    @Override
     public Iterator<FileInfo> getReadyForGCFiles() {
         return new FilesReadyForGCIterator(dynamoDB, readyForGCTablename, fileInfoFormat, garbageCollectorDelayBeforeDeletionInSeconds, stronglyConsistentReads);
     }
 
+    @Override
     public List<FileInfo> getActiveFilesWithNoJobId() throws StateStoreException {
         try {
             double totalCapacity = 0.0D;
@@ -403,6 +413,7 @@ public class DynamoDBFilesStore {
         }
     }
 
+    @Override
     public Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException {
         List<FileInfo> files = getActiveFiles();
         Map<String, List<String>> partitionToFiles = new HashMap<>();
@@ -465,8 +476,8 @@ public class DynamoDBFilesStore {
             return this;
         }
 
-        public DynamoDBFilesStore build() {
-            return new DynamoDBFilesStore(this);
+        public DynamoDBFileInfoStore build() {
+            return new DynamoDBFileInfoStore(this);
         }
     }
 }

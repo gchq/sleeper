@@ -43,6 +43,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.PrimitiveType;
+import sleeper.statestore.PartitionStore;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
@@ -59,9 +60,9 @@ import java.util.stream.Collectors;
 
 import static sleeper.statestore.dynamodb.DynamoDBPartitionFormat.IS_LEAF;
 
-public class DynamoDBPartitionsStore {
+public class DynamoDBPartitionStore implements PartitionStore {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBPartitionsStore.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBPartitionStore.class);
 
     private final AmazonDynamoDB dynamoDB;
     private final String tableName;
@@ -70,7 +71,7 @@ public class DynamoDBPartitionsStore {
     private final boolean stronglyConsistentReads;
     private final DynamoDBPartitionFormat partitionFormat;
 
-    private DynamoDBPartitionsStore(Builder builder) {
+    private DynamoDBPartitionStore(Builder builder) {
         dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
         schema = Objects.requireNonNull(builder.schema, "schema must not be null");
         tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
@@ -97,6 +98,7 @@ public class DynamoDBPartitionsStore {
         }
     }
 
+    @Override
     public void atomicallyUpdatePartitionAndCreateNewOnes(
             Partition splitPartition, Partition newPartition1, Partition newPartition2) throws StateStoreException {
         // Validate request: splitPartition should be a non-leaf partition, its children should be newPartition1
@@ -163,6 +165,7 @@ public class DynamoDBPartitionsStore {
         }
     }
 
+    @Override
     public List<Partition> getAllPartitions() throws StateStoreException {
         try {
             double totalCapacity = 0.0D;
@@ -195,6 +198,7 @@ public class DynamoDBPartitionsStore {
         }
     }
 
+    @Override
     public List<Partition> getLeafPartitions() throws StateStoreException {
         // TODO optimise by pushing the predicate down to Dynamo
         return getAllPartitions().stream()
@@ -202,10 +206,12 @@ public class DynamoDBPartitionsStore {
                 .collect(Collectors.toList());
     }
 
+    @Override
     public void initialise() throws StateStoreException {
         initialise(new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct());
     }
 
+    @Override
     public void initialise(List<Partition> partitions) throws StateStoreException {
         if (null == partitions || partitions.isEmpty()) {
             throw new StateStoreException("At least one partition must be provided");
@@ -249,8 +255,8 @@ public class DynamoDBPartitionsStore {
             return this;
         }
 
-        public DynamoDBPartitionsStore build() {
-            return new DynamoDBPartitionsStore(this);
+        public DynamoDBPartitionStore build() {
+            return new DynamoDBPartitionStore(this);
         }
     }
 }

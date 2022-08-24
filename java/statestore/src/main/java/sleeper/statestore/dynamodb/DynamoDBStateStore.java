@@ -43,8 +43,8 @@ public class DynamoDBStateStore implements StateStore {
     public static final String FILE_PARTITION = DynamoDBFileInfoFormat.PARTITION;
     public static final String PARTITION_ID = DynamoDBPartitionFormat.ID;
 
-    private final DynamoDBFilesStore filesStore;
-    private final DynamoDBPartitionsStore partitionsStore;
+    private final DynamoDBFileInfoStore filesStore;
+    private final DynamoDBPartitionStore partitionsStore;
 
     public DynamoDBStateStore(TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
         this(tableProperties.get(ACTIVE_FILEINFO_TABLENAME),
@@ -63,13 +63,13 @@ public class DynamoDBStateStore implements StateStore {
                               int garbageCollectorDelayBeforeDeletionInSeconds,
                               boolean stronglyConsistentReads,
                               AmazonDynamoDB dynamoDB) {
-        this.filesStore = DynamoDBFilesStore.builder()
+        this.filesStore = DynamoDBFileInfoStore.builder()
                 .dynamoDB(dynamoDB).schema(schema)
                 .activeTablename(activeFileInfoTablename).readyForGCTablename(readyForGCFileInfoTablename)
                 .stronglyConsistentReads(stronglyConsistentReads)
                 .garbageCollectorDelayBeforeDeletionInSeconds(garbageCollectorDelayBeforeDeletionInSeconds)
                 .build();
-        this.partitionsStore = DynamoDBPartitionsStore.builder()
+        this.partitionsStore = DynamoDBPartitionStore.builder()
                 .dynamoDB(dynamoDB).schema(schema)
                 .tableName(partitionTablename).stronglyConsistentReads(stronglyConsistentReads)
                 .build();
