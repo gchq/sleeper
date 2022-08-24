@@ -140,11 +140,6 @@ public class S3StateStore implements StateStore {
     }
 
     @Override
-    public List<PrimitiveType> getRowKeyTypes() {
-        return Collections.unmodifiableList(rowKeyTypes);
-    }
-
-    @Override
     public void addFile(FileInfo fileInfo) throws StateStoreException {
         addFiles(Collections.singletonList(fileInfo));
     }

@@ -19,12 +19,10 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.PrimitiveType;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +43,6 @@ public class DynamoDBStateStore implements StateStore {
     public static final String FILE_PARTITION = DynamoDBFileInfoFormat.PARTITION;
     public static final String PARTITION_ID = DynamoDBPartitionFormat.ID;
 
-    private final List<PrimitiveType> rowKeyTypes;
     private final DynamoDBFilesStore filesStore;
     private final DynamoDBPartitionsStore partitionsStore;
 
@@ -66,10 +63,6 @@ public class DynamoDBStateStore implements StateStore {
                               int garbageCollectorDelayBeforeDeletionInSeconds,
                               boolean stronglyConsistentReads,
                               AmazonDynamoDB dynamoDB) {
-        this.rowKeyTypes = schema.getRowKeyTypes();
-        if (this.rowKeyTypes.isEmpty()) {
-            throw new IllegalArgumentException("rowKeyTypes must not be empty");
-        }
         this.filesStore = DynamoDBFilesStore.builder()
                 .dynamoDB(dynamoDB).schema(schema)
                 .activeTablename(activeFileInfoTablename).readyForGCTablename(readyForGCFileInfoTablename)
@@ -80,11 +73,6 @@ public class DynamoDBStateStore implements StateStore {
                 .dynamoDB(dynamoDB).schema(schema)
                 .tableName(partitionTablename).stronglyConsistentReads(stronglyConsistentReads)
                 .build();
-    }
-
-    @Override
-    public List<PrimitiveType> getRowKeyTypes() {
-        return Collections.unmodifiableList(rowKeyTypes);
     }
 
     @Override

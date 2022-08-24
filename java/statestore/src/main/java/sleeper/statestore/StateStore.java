@@ -16,7 +16,6 @@
 package sleeper.statestore;
 
 import sleeper.core.partition.Partition;
-import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.Iterator;
 import java.util.List;
@@ -29,15 +28,10 @@ import java.util.Map;
 public interface StateStore {
 
     /**
-     * Returns the {@link PrimitiveType}s of the row keys.
-     */
-    List<PrimitiveType> getRowKeyTypes();
-    
-    /**
      * Adds a {@link FileInfo}.
-     * 
+     *
      * @param fileInfo The fileInfo to be added
-     * @throws StateStoreException 
+     * @throws StateStoreException
      */
     void addFile(FileInfo fileInfo) throws StateStoreException;
 
@@ -53,10 +47,10 @@ public interface StateStore {
      * Atomically changes the status of some files from {@link FileInfo.FileStatus.ACTIVE}
      * to {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION}, and adds a new
      * {@link FileInfo} as an {@link FileInfo.FileStatus.ACTIVE} file.
-     * 
+     *
      * @param filesToBeMarkedReadyForGC The files to be marked as {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION}
-     * @param newActiveFile The file to be added as an {@link FileInfo.FileStatus.ACTIVE} file
-     * @throws StateStoreException 
+     * @param newActiveFile             The file to be added as an {@link FileInfo.FileStatus.ACTIVE} file
+     * @throws StateStoreException
      */
     void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(
             List<FileInfo> filesToBeMarkedReadyForGC,
@@ -66,11 +60,11 @@ public interface StateStore {
      * Atomically changes the status of some files from {@link FileInfo.FileStatus.ACTIVE}
      * to {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION}, and adds two new
      * {@link FileInfo}s as an {@link FileInfo.FileStatus.ACTIVE} file.
-     * 
+     *
      * @param filesToBeMarkedReadyForGC The files to be marked as {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION}.
-     * @param leftFileInfo The first file to be added as an {@link FileInfo.FileStatus.ACTIVE} file
-     * @param rightFileInfo The second file to be added as an {@link FileInfo.FileStatus.ACTIVE} file
-     * @throws StateStoreException 
+     * @param leftFileInfo              The first file to be added as an {@link FileInfo.FileStatus.ACTIVE} file
+     * @param rightFileInfo             The second file to be added as an {@link FileInfo.FileStatus.ACTIVE} file
+     * @throws StateStoreException
      */
     void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC,
                                                                   FileInfo leftFileInfo,
@@ -79,10 +73,10 @@ public interface StateStore {
     /**
      * Atomically updates the job field of the input files of the compactionJob to the job
      * id, as long as the job field is currently null.
-     * 
-     * @param jobId The job id which will be added to the FileInfos
+     *
+     * @param jobId     The job id which will be added to the FileInfos
      * @param fileInfos The FileInfos whose status will be updated
-     * @throws StateStoreException 
+     * @throws StateStoreException
      */
     void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos)
             throws StateStoreException;
@@ -99,7 +93,7 @@ public interface StateStore {
      * Returns all {@link FileInfo}s with a status of status.
      *
      * @return a {@code List} of {@code FileInfo.FileStatus}es with the matching status
-     * @throws StateStoreException 
+     * @throws StateStoreException
      */
     List<FileInfo> getActiveFiles() throws StateStoreException;
 
@@ -110,34 +104,34 @@ public interface StateStore {
      * <code>delayBeforeGarbageCollectionInSeconds</code> is taken from the SleeperProperties).
      *
      * @return a {@code List} of size of most max of {@code FileInfo.FileStatus}es with the matching status
-     * @throws StateStoreException 
+     * @throws StateStoreException
      */
     Iterator<FileInfo> getReadyForGCFiles() throws StateStoreException;
 
     /**
      * Returns all {@link FileInfo}s with status {@link FileInfo.FileStatus} of
      * {@link FileInfo.FileStatus.ACTIVE} which have a null job id.
-     * 
+     *
      * @return a {@code List} of {@code FileInfo.FileStatus}es which are {@link FileInfo.FileStatus.ACTIVE} and have a null job id
-     * @throws StateStoreException 
+     * @throws StateStoreException
      */
     List<FileInfo> getActiveFilesWithNoJobId() throws StateStoreException;
 
     /**
      * Returns a {@link Map} from the partition id to a {@List} of the filenames.
-     * 
+     *
      * @return a {@link Map} from the partition id to a {@List} of the filenames
-     * @throws StateStoreException 
+     * @throws StateStoreException
      */
     Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException;
-    
+
     /**
      * Atomically updates a {@link Partition} and adds two new ones, conditional
      * on the splitPartition being marked as a leaf partition.
      *
      * @param splitPartition The {@link Partition} to be updated
-     * @param newPartition1 The first new {@link Partition}
-     * @param newPartition2 The second new {@link Partition}
+     * @param newPartition1  The first new {@link Partition}
+     * @param newPartition2  The second new {@link Partition}
      * @throws StateStoreException
      */
     void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition,
@@ -146,33 +140,33 @@ public interface StateStore {
 
     /**
      * Returns all the {@link Partition}s.
-     * 
+     *
      * @return All the {@link Partition}s
-     * @throws StateStoreException 
+     * @throws StateStoreException
      */
     List<Partition> getAllPartitions() throws StateStoreException;
 
     /**
      * Returns all the [@link Partition}s which are leaf partitions.
-     * 
+     *
      * @return All the {@link Partition}s which are leaf partitions.
-     * @throws StateStoreException 
+     * @throws StateStoreException
      */
     List<Partition> getLeafPartitions() throws StateStoreException;
 
     /**
      * Initialises the store with a single root {@link Partition} covering all
      * keys.
-     * 
-     * @throws StateStoreException 
+     *
+     * @throws StateStoreException
      */
     void initialise() throws StateStoreException;
-    
+
     /**
      * Initialises store with the list of {@link Partition}s.
-     * 
+     *
      * @param partitions The initial list of {@link Partition}s
-     * @throws StateStoreException 
+     * @throws StateStoreException
      */
     void initialise(List<Partition> partitions) throws StateStoreException;
 }
