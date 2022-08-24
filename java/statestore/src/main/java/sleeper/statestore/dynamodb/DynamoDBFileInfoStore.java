@@ -113,6 +113,14 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         }
     }
 
+    private String tableName(FileInfo fileInfo) {
+        if (fileInfo.getFileStatus().equals(ACTIVE)) {
+            return activeTablename;
+        } else {
+            return readyForGCTablename;
+        }
+    }
+
     @Override
     public void addFiles(List<FileInfo> fileInfos) throws StateStoreException {
         for (FileInfo fileInfo : fileInfos) {
@@ -300,6 +308,11 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         }
     }
 
+    @Override
+    public Iterator<FileInfo> getReadyForGCFiles() {
+        return new FilesReadyForGCIterator(dynamoDB, readyForGCTablename, fileInfoFormat, garbageCollectorDelayBeforeDeletionInSeconds, stronglyConsistentReads);
+    }
+
     private static class FilesReadyForGCIterator implements Iterator<FileInfo> {
         private final AmazonDynamoDB dynamoDB;
         private final String readyForGCFileInfoTablename;
@@ -374,11 +387,6 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public Iterator<FileInfo> getReadyForGCFiles() {
-        return new FilesReadyForGCIterator(dynamoDB, readyForGCTablename, fileInfoFormat, garbageCollectorDelayBeforeDeletionInSeconds, stronglyConsistentReads);
-    }
-
-    @Override
     public List<FileInfo> getActiveFilesWithNoJobId() throws StateStoreException {
         try {
             double totalCapacity = 0.0D;
@@ -425,14 +433,6 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
             partitionToFiles.get(partition).add(fileInfo.getFilename());
         }
         return partitionToFiles;
-    }
-
-    private String tableName(FileInfo fileInfo) {
-        if (fileInfo.getFileStatus().equals(ACTIVE)) {
-            return activeTablename;
-        } else {
-            return readyForGCTablename;
-        }
     }
 
     public static final class Builder {

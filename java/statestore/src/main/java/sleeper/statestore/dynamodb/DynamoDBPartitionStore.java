@@ -80,22 +80,8 @@ public class DynamoDBPartitionStore implements PartitionStore {
         partitionFormat = new DynamoDBPartitionFormat(schema);
     }
 
-    private void addPartition(Partition partition) throws StateStoreException {
-        try {
-            Map<String, AttributeValue> map = partitionFormat.getItemFromPartition(partition);
-            PutItemRequest putItemRequest = new PutItemRequest()
-                    .withTableName(tableName)
-                    .withItem(map)
-                    .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
-            PutItemResult putItemResult = dynamoDB.putItem(putItemRequest);
-            LOGGER.debug("Added partition with id {}, capacity consumed = ",
-                    partition.getId(), putItemResult.getConsumedCapacity().getCapacityUnits());
-        } catch (IOException | ConditionalCheckFailedException | ProvisionedThroughputExceededException
-                 | ResourceNotFoundException | ItemCollectionSizeLimitExceededException
-                 | TransactionConflictException | RequestLimitExceededException
-                 | InternalServerErrorException e) {
-            throw new StateStoreException("Exception calling putItem", e);
-        }
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -222,8 +208,22 @@ public class DynamoDBPartitionStore implements PartitionStore {
         }
     }
 
-    public static Builder builder() {
-        return new Builder();
+    private void addPartition(Partition partition) throws StateStoreException {
+        try {
+            Map<String, AttributeValue> map = partitionFormat.getItemFromPartition(partition);
+            PutItemRequest putItemRequest = new PutItemRequest()
+                    .withTableName(tableName)
+                    .withItem(map)
+                    .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
+            PutItemResult putItemResult = dynamoDB.putItem(putItemRequest);
+            LOGGER.debug("Added partition with id {}, capacity consumed = ",
+                    partition.getId(), putItemResult.getConsumedCapacity().getCapacityUnits());
+        } catch (IOException | ConditionalCheckFailedException | ProvisionedThroughputExceededException
+                 | ResourceNotFoundException | ItemCollectionSizeLimitExceededException
+                 | TransactionConflictException | RequestLimitExceededException
+                 | InternalServerErrorException e) {
+            throw new StateStoreException("Exception calling putItem", e);
+        }
     }
 
     public static final class Builder {
