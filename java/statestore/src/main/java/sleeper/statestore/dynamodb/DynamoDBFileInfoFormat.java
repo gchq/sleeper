@@ -31,17 +31,17 @@ import java.util.Map;
 import static sleeper.statestore.dynamodb.DynamoDBAttributes.createBinaryAttribute;
 import static sleeper.statestore.dynamodb.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.statestore.dynamodb.DynamoDBAttributes.createStringAttribute;
-import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
-import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_PARTITION;
-import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_STATUS;
 
 class DynamoDBFileInfoFormat {
 
+    static final String NAME = "Name";
+    static final String STATUS = "Status";
+    static final String PARTITION = "Partition";
     private static final String NUMBER_LINES = "NumLines";
     private static final String MIN_KEY = "MinKey";
     private static final String MAX_KEY = "MaxKey";
-    private static final String LAST_UPDATE_TIME = "LastUpdateTime";
-    private static final String JOB_ID = "Job_name";
+    static final String LAST_UPDATE_TIME = "LastUpdateTime";
+    static final String JOB_ID = "Job_name";
 
     private final List<PrimitiveType> rowKeyTypes;
     private final KeySerDe keySerDe;
@@ -61,7 +61,7 @@ class DynamoDBFileInfoFormat {
      */
     Map<String, AttributeValue> createRecordWithStatus(FileInfo fileInfo, FileInfo.FileStatus newStatus) throws StateStoreException {
         Map<String, AttributeValue> record = createRecord(fileInfo);
-        record.put(FILE_STATUS, createStringAttribute(newStatus.toString()));
+        record.put(STATUS, createStringAttribute(newStatus.toString()));
         return record;
     }
 
@@ -81,9 +81,9 @@ class DynamoDBFileInfoFormat {
     Map<String, AttributeValue> createRecord(FileInfo fileInfo) throws StateStoreException {
         Map<String, AttributeValue> itemValues = new HashMap<>();
 
-        itemValues.put(FILE_NAME, createStringAttribute(fileInfo.getFilename()));
-        itemValues.put(FILE_PARTITION, createStringAttribute(fileInfo.getPartitionId()));
-        itemValues.put(FILE_STATUS, createStringAttribute(fileInfo.getFileStatus().toString()));
+        itemValues.put(NAME, createStringAttribute(fileInfo.getFilename()));
+        itemValues.put(PARTITION, createStringAttribute(fileInfo.getPartitionId()));
+        itemValues.put(STATUS, createStringAttribute(fileInfo.getFileStatus().toString()));
         if (null != fileInfo.getNumberOfRecords()) {
             itemValues.put(NUMBER_LINES, createNumberAttribute(fileInfo.getNumberOfRecords()));
         }
@@ -110,8 +110,8 @@ class DynamoDBFileInfoFormat {
     FileInfo getFileInfoFromAttributeValues(Map<String, AttributeValue> item) throws IOException {
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(rowKeyTypes);
-        fileInfo.setFileStatus(FileInfo.FileStatus.valueOf(item.get(FILE_STATUS).getS()));
-        fileInfo.setPartitionId(item.get(FILE_PARTITION).getS());
+        fileInfo.setFileStatus(FileInfo.FileStatus.valueOf(item.get(STATUS).getS()));
+        fileInfo.setPartitionId(item.get(PARTITION).getS());
         if (null != item.get(NUMBER_LINES)) {
             fileInfo.setNumberOfRecords(Long.parseLong(item.get(NUMBER_LINES).getN()));
         }
@@ -121,7 +121,7 @@ class DynamoDBFileInfoFormat {
         if (null != item.get(MAX_KEY)) {
             fileInfo.setMaxRowKey(keySerDe.deserialise(item.get(MAX_KEY).getB().array()));
         }
-        fileInfo.setFilename(item.get(FILE_NAME).getS());
+        fileInfo.setFilename(item.get(NAME).getS());
         if (null != item.get(JOB_ID)) {
             fileInfo.setJobId(item.get(JOB_ID).getS());
         }
