@@ -55,7 +55,6 @@ import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -75,6 +74,9 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_TAB
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.statestore.FileInfo.FileStatus.ACTIVE;
 import static sleeper.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
+import static sleeper.statestore.dynamodb.DynamoDBAttributes.createBinaryAttribute;
+import static sleeper.statestore.dynamodb.DynamoDBAttributes.createNumberAttribute;
+import static sleeper.statestore.dynamodb.DynamoDBAttributes.createStringAttribute;
 
 /**
  * An implementation of {@link StateStore} that uses DynamoDB to store the state.
@@ -200,26 +202,6 @@ public class DynamoDBStateStore implements StateStore {
     }
 
     /**
-     * Creates a String attribute. This method abstracts an AWS call to make life easier when upgrading SDK
-     *
-     * @param str the string to convert
-     * @return the AttributeValue
-     */
-    private AttributeValue createStringAttribute(String str) {
-        return new AttributeValue(str);
-    }
-
-    /**
-     * Creates a Number attribute. This method abstracts an AWS call to make life easier when upgrading SDK
-     *
-     * @param number the number to convert
-     * @return the AttributeValue
-     */
-    private AttributeValue createNumberAttribute(Number number) {
-        return new AttributeValue().withN("" + number);
-    }
-
-    /**
      * Creates a record for the DynamoDB state store.
      *
      * @param fileInfo the File which the record is about
@@ -256,7 +238,7 @@ public class DynamoDBStateStore implements StateStore {
     }
 
     private AttributeValue getAttributeValueFromRowKeys(Key rowKey) throws IOException {
-        return new AttributeValue().withB(ByteBuffer.wrap(keySerDe.serialise(rowKey)));
+        return createBinaryAttribute(keySerDe.serialise(rowKey));
     }
 
     @Override
