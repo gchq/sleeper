@@ -60,8 +60,8 @@ import static sleeper.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTIO
 import static sleeper.statestore.dynamodb.DynamoDBAttributes.createStringAttribute;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.JOB_ID;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.LAST_UPDATE_TIME;
+import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.STATUS;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
-import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_STATUS;
 
 public class DynamoDBFileInfoStore implements FileInfoStore {
 
@@ -138,7 +138,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
             Map<String, AttributeValue> key = new HashMap<>();
             key.put(FILE_NAME, createStringAttribute(fileInfo.getFilename()));
             Map<String, String> expressionAttributeNames = new HashMap<>();
-            expressionAttributeNames.put("#status", FILE_STATUS);
+            expressionAttributeNames.put("#status", STATUS);
             Delete delete = new Delete()
                     .withTableName(activeTablename)
                     .withKey(key)
@@ -182,7 +182,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
             Map<String, AttributeValue> key = new HashMap<>();
             key.put(FILE_NAME, createStringAttribute(fileInfo.getFilename()));
             Map<String, String> expressionAttributeNames = new HashMap<>();
-            expressionAttributeNames.put("#status", FILE_STATUS);
+            expressionAttributeNames.put("#status", STATUS);
             Delete delete = new Delete()
                     .withTableName(activeTablename)
                     .withKey(key)

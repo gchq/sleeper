@@ -39,8 +39,6 @@ import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_
 public class DynamoDBStateStore implements StateStore {
 
     public static final String FILE_NAME = DynamoDBFileInfoFormat.NAME;
-    public static final String FILE_STATUS = DynamoDBFileInfoFormat.STATUS;
-    public static final String FILE_PARTITION = DynamoDBFileInfoFormat.PARTITION;
     public static final String PARTITION_ID = DynamoDBPartitionFormat.ID;
 
     private final DynamoDBFileInfoStore filesStore;
