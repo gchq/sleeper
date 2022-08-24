@@ -43,9 +43,12 @@ import com.amazonaws.services.dynamodbv2.model.TransactionInProgressException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.key.Key;
 import sleeper.core.key.KeySerDe;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.range.RegionSerDe;
+import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
@@ -70,9 +73,6 @@ import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRO
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
-import sleeper.core.key.Key;
-import sleeper.core.range.RegionSerDe;
-import sleeper.core.schema.Schema;
 import static sleeper.statestore.FileInfo.FileStatus.ACTIVE;
 import static sleeper.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 
@@ -81,7 +81,7 @@ import static sleeper.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTIO
  */
 public class DynamoDBStateStore implements StateStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBStateStore.class);
-    
+
     public static final String FILE_NAME = "Name";
     public static final String FILE_STATUS = "Status";
     public static final String FILE_PARTITION = "Partition";
@@ -96,7 +96,7 @@ public class DynamoDBStateStore implements StateStore {
     private static final String PARTITION_CHILD_IDS = "PartitionChildIds";
     private static final String PARTITION_SPLIT_DIMENSION = "PartitionSplitDimension";
     private static final String REGION = "Region";
-    
+
     private final AmazonDynamoDB dynamoDB;
     private final String activeFileInfoTablename;
     private final String readyForGCFileInfoTablename;
@@ -164,10 +164,10 @@ public class DynamoDBStateStore implements StateStore {
             }
             PutItemResult putItemResult = dynamoDB.putItem(putItemRequest);
             LOGGER.debug("Put file info for file {} to table {}, capacity consumed = {}",
-                        fileInfo.getFilename(), activeFileInfoTablename, putItemResult.getConsumedCapacity().getCapacityUnits());
+                    fileInfo.getFilename(), activeFileInfoTablename, putItemResult.getConsumedCapacity().getCapacityUnits());
         } catch (ConditionalCheckFailedException | ProvisionedThroughputExceededException | ResourceNotFoundException
-                | ItemCollectionSizeLimitExceededException | TransactionConflictException | RequestLimitExceededException
-                | InternalServerErrorException e) {
+                 | ItemCollectionSizeLimitExceededException | TransactionConflictException
+                 | RequestLimitExceededException | InternalServerErrorException e) {
             throw new StateStoreException("Exception calling putItem", e);
         }
     }
@@ -181,7 +181,8 @@ public class DynamoDBStateStore implements StateStore {
 
     /**
      * Creates a record with a new status
-     * @param fileInfo the File
+     *
+     * @param fileInfo  the File
      * @param newStatus the new status of that file
      * @return A Dynamo record
      * @throws StateStoreException if the Dynamo record fails to be created
@@ -200,6 +201,7 @@ public class DynamoDBStateStore implements StateStore {
 
     /**
      * Creates a String attribute. This method abstracts an AWS call to make life easier when upgrading SDK
+     *
      * @param str the string to convert
      * @return the AttributeValue
      */
@@ -209,6 +211,7 @@ public class DynamoDBStateStore implements StateStore {
 
     /**
      * Creates a Number attribute. This method abstracts an AWS call to make life easier when upgrading SDK
+     *
      * @param number the number to convert
      * @return the AttributeValue
      */
@@ -218,6 +221,7 @@ public class DynamoDBStateStore implements StateStore {
 
     /**
      * Creates a record for the DynamoDB state store.
+     *
      * @param fileInfo the File which the record is about
      * @return A record in DynamoDB
      * @throws StateStoreException if the record fails to create
@@ -292,10 +296,10 @@ public class DynamoDBStateStore implements StateStore {
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Updated status of {} files to ready for GC and added active file, capacity consumed = {}",
-                        filesToBeMarkedReadyForGC.size(), totalConsumed);
+                    filesToBeMarkedReadyForGC.size(), totalConsumed);
         } catch (TransactionCanceledException | ResourceNotFoundException
-                | TransactionInProgressException | IdempotentParameterMismatchException
-                | ProvisionedThroughputExceededException | InternalServerErrorException e) {
+                 | TransactionInProgressException | IdempotentParameterMismatchException
+                 | ProvisionedThroughputExceededException | InternalServerErrorException e) {
             throw new StateStoreException(e);
         }
     }
@@ -342,10 +346,10 @@ public class DynamoDBStateStore implements StateStore {
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Updated status of {} files to ready for GC and added 2 active files, capacity consumed = {}",
-                        filesToBeMarkedReadyForGC.size(), totalConsumed);
+                    filesToBeMarkedReadyForGC.size(), totalConsumed);
         } catch (TransactionCanceledException | ResourceNotFoundException
-                | TransactionInProgressException | IdempotentParameterMismatchException
-                | ProvisionedThroughputExceededException | InternalServerErrorException e) {
+                 | TransactionInProgressException | IdempotentParameterMismatchException
+                 | ProvisionedThroughputExceededException | InternalServerErrorException e) {
             throw new StateStoreException(e);
         }
     }
@@ -379,10 +383,10 @@ public class DynamoDBStateStore implements StateStore {
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Updated job status of {} files, read capacity consumed = {}",
-                        files.size(), totalConsumed);
+                    files.size(), totalConsumed);
         } catch (TransactionCanceledException | ResourceNotFoundException
-                | TransactionInProgressException | IdempotentParameterMismatchException
-                | ProvisionedThroughputExceededException | InternalServerErrorException e) {
+                 | TransactionInProgressException | IdempotentParameterMismatchException
+                 | ProvisionedThroughputExceededException | InternalServerErrorException e) {
             throw new StateStoreException(e);
         }
     }
@@ -431,7 +435,7 @@ public class DynamoDBStateStore implements StateStore {
             }
             return fileInfoResults;
         } catch (ProvisionedThroughputExceededException | ResourceNotFoundException | RequestLimitExceededException
-                | InternalServerErrorException | IOException e) {
+                 | InternalServerErrorException | IOException e) {
             throw new StateStoreException("Exception querying DynamoDB", e);
         }
     }
@@ -445,7 +449,7 @@ public class DynamoDBStateStore implements StateStore {
         private double totalCapacity;
         private ScanResult scanResult;
         private Iterator<Map<String, AttributeValue>> itemsIterator;
-        
+
         FilesReadyForGCIterator(AmazonDynamoDB dynamoDB,
                                 String readyForGCFileInfoTablename,
                                 List<PrimitiveType> rowKeyTypes,
@@ -544,7 +548,7 @@ public class DynamoDBStateStore implements StateStore {
             }
             return fileInfoResults;
         } catch (ProvisionedThroughputExceededException | ResourceNotFoundException | RequestLimitExceededException
-                | InternalServerErrorException | IOException e) {
+                 | InternalServerErrorException | IOException e) {
             throw new StateStoreException("Exception querying DynamoDB", e);
         }
     }
@@ -574,9 +578,9 @@ public class DynamoDBStateStore implements StateStore {
             LOGGER.debug("Added partition with id {}, capacity consumed = ",
                     partition.getId(), putItemResult.getConsumedCapacity().getCapacityUnits());
         } catch (IOException | ConditionalCheckFailedException | ProvisionedThroughputExceededException
-                | ResourceNotFoundException | ItemCollectionSizeLimitExceededException
-                | TransactionConflictException | RequestLimitExceededException
-                | InternalServerErrorException e) {
+                 | ResourceNotFoundException | ItemCollectionSizeLimitExceededException
+                 | TransactionConflictException | RequestLimitExceededException
+                 | InternalServerErrorException e) {
             throw new StateStoreException("Exception calling putItem", e);
         }
     }
@@ -656,10 +660,10 @@ public class DynamoDBStateStore implements StateStore {
             List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
             double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Split partition {}, capacity consumed = {}",
-                        splitPartition.getId(), totalCapacity);
+                    splitPartition.getId(), totalCapacity);
         } catch (TransactionCanceledException | ResourceNotFoundException
-                | TransactionInProgressException | IdempotentParameterMismatchException
-                | ProvisionedThroughputExceededException | InternalServerErrorException e) {
+                 | TransactionInProgressException | IdempotentParameterMismatchException
+                 | ProvisionedThroughputExceededException | InternalServerErrorException e) {
             throw new StateStoreException(e);
         }
     }
@@ -707,7 +711,7 @@ public class DynamoDBStateStore implements StateStore {
             }
             return partitionResults;
         } catch (ProvisionedThroughputExceededException | ResourceNotFoundException | RequestLimitExceededException
-                | InternalServerErrorException | IOException e) {
+                 | InternalServerErrorException | IOException e) {
             throw new StateStoreException("Exception querying DynamoDB", e);
         }
     }
@@ -760,9 +764,9 @@ public class DynamoDBStateStore implements StateStore {
         if (null != item.get(PARTITION_SPLIT_DIMENSION)) {
             partition.setDimension(Integer.parseInt(item.get(PARTITION_SPLIT_DIMENSION).getN()));
         }
-        
+
         partition.setRegion(regionSerDe.fromJson(item.get(REGION).getS()));
-        
+
         return partition;
     }
 
