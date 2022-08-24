@@ -43,8 +43,6 @@ import com.amazonaws.services.dynamodbv2.model.TransactionInProgressException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.key.Key;
-import sleeper.core.key.KeySerDe;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.RegionSerDe;
@@ -74,7 +72,6 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_TAB
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.statestore.FileInfo.FileStatus.ACTIVE;
 import static sleeper.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
-import static sleeper.statestore.dynamodb.DynamoDBAttributes.createBinaryAttribute;
 import static sleeper.statestore.dynamodb.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.statestore.dynamodb.DynamoDBAttributes.createStringAttribute;
 
@@ -107,8 +104,8 @@ public class DynamoDBStateStore implements StateStore {
     private final List<PrimitiveType> rowKeyTypes;
     private final int garbageCollectorDelayBeforeDeletionInSeconds;
     private final boolean stronglyConsistentReads;
-    private final KeySerDe keySerDe;
     private final RegionSerDe regionSerDe;
+    private final DynamoDBFileInfoFormat fileInfoFormat;
 
     public DynamoDBStateStore(TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
         this(tableProperties.get(ACTIVE_FILEINFO_TABLENAME),
@@ -138,8 +135,8 @@ public class DynamoDBStateStore implements StateStore {
         this.garbageCollectorDelayBeforeDeletionInSeconds = garbageCollectorDelayBeforeDeletionInSeconds;
         this.stronglyConsistentReads = stronglyConsistentReads;
         this.dynamoDB = Objects.requireNonNull(dynamoDB, "dynamoDB must not be null");
-        this.keySerDe = new KeySerDe(rowKeyTypes);
         this.regionSerDe = new RegionSerDe(schema);
+        this.fileInfoFormat = new DynamoDBFileInfoFormat(schema);
     }
 
     @Override
@@ -154,7 +151,7 @@ public class DynamoDBStateStore implements StateStore {
                 || null == fileInfo.getPartitionId()) {
             throw new IllegalArgumentException("FileInfo needs non-null filename, status and partition: got " + fileInfo);
         }
-        Map<String, AttributeValue> itemValues = createRecord(fileInfo);
+        Map<String, AttributeValue> itemValues = fileInfoFormat.createRecord(fileInfo);
         try {
             PutItemRequest putItemRequest = new PutItemRequest()
                     .withItem(itemValues)
@@ -181,66 +178,6 @@ public class DynamoDBStateStore implements StateStore {
         }
     }
 
-    /**
-     * Creates a record with a new status
-     *
-     * @param fileInfo  the File
-     * @param newStatus the new status of that file
-     * @return A Dynamo record
-     * @throws StateStoreException if the Dynamo record fails to be created
-     */
-    private Map<String, AttributeValue> createRecordWithStatus(FileInfo fileInfo, FileInfo.FileStatus newStatus) throws StateStoreException {
-        Map<String, AttributeValue> record = createRecord(fileInfo);
-        record.put(FILE_STATUS, createStringAttribute(newStatus.toString()));
-        return record;
-    }
-
-    private Map<String, AttributeValue> createRecordWithJobId(FileInfo fileInfo, String jobId) throws StateStoreException {
-        Map<String, AttributeValue> record = createRecord(fileInfo);
-        record.put(JOB_ID, createStringAttribute(jobId));
-        return record;
-    }
-
-    /**
-     * Creates a record for the DynamoDB state store.
-     *
-     * @param fileInfo the File which the record is about
-     * @return A record in DynamoDB
-     * @throws StateStoreException if the record fails to create
-     */
-    private Map<String, AttributeValue> createRecord(FileInfo fileInfo) throws StateStoreException {
-        Map<String, AttributeValue> itemValues = new HashMap<>();
-
-        itemValues.put(FILE_NAME, createStringAttribute(fileInfo.getFilename()));
-        itemValues.put(FILE_PARTITION, createStringAttribute(fileInfo.getPartitionId()));
-        itemValues.put(FILE_STATUS, createStringAttribute(fileInfo.getFileStatus().toString()));
-        if (null != fileInfo.getNumberOfRecords()) {
-            itemValues.put(NUMBER_LINES, createNumberAttribute(fileInfo.getNumberOfRecords()));
-        }
-        try {
-            if (null != fileInfo.getMinRowKey()) {
-                itemValues.put(MIN_KEY, getAttributeValueFromRowKeys(fileInfo.getMinRowKey()));
-            }
-            if (null != fileInfo.getMaxRowKey()) {
-                itemValues.put(MAX_KEY, getAttributeValueFromRowKeys(fileInfo.getMaxRowKey()));
-            }
-        } catch (IOException e) {
-            throw new StateStoreException("IOException serialising row keys", e);
-        }
-        if (null != fileInfo.getJobId()) {
-            itemValues.put(JOB_ID, createStringAttribute(fileInfo.getJobId()));
-        }
-        if (null != fileInfo.getLastStateStoreUpdateTime()) {
-            itemValues.put(LAST_UPDATE_TIME, createNumberAttribute(fileInfo.getLastStateStoreUpdateTime()));
-        }
-
-        return itemValues;
-    }
-
-    private AttributeValue getAttributeValueFromRowKeys(Key rowKey) throws IOException {
-        return createBinaryAttribute(keySerDe.serialise(rowKey));
-    }
-
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(
             List<FileInfo> filesToBeMarkedReadyForGC,
@@ -258,14 +195,14 @@ public class DynamoDBStateStore implements StateStore {
                     .withExpressionAttributeNames(expressionAttributeNames)
                     .withConditionExpression("attribute_exists(#status)");
             writes.add(new TransactWriteItem().withDelete(delete));
-            Map<String, AttributeValue> newItem = createRecordWithStatus(fileInfo, READY_FOR_GARBAGE_COLLECTION);
+            Map<String, AttributeValue> newItem = fileInfoFormat.createRecordWithStatus(fileInfo, READY_FOR_GARBAGE_COLLECTION);
             Put put = new Put()
                     .withTableName(readyForGCFileInfoTablename)
                     .withItem(newItem);
             writes.add(new TransactWriteItem().withPut(put));
         }
         // Add record for file for new status
-        Map<String, AttributeValue> newItem = createRecordWithStatus(newActiveFile, ACTIVE);
+        Map<String, AttributeValue> newItem = fileInfoFormat.createRecordWithStatus(newActiveFile, ACTIVE);
         Put put = new Put()
                 .withTableName(activeFileInfoTablename)
                 .withItem(newItem);
@@ -303,19 +240,19 @@ public class DynamoDBStateStore implements StateStore {
                     .withExpressionAttributeNames(expressionAttributeNames)
                     .withConditionExpression("attribute_exists(#status)");
             writes.add(new TransactWriteItem().withDelete(delete));
-            Map<String, AttributeValue> newItem = createRecordWithStatus(fileInfo, READY_FOR_GARBAGE_COLLECTION);
+            Map<String, AttributeValue> newItem = fileInfoFormat.createRecordWithStatus(fileInfo, READY_FOR_GARBAGE_COLLECTION);
             Put put = new Put()
                     .withTableName(readyForGCFileInfoTablename)
                     .withItem(newItem);
             writes.add(new TransactWriteItem().withPut(put));
         }
         // Add record for file for new status
-        Map<String, AttributeValue> newKeyLeftFile = createRecordWithStatus(leftFileInfo, ACTIVE);
+        Map<String, AttributeValue> newKeyLeftFile = fileInfoFormat.createRecordWithStatus(leftFileInfo, ACTIVE);
         Put put = new Put()
                 .withTableName(activeFileInfoTablename)
                 .withItem(newKeyLeftFile);
         writes.add(new TransactWriteItem().withPut(put));
-        Map<String, AttributeValue> newKeyRightFile = createRecordWithStatus(rightFileInfo, ACTIVE);
+        Map<String, AttributeValue> newKeyRightFile = fileInfoFormat.createRecordWithStatus(rightFileInfo, ACTIVE);
         Put put2 = new Put()
                 .withTableName(activeFileInfoTablename)
                 .withItem(newKeyRightFile);
@@ -347,7 +284,7 @@ public class DynamoDBStateStore implements StateStore {
         // TODO This should only be done for active files
         // Create Puts for each of the files, conditional on the compactionJob field being not present
         for (FileInfo fileInfo : files) {
-            Map<String, AttributeValue> fileAttributeValues = createRecordWithJobId(fileInfo, jobId);
+            Map<String, AttributeValue> fileAttributeValues = fileInfoFormat.createRecordWithJobId(fileInfo, jobId);
             Map<String, String> expressionAttributeNames = new HashMap<>();
             expressionAttributeNames.put("#jobid", JOB_ID);
             Put put = new Put()
@@ -413,7 +350,7 @@ public class DynamoDBStateStore implements StateStore {
             LOGGER.debug("Scanned for all active files, capacity consumed = {}", totalCapacity);
             List<FileInfo> fileInfoResults = new ArrayList<>();
             for (Map<String, AttributeValue> map : results) {
-                fileInfoResults.add(getFileInfoFromAttributeValues(rowKeyTypes, map));
+                fileInfoResults.add(fileInfoFormat.getFileInfoFromAttributeValues(map));
             }
             return fileInfoResults;
         } catch (ProvisionedThroughputExceededException | ResourceNotFoundException | RequestLimitExceededException
@@ -425,7 +362,7 @@ public class DynamoDBStateStore implements StateStore {
     private static class FilesReadyForGCIterator implements Iterator<FileInfo> {
         private final AmazonDynamoDB dynamoDB;
         private final String readyForGCFileInfoTablename;
-        private final List<PrimitiveType> rowKeyTypes;
+        private final DynamoDBFileInfoFormat fileInfoFormat;
         private final int delayBeforeGarbageCollectionInSeconds;
         private final boolean stronglyConsistentReads;
         private double totalCapacity;
@@ -434,12 +371,12 @@ public class DynamoDBStateStore implements StateStore {
 
         FilesReadyForGCIterator(AmazonDynamoDB dynamoDB,
                                 String readyForGCFileInfoTablename,
-                                List<PrimitiveType> rowKeyTypes,
+                                DynamoDBFileInfoFormat fileInfoFormat,
                                 int delayBeforeGarbageCollectionInSeconds,
                                 boolean stronglyConsistentReads) {
             this.dynamoDB = dynamoDB;
             this.readyForGCFileInfoTablename = readyForGCFileInfoTablename;
-            this.rowKeyTypes = rowKeyTypes;
+            this.fileInfoFormat = fileInfoFormat;
             this.delayBeforeGarbageCollectionInSeconds = delayBeforeGarbageCollectionInSeconds;
             this.stronglyConsistentReads = stronglyConsistentReads;
             this.totalCapacity = 0.0D;
@@ -488,7 +425,7 @@ public class DynamoDBStateStore implements StateStore {
         @Override
         public FileInfo next() {
             try {
-                return getFileInfoFromAttributeValues(rowKeyTypes, itemsIterator.next());
+                return fileInfoFormat.getFileInfoFromAttributeValues(itemsIterator.next());
             } catch (IOException e) {
                 throw new RuntimeException("IOException creating FileInfo from attribute values");
             }
@@ -497,7 +434,7 @@ public class DynamoDBStateStore implements StateStore {
 
     @Override
     public Iterator<FileInfo> getReadyForGCFiles() {
-        return new FilesReadyForGCIterator(dynamoDB, readyForGCFileInfoTablename, rowKeyTypes, garbageCollectorDelayBeforeDeletionInSeconds, stronglyConsistentReads);
+        return new FilesReadyForGCIterator(dynamoDB, readyForGCFileInfoTablename, fileInfoFormat, garbageCollectorDelayBeforeDeletionInSeconds, stronglyConsistentReads);
     }
 
     @Override
@@ -526,7 +463,7 @@ public class DynamoDBStateStore implements StateStore {
             LOGGER.debug("Scanned for all active files with no job id, capacity consumed = {}", totalCapacity);
             List<FileInfo> fileInfoResults = new ArrayList<>();
             for (Map<String, AttributeValue> map : results) {
-                fileInfoResults.add(getFileInfoFromAttributeValues(rowKeyTypes, map));
+                fileInfoResults.add(fileInfoFormat.getFileInfoFromAttributeValues(map));
             }
             return fileInfoResults;
         } catch (ProvisionedThroughputExceededException | ResourceNotFoundException | RequestLimitExceededException
@@ -704,31 +641,6 @@ public class DynamoDBStateStore implements StateStore {
         return getAllPartitions().stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toList());
-    }
-
-    private static FileInfo getFileInfoFromAttributeValues(List<PrimitiveType> rowKeyTypes, Map<String, AttributeValue> item) throws IOException {
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(rowKeyTypes);
-        fileInfo.setFileStatus(FileInfo.FileStatus.valueOf(item.get(FILE_STATUS).getS()));
-        fileInfo.setPartitionId(item.get(FILE_PARTITION).getS());
-        if (null != item.get(NUMBER_LINES)) {
-            fileInfo.setNumberOfRecords(Long.parseLong(item.get(NUMBER_LINES).getN()));
-        }
-        KeySerDe keySerDe = new KeySerDe(rowKeyTypes);
-        if (null != item.get(MIN_KEY)) {
-            fileInfo.setMinRowKey(keySerDe.deserialise(item.get(MIN_KEY).getB().array()));
-        }
-        if (null != item.get(MAX_KEY)) {
-            fileInfo.setMaxRowKey(keySerDe.deserialise(item.get(MAX_KEY).getB().array()));
-        }
-        fileInfo.setFilename(item.get(FILE_NAME).getS());
-        if (null != item.get(JOB_ID)) {
-            fileInfo.setJobId(item.get(JOB_ID).getS());
-        }
-        if (null != item.get(LAST_UPDATE_TIME)) {
-            fileInfo.setLastStateStoreUpdateTime(Long.parseLong(item.get(LAST_UPDATE_TIME).getN()));
-        }
-        return fileInfo;
     }
 
     private Partition getPartitionFromAttributeValues(Map<String, AttributeValue> item) throws IOException {
