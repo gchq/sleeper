@@ -35,7 +35,7 @@ public class BuildEC2Parameters {
         branch = context.get(BRANCH);
     }
 
-    public static BuildEC2Parameters from(AppContext context) {
+    static BuildEC2Parameters from(AppContext context) {
         return new BuildEC2Parameters(context);
     }
 
