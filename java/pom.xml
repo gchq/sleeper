@@ -80,6 +80,7 @@
         <testcontainers.version>1.16.2</testcontainers.version>
         <wiremock.version>2.32.0</wiremock.version>
         <assertj.version>3.23.1</assertj.version>
+        <jsonunit.version>2.22.1</jsonunit.version>
         <!-- Maven plugins -->
         <release.plugin.version>3.0.0-M4</release.plugin.version>
         <surefire.plugin.version>3.0.0-M5</surefire.plugin.version>
@@ -120,7 +121,7 @@
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons-lang3.version}</version>
             </dependency>
-            <!-- GSON -->
+            <!-- JSON -->
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
@@ -173,6 +174,12 @@
                 <version>${assertj.version}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>net.javacrumbs.json-unit</groupId>
+                <artifactId>json-unit-assertj</artifactId>
+                <version>${jsonunit.version}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -184,6 +191,7 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
