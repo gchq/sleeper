@@ -155,6 +155,15 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
     protected CompactionJob createSplittingCompactionJob(
             List<FileInfo> files, String partition, String leftPartitionId, String rightPartitionId,
             Object splitPoint, int dimension, String s3Bucket) {
+        return createSplittingCompaction(
+                files, partition, leftPartitionId, rightPartitionId,
+                splitPoint, dimension, s3Bucket)
+                .buildJob();
+    }
+
+    protected CreateCompactionJob createSplittingCompaction(
+            List<FileInfo> files, String partition, String leftPartitionId, String rightPartitionId,
+            Object splitPoint, int dimension, String s3Bucket) {
 
         String jobId = UUID.randomUUID().toString();
         String leftOutputFile = fs + s3Bucket + "/partition_" + leftPartitionId + "/" + jobId + ".parquet";
@@ -165,27 +174,30 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
                         .splitPoint(splitPoint).dimension(dimension)
                         .build())
                 .build();
-        CompactionJob compactionJob = create.buildJob();
 
         LOGGER.info("Created compaction job of id {} to compact and split {} files in partition {}, into partitions {} and {}, to output files {}, {}",
                 jobId, files.size(), partition, leftPartitionId, rightPartitionId, leftOutputFile, rightOutputFile);
 
-        return compactionJob;
+        return create;
     }
 
     protected CompactionJob createCompactionJob(
+            List<FileInfo> files, String partition, String s3Bucket) {
+        return createCompaction(files, partition, s3Bucket).buildJob();
+    }
+
+    protected CreateCompactionJob createCompaction(
             List<FileInfo> files, String partition, String s3Bucket) {
 
         String jobId = UUID.randomUUID().toString();
         String outputFile = fs + s3Bucket + "/partition_" + partition + "/" + jobId + ".parquet";
         CreateCompactionJob create = createJob().jobId(jobId).partitionId(partition)
                 .inputFiles(files).outputFilePath(outputFile).build();
-        CompactionJob compactionJob = create.buildJob();
 
         LOGGER.info("Created compaction job of id {} to compact and split {} files in partition {} to output file {}",
                 jobId, files.size(), partition, outputFile);
 
-        return compactionJob;
+        return create;
     }
 
     private CreateCompactionJob.Builder createJob() {
