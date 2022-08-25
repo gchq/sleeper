@@ -25,6 +25,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * A convenience class for specifying partitions.
+ * <p>
+ * Note that a shorthand is used for cases where we have a schema with only one row key field.
+ * This will not be useful in the general case.
+ */
 public class PartitionsBuilder {
 
     private final Schema schema;
