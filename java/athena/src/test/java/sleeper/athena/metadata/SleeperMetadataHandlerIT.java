@@ -54,7 +54,6 @@ import sleeper.splitter.SplitPartition;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -429,9 +428,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         ListSchemasResponse listSchemasResponse = sleeperMetadataHandler.doListSchemaNames(new BlockAllocatorImpl(), new ListSchemasRequest(TestUtils.createIdentity(), "abc", "def"));
 
         // Then
-        Collection<String> schemas = listSchemasResponse.getSchemas();
-        assertThat(schemas).hasSize(1)
-                .contains(instance.get(ID));
+        assertThat(listSchemasResponse.getSchemas()).containsExactly(instance.get(ID));
     }
 
     @Test
@@ -451,11 +448,10 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 new ListTablesRequest(TestUtils.createIdentity(), "abc", "def", "mySchema", "next", -1));
 
         // Then
-        Collection<TableName> tables = listTablesResponse.getTables();
-        assertThat(tables).hasSize(3);
-
-        Lists.newArrayList(table1, table2, table3)
-                .forEach(tableName -> assertThat(tables.contains(new TableName("mySchema", tableName))).isTrue());
+        assertThat(listTablesResponse.getTables()).containsExactlyInAnyOrder(
+                new TableName("mySchema", table1),
+                new TableName("mySchema", table2),
+                new TableName("mySchema", table3));
     }
 
     @Test
@@ -474,14 +470,12 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 new ListTablesRequest(TestUtils.createIdentity(), "abc", "def", "mySchema", null, 1));
 
         // Then
-        Collection<TableName> tables = listTablesResponse.getTables();
-        assertThat(tables).hasSize(1);
 
         // Order the tables
         List<String> sorted = Lists.newArrayList(table1, table2).stream().sorted().collect(Collectors.toList());
 
         assertThat(listTablesResponse.getNextToken()).isEqualTo("1");
-        assertThat(tables).contains(new TableName("mySchema", sorted.get(0)));
+        assertThat(listTablesResponse.getTables()).containsExactly(new TableName("mySchema", sorted.get(0)));
     }
 
     @Test
@@ -502,10 +496,8 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 new ListTablesRequest(TestUtils.createIdentity(), "abc", "def", "mySchema", "1", 1));
 
         // Then
-        Collection<TableName> tables = listTablesResponse.getTables();
         assertThat(listTablesResponse.getNextToken()).isNull();
-        assertThat(tables).hasSize(1)
-                .contains(new TableName("mySchema", sorted.get(1)));
+        assertThat(listTablesResponse.getTables()).containsExactly(new TableName("mySchema", sorted.get(1)));
     }
 
     @Test
