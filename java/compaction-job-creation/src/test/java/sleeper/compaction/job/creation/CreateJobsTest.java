@@ -15,8 +15,6 @@
  */
 package sleeper.compaction.job.creation;
 
-import sleeper.compaction.job.CompactionJobSerDe;
-import sleeper.compaction.job.CompactionJob;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
@@ -31,6 +29,8 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
+import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
@@ -55,10 +55,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
@@ -105,7 +102,8 @@ public class CreateJobsTest {
         AmazonSQS sqs = createSQSClient();
         String queue = UUID.randomUUID().toString();
 
-        String queueUrl = sqs.createQueue(queue).getQueueUrl();;
+        String queueUrl = sqs.createQueue(queue).getQueueUrl();
+        ;
 
         sqs.shutdown();
 
@@ -178,25 +176,25 @@ public class CreateJobsTest {
         createJobs.createJobs();
 
         // Then
-        assertTrue(stateStore.getActiveFilesWithNoJobId().isEmpty());
+        assertThat(stateStore.getActiveFilesWithNoJobId()).isEmpty();
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         Set<String> jobIds = new HashSet<>();
         for (int i = 0; i < 4; i++) {
             String jobId = activeFiles.get(i).getJobId();
-            assertNotNull(jobId);
+            assertThat(jobId).isNotNull();
             jobIds.add(jobId);
         }
-        assertEquals(1, jobIds.size());
+        assertThat(jobIds).hasSize(1);
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .withMaxNumberOfMessages(10);
         ReceiveMessageResult receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
-        assertEquals(1, receiveMessageResult.getMessages().size());
+        assertThat(receiveMessageResult.getMessages()).hasSize(1);
         Message message = receiveMessageResult.getMessages().get(0);
         CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         CompactionJob compactionJob = compactionJobSerDe.deserialiseFromString(message.getBody());
-        assertEquals(Sets.newHashSet("file1", "file2", "file3", "file4"), Sets.newHashSet(compactionJob.getInputFiles()));
-        assertEquals(partition.getId(), compactionJob.getPartitionId());
-        assertFalse(compactionJob.isSplittingJob());
+        assertThat(Sets.newHashSet(compactionJob.getInputFiles())).isEqualTo(Sets.newHashSet("file1", "file2", "file3", "file4"));
+        assertThat(compactionJob.getPartitionId()).isEqualTo(partition.getId());
+        assertThat(compactionJob.isSplittingJob()).isFalse();
     }
 }

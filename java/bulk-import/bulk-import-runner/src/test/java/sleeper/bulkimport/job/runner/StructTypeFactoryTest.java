@@ -19,9 +19,7 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import static org.junit.Assert.assertEquals;
 import org.junit.Test;
-
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -30,6 +28,8 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class StructTypeFactoryTest {
 
@@ -51,26 +51,26 @@ public class StructTypeFactoryTest {
         StructType structType = structTypeFactory.getStructType(schema);
 
         // Then
-        assertEquals(10, structType.length());
+        assertThat(structType.length()).isEqualTo(10);
         StructField key1 = StructField.apply("key1", DataTypes.IntegerType, false, Metadata.empty());
-        assertEquals(key1, structType.fields()[0]);
+        assertThat(structType.fields()[0]).isEqualTo(key1);
         StructField key2 = StructField.apply("key2", DataTypes.LongType, false, Metadata.empty());
-        assertEquals(key2, structType.fields()[1]);
+        assertThat(structType.fields()[1]).isEqualTo(key2);
         StructField sort1 = StructField.apply("sort1", DataTypes.StringType, false, Metadata.empty());
-        assertEquals(sort1, structType.fields()[2]);
+        assertThat(structType.fields()[2]).isEqualTo(sort1);
         StructField sort2 = StructField.apply("sort2", DataTypes.BinaryType, false, Metadata.empty());
-        assertEquals(sort2, structType.fields()[3]);
+        assertThat(structType.fields()[3]).isEqualTo(sort2);
         StructField value1 = StructField.apply("value1", DataTypes.IntegerType, false, Metadata.empty());
-        assertEquals(value1, structType.fields()[4]);
+        assertThat(structType.fields()[4]).isEqualTo(value1);
         StructField value2 = StructField.apply("value2", DataTypes.LongType, false, Metadata.empty());
-        assertEquals(value2, structType.fields()[5]);
+        assertThat(structType.fields()[5]).isEqualTo(value2);
         StructField value3 = StructField.apply("value3", DataTypes.StringType, false, Metadata.empty());
-        assertEquals(value3, structType.fields()[6]);
+        assertThat(structType.fields()[6]).isEqualTo(value3);
         StructField value4 = StructField.apply("value4", DataTypes.BinaryType, false, Metadata.empty());
-        assertEquals(value4, structType.fields()[7]);
+        assertThat(structType.fields()[7]).isEqualTo(value4);
         StructField value5 = StructField.apply("value5", DataTypes.createArrayType(DataTypes.LongType), false, Metadata.empty());
-        assertEquals(value5, structType.fields()[8]);
+        assertThat(structType.fields()[8]).isEqualTo(value5);
         StructField value6 = StructField.apply("value6", DataTypes.createMapType(DataTypes.IntegerType, DataTypes.StringType), false, Metadata.empty());
-        assertEquals(value6, structType.fields()[9]);
+        assertThat(structType.fields()[9]).isEqualTo(value6);
     }
 }

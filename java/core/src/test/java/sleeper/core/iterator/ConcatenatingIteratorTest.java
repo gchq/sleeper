@@ -17,19 +17,18 @@ package sleeper.core.iterator;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.junit.Before;
+import org.junit.Test;
+import sleeper.core.record.Record;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
-import org.junit.Before;
-import org.junit.Test;
-import sleeper.core.record.Record;
 
 public class ConcatenatingIteratorTest {
 
@@ -58,7 +57,7 @@ public class ConcatenatingIteratorTest {
 
         // When
         List<Record> records = new ArrayList<>();
-        while(concatenatingIterator.hasNext()) {
+        while (concatenatingIterator.hasNext()) {
             records.add(concatenatingIterator.next());
         }
 
@@ -72,7 +71,7 @@ public class ConcatenatingIteratorTest {
                 new Record(Maps.toMap(Lists.newArrayList("16", "17", "18"), Integer::valueOf))
         );
 
-        assertEquals(expectedRecords, records);
+        assertThat(records).isEqualTo(expectedRecords);
     }
 
     @Test
@@ -81,7 +80,7 @@ public class ConcatenatingIteratorTest {
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(new ArrayList<>());
 
         // Then
-        assertFalse(concatenatingIterator.hasNext());
+        assertThat(concatenatingIterator.hasNext()).isFalse();
     }
 
     @Test
@@ -90,7 +89,7 @@ public class ConcatenatingIteratorTest {
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(null);
 
         // Then
-        assertFalse(concatenatingIterator.hasNext());
+        assertThat(concatenatingIterator.hasNext()).isFalse();
     }
 
     @Test
@@ -102,7 +101,7 @@ public class ConcatenatingIteratorTest {
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList(testSupplier));
 
         // Then
-        assertFalse(concatenatingIterator.hasNext());
+        assertThat(concatenatingIterator.hasNext()).isFalse();
     }
 
     @Test
@@ -114,7 +113,7 @@ public class ConcatenatingIteratorTest {
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList(nullSupplier));
 
         // Then
-        assertFalse(concatenatingIterator.hasNext());
+        assertThat(concatenatingIterator.hasNext()).isFalse();
     }
 
     @Test
@@ -127,7 +126,7 @@ public class ConcatenatingIteratorTest {
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList(testSupplier, otherTestSupplier));
 
         // Then
-        assertFalse(concatenatingIterator.hasNext());
+        assertThat(concatenatingIterator.hasNext()).isFalse();
     }
 
     @Test
@@ -141,9 +140,9 @@ public class ConcatenatingIteratorTest {
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList(testSupplier, nullSupplier, null, otherTestSupplier));
 
         // Then
-        assertFalse(concatenatingIterator.hasNext());
-        assertTrue(testSupplier.hasSupplied());
-        assertTrue(otherTestSupplier.hasSupplied());
+        assertThat(concatenatingIterator.hasNext()).isFalse();
+        assertThat(testSupplier.hasSupplied()).isTrue();
+        assertThat(otherTestSupplier.hasSupplied()).isTrue();
     }
 
     @Test
@@ -158,21 +157,21 @@ public class ConcatenatingIteratorTest {
                 nullSupplier, null, otherTestSupplier, testSupplier1));
 
         // Then
-        assertTrue(concatenatingIterator.hasNext());
-        assertTrue(testSupplier.hasSupplied());
-        assertTrue(otherTestSupplier.hasSupplied());
-        assertTrue(testSupplier1.hasSupplied());
+        assertThat(concatenatingIterator.hasNext()).isTrue();
+        assertThat(testSupplier.hasSupplied()).isTrue();
+        assertThat(otherTestSupplier.hasSupplied()).isTrue();
+        assertThat(testSupplier1.hasSupplied()).isTrue();
 
         List<Record> records = new ArrayList<>();
         while (concatenatingIterator.hasNext()) {
             records.add(concatenatingIterator.next());
         }
 
-        assertEquals(Lists.newArrayList(
+        assertThat(records).isEqualTo(Lists.newArrayList(
                 new Record(Maps.toMap(Lists.newArrayList("1", "2", "3"), Integer::valueOf)),
                 new Record(Maps.toMap(Lists.newArrayList("4", "5", "6"), Integer::valueOf)),
                 new Record(Maps.toMap(Lists.newArrayList("7", "8", "9"), Integer::valueOf))
-        ), records);
+        ));
 
     }
 
@@ -185,8 +184,8 @@ public class ConcatenatingIteratorTest {
         concatenatingIterator.next();
 
         // Then
-        assertTrue(testSupplier1.hasSupplied());
-        assertFalse(testSupplier2.hasSupplied());
+        assertThat(testSupplier1.hasSupplied()).isTrue();
+        assertThat(testSupplier2.hasSupplied()).isFalse();
     }
 
     @Test
@@ -199,8 +198,8 @@ public class ConcatenatingIteratorTest {
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList((Supplier<CloseableIterator<Record>>) () -> testIterator));
 
         // Then
-        assertFalse(concatenatingIterator.hasNext());
-        assertTrue(closed.get());
+        assertThat(concatenatingIterator.hasNext()).isFalse();
+        assertThat(closed.get()).isTrue();
     }
 
     @Test
@@ -225,8 +224,8 @@ public class ConcatenatingIteratorTest {
             concatenatingIterator.hasNext();
             fail("Expected an exception");
         } catch (RuntimeException e) {
-            assertEquals("Failed to close iterator", e.getMessage());
-            assertNotNull(e.getCause());
+            assertThat(e.getMessage()).isEqualTo("Failed to close iterator");
+            assertThat(e.getCause()).isNotNull();
         }
     }
 
@@ -242,7 +241,8 @@ public class ConcatenatingIteratorTest {
         private final Runnable onClose;
 
         private TestIterator() {
-            this(() -> {});
+            this(() -> {
+            });
         }
 
         public TestIterator(Runnable onClose) {

@@ -38,8 +38,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
@@ -116,7 +115,7 @@ public class TableCreatorIT {
         tableCreator.createTable(tableProperties);
 
         // Then
-        assertTrue(s3Client.doesBucketExistV2("sleeper-" + instanceProperties.get(ID) + "-table-test"));
+        assertThat(s3Client.doesBucketExistV2("sleeper-" + instanceProperties.get(ID) + "-table-test")).isTrue();
     }
 
     @Test
@@ -144,7 +143,7 @@ public class TableCreatorIT {
         // + plus "sleeper" "table" and three "-" characters (15 characters)
         // + the alphabet up to v (22 characters) = 63 characters
         String expected = "sleeper-" + alphabet + "-table-" + "abcdefghijklmnopqrstuv";
-        assertTrue(s3Client.doesBucketExistV2(expected));
+        assertThat(s3Client.doesBucketExistV2(expected)).isTrue();
     }
 
     @Test
@@ -169,7 +168,7 @@ public class TableCreatorIT {
 
         // Then
         String expected = "sleeper-mysleeperinstance-table-mytable";
-        assertTrue(s3Client.doesBucketExistV2(expected));
+        assertThat(s3Client.doesBucketExistV2(expected)).isTrue();
     }
 
     @Test
@@ -194,7 +193,7 @@ public class TableCreatorIT {
                 "sleeper-" + instanceId + "-table-mytable-partitions");
         List<String> tableNames = dynamoClient.listTables().getTableNames();
 
-        assertTrue(tableNames.containsAll(expectedTables));
+        assertThat(tableNames).containsAll(expectedTables);
     }
 
     @Test
@@ -213,6 +212,6 @@ public class TableCreatorIT {
         tableCreator.createTable(tableProperties);
 
         // Then
-        assertEquals(localDir, tableProperties.get(DATA_BUCKET));
+        assertThat(tableProperties.get(DATA_BUCKET)).isEqualTo(localDir);
     }
 }

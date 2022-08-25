@@ -28,8 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class EstimateSplitPointsTest {
 
@@ -51,7 +50,7 @@ public class EstimateSplitPointsTest {
 
         // Then
         List<Object> expected = Arrays.asList(10, 20, 30, 40, 50, 60, 70, 80, 90);
-        assertEquals(expected, splitPoints);
+        assertThat(splitPoints).isEqualTo(expected);
     }
 
     @Test
@@ -72,7 +71,7 @@ public class EstimateSplitPointsTest {
 
         // Then
         List<Object> expected = Arrays.asList(1000L, 2000L, 3000L, 4000L, 5000L, 6000L, 7000L, 8000L, 9000L);
-        assertEquals(expected, splitPoints);
+        assertThat(splitPoints).isEqualTo(expected);
     }
 
     @Test
@@ -83,7 +82,7 @@ public class EstimateSplitPointsTest {
         List<Record> records = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
-            record.put("key", String.format ("%04d", i * 100L));
+            record.put("key", String.format("%04d", i * 100L));
             records.add(record);
         }
         EstimateSplitPoints estimateSplitPoints = new EstimateSplitPoints(schema, records, 10);
@@ -93,7 +92,7 @@ public class EstimateSplitPointsTest {
 
         // Then
         List<Object> expected = Arrays.asList("1000", "2000", "3000", "4000", "5000", "6000", "7000", "8000", "9000");
-        assertEquals(expected, splitPoints);
+        assertThat(splitPoints).isEqualTo(expected);
     }
 
     @Test
@@ -116,9 +115,9 @@ public class EstimateSplitPointsTest {
         List<Object> expected = Arrays.asList(new byte[]{(byte) 10},
                 new byte[]{(byte) 20}, new byte[]{(byte) 30}, new byte[]{(byte) 40}, new byte[]{(byte) 50},
                 new byte[]{(byte) 60}, new byte[]{(byte) 70}, new byte[]{(byte) 80}, new byte[]{(byte) 90});
-        assertEquals(expected.size(), splitPoints.size());
+        assertThat(splitPoints).hasSameSizeAs(expected);
         for (int i = 0; i < expected.size(); i++) {
-            assertArrayEquals((byte[]) expected.get(i), (byte[]) splitPoints.get(i));
+            assertThat((byte[]) splitPoints.get(i)).containsExactly((byte[]) expected.get(i));
         }
     }
 

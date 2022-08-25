@@ -19,7 +19,11 @@ import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import sleeper.configuration.jars.ObjectFactory;
@@ -47,7 +51,7 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
     @ClassRule
@@ -138,7 +142,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
             errorThrown = true;
             e.printStackTrace();
         }
-        assertTrue(errorThrown);
+        assertThat(errorThrown).isTrue();
     }
 
     private void ingestAndVerifyUsingDirectWriteBackedByArrow(

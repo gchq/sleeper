@@ -25,8 +25,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
@@ -103,7 +102,7 @@ public class InstancePropertiesTest {
         loaded.load(file);
 
         // Then
-        assertEquals(instanceProperties, loaded);
+        assertThat(loaded).isEqualTo(instanceProperties);
     }
 
     @Test
@@ -117,14 +116,14 @@ public class InstancePropertiesTest {
         loaded.loadFromString(string);
 
         // Then
-        assertEquals(instanceProperties, loaded);
+        assertThat(loaded).isEqualTo(instanceProperties);
     }
 
     @Test
     public void shouldBeAbleToUseStandardGetMethod() {
         InstanceProperties instanceProperties = getSleeperProperties();
         String expectedAccount = "1234567890";
-        assertEquals(expectedAccount, instanceProperties.get(ACCOUNT));
+        assertThat(instanceProperties.get(ACCOUNT)).isEqualTo(expectedAccount);
     }
 
     @Test
@@ -133,12 +132,12 @@ public class InstancePropertiesTest {
 
         instanceProperties.set(FILE_SYSTEM, "file://");
 
-        assertEquals("file://", instanceProperties.get(FILE_SYSTEM));
+        assertThat(instanceProperties.get(FILE_SYSTEM)).isEqualTo("file://");
     }
 
     @Test
     public void shouldTranslatePropertyNamesIntoCompliantEnvironmentVariables() {
-        assertEquals("SLEEPER_ID", ID.toEnvironmentVariable());
+        assertThat(ID.toEnvironmentVariable()).isEqualTo("SLEEPER_ID");
     }
 
     @Test
@@ -152,9 +151,9 @@ public class InstancePropertiesTest {
         Integer pageSizeInt = instanceProperties.getInt(QUERY_PROCESSING_LAMBDA_RESULTS_BATCH_SIZE);
 
         // Then
-        assertEquals("100", pageSizeString);
-        assertEquals(new Integer(100), pageSizeInt);
-        assertEquals(new Long(100), pageSizeLong);
+        assertThat(pageSizeString).isEqualTo("100");
+        assertThat(pageSizeInt).isEqualTo(new Integer(100));
+        assertThat(pageSizeLong).isEqualTo(new Long(100));
     }
 
     @Test
@@ -177,7 +176,7 @@ public class InstancePropertiesTest {
             new InstanceProperties().loadFromString(serialised);
             fail("Exception expected");
         } catch (Exception e) {
-            assertNotNull(e.getMessage());
+            assertThat(e.getMessage()).isNotNull();
         }
     }
 
@@ -203,7 +202,7 @@ public class InstancePropertiesTest {
             new InstanceProperties().loadFromString(serialised);
             fail("Exception expected");
         } catch (Exception e) {
-            assertNotNull(e.getMessage());
+            assertThat(e.getMessage()).isNotNull();
         }
     }
 

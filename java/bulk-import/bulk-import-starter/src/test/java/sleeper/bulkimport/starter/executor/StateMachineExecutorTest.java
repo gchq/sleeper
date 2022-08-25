@@ -21,7 +21,11 @@ import com.amazonaws.services.stepfunctions.AWSStepFunctions;
 import com.amazonaws.services.stepfunctions.model.StartExecutionRequest;
 import com.amazonaws.services.stepfunctions.model.StartExecutionResult;
 import com.google.common.collect.Lists;
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.stubbing.Answer;
@@ -36,7 +40,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -82,7 +87,7 @@ public class StateMachineExecutorTest {
         JsonElement parsed = new JsonParser().parse(input);
         JsonObject jsonJobObject = parsed.getAsJsonObject().getAsJsonObject("job");
         BulkImportJob bulkImportJob = new Gson().fromJson(jsonJobObject, BulkImportJob.class);
-        assertEquals(myJob, bulkImportJob);
+        assertThat(bulkImportJob).isEqualTo(myJob);
     }
 
     @Test
@@ -107,7 +112,7 @@ public class StateMachineExecutorTest {
                 .map(JsonElement::getAsString)
                 .filter(s -> s.equals("spark.app.name=my-job"))
                 .collect(Collectors.toList());
-        assertEquals(1, appNameArgs.size());
+        assertThat(appNameArgs).hasSize(1);
     }
 
     @Test
@@ -132,7 +137,7 @@ public class StateMachineExecutorTest {
                 .map(JsonElement::getAsString)
                 .filter(s -> s.equals("--conf"))
                 .count();
-        assertNotEquals(0L, numberOfDefaultConfItems);
+        assertThat(numberOfDefaultConfItems).isNotZero();
     }
 
     @Test
@@ -151,8 +156,7 @@ public class StateMachineExecutorTest {
         } catch (IllegalArgumentException e) {
             String expectedMessage = "The bulk import job failed validation with the following checks failing: \n"
                     + "The input files must be set to a non-null and non-empty value.";
-            assertEquals(expectedMessage,
-                    e.getMessage());
+            assertThat(e.getMessage()).isEqualTo(expectedMessage);
         }
     }
 
@@ -179,8 +183,8 @@ public class StateMachineExecutorTest {
                 .map(JsonElement::getAsString)
                 .filter(s -> s.contains("spark.driver.memory="))
                 .collect(Collectors.toList());
-        assertEquals(1, appNameArgs.size());
-        assertEquals("spark.driver.memory=10g", appNameArgs.get(0));
+        assertThat(appNameArgs).hasSize(1);
+        assertThat(appNameArgs.get(0)).isEqualTo("spark.driver.memory=10g");
     }
 
     @Test
@@ -205,8 +209,8 @@ public class StateMachineExecutorTest {
                 .map(JsonElement::getAsString)
                 .filter(s -> s.contains("spark.driver.memory="))
                 .collect(Collectors.toList());
-        assertEquals(1, appNameArgs.size());
-        assertEquals("spark.driver.memory=7g", appNameArgs.get(0));
+        assertThat(appNameArgs).hasSize(1);
+        assertThat(appNameArgs.get(0)).isEqualTo("spark.driver.memory=7g");
     }
 
     @Test
@@ -226,7 +230,7 @@ public class StateMachineExecutorTest {
         JsonElement parsed = new JsonParser().parse(input);
         JsonObject jsonJobObject = parsed.getAsJsonObject().getAsJsonObject("job");
         BulkImportJob bulkImportJob = new Gson().fromJson(jsonJobObject, BulkImportJob.class);
-        assertNotNull(bulkImportJob.getId());
+        assertThat(bulkImportJob.getId()).isNotNull();
     }
 
     @Test
@@ -252,7 +256,7 @@ public class StateMachineExecutorTest {
                 .map(JsonElement::getAsString)
                 .collect(Collectors.toList());
         String finalNonNullArg = appNameArgs.get(appNameArgs.size() - 1);
-        assertEquals("myBucket", finalNonNullArg);
+        assertThat(finalNonNullArg).isEqualTo("myBucket");
     }
 
     @Test
@@ -277,13 +281,13 @@ public class StateMachineExecutorTest {
                 .map(JsonElement::getAsString)
                 .filter(s -> s.contains("spark.kubernetes.driver.pod.name="))
                 .collect(Collectors.toList());
-        assertEquals(1, podNameArg.size());
-        assertEquals("spark.kubernetes.driver.pod.name=my-job", podNameArg.get(0));
+        assertThat(podNameArg).hasSize(1);
+        assertThat(podNameArg.get(0)).isEqualTo("spark.kubernetes.driver.pod.name=my-job");
     }
 
     private Stream<JsonElement> jsonArrayToStream(JsonArray argsArray) {
         List<JsonElement> elementList = new ArrayList<>();
-        for (int j = 0 ; j < argsArray.size() ; j++) {
+        for (int j = 0; j < argsArray.size(); j++) {
             elementList.add(argsArray.get(j));
         }
         return elementList.stream();
