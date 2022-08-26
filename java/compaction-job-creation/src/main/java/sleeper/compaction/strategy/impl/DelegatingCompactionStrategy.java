@@ -41,7 +41,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
 
     private final LeafPartitionCompactionStrategy leafStrategy;
     private final ShouldCreateJobsStrategy shouldCreateJobsStrategy;
-    private final CompactionFactory factory = new CompactionFactory();
+    private CompactionFactory factory;
     private Schema schema;
     private int compactionFilesBatchSize;
 
@@ -60,7 +60,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
     public void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
         schema = tableProperties.getSchema();
         compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
-        factory.init(instanceProperties, tableProperties);
+        factory = new CompactionFactory(instanceProperties, tableProperties);
         leafStrategy.init(instanceProperties, tableProperties, factory);
         shouldCreateJobsStrategy.init(instanceProperties, tableProperties);
     }

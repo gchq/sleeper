@@ -35,13 +35,13 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 public class CompactionFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactionFactory.class);
 
-    private String tableName;
-    private String tableBucket;
-    private String fs;
-    private String iteratorClassName;
-    private String iteratorConfig;
+    private final String tableName;
+    private final String tableBucket;
+    private final String fs;
+    private final String iteratorClassName;
+    private final String iteratorConfig;
 
-    public void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
+    public CompactionFactory(InstanceProperties instanceProperties, TableProperties tableProperties) {
         tableName = tableProperties.get(TABLE_NAME);
         tableBucket = tableProperties.get(DATA_BUCKET);
         fs = instanceProperties.get(FILE_SYSTEM);
