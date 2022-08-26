@@ -52,26 +52,17 @@ public class ConcatenatingIteratorTest {
 
     @Test
     public void shouldReadFromEachSupplierSequentially() {
-        // Given
+        // When
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList(testSupplier1, testSupplier2));
 
-        // When
-        List<Record> records = new ArrayList<>();
-        while (concatenatingIterator.hasNext()) {
-            records.add(concatenatingIterator.next());
-        }
-
         // Then
-        List<Record> expectedRecords = Lists.newArrayList(
+        assertThat(concatenatingIterator).toIterable().containsExactly(
                 new Record(Maps.toMap(Lists.newArrayList("1", "2", "3"), Integer::valueOf)),
                 new Record(Maps.toMap(Lists.newArrayList("4", "5", "6"), Integer::valueOf)),
                 new Record(Maps.toMap(Lists.newArrayList("7", "8", "9"), Integer::valueOf)),
                 new Record(Maps.toMap(Lists.newArrayList("10", "11", "12"), Integer::valueOf)),
                 new Record(Maps.toMap(Lists.newArrayList("13", "14", "15"), Integer::valueOf)),
-                new Record(Maps.toMap(Lists.newArrayList("16", "17", "18"), Integer::valueOf))
-        );
-
-        assertThat(records).isEqualTo(expectedRecords);
+                new Record(Maps.toMap(Lists.newArrayList("16", "17", "18"), Integer::valueOf)));
     }
 
     @Test
@@ -80,7 +71,7 @@ public class ConcatenatingIteratorTest {
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(new ArrayList<>());
 
         // Then
-        assertThat(concatenatingIterator.hasNext()).isFalse();
+        assertThat(concatenatingIterator).isExhausted();
     }
 
     @Test
@@ -89,7 +80,7 @@ public class ConcatenatingIteratorTest {
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(null);
 
         // Then
-        assertThat(concatenatingIterator.hasNext()).isFalse();
+        assertThat(concatenatingIterator).isExhausted();
     }
 
     @Test
@@ -101,7 +92,7 @@ public class ConcatenatingIteratorTest {
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList(testSupplier));
 
         // Then
-        assertThat(concatenatingIterator.hasNext()).isFalse();
+        assertThat(concatenatingIterator).isExhausted();
     }
 
     @Test
@@ -113,7 +104,7 @@ public class ConcatenatingIteratorTest {
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList(nullSupplier));
 
         // Then
-        assertThat(concatenatingIterator.hasNext()).isFalse();
+        assertThat(concatenatingIterator).isExhausted();
     }
 
     @Test
@@ -126,7 +117,7 @@ public class ConcatenatingIteratorTest {
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList(testSupplier, otherTestSupplier));
 
         // Then
-        assertThat(concatenatingIterator.hasNext()).isFalse();
+        assertThat(concatenatingIterator).isExhausted();
     }
 
     @Test
@@ -140,7 +131,7 @@ public class ConcatenatingIteratorTest {
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList(testSupplier, nullSupplier, null, otherTestSupplier));
 
         // Then
-        assertThat(concatenatingIterator.hasNext()).isFalse();
+        assertThat(concatenatingIterator).isExhausted();
         assertThat(testSupplier.hasSupplied()).isTrue();
         assertThat(otherTestSupplier.hasSupplied()).isTrue();
     }
@@ -157,22 +148,15 @@ public class ConcatenatingIteratorTest {
                 nullSupplier, null, otherTestSupplier, testSupplier1));
 
         // Then
-        assertThat(concatenatingIterator.hasNext()).isTrue();
+        assertThat(concatenatingIterator).hasNext();
         assertThat(testSupplier.hasSupplied()).isTrue();
         assertThat(otherTestSupplier.hasSupplied()).isTrue();
         assertThat(testSupplier1.hasSupplied()).isTrue();
 
-        List<Record> records = new ArrayList<>();
-        while (concatenatingIterator.hasNext()) {
-            records.add(concatenatingIterator.next());
-        }
-
-        assertThat(records).isEqualTo(Lists.newArrayList(
+        assertThat(concatenatingIterator).toIterable().containsExactly(
                 new Record(Maps.toMap(Lists.newArrayList("1", "2", "3"), Integer::valueOf)),
                 new Record(Maps.toMap(Lists.newArrayList("4", "5", "6"), Integer::valueOf)),
-                new Record(Maps.toMap(Lists.newArrayList("7", "8", "9"), Integer::valueOf))
-        ));
-
+                new Record(Maps.toMap(Lists.newArrayList("7", "8", "9"), Integer::valueOf)));
     }
 
     @Test
@@ -198,7 +182,7 @@ public class ConcatenatingIteratorTest {
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList((Supplier<CloseableIterator<Record>>) () -> testIterator));
 
         // Then
-        assertThat(concatenatingIterator.hasNext()).isFalse();
+        assertThat(concatenatingIterator).isExhausted();
         assertThat(closed.get()).isTrue();
     }
 
