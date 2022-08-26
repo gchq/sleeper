@@ -16,6 +16,7 @@
 package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
+import com.amazonaws.services.elasticmapreduce.model.ComputeLimits;
 import com.amazonaws.services.elasticmapreduce.model.ComputeLimitsUnitType;
 import com.amazonaws.services.elasticmapreduce.model.InstanceGroupConfig;
 import com.amazonaws.services.elasticmapreduce.model.InstanceRoleType;
@@ -90,7 +91,7 @@ public class EmrExecutorTest {
                 .map(InstanceGroupConfig::getInstanceCount)
                 .reduce(Integer::sum)
                 .orElseThrow(IllegalArgumentException::new);
-        assertThat((int) instanceCount).isEqualTo(3);
+        assertThat(instanceCount).isEqualTo(3);
     }
 
     @Test
@@ -211,8 +212,9 @@ public class EmrExecutorTest {
 
         // Then
         ManagedScalingPolicy scalingPolicy = requested.get().getManagedScalingPolicy();
-        assertThat((int) scalingPolicy.getComputeLimits().getMaximumCapacityUnits()).isEqualTo(10);
-        assertThat(scalingPolicy.getComputeLimits().getUnitType()).isEqualTo(ComputeLimitsUnitType.Instances.name());
+        assertThat(scalingPolicy).extracting(ManagedScalingPolicy::getComputeLimits)
+                .extracting(ComputeLimits::getMaximumCapacityUnits, ComputeLimits::getUnitType)
+                .containsExactly(10, ComputeLimitsUnitType.Instances.name());
     }
 
     @Test
