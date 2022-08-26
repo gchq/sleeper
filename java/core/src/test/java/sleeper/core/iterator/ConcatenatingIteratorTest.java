@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ConcatenatingIteratorTest {
 
@@ -220,13 +220,10 @@ public class ConcatenatingIteratorTest {
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList((Supplier<CloseableIterator<Record>>) () -> failingIterator));
 
         // Then
-        try {
-            concatenatingIterator.hasNext();
-            fail("Expected an exception");
-        } catch (RuntimeException e) {
-            assertThat(e.getMessage()).isEqualTo("Failed to close iterator");
-            assertThat(e.getCause()).isNotNull();
-        }
+        assertThatThrownBy(concatenatingIterator::hasNext)
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Failed to close iterator")
+                .hasCauseInstanceOf(IOException.class);
     }
 
 
