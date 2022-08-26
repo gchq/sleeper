@@ -43,7 +43,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.fail;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -646,12 +646,15 @@ public class QuerySerDeTest {
         if (createSerDeFromTablePropertiesProvider) {
             // When the QuerySerDe is created from a TablePropertiesProvider,
             // the TablePropertiesProvider will return TableProperties for a table with a null name.
-            Exception exception = assertThrows(JsonParseException.class, () -> querySerDe.fromJson(querySerDe.toJson(query)));
-            assertThat(exception.getMessage()).isEqualTo("tableName field must be provided");
+            String json = querySerDe.toJson(query);
+            assertThatThrownBy(() -> querySerDe.fromJson(json))
+                    .isInstanceOf(JsonParseException.class)
+                    .hasMessage("tableName field must be provided");
         } else {
             // When the QuerySerDe is created from a Map, a NullPointerException is thrown
             // when retrieving a table with a null name.
-            assertThrows(NullPointerException.class, () -> querySerDe.fromJson(querySerDe.toJson(query)));
+            assertThatThrownBy(() -> querySerDe.toJson(query))
+                    .isInstanceOf(NullPointerException.class);
         }
     }
 
@@ -672,8 +675,9 @@ public class QuerySerDeTest {
                 "}\n";
 
         // When & Then
-        Exception exception = assertThrows(JsonParseException.class, () -> querySerDe.fromJson(queryJson));
-        assertThat(exception.getMessage()).isEqualTo("tableName field must be provided");
+        assertThatThrownBy(() -> querySerDe.fromJson(queryJson))
+                .isInstanceOf(JsonParseException.class)
+                .hasMessage("tableName field must be provided");
     }
 
     private static class TestPropertiesProvider extends TablePropertiesProvider {
