@@ -586,10 +586,8 @@ public class ReinitialiseTableIT {
             }
         }
 
-        assertThat(filesVersion).isNotEmpty();
-        assertThat(partitionsVersion).isNotEmpty();
-        assertThat(filesVersion).contains(versionPrefix + expectedFilesVersion);
-        assertThat(partitionsVersion).contains(versionPrefix + expectedPartitionsVersion);
+        assertThat(filesVersion).isNotEmpty().contains(versionPrefix + expectedFilesVersion);
+        assertThat(partitionsVersion).isNotEmpty().contains(versionPrefix + expectedPartitionsVersion);
     }
 
     private void assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(String tableBucketName) {
