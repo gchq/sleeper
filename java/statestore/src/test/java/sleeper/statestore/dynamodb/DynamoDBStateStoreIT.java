@@ -500,8 +500,8 @@ public class DynamoDBStateStoreIT {
         dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToMoveToReadyForGC, newFileInfo);
 
         // Then
-        assertThat(dynamoDBStateStore.getReadyForGCFiles()).toIterable().hasSize(4);
         assertThat(dynamoDBStateStore.getActiveFiles()).containsExactly(newFileInfo);
+        assertThat(dynamoDBStateStore.getReadyForGCFiles()).toIterable().hasSize(4);
     }
 
     @Test
@@ -540,8 +540,8 @@ public class DynamoDBStateStoreIT {
         dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo);
 
         // Then
-        assertThat(dynamoDBStateStore.getReadyForGCFiles()).toIterable().hasSize(4);
         assertThat(dynamoDBStateStore.getActiveFiles()).containsExactlyInAnyOrder(newLeftFileInfo, newRightFileInfo);
+        assertThat(dynamoDBStateStore.getReadyForGCFiles()).toIterable().hasSize(4);
     }
 
     @Test(expected = StateStoreException.class)
