@@ -55,7 +55,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class DynamoDBStateStoreIT {
     private static final int DYNAMO_PORT = 8000;
@@ -273,7 +273,7 @@ public class DynamoDBStateStoreIT {
         assertThat(new HashSet<>(fileInfos)).isEqualTo(expected);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testExceptionThrownWhenAddingFileInfoWithMissingFilename() throws StateStoreException {
         // Given
         Schema schema = new Schema();
@@ -288,10 +288,11 @@ public class DynamoDBStateStoreIT {
         fileInfo.setLastStateStoreUpdateTime(1_000_000L);
 
         // When / Then
-        dynamoDBStateStore.addFile(fileInfo);
+        assertThatThrownBy(() -> dynamoDBStateStore.addFile(fileInfo))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testExceptionThrownWhenAddingFileInfoWithMissingStatus() throws StateStoreException {
         // Given
         Schema schema = new Schema();
@@ -306,10 +307,11 @@ public class DynamoDBStateStoreIT {
         fileInfo.setLastStateStoreUpdateTime(1_000_000L);
 
         // When / Then
-        dynamoDBStateStore.addFile(fileInfo);
+        assertThatThrownBy(() -> dynamoDBStateStore.addFile(fileInfo))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testExceptionThrownWhenAddingFileInfoWithMissingPartition() throws StateStoreException {
         // Given
         Schema schema = new Schema();
@@ -324,7 +326,8 @@ public class DynamoDBStateStoreIT {
         fileInfo.setLastStateStoreUpdateTime(1_000_000L);
 
         // When / Then
-        dynamoDBStateStore.addFile(fileInfo);
+        assertThatThrownBy(() -> dynamoDBStateStore.addFile(fileInfo))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -603,7 +606,7 @@ public class DynamoDBStateStoreIT {
         assertThat(activeFiles.get(1)).isEqualTo(newRightFileInfo);
     }
 
-    @Test(expected = StateStoreException.class)
+    @Test
     public void atomicallyUpdateStatusToReadyForGCAndCreateNewActiveFileShouldFailIfFilesNotActive() throws StateStoreException {
         // Given
         Schema schema = new Schema();
@@ -630,7 +633,9 @@ public class DynamoDBStateStoreIT {
         newFileInfo.setPartitionId("7");
 
         // When / Then
-        dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToMoveToReadyForGC, newFileInfo);
+        assertThatThrownBy(() ->
+                dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToMoveToReadyForGC, newFileInfo))
+                .isInstanceOf(StateStoreException.class);
     }
 
     @Test
@@ -670,7 +675,7 @@ public class DynamoDBStateStoreIT {
         assertThat(dynamoDBStateStore.getReadyForGCFiles().hasNext()).isFalse();
     }
 
-    @Test(expected = StateStoreException.class)
+    @Test
     public void shouldNotAtomicallyCreateJobAndUpdateJobStatusOfFilesWhenJobIdAlreadySet() throws StateStoreException {
         // Given
         Schema schema = new Schema();
@@ -693,7 +698,9 @@ public class DynamoDBStateStoreIT {
         String jobId = UUID.randomUUID().toString();
 
         // When / Then
-        dynamoDBStateStore.atomicallyUpdateJobStatusOfFiles(jobId, files);
+        assertThatThrownBy(() ->
+                dynamoDBStateStore.atomicallyUpdateJobStatusOfFiles(jobId, files))
+                .isInstanceOf(StateStoreException.class);
     }
 
     @Test
@@ -941,18 +948,13 @@ public class DynamoDBStateStoreIT {
         assertThat(new HashSet<>(partitions)).isEqualTo(new HashSet<>(Arrays.asList(parentPartition, childPartition1, childPartition2)));
     }
 
-    @Test(expected = StateStoreException.class)
+    @Test
     public void shouldNotUpdatePartitionsIfLeafStatusChanges() throws StateStoreException {
         // Given
         Schema schema = new Schema();
         Field field = new Field("key", new LongType());
         schema.setRowKeyFields(field);
-        StateStore dynamoDBStateStore = null;
-        try {
-            dynamoDBStateStore = getStateStore(schema);
-        } catch (StateStoreException e) {
-            fail(e.getMessage());
-        }
+        StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
@@ -977,21 +979,18 @@ public class DynamoDBStateStoreIT {
 
         // When / Then
         //  - Attempting to split something that has already been split should fail
-        dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
+        assertThatThrownBy(() ->
+                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2))
+                .isInstanceOf(StateStoreException.class);
     }
 
-    @Test(expected = StateStoreException.class)
+    @Test
     public void shouldThrowExceptionWithPartitionSplitRequestWhereParentIsLeaf() throws StateStoreException {
         // Given
         Schema schema = new Schema();
         Field field = new Field("key", new LongType());
         schema.setRowKeyFields(field);
-        StateStore dynamoDBStateStore = null;
-        try {
-            dynamoDBStateStore = getStateStore(schema);
-        } catch (StateStoreException e) {
-            fail(e.getMessage());
-        }
+        StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
         Partition childPartition1 = new Partition();
@@ -1012,21 +1011,18 @@ public class DynamoDBStateStoreIT {
         childPartition2.setParentPartitionId("parent");
 
         // When / Then
-        dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
+        assertThatThrownBy(() ->
+                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2))
+                .isInstanceOf(StateStoreException.class);
     }
 
-    @Test(expected = StateStoreException.class)
+    @Test
     public void shouldThrowExceptionWithPartitionSplitRequestWhereChildrenWrong() throws StateStoreException {
         // Given
         Schema schema = new Schema();
         Field field = new Field("key", new LongType());
         schema.setRowKeyFields(field);
-        StateStore dynamoDBStateStore = null;
-        try {
-            dynamoDBStateStore = getStateStore(schema);
-        } catch (StateStoreException e) {
-            fail(e.getMessage());
-        }
+        StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child3", "child2")); // Wrong children
@@ -1048,21 +1044,18 @@ public class DynamoDBStateStoreIT {
         childPartition2.setParentPartitionId("parent");
 
         // When / Then
-        dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
+        assertThatThrownBy(() ->
+                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2))
+                .isInstanceOf(StateStoreException.class);
     }
 
-    @Test(expected = StateStoreException.class)
+    @Test
     public void shouldThrowExceptionWithPartitionSplitRequestWhereParentWrong() throws StateStoreException {
         // Given
         Schema schema = new Schema();
         Field field = new Field("key", new LongType());
         schema.setRowKeyFields(field);
-        StateStore dynamoDBStateStore = null;
-        try {
-            dynamoDBStateStore = getStateStore(schema);
-        } catch (StateStoreException e) {
-            fail(e.getMessage());
-        }
+        StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
@@ -1084,21 +1077,18 @@ public class DynamoDBStateStoreIT {
         childPartition2.setParentPartitionId("parent");
 
         // When / Then
-        dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
+        assertThatThrownBy(() ->
+                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2))
+                .isInstanceOf(StateStoreException.class);
     }
 
-    @Test(expected = StateStoreException.class)
+    @Test
     public void shouldThrowExceptionWithPartitionSplitRequestWhereNewPartitionIsNotLeaf() throws StateStoreException {
         // Given
         Schema schema = new Schema();
         Field field = new Field("key", new LongType());
         schema.setRowKeyFields(field);
-        StateStore dynamoDBStateStore = null;
-        try {
-            dynamoDBStateStore = getStateStore(schema);
-        } catch (StateStoreException e) {
-            fail(e.getMessage());
-        }
+        StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
@@ -1120,7 +1110,9 @@ public class DynamoDBStateStoreIT {
         childPartition2.setParentPartitionId("parent");
 
         // When / Then
-        dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
+        assertThatThrownBy(() ->
+                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2))
+                .isInstanceOf(StateStoreException.class);
     }
 
     @Test
