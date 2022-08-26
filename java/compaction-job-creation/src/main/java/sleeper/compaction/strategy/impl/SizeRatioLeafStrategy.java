@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfo;
 
@@ -37,7 +36,6 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(SizeRatioLeafStrategy.class);
 
     private int ratio;
-    private int maxConcurrentCompactionJobsPerPartition;
     private int compactionFilesBatchSize;
     private CompactionFactory factory;
 
@@ -45,7 +43,6 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
     public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionFactory factory) {
         ratio = tableProperties.getInt(SIZE_RATIO_COMPACTION_STRATEGY_RATIO);
         compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
-        maxConcurrentCompactionJobsPerPartition = tableProperties.getInt(TableProperty.SIZE_RATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION);
         this.factory = factory;
     }
 
@@ -56,7 +53,7 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
         List<FileInfo> filesThatMeetCriteria = getListOfFilesThatMeetsCriteria(partition, fileInfos);
         if (null == filesThatMeetCriteria || filesThatMeetCriteria.isEmpty()) {
             LOGGER.info("For partition {} there is no list of files that meet the criteria", partition.getId());
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         LOGGER.info("For partition {} there is a list of {} files that meet the criteria", partition.getId(), filesThatMeetCriteria.size());
 
