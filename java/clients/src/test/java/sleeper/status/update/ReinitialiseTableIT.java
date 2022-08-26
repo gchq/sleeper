@@ -331,11 +331,9 @@ public class ReinitialiseTableIT {
         List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
         assertThat(partitionsList).hasSize(5);
         assertThat(dynamoStateStore.getLeafPartitions()).hasSize(3);
-        List<String> s3Keys = partitionsList
-                .stream()
-                .map(partition -> partition.getRegion().getRange("key").getMin().toString())
-                .collect(Collectors.toList());
-        assertThat(s3Keys).contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
+        assertThat(partitionsList)
+                .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
+                .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
 
         assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
     }
@@ -378,11 +376,9 @@ public class ReinitialiseTableIT {
         List<Partition> partitionsList = s3StateStore.getAllPartitions();
         assertThat(partitionsList).hasSize(5);
         assertThat(s3StateStore.getLeafPartitions()).hasSize(3);
-        List<String> s3Keys = partitionsList
-                .stream()
-                .map(partition -> partition.getRegion().getRange("key").getMin().toString())
-                .collect(Collectors.toList());
-        assertThat(s3Keys).contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
+        assertThat(partitionsList)
+                .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
+                .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
 
         assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
     }
@@ -417,11 +413,9 @@ public class ReinitialiseTableIT {
         List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
         assertThat(partitionsList).hasSize(5);
         assertThat(dynamoStateStore.getLeafPartitions()).hasSize(3);
-        List<String> s3Keys = partitionsList
-                .stream()
-                .map(partition -> partition.getRegion().getRange("key").getMin().toString())
-                .collect(Collectors.toList());
-        assertThat(s3Keys).contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
+        assertThat(partitionsList)
+                .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
+                .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
 
         assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
     }
@@ -464,11 +458,9 @@ public class ReinitialiseTableIT {
         List<Partition> partitionsList = s3StateStore.getAllPartitions();
         assertThat(partitionsList).hasSize(5);
         assertThat(s3StateStore.getLeafPartitions()).hasSize(3);
-        List<String> s3Keys = partitionsList
-                .stream()
-                .map(partition -> partition.getRegion().getRange("key").getMin().toString())
-                .collect(Collectors.toList());
-        assertThat(s3Keys).contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
+        assertThat(partitionsList)
+                .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
+                .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
 
         assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
     }
@@ -556,12 +548,7 @@ public class ReinitialiseTableIT {
                 .withConsistentRead(true);
         ScanResult scanResult = dynamoDBClient.scan(scanRequest);
         assertThat(scanResult.getItems()).isEmpty();
-
-        List<FileInfo> activeFiles = dynamoStateStore.getActiveFiles()
-                .stream()
-                .sorted(Comparator.comparing(FileInfo::getFilename))
-                .collect(Collectors.toList());
-        assertThat(activeFiles).isEmpty();
+        assertThat(dynamoStateStore.getActiveFiles()).isEmpty();
     }
 
     private void assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(TableProperties tableProperties,
@@ -596,11 +583,9 @@ public class ReinitialiseTableIT {
         ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(tableBucketName).withMaxKeys(10);
         ListObjectsV2Result result = s3Client.listObjectsV2(req);
         assertThat(result.getKeyCount()).isEqualTo(3);
-        List<String> s3Keys = result.getObjectSummaries()
-                .stream()
-                .map(S3ObjectSummary::getKey)
-                .collect(Collectors.toList());
-        assertThat(s3Keys).contains(FILE_SHOULD_NOT_BE_DELETED_1, FILE_SHOULD_NOT_BE_DELETED_2, FILE_SHOULD_NOT_BE_DELETED_3);
+        assertThat(result.getObjectSummaries())
+                .extracting(S3ObjectSummary::getKey)
+                .contains(FILE_SHOULD_NOT_BE_DELETED_1, FILE_SHOULD_NOT_BE_DELETED_2, FILE_SHOULD_NOT_BE_DELETED_3);
     }
 
     private void assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted(
@@ -608,11 +593,10 @@ public class ReinitialiseTableIT {
         ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(tableBucketName).withMaxKeys(10);
         ListObjectsV2Result result = s3Client.listObjectsV2(req);
         assertThat(result.getKeyCount()).isEqualTo(4);
-        List<String> s3Keys = result.getObjectSummaries()
-                .stream()
-                .map(S3ObjectSummary::getKey)
-                .collect(Collectors.toList());
-        assertThat(s3Keys).contains(FILE_SHOULD_NOT_BE_DELETED_1, FILE_SHOULD_NOT_BE_DELETED_2, FILE_SHOULD_NOT_BE_DELETED_3, S3_STATE_STORE_PARTITIONS_FILENAME)
+        assertThat(result.getObjectSummaries())
+                .extracting(S3ObjectSummary::getKey)
+                .contains(FILE_SHOULD_NOT_BE_DELETED_1, FILE_SHOULD_NOT_BE_DELETED_2, FILE_SHOULD_NOT_BE_DELETED_3,
+                        S3_STATE_STORE_PARTITIONS_FILENAME)
                 .doesNotContain(S3_STATE_STORE_FILES_FILENAME);
     }
 
@@ -687,15 +671,10 @@ public class ReinitialiseTableIT {
         assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(tableProperties, "2", "2");
 
         // - Check S3StateStore has correct active files
-        List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
-                .stream()
-                .sorted(Comparator.comparing(FileInfo::getFilename))
-                .collect(Collectors.toList());
-        assertThat(activeFiles).hasSize(2);
+        assertThat(s3StateStore.getActiveFiles()).hasSize(2);
 
         // - Check S3StateStore has correct partitions
-        List<Partition> partitionsList = s3StateStore.getAllPartitions();
-        assertThat(partitionsList).hasSize(3);
+        assertThat(s3StateStore.getAllPartitions()).hasSize(3);
 
         return s3StateStore;
     }
