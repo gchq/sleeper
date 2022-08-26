@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class PartitionTest {
 
@@ -269,7 +270,7 @@ public class PartitionTest {
         assertThat(hashCode3).isNotEqualTo(hashCode1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldThrowIllegalArgumentExceptionIfRegionNotInCanonicalForm() {
         // Given
         Schema schema = new Schema();
@@ -278,10 +279,11 @@ public class PartitionTest {
         Partition partition = new Partition();
         partition.setRowKeyTypes(new IntType());
         partition.setId("1---10");
-        Range range = new Range(field, 1, true, 10, true);
+        Region region = new Region(new Range(field, 1, true, 10, true));
 
         // When / Then
-        partition.setRegion(new Region(range));
+        assertThatThrownBy(() -> partition.setRegion(region))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
