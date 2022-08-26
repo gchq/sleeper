@@ -23,6 +23,7 @@ import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SchemaTest {
 
@@ -53,45 +54,51 @@ public class SchemaTest {
         assertThat(test2).isFalse();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldntAllowMapTypeAsRowKey() {
         // Given
         Schema schema1 = new Schema();
-        schema1.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new MapType(new IntType(), new ByteArrayType())));
+        Field allowField = new Field("column1", new IntType());
+        Field refuseField = new Field("column2", new MapType(new IntType(), new ByteArrayType()));
 
         // When / Then
-        schema1.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new StringType()));
+        assertThatThrownBy(() -> schema1.setRowKeyFields(allowField, refuseField))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldntAllowMapTypeAsSortKey() {
         // Given
         Schema schema1 = new Schema();
         schema1.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new StringType()));
-        schema1.setSortKeyFields(new Field("column3", new MapType(new IntType(), new ByteArrayType())));
+        Field refuseField = new Field("column3", new MapType(new IntType(), new ByteArrayType()));
 
         // When / Then
-        schema1.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new StringType()));
+        assertThatThrownBy(() -> schema1.setSortKeyFields(refuseField))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldntAllowListTypeAsRowKey() {
         // Given
         Schema schema1 = new Schema();
-        schema1.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new ListType(new IntType())));
+        Field allowField = new Field("column1", new IntType());
+        Field refuseField = new Field("column2", new ListType(new IntType()));
 
         // When / Then
-        schema1.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new StringType()));
+        assertThatThrownBy(() -> schema1.setRowKeyFields(allowField, refuseField))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldntAllowListTypeAsSortKey() {
         // Given
         Schema schema1 = new Schema();
         schema1.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new StringType()));
-        schema1.setSortKeyFields(new Field("column3", new ListType(new IntType())));
+        Field refuseField = new Field("column3", new ListType(new IntType()));
 
         // When / Then
-        schema1.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new StringType()));
+        assertThatThrownBy(() -> schema1.setSortKeyFields(refuseField))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }
