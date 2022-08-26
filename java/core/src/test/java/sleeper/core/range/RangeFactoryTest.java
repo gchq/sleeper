@@ -23,6 +23,7 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class RangeFactoryTest {
 
@@ -69,7 +70,7 @@ public class RangeFactoryTest {
         assertThat(range6.isMaxInclusive()).isTrue();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldNotAcceptNullMin() {
         // Given
         Schema schema = new Schema();
@@ -78,6 +79,8 @@ public class RangeFactoryTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When / Then
-        rangeFactory.createRange(field, null, false, "A", true);
+        assertThatThrownBy(() ->
+                rangeFactory.createRange(field, null, false, "A", true))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }
