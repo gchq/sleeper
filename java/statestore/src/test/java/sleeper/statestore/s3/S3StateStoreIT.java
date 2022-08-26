@@ -446,32 +446,16 @@ public class S3StateStoreIT {
 
         // When 1
         Iterator<FileInfo> readyForGCFilesIterator = stateStore.getReadyForGCFiles();
-        List<FileInfo> readyForGCFiles = new ArrayList<>();
-        while (readyForGCFilesIterator.hasNext()) {
-            readyForGCFiles.add(readyForGCFilesIterator.next());
-        }
 
         // Then 1
-        assertThat(readyForGCFiles).hasSize(1);
-        assertThat(readyForGCFiles.get(0)).isEqualTo(fileInfo1);
+        assertThat(readyForGCFilesIterator).toIterable().containsExactly(fileInfo1);
 
         // When 2
         Thread.sleep(9000L);
         readyForGCFilesIterator = stateStore.getReadyForGCFiles();
-        readyForGCFiles.clear();
-        while (readyForGCFilesIterator.hasNext()) {
-            readyForGCFiles.add(readyForGCFilesIterator.next());
-        }
 
         // Then 2
-        assertThat(readyForGCFiles).hasSize(2);
-        if (readyForGCFiles.get(0).getFilename().equals(fileInfo1.getFilename())) {
-            assertThat(readyForGCFiles.get(0)).isEqualTo(fileInfo1);
-            assertThat(readyForGCFiles.get(1)).isEqualTo(fileInfo3);
-        } else {
-            assertThat(readyForGCFiles.get(0)).isEqualTo(fileInfo3);
-            assertThat(readyForGCFiles.get(1)).isEqualTo(fileInfo1);
-        }
+        assertThat(readyForGCFilesIterator).toIterable().containsExactlyInAnyOrder(fileInfo1, fileInfo3);
     }
 
     @Test
@@ -547,11 +531,10 @@ public class S3StateStoreIT {
 
         // When
         stateStore.deleteReadyForGCFile(fileInfo2);
-        Iterator<FileInfo> readyForGC = stateStore.getReadyForGCFiles();
 
         // Then
         assertThat(stateStore.getActiveFiles()).containsExactly(fileInfo1);
-        assertThat(readyForGC.hasNext()).isFalse();
+        assertThat(stateStore.getReadyForGCFiles()).isExhausted();
     }
 
     @Test(expected = StateStoreException.class)
@@ -616,15 +599,10 @@ public class S3StateStoreIT {
 
         // When
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToMoveToReadyForGC, newFileInfo);
-        List<FileInfo> filesReadyForGC = new ArrayList<>();
-        Iterator<FileInfo> filesReadyForGCIterator = stateStore.getReadyForGCFiles();
-        while (filesReadyForGCIterator.hasNext()) {
-            filesReadyForGC.add(filesReadyForGCIterator.next());
-        }
 
         // Then
         assertThat(stateStore.getActiveFiles()).containsExactly(newFileInfo);
-        assertThat(filesReadyForGC).hasSize(4);
+        assertThat(stateStore.getReadyForGCFiles()).toIterable().hasSize(4);
     }
 
     @Test
@@ -668,15 +646,10 @@ public class S3StateStoreIT {
 
         // When
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo);
-        List<FileInfo> filesReadyForGC = new ArrayList<>();
-        Iterator<FileInfo> filesReadyForGCIterator = stateStore.getReadyForGCFiles();
-        while (filesReadyForGCIterator.hasNext()) {
-            filesReadyForGC.add(filesReadyForGCIterator.next());
-        }
 
         // Then
         assertThat(stateStore.getActiveFiles()).containsExactlyInAnyOrder(newLeftFileInfo, newRightFileInfo);
-        assertThat(filesReadyForGC).hasSize(4);
+        assertThat(stateStore.getReadyForGCFiles()).toIterable().hasSize(4);
     }
 
     @Test(expected = StateStoreException.class)
@@ -791,7 +764,7 @@ public class S3StateStoreIT {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId")
                 .containsExactlyInAnyOrderElementsOf(files)
                 .extracting(FileInfo::getJobId).containsOnly(jobId);
-        assertThat(stateStore.getReadyForGCFiles().hasNext()).isFalse();
+        assertThat(stateStore.getReadyForGCFiles()).isExhausted();
     }
 
     @Test(expected = StateStoreException.class)
