@@ -18,16 +18,19 @@ package sleeper.cdk.custom;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.DescribeVpcEndpointsRequest;
 import com.amazonaws.services.ec2.model.DescribeVpcEndpointsResult;
+import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.ec2.model.VpcEndpoint;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -95,10 +98,9 @@ public class VpcCheckLambdaTest {
                 .withRequestType("Create")
                 .withResourceProperties(properties).build(), null);
 
-        DescribeVpcEndpointsRequest request = requestReference.get();
-        assertThat(request.getFilters().get(0).getName()).isEqualTo("vpc-id");
-        assertThat(request.getFilters().get(0).getValues().get(0)).isEqualTo("myVpc");
-        assertThat(request.getFilters().get(1).getName()).isEqualTo("service-name");
-        assertThat(request.getFilters().get(1).getValues().get(0)).isEqualTo("com.amazonaws.my-region-1.s3");
+        assertThat(requestReference.get().getFilters())
+                .extracting(Filter::getName, Filter::getValues).containsExactly(
+                        tuple("vpc-id", Collections.singletonList("myVpc")),
+                        tuple("service-name", Collections.singletonList("com.amazonaws.my-region-1.s3")));
     }
 }
