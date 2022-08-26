@@ -79,8 +79,8 @@ public class PartitionTreeTest {
         List<String> children2 = partitionTree.getChildIds(L1_RIGHT);
 
         // Then
-        assertThat(children1).isEqualTo(Arrays.asList(L1_LEFT, L1_RIGHT));
-        assertThat(children2).isEqualTo(Arrays.asList(L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R));
+        assertThat(children1).containsExactly(L1_LEFT, L1_RIGHT);
+        assertThat(children2).containsExactly(L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R);
     }
 
     @Test
@@ -121,10 +121,10 @@ public class PartitionTreeTest {
         List<String> ancestorsOfL2LOfL1LIds = partitionTree.getAllAncestorIds(L2_LEFT_OF_L1L);
 
         // Then
-        assertThat(ancestorsOfRoot).isEqualTo(Collections.emptyList());
-        assertThat(ancestorsOfRootIds).isEqualTo(Collections.emptyList());
-        assertThat(ancestorsOfL2LOfL1L).isEqualTo(Arrays.asList(l1Left, root));
-        assertThat(ancestorsOfL2LOfL1LIds).isEqualTo(Arrays.asList(l1Left.getId(), root.getId()));
+        assertThat(ancestorsOfRoot).isEmpty();
+        assertThat(ancestorsOfRootIds).isEmpty();
+        assertThat(ancestorsOfL2LOfL1L).containsExactly(l1Left, root);
+        assertThat(ancestorsOfL2LOfL1LIds).containsExactly(l1Left.getId(), root.getId());
     }
 
     @Test
