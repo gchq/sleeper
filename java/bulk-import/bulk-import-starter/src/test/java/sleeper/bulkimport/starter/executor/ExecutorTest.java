@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 
 public class ExecutorTest {
@@ -89,8 +89,9 @@ public class ExecutorTest {
         ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, s3);
 
         // When
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> executorMock.runJob(importJob));
-        assertThat(exception.getMessage()).isEqualTo(getExpectedErrorMessage("The input files must be set to a non-null and non-empty value."));
+        assertThatThrownBy(() -> executorMock.runJob(importJob))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(getExpectedErrorMessage("The input files must be set to a non-null and non-empty value."));
         s3.shutdown();
     }
 
@@ -130,8 +131,9 @@ public class ExecutorTest {
         ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, s3);
 
         // When / Then
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> executorMock.runJob(importJob));
-        assertThat(exception.getMessage()).isEqualTo(getExpectedErrorMessage("Table does not exist."));
+        assertThatThrownBy(() -> executorMock.runJob(importJob))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(getExpectedErrorMessage("Table does not exist."));
         s3.shutdown();
     }
 
@@ -148,8 +150,9 @@ public class ExecutorTest {
         ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, null);
 
         // When / Then
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> executorMock.runJob(importJob));
-        assertThat(exception.getMessage()).isEqualTo(getExpectedErrorMessage("Job IDs are only allowed to be up to 63 characters long."));
+        assertThatThrownBy(() -> executorMock.runJob(importJob))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(getExpectedErrorMessage("Job IDs are only allowed to be up to 63 characters long."));
     }
 
     @Test
@@ -163,8 +166,9 @@ public class ExecutorTest {
         ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, null);
 
         // When / Then
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> executorMock.runJob(importJob));
-        assertThat(exception.getMessage()).isEqualTo(getExpectedErrorMessage("The table name must be set to a non-null value."));
+        assertThatThrownBy(() -> executorMock.runJob(importJob))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(getExpectedErrorMessage("The table name must be set to a non-null value."));
     }
 
     @Test
@@ -179,8 +183,9 @@ public class ExecutorTest {
         ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, null);
 
         // When / Then
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> executorMock.runJob(importJob));
-        assertThat(exception.getMessage()).isEqualTo(getExpectedErrorMessage("Job Ids must only contain lowercase alphanumerics and dashes."));
+        assertThatThrownBy(() -> executorMock.runJob(importJob))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(getExpectedErrorMessage("Job Ids must only contain lowercase alphanumerics and dashes."));
     }
 
     @Test
