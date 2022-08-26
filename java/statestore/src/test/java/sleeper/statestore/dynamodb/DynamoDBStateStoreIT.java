@@ -51,7 +51,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
@@ -634,13 +633,10 @@ public class DynamoDBStateStoreIT {
         dynamoDBStateStore.atomicallyUpdateJobStatusOfFiles(jobId, files);
 
         // Then
-        Set<FileInfo> expectedFiles = files.stream()
-                .map(f -> {
-                    f.setJobId(jobId);
-                    return f;
-                })
-                .collect(Collectors.toSet());
-        assertThat(dynamoDBStateStore.getActiveFiles()).hasSize(4).containsExactlyInAnyOrderElementsOf(expectedFiles);
+        assertThat(dynamoDBStateStore.getActiveFiles())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId")
+                .containsExactlyInAnyOrderElementsOf(files)
+                .extracting(FileInfo::getJobId).containsOnly(jobId);
         assertThat(dynamoDBStateStore.getReadyForGCFiles().hasNext()).isFalse();
     }
 
