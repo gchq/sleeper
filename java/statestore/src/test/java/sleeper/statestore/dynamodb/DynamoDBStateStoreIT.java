@@ -45,7 +45,6 @@ import sleeper.statestore.StateStoreException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -131,16 +130,15 @@ public class DynamoDBStateStoreIT {
         dynamoDBStateStore.addFile(fileInfo);
 
         // Then
-        List<FileInfo> fileInfos = dynamoDBStateStore.getActiveFiles();
-        assertThat(fileInfos).hasSize(1);
-        assertThat(fileInfos.get(0).getRowKeyTypes()).hasSize(1);
-        assertThat(fileInfos.get(0).getRowKeyTypes().get(0)).isEqualTo(new LongType());
-        assertThat(fileInfos.get(0).getFilename()).isEqualTo("abc");
-        assertThat(fileInfos.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
-        assertThat(fileInfos.get(0).getPartitionId()).isEqualTo("1");
-        assertThat(fileInfos.get(0).getMinRowKey()).isEqualTo(Key.create(1L));
-        assertThat(fileInfos.get(0).getMaxRowKey()).isEqualTo(Key.create(10L));
-        assertThat(fileInfos.get(0).getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
+            assertThat(found.getRowKeyTypes()).containsExactly(new LongType());
+            assertThat(found.getFilename()).isEqualTo("abc");
+            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
+            assertThat(found.getPartitionId()).isEqualTo("1");
+            assertThat(found.getMinRowKey()).isEqualTo(Key.create(1L));
+            assertThat(found.getMaxRowKey()).isEqualTo(Key.create(10L));
+            assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        });
     }
 
     @Test
@@ -162,18 +160,17 @@ public class DynamoDBStateStoreIT {
         dynamoDBStateStore.addFile(fileInfo);
 
         // Then
-        List<FileInfo> fileInfos = dynamoDBStateStore.getActiveFiles();
-        assertThat(fileInfos).hasSize(1);
-        assertThat(fileInfos.get(0).getRowKeyTypes()).hasSize(1);
-        assertThat(fileInfos.get(0).getRowKeyTypes().get(0)).isEqualTo(new ByteArrayType());
-        assertThat(fileInfos.get(0).getFilename()).isEqualTo("abc");
-        assertThat(fileInfos.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
-        assertThat(fileInfos.get(0).getPartitionId()).isEqualTo("1");
-        assertThat(fileInfos.get(0).getMinRowKey().size()).isOne();
-        assertThat((byte[]) fileInfos.get(0).getMinRowKey().get(0)).containsExactly(new byte[]{1});
-        assertThat(fileInfos.get(0).getMaxRowKey().size()).isOne();
-        assertThat((byte[]) fileInfos.get(0).getMaxRowKey().get(0)).containsExactly(new byte[]{10});
-        assertThat(fileInfos.get(0).getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
+            assertThat(found.getRowKeyTypes()).containsExactly(new ByteArrayType());
+            assertThat(found.getFilename()).isEqualTo("abc");
+            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
+            assertThat(found.getPartitionId()).isEqualTo("1");
+            assertThat(found.getMinRowKey().size()).isOne();
+            assertThat((byte[]) found.getMinRowKey().get(0)).containsExactly(new byte[]{1});
+            assertThat(found.getMaxRowKey().size()).isOne();
+            assertThat((byte[]) found.getMaxRowKey().get(0)).containsExactly(new byte[]{10});
+            assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        });
     }
 
     @Test
@@ -195,21 +192,19 @@ public class DynamoDBStateStoreIT {
         dynamoDBStateStore.addFile(fileInfo);
 
         // Then
-        List<FileInfo> fileInfos = dynamoDBStateStore.getActiveFiles();
-        assertThat(fileInfos).hasSize(1);
-        assertThat(fileInfos.get(0).getRowKeyTypes()).hasSize(2);
-        assertThat(fileInfos.get(0).getRowKeyTypes().get(0)).isEqualTo(new ByteArrayType());
-        assertThat(fileInfos.get(0).getRowKeyTypes().get(1)).isEqualTo(new ByteArrayType());
-        assertThat(fileInfos.get(0).getFilename()).isEqualTo("abc");
-        assertThat(fileInfos.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
-        assertThat(fileInfos.get(0).getPartitionId()).isEqualTo("1");
-        assertThat(fileInfos.get(0).getMinRowKey().size()).isEqualTo(2);
-        assertThat((byte[]) fileInfos.get(0).getMinRowKey().get(0)).containsExactly(new byte[]{1});
-        assertThat((byte[]) fileInfos.get(0).getMinRowKey().get(1)).containsExactly(new byte[]{2});
-        assertThat(fileInfos.get(0).getMaxRowKey().size()).isEqualTo(2);
-        assertThat((byte[]) fileInfos.get(0).getMaxRowKey().get(0)).containsExactly(new byte[]{10});
-        assertThat((byte[]) fileInfos.get(0).getMaxRowKey().get(1)).containsExactly(new byte[]{11});
-        assertThat(fileInfos.get(0).getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
+            assertThat(found.getRowKeyTypes()).containsExactly(new ByteArrayType(), new ByteArrayType());
+            assertThat(found.getFilename()).isEqualTo("abc");
+            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
+            assertThat(found.getPartitionId()).isEqualTo("1");
+            assertThat(found.getMinRowKey().size()).isEqualTo(2);
+            assertThat((byte[]) found.getMinRowKey().get(0)).containsExactly(new byte[]{1});
+            assertThat((byte[]) found.getMinRowKey().get(1)).containsExactly(new byte[]{2});
+            assertThat(found.getMaxRowKey().size()).isEqualTo(2);
+            assertThat((byte[]) found.getMaxRowKey().get(0)).containsExactly(new byte[]{10});
+            assertThat((byte[]) found.getMaxRowKey().get(1)).containsExactly(new byte[]{11});
+            assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        });
     }
 
     @Test
@@ -231,18 +226,15 @@ public class DynamoDBStateStoreIT {
         dynamoDBStateStore.addFile(fileInfo);
 
         // Then
-        List<FileInfo> fileInfos = dynamoDBStateStore.getActiveFiles();
-        assertThat(fileInfos).hasSize(1);
-        assertThat(fileInfo.getFilename()).isEqualTo("abc");
-        assertThat(fileInfos.get(0).getRowKeyTypes()).hasSize(2);
-        assertThat(fileInfos.get(0).getRowKeyTypes().get(0)).isEqualTo(new LongType());
-        assertThat(fileInfos.get(0).getRowKeyTypes().get(1)).isEqualTo(new StringType());
-        assertThat(fileInfos.get(0).getFilename()).isEqualTo("abc");
-        assertThat(fileInfos.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
-        assertThat(fileInfos.get(0).getPartitionId()).isEqualTo("1");
-        assertThat(fileInfos.get(0).getMinRowKey()).isEqualTo(Key.create(Arrays.asList(1L, "Z")));
-        assertThat(fileInfos.get(0).getMaxRowKey()).isEqualTo(Key.create(Arrays.asList(10L, "A")));
-        assertThat(fileInfos.get(0).getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
+            assertThat(found.getRowKeyTypes()).containsExactly(new LongType(), new StringType());
+            assertThat(found.getFilename()).isEqualTo("abc");
+            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
+            assertThat(found.getPartitionId()).isEqualTo("1");
+            assertThat(found.getMinRowKey()).isEqualTo(Key.create(Arrays.asList(1L, "Z")));
+            assertThat(found.getMaxRowKey()).isEqualTo(Key.create(Arrays.asList(10L, "A")));
+            assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        });
     }
 
     @Test
@@ -269,8 +261,7 @@ public class DynamoDBStateStoreIT {
         List<FileInfo> fileInfos = dynamoDBStateStore.getActiveFiles();
 
         // Then
-        assertThat(fileInfos).hasSize(10000);
-        assertThat(new HashSet<>(fileInfos)).isEqualTo(expected);
+        assertThat(fileInfos).hasSize(10000).containsExactlyInAnyOrderElementsOf(expected);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -440,11 +431,7 @@ public class DynamoDBStateStoreIT {
         List<FileInfo> fileInfos = dynamoDBStateStore.getActiveFilesWithNoJobId();
 
         // Then
-        assertThat(fileInfos).hasSize(2);
-        List<FileInfo> expectedFileInfos = new ArrayList<>();
-        expectedFileInfos.add(fileInfo1);
-        expectedFileInfos.add(fileInfo2);
-        assertThat(fileInfos).isEqualTo(expectedFileInfos);
+        assertThat(fileInfos).containsExactly(fileInfo1, fileInfo2);
     }
 
     @Test
@@ -471,8 +458,7 @@ public class DynamoDBStateStoreIT {
         List<FileInfo> fileInfos = dynamoDBStateStore.getActiveFilesWithNoJobId();
 
         // Then
-        assertThat(fileInfos).hasSize(10000);
-        assertThat(new HashSet<>(fileInfos)).isEqualTo(expected);
+        assertThat(fileInfos).hasSize(10000).containsExactlyInAnyOrderElementsOf(expected);
     }
 
     @Test
@@ -502,13 +488,11 @@ public class DynamoDBStateStoreIT {
 
         // When
         dynamoDBStateStore.deleteReadyForGCFile(fileInfo2);
-        List<FileInfo> active = dynamoDBStateStore.getActiveFiles();
         Iterator<FileInfo> readyForGC = dynamoDBStateStore.getReadyForGCFiles();
 
         // Then
-        assertThat(active).hasSize(1);
+        assertThat(dynamoDBStateStore.getActiveFiles()).containsExactly(fileInfo1);
         assertThat(readyForGC.hasNext()).isFalse();
-        assertThat(active.get(0)).isEqualTo(fileInfo1);
     }
 
     @Test
@@ -544,12 +528,10 @@ public class DynamoDBStateStoreIT {
         while (filesReadyForGCIterator.hasNext()) {
             filesReadyForGC.add(filesReadyForGCIterator.next());
         }
-        List<FileInfo> activeFiles = dynamoDBStateStore.getActiveFiles();
 
         // Then
         assertThat(filesReadyForGC).hasSize(4);
-        assertThat(activeFiles).hasSize(1);
-        assertThat(activeFiles.get(0)).isEqualTo(newFileInfo);
+        assertThat(dynamoDBStateStore.getActiveFiles()).containsExactly(newFileInfo);
     }
 
     @Test
@@ -591,16 +573,10 @@ public class DynamoDBStateStoreIT {
         while (filesReadyForGCIterator.hasNext()) {
             filesReadyForGC.add(filesReadyForGCIterator.next());
         }
-        List<FileInfo> activeFiles = dynamoDBStateStore.getActiveFiles()
-                .stream()
-                .sorted(Comparator.comparing(FileInfo::getFilename)) // Put the left file first to make the following tests simpler
-                .collect(Collectors.toList());
 
         // Then
         assertThat(filesReadyForGC).hasSize(4);
-        assertThat(activeFiles).hasSize(2);
-        assertThat(activeFiles.get(0)).isEqualTo(newLeftFileInfo);
-        assertThat(activeFiles.get(1)).isEqualTo(newRightFileInfo);
+        assertThat(dynamoDBStateStore.getActiveFiles()).containsExactlyInAnyOrder(newLeftFileInfo, newRightFileInfo);
     }
 
     @Test(expected = StateStoreException.class)
@@ -658,15 +634,13 @@ public class DynamoDBStateStoreIT {
         dynamoDBStateStore.atomicallyUpdateJobStatusOfFiles(jobId, files);
 
         // Then
-        Set<FileInfo> updatedFiles = new HashSet<>(dynamoDBStateStore.getActiveFiles());
-        assertThat(updatedFiles).hasSize(4);
         Set<FileInfo> expectedFiles = files.stream()
                 .map(f -> {
                     f.setJobId(jobId);
                     return f;
                 })
                 .collect(Collectors.toSet());
-        assertThat(updatedFiles).isEqualTo(expectedFiles);
+        assertThat(dynamoDBStateStore.getActiveFiles()).hasSize(4).containsExactlyInAnyOrderElementsOf(expectedFiles);
         assertThat(dynamoDBStateStore.getReadyForGCFiles().hasNext()).isFalse();
     }
 
@@ -705,11 +679,8 @@ public class DynamoDBStateStoreIT {
                 .construct();
         StateStore stateStore = getStateStore(schema, partitions);
 
-        // When
-        List<Partition> allPartitions = stateStore.getAllPartitions();
-
-        // Then
-        assertThat(new HashSet<>(allPartitions)).isEqualTo(new HashSet<>(partitions));
+        // When / Then
+        assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions);
     }
 
     @Test
@@ -721,11 +692,8 @@ public class DynamoDBStateStoreIT {
                 .construct();
         StateStore stateStore = getStateStore(schema, partitions);
 
-        // When
-        List<Partition> allPartitions = stateStore.getAllPartitions();
-
-        // Then
-        assertThat(new HashSet<>(allPartitions)).isEqualTo(new HashSet<>(partitions));
+        // When / Then
+        assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions);
     }
 
     @Test
@@ -739,11 +707,8 @@ public class DynamoDBStateStoreIT {
                 .construct();
         StateStore stateStore = getStateStore(schema, partitions);
 
-        // When
-        List<Partition> allPartitions = stateStore.getAllPartitions();
-
-        // Then
-        assertThat(new HashSet<>(allPartitions)).isEqualTo(new HashSet<>(partitions));
+        // When / Then
+        assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions);
     }
 
     @Test
@@ -757,11 +722,8 @@ public class DynamoDBStateStoreIT {
                 .construct();
         StateStore stateStore = getStateStore(schema, partitions);
 
-        // When
-        List<Partition> allPartitions = stateStore.getAllPartitions();
-
-        // Then
-        assertThat(new HashSet<>(allPartitions)).isEqualTo(new HashSet<>(partitions));
+        // When / Then
+        assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions);
     }
 
     @Test
@@ -855,10 +817,7 @@ public class DynamoDBStateStoreIT {
         });
 
         // Then
-        assertThat(retrievedPartitions.get(0)).isEqualTo(partition0);
-        assertThat(retrievedPartitions.get(1)).isEqualTo(partition1);
-        assertThat(retrievedPartitions.get(2)).isEqualTo(partition2);
-        assertThat(retrievedPartitions.get(3)).isEqualTo(partition3);
+        assertThat(retrievedPartitions).containsExactly(partition0, partition1, partition2, partition3);
     }
 
     @Test
@@ -898,9 +857,7 @@ public class DynamoDBStateStoreIT {
         });
 
         // Then
-        assertThat(retrievedPartitions.get(0)).isEqualTo(partition1);
-        assertThat(retrievedPartitions.get(1)).isEqualTo(partition3);
-        assertThat(retrievedPartitions.get(2)).isEqualTo(partition4);
+        assertThat(retrievedPartitions).containsExactly(partition1, partition3, partition4);
     }
 
     @Test
@@ -937,8 +894,8 @@ public class DynamoDBStateStoreIT {
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
 
         // Then
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertThat(new HashSet<>(partitions)).isEqualTo(new HashSet<>(Arrays.asList(parentPartition, childPartition1, childPartition2)));
+        assertThat(dynamoDBStateStore.getAllPartitions())
+                .containsExactlyInAnyOrder(parentPartition, childPartition1, childPartition2);
     }
 
     @Test(expected = StateStoreException.class)
@@ -1139,7 +1096,7 @@ public class DynamoDBStateStoreIT {
         Region expectedRegion = new Region(new Range(field, Integer.MIN_VALUE, null));
         Partition expectedPartition = new Partition(schema.getRowKeyTypes(),
                 expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
@@ -1158,7 +1115,7 @@ public class DynamoDBStateStoreIT {
         Region expectedRegion = new Region(new Range(field, Long.MIN_VALUE, null));
         Partition expectedPartition = new Partition(Collections.singletonList(new LongType()),
                 expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
@@ -1177,7 +1134,7 @@ public class DynamoDBStateStoreIT {
         Region expectedRegion = new Region(new Range(field, "", null));
         Partition expectedPartition = new Partition(Collections.singletonList(new StringType()),
                 expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
@@ -1196,6 +1153,6 @@ public class DynamoDBStateStoreIT {
         Region expectedRegion = new Region(new Range(field, new byte[]{}, null));
         Partition expectedPartition = new Partition(Collections.singletonList(new ByteArrayType()),
                 expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 }
