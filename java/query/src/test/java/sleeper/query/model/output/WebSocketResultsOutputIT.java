@@ -82,7 +82,7 @@ public class WebSocketResultsOutputIT {
                         .and(matchingJsonPath("$.message", equalTo("records")))
         ));
         assertThat(result.getRecordCount()).isZero();
-        assertThat(result.getError().getMessage()).contains("GoneException");
+        assertThat(result.getError()).hasMessageContaining("GoneException");
     }
 
     @Test
