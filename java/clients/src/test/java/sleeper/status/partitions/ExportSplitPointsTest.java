@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package sleeper.status.partitions;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -23,7 +38,6 @@ import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -78,7 +92,7 @@ public class ExportSplitPointsTest {
         List<Object> exportedSplitPoints = exportSplitPoints.getSplitPoints();
 
         // Then
-        assertThat(exportedSplitPoints).isEqualTo(Arrays.asList(-10, 1000));
+        assertThat(exportedSplitPoints).containsExactly(-10, 1000);
     }
 
     @Test
@@ -100,7 +114,7 @@ public class ExportSplitPointsTest {
         List<Object> exportedSplitPoints = exportSplitPoints.getSplitPoints();
 
         // Then
-        assertThat(exportedSplitPoints).isEqualTo(Arrays.asList(-10L, 1000L));
+        assertThat(exportedSplitPoints).containsExactly(-10L, 1000L);
     }
 
     @Test
@@ -122,7 +136,7 @@ public class ExportSplitPointsTest {
         List<Object> exportedSplitPoints = exportSplitPoints.getSplitPoints();
 
         // Then
-        assertThat(exportedSplitPoints).isEqualTo(Arrays.asList("A", "T"));
+        assertThat(exportedSplitPoints).containsExactly("A", "T");
     }
 
     @Test
@@ -144,8 +158,6 @@ public class ExportSplitPointsTest {
         List<Object> exportedSplitPoints = exportSplitPoints.getSplitPoints();
 
         // Then
-        assertThat(exportedSplitPoints).hasSize(2);
-        assertThat((byte[]) exportedSplitPoints.get(0)).containsExactly(new byte[]{10});
-        assertThat((byte[]) exportedSplitPoints.get(1)).containsExactly(new byte[]{100});
+        assertThat(exportedSplitPoints).containsExactly(new byte[]{10}, new byte[]{100});
     }
 }

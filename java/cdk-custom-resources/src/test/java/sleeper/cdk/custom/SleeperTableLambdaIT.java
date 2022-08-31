@@ -144,8 +144,8 @@ public class SleeperTableLambdaIT {
         // Then
         List<S3ObjectSummary> tables = s3Client.listObjectsV2(instanceProperties.get(CONFIG_BUCKET), "tables")
                 .getObjectSummaries();
-        assertThat(tables).hasSize(1);
-        assertThat(tables.get(0).getKey()).isEqualTo("tables/" + tableProperties.get(TABLE_NAME));
+        assertThat(tables).extracting(S3ObjectSummary::getKey)
+                .containsExactly("tables/" + tableProperties.get(TABLE_NAME));
         s3Client.shutdown();
         dynamoClient.shutdown();
     }

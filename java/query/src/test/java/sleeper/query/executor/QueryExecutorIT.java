@@ -72,7 +72,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -112,9 +111,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnNothingWhenThereAreNoFiles()
-            throws StateStoreException,
-            ObjectFactoryException, QueryException {
+    public void shouldReturnNothingWhenThereAreNoFiles() throws Exception {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
@@ -153,9 +150,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenOneRecordInOneFileInOnePartition()
-            throws StateStoreException, InterruptedException, ExecutionException,
-            IOException, IteratorException, ObjectFactoryException, QueryException {
+    public void shouldReturnCorrectDataWhenOneRecordInOneFileInOnePartition() throws Exception {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
@@ -226,13 +221,11 @@ public class QueryExecutorIT {
         LeafPartitionQuery expectedLeafPartitionQuery = new LeafPartitionQuery
                 .Builder("myTable", "id", leafPartitionQueries.get(0).getSubQueryId(), region, "root", rootPartition.getRegion(), files)
                 .build();
-        assertThat(leafPartitionQueries.get(0)).isEqualTo(expectedLeafPartitionQuery);
+        assertThat(leafPartitionQueries).containsExactly(expectedLeafPartitionQuery);
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenMultipleIdenticalRecordsInOneFileInOnePartition()
-            throws StateStoreException, InterruptedException,
-            IOException, IteratorException, ObjectFactoryException, QueryException {
+    public void shouldReturnCorrectDataWhenMultipleIdenticalRecordsInOneFileInOnePartition() throws Exception {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
@@ -299,7 +292,7 @@ public class QueryExecutorIT {
         LeafPartitionQuery expectedLeafPartitionQuery = new LeafPartitionQuery
                 .Builder("myTable", "id", leafPartitionQueries.get(0).getSubQueryId(), region, "root", rootPartition.getRegion(), files)
                 .build();
-        assertThat(leafPartitionQueries.get(0)).isEqualTo(expectedLeafPartitionQuery);
+        assertThat(leafPartitionQueries).containsExactly(expectedLeafPartitionQuery);
     }
 
     @Test
@@ -374,7 +367,7 @@ public class QueryExecutorIT {
         LeafPartitionQuery expectedLeafPartitionQuery = new LeafPartitionQuery
                 .Builder("myTable", "id", leafPartitionQueries.get(0).getSubQueryId(), region, "root", rootPartition.getRegion(), files)
                 .build();
-        assertThat(leafPartitionQueries.get(0)).isEqualTo(expectedLeafPartitionQuery);
+        assertThat(leafPartitionQueries).containsExactly(expectedLeafPartitionQuery);
     }
 
     @Test
@@ -531,7 +524,7 @@ public class QueryExecutorIT {
         LeafPartitionQuery expectedLeafPartitionQuery = new LeafPartitionQuery
                 .Builder("myTable", "id", leafPartitionQueries.get(0).getSubQueryId(), region, "root", rootPartition.getRegion(), files)
                 .build();
-        assertThat(leafPartitionQueries.get(0)).isEqualTo(expectedLeafPartitionQuery);
+        assertThat(leafPartitionQueries).containsExactly(expectedLeafPartitionQuery);
     }
 
     @Test

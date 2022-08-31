@@ -94,8 +94,6 @@ public class InitialiseStateStoreIT {
         initialiseStateStore.run();
 
         // Then
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, null));
         Partition expectedPartition = new Partition(
                 schema.getRowKeyTypes(),
@@ -106,7 +104,7 @@ public class InitialiseStateStoreIT {
                 Collections.emptyList(),
                 -1
         );
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(dynamoDBStateStore.getAllPartitions()).containsExactly(expectedPartition);
     }
 
     @Test
@@ -165,8 +163,7 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
+        assertThat(leafPartitions).containsExactly(expectedLeafPartition0, expectedLeafPartition1);
     }
 
     @Test
@@ -272,12 +269,9 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(internalPartitions.get(0)).isEqualTo(expectedInternalPartition0);
-        assertThat(internalPartitions.get(1)).isEqualTo(expectedInternalPartition1);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
-        assertThat(leafPartitions.get(2)).isEqualTo(expectedLeafPartition2);
-        assertThat(leafPartitions.get(3)).isEqualTo(expectedLeafPartition3);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
     @Test
@@ -397,12 +391,9 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(internalPartitions.get(0)).isEqualTo(expectedInternalPartition0);
-        assertThat(internalPartitions.get(1)).isEqualTo(expectedInternalPartition1);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
-        assertThat(leafPartitions.get(2)).isEqualTo(expectedLeafPartition2);
-        assertThat(leafPartitions.get(3)).isEqualTo(expectedLeafPartition3);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
     @Test
@@ -432,7 +423,7 @@ public class InitialiseStateStoreIT {
                 Collections.emptyList(),
                 -1
         );
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
@@ -491,8 +482,7 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
+        assertThat(leafPartitions).containsExactly(expectedLeafPartition0, expectedLeafPartition1);
     }
 
     @Test
@@ -598,12 +588,9 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(internalPartitions.get(0)).isEqualTo(expectedInternalPartition0);
-        assertThat(internalPartitions.get(1)).isEqualTo(expectedInternalPartition1);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
-        assertThat(leafPartitions.get(2)).isEqualTo(expectedLeafPartition2);
-        assertThat(leafPartitions.get(3)).isEqualTo(expectedLeafPartition3);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
     @Test
@@ -723,12 +710,9 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(internalPartitions.get(0)).isEqualTo(expectedInternalPartition0);
-        assertThat(internalPartitions.get(1)).isEqualTo(expectedInternalPartition1);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
-        assertThat(leafPartitions.get(2)).isEqualTo(expectedLeafPartition2);
-        assertThat(leafPartitions.get(3)).isEqualTo(expectedLeafPartition3);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
     @Test
@@ -759,7 +743,7 @@ public class InitialiseStateStoreIT {
                 Collections.emptyList(),
                 -1
         );
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
@@ -818,8 +802,7 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
+        assertThat(leafPartitions).containsExactly(expectedLeafPartition0, expectedLeafPartition1);
     }
 
     @Test
@@ -931,12 +914,9 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(internalPartitions.get(0)).isEqualTo(expectedInternalPartition0);
-        assertThat(internalPartitions.get(1)).isEqualTo(expectedInternalPartition1);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
-        assertThat(leafPartitions.get(2)).isEqualTo(expectedLeafPartition2);
-        assertThat(leafPartitions.get(3)).isEqualTo(expectedLeafPartition3);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
     @Test
@@ -1056,12 +1036,9 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(internalPartitions.get(0)).isEqualTo(expectedInternalPartition0);
-        assertThat(internalPartitions.get(1)).isEqualTo(expectedInternalPartition1);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
-        assertThat(leafPartitions.get(2)).isEqualTo(expectedLeafPartition2);
-        assertThat(leafPartitions.get(3)).isEqualTo(expectedLeafPartition3);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
     @Test(expected = IllegalArgumentException.class)
