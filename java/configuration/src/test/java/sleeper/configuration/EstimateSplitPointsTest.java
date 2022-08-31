@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class EstimateSplitPointsTest {
 
@@ -113,7 +114,7 @@ public class EstimateSplitPointsTest {
                 new byte[]{60}, new byte[]{70}, new byte[]{80}, new byte[]{90});
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldRefuseToSplitIntoOnePartition() {
         // Given
         Schema schema = new Schema();
@@ -124,9 +125,9 @@ public class EstimateSplitPointsTest {
             record.put("key", new byte[]{(byte) i});
             records.add(record);
         }
-        EstimateSplitPoints estimateSplitPoints = new EstimateSplitPoints(schema, records, 1);
 
         // When / Then
-        estimateSplitPoints.estimate();
+        assertThatThrownBy(() -> new EstimateSplitPoints(schema, records, 1))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

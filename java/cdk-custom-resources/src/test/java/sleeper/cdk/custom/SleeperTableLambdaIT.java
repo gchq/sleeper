@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -213,14 +214,12 @@ public class SleeperTableLambdaIT {
         SleeperTableLambda sleeperTableLambda = new SleeperTableLambda(s3Client, dynamoClient);
 
         // When / Then
-        try {
-            sleeperTableLambda.handleEvent(CloudFormationCustomResourceEvent.builder()
-                    .withRequestType("RANDOM")
-                    .withResourceProperties(createInput(instanceProperties, tableProperties))
-                    .build(), null);
-        } catch (Exception e) {
-            assertThat(e.getMessage()).isEqualTo("Invalid request type: RANDOM");
-        }
+        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                .withRequestType("RANDOM")
+                .withResourceProperties(createInput(instanceProperties, tableProperties))
+                .build();
+        assertThatThrownBy(() -> sleeperTableLambda.handleEvent(event, null))
+                .hasMessage("Invalid request type: RANDOM");
         s3Client.shutdown();
         dynamoClient.shutdown();
     }

@@ -23,6 +23,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class RangeTest {
 
@@ -53,14 +54,15 @@ public class RangeTest {
         assertThat(hashCode4).isNotEqualTo(hashCode3);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldThrowIllegalArgumentExceptionIfGivenWrongType() {
         // Given
         Field field = new Field("key", new IntType());
         Range range = new Range(field, 10, true, 20, true);
 
         // When / Then
-        range.doesRangeContainObject(10L);
+        assertThatThrownBy(() -> range.doesRangeContainObject(10L))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

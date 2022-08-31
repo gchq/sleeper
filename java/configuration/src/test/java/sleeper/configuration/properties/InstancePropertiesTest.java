@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
@@ -172,12 +172,9 @@ public class InstancePropertiesTest {
         String serialised = instanceProperties.saveAsString();
 
         // Then
-        try {
-            new InstanceProperties().loadFromString(serialised);
-            fail("Exception expected");
-        } catch (Exception e) {
-            assertThat(e.getMessage()).isNotNull();
-        }
+        InstanceProperties properties = new InstanceProperties();
+        assertThatThrownBy(() -> properties.loadFromString(serialised))
+                .hasMessageContaining(ACCOUNT.getPropertyName());
     }
 
     @Test
@@ -198,12 +195,9 @@ public class InstancePropertiesTest {
         String serialised = instanceProperties.saveAsString();
 
         // Then
-        try {
-            new InstanceProperties().loadFromString(serialised);
-            fail("Exception expected");
-        } catch (Exception e) {
-            assertThat(e.getMessage()).isNotNull();
-        }
+        InstanceProperties properties = new InstanceProperties();
+        assertThatThrownBy(() -> properties.loadFromString(serialised))
+                .hasMessageContaining(MAXIMUM_CONNECTIONS_TO_S3.getPropertyName());
     }
 
     private static InstanceProperties getSleeperProperties() {

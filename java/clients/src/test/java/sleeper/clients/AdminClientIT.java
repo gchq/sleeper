@@ -37,7 +37,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
@@ -218,12 +218,12 @@ public class AdminClientIT {
         getS3Client().createBucket(CONFIG_BUCKET_NAME);
         validInstanceProperties.saveToS3(getS3Client());
 
-        // When
-        Exception exception = assertThrows(IllegalArgumentException.class, () ->
-                AdminClient.updateProperty(getS3Client(), INSTANCE_ID, LOG_RETENTION_IN_DAYS.getPropertyName(), "abc", null));
-        // Then
+        // When / Then
         String expectedMessage = "Sleeper property: " + LOG_RETENTION_IN_DAYS.getPropertyName() + " is invalid";
-        assertThat(exception.getMessage()).contains(expectedMessage);
+        assertThatThrownBy(() ->
+                AdminClient.updateProperty(getS3Client(), INSTANCE_ID, LOG_RETENTION_IN_DAYS.getPropertyName(), "abc", null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(expectedMessage);
     }
 
     @Test
@@ -235,13 +235,13 @@ public class AdminClientIT {
         validInstanceProperties.saveToS3(getS3Client());
         validTableProperties.saveToS3(getS3Client());
 
-        // When
-        Exception exception = assertThrows(IllegalArgumentException.class, () ->
-                AdminClient.updateProperty(getS3Client(), INSTANCE_ID, ENCRYPTED.getPropertyName(),
-                        "abc", TABLE_NAME_VALUE));
-        // Then
+        // When / Then
         String expectedMessage = "Sleeper property: " + ENCRYPTED.getPropertyName() + " is invalid";
-        assertThat(exception.getMessage()).contains(expectedMessage);
+        assertThatThrownBy(() ->
+                AdminClient.updateProperty(getS3Client(), INSTANCE_ID, ENCRYPTED.getPropertyName(),
+                        "abc", TABLE_NAME_VALUE))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(expectedMessage);
     }
 
     @Test
@@ -251,13 +251,13 @@ public class AdminClientIT {
         getS3Client().createBucket(CONFIG_BUCKET_NAME);
         validInstanceProperties.saveToS3(getS3Client());
 
-        // When
-        Exception exception = assertThrows(IllegalArgumentException.class, () ->
-                AdminClient.updateProperty(getS3Client(), INSTANCE_ID,
-                        "sleeper.log.ret.day", "3", null));
-        // Then
+        // When / Then
         String expectedMessage = "Sleeper property: sleeper.log.ret.day does not exist and cannot be updated";
-        assertThat(exception.getMessage()).contains(expectedMessage);
+        assertThatThrownBy(() ->
+                AdminClient.updateProperty(getS3Client(), INSTANCE_ID,
+                        "sleeper.log.ret.day", "3", null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(expectedMessage);
     }
 
     @Test
@@ -269,13 +269,13 @@ public class AdminClientIT {
         validInstanceProperties.saveToS3(getS3Client());
         validTableProperties.saveToS3(getS3Client());
 
-        // When
-        Exception exception = assertThrows(IllegalArgumentException.class, () ->
-                AdminClient.updateProperty(getS3Client(), INSTANCE_ID, "sleeper.table.encrypt",
-                        "true", TABLE_NAME_VALUE));
-        // Then
+        // When / Then
         String expectedMessage = "Sleeper property: sleeper.table.encrypt does not exist and cannot be updated";
-        assertThat(exception.getMessage()).contains(expectedMessage);
+        assertThatThrownBy(() ->
+                AdminClient.updateProperty(getS3Client(), INSTANCE_ID, "sleeper.table.encrypt",
+                        "true", TABLE_NAME_VALUE))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(expectedMessage);
     }
 
     @Test
@@ -287,14 +287,14 @@ public class AdminClientIT {
         validInstanceProperties.saveToS3(getS3Client());
         validTableProperties.saveToS3(getS3Client());
 
-        // When
-        Exception exception = assertThrows(IllegalArgumentException.class, () ->
-                AdminClient.updateProperty(getS3Client(), INSTANCE_ID, ENCRYPTED.getPropertyName(),
-                        "true", null));
-        // Then
+        // When / Then
         String expectedMessage = "When a table property is being updated e.g. sleeper.table.* " +
                 "then a Table Name must be provided in the parameters";
-        assertThat(exception.getMessage()).contains(expectedMessage);
+        assertThatThrownBy(() ->
+                AdminClient.updateProperty(getS3Client(), INSTANCE_ID, ENCRYPTED.getPropertyName(),
+                        "true", null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(expectedMessage);
     }
 
     @After

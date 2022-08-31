@@ -48,6 +48,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class InitialiseStateStoreIT {
     private static final int DYNAMO_PORT = 8000;
@@ -1041,7 +1042,7 @@ public class InitialiseStateStoreIT {
                 expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldThrowExceptionIfSplitPointIsOfWrongType() throws StateStoreException {
         // Given
         Schema schema = new Schema();
@@ -1054,10 +1055,11 @@ public class InitialiseStateStoreIT {
         InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, splitPoints);
 
         // When / Then
-        initialiseStateStore.run();
+        assertThatThrownBy(initialiseStateStore::run)
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldThrowExceptionIfDuplicateSplitPoints() throws StateStoreException {
         // Given
         Schema schema = new Schema();
@@ -1071,10 +1073,11 @@ public class InitialiseStateStoreIT {
         InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, splitPoints);
 
         // When / Then
-        initialiseStateStore.run();
+        assertThatThrownBy(initialiseStateStore::run)
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldThrowExceptionIfSplitPointsAreInWrongOrder() throws StateStoreException {
         // Given
         Schema schema = new Schema();
@@ -1088,6 +1091,7 @@ public class InitialiseStateStoreIT {
         InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, splitPoints);
 
         // When / Then
-        initialiseStateStore.run();
+        assertThatThrownBy(initialiseStateStore::run)
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

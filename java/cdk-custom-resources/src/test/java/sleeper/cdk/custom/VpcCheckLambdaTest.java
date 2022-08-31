@@ -30,6 +30,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -47,14 +49,12 @@ public class VpcCheckLambdaTest {
         when(mockEc2.describeVpcEndpoints(Mockito.any())).thenReturn(new DescribeVpcEndpointsResult());
 
         // Then
-        try {
-            vpcCheckLambda.handleEvent(CloudFormationCustomResourceEvent.builder()
-                    .withRequestType("Create")
-                    .withResourceProperties(new HashMap<>()).build(), null);
-            fail("Exception expected");
-        } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage()).isNotNull();
-        }
+        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                .withRequestType("Create")
+                .withResourceProperties(new HashMap<>()).build();
+        assertThatThrownBy(() -> vpcCheckLambda.handleEvent(event, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("endpoint");
     }
 
     @Test
@@ -68,10 +68,11 @@ public class VpcCheckLambdaTest {
                 .withVpcEndpoints(new VpcEndpoint()));
 
         // Then
-        vpcCheckLambda.handleEvent(CloudFormationCustomResourceEvent.builder()
+        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
                 .withRequestType("Create")
-                .withResourceProperties(new HashMap<>()).build(), null);
-        // no exceptions
+                .withResourceProperties(new HashMap<>()).build();
+        assertThatCode(() -> vpcCheckLambda.handleEvent(event, null))
+                .doesNotThrowAnyException();
     }
 
     @Test

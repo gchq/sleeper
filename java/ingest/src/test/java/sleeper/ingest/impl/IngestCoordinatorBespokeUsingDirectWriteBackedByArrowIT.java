@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
     @ClassRule
@@ -128,21 +128,16 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                         new AbstractMap.SimpleEntry<>(0, 2),
                         new AbstractMap.SimpleEntry<>(1, 2))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        boolean errorThrown = false;
-        try {
-            ingestAndVerifyUsingDirectWriteBackedByArrow(
-                    recordListAndSchema,
-                    keyAndDimensionToSplitOnInOrder,
-                    keyToPartitionNoMappingFn,
-                    partitionNoToExpectedNoOfFilesMap,
-                    32 * 1024L,
-                    1024 * 1024L,
-                    64 * 1024 * 1024L);
-        } catch (Exception e) {
-            errorThrown = true;
-            e.printStackTrace();
-        }
-        assertThat(errorThrown).isTrue();
+        assertThatThrownBy(() ->
+                ingestAndVerifyUsingDirectWriteBackedByArrow(
+                        recordListAndSchema,
+                        keyAndDimensionToSplitOnInOrder,
+                        keyToPartitionNoMappingFn,
+                        partitionNoToExpectedNoOfFilesMap,
+                        32 * 1024L,
+                        1024 * 1024L,
+                        64 * 1024 * 1024L))
+                .isInstanceOf(NullPointerException.class);
     }
 
     private void ingestAndVerifyUsingDirectWriteBackedByArrow(

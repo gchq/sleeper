@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -131,14 +131,11 @@ public class StateMachineExecutorTest {
                 .build();
 
         // When / Then
-        try {
-            stateMachineExecutor.runJob(myJob);
-            fail("Exception expected");
-        } catch (IllegalArgumentException e) {
-            String expectedMessage = "The bulk import job failed validation with the following checks failing: \n"
-                    + "The input files must be set to a non-null and non-empty value.";
-            assertThat(e.getMessage()).isEqualTo(expectedMessage);
-        }
+        String expectedMessage = "The bulk import job failed validation with the following checks failing: \n"
+                + "The input files must be set to a non-null and non-empty value.";
+        assertThatThrownBy(() -> stateMachineExecutor.runJob(myJob))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(expectedMessage);
     }
 
     @Test
