@@ -20,6 +20,7 @@ import org.junit.Test;
 
 import java.util.HashMap;
 
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class BulkImportJobSerDeTest {
@@ -49,15 +50,15 @@ public class BulkImportJobSerDeTest {
                 .build();
 
         // When
-        BulkImportJob bulkImportJob = new BulkImportJobSerDe().fromJson(
+        BulkImportJob bulkImportJob = new BulkImportJobSerDe().fromJson("" +
                 "{" +
-                        "   \"id\": \"myJob\"," +
-                        "   \"className\": \"com.example.MyClass\"," +
-                        "   \"files\": [ \"a/b/c.parquet\" ]," +
-                        "   \"sparkConf\": {" +
-                        "       \"key\": \"value\"" +
-                        "   }" +
-                        "}");
+                "   \"id\": \"myJob\"," +
+                "   \"className\": \"com.example.MyClass\"," +
+                "   \"files\": [ \"a/b/c.parquet\" ]," +
+                "   \"sparkConf\": {" +
+                "       \"key\": \"value\"" +
+                "   }" +
+                "}");
 
         // Then
         assertThat(bulkImportJob).isEqualTo(expected);
@@ -91,16 +92,15 @@ public class BulkImportJobSerDeTest {
         String serialised = new BulkImportJobSerDe().toJson(fullJob);
 
         // Then
-        String expected =
+        assertThatJson(serialised).isEqualTo("" +
                 "{" +
-                        "\"className\":\"com.example.MyClass\"," +
-                        "\"files\":[\"a/b/c.parquet\"]," +
-                        "\"id\":\"myJob\"," +
-                        "\"sparkConf\":{" +
-                        "\"key\":\"value\"" +
-                        "}" +
-                        "}";
-        assertThat(serialised).isEqualTo(expected);
+                "    \"className\":\"com.example.MyClass\"," +
+                "    \"files\":[\"a/b/c.parquet\"]," +
+                "    \"id\":\"myJob\"," +
+                "    \"sparkConf\":{" +
+                "        \"key\":\"value\"" +
+                "    }" +
+                "}");
     }
 
     @Test

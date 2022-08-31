@@ -24,7 +24,6 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import com.google.common.collect.Sets;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -103,7 +102,6 @@ public class CreateJobsTest {
         String queue = UUID.randomUUID().toString();
 
         String queueUrl = sqs.createQueue(queue).getQueueUrl();
-        ;
 
         sqs.shutdown();
 
@@ -193,7 +191,7 @@ public class CreateJobsTest {
         Message message = receiveMessageResult.getMessages().get(0);
         CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         CompactionJob compactionJob = compactionJobSerDe.deserialiseFromString(message.getBody());
-        assertThat(Sets.newHashSet(compactionJob.getInputFiles())).isEqualTo(Sets.newHashSet("file1", "file2", "file3", "file4"));
+        assertThat(compactionJob.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
         assertThat(compactionJob.getPartitionId()).isEqualTo(partition.getId());
         assertThat(compactionJob.isSplittingJob()).isFalse();
     }

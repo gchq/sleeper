@@ -25,7 +25,6 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,8 +49,7 @@ public class EstimateSplitPointsTest {
         List<Object> splitPoints = estimateSplitPoints.estimate();
 
         // Then
-        List<Object> expected = Arrays.asList(10, 20, 30, 40, 50, 60, 70, 80, 90);
-        assertThat(splitPoints).isEqualTo(expected);
+        assertThat(splitPoints).containsExactly(10, 20, 30, 40, 50, 60, 70, 80, 90);
     }
 
     @Test
@@ -71,8 +69,7 @@ public class EstimateSplitPointsTest {
         List<Object> splitPoints = estimateSplitPoints.estimate();
 
         // Then
-        List<Object> expected = Arrays.asList(1000L, 2000L, 3000L, 4000L, 5000L, 6000L, 7000L, 8000L, 9000L);
-        assertThat(splitPoints).isEqualTo(expected);
+        assertThat(splitPoints).containsExactly(1000L, 2000L, 3000L, 4000L, 5000L, 6000L, 7000L, 8000L, 9000L);
     }
 
     @Test
@@ -92,8 +89,7 @@ public class EstimateSplitPointsTest {
         List<Object> splitPoints = estimateSplitPoints.estimate();
 
         // Then
-        List<Object> expected = Arrays.asList("1000", "2000", "3000", "4000", "5000", "6000", "7000", "8000", "9000");
-        assertThat(splitPoints).isEqualTo(expected);
+        assertThat(splitPoints).containsExactly("1000", "2000", "3000", "4000", "5000", "6000", "7000", "8000", "9000");
     }
 
     @Test
@@ -113,13 +109,9 @@ public class EstimateSplitPointsTest {
         List<Object> splitPoints = estimateSplitPoints.estimate();
 
         // Then
-        List<Object> expected = Arrays.asList(new byte[]{(byte) 10},
-                new byte[]{(byte) 20}, new byte[]{(byte) 30}, new byte[]{(byte) 40}, new byte[]{(byte) 50},
-                new byte[]{(byte) 60}, new byte[]{(byte) 70}, new byte[]{(byte) 80}, new byte[]{(byte) 90});
-        assertThat(splitPoints).hasSameSizeAs(expected);
-        for (int i = 0; i < expected.size(); i++) {
-            assertThat((byte[]) splitPoints.get(i)).containsExactly((byte[]) expected.get(i));
-        }
+        assertThat(splitPoints).containsExactly(new byte[]{10},
+                new byte[]{20}, new byte[]{30}, new byte[]{40}, new byte[]{50},
+                new byte[]{60}, new byte[]{70}, new byte[]{80}, new byte[]{90});
     }
 
     @Test
