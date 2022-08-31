@@ -19,7 +19,11 @@ import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import sleeper.configuration.jars.ObjectFactory;
@@ -47,7 +51,7 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
     @ClassRule
@@ -124,21 +128,16 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                         new AbstractMap.SimpleEntry<>(0, 2),
                         new AbstractMap.SimpleEntry<>(1, 2))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        boolean errorThrown = false;
-        try {
-            ingestAndVerifyUsingDirectWriteBackedByArrow(
-                    recordListAndSchema,
-                    keyAndDimensionToSplitOnInOrder,
-                    keyToPartitionNoMappingFn,
-                    partitionNoToExpectedNoOfFilesMap,
-                    32 * 1024L,
-                    1024 * 1024L,
-                    64 * 1024 * 1024L);
-        } catch (Exception e) {
-            errorThrown = true;
-            e.printStackTrace();
-        }
-        assertTrue(errorThrown);
+        assertThatThrownBy(() ->
+                ingestAndVerifyUsingDirectWriteBackedByArrow(
+                        recordListAndSchema,
+                        keyAndDimensionToSplitOnInOrder,
+                        keyToPartitionNoMappingFn,
+                        partitionNoToExpectedNoOfFilesMap,
+                        32 * 1024L,
+                        1024 * 1024L,
+                        64 * 1024 * 1024L))
+                .isInstanceOf(NullPointerException.class);
     }
 
     private void ingestAndVerifyUsingDirectWriteBackedByArrow(
