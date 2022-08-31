@@ -44,22 +44,17 @@ public class AdditionIteratorTest {
         Iterator<Record> filtered = additionIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
-        assertThat(filtered.hasNext()).isTrue();
         Record expectedRecord1 = new Record();
         expectedRecord1.put("id", "1");
         expectedRecord1.put("count", 6L);
-        assertThat(filtered.next()).isEqualTo(expectedRecord1);
-        assertThat(filtered.hasNext()).isTrue();
         Record expectedRecord2 = new Record();
         expectedRecord2.put("id", "2");
         expectedRecord2.put("count", 10L);
-        assertThat(filtered.next()).isEqualTo(expectedRecord2);
-        assertThat(filtered.hasNext()).isTrue();
         Record expectedRecord3 = new Record();
         expectedRecord3.put("id", "3");
         expectedRecord3.put("count", 1100L);
-        assertThat(filtered.next()).isEqualTo(expectedRecord3);
-        assertThat(filtered.hasNext()).isFalse();
+        assertThat(filtered).toIterable().containsExactly(
+                expectedRecord1, expectedRecord2, expectedRecord3);
     }
 
     @Test
@@ -74,22 +69,17 @@ public class AdditionIteratorTest {
         Iterator<Record> filtered = additionIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
-        assertThat(filtered.hasNext()).isTrue();
         Record expectedRecord1 = new Record();
         expectedRecord1.put("id", new byte[]{1});
         expectedRecord1.put("count", 6L);
-        assertThat(filtered.next()).isEqualTo(expectedRecord1);
-        assertThat(filtered.hasNext()).isTrue();
         Record expectedRecord2 = new Record();
         expectedRecord2.put("id", new byte[]{2, 2});
         expectedRecord2.put("count", 10L);
-        assertThat(filtered.next()).isEqualTo(expectedRecord2);
-        assertThat(filtered.hasNext()).isTrue();
         Record expectedRecord3 = new Record();
         expectedRecord3.put("id", new byte[]{3, 1, 1});
         expectedRecord3.put("count", 1100L);
-        assertThat(filtered.next()).isEqualTo(expectedRecord3);
-        assertThat(filtered.hasNext()).isFalse();
+        assertThat(filtered).toIterable().containsExactly(
+                expectedRecord1, expectedRecord2, expectedRecord3);
     }
 
     private static Schema getSchema1() {

@@ -40,11 +40,8 @@ public class SecurityFilteringIteratorTest {
         Iterator<Record> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
-        assertThat(filtered.hasNext()).isTrue();
-        assertThat(filtered.next()).isEqualTo(records.get(0));
-        assertThat(filtered.hasNext()).isTrue();
-        assertThat(filtered.next()).isEqualTo(records.get(2));
-        assertThat(filtered.hasNext()).isFalse();
+        assertThat(filtered).toIterable()
+                .containsExactly(records.get(0), records.get(2));
     }
 
     @Test
@@ -59,9 +56,8 @@ public class SecurityFilteringIteratorTest {
         Iterator<Record> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
-        assertThat(filtered.hasNext()).isTrue();
-        assertThat(filtered.next()).isEqualTo(records.get(2));
-        assertThat(filtered.hasNext()).isFalse();
+        assertThat(filtered).toIterable()
+                .containsExactly(records.get(2));
     }
 
     private static List<Record> getData() {

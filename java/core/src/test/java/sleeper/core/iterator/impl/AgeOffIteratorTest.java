@@ -40,11 +40,8 @@ public class AgeOffIteratorTest {
         Iterator<Record> filtered = ageOffIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
-        assertThat(filtered.hasNext()).isTrue();
-        assertThat(filtered.next()).isEqualTo(records.get(1));
-        assertThat(filtered.hasNext()).isTrue();
-        assertThat(filtered.next()).isEqualTo(records.get(4));
-        assertThat(filtered.hasNext()).isFalse();
+        assertThat(filtered).toIterable()
+                .containsExactly(records.get(1), records.get(4));
     }
 
     private static List<Record> getData() {

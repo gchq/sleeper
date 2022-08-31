@@ -21,7 +21,6 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.AfterClass;
@@ -67,10 +66,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -127,18 +124,20 @@ public class QueryExecutorIT {
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
         Query query = new Query.Builder("myTable", "id", region).build();
-        CloseableIterator<Record> results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 1
-        assertThat(results.hasNext()).isFalse();
+            // Then 1
+            assertThat(results).isExhausted();
+        }
 
         // When 2
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 2
-        assertThat(results.hasNext()).isFalse();
+            // Then 2
+            assertThat(results).isExhausted();
+        }
 
         // When 3
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
@@ -171,45 +170,39 @@ public class QueryExecutorIT {
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
         Query query = new Query.Builder("myTable", "id", region).build();
-        CloseableIterator<Record> results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 1
-        List<Record> resultsAsList = new ArrayList<>();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 1
+            assertThat(results).toIterable()
+                    .containsExactly(getRecords().get(0));
         }
-        results.close();
-        assertThat(resultsAsList).hasSize(1);
-        assertThat(resultsAsList.get(0)).isEqualTo(getRecords().get(0));
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 0L));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 2
-        assertThat(results.hasNext()).isFalse();
+            // Then 2
+            assertThat(results).isExhausted();
+        }
 
         // When 3
         region = new Region(rangeFactory.createRange(field, -10L, true, 1L, true));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 3
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 3
+            assertThat(results).toIterable()
+                    .containsExactly(getRecords().get(0));
         }
-        assertThat(resultsAsList).hasSize(1);
-        assertThat(resultsAsList.get(0)).isEqualTo(getRecords().get(0));
 
         // When 4
         region = new Region(rangeFactory.createRange(field, 10L, true, 100L, true));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
-
-        // Then 4
-        assertThat(results.hasNext()).isFalse();
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
+            // Then 4
+            assertThat(results).isExhausted();
+        }
 
         // When 5
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
@@ -246,40 +239,30 @@ public class QueryExecutorIT {
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
         Query query = new Query.Builder("myTable", "id", region).build();
-        CloseableIterator<Record> results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 1
-        List<Record> resultsAsList = new ArrayList<>();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
-        }
-        results.close();
-        assertThat(resultsAsList).hasSize(10);
-        for (Record record : resultsAsList) {
-            assertThat(record).isEqualTo(getRecords().get(0));
+            // Then 1
+            assertThat(results).toIterable().hasSize(10)
+                    .allSatisfy(record -> assertThat(record).isEqualTo(getRecords().get(0)));
         }
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 0L));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 2
-        assertThat(results.hasNext()).isFalse();
+            // Then 2
+            assertThat(results).isExhausted();
+        }
 
         // When 3
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 3
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
-        }
-        assertThat(resultsAsList).hasSize(10);
-        for (Record record : resultsAsList) {
-            assertThat(record).isEqualTo(getRecords().get(0));
+            // Then 3
+            assertThat(results).toIterable().hasSize(10)
+                    .allSatisfy(record -> assertThat(record).isEqualTo(getRecords().get(0)));
         }
 
         // When 4
@@ -321,40 +304,30 @@ public class QueryExecutorIT {
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
         Query query = new Query.Builder("myTable", "id", region).build();
-        CloseableIterator<Record> results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 1
-        List<Record> resultsAsList = new ArrayList<>();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
-        }
-        results.close();
-        assertThat(resultsAsList).hasSize(10);
-        for (Record record : resultsAsList) {
-            assertThat(record).isEqualTo(getRecords().get(0));
+            // Then 1
+            assertThat(results).toIterable().hasSize(10)
+                    .allSatisfy(record -> assertThat(record).isEqualTo(getRecords().get(0)));
         }
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 0L));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 2
-        assertThat(results.hasNext()).isFalse();
+            // Then 2
+            assertThat(results).isExhausted();
+        }
 
         // When 3
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 3
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
-        }
-        assertThat(resultsAsList).hasSize(10);
-        for (Record record : resultsAsList) {
-            assertThat(record).isEqualTo(getRecords().get(0));
+            // Then 3
+            assertThat(results).toIterable().hasSize(10)
+                    .allSatisfy(record -> assertThat(record).isEqualTo(getRecords().get(0)));
         }
 
         // When 4
@@ -396,123 +369,99 @@ public class QueryExecutorIT {
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
         Query query = new Query.Builder("myTable", "id", region).build();
-        CloseableIterator<Record> results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 1
-        List<Record> resultsAsList = new ArrayList<>();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
-        }
-        results.close();
-        assertThat(resultsAsList).hasSize(10);
-        for (Record record : resultsAsList) {
-            assertThat(record).isEqualTo(getMultipleRecords().get(0));
+            // Then 1
+            assertThat(results).toIterable().hasSize(10)
+                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRecords().get(0)));
         }
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 5L));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 2
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
-        }
-        results.close();
-        assertThat(resultsAsList).hasSize(10);
-        for (Record record : resultsAsList) {
-            assertThat(record).isEqualTo(getMultipleRecords().get(4));
+            // Then 2
+            assertThat(results).toIterable().hasSize(10)
+                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRecords().get(4)));
         }
 
         // When 3
         region = new Region(rangeFactory.createExactRange(field, 0L));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 3
-        assertThat(results.hasNext()).isFalse();
+            // Then 3
+            assertThat(results).isExhausted();
+        }
 
         // When 4
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 4
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 4
+            assertThat(results).toIterable().hasSize(100)
+                    .hasSameElementsAs(getMultipleRecords());
         }
-        assertThat(resultsAsList).hasSize(100);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords()));
 
         // When 5
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 5
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 5
+            assertThat(results).toIterable().hasSize(90)
+                    .hasSameElementsAs(getMultipleRecords().stream()
+                            .filter(r -> ((long) r.get("key")) >= 1L && ((long) r.get("key")) < 10L)
+                            .collect(Collectors.toList()));
         }
-        assertThat(resultsAsList).hasSize(90);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords().stream()
-                .filter(r -> ((long) r.get("key")) >= 1L && ((long) r.get("key")) < 10L).collect(Collectors.toList())));
 
         // When 6
         region = new Region(rangeFactory.createRange(field, 1L, false, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 6
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 6
+            assertThat(results).toIterable().hasSize(80)
+                    .hasSameElementsAs(getMultipleRecords().stream()
+                            .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) < 10L)
+                            .collect(Collectors.toList()));
         }
-        assertThat(resultsAsList).hasSize(80);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords().stream()
-                .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) < 10L).collect(Collectors.toList())));
 
         // When 7
         region = new Region(rangeFactory.createRange(field, 1L, false, 10L, true));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 7
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 7
+            assertThat(results).toIterable().hasSize(90)
+                    .hasSameElementsAs(getMultipleRecords().stream()
+                            .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) <= 10L)
+                            .collect(Collectors.toList()));
         }
-        assertThat(resultsAsList).hasSize(90);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords().stream()
-                .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) <= 10L).collect(Collectors.toList())));
 
         // When 8
         region = new Region(rangeFactory.createRange(field, -100000L, true, 123456789L, true));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 8
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 8
+            assertThat(results).toIterable().hasSize(100)
+                    .hasSameElementsAs(getMultipleRecords());
         }
-        assertThat(resultsAsList).hasSize(100);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords()));
 
         // When 9
         region = new Region(rangeFactory.createRange(field, 5L, true, 123456789L, true));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 9
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 9
+            assertThat(results).toIterable().hasSize(60)
+                    .hasSameElementsAs(getMultipleRecords().stream()
+                            .filter(r -> ((long) r.get("key")) >= 5L)
+                            .collect(Collectors.toList()));
         }
-        assertThat(resultsAsList).hasSize(60);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords().stream().filter(r -> ((long) r.get("key")) >= 5L).collect(Collectors.toList())));
 
         // When 10
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
@@ -565,68 +514,53 @@ public class QueryExecutorIT {
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
         Query query = new Query.Builder("myTable", "id", region).build();
-        CloseableIterator<Record> results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 1
-        List<Record> resultsAsList = new ArrayList<>();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
-        }
-        results.close();
-        assertThat(resultsAsList).hasSize(10);
-        for (Record record : resultsAsList) {
-            assertThat(record).isEqualTo(getMultipleRecords().get(0));
+            // Then 1
+            assertThat(results).toIterable().hasSize(10)
+                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRecords().get(0)));
         }
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 5L));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 2
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
-        }
-        results.close();
-        assertThat(resultsAsList).hasSize(10);
-        for (Record record : resultsAsList) {
-            assertThat(record).isEqualTo(getMultipleRecords().get(4));
+            // Then 2
+            assertThat(results).toIterable().hasSize(10)
+                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRecords().get(4)));
         }
 
         // When 3
         region = new Region(rangeFactory.createExactRange(field, 0L));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 3
-        assertThat(results.hasNext()).isFalse();
+            // Then 3
+            assertThat(results.hasNext()).isFalse();
+        }
 
         // When 4
         region = new Region(rangeFactory.createRange(field, -100000L, true, 123456789L, true));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 4
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 4
+            assertThat(results).toIterable().hasSize(100)
+                    .hasSameElementsAs(getMultipleRecords());
         }
-        assertThat(resultsAsList).hasSize(100);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords()));
 
         // When 5
         region = new Region(rangeFactory.createRange(field, 5L, true, 123456789L, true));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 5
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 5
+            assertThat(results).toIterable().hasSize(60)
+                    .hasSameElementsAs(getMultipleRecords()
+                            .stream().filter(r -> ((long) r.get("key")) >= 5L)
+                            .collect(Collectors.toList()));
         }
-        assertThat(resultsAsList).hasSize(60);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords().stream().filter(r -> ((long) r.get("key")) >= 5L).collect(Collectors.toList())));
 
         // When 6
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
@@ -697,17 +631,11 @@ public class QueryExecutorIT {
         Range range2 = rangeFactory.createExactRange(field2, "1");
         Region region = new Region(Arrays.asList(range1, range2));
         Query query = new Query.Builder("myTable", "id", region).build();
-        CloseableIterator<Record> results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 1
-        List<Record> resultsAsList = new ArrayList<>();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
-        }
-        results.close();
-        assertThat(resultsAsList).hasSize(10);
-        for (Record record : resultsAsList) {
-            assertThat(record).isEqualTo(getMultipleRecordsMultidimRowKey().get(0));
+            // Then 1
+            assertThat(results).toIterable().hasSize(10)
+                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRecordsMultidimRowKey().get(0)));
         }
 
         // When 2
@@ -715,17 +643,11 @@ public class QueryExecutorIT {
         range2 = rangeFactory.createExactRange(field2, "5");
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 2
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
-        }
-        results.close();
-        assertThat(resultsAsList).hasSize(10);
-        for (Record record : resultsAsList) {
-            assertThat(record).isEqualTo(getMultipleRecordsMultidimRowKey().get(4));
+            // Then 2
+            assertThat(results).toIterable().hasSize(10)
+                    .allSatisfy(record -> assertThat(record).isEqualTo(getMultipleRecordsMultidimRowKey().get(4)));
         }
 
         // When 3
@@ -733,49 +655,38 @@ public class QueryExecutorIT {
         range2 = rangeFactory.createExactRange(field2, "notthere");
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 3
-        assertThat(results.hasNext()).isFalse();
+            // Then 3
+            assertThat(results).isExhausted();
+        }
 
         // When 4
         range1 = rangeFactory.createRange(field1, -100000L, true, 123456789L, true);
         range2 = rangeFactory.createRange(field2, "0", true, "99999999999", true);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 4
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 4
+            assertThat(results).toIterable().hasSize(100)
+                    .hasSameElementsAs(getMultipleRecordsMultidimRowKey());
         }
-        results.close();
-        assertThat(resultsAsList).hasSize(100);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecordsMultidimRowKey()));
 
         // When 5
         range1 = rangeFactory.createRange(field1, 2L, true, 5L, true);
         range2 = rangeFactory.createRange(field2, "3", true, "6", true);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 5
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 5
+            assertThat(results).toIterable().hasSize(30)
+                    .hasSameElementsAs(getMultipleRecordsMultidimRowKey().stream()
+                            .filter(r -> ((long) r.get("key1")) >= 2L && ((long) r.get("key1")) <= 5L)
+                            .filter(r -> ((String) r.get("key2")).compareTo("3") >= 0 && ((String) r.get("key2")).compareTo("6") <= 0)
+                            .collect(Collectors.toList()));
         }
-        results.close();
-        assertThat(resultsAsList).hasSize(30);
-        Set<Record> expectedResults = new HashSet<>(
-                getMultipleRecordsMultidimRowKey().stream()
-                        .filter(r -> ((long) r.get("key1")) >= 2L && ((long) r.get("key1")) <= 5L)
-                        .filter(r -> ((String) r.get("key2")).compareTo("3") >= 0 && ((String) r.get("key2")).compareTo("6") <= 0)
-                        .collect(Collectors.toList())
-        );
-
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(expectedResults);
 
         // When 6
         range1 = rangeFactory.createRange(field1, 2L, true, 500L, true);
@@ -926,158 +837,129 @@ public class QueryExecutorIT {
         Region region = new Region(Arrays.asList(range1, range2));
 
         Query query = new Query.Builder("myTable", "id", region).build();
-        CloseableIterator<Record> results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 1
-        List<Record> resultsAsList = new ArrayList<>();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 1
+            assertThat(results).toIterable().hasSize(12) // 12 because the same data was added 3 times at different levels of the tree
+                    .hasSameElementsAs(records);
         }
-        assertThat(resultsAsList).hasSize(12); // 12 because the same data was added 3 times at different levels of the tree
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(records));
 
         // When 2 - query for range within partition 1
         range1 = rangeFactory.createRange(field1, "", true, "H", true);
         range2 = rangeFactory.createRange(field2, "", true, "S", true);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 2
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 2
+            assertThat(results).toIterable().hasSize(3)
+                    .hasSameElementsAs(Collections.singletonList(record1));
         }
-        assertThat(resultsAsList).hasSize(3);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(Collections.singletonList(record1)));
 
         // When 3 - query for range within partition 1
         range1 = rangeFactory.createRange(field1, "", true, "H", false);
         range2 = rangeFactory.createRange(field2, "", true, "S", false);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 3
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 3
+            assertThat(results).toIterable().hasSize(3)
+                    .hasSameElementsAs(Collections.singletonList(record1));
         }
-        assertThat(resultsAsList).hasSize(3);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(Collections.singletonList(record1)));
 
         // When 4 - query for range within partition 1
         range1 = rangeFactory.createRange(field1, "", false, "H", true);
         range2 = rangeFactory.createRange(field2, "", false, "S", true);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 4
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 4
+            assertThat(results).toIterable().hasSize(3)
+                    .hasSameElementsAs(Collections.singletonList(record1));
         }
-        assertThat(resultsAsList).hasSize(3);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(Collections.singletonList(record1)));
 
         // When 5 - query for range within partition 1
         range1 = rangeFactory.createRange(field1, "", false, "H", false);
         range2 = rangeFactory.createRange(field2, "", false, "S", false);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 5
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 5
+            assertThat(results).toIterable().hasSize(3)
+                    .hasSameElementsAs(Collections.singletonList(record1));
         }
-        assertThat(resultsAsList).hasSize(3);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(Collections.singletonList(record1)));
 
         // When 6 - query for range within partitions 1 and 2
         range1 = rangeFactory.createRange(field1, "", true, "Z", true);
         range2 = rangeFactory.createRange(field2, "", true, "S", true);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 6
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 6
+            assertThat(results).toIterable().hasSize(6)
+                    .hasSameElementsAs(Arrays.asList(record1, record2));
         }
-        assertThat(resultsAsList).hasSize(6);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(Arrays.asList(record1, record2)));
 
         // When 7 - query for range to the right of the data in partitions 2 and 4
         range1 = rangeFactory.createRange(field1, "T", true, "Z", true);
         range2 = rangeFactory.createRange(field2, "", true, "Z", true);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 7
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 7
+            assertThat(results).isExhausted();
         }
-        assertThat(resultsAsList).isEmpty();
 
         // When 8 - query for a 1-dimensional range
         range1 = rangeFactory.createRange(field1, "J", true, "Z", true);
         region = new Region(range1);
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 8
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 8
+            assertThat(results).toIterable().hasSize(6)
+                    .hasSameElementsAs(Arrays.asList(record2, record4));
         }
-        assertThat(resultsAsList).hasSize(6);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(Arrays.asList(record2, record4)));
 
         // When 9 - query for a range where the first dimension is constant
         range1 = rangeFactory.createExactRange(field1, "C");
         range2 = rangeFactory.createRange(field2, "", true, null, true);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 9
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 9
+            assertThat(results).toIterable().hasSize(3)
+                    .hasSameElementsAs(Collections.singletonList(record3));
         }
-        assertThat(resultsAsList).hasSize(3);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(Sets.newHashSet(record3));
 
         // When 10 - query for a range where the max equals record1 and max is not inclusive
         range1 = rangeFactory.createRange(field1, "", true, "D", false);
         range2 = rangeFactory.createRange(field2, "", true, "T", true);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 10
-        assertThat(results.hasNext()).isFalse();
+            // Then 10
+            assertThat(results).isExhausted();
+        }
 
         // When 11 - query for a range where the max equals record1 and max is inclusive
         range1 = rangeFactory.createRange(field1, "", true, "D", true);
         range2 = rangeFactory.createRange(field2, "", true, "T", true);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 11
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 11
+            assertThat(results).toIterable().hasSize(3)
+                    .hasSameElementsAs(Collections.singletonList(record1));
         }
-        assertThat(resultsAsList).hasSize(3);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(Sets.newHashSet(record1));
 
         // When 12 - query for a range where the boundaries cover all 4 records, min is inclusive, max is not inclusive
         // Record i is in range? 1 - yes; 2 - yes; 3 - yes; 4 - no
@@ -1085,15 +967,12 @@ public class QueryExecutorIT {
         range2 = rangeFactory.createRange(field2, "H", true, "Z", false);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 12
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 12
+            assertThat(results).toIterable().hasSize(9)
+                    .hasSameElementsAs(Arrays.asList(record1, record2, record3));
         }
-        assertThat(resultsAsList).hasSize(9);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(Sets.newHashSet(record1, record2, record3));
 
         // When 13 - query for a range where the boundaries cover all 4 records, min is inclusive, and max is inclusive
         // Record i is in range? 1 - yes; 2 - yes; 3 - yes; 4 - yes
@@ -1101,15 +980,12 @@ public class QueryExecutorIT {
         range2 = rangeFactory.createRange(field2, "H", true, "Z", true);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 13
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 13
+            assertThat(results).toIterable().hasSize(12)
+                    .hasSameElementsAs(Arrays.asList(record1, record2, record3, record4));
         }
-        assertThat(resultsAsList).hasSize(12);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(Sets.newHashSet(record1, record2, record3, record4));
 
         // When 14 - query for a range where the boundaries cover all 4 records, min is not inclusive, and max is not inclusive
         // Record i is in range? 1 - yes; 2 - no; 3 - no; 4 - no
@@ -1117,15 +993,12 @@ public class QueryExecutorIT {
         range2 = rangeFactory.createRange(field2, "H", false, "Z", false);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 14
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 14
+            assertThat(results).toIterable().hasSize(3)
+                    .hasSameElementsAs(Collections.singletonList(record1));
         }
-        assertThat(resultsAsList).hasSize(3);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(Sets.newHashSet(record1));
 
         // When 15 - query for a range where the boundaries cover all 4 records, min is not inclusive, and max is inclusive
         // Record i is in range? 1 - yes; 2 - no; 3 - no; 4 - yes
@@ -1133,15 +1006,12 @@ public class QueryExecutorIT {
         range2 = rangeFactory.createRange(field2, "H", false, "Z", true);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 15
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 15
+            assertThat(results).toIterable().hasSize(6)
+                    .hasSameElementsAs(Arrays.asList(record1, record4));
         }
-        assertThat(resultsAsList).hasSize(6);
-        assertThat(new HashSet<>(resultsAsList)).isEqualTo(Sets.newHashSet(record1, record4));
 
         // When 16
         range1 = rangeFactory.createRange(field1, "C", false, "P", true);
@@ -1209,46 +1079,39 @@ public class QueryExecutorIT {
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
         Query query = new Query.Builder("myTable", "id", region).build();
-        CloseableIterator<Record> results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 1
-        List<Record> resultsAsList = new ArrayList<>();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 1
+            assertThat(results).toIterable()
+                    .containsExactlyElementsOf(getMultipleRecordsForTestingSorting()
+                            .stream()
+                            .filter(r -> ((long) r.get("key")) == 1L)
+                            .sorted(Comparator.comparing(r -> ((Long) r.get("value1"))))
+                            .collect(Collectors.toList()));
         }
-        results.close();
-        List<Record> expectedResults = getMultipleRecordsForTestingSorting()
-                .stream()
-                .filter(r -> ((long) r.get("key")) == 1L)
-                .sorted(Comparator.comparing(r -> ((Long) r.get("value1"))))
-                .collect(Collectors.toList());
-        assertThat(resultsAsList).isEqualTo(expectedResults);
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 5L));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 2
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 2
+            assertThat(results).toIterable()
+                    .containsExactlyElementsOf(getMultipleRecordsForTestingSorting()
+                            .stream()
+                            .filter(r -> ((long) r.get("key")) == 5L)
+                            .sorted(Comparator.comparing(r -> ((Long) r.get("value1"))))
+                            .collect(Collectors.toList()));
         }
-        results.close();
-        expectedResults = getMultipleRecordsForTestingSorting()
-                .stream()
-                .filter(r -> ((long) r.get("key")) == 5L)
-                .sorted(Comparator.comparing(r -> ((Long) r.get("value1"))))
-                .collect(Collectors.toList());
-        assertThat(resultsAsList).isEqualTo(expectedResults);
 
         // When 3
         region = new Region(rangeFactory.createExactRange(field, 0L));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 3
-        assertThat(results.hasNext()).isFalse();
+            // Then 3
+            assertThat(results).isExhausted();
+        }
     }
 
     @Test
@@ -1276,54 +1139,47 @@ public class QueryExecutorIT {
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, "1"));
         Query query = new Query.Builder("myTable", "id", region).build();
-        CloseableIterator<Record> results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 1
-        List<Record> resultsAsList = new ArrayList<>();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 1
+            assertThat(results).toIterable().containsExactly(records.get(0));
         }
-        results.close();
-        assertThat(resultsAsList).hasSize(1);
-        assertThat(resultsAsList.get(0)).isEqualTo(records.get(0));
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, "0"));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 2
-        assertThat(results.hasNext()).isFalse();
+            // Then 2
+            assertThat(results).isExhausted();
+        }
 
         // When 3
         region = new Region(rangeFactory.createExactRange(field, "2"));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 3
-        assertThat(results.hasNext()).isFalse();
+            // Then 3
+            assertThat(results).isExhausted();
+        }
 
         // When 4
         region = new Region(rangeFactory.createExactRange(field, "3"));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 4
-        assertThat(results.hasNext()).isFalse();
+            // Then 4
+            assertThat(results).isExhausted();
+        }
 
         // When 5
         region = new Region(rangeFactory.createExactRange(field, "4"));
         query = new Query.Builder("myTable", "id", region).build();
-        results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then 5
-        resultsAsList.clear();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
+            // Then 5
+            assertThat(results).toIterable().containsExactly(records.get(3));
         }
-        results.close();
-        assertThat(resultsAsList).hasSize(1);
-        assertThat(resultsAsList.get(0)).isEqualTo(records.get(3));
     }
 
     @Test
@@ -1352,17 +1208,12 @@ public class QueryExecutorIT {
                 .setQueryTimeIteratorClassName(SecurityFilteringIterator.class.getName())
                 .setQueryTimeIteratorConfig("securityLabel,notsecret")
                 .build();
-        CloseableIterator<Record> results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then
-        List<Record> resultsAsList = new ArrayList<>();
-        while (results.hasNext()) {
-            resultsAsList.add(results.next());
-        }
-        results.close();
-        assertThat(resultsAsList).hasSize(5);
-        for (Record record : resultsAsList) {
-            assertThat(record).isEqualTo(getRecordsForQueryTimeIteratorTest("notsecret").get(0));
+            // Then
+            Record expected = getRecordsForQueryTimeIteratorTest("notsecret").get(0);
+            assertThat(results).toIterable().hasSize(5)
+                    .allSatisfy(result -> assertThat(result).isEqualTo(expected));
         }
     }
 
@@ -1389,13 +1240,12 @@ public class QueryExecutorIT {
                 .setResultsPublisherConfig(new HashMap<>())
                 .setRequestedValueFields(Lists.newArrayList("value2"))
                 .build();
-        CloseableIterator<Record> results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then
-        assertThat(results.hasNext()).isTrue();
-        Record result = results.next();
-        assertThat(results.hasNext()).isFalse();
-        assertThat(result.getKeys()).doesNotContain("value1").contains("key", "value2");
+            // Then
+            assertThat(results).toIterable().hasSize(1)
+                    .flatExtracting(Record::getKeys).doesNotContain("value1").contains("key", "value2");
+        }
     }
 
     @Test
@@ -1421,13 +1271,11 @@ public class QueryExecutorIT {
                 .setResultsPublisherConfig(new HashMap<>())
                 .setRequestedValueFields(Lists.newArrayList("value"))
                 .build();
-        CloseableIterator<Record> results = queryExecutor.execute(query);
+        try (CloseableIterator<Record> results = queryExecutor.execute(query)) {
 
-        // Then
-        assertThat(results.hasNext()).isTrue();
-        while (results.hasNext()) {
-            Record result = results.next();
-            assertThat(result.getKeys()).contains("key", "value", "securityLabel");
+            // Then
+            assertThat(results).hasNext().toIterable().allSatisfy(result ->
+                    assertThat(result.getKeys()).contains("key", "value", "securityLabel"));
         }
     }
 
