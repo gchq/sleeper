@@ -24,12 +24,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class SecurityFilteringIteratorTest {
-    
+
     @Test
     public void shouldFilter() {
         // Given
@@ -37,18 +35,18 @@ public class SecurityFilteringIteratorTest {
         Iterator<Record> iterator = records.iterator();
         SecurityFilteringIterator securityFilteringIterator = new SecurityFilteringIterator();
         securityFilteringIterator.init("securityLabel,public", new Schema());
-        
+
         // When
         Iterator<Record> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
-        
+
         // Then
-        assertTrue(filtered.hasNext());
-        assertEquals(records.get(0), filtered.next());
-        assertTrue(filtered.hasNext());
-        assertEquals(records.get(2), filtered.next());
-        assertFalse(filtered.hasNext());
+        assertThat(filtered.hasNext()).isTrue();
+        assertThat(filtered.next()).isEqualTo(records.get(0));
+        assertThat(filtered.hasNext()).isTrue();
+        assertThat(filtered.next()).isEqualTo(records.get(2));
+        assertThat(filtered.hasNext()).isFalse();
     }
-    
+
     @Test
     public void shouldAllowRecordsWithEmptyVisibilitiesEvenIfNoAuths() {
         // Given
@@ -56,16 +54,16 @@ public class SecurityFilteringIteratorTest {
         Iterator<Record> iterator = records.iterator();
         SecurityFilteringIterator securityFilteringIterator = new SecurityFilteringIterator();
         securityFilteringIterator.init("securityLabel", new Schema());
-        
+
         // When
         Iterator<Record> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
-        
+
         // Then
-        assertTrue(filtered.hasNext());
-        assertEquals(records.get(2), filtered.next());
-        assertFalse(filtered.hasNext());
+        assertThat(filtered.hasNext()).isTrue();
+        assertThat(filtered.next()).isEqualTo(records.get(2));
+        assertThat(filtered.hasNext()).isFalse();
     }
-    
+
     private static List<Record> getData() {
         List<Record> records = new ArrayList<>();
         Record record1 = new Record();

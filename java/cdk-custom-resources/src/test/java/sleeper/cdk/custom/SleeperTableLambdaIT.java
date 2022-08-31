@@ -15,7 +15,34 @@
  */
 package sleeper.cdk.custom;
 
-import static org.junit.Assert.assertEquals;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.utility.DockerImageName;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.CommonTestConstants;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
+import sleeper.statestore.StateStoreException;
+import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -31,35 +58,6 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_TAB
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
-
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
-
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.CommonTestConstants;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.StringType;
-import sleeper.statestore.StateStoreException;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 public class SleeperTableLambdaIT {
     @ClassRule
@@ -118,12 +116,12 @@ public class SleeperTableLambdaIT {
         sleeperTableLambda.handleEvent(CloudFormationCustomResourceEvent.builder()
                 .withRequestType("Create")
                 .withResourceProperties(createInput(instanceProperties, tableProperties))
-                .build(),null);
+                .build(), null);
 
         // Then
         Integer count = dynamoClient.scan(new ScanRequest().withTableName(tableProperties.get(PARTITION_TABLENAME)))
                 .getCount();
-        assertEquals(new Integer(1), count);
+        assertThat(count).isEqualTo(new Integer(1));
         s3Client.shutdown();
         dynamoClient.shutdown();
     }
@@ -141,13 +139,13 @@ public class SleeperTableLambdaIT {
         sleeperTableLambda.handleEvent(CloudFormationCustomResourceEvent.builder()
                 .withRequestType("Create")
                 .withResourceProperties(createInput(instanceProperties, tableProperties))
-                .build(),null);
+                .build(), null);
 
         // Then
         List<S3ObjectSummary> tables = s3Client.listObjectsV2(instanceProperties.get(CONFIG_BUCKET), "tables")
                 .getObjectSummaries();
-        assertEquals(1, tables.size());
-        assertEquals("tables/" + tableProperties.get(TABLE_NAME), tables.get(0).getKey());
+        assertThat(tables).hasSize(1);
+        assertThat(tables.get(0).getKey()).isEqualTo("tables/" + tableProperties.get(TABLE_NAME));
         s3Client.shutdown();
         dynamoClient.shutdown();
     }
@@ -167,12 +165,12 @@ public class SleeperTableLambdaIT {
         sleeperTableLambda.handleEvent(CloudFormationCustomResourceEvent.builder()
                 .withRequestType("Delete")
                 .withResourceProperties(createInput(instanceProperties, tableProperties))
-                .build(),null);
+                .build(), null);
 
         // Then
         List<S3ObjectSummary> tables = s3Client.listObjectsV2(instanceProperties.get(CONFIG_BUCKET), "tables")
                 .getObjectSummaries();
-        assertEquals(0, tables.size());
+        assertThat(tables).isEmpty();
         s3Client.shutdown();
         dynamoClient.shutdown();
     }
@@ -197,10 +195,10 @@ public class SleeperTableLambdaIT {
         // Then
         List<S3ObjectSummary> tables = s3Client.listObjectsV2(instanceProperties.get(CONFIG_BUCKET), "tables")
                 .getObjectSummaries();
-        assertEquals(1, tables.size());
+        assertThat(tables).hasSize(1);
         TableProperties downloaded = new TableProperties(instanceProperties);
         downloaded.loadFromS3(s3Client, tableProperties.get(TABLE_NAME));
-        assertEquals(new Integer(20), downloaded.getInt(ROW_GROUP_SIZE));
+        assertThat(downloaded.getInt(ROW_GROUP_SIZE)).isEqualTo(new Integer(20));
         s3Client.shutdown();
         dynamoClient.shutdown();
     }
@@ -219,9 +217,9 @@ public class SleeperTableLambdaIT {
             sleeperTableLambda.handleEvent(CloudFormationCustomResourceEvent.builder()
                     .withRequestType("RANDOM")
                     .withResourceProperties(createInput(instanceProperties, tableProperties))
-                    .build(),null);
+                    .build(), null);
         } catch (Exception e) {
-            assertEquals("Invalid request type: RANDOM", e.getMessage());
+            assertThat(e.getMessage()).isEqualTo("Invalid request type: RANDOM");
         }
         s3Client.shutdown();
         dynamoClient.shutdown();

@@ -22,27 +22,9 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.AfterClass;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -53,8 +35,6 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
@@ -80,6 +60,26 @@ import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
 public class QueryExecutorIT {
     protected static final int DYNAMO_PORT = 8000;
@@ -126,30 +126,30 @@ public class QueryExecutorIT {
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
-        
+
         // When 1
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
         Query query = new Query.Builder("myTable", "id", region).build();
         CloseableIterator<Record> results = queryExecutor.execute(query);
 
         // Then 1
-        assertFalse(results.hasNext());
-        
+        assertThat(results.hasNext()).isFalse();
+
         // When 2
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
         results = queryExecutor.execute(query);
 
         // Then 2
-        assertFalse(results.hasNext());
-        
+        assertThat(results.hasNext()).isFalse();
+
         // When 3
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
-        
+
         // Then 3
-        assertTrue(leafPartitionQueries.isEmpty());
+        assertThat(leafPartitionQueries).isEmpty();
     }
 
     @Test
@@ -184,8 +184,8 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertEquals(1, resultsAsList.size());
-        assertEquals(getRecords().get(0), resultsAsList.get(0));
+        assertThat(resultsAsList).hasSize(1);
+        assertThat(resultsAsList.get(0)).isEqualTo(getRecords().get(0));
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 0L));
@@ -193,8 +193,8 @@ public class QueryExecutorIT {
         results = queryExecutor.execute(query);
 
         // Then 2
-        assertFalse(results.hasNext());
-        
+        assertThat(results.hasNext()).isFalse();
+
         // When 3
         region = new Region(rangeFactory.createRange(field, -10L, true, 1L, true));
         query = new Query.Builder("myTable", "id", region).build();
@@ -205,28 +205,28 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(1, resultsAsList.size());
-        assertEquals(getRecords().get(0), resultsAsList.get(0));
-        
+        assertThat(resultsAsList).hasSize(1);
+        assertThat(resultsAsList.get(0)).isEqualTo(getRecords().get(0));
+
         // When 4
         region = new Region(rangeFactory.createRange(field, 10L, true, 100L, true));
         query = new Query.Builder("myTable", "id", region).build();
         results = queryExecutor.execute(query);
 
         // Then 4
-        assertFalse(results.hasNext());
-        
+        assertThat(results.hasNext()).isFalse();
+
         // When 5
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
-        
+
         // Then 5
-        assertEquals(1, leafPartitionQueries.size());
+        assertThat(leafPartitionQueries).hasSize(1);
         LeafPartitionQuery expectedLeafPartitionQuery = new LeafPartitionQuery
                 .Builder("myTable", "id", leafPartitionQueries.get(0).getSubQueryId(), region, "root", rootPartition.getRegion(), files)
                 .build();
-        assertEquals(expectedLeafPartitionQuery, leafPartitionQueries.get(0));
+        assertThat(leafPartitionQueries.get(0)).isEqualTo(expectedLeafPartitionQuery);
     }
 
     @Test
@@ -261,9 +261,9 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertEquals(10, resultsAsList.size());
+        assertThat(resultsAsList).hasSize(10);
         for (Record record : resultsAsList) {
-            assertEquals(getRecords().get(0), record);
+            assertThat(record).isEqualTo(getRecords().get(0));
         }
 
         // When 2
@@ -272,34 +272,34 @@ public class QueryExecutorIT {
         results = queryExecutor.execute(query);
 
         // Then 2
-        assertFalse(results.hasNext());
-        
+        assertThat(results.hasNext()).isFalse();
+
         // When 3
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
         query = new Query.Builder("myTable", "id", region).build();
         results = queryExecutor.execute(query);
-        
+
         // Then 3
         resultsAsList.clear();
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(10, resultsAsList.size());
+        assertThat(resultsAsList).hasSize(10);
         for (Record record : resultsAsList) {
-            assertEquals(getRecords().get(0), record);
+            assertThat(record).isEqualTo(getRecords().get(0));
         }
-        
+
         // When 4
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
-        
+
         // Then 4
-        assertEquals(1, leafPartitionQueries.size());
+        assertThat(leafPartitionQueries).hasSize(1);
         LeafPartitionQuery expectedLeafPartitionQuery = new LeafPartitionQuery
                 .Builder("myTable", "id", leafPartitionQueries.get(0).getSubQueryId(), region, "root", rootPartition.getRegion(), files)
                 .build();
-        assertEquals(expectedLeafPartitionQuery, leafPartitionQueries.get(0));
+        assertThat(leafPartitionQueries.get(0)).isEqualTo(expectedLeafPartitionQuery);
     }
 
     @Test
@@ -336,9 +336,9 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertEquals(10, resultsAsList.size());
+        assertThat(resultsAsList).hasSize(10);
         for (Record record : resultsAsList) {
-            assertEquals(getRecords().get(0), record);
+            assertThat(record).isEqualTo(getRecords().get(0));
         }
 
         // When 2
@@ -347,34 +347,34 @@ public class QueryExecutorIT {
         results = queryExecutor.execute(query);
 
         // Then 2
-        assertFalse(results.hasNext());
-        
+        assertThat(results.hasNext()).isFalse();
+
         // When 3
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
         query = new Query.Builder("myTable", "id", region).build();
         results = queryExecutor.execute(query);
-        
+
         // Then 3
         resultsAsList.clear();
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(10, resultsAsList.size());
+        assertThat(resultsAsList).hasSize(10);
         for (Record record : resultsAsList) {
-            assertEquals(getRecords().get(0), record);
+            assertThat(record).isEqualTo(getRecords().get(0));
         }
-        
+
         // When 4
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
-        
+
         // Then 4
-        assertEquals(1, leafPartitionQueries.size());
+        assertThat(leafPartitionQueries).hasSize(1);
         LeafPartitionQuery expectedLeafPartitionQuery = new LeafPartitionQuery
                 .Builder("myTable", "id", leafPartitionQueries.get(0).getSubQueryId(), region, "root", rootPartition.getRegion(), files)
                 .build();
-        assertEquals(expectedLeafPartitionQuery, leafPartitionQueries.get(0));
+        assertThat(leafPartitionQueries.get(0)).isEqualTo(expectedLeafPartitionQuery);
     }
 
     @Test
@@ -411,9 +411,9 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertEquals(10, resultsAsList.size());
+        assertThat(resultsAsList).hasSize(10);
         for (Record record : resultsAsList) {
-            assertEquals(getMultipleRecords().get(0), record);
+            assertThat(record).isEqualTo(getMultipleRecords().get(0));
         }
 
         // When 2
@@ -427,9 +427,9 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertEquals(10, resultsAsList.size());
+        assertThat(resultsAsList).hasSize(10);
         for (Record record : resultsAsList) {
-            assertEquals(getMultipleRecords().get(4), record);
+            assertThat(record).isEqualTo(getMultipleRecords().get(4));
         }
 
         // When 3
@@ -438,100 +438,100 @@ public class QueryExecutorIT {
         results = queryExecutor.execute(query);
 
         // Then 3
-        assertFalse(results.hasNext());
-        
+        assertThat(results.hasNext()).isFalse();
+
         // When 4
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
         query = new Query.Builder("myTable", "id", region).build();
         results = queryExecutor.execute(query);
-        
+
         // Then 4
         resultsAsList.clear();
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(100, resultsAsList.size());
-        assertEquals(new HashSet<>(getMultipleRecords()), new HashSet<>(resultsAsList));
-        
+        assertThat(resultsAsList).hasSize(100);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords()));
+
         // When 5
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
         results = queryExecutor.execute(query);
-        
+
         // Then 5
         resultsAsList.clear();
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(90, resultsAsList.size());
-        assertEquals(new HashSet<>(getMultipleRecords().stream()
-                .filter(r -> ((long) r.get("key")) >= 1L && ((long) r.get("key")) < 10L).collect(Collectors.toList())), new HashSet<>(resultsAsList));
-        
+        assertThat(resultsAsList).hasSize(90);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords().stream()
+                .filter(r -> ((long) r.get("key")) >= 1L && ((long) r.get("key")) < 10L).collect(Collectors.toList())));
+
         // When 6
         region = new Region(rangeFactory.createRange(field, 1L, false, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
         results = queryExecutor.execute(query);
-        
+
         // Then 6
         resultsAsList.clear();
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(80, resultsAsList.size());
-        assertEquals(new HashSet<>(getMultipleRecords().stream()
-                .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) < 10L).collect(Collectors.toList())), new HashSet<>(resultsAsList));
-        
+        assertThat(resultsAsList).hasSize(80);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords().stream()
+                .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) < 10L).collect(Collectors.toList())));
+
         // When 7
         region = new Region(rangeFactory.createRange(field, 1L, false, 10L, true));
         query = new Query.Builder("myTable", "id", region).build();
         results = queryExecutor.execute(query);
-        
+
         // Then 7
         resultsAsList.clear();
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(90, resultsAsList.size());
-        assertEquals(new HashSet<>(getMultipleRecords().stream()
-                .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) <= 10L).collect(Collectors.toList())), new HashSet<>(resultsAsList));
-        
+        assertThat(resultsAsList).hasSize(90);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords().stream()
+                .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) <= 10L).collect(Collectors.toList())));
+
         // When 8
         region = new Region(rangeFactory.createRange(field, -100000L, true, 123456789L, true));
         query = new Query.Builder("myTable", "id", region).build();
         results = queryExecutor.execute(query);
-        
+
         // Then 8
         resultsAsList.clear();
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(100, resultsAsList.size());
-        assertEquals(new HashSet<>(getMultipleRecords()), new HashSet<>(resultsAsList));
-        
+        assertThat(resultsAsList).hasSize(100);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords()));
+
         // When 9
         region = new Region(rangeFactory.createRange(field, 5L, true, 123456789L, true));
         query = new Query.Builder("myTable", "id", region).build();
         results = queryExecutor.execute(query);
-        
+
         // Then 9
         resultsAsList.clear();
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(60, resultsAsList.size());
-        assertEquals(new HashSet<>(getMultipleRecords().stream().filter(r -> ((long) r.get("key")) >= 5L).collect(Collectors.toList())), new HashSet<>(resultsAsList));
-        
+        assertThat(resultsAsList).hasSize(60);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords().stream().filter(r -> ((long) r.get("key")) >= 5L).collect(Collectors.toList())));
+
         // When 10
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
-        
+
         // Then 10
-        assertEquals(1, leafPartitionQueries.size());
+        assertThat(leafPartitionQueries).hasSize(1);
         LeafPartitionQuery expectedLeafPartitionQuery = new LeafPartitionQuery
                 .Builder("myTable", "id", leafPartitionQueries.get(0).getSubQueryId(), region, "root", rootPartition.getRegion(), files)
                 .build();
-        assertEquals(expectedLeafPartitionQuery, leafPartitionQueries.get(0));
+        assertThat(leafPartitionQueries.get(0)).isEqualTo(expectedLeafPartitionQuery);
     }
 
     @Test
@@ -580,9 +580,9 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertEquals(10, resultsAsList.size());
+        assertThat(resultsAsList).hasSize(10);
         for (Record record : resultsAsList) {
-            assertEquals(getMultipleRecords().get(0), record);
+            assertThat(record).isEqualTo(getMultipleRecords().get(0));
         }
 
         // When 2
@@ -596,9 +596,9 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertEquals(10, resultsAsList.size());
+        assertThat(resultsAsList).hasSize(10);
         for (Record record : resultsAsList) {
-            assertEquals(getMultipleRecords().get(4), record);
+            assertThat(record).isEqualTo(getMultipleRecords().get(4));
         }
 
         // When 3
@@ -607,8 +607,8 @@ public class QueryExecutorIT {
         results = queryExecutor.execute(query);
 
         // Then 3
-        assertFalse(results.hasNext());
-        
+        assertThat(results.hasNext()).isFalse();
+
         // When 4
         region = new Region(rangeFactory.createRange(field, -100000L, true, 123456789L, true));
         query = new Query.Builder("myTable", "id", region).build();
@@ -619,8 +619,8 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(100, resultsAsList.size());
-        assertEquals(new HashSet<>(getMultipleRecords()), new HashSet<>(resultsAsList));
+        assertThat(resultsAsList).hasSize(100);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords()));
 
         // When 5
         region = new Region(rangeFactory.createRange(field, 5L, true, 123456789L, true));
@@ -632,16 +632,16 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(60, resultsAsList.size());
-        assertEquals(new HashSet<>(getMultipleRecords().stream().filter(r -> ((long) r.get("key")) >= 5L).collect(Collectors.toList())), new HashSet<>(resultsAsList));
-        
+        assertThat(resultsAsList).hasSize(60);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecords().stream().filter(r -> ((long) r.get("key")) >= 5L).collect(Collectors.toList())));
+
         // When 6
         region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         query = new Query.Builder("myTable", "id", region).build();
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
-        
+
         // Then 6
-        assertEquals(2, leafPartitionQueries.size());  
+        assertThat(leafPartitionQueries).hasSize(2);
         LeafPartitionQuery leftLeafPartitionQuery;
         LeafPartitionQuery rightLeafPartitionQuery;
         if (leafPartitionQueries.get(0).getLeafPartitionId().equals(leftPartition.getId())) {
@@ -654,11 +654,11 @@ public class QueryExecutorIT {
         LeafPartitionQuery expectedLeftLeafPartitionQuery = new LeafPartitionQuery
                 .Builder("myTable", "id", leftLeafPartitionQuery.getSubQueryId(), region, leftPartition.getId(), leftPartition.getRegion(), filesInLeftPartition)
                 .build();
-        assertEquals(expectedLeftLeafPartitionQuery, leftLeafPartitionQuery);
+        assertThat(leftLeafPartitionQuery).isEqualTo(expectedLeftLeafPartitionQuery);
         LeafPartitionQuery expectedRightLeafPartitionQuery = new LeafPartitionQuery
                 .Builder("myTable", "id", rightLeafPartitionQuery.getSubQueryId(), region, rightPartition.getId(), rightPartition.getRegion(), filesInRightPartition)
                 .build();
-        assertEquals(expectedRightLeafPartitionQuery, rightLeafPartitionQuery);
+        assertThat(rightLeafPartitionQuery).isEqualTo(expectedRightLeafPartitionQuery);
     }
 
     @Test
@@ -712,9 +712,9 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertEquals(10, resultsAsList.size());
+        assertThat(resultsAsList).hasSize(10);
         for (Record record : resultsAsList) {
-            assertEquals(getMultipleRecordsMultidimRowKey().get(0), record);
+            assertThat(record).isEqualTo(getMultipleRecordsMultidimRowKey().get(0));
         }
 
         // When 2
@@ -730,9 +730,9 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertEquals(10, resultsAsList.size());
+        assertThat(resultsAsList).hasSize(10);
         for (Record record : resultsAsList) {
-            assertEquals(getMultipleRecordsMultidimRowKey().get(4), record);
+            assertThat(record).isEqualTo(getMultipleRecordsMultidimRowKey().get(4));
         }
 
         // When 3
@@ -743,56 +743,56 @@ public class QueryExecutorIT {
         results = queryExecutor.execute(query);
 
         // Then 3
-        assertFalse(results.hasNext());
-        
+        assertThat(results.hasNext()).isFalse();
+
         // When 4
         range1 = rangeFactory.createRange(field1, -100000L, true, 123456789L, true);
         range2 = rangeFactory.createRange(field2, "0", true, "99999999999", true);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
         results = queryExecutor.execute(query);
-        
+
         // Then 4
         resultsAsList.clear();
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertEquals(100, resultsAsList.size());
-        assertEquals(new HashSet<>(getMultipleRecordsMultidimRowKey()), new HashSet<>(resultsAsList));
-        
+        assertThat(resultsAsList).hasSize(100);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(getMultipleRecordsMultidimRowKey()));
+
         // When 5
         range1 = rangeFactory.createRange(field1, 2L, true, 5L, true);
         range2 = rangeFactory.createRange(field2, "3", true, "6", true);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
         results = queryExecutor.execute(query);
-        
+
         // Then 5
         resultsAsList.clear();
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertEquals(30, resultsAsList.size());
+        assertThat(resultsAsList).hasSize(30);
         Set<Record> expectedResults = new HashSet<>(
                 getMultipleRecordsMultidimRowKey().stream()
                         .filter(r -> ((long) r.get("key1")) >= 2L && ((long) r.get("key1")) <= 5L)
                         .filter(r -> ((String) r.get("key2")).compareTo("3") >= 0 && ((String) r.get("key2")).compareTo("6") <= 0)
                         .collect(Collectors.toList())
         );
-        
-        assertEquals(expectedResults, new HashSet<>(resultsAsList));
-        
+
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(expectedResults);
+
         // When 6
         range1 = rangeFactory.createRange(field1, 2L, true, 500L, true);
         range2 = rangeFactory.createRange(field2, "3", true, "6", true);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
-        
+
         // Then 6
-        assertEquals(2, leafPartitionQueries.size());  
+        assertThat(leafPartitionQueries).hasSize(2);
         LeafPartitionQuery leftLeafPartitionQuery;
         LeafPartitionQuery rightLeafPartitionQuery;
         if (leafPartitionQueries.get(0).getLeafPartitionId().equals(leftPartition.getId())) {
@@ -805,11 +805,11 @@ public class QueryExecutorIT {
         LeafPartitionQuery expectedLeftLeafPartitionQuery = new LeafPartitionQuery
                 .Builder("myTable", "id", leftLeafPartitionQuery.getSubQueryId(), region, leftPartition.getId(), leftPartition.getRegion(), filesInLeftPartition)
                 .build();
-        assertEquals(expectedLeftLeafPartitionQuery, leftLeafPartitionQuery);
+        assertThat(leftLeafPartitionQuery).isEqualTo(expectedLeftLeafPartitionQuery);
         LeafPartitionQuery expectedRightLeafPartitionQuery = new LeafPartitionQuery
                 .Builder("myTable", "id", rightLeafPartitionQuery.getSubQueryId(), region, rightPartition.getId(), rightPartition.getRegion(), filesInRightPartition)
                 .build();
-        assertEquals(expectedRightLeafPartitionQuery, rightLeafPartitionQuery);
+        assertThat(rightLeafPartitionQuery).isEqualTo(expectedRightLeafPartitionQuery);
     }
 
     @Test
@@ -854,13 +854,13 @@ public class QueryExecutorIT {
         Range leftRange2 = new RangeFactory(schema).createRange(field2, "", null);
         Partition leftPartition = new Partition(rowKeyTypes,
                 new Region(Arrays.asList(leftRange1, leftRange2)),
-               "left", true, "root", new ArrayList<>(), -1);
-        
+                "left", true, "root", new ArrayList<>(), -1);
+
         Range rightRange1 = new RangeFactory(schema).createRange(field1, "I", null);
         Range rightRange2 = new RangeFactory(schema).createRange(field2, "", null);
         Partition rightPartition = new Partition(rowKeyTypes,
                 new Region(Arrays.asList(rightRange1, rightRange2)),
-               "right", true, "root", new ArrayList<>(), -1);
+                "right", true, "root", new ArrayList<>(), -1);
 
         rootPartition.setLeafPartition(false);
         rootPartition.setChildPartitionIds(Arrays.asList("left", "right"));
@@ -873,25 +873,25 @@ public class QueryExecutorIT {
         Range range12 = new RangeFactory(schema).createRange(field2, "", "T");
         Partition partition1 = new Partition(rowKeyTypes,
                 new Region(Arrays.asList(range11, range12)),
-               "P1", true, "left", new ArrayList<>(), -1);
-        
+                "P1", true, "left", new ArrayList<>(), -1);
+
         Range range21 = new RangeFactory(schema).createRange(field1, "I", null);
         Range range22 = new RangeFactory(schema).createRange(field2, "", "T");
         Partition partition2 = new Partition(rowKeyTypes,
-               new Region(Arrays.asList(range21, range22)),
-               "P2", true, "right", new ArrayList<>(), -1);
-        
+                new Region(Arrays.asList(range21, range22)),
+                "P2", true, "right", new ArrayList<>(), -1);
+
         Range range31 = new RangeFactory(schema).createRange(field1, "", "I");
         Range range32 = new RangeFactory(schema).createRange(field2, "T", null);
         Partition partition3 = new Partition(rowKeyTypes,
-               new Region(Arrays.asList(range31, range32)),
-               "P3", true, "left", new ArrayList<>(), -1);
+                new Region(Arrays.asList(range31, range32)),
+                "P3", true, "left", new ArrayList<>(), -1);
 
         Range range41 = new RangeFactory(schema).createRange(field1, "I", null);
         Range range42 = new RangeFactory(schema).createRange(field2, "T", null);
         Partition partition4 = new Partition(rowKeyTypes,
-               new Region(Arrays.asList(range41, range42)), 
-               "P4", true, "right", new ArrayList<>(), -1);
+                new Region(Arrays.asList(range41, range42)),
+                "P4", true, "right", new ArrayList<>(), -1);
 
         // Split the left partition into 1 and 3
         leftPartition.setLeafPartition(false);
@@ -921,7 +921,7 @@ public class QueryExecutorIT {
                 .filter(f -> f.getPartitionId().equals(partition4.getId()) || f.getPartitionId().equals(rightPartition.getId()) || f.getPartitionId().equals(rootPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
-        
+
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
@@ -931,7 +931,7 @@ public class QueryExecutorIT {
         Range range1 = rangeFactory.createRange(field1, "", true, null, false);
         Range range2 = rangeFactory.createRange(field2, "", true, null, false);
         Region region = new Region(Arrays.asList(range1, range2));
-        
+
         Query query = new Query.Builder("myTable", "id", region).build();
         CloseableIterator<Record> results = queryExecutor.execute(query);
 
@@ -940,8 +940,8 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(12, resultsAsList.size()); // 12 because the same data was added 3 times at different levels of the tree
-        assertEquals(new HashSet<>(records), new HashSet<>(resultsAsList));
+        assertThat(resultsAsList).hasSize(12); // 12 because the same data was added 3 times at different levels of the tree
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(records));
 
         // When 2 - query for range within partition 1
         range1 = rangeFactory.createRange(field1, "", true, "H", true);
@@ -955,9 +955,9 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(3, resultsAsList.size());
-        assertEquals(new HashSet<>(Collections.singletonList(record1)), new HashSet<>(resultsAsList));
-        
+        assertThat(resultsAsList).hasSize(3);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(Collections.singletonList(record1)));
+
         // When 3 - query for range within partition 1
         range1 = rangeFactory.createRange(field1, "", true, "H", false);
         range2 = rangeFactory.createRange(field2, "", true, "S", false);
@@ -970,8 +970,8 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(3, resultsAsList.size());
-        assertEquals(new HashSet<>(Collections.singletonList(record1)), new HashSet<>(resultsAsList));
+        assertThat(resultsAsList).hasSize(3);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(Collections.singletonList(record1)));
 
         // When 4 - query for range within partition 1
         range1 = rangeFactory.createRange(field1, "", false, "H", true);
@@ -985,9 +985,9 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(3, resultsAsList.size());
-        assertEquals(new HashSet<>(Collections.singletonList(record1)), new HashSet<>(resultsAsList));
-        
+        assertThat(resultsAsList).hasSize(3);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(Collections.singletonList(record1)));
+
         // When 5 - query for range within partition 1
         range1 = rangeFactory.createRange(field1, "", false, "H", false);
         range2 = rangeFactory.createRange(field2, "", false, "S", false);
@@ -1000,9 +1000,9 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(3, resultsAsList.size());
-        assertEquals(new HashSet<>(Collections.singletonList(record1)), new HashSet<>(resultsAsList));
-        
+        assertThat(resultsAsList).hasSize(3);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(Collections.singletonList(record1)));
+
         // When 6 - query for range within partitions 1 and 2
         range1 = rangeFactory.createRange(field1, "", true, "Z", true);
         range2 = rangeFactory.createRange(field2, "", true, "S", true);
@@ -1015,8 +1015,8 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(6, resultsAsList.size());
-        assertEquals(new HashSet<>(Arrays.asList(record1, record2)), new HashSet<>(resultsAsList));
+        assertThat(resultsAsList).hasSize(6);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(Arrays.asList(record1, record2)));
 
         // When 7 - query for range to the right of the data in partitions 2 and 4
         range1 = rangeFactory.createRange(field1, "T", true, "Z", true);
@@ -1030,7 +1030,7 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(0, resultsAsList.size());
+        assertThat(resultsAsList).isEmpty();
 
         // When 8 - query for a 1-dimensional range
         range1 = rangeFactory.createRange(field1, "J", true, "Z", true);
@@ -1043,8 +1043,8 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(6, resultsAsList.size());
-        assertEquals(new HashSet<>(Arrays.asList(record2, record4)), new HashSet<>(resultsAsList));
+        assertThat(resultsAsList).hasSize(6);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(new HashSet<>(Arrays.asList(record2, record4)));
 
         // When 9 - query for a range where the first dimension is constant
         range1 = rangeFactory.createExactRange(field1, "C");
@@ -1058,9 +1058,9 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(3, resultsAsList.size());
-        assertEquals(Sets.newHashSet(record3), new HashSet<>(resultsAsList));
-        
+        assertThat(resultsAsList).hasSize(3);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(Sets.newHashSet(record3));
+
         // When 10 - query for a range where the max equals record1 and max is not inclusive
         range1 = rangeFactory.createRange(field1, "", true, "D", false);
         range2 = rangeFactory.createRange(field2, "", true, "T", true);
@@ -1069,8 +1069,8 @@ public class QueryExecutorIT {
         results = queryExecutor.execute(query);
 
         // Then 10
-        assertFalse(results.hasNext());
-        
+        assertThat(results.hasNext()).isFalse();
+
         // When 11 - query for a range where the max equals record1 and max is inclusive
         range1 = rangeFactory.createRange(field1, "", true, "D", true);
         range2 = rangeFactory.createRange(field2, "", true, "T", true);
@@ -1083,9 +1083,9 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(3, resultsAsList.size());
-        assertEquals(Sets.newHashSet(record1), new HashSet<>(resultsAsList));
-        
+        assertThat(resultsAsList).hasSize(3);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(Sets.newHashSet(record1));
+
         // When 12 - query for a range where the boundaries cover all 4 records, min is inclusive, max is not inclusive
         // Record i is in range? 1 - yes; 2 - yes; 3 - yes; 4 - no
         range1 = rangeFactory.createRange(field1, "C", true, "P", false);
@@ -1099,9 +1099,9 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(9, resultsAsList.size());
-        assertEquals(Sets.newHashSet(record1, record2, record3), new HashSet<>(resultsAsList));
-        
+        assertThat(resultsAsList).hasSize(9);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(Sets.newHashSet(record1, record2, record3));
+
         // When 13 - query for a range where the boundaries cover all 4 records, min is inclusive, and max is inclusive
         // Record i is in range? 1 - yes; 2 - yes; 3 - yes; 4 - yes
         range1 = rangeFactory.createRange(field1, "C", true, "P", true);
@@ -1115,9 +1115,9 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(12, resultsAsList.size());
-        assertEquals(Sets.newHashSet(record1, record2, record3, record4), new HashSet<>(resultsAsList));
-        
+        assertThat(resultsAsList).hasSize(12);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(Sets.newHashSet(record1, record2, record3, record4));
+
         // When 14 - query for a range where the boundaries cover all 4 records, min is not inclusive, and max is not inclusive
         // Record i is in range? 1 - yes; 2 - no; 3 - no; 4 - no
         range1 = rangeFactory.createRange(field1, "C", false, "P", false);
@@ -1131,9 +1131,9 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(3, resultsAsList.size());
-        assertEquals(Sets.newHashSet(record1), new HashSet<>(resultsAsList));
-        
+        assertThat(resultsAsList).hasSize(3);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(Sets.newHashSet(record1));
+
         // When 15 - query for a range where the boundaries cover all 4 records, min is not inclusive, and max is inclusive
         // Record i is in range? 1 - yes; 2 - no; 3 - no; 4 - yes
         range1 = rangeFactory.createRange(field1, "C", false, "P", true);
@@ -1147,18 +1147,18 @@ public class QueryExecutorIT {
         while (results.hasNext()) {
             resultsAsList.add(results.next());
         }
-        assertEquals(6, resultsAsList.size());
-        assertEquals(Sets.newHashSet(record1, record4), new HashSet<>(resultsAsList));
-        
+        assertThat(resultsAsList).hasSize(6);
+        assertThat(new HashSet<>(resultsAsList)).isEqualTo(Sets.newHashSet(record1, record4));
+
         // When 16
         range1 = rangeFactory.createRange(field1, "C", false, "P", true);
         range2 = rangeFactory.createRange(field2, "H", false, "Z", true);
         region = new Region(Arrays.asList(range1, range2));
         query = new Query.Builder("myTable", "id", region).build();
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
-        
+
         // Then 16
-        assertEquals(4, leafPartitionQueries.size());  
+        assertThat(leafPartitionQueries).hasSize(4);
         LeafPartitionQuery leafPartition1Query = leafPartitionQueries.stream()
                 .filter(p -> p.getLeafPartitionId().equals("P1"))
                 .findFirst()
@@ -1178,19 +1178,19 @@ public class QueryExecutorIT {
         LeafPartitionQuery expectedLeafPartition1Query = new LeafPartitionQuery
                 .Builder("myTable", "id", leafPartition1Query.getSubQueryId(), region, partition1.getId(), partition1.getRegion(), filesInLeafPartition1)
                 .build();
-        assertEquals(expectedLeafPartition1Query, leafPartition1Query);
+        assertThat(leafPartition1Query).isEqualTo(expectedLeafPartition1Query);
         LeafPartitionQuery expectedLeafPartition2Query = new LeafPartitionQuery
                 .Builder("myTable", "id", leafPartition2Query.getSubQueryId(), region, partition2.getId(), partition2.getRegion(), filesInLeafPartition2)
                 .build();
-        assertEquals(expectedLeafPartition2Query, leafPartition2Query);
+        assertThat(leafPartition2Query).isEqualTo(expectedLeafPartition2Query);
         LeafPartitionQuery expectedLeafPartition3Query = new LeafPartitionQuery
                 .Builder("myTable", "id", leafPartition3Query.getSubQueryId(), region, partition3.getId(), partition3.getRegion(), filesInLeafPartition3)
                 .build();
-        assertEquals(expectedLeafPartition3Query, leafPartition3Query);
+        assertThat(leafPartition3Query).isEqualTo(expectedLeafPartition3Query);
         LeafPartitionQuery expectedLeafPartition4Query = new LeafPartitionQuery
                 .Builder("myTable", "id", leafPartition4Query.getSubQueryId(), region, partition4.getId(), partition4.getRegion(), filesInLeafPartition4)
                 .build();
-        assertEquals(expectedLeafPartition4Query, leafPartition4Query);
+        assertThat(leafPartition4Query).isEqualTo(expectedLeafPartition4Query);
     }
 
     @Test
@@ -1229,7 +1229,7 @@ public class QueryExecutorIT {
                 .filter(r -> ((long) r.get("key")) == 1L)
                 .sorted(Comparator.comparing(r -> ((Long) r.get("value1"))))
                 .collect(Collectors.toList());
-        assertEquals(expectedResults, resultsAsList);
+        assertThat(resultsAsList).isEqualTo(expectedResults);
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, 5L));
@@ -1247,7 +1247,7 @@ public class QueryExecutorIT {
                 .filter(r -> ((long) r.get("key")) == 5L)
                 .sorted(Comparator.comparing(r -> ((Long) r.get("value1"))))
                 .collect(Collectors.toList());
-        assertEquals(expectedResults, resultsAsList);
+        assertThat(resultsAsList).isEqualTo(expectedResults);
 
         // When 3
         region = new Region(rangeFactory.createExactRange(field, 0L));
@@ -1255,7 +1255,7 @@ public class QueryExecutorIT {
         results = queryExecutor.execute(query);
 
         // Then 3
-        assertFalse(results.hasNext());
+        assertThat(results.hasNext()).isFalse();
     }
 
     @Test
@@ -1291,8 +1291,8 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertEquals(1, resultsAsList.size());
-        assertEquals(records.get(0), resultsAsList.get(0));
+        assertThat(resultsAsList).hasSize(1);
+        assertThat(resultsAsList.get(0)).isEqualTo(records.get(0));
 
         // When 2
         region = new Region(rangeFactory.createExactRange(field, "0"));
@@ -1300,7 +1300,7 @@ public class QueryExecutorIT {
         results = queryExecutor.execute(query);
 
         // Then 2
-        assertFalse(results.hasNext());
+        assertThat(results.hasNext()).isFalse();
 
         // When 3
         region = new Region(rangeFactory.createExactRange(field, "2"));
@@ -1308,7 +1308,7 @@ public class QueryExecutorIT {
         results = queryExecutor.execute(query);
 
         // Then 3
-        assertFalse(results.hasNext());
+        assertThat(results.hasNext()).isFalse();
 
         // When 4
         region = new Region(rangeFactory.createExactRange(field, "3"));
@@ -1316,7 +1316,7 @@ public class QueryExecutorIT {
         results = queryExecutor.execute(query);
 
         // Then 4
-        assertFalse(results.hasNext());
+        assertThat(results.hasNext()).isFalse();
 
         // When 5
         region = new Region(rangeFactory.createExactRange(field, "4"));
@@ -1329,8 +1329,8 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertEquals(1, resultsAsList.size());
-        assertEquals(records.get(3), resultsAsList.get(0));
+        assertThat(resultsAsList).hasSize(1);
+        assertThat(resultsAsList.get(0)).isEqualTo(records.get(3));
     }
 
     @Test
@@ -1367,9 +1367,9 @@ public class QueryExecutorIT {
             resultsAsList.add(results.next());
         }
         results.close();
-        assertEquals(5, resultsAsList.size());
+        assertThat(resultsAsList).hasSize(5);
         for (Record record : resultsAsList) {
-            assertEquals(getRecordsForQueryTimeIteratorTest("notsecret").get(0), record);
+            assertThat(record).isEqualTo(getRecordsForQueryTimeIteratorTest("notsecret").get(0));
         }
     }
 
@@ -1387,7 +1387,7 @@ public class QueryExecutorIT {
                 new Configuration(), Executors.newFixedThreadPool(1));
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
-        
+
         // When
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
         Query query = new Query.Builder("unused", "abc", region)
@@ -1399,12 +1399,10 @@ public class QueryExecutorIT {
         CloseableIterator<Record> results = queryExecutor.execute(query);
 
         // Then
-        assertTrue(results.hasNext());
+        assertThat(results.hasNext()).isTrue();
         Record result = results.next();
-        assertFalse(results.hasNext());
-        assertFalse(result.getKeys().contains("value1"));
-        assertTrue(result.getKeys().contains("key"));
-        assertTrue(result.getKeys().contains("value2"));
+        assertThat(results.hasNext()).isFalse();
+        assertThat(result.getKeys()).doesNotContain("value1").contains("key", "value2");
     }
 
     @Test
@@ -1433,15 +1431,13 @@ public class QueryExecutorIT {
         CloseableIterator<Record> results = queryExecutor.execute(query);
 
         // Then
-        assertTrue(results.hasNext());
+        assertThat(results.hasNext()).isTrue();
         while (results.hasNext()) {
             Record result = results.next();
-            assertTrue(result.getKeys().contains("key"));
-            assertTrue(result.getKeys().contains("value"));
-            assertTrue(result.getKeys().contains("securityLabel"));
+            assertThat(result.getKeys()).contains("key", "value", "securityLabel");
         }
     }
- 
+
     protected Schema getLongKeySchema() {
         Schema schema = new Schema();
         schema.setRowKeyFields(new Field("key", new LongType()));
@@ -1576,7 +1572,7 @@ public class QueryExecutorIT {
         dynamoStateStore.initialise(new PartitionsFromSplitPoints(schema, splitPoints).construct());
         return dynamoStateStore;
     }
-    
+
     private static Record createRecordMultidimensionalKey(String key1, String key2, long value1, long value2) {
         Record record = new Record();
         record.put("key1", key1);

@@ -27,8 +27,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class KeySerDeTest {
 
@@ -47,19 +46,19 @@ public class KeySerDeTest {
         keys.add("abc");
         keys.add(new byte[]{1, 2, 3});
         Key key = Key.create(keys);
-        
+
         // When
         byte[] serialised = keySerDe.serialise(key);
         Key deserialisedKey = keySerDe.deserialise(serialised);
-        
+
         // Then
-        assertEquals(4, deserialisedKey.size());
-        assertEquals(1, deserialisedKey.get(0));
-        assertEquals(10L, deserialisedKey.get(1));
-        assertEquals("abc", deserialisedKey.get(2));
-        assertArrayEquals(new byte[]{1, 2, 3}, (byte[]) deserialisedKey.get(3));
+        assertThat(deserialisedKey.size()).isEqualTo(4);
+        assertThat(deserialisedKey.get(0)).isEqualTo(1);
+        assertThat(deserialisedKey.get(1)).isEqualTo(10L);
+        assertThat(deserialisedKey.get(2)).isEqualTo("abc");
+        assertThat((byte[]) deserialisedKey.get(3)).containsExactly(new byte[]{1, 2, 3});
     }
-    
+
     @Test
     public void shouldSerialiseAndDeserialiseNullIntKeyCorrectly() throws IOException {
         // Given
@@ -67,16 +66,16 @@ public class KeySerDeTest {
         schema.setRowKeyFields(new Field("rowkey1", new IntType()));
         KeySerDe keySerDe = new KeySerDe(schema);
         Key key = Key.create(null);
-        
+
         // When
         byte[] serialised = keySerDe.serialise(key);
         Key deserialisedKey = keySerDe.deserialise(serialised);
-        
+
         // Then
-        assertEquals(1, deserialisedKey.size());
-        assertEquals(null, deserialisedKey.get(0));
+        assertThat(deserialisedKey.size()).isOne();
+        assertThat(deserialisedKey.get(0)).isNull();
     }
-    
+
     @Test
     public void shouldSerialiseAndDeserialiseNullLongKeyCorrectly() throws IOException {
         // Given
@@ -84,16 +83,16 @@ public class KeySerDeTest {
         schema.setRowKeyFields(new Field("rowkey1", new LongType()));
         KeySerDe keySerDe = new KeySerDe(schema);
         Key key = Key.create(null);
-        
+
         // When
         byte[] serialised = keySerDe.serialise(key);
         Key deserialisedKeys = keySerDe.deserialise(serialised);
-        
+
         // Then
-        assertEquals(1, deserialisedKeys.size());
-        assertEquals(null, deserialisedKeys.get(0));
+        assertThat(deserialisedKeys.size()).isOne();
+        assertThat(deserialisedKeys.get(0)).isNull();
     }
-    
+
     @Test
     public void shouldSerialiseAndDeserialiseNullStringKeyCorrectly() throws IOException {
         // Given
@@ -101,16 +100,16 @@ public class KeySerDeTest {
         schema.setRowKeyFields(new Field("rowkey1", new StringType()));
         KeySerDe keySerDe = new KeySerDe(schema);
         Key key = Key.create(null);
-        
+
         // When
         byte[] serialised = keySerDe.serialise(key);
         Key deserialisedKeys = keySerDe.deserialise(serialised);
-        
+
         // Then
-        assertEquals(1, deserialisedKeys.size());
-        assertEquals(null, deserialisedKeys.get(0));
+        assertThat(deserialisedKeys.size()).isOne();
+        assertThat(deserialisedKeys.get(0)).isNull();
     }
-    
+
     @Test
     public void shouldSerialiseAndDeserialiseNullByteArrayKeyCorrectly() throws IOException {
         // Given
@@ -118,16 +117,16 @@ public class KeySerDeTest {
         schema.setRowKeyFields(new Field("rowkey1", new ByteArrayType()));
         KeySerDe keySerDe = new KeySerDe(schema);
         Key key = Key.create(null);
-        
+
         // When
         byte[] serialised = keySerDe.serialise(key);
         Key deserialisedKeys = keySerDe.deserialise(serialised);
-        
+
         // Then
-        assertEquals(1, deserialisedKeys.size());
-        assertEquals(null, deserialisedKeys.get(0));
+        assertThat(deserialisedKeys.size()).isOne();
+        assertThat(deserialisedKeys.get(0)).isNull();
     }
-    
+
     @Test
     public void shouldSerialiseAndDeserialiseCorrectlyWhenThereAreFewerKeysThanInSchema() throws IOException {
         // Given
@@ -155,7 +154,7 @@ public class KeySerDeTest {
         List<Object> keys4 = new ArrayList<>();
         keys4.add(1);
         Key key4 = Key.create(keys4);
-        
+
         // When
         byte[] serialised1 = keySerDe.serialise(key1);
         Key deserialisedKey1 = keySerDe.deserialise(serialised1);
@@ -165,21 +164,21 @@ public class KeySerDeTest {
         Key deserialisedKey3 = keySerDe.deserialise(serialised3);
         byte[] serialised4 = keySerDe.serialise(key4);
         Key deserialisedKey4 = keySerDe.deserialise(serialised4);
-        
+
         // Then
-        assertEquals(4, deserialisedKey1.size());
-        assertEquals(1, deserialisedKey1.get(0));
-        assertEquals(10L, deserialisedKey1.get(1));
-        assertEquals("abc", deserialisedKey1.get(2));
-        assertArrayEquals(new byte[]{1, 2, 3}, (byte[]) deserialisedKey1.get(3));
-        assertEquals(3, deserialisedKey2.size());
-        assertEquals(1, deserialisedKey2.get(0));
-        assertEquals(10L, deserialisedKey2.get(1));
-        assertEquals("abc", deserialisedKey1.get(2));
-        assertEquals(2, deserialisedKey3.size());
-        assertEquals(1, deserialisedKey3.get(0));
-        assertEquals(10L, deserialisedKey2.get(1));
-        assertEquals(1, deserialisedKey4.size());
-        assertEquals(1, deserialisedKey4.get(0));
+        assertThat(deserialisedKey1.size()).isEqualTo(4);
+        assertThat(deserialisedKey1.get(0)).isEqualTo(1);
+        assertThat(deserialisedKey1.get(1)).isEqualTo(10L);
+        assertThat(deserialisedKey1.get(2)).isEqualTo("abc");
+        assertThat((byte[]) deserialisedKey1.get(3)).containsExactly(new byte[]{1, 2, 3});
+        assertThat(deserialisedKey2.size()).isEqualTo(3);
+        assertThat(deserialisedKey2.get(0)).isEqualTo(1);
+        assertThat(deserialisedKey2.get(1)).isEqualTo(10L);
+        assertThat(deserialisedKey1.get(2)).isEqualTo("abc");
+        assertThat(deserialisedKey3.size()).isEqualTo(2);
+        assertThat(deserialisedKey3.get(0)).isEqualTo(1);
+        assertThat(deserialisedKey2.get(1)).isEqualTo(10L);
+        assertThat(deserialisedKey4.size()).isOne();
+        assertThat(deserialisedKey4.get(0)).isEqualTo(1);
     }
 }

@@ -43,7 +43,7 @@ import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class AbstractRecordHandlerIT {
 
@@ -96,7 +96,7 @@ public abstract class AbstractRecordHandlerIT {
         fieldReader.setPosition(position);
 
         Object value = fieldReader.readObject();
-        assertEquals(expectedValue, value);
+        assertThat(value).isEqualTo(expectedValue);
     }
 
     protected TableProperties createTable(InstanceProperties instanceProperties, Object... initialSplits) throws IOException {

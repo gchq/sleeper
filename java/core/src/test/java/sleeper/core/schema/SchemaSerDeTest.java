@@ -23,7 +23,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class SchemaSerDeTest {
 
@@ -44,7 +44,7 @@ public class SchemaSerDeTest {
         Schema read = schemaSerDe.fromJson(schemaSerDe.toJson(schema));
 
         // Then
-        assertEquals(schema, read);
+        assertThat(read).isEqualTo(schema);
     }
 
     @Test
@@ -109,6 +109,6 @@ public class SchemaSerDeTest {
                 new Field("column6", new ByteArrayType()),
                 new Field("column7", new ListType(new StringType()))
         );
-        assertEquals(expectedSchema, deserialisedSchema);
+        assertThat(deserialisedSchema).isEqualTo(expectedSchema);
     }
 }

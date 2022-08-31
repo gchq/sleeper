@@ -20,26 +20,14 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import sleeper.configuration.properties.InstanceProperties;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import sleeper.configuration.properties.table.TableProperties;
-import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_BASE64_ENCODED;
-import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_KEY;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
@@ -51,6 +39,20 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_BASE64_ENCODED;
+import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_KEY;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TableInitialiserIT {
     @ClassRule
@@ -103,8 +105,8 @@ public class TableInitialiserIT {
         new TableInitialiser(s3Client, dynamoClient).initialise(instanceProperties, tableProperties, configBucket, new Configuration());
 
         // Then
-        assertEquals(new Integer(1), dynamoClient.scan(
-                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount());
+        assertThat(dynamoClient.scan(
+                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount()).isEqualTo(new Integer(1));
     }
 
     @Test
@@ -135,8 +137,8 @@ public class TableInitialiserIT {
         new TableInitialiser(s3Client, dynamoClient).initialise(instanceProperties, tableProperties, configBucket, new Configuration());
 
         // Then
-        assertEquals(Integer.valueOf(7), dynamoClient.scan(
-                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount());
+        assertThat(dynamoClient.scan(
+                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount()).isEqualTo(Integer.valueOf(7));
         validateSplits(tableProperties, "key", "", dynamoClient, "a", "b", "c");
     }
 
@@ -172,8 +174,8 @@ public class TableInitialiserIT {
         new TableInitialiser(s3Client, dynamoClient).initialise(instanceProperties, tableProperties, configBucket, new Configuration());
 
         // Then
-        assertEquals(Integer.valueOf(7), dynamoClient.scan(
-                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount());
+        assertThat(dynamoClient.scan(
+                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount()).isEqualTo(Integer.valueOf(7));
         validateSplits(tableProperties, "key", "", dynamoClient, "a", "b", "c");
     }
 
@@ -208,8 +210,8 @@ public class TableInitialiserIT {
         new TableInitialiser(s3Client, dynamoClient).initialise(instanceProperties, tableProperties, configBucket, new Configuration());
 
         // Then
-        assertEquals(Integer.valueOf(7), dynamoClient.scan(
-                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount());
+        assertThat(dynamoClient.scan(
+                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount()).isEqualTo(Integer.valueOf(7));
         validateSplits(tableProperties, "key", Long.MIN_VALUE, dynamoClient, 1000L, 1_000_000L, 1_000_000_000L);
     }
 
@@ -244,8 +246,8 @@ public class TableInitialiserIT {
         new TableInitialiser(s3Client, dynamoClient).initialise(instanceProperties, tableProperties, configBucket, new Configuration());
 
         // Then
-        assertEquals(Integer.valueOf(7), dynamoClient.scan(
-                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount());
+        assertThat(dynamoClient.scan(
+                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount()).isEqualTo(Integer.valueOf(7));
         validateSplits(tableProperties, "key", Integer.MIN_VALUE, dynamoClient, 100, 1000, 10000);
     }
 
@@ -285,8 +287,8 @@ public class TableInitialiserIT {
         new TableInitialiser(s3Client, dynamoClient).initialise(instanceProperties, tableProperties, configBucket, new Configuration());
 
         // Then
-        assertEquals(Integer.valueOf(7), dynamoClient.scan(
-                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount());
+        assertThat(dynamoClient.scan(
+                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount()).isEqualTo(Integer.valueOf(7));
         validateSplits(tableProperties, "key", new byte[0], dynamoClient,
                 "a".getBytes(StandardCharsets.UTF_16),
                 "b".getBytes(StandardCharsets.UTF_16),
@@ -295,12 +297,12 @@ public class TableInitialiserIT {
 
     private void validateSplits(TableProperties tableProperties, String fieldName, Object minValue, AmazonDynamoDB dynamoClient, Object... splits) throws StateStoreException {
         DynamoDBStateStore stateStore = new DynamoDBStateStore(tableProperties, dynamoClient);
-        assertEquals(4, stateStore.getLeafPartitions().size());
+        assertThat(stateStore.getLeafPartitions()).hasSize(4);
 
         List<Partition> leafPartitions = stateStore.getLeafPartitions();
         ensurePartitionExists(leafPartitions, fieldName, minValue, splits[0]);
         for (int i = 1; i < splits.length; i++) {
-            ensurePartitionExists(leafPartitions, fieldName, splits[i -1], splits[i]);
+            ensurePartitionExists(leafPartitions, fieldName, splits[i - 1], splits[i]);
         }
         ensurePartitionExists(leafPartitions, fieldName, splits[splits.length - 1], null);
     }
