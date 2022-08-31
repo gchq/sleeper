@@ -105,12 +105,7 @@ public class QuerySerDeTest {
         Query query = querySerDe.fromJson(serialisedQuery);
 
         // Then
-        if (query instanceof LeafPartitionQuery) {
-            fail("Query should be of class Query");
-        }
-        if (!(query instanceof Query)) {
-            fail("Query should be of class Query");
-        }
+        assertThat(query).isNotInstanceOf(LeafPartitionQuery.class);
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
@@ -151,12 +146,7 @@ public class QuerySerDeTest {
         Query query = querySerDe.fromJson(serialisedQuery);
 
         // Then
-        if (query instanceof LeafPartitionQuery) {
-            fail("Query should be of class Query");
-        }
-        if (!(query instanceof Query)) {
-            fail("Query should be of class Query");
-        }
+        assertThat(query).isNotInstanceOf(LeafPartitionQuery.class);
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
@@ -197,12 +187,7 @@ public class QuerySerDeTest {
         Query query = querySerDe.fromJson(serialisedQuery);
 
         // Then
-        if (query instanceof LeafPartitionQuery) {
-            fail("Query should be of class Query");
-        }
-        if (!(query instanceof Query)) {
-            fail("Query should be of class Query");
-        }
+        assertThat(query).isNotInstanceOf(LeafPartitionQuery.class);
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
@@ -243,12 +228,7 @@ public class QuerySerDeTest {
         Query query = querySerDe.fromJson(serialisedQuery);
 
         // Then
-        if (query instanceof LeafPartitionQuery) {
-            fail("Query should be of class Query");
-        }
-        if (!(query instanceof Query)) {
-            fail("Query should be of class Query");
-        }
+        assertThat(query).isNotInstanceOf(LeafPartitionQuery.class);
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
@@ -290,12 +270,7 @@ public class QuerySerDeTest {
         Query query = querySerDe.fromJson(serialisedQuery);
 
         // Then
-        if (query instanceof LeafPartitionQuery) {
-            fail("Query should be of class Query");
-        }
-        if (!(query instanceof Query)) {
-            fail("Query should be of class Query");
-        }
+        assertThat(query).isNotInstanceOf(LeafPartitionQuery.class);
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());

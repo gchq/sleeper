@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package sleeper.ingest.testutils;
 
 import com.facebook.collections.ByteArray;
@@ -94,7 +109,7 @@ public class ResultVerifier {
                 .collect(Collectors.toSet());
 
         assertThat(stateStore.getActiveFiles()).hasSize(expectedTotalNoOfFiles);
-        assertThat(allPartitionNoSet.stream().allMatch(partitionNoToExpectedNoOfFilesMap::containsKey)).isTrue();
+        assertThat(allPartitionNoSet).allMatch(partitionNoToExpectedNoOfFilesMap::containsKey);
 
         allPartitionNoSet.forEach(partitionNo -> verifyPartition(
                 sleeperSchema,
@@ -154,17 +169,21 @@ public class ResultVerifier {
                     if (field.getType() instanceof ByteArrayType) {
                         assertThat(keyComparator.compare(
                                 Key.create(((ByteArray) savedSketch.getQuantile(quantile)).getArray()),
-                                Key.create(((ByteArray) expectedSketch.getQuantile(quantileWithToleranceLower)).getArray()))).isGreaterThanOrEqualTo(0);
+                                Key.create(((ByteArray) expectedSketch.getQuantile(quantileWithToleranceLower)).getArray())))
+                                .isGreaterThanOrEqualTo(0);
                         assertThat(keyComparator.compare(
                                 Key.create(((ByteArray) savedSketch.getQuantile(quantile)).getArray()),
-                                Key.create(((ByteArray) expectedSketch.getQuantile(quantileWithToleranceUpper)).getArray()))).isLessThanOrEqualTo(0);
+                                Key.create(((ByteArray) expectedSketch.getQuantile(quantileWithToleranceUpper)).getArray())))
+                                .isLessThanOrEqualTo(0);
                     } else {
                         assertThat(keyComparator.compare(
                                 Key.create(savedSketch.getQuantile(quantile)),
-                                Key.create(expectedSketch.getQuantile(quantileWithToleranceLower)))).isGreaterThanOrEqualTo(0);
+                                Key.create(expectedSketch.getQuantile(quantileWithToleranceLower))))
+                                .isGreaterThanOrEqualTo(0);
                         assertThat(keyComparator.compare(
                                 Key.create(savedSketch.getQuantile(quantile)),
-                                Key.create(expectedSketch.getQuantile(quantileWithToleranceUpper)))).isLessThanOrEqualTo(0);
+                                Key.create(expectedSketch.getQuantile(quantileWithToleranceUpper))))
+                                .isLessThanOrEqualTo(0);
                     }
                 });
             });

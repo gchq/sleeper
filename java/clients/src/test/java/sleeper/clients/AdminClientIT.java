@@ -92,7 +92,8 @@ public class AdminClientIT {
         AdminClient.printInstancePropertiesReport(getS3Client(), INSTANCE_ID);
 
         // Then check some default property values are present in the output, don't check values in case they change
-        assertThat(outputStreamCaptor.toString()).contains("sleeper.athena.handler.memory")
+        assertThat(outputStreamCaptor.toString())
+                .contains("sleeper.athena.handler.memory")
                 .contains("sleeper.bulk.import.emr.bucket.create")
                 .contains("sleeper.bulk.import.emr.bucket.create")
                 .contains("sleeper.default.page.size")
@@ -104,9 +105,11 @@ public class AdminClientIT {
                 .contains("sleeper.vpc: aVPC");
 
         // Then check the ordering of some property names are correct
-        assertThat(outputStreamCaptor.toString().indexOf("sleeper.account")).isLessThan(outputStreamCaptor.toString().indexOf("sleeper.log.retention.days"))
+        assertThat(outputStreamCaptor.toString().indexOf("sleeper.account"))
+                .isLessThan(outputStreamCaptor.toString().indexOf("sleeper.log.retention.days"))
                 .isLessThan(outputStreamCaptor.toString().indexOf("sleeper.vpc"));
-        assertThat(outputStreamCaptor.toString().indexOf("sleeper.log.retention.days")).isLessThan(outputStreamCaptor.toString().indexOf("sleeper.vpc"));
+        assertThat(outputStreamCaptor.toString().indexOf("sleeper.log.retention.days"))
+                .isLessThan(outputStreamCaptor.toString().indexOf("sleeper.vpc"));
     }
 
     @Test
@@ -127,7 +130,8 @@ public class AdminClientIT {
         AdminClient.printTablePropertiesReport(getS3Client(), INSTANCE_ID, TABLE_NAME_VALUE);
 
         // Then check some default table property values are present in the output, don't check values in case they change
-        assertThat(outputStreamCaptor.toString()).contains("sleeper.table.splits.base64.encoded")
+        assertThat(outputStreamCaptor.toString())
+                .contains("sleeper.table.splits.base64.encoded")
                 .contains("sleeper.table.statestore.classname")
                 .contains("sleeper.table.fs.s3a.readahead.range")
                 // Then check some set table property values are present in the output
@@ -139,9 +143,11 @@ public class AdminClientIT {
                         "\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}");
 
         // Then check the ordering of some property names are correct
-        assertThat(outputStreamCaptor.toString().indexOf("sleeper.table.encrypted")).isLessThan(outputStreamCaptor.toString().indexOf("sleeper.table.name"))
+        assertThat(outputStreamCaptor.toString().indexOf("sleeper.table.encrypted"))
+                .isLessThan(outputStreamCaptor.toString().indexOf("sleeper.table.name"))
                 .isLessThan(outputStreamCaptor.toString().indexOf("sleeper.table.schema"));
-        assertThat(outputStreamCaptor.toString().indexOf("sleeper.table.name")).isLessThan(outputStreamCaptor.toString().indexOf("sleeper.table.schema"));
+        assertThat(outputStreamCaptor.toString().indexOf("sleeper.table.name"))
+                .isLessThan(outputStreamCaptor.toString().indexOf("sleeper.table.schema"));
     }
 
     @Test
@@ -165,8 +171,8 @@ public class AdminClientIT {
         AdminClient.printTablesReport(getS3Client(), INSTANCE_ID);
 
         // Then check some table names are present in the output
-        assertThat(outputStreamCaptor.toString()).contains("test")
-                .contains("test2");
+        assertThat(outputStreamCaptor.toString())
+                .contains("test", "test2");
     }
 
     @Test
