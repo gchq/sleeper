@@ -15,7 +15,7 @@
  */
 package sleeper.status.report.filestatus;
 
-import com.google.common.io.Resources;
+import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
@@ -25,12 +25,13 @@ import sleeper.core.schema.type.StringType;
 import sleeper.statestore.FileInfo;
 
 import java.io.IOException;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
-import static com.google.common.io.Resources.getResource;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -41,8 +42,8 @@ public class FilesStatusReportTest {
         // Given
         Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
-        List<Partition> partitions = PartitionsFromSplitPoints.sequentialIds(schema,
-                Arrays.asList("aaa", "bbb", "ccc", "ddd", "eee", "fff", "ggg"));
+        List<Partition> partitions = new PartitionsFromSplitPoints(schema,
+                Arrays.asList("aaa", "bbb", "ccc", "ddd", "eee", "fff", "ggg")).construct();
         FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
         List<FileInfo> activeFiles = Arrays.asList(
                 fileInfoFactory.leafFile(50000001, "123", "456"),
@@ -72,8 +73,8 @@ public class FilesStatusReportTest {
         // Given
         Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
-        List<Partition> partitions = PartitionsFromSplitPoints.sequentialIds(schema,
-                Arrays.asList("beeblebrox", "wowbagger"));
+        List<Partition> partitions = new PartitionsFromSplitPoints(schema,
+                Arrays.asList("beeblebrox", "wowbagger")).construct();
         FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
         List<FileInfo> activeFiles = Arrays.asList(
                 fileInfoFactory.leafFile(50000001, "aardvark", "arthur"),
@@ -93,7 +94,8 @@ public class FilesStatusReportTest {
     }
 
     private static String example(String path) throws IOException {
-        return Resources.toString(getResource(path), Charset.defaultCharset());
+        URL url = FilesStatusReportTest.class.getClassLoader().getResource(path);
+        return IOUtils.toString(Objects.requireNonNull(url), Charset.defaultCharset());
     }
 
 }

@@ -116,7 +116,7 @@ public class StandardFileStatusReporterRecordCountTest {
     private static FileStatus statusWithRecordCount(long recordCount) throws StateStoreException {
         Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
-        List<Partition> partitions = PartitionsFromSplitPoints.sequentialIds(schema, Collections.emptyList());
+        List<Partition> partitions = new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct();
         FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
         List<FileInfo> activeFiles = Arrays.asList(
                 fileInfoFactory.leafFile(recordCount, "arthur", "ford"));
