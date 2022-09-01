@@ -23,7 +23,6 @@ import sleeper.core.schema.type.StringType;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,19 +31,16 @@ public class PartitionTreeNearestCommonAncestorTest {
     @Test
     public void shouldTellWhenBothPartitionsAreTheSame() {
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
-        List<Partition> partitions = PartitionsFromSplitPoints.sequentialIds(schema, Collections.emptyList());
-        PartitionTree tree = new PartitionTree(schema, partitions);
-        Partition partition = partitions.get(0);
+        PartitionTree tree = PartitionsFromSplitPoints.treeFrom(schema, Collections.emptyList());
 
         assertThat(tree.getNearestCommonAncestor(Key.create("a"), Key.create("b")))
-                .isEqualTo(partition);
+                .isEqualTo(tree.getRootPartition());
     }
 
     @Test
     public void shouldGetRootPartitionForTwoImmediatelyBeneathIt() {
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
-        List<Partition> partitions = PartitionsFromSplitPoints.sequentialIds(schema, Collections.singletonList("abc"));
-        PartitionTree tree = new PartitionTree(schema, partitions);
+        PartitionTree tree = PartitionsFromSplitPoints.treeFrom(schema, Collections.singletonList("abc"));
 
         assertThat(tree.getNearestCommonAncestor(Key.create("a"), Key.create("b")))
                 .isEqualTo(tree.getRootPartition());
@@ -53,8 +49,7 @@ public class PartitionTreeNearestCommonAncestorTest {
     @Test
     public void shouldGetRootPartitionForTwoOutsideMaxAndMinSplitPoints() {
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
-        List<Partition> partitions = PartitionsFromSplitPoints.sequentialIds(schema, Arrays.asList("abc", "def"));
-        PartitionTree tree = new PartitionTree(schema, partitions);
+        PartitionTree tree = PartitionsFromSplitPoints.treeFrom(schema, Arrays.asList("abc", "def"));
 
         assertThat(tree.getNearestCommonAncestor(Key.create("a"), Key.create("z")))
                 .isEqualTo(tree.getRootPartition());

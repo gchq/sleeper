@@ -34,8 +34,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
 /**
  * Given a list of split points that split the first dimension of the row keys into partitions, this class
@@ -48,15 +46,9 @@ public class PartitionsFromSplitPoints {
     private final List<Field> rowKeyFields;
     private final List<PrimitiveType> rowKeyTypes;
     private final List<Object> splitPoints;
-    private final Supplier<String> idSupplier;
 
     public PartitionsFromSplitPoints(
             Schema schema, List<Object> splitPoints) {
-        this(schema, splitPoints, () -> UUID.randomUUID().toString());
-    }
-
-    private PartitionsFromSplitPoints(
-            Schema schema, List<Object> splitPoints, Supplier<String> idSupplier) {
         this.schema = schema;
         this.rowKeyFields = schema.getRowKeyFields();
         this.rowKeyTypes = new ArrayList<>();
@@ -64,7 +56,6 @@ public class PartitionsFromSplitPoints {
             this.rowKeyTypes.add((PrimitiveType) field.getType());
         }
         this.splitPoints = splitPoints;
-        this.idSupplier = idSupplier;
     }
 
     public List<Partition> construct() {
@@ -98,7 +89,7 @@ public class PartitionsFromSplitPoints {
                 Partition rightPartition = partitionsInLayer.get(i + 1);
 
                 Partition parent = new Partition();
-                parent.setId(idSupplier.get());
+                parent.setId(UUID.randomUUID().toString());
                 parent.setParentPartitionId(null);
                 parent.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
                 parent.setLeafPartition(false);
@@ -166,7 +157,7 @@ public class PartitionsFromSplitPoints {
             rangesForThisRegion.addAll(ranges);
             Region region = new Region(rangesForThisRegion);
             partition.setRegion(region);
-            partition.setId(idSupplier.get());
+            partition.setId(UUID.randomUUID().toString());
             partition.setLeafPartition(true);
             partition.setParentPartitionId(null);
             partition.setChildPartitionIds(new ArrayList<>());
@@ -263,10 +254,8 @@ public class PartitionsFromSplitPoints {
         return (Comparable) obj;
     }
 
-    public static List<Partition> sequentialIds(Schema schema, List<Object> splitPoints) {
-        AtomicInteger idCount = new AtomicInteger(0);
-        Supplier<String> idSupplier = () -> "" + (char) ('A' + idCount.getAndIncrement());
-        return new PartitionsFromSplitPoints(schema, splitPoints, idSupplier).construct();
+    public static PartitionTree treeFrom(Schema schema, List<Object> splitPoints) {
+        return new PartitionTree(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct());
     }
 
 }

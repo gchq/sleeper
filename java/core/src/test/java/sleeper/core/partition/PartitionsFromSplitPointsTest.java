@@ -21,7 +21,6 @@ import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.StringType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -307,25 +306,5 @@ public class PartitionsFromSplitPointsTest {
                 assertThat(partitionIdsOfLevelBelow).contains(partition.getChildPartitionIds().get(0), partition.getChildPartitionIds().get(1));
             }
         }
-    }
-
-    @Test
-    public void canGeneratePartitionIdsSequentiallyForTests() {
-        // Given
-        Field field = new Field("key1", new StringType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        List<Object> splitPoints = Arrays.asList("abc", "def");
-
-        // When
-        List<Partition> partitions = PartitionsFromSplitPoints.sequentialIds(schema, splitPoints);
-
-        // Then
-        PartitionsBuilder builder = new PartitionsBuilder(schema);
-        Partition a = builder.partition("A", "", "abc");
-        Partition b = builder.partition("B", "abc", "def");
-        Partition c = builder.partition("C", "def", null);
-        Partition d = builder.parent(Arrays.asList(a, b), "D", "", "def");
-        Partition e = builder.parent(Arrays.asList(d, c), "E", "", null);
-        assertThat(partitions).containsExactly(a, b, c, d, e);
     }
 }
