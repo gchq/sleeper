@@ -15,29 +15,39 @@
  */
 package sleeper.environment.cdk.config;
 
-import java.util.Optional;
-
-public class OptionalStringParameter {
-
+public class IntParameter {
     private final String key;
+    private final int defaultValue;
 
-    private OptionalStringParameter(String key) {
+    private IntParameter(String key, int defaultValue) {
         this.key = key;
+        this.defaultValue = defaultValue;
     }
 
-    Optional<String> get(AppContext context) {
-        return getOptionalString(context, key);
+    int get(AppContext context) {
+        return OptionalStringParameter.getOptionalString(context, key)
+                .map(value -> parse(key, value))
+                .orElse(defaultValue);
+    }
+
+    public StringValue value(int value) {
+        return value("" + value);
     }
 
     public StringValue value(String value) {
         return new StringValue(key, value);
     }
 
-    static OptionalStringParameter key(String key) {
-        return new OptionalStringParameter(key);
+    static IntParameter keyAndDefault(String key, int defaultValue) {
+        return new IntParameter(key, defaultValue);
     }
 
-    static Optional<String> getOptionalString(AppContext context, String key) {
-        return Optional.ofNullable(StringParameter.getStringOrDefault(context, key, null));
+    private static int parse(String key, String value) {
+        try {
+            return Integer.parseInt(value);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(key + "must be an integer", e);
+        }
     }
+
 }

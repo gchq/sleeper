@@ -20,18 +20,12 @@ import sleeper.environment.cdk.util.MyIpUtil;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
-import software.amazon.awscdk.services.ec2.BlockDevice;
-import software.amazon.awscdk.services.ec2.BlockDeviceVolume;
 import software.amazon.awscdk.services.ec2.CfnKeyPair;
-import software.amazon.awscdk.services.ec2.EbsDeviceOptions;
-import software.amazon.awscdk.services.ec2.EbsDeviceVolumeType;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.Instance;
 import software.amazon.awscdk.services.ec2.InstanceClass;
 import software.amazon.awscdk.services.ec2.InstanceSize;
 import software.amazon.awscdk.services.ec2.InstanceType;
-import software.amazon.awscdk.services.ec2.LookupMachineImageProps;
-import software.amazon.awscdk.services.ec2.MachineImage;
 import software.amazon.awscdk.services.ec2.Peer;
 import software.amazon.awscdk.services.ec2.Port;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
@@ -59,6 +53,7 @@ public class BuildEC2Stack extends Stack {
         vpc = context.get(VPC_ID)
                 .map(vpcId -> Vpc.fromLookup(scope, "Vpc", VpcLookupOptions.builder().vpcId(vpcId).build()))
                 .orElse(inheritVpc);
+        BuildEC2Image image = params.image();
 
         String keyFile = getStackName() + ".pem";
         CfnKeyPair key = createSshKeyPair(keyFile);
@@ -67,25 +62,18 @@ public class BuildEC2Stack extends Stack {
         Instance instance = Instance.Builder.create(this, "EC2")
                 .vpc(vpc)
                 .securityGroup(allowSsh)
-                .machineImage(MachineImage.lookup(LookupMachineImageProps.builder()
-                        .name("ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*")
-                        .owners(Collections.singletonList("099720109477"))
-                        .build()))
+                .machineImage(image.machineImage())
                 .instanceType(InstanceType.of(InstanceClass.T3, InstanceSize.LARGE))
                 .vpcSubnets(SubnetSelection.builder().subnetType(SubnetType.PUBLIC).build())
                 .userData(UserData.custom(LoadUserDataUtil.userData(params)))
                 .userDataCausesReplacement(true)
                 .keyName(key.getKeyName())
-                .blockDevices(Collections.singletonList(BlockDevice.builder()
-                        .deviceName("/dev/sda1")
-                        .volume(BlockDeviceVolume.ebs(200,
-                                EbsDeviceOptions.builder().volumeType(EbsDeviceVolumeType.GP3).build()))
-                        .build()))
+                .blockDevices(Collections.singletonList(image.rootBlockDevice()))
                 .build();
         instance.getInstance().addDependsOn(key);
 
         CfnOutput.Builder.create(this, "ConnectCommand")
-                .value("ssh -i " + keyFile + " ubuntu@" + instance.getInstancePublicIp())
+                .value("ssh -i " + keyFile + " " + image.loginUser() + "@" + instance.getInstancePublicIp())
                 .description("Command to connect to EC2")
                 .build();
     }

@@ -19,13 +19,12 @@ import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
 import static sleeper.environment.cdk.config.AppParameters.VPC_ID;
 
-public class AppParametersTest {
+public class OptionalStringParameterTest {
 
     @Test
-    public void refuseEmptyStringForOptionalParameter() {
+    public void refuseEmptyString() {
         AppContext context = AppContext.of(VPC_ID.value(""));
         assertThatThrownBy(() -> context.get(VPC_ID))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -33,40 +32,14 @@ public class AppParametersTest {
     }
 
     @Test
-    public void allowUnsetOptionalParameter() {
+    public void allowUnset() {
         AppContext context = AppContext.empty();
         assertThat(context.get(VPC_ID)).isEmpty();
     }
 
     @Test
-    public void canSetOptionalValue() {
+    public void canSetValue() {
         AppContext context = AppContext.of(VPC_ID.value("some-test-id"));
         assertThat(context.get(VPC_ID)).contains("some-test-id");
-    }
-
-    @Test
-    public void refuseEmptyStringForDefaultedParameter() {
-        AppContext context = AppContext.of(INSTANCE_ID.value(""));
-        assertThatThrownBy(() -> context.get(INSTANCE_ID))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("instanceId");
-    }
-
-    @Test
-    public void useDefaultValueForUnsetDefaultedParameter() {
-        AppContext context = AppContext.empty();
-        assertThat(context.get(INSTANCE_ID)).isEqualTo("SleeperEnvironment");
-    }
-
-    @Test
-    public void canSetValueForDefaultedParameter() {
-        AppContext context = AppContext.of(INSTANCE_ID.value("some-test-id"));
-        assertThat(context.get(INSTANCE_ID)).isEqualTo("some-test-id");
-    }
-
-    @Test
-    public void takeFirstValueWhenSpecifiedMultipleTimes() {
-        AppContext context = AppContext.of(INSTANCE_ID.value("id-1"), INSTANCE_ID.value("id-2"));
-        assertThat(context.get(INSTANCE_ID)).isEqualTo("id-1");
     }
 }

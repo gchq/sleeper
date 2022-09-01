@@ -34,6 +34,10 @@ public interface AppContext {
         return string.get(this);
     }
 
+    default int get(IntParameter integer) {
+        return integer.get(this);
+    }
+
     static AppContext of(App app) {
         return of(app.getNode());
     }

@@ -19,16 +19,28 @@ import org.junit.Test;
 import sleeper.environment.cdk.config.AppContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.*;
+import static sleeper.environment.cdk.buildec2.BuildEC2Image.LOGIN_USER;
+import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.BRANCH;
+import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.FORK;
+import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.REPOSITORY;
 
 public class BuildEC2ParametersTest {
 
     @Test
-    public void canFillTemplate() {
+    public void fillGitClone() {
         assertThat(BuildEC2Parameters.from(AppContext.of(
                         BRANCH.value("feature/test"), FORK.value("test-fork"), REPOSITORY.value("test-project")))
                 .fillUserDataTemplate("git clone -b ${branch} https://github.com/${fork}/${repository}.git"))
                 .isEqualTo("git clone -b feature/test https://github.com/test-fork/test-project.git");
+    }
+
+    @Test
+    public void fillLoginUser() {
+        assertThat(BuildEC2Parameters.from(AppContext.of(LOGIN_USER.value("test-user")))
+                .fillUserDataTemplate("LOGIN_USER=${loginUser}\n" +
+                        "LOGIN_HOME=/home/$LOGIN_USER"))
+                .isEqualTo("LOGIN_USER=test-user\n" +
+                        "LOGIN_HOME=/home/$LOGIN_USER");
     }
 
     @Test
