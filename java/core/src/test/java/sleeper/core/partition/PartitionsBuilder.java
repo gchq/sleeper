@@ -80,7 +80,7 @@ public class PartitionsBuilder {
     private Field singleRowKeyField() {
         List<Field> rowKeyFields = schema.getRowKeyFields();
         if (rowKeyFields.size() != 1) {
-            throw new IllegalStateException("Cannot get single row key field, have " + rowKeyFields.size());
+            throw new IllegalStateException("Cannot get single row key field, have " + rowKeyFields.size() + " row key fields");
         }
         return rowKeyFields.get(0);
     }
