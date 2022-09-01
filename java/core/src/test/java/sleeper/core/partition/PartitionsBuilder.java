@@ -15,7 +15,7 @@
  */
 package sleeper.core.partition;
 
-import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -35,16 +35,19 @@ import java.util.stream.Collectors;
 public class PartitionsBuilder {
 
     private final Schema schema;
+    private final RangeFactory rangeFactory;
     private final List<PrimitiveType> rowKeyTypes;
     private final List<Partition> partitions = new ArrayList<>();
 
     public PartitionsBuilder(Schema schema) {
         this.schema = schema;
+        rangeFactory = new RangeFactory(schema);
         rowKeyTypes = schema.getRowKeyTypes();
     }
 
     public Partition partition(String id, Object min, Object max) {
-        Partition partition = new Partition(rowKeyTypes, new Region(new Range(singleRowKeyField(), min, max)),
+        Partition partition = new Partition(rowKeyTypes,
+                new Region(rangeFactory.createRange(singleRowKeyField(), min, max)),
                 id, true, null, Collections.emptyList(), -1);
         partitions.add(partition);
         return partition;
@@ -70,11 +73,7 @@ public class PartitionsBuilder {
         return parent;
     }
 
-    public List<Partition> getPartitions() {
-        return partitions;
-    }
-
-    public PartitionTree getPartitionTree() {
+    public PartitionTree buildTree() {
         return new PartitionTree(schema, partitions);
     }
 

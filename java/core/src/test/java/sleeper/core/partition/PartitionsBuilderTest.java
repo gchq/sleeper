@@ -44,12 +44,11 @@ public class PartitionsBuilderTest {
         builder.child(mid, "C", "", "abc");
         builder.child(mid, "D", "abc", "def");
         builder.child(root, "E", "def", null);
-        List<Partition> partitions = builder.getPartitions();
-        PartitionTree tree = builder.getPartitionTree();
+        PartitionTree tree = builder.buildTree();
 
         // Then
         List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
-        assertThat(partitions).containsExactly(
+        assertThat(tree).isEqualTo(new PartitionTree(schema, Arrays.asList(
                 new Partition(rowKeyTypes, new Region(new Range(field, "", null)),
                         "A", false, null, Arrays.asList("B", "E"), 0),
                 new Partition(rowKeyTypes, new Region(new Range(field, "", "def")),
@@ -59,7 +58,7 @@ public class PartitionsBuilderTest {
                 new Partition(rowKeyTypes, new Region(new Range(field, "abc", "def")),
                         "D", true, "B", Collections.emptyList(), -1),
                 new Partition(rowKeyTypes, new Region(new Range(field, "def", null)),
-                        "E", true, "A", Collections.emptyList(), -1));
+                        "E", true, "A", Collections.emptyList(), -1))));
         assertThat(tree.getRootPartition()).isEqualTo(root);
     }
 
@@ -76,12 +75,11 @@ public class PartitionsBuilderTest {
         Partition c = builder.partition("C", "def", null);
         Partition mid = builder.parent(Arrays.asList(a, b), "D", "", "def");
         Partition root = builder.parent(Arrays.asList(mid, c), "E", "", null);
-        List<Partition> partitions = builder.getPartitions();
-        PartitionTree tree = builder.getPartitionTree();
+        PartitionTree tree = builder.buildTree();
 
         // Then
         List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
-        assertThat(partitions).containsExactly(
+        assertThat(tree).isEqualTo(new PartitionTree(schema, Arrays.asList(
                 new Partition(rowKeyTypes, new Region(new Range(field, "", "abc")),
                         "A", true, "D", Collections.emptyList(), -1),
                 new Partition(rowKeyTypes, new Region(new Range(field, "abc", "def")),
@@ -91,7 +89,7 @@ public class PartitionsBuilderTest {
                 new Partition(rowKeyTypes, new Region(new Range(field, "", "def")),
                         "D", false, "E", Arrays.asList("A", "B"), 0),
                 new Partition(rowKeyTypes, new Region(new Range(field, "", null)),
-                        "E", false, null, Arrays.asList("D", "C"), 0));
+                        "E", false, null, Arrays.asList("D", "C"), 0))));
         assertThat(tree.getRootPartition()).isEqualTo(root);
     }
 }

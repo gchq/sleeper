@@ -64,7 +64,7 @@ public class PartitionTreeNearestCommonAncestorTest {
         Partition c = builder.partition("C", "def", null);
         Partition mid = builder.parent(Arrays.asList(a, b), "D", "", "def");
         Partition root = builder.parent(Arrays.asList(mid, c), "E", "", null);
-        PartitionTree tree = builder.getPartitionTree();
+        PartitionTree tree = builder.buildTree();
 
         assertThat(tree.getNearestCommonAncestor(Key.create("a"), Key.create("d")))
                 .isEqualTo(mid);
@@ -81,7 +81,7 @@ public class PartitionTreeNearestCommonAncestorTest {
         Partition e = builder.parent(Arrays.asList(a, b), "E", "", "def");
         Partition f = builder.parent(Arrays.asList(e, c), "F", "", "ghi");
         Partition g = builder.parent(Arrays.asList(f, d), "G", "", null);
-        PartitionTree tree = builder.getPartitionTree();
+        PartitionTree tree = builder.buildTree();
 
         assertThat(tree.getNearestCommonAncestor(Key.create("a"), Key.create("f")))
                 .isEqualTo(f);
