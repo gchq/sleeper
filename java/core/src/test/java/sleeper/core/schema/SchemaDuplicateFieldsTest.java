@@ -93,4 +93,18 @@ public class SchemaDuplicateFieldsTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("column2");
     }
+
+    @Test
+    public void refuseFieldNameInRowKeysAndValueKeys() {
+        // Given
+        Schema.Builder builder = Schema.builder()
+                .rowKeyFields(new Field("column1", new IntType()))
+                .sortKeyFields(new Field("column2", new StringType()))
+                .valueFields(new Field("column1", new ByteArrayType()));
+
+        // When / Then
+        assertThatThrownBy(builder::build)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("column1");
+    }
 }
