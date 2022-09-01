@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/maven-full.yaml'
       - 'java/**'
+      - '!java/cdk-environment/**'
 
 jobs:
   build:
