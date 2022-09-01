@@ -15,6 +15,7 @@
  */
 package sleeper.core.partition;
 
+import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
@@ -23,7 +24,10 @@ import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -38,6 +42,7 @@ public class PartitionsBuilder {
     private final RangeFactory rangeFactory;
     private final List<PrimitiveType> rowKeyTypes;
     private final List<Partition> partitions = new ArrayList<>();
+    private final Map<String, Partition> partitionById = new HashMap<>();
 
     public PartitionsBuilder(Schema schema) {
         this.schema = schema;
@@ -45,11 +50,25 @@ public class PartitionsBuilder {
         rowKeyTypes = schema.getRowKeyTypes();
     }
 
+    public PartitionsBuilder root(String id, Object min, Object max) {
+        partition(id, min, max);
+        return this;
+    }
+
+    public PartitionsBuilder split(String parentId, String leftId, String rightId, Object splitPoint) {
+        Partition parent = partitionById(parentId);
+        Range parentRange = singleRange(parent);
+        child(parent, leftId, parentRange.getMin(), splitPoint);
+        child(parent, rightId, splitPoint, parentRange.getMax());
+        return this;
+    }
+
     public Partition partition(String id, Object min, Object max) {
         Partition partition = new Partition(rowKeyTypes,
                 new Region(rangeFactory.createRange(singleRowKeyField(), min, max)),
                 id, true, null, Collections.emptyList(), -1);
         partitions.add(partition);
+        partitionById.put(id, partition);
         return partition;
     }
 
@@ -71,6 +90,15 @@ public class PartitionsBuilder {
         parent.setDimension(0);
         children.forEach(child -> child.setParentPartitionId(id));
         return parent;
+    }
+
+    private Partition partitionById(String id) {
+        return Optional.ofNullable(partitionById.get(id))
+                .orElseThrow(() -> new IllegalArgumentException("Partition not specified: " + id));
+    }
+
+    private Range singleRange(Partition partition) {
+        return partition.getRegion().getRange(singleRowKeyField().getName());
     }
 
     public List<Partition> buildList() {
