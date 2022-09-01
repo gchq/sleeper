@@ -62,11 +62,27 @@ public class PartitionsBuilder {
         return this;
     }
 
+    public PartitionsBuilder joinAllLeftFirst(String... ids) {
+        if (ids.length != partitions.size() - 1) {
+            throw new IllegalArgumentException("Must specify IDs for all joins between leaves");
+        }
+        Partition left = partitions.get(0);
+        for (int i = 0; i < ids.length; i++) {
+            Partition right = partitions.get(i + 1);
+            left = join(ids[i], left, right);
+        }
+        return this;
+    }
+
     public PartitionsBuilder join(String parentId, String leftId, String rightId) {
         Partition left = partitionById(leftId);
         Partition right = partitionById(rightId);
-        parent(Arrays.asList(left, right), parentId, singleRange(left).getMin(), singleRange(right).getMax());
+        join(parentId, left, right);
         return this;
+    }
+
+    private Partition join(String parentId, Partition left, Partition right) {
+        return parent(Arrays.asList(left, right), parentId, singleRange(left).getMin(), singleRange(right).getMax());
     }
 
     public PartitionsBuilder root(String id, Object min, Object max) {

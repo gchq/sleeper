@@ -152,4 +152,27 @@ public class PartitionsBuilderTest {
         assertThat(builder.buildList()).isEqualTo(expectedPartitions);
         assertThat(builder.buildTree()).isEqualTo(new PartitionTree(schema, expectedPartitions));
     }
+
+    @Test
+    public void canBuildPartitionsSpecifyingSplitPointsLeavesFirstJoinAllLeftFirst() {
+        // Given
+        Field field = new Field("key1", new StringType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+
+        // When
+        PartitionsBuilder builder = new PartitionsBuilder(schema)
+                .leavesWithSplits(
+                        Arrays.asList("A", "B", "C"),
+                        Arrays.asList("aaa", "bbb"))
+                .joinAllLeftFirst("D", "E");
+
+        // Then
+        assertThat(builder.buildList()).isEqualTo(new PartitionsBuilder(schema)
+                .leavesWithSplits(
+                        Arrays.asList("A", "B", "C"),
+                        Arrays.asList("aaa", "bbb"))
+                .join("D", "A", "B")
+                .join("E", "D", "C")
+                .buildList());
+    }
 }
