@@ -73,6 +73,10 @@ public class PartitionsBuilder {
         return parent;
     }
 
+    public List<Partition> buildList() {
+        return new ArrayList<>(partitions);
+    }
+
     public PartitionTree buildTree() {
         return new PartitionTree(schema, partitions);
     }
