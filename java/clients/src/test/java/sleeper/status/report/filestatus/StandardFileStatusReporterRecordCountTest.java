@@ -25,7 +25,6 @@ import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStoreException;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -118,7 +117,7 @@ public class StandardFileStatusReporterRecordCountTest {
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
         List<Partition> partitions = new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct();
         FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
-        List<FileInfo> activeFiles = Arrays.asList(
+        List<FileInfo> activeFiles = Collections.singletonList(
                 fileInfoFactory.leafFile(recordCount, "arthur", "ford"));
 
         return FileStatusCollector.run(StateStoreFiles.builder()
