@@ -18,7 +18,7 @@ package sleeper.status.report.filestatus;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -42,8 +42,18 @@ public class FilesStatusReportTest {
         // Given
         Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
-        List<Partition> partitions = new PartitionsFromSplitPoints(schema,
-                Arrays.asList("aaa", "bbb", "ccc", "ddd", "eee", "fff", "ggg")).construct();
+        List<Partition> partitions = new PartitionsBuilder(schema)
+                .leavesWithSplits(
+                        Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H"),
+                        Arrays.asList("aaa", "bbb", "ccc", "ddd", "eee", "fff", "ggg"))
+                .join("I", "A", "B")
+                .join("J", "I", "C")
+                .join("K", "J", "D")
+                .join("L", "K", "E")
+                .join("M", "L", "F")
+                .join("N", "M", "G")
+                .join("O", "N", "H")
+                .buildList();
         FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
         List<FileInfo> activeFiles = Arrays.asList(
                 fileInfoFactory.leafFile(50000001, "123", "456"),
@@ -73,8 +83,13 @@ public class FilesStatusReportTest {
         // Given
         Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
-        List<Partition> partitions = new PartitionsFromSplitPoints(schema,
-                Arrays.asList("beeblebrox", "wowbagger")).construct();
+        List<Partition> partitions = new PartitionsBuilder(schema)
+                .leavesWithSplits(
+                        Arrays.asList("A", "B", "C"),
+                        Arrays.asList("beeblebrox", "wowbagger"))
+                .join("D", "A", "B")
+                .join("E", "D", "C")
+                .buildList();
         FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
         List<FileInfo> activeFiles = Arrays.asList(
                 fileInfoFactory.leafFile(50000001, "aardvark", "arthur"),
