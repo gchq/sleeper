@@ -31,18 +31,17 @@ pushd ${PROJECT_ROOT}/java
 mvn versions:set -DnewVersion=${NEW_VERSION} -DgenerateBackupPoms=false
 popd
 
+source "${PROJECT_ROOT}/scripts/utility/sedInPlace.sh"
+
 # Update the version number in the Python module
-sed \
-  -i "" \
+sed_in_place \
   -e "s|^    version=.*|    version='${NEW_VERSION}',|" \
   python/setup.py
 
 # Update the version numbers in the example property files
-sed \
-  -i "" \
+sed_in_place \
   -e "s|^sleeper.version=.*|sleeper.version=${NEW_VERSION}|"\
   example/basic/instance.properties
-sed \
-  -i "" \
+sed_in_place \
   -e "s|^sleeper.version=.*|sleeper.version=${NEW_VERSION}|"\
   example/full/instance.properties

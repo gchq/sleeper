@@ -93,7 +93,8 @@ sed \
 # Instance Properties
 # Note this sed command uses the file in generated dir not the template dir
 # as this was required to include some pre-generated system test specific properties
-sed \
+source "${BASE_DIR}/scripts/utility/sedInPlace.sh"
+sed_in_place \
 	-e "s|^sleeper.account=.*|sleeper.account=${ACCOUNT}|" \
 	-e "s|^sleeper.region=.*|sleeper.region=${REGION}|" \
 	-e "s|^sleeper.id=.*|sleeper.id=${INSTANCE_ID}|" \
@@ -106,7 +107,7 @@ sed \
 	-e "s|^sleeper.subnet=.*|sleeper.subnet=${SUBNET}|" \
 	-e "s|^sleeper.tags.file=.*|sleeper.tags.file=${TAGS}|" \
 	-e "s|^sleeper.table.properties=.*|sleeper.table.properties=${TABLE_PROPERTIES}|" \
-	-i "" ${INSTANCE_PROPERTIES}
+	${INSTANCE_PROPERTIES}
 
 ###################################
 # Build and publish Docker images #
