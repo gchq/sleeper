@@ -23,6 +23,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -50,6 +51,24 @@ public class PartitionsBuilder {
         rowKeyTypes = schema.getRowKeyTypes();
     }
 
+    public PartitionsBuilder leavesWithSplits(List<String> ids, List<Object> splits) {
+        List<Region> regions = PartitionsFromSplitPoints.leafRegionsFromSplitPoints(schema, splits);
+        if (ids.size() != regions.size()) {
+            throw new IllegalArgumentException("Must specify IDs for all leaves before, after and in between splits");
+        }
+        for (int i = 0; i < ids.size(); i++) {
+            partition(ids.get(i), regions.get(i));
+        }
+        return this;
+    }
+
+    public PartitionsBuilder join(String parentId, String leftId, String rightId) {
+        Partition left = partitionById(leftId);
+        Partition right = partitionById(rightId);
+        parent(Arrays.asList(left, right), parentId, singleRange(left).getMin(), singleRange(right).getMax());
+        return this;
+    }
+
     public PartitionsBuilder root(String id, Object min, Object max) {
         partition(id, min, max);
         return this;
@@ -64,8 +83,11 @@ public class PartitionsBuilder {
     }
 
     public Partition partition(String id, Object min, Object max) {
-        Partition partition = new Partition(rowKeyTypes,
-                new Region(rangeFactory.createRange(singleRowKeyField(), min, max)),
+        return partition(id, new Region(rangeFactory.createRange(singleRowKeyField(), min, max)));
+    }
+
+    private Partition partition(String id, Region region) {
+        Partition partition = new Partition(rowKeyTypes, region,
                 id, true, null, Collections.emptyList(), -1);
         partitions.add(partition);
         partitionById.put(id, partition);
