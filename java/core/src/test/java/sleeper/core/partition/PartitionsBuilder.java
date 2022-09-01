@@ -17,6 +17,7 @@ package sleeper.core.partition;
 
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.PrimitiveType;
 
@@ -43,7 +44,7 @@ public class PartitionsBuilder {
     }
 
     public Partition partition(String id, Object min, Object max) {
-        Partition partition = new Partition(rowKeyTypes, new Region(new Range(schema.getSingleRowKeyField(), min, max)),
+        Partition partition = new Partition(rowKeyTypes, new Region(new Range(singleRowKeyField(), min, max)),
                 id, true, null, Collections.emptyList(), -1);
         partitions.add(partition);
         return partition;
@@ -75,5 +76,13 @@ public class PartitionsBuilder {
 
     public PartitionTree getPartitionTree() {
         return new PartitionTree(schema, partitions);
+    }
+
+    private Field singleRowKeyField() {
+        List<Field> rowKeyFields = schema.getRowKeyFields();
+        if (rowKeyFields.size() != 1) {
+            throw new IllegalStateException("Cannot get single row key field, have " + rowKeyFields.size());
+        }
+        return rowKeyFields.get(0);
     }
 }

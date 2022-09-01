@@ -73,18 +73,6 @@ public class Schema {
         return rowKeyFields.stream().map(Field::getType).map(t -> (PrimitiveType) t).collect(Collectors.toList());
     }
 
-    /**
-     * A convenience method for cases where we've set up only one row key field.
-     *
-     * @return The row key field
-     */
-    public Field getSingleRowKeyField() {
-        if (rowKeyFields.size() != 1) {
-            throw new IllegalStateException("Cannot get single row key field, have " + rowKeyFields.size());
-        }
-        return rowKeyFields.get(0);
-    }
-
     public void setSortKeyFields(List<Field> sortKeyFields) {
         validateSortKeys(sortKeyFields);
         this.sortKeyFields.clear();
