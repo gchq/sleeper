@@ -34,8 +34,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
 /**
  * Given a list of split points that split the first dimension of the row keys into partitions, this class
@@ -48,15 +46,9 @@ public class PartitionsFromSplitPoints {
     private final List<Field> rowKeyFields;
     private final List<PrimitiveType> rowKeyTypes;
     private final List<Object> splitPoints;
-    private final Supplier<String> idSupplier;
 
     public PartitionsFromSplitPoints(
             Schema schema, List<Object> splitPoints) {
-        this(schema, splitPoints, () -> UUID.randomUUID().toString());
-    }
-
-    private PartitionsFromSplitPoints(
-            Schema schema, List<Object> splitPoints, Supplier<String> idSupplier) {
         this.schema = schema;
         this.rowKeyFields = schema.getRowKeyFields();
         this.rowKeyTypes = new ArrayList<>();
@@ -64,7 +56,6 @@ public class PartitionsFromSplitPoints {
             this.rowKeyTypes.add((PrimitiveType) field.getType());
         }
         this.splitPoints = splitPoints;
-        this.idSupplier = idSupplier;
     }
 
     public List<Partition> construct() {
@@ -98,7 +89,7 @@ public class PartitionsFromSplitPoints {
                 Partition rightPartition = partitionsInLayer.get(i + 1);
 
                 Partition parent = new Partition();
-                parent.setId(idSupplier.get());
+                parent.setId(UUID.randomUUID().toString());
                 parent.setParentPartitionId(null);
                 parent.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
                 parent.setLeafPartition(false);
@@ -140,33 +131,13 @@ public class PartitionsFromSplitPoints {
     }
 
     private List<Partition> createLeafPartitions() {
-        List<Object> partitionBoundaries = new ArrayList<>();
-        Type type = rowKeyTypes.get(0);
-        partitionBoundaries.add(getMinimum(type));
-        for (Object splitPoint : splitPoints) {
-            partitionBoundaries.add(splitPoint);
-        }
-        partitionBoundaries.add(null);
-
-        // Create ranges for the other dimensions
-        List<Range> ranges = new ArrayList<>();
-        for (int i = 1; i < rowKeyFields.size(); i++) {
-            Type rowKeyType = schema.getField(rowKeyFields.get(i).getName()).get().getType();
-            Range range = new Range(rowKeyFields.get(i), getMinimum(rowKeyType), true, null, false);
-            ranges.add(range);
-        }
-
+        List<Region> leafRegions = leafRegionsFromSplitPoints(schema, splitPoints);
         List<Partition> leafPartitions = new ArrayList<>();
-        for (int i = 0; i < partitionBoundaries.size() - 1; i++) {
+        for (Region region : leafRegions) {
             Partition partition = new Partition();
             partition.setRowKeyTypes(rowKeyTypes);
-            List<Range> rangesForThisRegion = new ArrayList<>();
-            Range rangeForDim0 = new Range(rowKeyFields.get(0), partitionBoundaries.get(i), true, partitionBoundaries.get(i + 1), false);
-            rangesForThisRegion.add(rangeForDim0);
-            rangesForThisRegion.addAll(ranges);
-            Region region = new Region(rangesForThisRegion);
             partition.setRegion(region);
-            partition.setId(idSupplier.get());
+            partition.setId(UUID.randomUUID().toString());
             partition.setLeafPartition(true);
             partition.setParentPartitionId(null);
             partition.setChildPartitionIds(new ArrayList<>());
@@ -200,7 +171,7 @@ public class PartitionsFromSplitPoints {
         return range;
     }
 
-    private Object getMinimum(Type type) {
+    private static Object getMinimum(Type type) {
         if (type instanceof IntType) {
             return Integer.MIN_VALUE;
         }
@@ -263,10 +234,38 @@ public class PartitionsFromSplitPoints {
         return (Comparable) obj;
     }
 
-    public static List<Partition> sequentialIds(Schema schema, List<Object> splitPoints) {
-        AtomicInteger idCount = new AtomicInteger(0);
-        Supplier<String> idSupplier = () -> "" + (char) ('A' + idCount.getAndIncrement());
-        return new PartitionsFromSplitPoints(schema, splitPoints, idSupplier).construct();
+    public static List<Region> leafRegionsFromSplitPoints(Schema schema, List<Object> splitPoints) {
+        List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
+        List<Field> rowKeyFields = schema.getRowKeyFields();
+
+        List<Object> partitionBoundaries = new ArrayList<>();
+        Type type = rowKeyTypes.get(0);
+        partitionBoundaries.add(getMinimum(type));
+        partitionBoundaries.addAll(splitPoints);
+        partitionBoundaries.add(null);
+
+        // Create ranges for the other dimensions
+        List<Range> ranges = new ArrayList<>();
+        for (Field rowKeyField : rowKeyFields.subList(1, rowKeyFields.size())) {
+            Type rowKeyType = rowKeyField.getType();
+            Range range = new Range(rowKeyField, getMinimum(rowKeyType), true, null, false);
+            ranges.add(range);
+        }
+
+        List<Region> leafRegions = new ArrayList<>();
+        for (int i = 0; i < partitionBoundaries.size() - 1; i++) {
+            List<Range> rangesForThisRegion = new ArrayList<>();
+            Range rangeForDim0 = new Range(rowKeyFields.get(0), partitionBoundaries.get(i), true, partitionBoundaries.get(i + 1), false);
+            rangesForThisRegion.add(rangeForDim0);
+            rangesForThisRegion.addAll(ranges);
+            Region region = new Region(rangesForThisRegion);
+            leafRegions.add(region);
+        }
+        return leafRegions;
+    }
+
+    public static PartitionTree treeFrom(Schema schema, List<Object> splitPoints) {
+        return new PartitionTree(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct());
     }
 
 }

@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -42,7 +43,7 @@ public class PartitionTree {
         partitions.forEach(p -> this.idToPartition.put(p.getId(), p));
         List<Partition> rootPartitions = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList());
         // There should be exactly one root partition.
-        if (rootPartitions.isEmpty() || rootPartitions.size() > 1) {
+        if (rootPartitions.size() != 1) {
             throw new IllegalArgumentException("There should be exactly one root partition, found " + rootPartitions.size());
         }
         this.rootPartition = rootPartitions.get(0);
@@ -151,5 +152,19 @@ public class PartitionTree {
             }
         }
         return getRootPartition();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PartitionTree that = (PartitionTree) o;
+        return schema.equals(that.schema)
+                && idToPartition.equals(that.idToPartition);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(schema, idToPartition);
     }
 }
