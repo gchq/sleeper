@@ -45,10 +45,12 @@ java -cp ${BASE_DIR}/scripts/jars/clients-*-utility.jar "sleeper.status.update.P
 
 RETAIN_INFRA=`grep sleeper.retain.infra.after.destroy ${INSTANCE_PROPERTIES} | cut -d'=' -f2`
 if [[ "${RETAIN_INFRA,,}" == "false" ]]; then
-  echo "Removing all data from table and query results buckets"
+  echo "Removing all data from config, table and query results buckets"
+  echo "Removing: ${CONFIG_BUCKET}"
   echo "Removing: ${TABLE_BUCKET}"
   echo "Removing: ${QUERY_BUCKET}"
   # Don't fail script if buckets don't exist
+  aws s3 rm s3://${CONFIG_BUCKET} --recursive || true
   aws s3 rm s3://${TABLE_BUCKET} --recursive || true
   aws s3 rm s3://${QUERY_BUCKET} --recursive || true
 fi

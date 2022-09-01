@@ -16,7 +16,14 @@
 package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.model.*;
+import com.amazonaws.services.elasticmapreduce.model.ComputeLimits;
+import com.amazonaws.services.elasticmapreduce.model.ComputeLimitsUnitType;
+import com.amazonaws.services.elasticmapreduce.model.InstanceGroupConfig;
+import com.amazonaws.services.elasticmapreduce.model.InstanceRoleType;
+import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
+import com.amazonaws.services.elasticmapreduce.model.ManagedScalingPolicy;
+import com.amazonaws.services.elasticmapreduce.model.RunJobFlowRequest;
+import com.amazonaws.services.elasticmapreduce.model.RunJobFlowResult;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.google.common.collect.ImmutableMap;
@@ -35,7 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -66,31 +73,6 @@ public class EmrExecutorTest {
     }
 
     @Test
-    public void shouldPrettyPrintTheJobToAvoidEmrBug() {
-        // Given
-        EmrExecutor emrExecutor = new EmrExecutor(emr, new InstanceProperties(), tablePropertiesProvider, amazonS3);
-        BulkImportJob myJob = new BulkImportJob.Builder()
-                .tableName("myTable")
-                .id("my-job")
-                .files(Lists.newArrayList("file1.parquet"))
-                .build();
-
-        // When
-        emrExecutor.runJob(myJob);
-
-        // Then
-        List<String> args = requested.get().getSteps().get(0).getHadoopJarStep().getArgs();
-        String jobArg = args.get(args.size() - 2);
-        assertEquals("{\n"
-                + "  \"files\": [\n"
-                + "    \"file1.parquet\"\n"
-                + "  ],\n"
-                + "  \"id\": \"my-job\",\n"
-                + "  \"tableName\": \"myTable\"\n"
-                + "}", jobArg);
-    }
-
-    @Test
     public void shouldCreateAClusterOfThreeMachinesByDefault() {
         // Given
         EmrExecutor emrExecutor = new EmrExecutor(emr, new InstanceProperties(), tablePropertiesProvider, amazonS3);
@@ -109,7 +91,7 @@ public class EmrExecutorTest {
                 .map(InstanceGroupConfig::getInstanceCount)
                 .reduce(Integer::sum)
                 .orElseThrow(IllegalArgumentException::new);
-        assertEquals(3, (int) instanceCount);
+        assertThat(instanceCount).isEqualTo(3);
     }
 
     @Test
@@ -130,7 +112,7 @@ public class EmrExecutorTest {
         JobFlowInstancesConfig config = requested.get().getInstances();
         String executorInstanceType = config.getInstanceGroups().stream().filter(g -> g.getInstanceRole().equals(InstanceRoleType.CORE.name()))
                 .map(InstanceGroupConfig::getInstanceType).findFirst().orElse("not-found");
-        assertEquals("r5.xlarge", executorInstanceType);
+        assertThat(executorInstanceType).isEqualTo("r5.xlarge");
     }
 
     @Test
@@ -150,16 +132,16 @@ public class EmrExecutorTest {
         JobFlowInstancesConfig config = requested.get().getInstances();
         String executorMarketType = config.getInstanceGroups().stream().filter(g -> g.getInstanceRole().equals(InstanceRoleType.CORE.name()))
                 .map(InstanceGroupConfig::getMarket).findFirst().orElse("not-found");
-        assertEquals("SPOT", executorMarketType);
+        assertThat(executorMarketType).isEqualTo("SPOT");
     }
 
     @Test
     public void shouldUseMarketTypeDefinedInConfig() {
         // Given
-        TableProperties tableProperties  = new TableProperties(new InstanceProperties());
-        tableProperties.set(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS , "5");
-        tableProperties.set(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS , "10");
-        tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE , "ON_DEMAND");
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        tableProperties.set(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, "5");
+        tableProperties.set(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS, "10");
+        tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "ON_DEMAND");
 
         when(tablePropertiesProvider.getTableProperties(anyString()))
                 .then((Answer<TableProperties>) x -> tableProperties);
@@ -179,22 +161,22 @@ public class EmrExecutorTest {
         JobFlowInstancesConfig config = requested.get().getInstances();
         String executorMarketType = config.getInstanceGroups().stream().filter(g -> g.getInstanceRole().equals(InstanceRoleType.CORE.name()))
                 .map(InstanceGroupConfig::getMarket).findFirst().orElse("not-found");
-        assertEquals("ON_DEMAND", executorMarketType);
+        assertThat(executorMarketType).isEqualTo("ON_DEMAND");
     }
 
     @Test
     public void shouldUseMarketTypeDefinedInRequest() {
         // Given
-        TableProperties tableProperties  = new TableProperties(new InstanceProperties());
-        tableProperties.set(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS , "5");
-        tableProperties.set(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS , "10");
-        tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE , "ON_DEMAND");
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        tableProperties.set(BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, "5");
+        tableProperties.set(BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS, "10");
+        tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "ON_DEMAND");
 
         when(tablePropertiesProvider.getTableProperties(anyString()))
                 .then((Answer<TableProperties>) x -> tableProperties);
 
-        Map<String,String>  platformSpec = new HashMap<>();
-        platformSpec.put(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE.getPropertyName() , "SPOT");
+        Map<String, String> platformSpec = new HashMap<>();
+        platformSpec.put(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE.getPropertyName(), "SPOT");
 
         EmrExecutor emrExecutor = new EmrExecutor(emr, new InstanceProperties(), tablePropertiesProvider, amazonS3);
         BulkImportJob myJob = new BulkImportJob.Builder()
@@ -211,7 +193,7 @@ public class EmrExecutorTest {
         JobFlowInstancesConfig config = requested.get().getInstances();
         String executorMarketType = config.getInstanceGroups().stream().filter(g -> g.getInstanceRole().equals(InstanceRoleType.CORE.name()))
                 .map(InstanceGroupConfig::getMarket).findFirst().orElse("not-found");
-        assertEquals("SPOT", executorMarketType);
+        assertThat(executorMarketType).isEqualTo("SPOT");
     }
 
     @Test
@@ -230,8 +212,9 @@ public class EmrExecutorTest {
 
         // Then
         ManagedScalingPolicy scalingPolicy = requested.get().getManagedScalingPolicy();
-        assertEquals(10, (int) scalingPolicy.getComputeLimits().getMaximumCapacityUnits());
-        assertEquals(ComputeLimitsUnitType.Instances.name(), scalingPolicy.getComputeLimits().getUnitType());
+        assertThat(scalingPolicy).extracting(ManagedScalingPolicy::getComputeLimits)
+                .extracting(ComputeLimits::getMaximumCapacityUnits, ComputeLimits::getUnitType)
+                .containsExactly(10, ComputeLimitsUnitType.Instances.name());
     }
 
     @Test
@@ -259,6 +242,6 @@ public class EmrExecutorTest {
             }
         }
 
-        assertEquals("100", conf.get("spark.hadoop.fs.s3a.connection.maximum"));
+        assertThat(conf).containsEntry("spark.hadoop.fs.s3a.connection.maximum", "100");
     }
 }

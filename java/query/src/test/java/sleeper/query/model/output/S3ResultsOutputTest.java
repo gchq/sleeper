@@ -29,7 +29,11 @@ import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.*;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.ListType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.MapType;
+import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.query.model.Query;
 
@@ -39,14 +43,21 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.*;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_RESULTS_PAGE_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_RESULTS_ROW_GROUP_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.query.model.output.S3ResultsOutput.PAGE_SIZE;
 import static sleeper.query.model.output.S3ResultsOutput.ROW_GROUP_SIZE;
 
@@ -78,8 +89,8 @@ public class S3ResultsOutputTest {
         //Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
-        assertEquals("Results list matches records", recordList, getRecordsFromOutput(pathToResultsFile));
-        assertEquals("There is only one block as rowGroup size is large", 1, numberOfBlocks);
+        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(recordList);
+        assertThat(numberOfBlocks).as("There is only one block as rowGroup size is large").isOne();
     }
 
     @Test
@@ -97,8 +108,8 @@ public class S3ResultsOutputTest {
         //Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
-        assertEquals("Results list matches records", recordList, getRecordsFromOutput(pathToResultsFile));
-        assertTrue("There are several blocks as rowGroup size is small", numberOfBlocks > 10);
+        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(recordList);
+        assertThat(numberOfBlocks).as("There are several blocks as rowGroup size is small").isGreaterThan(10);
     }
 
     @Test
@@ -115,8 +126,8 @@ public class S3ResultsOutputTest {
         //Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
-        assertEquals("Results list matches records", recordList, getRecordsFromOutput(pathToResultsFile));
-        assertTrue("There are several blocks as rowGroup size is small", numberOfBlocks > 10);
+        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(recordList);
+        assertThat(numberOfBlocks).as("There are several blocks as rowGroup size is small").isGreaterThan(10);
     }
 
     private String getParquetFilesWithinDirPath(String dir) throws IOException {
@@ -129,7 +140,7 @@ public class S3ResultsOutputTest {
                     .filter(s -> s.endsWith(".parquet"))
                     .collect(Collectors.toList());
 
-            assertEquals("one results Parquet file in dir", 1, files.size());
+            assertThat(files).as("one results Parquet file in dir").hasSize(1);
             return files.get(0);
         }
     }

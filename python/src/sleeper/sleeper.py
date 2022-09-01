@@ -99,7 +99,7 @@ class SleeperClient:
 
 
     def bulk_import_parquet_files_from_s3(self, table_name: str, files: list,
-        id: str = str(uuid.uuid4()), platform: str = "EMR", platform_spec: dict = None):
+        id: str = None, platform: str = "EMR", platform_spec: dict = None, class_name: str = None):
         """
         Ingests the data in the given files to the Sleeper table with name table_name using the bulk
         import method. This is done by posting a message containing the list of files to the bulk
@@ -109,11 +109,11 @@ class SleeperClient:
 
         :param table_name: the table name to write to
         :param files: list of the files containing the records to ingest
-        :param id: the id of the bulk import job
+        :param id: the id of the bulk import job - if one is not provided then a UUID will be assigned
         :param platform: the platform to use - either "EMR" or "PersistentEMR" or "EKS"
         :param platform_spec: a dict containing details of the platform to use - see docs/python-api.md
         """
-        _bulk_import(table_name, files, self._emr_bulk_import_queue, self._persistent_emr_bulk_import_queue, self._eks_bulk_import_queue, id, platform, platform_spec)
+        _bulk_import(table_name, files, self._emr_bulk_import_queue, self._persistent_emr_bulk_import_queue, self._eks_bulk_import_queue, id, platform, platform_spec, class_name)
 
 
     def exact_key_query(self, table_name: str, keys) -> list:
@@ -372,7 +372,7 @@ def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str):
     if ingest_queue == None:
         raise Exception("Ingest queue is not defined - was the Ingest Stack deployed?")
 
-    # Creates the ingest message and generates and ID
+    # Creates the ingest message and generates an ID
     ingest_message = {
         "id": str(uuid.uuid4()),
         "tableName": table_name,
@@ -388,7 +388,7 @@ def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str):
 
 def _bulk_import(table_name: str, files_to_ingest: list,
         emr_bulk_import_queue: str, persistent_emr_bulk_import_queue: str, eks_bulk_import_queue: str,
-        id: str, platform: str, platform_spec: dict):
+        id: str, platform: str, platform_spec: dict, class_name: str):
     """
     Instructs Sleeper to bulk imoport the given files from S3.
 
@@ -415,6 +415,9 @@ def _bulk_import(table_name: str, files_to_ingest: list,
             raise Exception("EKS bulk import queue is not defined - was the EksBulkImportStack deployed?")
         queue = eks_bulk_import_queue
 
+    if id == None:
+        id = str(uuid.uuid4())
+
     # Creates the ingest message and generates and ID
     bulk_import_message = {
         "id": id,
@@ -423,6 +426,8 @@ def _bulk_import(table_name: str, files_to_ingest: list,
     }
     if platform_spec != None and platform != "PersistentEMR":
         bulk_import_message["platformSpec"] = platform_spec
+    if class_name != None:
+        bulk_import_message["className"] = class_name
 
     # Converts bulk import message to json and sends to the SQS queue
     bulk_import_message_json = json.dumps(bulk_import_message)

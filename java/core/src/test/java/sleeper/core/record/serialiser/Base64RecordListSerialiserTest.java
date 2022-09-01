@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class Base64RecordListSerialiserTest {
 
@@ -60,6 +60,6 @@ public class Base64RecordListSerialiserTest {
         ResultsBatch deserialised = serialiser.deserialise(serialised);
 
         // Then
-        assertEquals(deserialised, resultsBatch);
+        assertThat(resultsBatch).isEqualTo(deserialised);
     }
 }

@@ -15,15 +15,8 @@
  */
 package sleeper.bulkimport.job.runner;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import sleeper.core.key.Key;
 import sleeper.core.partition.PartitionTree;
@@ -33,6 +26,13 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class AddPartitionIteratorTest {
 
@@ -52,16 +52,11 @@ public class AddPartitionIteratorTest {
         String partition1 = partitionTree.getLeafPartition(Key.create(1)).getId();
         String partition2 = partitionTree.getLeafPartition(Key.create(4)).getId();
         AddPartitionIterator addPartitionIterator = new AddPartitionIterator(rows, schema, partitionTree);
-        
+
         // When / Then
-        assertTrue(addPartitionIterator.hasNext());
-        Row readRow1 = addPartitionIterator.next();
         Row expectedRow1 = RowFactory.create(1, 2L, "3", partition1);
-        assertEquals(expectedRow1, readRow1);
-        assertTrue(addPartitionIterator.hasNext());
-        Row readRow2 = addPartitionIterator.next();
         Row expectedRow2 = RowFactory.create(4, 5L, "6", partition2);
-        assertEquals(expectedRow2, readRow2);
-        assertFalse(addPartitionIterator.hasNext());
+        assertThat(addPartitionIterator).toIterable()
+                .containsExactly(expectedRow1, expectedRow2);
     }
 }

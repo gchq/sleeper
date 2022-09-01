@@ -26,9 +26,8 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.*;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
@@ -36,11 +35,10 @@ import sleeper.configuration.properties.table.TableProperty;
 public abstract class Executor {
     private static final Logger LOGGER = LoggerFactory.getLogger(Executor.class);
     private static final Predicate<String> LOWER_ALPHANUMERICS_AND_DASHES = Pattern.compile("^[a-z0-9-]+$").asPredicate();
-    protected static final String DEFAULT_CLASS = "sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDRunner";
 
     protected final InstanceProperties instanceProperties;
-    private final TablePropertiesProvider tablePropertiesProvider;
-    private final AmazonS3 s3Client;
+    protected final TablePropertiesProvider tablePropertiesProvider;
+    protected final AmazonS3 s3Client;
 
     public Executor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AmazonS3 amazonS3Client) {
         this.instanceProperties = instanceProperties;
@@ -62,25 +60,33 @@ public abstract class Executor {
 
     protected abstract void runJobOnPlatform(BulkImportJob bulkImportJob);
 
-    protected abstract Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties);
+    protected abstract Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties, InstanceProperties instanceProperties);
 
     protected abstract String getJarLocation();
 
-    public InstanceProperties getInstanceProperties() {
-        return instanceProperties;
-    }
-
     protected List<String> constructArgs(BulkImportJob bulkImportJob) {
-        Map<String, String> config = getDefaultSparkConfig(bulkImportJob, bulkImportJob.getPlatformSpec(), tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName()));
+        Map<String, String> config = getDefaultSparkConfig(bulkImportJob,
+            bulkImportJob.getPlatformSpec(), tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName()), instanceProperties);
         Map<String, String> userConfig = bulkImportJob.getSparkConf();
         if (null != userConfig) {
             config.putAll(userConfig);
         }
         LOGGER.info("Using Spark config {}", config);
 
-        String className = bulkImportJob.getClassName() != null ? bulkImportJob.getClassName() : DEFAULT_CLASS;
+        String className = bulkImportJob.getClassName() != null ? bulkImportJob.getClassName() : instanceProperties.get(BULK_IMPORT_CLASS_NAME);
 
         List<String> args = Lists.newArrayList("spark-submit", "--deploy-mode", "cluster", "--class", className);
+
+        args.add("--executor-cores");
+        args.add("" + instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_CORES));
+        args.add("--driver-cores");
+        args.add("" + instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_CORES));
+        args.add("--executor-memory");
+        args.add("" + instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_MEMORY));
+        args.add("--driver-memory");
+        args.add("" + instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_MEMORY));
+        args.add("--num-executors");
+        args.add("" + instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_INSTANCES));
 
         for (Map.Entry<String, String> configurationItem : config.entrySet()) {
             args.add("--conf");
@@ -88,8 +94,6 @@ public abstract class Executor {
         }
 
         args.add(getJarLocation());
-        args.add(new BulkImportJobSerDe().toJson(bulkImportJob));
-        args.add(instanceProperties.get(CONFIG_BUCKET));
 
         return args;
     }

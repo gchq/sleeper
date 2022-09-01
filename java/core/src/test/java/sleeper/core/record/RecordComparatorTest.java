@@ -23,7 +23,7 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class RecordComparatorTest {
 
@@ -43,20 +43,20 @@ public class RecordComparatorTest {
         record3.put("key", 1);
         record3.put("value", 10000);
         RecordComparator comparator = new RecordComparator(schema);
-        
+
         // When
         int comparison1 = comparator.compare(record1, record2);
         int comparison2 = comparator.compare(record1, record3);
         int comparison3 = comparator.compare(record2, record3);
         int comparison4 = comparator.compare(record1, record1);
-       
+
         // Then
-        assertTrue(comparison1 < 0);
-        assertTrue(comparison2 == 0);
-        assertTrue(comparison3 > 0);
-        assertTrue(comparison4 == 0);
+        assertThat(comparison1).isLessThan(0);
+        assertThat(comparison2).isZero();
+        assertThat(comparison3).isGreaterThan(0);
+        assertThat(comparison4).isZero();
     }
-    
+
     @Test
     public void shouldCompareCorrectlyWithLongRowKeyAndNoSortKeys() {
         // Given
@@ -73,20 +73,20 @@ public class RecordComparatorTest {
         record3.put("key", 1L);
         record3.put("value", 10000L);
         RecordComparator comparator = new RecordComparator(schema);
-        
+
         // When
         int comparison1 = comparator.compare(record1, record2);
         int comparison2 = comparator.compare(record1, record3);
         int comparison3 = comparator.compare(record2, record3);
         int comparison4 = comparator.compare(record1, record1);
-       
+
         // Then
-        assertTrue(comparison1 < 0);
-        assertTrue(comparison2 == 0);
-        assertTrue(comparison3 > 0);
-        assertTrue(comparison4 == 0);
+        assertThat(comparison1).isLessThan(0);
+        assertThat(comparison2).isZero();
+        assertThat(comparison3).isGreaterThan(0);
+        assertThat(comparison4).isZero();
     }
-    
+
     @Test
     public void shouldCompareCorrectlyWithStringRowKeyAndNoSortKeys() {
         // Given
@@ -103,20 +103,20 @@ public class RecordComparatorTest {
         record3.put("key", "1");
         record3.put("value", "10000");
         RecordComparator comparator = new RecordComparator(schema);
-        
+
         // When
         int comparison1 = comparator.compare(record1, record2);
         int comparison2 = comparator.compare(record1, record3);
         int comparison3 = comparator.compare(record2, record3);
         int comparison4 = comparator.compare(record1, record1);
-       
+
         // Then
-        assertTrue(comparison1 < 0);
-        assertTrue(comparison2 == 0);
-        assertTrue(comparison3 > 0);
-        assertTrue(comparison4 == 0);
+        assertThat(comparison1).isLessThan(0);
+        assertThat(comparison2).isZero();
+        assertThat(comparison3).isGreaterThan(0);
+        assertThat(comparison4).isZero();
     }
-    
+
     @Test
     public void shouldCompareCorrectlyWithByteArrayRowKeyAndNoSortKeys() {
         // Given
@@ -133,20 +133,20 @@ public class RecordComparatorTest {
         record3.put("key", new byte[]{1});
         record3.put("value", new byte[]{102});
         RecordComparator comparator = new RecordComparator(schema);
-        
+
         // When
         int comparison1 = comparator.compare(record1, record2);
         int comparison2 = comparator.compare(record1, record3);
         int comparison3 = comparator.compare(record2, record3);
         int comparison4 = comparator.compare(record1, record1);
-       
+
         // Then
-        assertTrue(comparison1 < 0);
-        assertTrue(comparison2 == 0);
-        assertTrue(comparison3 > 0);
-        assertTrue(comparison4 == 0);
+        assertThat(comparison1).isLessThan(0);
+        assertThat(comparison2).isZero();
+        assertThat(comparison3).isGreaterThan(0);
+        assertThat(comparison4).isZero();
     }
-    
+
     @Test
     public void shouldCompareCorrectlyWithIntRowKeyAndIntSortKey() {
         // Given
@@ -175,20 +175,20 @@ public class RecordComparatorTest {
         record5.put("sort", 1);
         record5.put("value", 1000);
         RecordComparator comparator = new RecordComparator(schema);
-        
+
         // When
         int comparison1 = comparator.compare(record1, record2);
         int comparison2 = comparator.compare(record1, record3);
         int comparison3 = comparator.compare(record2, record4);
         int comparison4 = comparator.compare(record4, record5);
-       
+
         // Then
-        assertTrue(comparison1 < 0);
-        assertTrue(comparison2 > 0);
-        assertTrue(comparison3 < 0);
-        assertTrue(comparison4 == 0);
+        assertThat(comparison1).isLessThan(0);
+        assertThat(comparison2).isGreaterThan(0);
+        assertThat(comparison3).isLessThan(0);
+        assertThat(comparison4).isZero();
     }
-    
+
     @Test
     public void shouldCompareCorrectlyWithByteArrayRowKeyAndByteArraySortKey() {
         // Given
@@ -217,20 +217,20 @@ public class RecordComparatorTest {
         record5.put("sort", new byte[]{50, 51});
         record5.put("value", 1000);
         RecordComparator comparator = new RecordComparator(schema);
-        
+
         // When
         int comparison1 = comparator.compare(record1, record2);
         int comparison2 = comparator.compare(record1, record3);
         int comparison3 = comparator.compare(record2, record4);
         int comparison4 = comparator.compare(record4, record5);
-       
+
         // Then
-        assertTrue(comparison1 < 0);
-        assertTrue(comparison2 < 0);
-        assertTrue(comparison3 > 0);
-        assertTrue(comparison4 == 0);
+        assertThat(comparison1).isLessThan(0);
+        assertThat(comparison2).isLessThan(0);
+        assertThat(comparison3).isGreaterThan(0);
+        assertThat(comparison4).isZero();
     }
-    
+
     @Test
     public void shouldCompareCorrectlyWithMultidimensionalByteArrayRowKeyAndMultidimensionalByteArraySortKey() {
         // Given
@@ -286,9 +286,9 @@ public class RecordComparatorTest {
         record8.put("sort1", new byte[]{50, 51});
         record8.put("sort2", new byte[]{50, 51});
         record8.put("value", 1000);
-        
+
         RecordComparator comparator = new RecordComparator(schema);
-        
+
         // When
         int comparison1 = comparator.compare(record1, record2);
         int comparison2 = comparator.compare(record1, record3);
@@ -297,14 +297,14 @@ public class RecordComparatorTest {
         int comparison5 = comparator.compare(record1, record6);
         int comparison6 = comparator.compare(record2, record7);
         int comparison7 = comparator.compare(record7, record8);
-       
+
         // Then
-        assertTrue(comparison1 < 0);
-        assertTrue(comparison2 < 0);
-        assertTrue(comparison3 < 0);
-        assertTrue(comparison4 < 0);
-        assertTrue(comparison5 < 0);
-        assertTrue(comparison6 > 0);
-        assertTrue(comparison7 == 0);
+        assertThat(comparison1).isLessThan(0);
+        assertThat(comparison2).isLessThan(0);
+        assertThat(comparison3).isLessThan(0);
+        assertThat(comparison4).isLessThan(0);
+        assertThat(comparison5).isLessThan(0);
+        assertThat(comparison6).isGreaterThan(0);
+        assertThat(comparison7).isZero();
     }
 }
