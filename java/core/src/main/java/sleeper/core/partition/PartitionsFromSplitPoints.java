@@ -241,16 +241,14 @@ public class PartitionsFromSplitPoints {
         List<Object> partitionBoundaries = new ArrayList<>();
         Type type = rowKeyTypes.get(0);
         partitionBoundaries.add(getMinimum(type));
-        for (Object splitPoint : splitPoints) {
-            partitionBoundaries.add(splitPoint);
-        }
+        partitionBoundaries.addAll(splitPoints);
         partitionBoundaries.add(null);
 
         // Create ranges for the other dimensions
         List<Range> ranges = new ArrayList<>();
-        for (int i = 1; i < rowKeyFields.size(); i++) {
-            Type rowKeyType = schema.getField(rowKeyFields.get(i).getName()).get().getType();
-            Range range = new Range(rowKeyFields.get(i), getMinimum(rowKeyType), true, null, false);
+        for (Field rowKeyField : rowKeyFields.subList(1, rowKeyFields.size())) {
+            Type rowKeyType = rowKeyField.getType();
+            Range range = new Range(rowKeyField, getMinimum(rowKeyType), true, null, false);
             ranges.add(range);
         }
 
