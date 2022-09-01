@@ -16,6 +16,7 @@
 package sleeper.core.range;
 
 import org.junit.Test;
+import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -35,11 +36,12 @@ public class RegionSerDeTest {
         // Given
         Field field = new Field("key", new IntType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
-                Range range = new Range(field, 1, minInclusive, 10, maxInclusive);
+                Range range = rangeFactory.createRange(field, 1, minInclusive, 10, maxInclusive);
                 Region region = new Region(range);
 
                 // When
@@ -57,11 +59,12 @@ public class RegionSerDeTest {
         // Given
         Field field = new Field("key", new IntType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
-                Range range = new Range(field, 1, minInclusive, null, maxInclusive);
+                Range range = rangeFactory.createRange(field, 1, minInclusive, null, maxInclusive);
                 Region region = new Region(range);
 
                 // When
@@ -79,11 +82,12 @@ public class RegionSerDeTest {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
-                Range range = new Range(field, 1L, minInclusive, 10L, maxInclusive);
+                Range range = rangeFactory.createRange(field, 1L, minInclusive, 10L, maxInclusive);
                 Region region = new Region(range);
 
                 // When
@@ -101,11 +105,12 @@ public class RegionSerDeTest {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
-                Range range = new Range(field, 1L, minInclusive, null, maxInclusive);
+                Range range = rangeFactory.createRange(field, 1L, minInclusive, null, maxInclusive);
                 Region region = new Region(range);
 
                 // When
@@ -123,11 +128,12 @@ public class RegionSerDeTest {
         // Given
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
-                Range range = new Range(field, "B", minInclusive, "I", maxInclusive);
+                Range range = rangeFactory.createRange(field, "B", minInclusive, "I", maxInclusive);
                 Region region = new Region(range);
 
                 // When
@@ -145,6 +151,7 @@ public class RegionSerDeTest {
         // Given
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         String jsonRegion = "{\"key\":{\"min\":\"A\",\"minInclusive\":false,\"max\":\"B\",\"maxInclusive\":false},\"stringsBase64Encoded\":false}";
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
@@ -152,7 +159,7 @@ public class RegionSerDeTest {
         Region region = regionSerDe.fromJson(jsonRegion);
 
         // Then
-        Range expectedRange = new Range(field, "A", false, "B", false);
+        Range expectedRange = rangeFactory.createRange(field, "A", false, "B", false);
         Region expectedRegion = new Region(expectedRange);
         assertThat(region).isEqualTo(expectedRegion);
     }
@@ -162,11 +169,12 @@ public class RegionSerDeTest {
         // Given
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
-                Range range = new Range(field, "B", minInclusive, null, maxInclusive);
+                Range range = rangeFactory.createRange(field, "B", minInclusive, null, maxInclusive);
                 Region region = new Region(range);
 
                 // When
@@ -184,11 +192,12 @@ public class RegionSerDeTest {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
-                Range range = new Range(field, new byte[]{10, 11, 12}, minInclusive, new byte[]{15}, maxInclusive);
+                Range range = rangeFactory.createRange(field, new byte[]{10, 11, 12}, minInclusive, new byte[]{15}, maxInclusive);
                 Region region = new Region(range);
 
                 // When
@@ -206,11 +215,12 @@ public class RegionSerDeTest {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
-                Range range = new Range(field, new byte[]{10, 11, 12}, minInclusive, null, maxInclusive);
+                Range range = rangeFactory.createRange(field, new byte[]{10, 11, 12}, minInclusive, null, maxInclusive);
                 Region region = new Region(range);
 
                 // When
@@ -231,10 +241,11 @@ public class RegionSerDeTest {
         Field field3 = new Field("key3", new StringType());
         Field field4 = new Field("key4", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field1, field2, field3, field4).build();
-        Range range1 = new Range(field1, 1, true, 10, true);
-        Range range2 = new Range(field2, 100L, true, 1000L, false);
-        Range range3 = new Range(field3, "B", false, "G", true);
-        Range range4 = new Range(field4, new byte[]{10, 11, 12}, false, new byte[]{15}, false);
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        Range range1 = rangeFactory.createRange(field1, 1, true, 10, true);
+        Range range2 = rangeFactory.createRange(field2, 100L, true, 1000L, false);
+        Range range3 = rangeFactory.createRange(field3, "B", false, "G", true);
+        Range range4 = rangeFactory.createRange(field4, new byte[]{10, 11, 12}, false, new byte[]{15}, false);
         Region region = new Region(Arrays.asList(range1, range2, range3, range4));
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 

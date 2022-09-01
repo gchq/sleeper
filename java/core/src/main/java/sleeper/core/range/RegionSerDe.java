@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -53,7 +54,6 @@ public class RegionSerDe {
     private final Schema schema;
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
-
     public RegionSerDe(Schema schema) {
         try {
             this.schema = schema;
@@ -84,9 +84,11 @@ public class RegionSerDe {
     
     public static class RegionJsonSerDe implements JsonSerializer<Region>, JsonDeserializer<Region> {
         private final Schema schema;
+        private final RangeFactory rangeFactory;
         
         public RegionJsonSerDe(Schema schema) {
             this.schema = schema;
+            this.rangeFactory = new RangeFactory(schema);
         }
         
         @Override
@@ -186,7 +188,7 @@ public class RegionSerDe {
             Object max = getObject(MAX, fieldName, json, stringsBase64Encoded);
             boolean maxInclusive = json.has(MAX_INCLUSIVE) ?
                     json.get(MAX_INCLUSIVE).getAsBoolean() : false;
-            return new Range(schema.getField(fieldName).get(), min, minInclusive, max, maxInclusive);
+            return rangeFactory.createRange(schema.getField(fieldName).get(), min, minInclusive, max, maxInclusive);
         }
         
         private Object getObject(String key, String fieldName, JsonObject json, boolean stringsBase64Encoded) {

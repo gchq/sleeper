@@ -17,6 +17,7 @@ package sleeper.core.partition;
 
 import org.junit.Test;
 import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -39,6 +40,7 @@ public class PartitionsFromSplitPointsTest {
     public void shouldCreateTreeWithOneRootNodeIfNoSplitPoints() {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, Collections.emptyList());
 
         // When
@@ -53,7 +55,7 @@ public class PartitionsFromSplitPointsTest {
         expectedPartition.setRowKeyTypes(schema.getRowKeyTypes());
         expectedPartition.setDimension(-1);
         expectedPartition.setLeafPartition(true);
-        Range expectedRange = new Range(schema.getRowKeyFields().get(0),
+        Range expectedRange = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                 Long.MIN_VALUE, true, null, false);
         Region expectedRegion = new Region(expectedRange);
         expectedPartition.setRegion(expectedRegion);
@@ -64,6 +66,7 @@ public class PartitionsFromSplitPointsTest {
     public void shouldCreateTreeWithOneRootAndTwoChildrenIfOneSplitPoint() {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         List<Object> splitPoints = Collections.singletonList(0L);
         PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, splitPoints);
 
@@ -93,7 +96,7 @@ public class PartitionsFromSplitPointsTest {
         expectedRootPartition.setRowKeyTypes(schema.getRowKeyTypes());
         expectedRootPartition.setDimension(0);
         expectedRootPartition.setLeafPartition(false);
-        Range expectedRootRange = new Range(schema.getRowKeyFields().get(0),
+        Range expectedRootRange = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                 Long.MIN_VALUE, true, null, false);
         Region expectedRootRegion = new Region(expectedRootRange);
         expectedRootPartition.setRegion(expectedRootRegion);
@@ -106,7 +109,7 @@ public class PartitionsFromSplitPointsTest {
         expectedLeftPartition.setRowKeyTypes(schema.getRowKeyTypes());
         expectedLeftPartition.setDimension(-1);
         expectedLeftPartition.setLeafPartition(true);
-        Range expectedLeftRange = new Range(schema.getRowKeyFields().get(0),
+        Range expectedLeftRange = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                 Long.MIN_VALUE, true, 0L, false);
         Region expectedLeftRegion = new Region(expectedLeftRange);
         expectedLeftPartition.setRegion(expectedLeftRegion);
@@ -118,7 +121,7 @@ public class PartitionsFromSplitPointsTest {
         expectedRightPartition.setRowKeyTypes(schema.getRowKeyTypes());
         expectedRightPartition.setDimension(-1);
         expectedRightPartition.setLeafPartition(true);
-        Range expectedRightRange = new Range(schema.getRowKeyFields().get(0),
+        Range expectedRightRange = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                 0L, true, null, false);
         Region expectedRightRegion = new Region(expectedRightRange);
         expectedRightPartition.setRegion(expectedRightRegion);
@@ -130,6 +133,7 @@ public class PartitionsFromSplitPointsTest {
     public void shouldCreateTreeWithThreeLayersIfTwoSplitPoints() {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         List<Object> splitPoints = Arrays.asList(0L, 100L);
         PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, splitPoints);
 
@@ -164,7 +168,7 @@ public class PartitionsFromSplitPointsTest {
         expectedRootPartition.setRowKeyTypes(schema.getRowKeyTypes());
         expectedRootPartition.setDimension(0);
         expectedRootPartition.setLeafPartition(false);
-        Range expectedRootRange = new Range(schema.getRowKeyFields().get(0),
+        Range expectedRootRange = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                 Long.MIN_VALUE, true, null, false);
         Region expectedRootRegion = new Region(expectedRootRange);
         expectedRootPartition.setRegion(expectedRootRegion);
@@ -177,7 +181,7 @@ public class PartitionsFromSplitPointsTest {
         expectedInternalPartition.setRowKeyTypes(schema.getRowKeyTypes());
         expectedInternalPartition.setDimension(0);
         expectedInternalPartition.setLeafPartition(false);
-        Range expectedInternalRange = new Range(schema.getRowKeyFields().get(0),
+        Range expectedInternalRange = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                 Long.MIN_VALUE, true, 100L, false);
         Region expectedInternalRegion = new Region(expectedInternalRange);
         expectedInternalPartition.setRegion(expectedInternalRegion);
@@ -190,7 +194,7 @@ public class PartitionsFromSplitPointsTest {
         expectedLeafPartition0.setRowKeyTypes(schema.getRowKeyTypes());
         expectedLeafPartition0.setDimension(-1);
         expectedLeafPartition0.setLeafPartition(true);
-        Range expectedLeafPartition0Range = new Range(schema.getRowKeyFields().get(0),
+        Range expectedLeafPartition0Range = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                 Long.MIN_VALUE, true, 0L, false);
         Region expectedLeafPartition0Region = new Region(expectedLeafPartition0Range);
         expectedLeafPartition0.setRegion(expectedLeafPartition0Region);
@@ -202,7 +206,7 @@ public class PartitionsFromSplitPointsTest {
         expectedLeafPartition1.setRowKeyTypes(schema.getRowKeyTypes());
         expectedLeafPartition1.setDimension(-1);
         expectedLeafPartition1.setLeafPartition(true);
-        Range expectedLeafPartition1Range = new Range(schema.getRowKeyFields().get(0),
+        Range expectedLeafPartition1Range = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                 0L, true, 100L, false);
         Region expectedLeafPartition1Region = new Region(expectedLeafPartition1Range);
         expectedLeafPartition1.setRegion(expectedLeafPartition1Region);
@@ -214,7 +218,7 @@ public class PartitionsFromSplitPointsTest {
         expectedLeafPartition2.setRowKeyTypes(schema.getRowKeyTypes());
         expectedLeafPartition2.setDimension(-1);
         expectedLeafPartition2.setLeafPartition(true);
-        Range expectedLeafPartition2Range = new Range(schema.getRowKeyFields().get(0),
+        Range expectedLeafPartition2Range = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                 100L, true, null, false);
         Region expectedLeafPartition2Region = new Region(expectedLeafPartition2Range);
         expectedLeafPartition2.setRegion(expectedLeafPartition2Region);
@@ -227,6 +231,7 @@ public class PartitionsFromSplitPointsTest {
     public void shouldCreateTreeWithXLayersIf63SplitPoints() {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         List<Object> splitPoints = new ArrayList<>();
         for (int i = 0; i < 63; i++) {
             splitPoints.add((long) i);
@@ -286,7 +291,7 @@ public class PartitionsFromSplitPointsTest {
         expectedRootPartition.setRowKeyTypes(schema.getRowKeyTypes());
         expectedRootPartition.setDimension(0);
         expectedRootPartition.setLeafPartition(false);
-        Range expectedRootRange = new Range(schema.getRowKeyFields().get(0),
+        Range expectedRootRange = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                 Long.MIN_VALUE, true, null, false);
         Region expectedRootRegion = new Region(expectedRootRange);
         expectedRootPartition.setRegion(expectedRootRegion);
