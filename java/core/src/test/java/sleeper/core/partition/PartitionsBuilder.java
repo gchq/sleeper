@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -62,14 +63,15 @@ public class PartitionsBuilder {
         return this;
     }
 
-    public PartitionsBuilder joinAllLeftFirst(String... ids) {
-        if (ids.length != partitions.size() - 1) {
-            throw new IllegalArgumentException("Must specify IDs for all joins between leaves");
-        }
+    public PartitionsBuilder anyTreeJoiningAllLeaves() {
         Partition left = partitions.get(0);
-        for (int i = 0; i < ids.length; i++) {
-            Partition right = partitions.get(i + 1);
-            left = join(ids[i], left, right);
+        if (partitions.stream().anyMatch(p -> !p.isLeafPartition())) {
+            throw new IllegalArgumentException("Must only specify leaf partitions");
+        }
+        int numLeaves = partitions.size();
+        for (int i = 1; i < numLeaves; i++) {
+            Partition right = partitions.get(i);
+            left = join(UUID.randomUUID().toString(), left, right);
         }
         return this;
     }

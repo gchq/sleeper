@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class PartitionsBuilderTest {
 
@@ -154,25 +155,39 @@ public class PartitionsBuilderTest {
     }
 
     @Test
-    public void canBuildPartitionsSpecifyingSplitPointsLeavesFirstJoinAllLeftFirst() {
+    public void canBuildPartitionsSpecifyingSplitPointsLeavesFirstWhenOnlyCareAboutLeaves() {
         // Given
         Field field = new Field("key1", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
 
-        // When
+        // When I only care about leaf partitions, so I want any tree without caring about
+        // the structure or the non-leaf IDs
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .leavesWithSplits(
+                        Arrays.asList("A", "B", "C"),
+                        Arrays.asList("aaa", "bbb"))
+                .anyTreeJoiningAllLeaves()
+                .buildTree();
+
+        // Then all leaves have a path to the root partition
+        assertThat(tree.getAllAncestors("A")).endsWith(tree.getRootPartition());
+        assertThat(tree.getAllAncestors("B")).endsWith(tree.getRootPartition());
+        assertThat(tree.getAllAncestors("C")).endsWith(tree.getRootPartition());
+    }
+
+    @Test
+    public void failJoiningAllLeavesIfNonLeafSpecified() {
+        // Given
+        Field field = new Field("key1", new StringType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         PartitionsBuilder builder = new PartitionsBuilder(schema)
                 .leavesWithSplits(
                         Arrays.asList("A", "B", "C"),
                         Arrays.asList("aaa", "bbb"))
-                .joinAllLeftFirst("D", "E");
+                .join("D", "A", "B");
 
-        // Then
-        assertThat(builder.buildList()).isEqualTo(new PartitionsBuilder(schema)
-                .leavesWithSplits(
-                        Arrays.asList("A", "B", "C"),
-                        Arrays.asList("aaa", "bbb"))
-                .join("D", "A", "B")
-                .join("E", "D", "C")
-                .buildList());
+        // When / Then
+        assertThatThrownBy(builder::anyTreeJoiningAllLeaves)
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }
