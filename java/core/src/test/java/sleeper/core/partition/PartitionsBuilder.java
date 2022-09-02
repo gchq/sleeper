@@ -15,7 +15,6 @@
  */
 package sleeper.core.partition;
 
-import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
 
@@ -73,31 +72,6 @@ public class PartitionsBuilder {
         Partition right = partitionById(rightId);
         add(factory.parentJoining(parentId, left, right));
         return this;
-    }
-
-    public PartitionsBuilder root(String id, Object min, Object max) {
-        add(factory.partition(id, min, max));
-        return this;
-    }
-
-    public PartitionsBuilder split(String parentId, String leftId, String rightId, Object splitPoint) {
-        Partition parent = partitionById(parentId);
-        Range parentRange = factory.singleRange(parent);
-        add(factory.child(parent, leftId, parentRange.getMin(), splitPoint));
-        add(factory.child(parent, rightId, splitPoint, parentRange.getMax()));
-        return this;
-    }
-
-    public Partition partition(String id, Object min, Object max) {
-        return add(factory.partition(id, min, max));
-    }
-
-    public Partition child(Partition parent, String id, Object min, Object max) {
-        return add(factory.child(parent, id, min, max));
-    }
-
-    public Partition parent(List<Partition> children, String id, Object min, Object max) {
-        return add(factory.parent(children, id, min, max));
     }
 
     private Partition add(Partition partition) {
