@@ -58,7 +58,7 @@ public class PartitionsFromSplitPointsTest {
                 Long.MIN_VALUE, true, null, false);
         Region expectedRegion = new Region(expectedRange);
         expectedPartition.setRegion(expectedRegion);
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
@@ -112,7 +112,6 @@ public class PartitionsFromSplitPointsTest {
                 Long.MIN_VALUE, true, 0L, false);
         Region expectedLeftRegion = new Region(expectedLeftRange);
         expectedLeftPartition.setRegion(expectedLeftRegion);
-        assertThat(childPartitions.get(0)).isEqualTo(expectedLeftPartition);
 
         Partition expectedRightPartition = new Partition();
         expectedRightPartition.setId(childPartitions.get(1).getId());
@@ -125,7 +124,8 @@ public class PartitionsFromSplitPointsTest {
                 0L, true, null, false);
         Region expectedRightRegion = new Region(expectedRightRange);
         expectedRightPartition.setRegion(expectedRightRegion);
-        assertThat(childPartitions.get(1)).isEqualTo(expectedRightPartition);
+
+        assertThat(childPartitions).containsExactly(expectedLeftPartition, expectedRightPartition);
     }
 
     @Test
@@ -197,7 +197,6 @@ public class PartitionsFromSplitPointsTest {
                 Long.MIN_VALUE, true, 0L, false);
         Region expectedLeafPartition0Region = new Region(expectedLeafPartition0Range);
         expectedLeafPartition0.setRegion(expectedLeafPartition0Region);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
 
         Partition expectedLeafPartition1 = new Partition();
         expectedLeafPartition1.setId(leafPartitions.get(1).getId());
@@ -210,7 +209,6 @@ public class PartitionsFromSplitPointsTest {
                 0L, true, 100L, false);
         Region expectedLeafPartition1Region = new Region(expectedLeafPartition1Range);
         expectedLeafPartition1.setRegion(expectedLeafPartition1Region);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
 
         Partition expectedLeafPartition2 = new Partition();
         expectedLeafPartition2.setId(leafPartitions.get(2).getId());
@@ -223,7 +221,9 @@ public class PartitionsFromSplitPointsTest {
                 100L, true, null, false);
         Region expectedLeafPartition2Region = new Region(expectedLeafPartition2Range);
         expectedLeafPartition2.setRegion(expectedLeafPartition2Region);
-        assertThat(leafPartitions.get(2)).isEqualTo(expectedLeafPartition2);
+
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2);
     }
 
     @Test
@@ -303,7 +303,8 @@ public class PartitionsFromSplitPointsTest {
             for (Partition partition : partitionsAtLevel) {
                 assertThat(partition.isLeafPartition()).isFalse();
                 assertThat(partitionIdsOfLevelAbove).contains(partition.getParentPartitionId());
-                assertThat(partitionIdsOfLevelBelow).contains(partition.getChildPartitionIds().get(0), partition.getChildPartitionIds().get(1));
+                assertThat(partitionIdsOfLevelBelow).contains(
+                        partition.getChildPartitionIds().get(0), partition.getChildPartitionIds().get(1));
             }
         }
     }

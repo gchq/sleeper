@@ -15,7 +15,6 @@
  */
 package sleeper.configuration.properties;
 
-import com.google.common.collect.Lists;
 import org.junit.Test;
 
 import java.util.List;
@@ -143,7 +142,7 @@ public class SleeperPropertiesTest {
         List<String> list = testSleeperProperties.getList(OPTIONAL_STACKS);
 
         // Then
-        assertThat(list).isEqualTo(Lists.newArrayList("a", "b", "c"));
+        assertThat(list).containsExactly("a", "b", "c");
     }
 
     @Test

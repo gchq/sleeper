@@ -90,6 +90,6 @@ public class TablePropertiesIT {
         tableProperties.loadFromS3(s3Client, "test");
 
         // Then
-        assertThat(validProperties).isEqualTo(tableProperties);
+        assertThat(tableProperties).isEqualTo(validProperties);
     }
 }

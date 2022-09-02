@@ -73,6 +73,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE;
@@ -193,8 +194,7 @@ public class BulkImportJobRunnerIT {
     }
 
     @Test
-    public void shouldImportDataSinglePartition() throws IOException, StateStoreException,
-            ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public void shouldImportDataSinglePartition() throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -267,16 +267,14 @@ public class BulkImportJobRunnerIT {
         }
         assertThat(readRecords).hasSameSizeAs(records);
 
-        List<Record> expectedRecords = new ArrayList<>();
-        expectedRecords.addAll(records);
+        List<Record> expectedRecords = new ArrayList<>(records);
         sortRecords(expectedRecords);
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
     }
 
     @Test
-    public void shouldNotCoalesceIfSmallNumberOfLeafPartitions() throws IOException, StateStoreException,
-            ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public void shouldNotCoalesceIfSmallNumberOfLeafPartitions() throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -368,8 +366,7 @@ public class BulkImportJobRunnerIT {
     }
 
     @Test
-    public void shouldImportDataMultiplePartitions() throws IOException, StateStoreException,
-            ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public void shouldImportDataMultiplePartitions() throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -414,14 +411,6 @@ public class BulkImportJobRunnerIT {
         runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles).tableName(tableName).build());
 
         // Then
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles).hasSize(2);
-        FileInfo fileInfo1 = activeFiles.get(0);
-        assertThat((long) fileInfo1.getNumberOfRecords()).isEqualTo(50L);
-        List<Record> readRecords1 = readRecords(fileInfo1.getFilename(), schema);
-        FileInfo fileInfo2 = activeFiles.get(1);
-        assertThat((long) fileInfo2.getNumberOfRecords()).isEqualTo(50L);
-        List<Record> readRecords2 = readRecords(fileInfo2.getFilename(), schema);
         List<Record> leftPartition = records.stream()
                 .filter(record -> ((int) record.get("key")) < 50)
                 .sorted((record1, record2) -> {
@@ -438,18 +427,16 @@ public class BulkImportJobRunnerIT {
                     return key1 - key2;
                 })
                 .collect(Collectors.toList());
-        if (((int) readRecords1.get(0).get("key")) < 50) {
-            assertThat(readRecords1).isEqualTo(leftPartition);
-            assertThat(readRecords2).isEqualTo(rightPartition);
-        } else {
-            assertThat(readRecords1).isEqualTo(rightPartition);
-            assertThat(readRecords2).isEqualTo(leftPartition);
-        }
+        assertThat(stateStore.getActiveFiles())
+                .extracting(FileInfo::getNumberOfRecords,
+                        file -> readRecords(file.getFilename(), schema))
+                .containsExactlyInAnyOrder(
+                        tuple(50L, leftPartition),
+                        tuple(50L, rightPartition));
     }
 
     @Test
-    public void shouldImportLargeAmountOfDataMultiplePartitions() throws IOException, StateStoreException,
-            ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public void shouldImportLargeAmountOfDataMultiplePartitions() throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -599,40 +586,30 @@ public class BulkImportJobRunnerIT {
         runner.run(new BulkImportJob.Builder().id("my-job").files(Lists.newArrayList("/import/")).tableName(tableName).build());
 
         // Then
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles).hasSize(1);
-        FileInfo fileInfo = activeFiles.get(0);
-        assertThat((long) fileInfo.getNumberOfRecords()).isEqualTo(100L);
-        assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
-        ParquetRecordReader reader = new ParquetRecordReader(new Path(fileInfo.getFilename()), schema);
-        List<Record> readRecords = new ArrayList<>(100);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(new Record(record));
-            record = reader.read();
-        }
-        reader.close();
-        Collections.sort(records, (record1, record2) -> {
-            int key1 = (int) record1.get("key");
-            int key2 = (int) record2.get("key");
-            return key1 - key2;
-        });
-        assertThat(readRecords).isEqualTo(records);
+        String expectedPartitionId = stateStore.getAllPartitions().get(0).getId();
+        sortRecords(records);
+        assertThat(stateStore.getActiveFiles())
+                .extracting(FileInfo::getNumberOfRecords, FileInfo::getPartitionId,
+                        file -> readRecords(file.getFilename(), schema))
+                .containsExactly(tuple(100L, expectedPartitionId, records));
     }
 
-    private List<Record> readRecords(String filename, Schema schema) throws IOException {
-        ParquetRecordReader reader = new ParquetRecordReader(new Path(filename), schema);
-        List<Record> readRecords = new ArrayList<>();
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(new Record(record));
-            record = reader.read();
+    private List<Record> readRecords(String filename, Schema schema) {
+        try (ParquetRecordReader reader = new ParquetRecordReader(new Path(filename), schema)) {
+            List<Record> readRecords = new ArrayList<>();
+            Record record = reader.read();
+            while (null != record) {
+                readRecords.add(new Record(record));
+                record = reader.read();
+            }
+            return readRecords;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed reading records", e);
         }
-        return readRecords;
     }
 
     private void sortRecords(List<Record> records) {
-        Collections.sort(records, (record1, record2) -> {
+        records.sort((record1, record2) -> {
             int key1 = (int) record1.get("key");
             int key2 = (int) record2.get("key");
             return key1 - key2;

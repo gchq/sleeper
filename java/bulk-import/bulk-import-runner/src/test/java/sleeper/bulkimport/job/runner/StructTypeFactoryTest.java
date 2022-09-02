@@ -52,25 +52,16 @@ public class StructTypeFactoryTest {
 
         // Then
         assertThat(structType.length()).isEqualTo(10);
-        StructField key1 = StructField.apply("key1", DataTypes.IntegerType, false, Metadata.empty());
-        assertThat(structType.fields()[0]).isEqualTo(key1);
-        StructField key2 = StructField.apply("key2", DataTypes.LongType, false, Metadata.empty());
-        assertThat(structType.fields()[1]).isEqualTo(key2);
-        StructField sort1 = StructField.apply("sort1", DataTypes.StringType, false, Metadata.empty());
-        assertThat(structType.fields()[2]).isEqualTo(sort1);
-        StructField sort2 = StructField.apply("sort2", DataTypes.BinaryType, false, Metadata.empty());
-        assertThat(structType.fields()[3]).isEqualTo(sort2);
-        StructField value1 = StructField.apply("value1", DataTypes.IntegerType, false, Metadata.empty());
-        assertThat(structType.fields()[4]).isEqualTo(value1);
-        StructField value2 = StructField.apply("value2", DataTypes.LongType, false, Metadata.empty());
-        assertThat(structType.fields()[5]).isEqualTo(value2);
-        StructField value3 = StructField.apply("value3", DataTypes.StringType, false, Metadata.empty());
-        assertThat(structType.fields()[6]).isEqualTo(value3);
-        StructField value4 = StructField.apply("value4", DataTypes.BinaryType, false, Metadata.empty());
-        assertThat(structType.fields()[7]).isEqualTo(value4);
-        StructField value5 = StructField.apply("value5", DataTypes.createArrayType(DataTypes.LongType), false, Metadata.empty());
-        assertThat(structType.fields()[8]).isEqualTo(value5);
-        StructField value6 = StructField.apply("value6", DataTypes.createMapType(DataTypes.IntegerType, DataTypes.StringType), false, Metadata.empty());
-        assertThat(structType.fields()[9]).isEqualTo(value6);
+        assertThat(structType.fields()).containsExactly(
+                StructField.apply("key1", DataTypes.IntegerType, false, Metadata.empty()),
+                StructField.apply("key2", DataTypes.LongType, false, Metadata.empty()),
+                StructField.apply("sort1", DataTypes.StringType, false, Metadata.empty()),
+                StructField.apply("sort2", DataTypes.BinaryType, false, Metadata.empty()),
+                StructField.apply("value1", DataTypes.IntegerType, false, Metadata.empty()),
+                StructField.apply("value2", DataTypes.LongType, false, Metadata.empty()),
+                StructField.apply("value3", DataTypes.StringType, false, Metadata.empty()),
+                StructField.apply("value4", DataTypes.BinaryType, false, Metadata.empty()),
+                StructField.apply("value5", DataTypes.createArrayType(DataTypes.LongType), false, Metadata.empty()),
+                StructField.apply("value6", DataTypes.createMapType(DataTypes.IntegerType, DataTypes.StringType), false, Metadata.empty()));
     }
 }
