@@ -134,8 +134,8 @@ public class PartitionsBuilderTest {
                 .leavesWithSplits(
                         Arrays.asList("A", "B", "C"),
                         Arrays.asList("aaa", "bbb"))
-                .join("D", "A", "B")
-                .join("E", "D", "C");
+                .parentJoining("D", "A", "B")
+                .parentJoining("E", "D", "C");
 
         // Then
         List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
@@ -184,7 +184,7 @@ public class PartitionsBuilderTest {
                 .leavesWithSplits(
                         Arrays.asList("A", "B", "C"),
                         Arrays.asList("aaa", "bbb"))
-                .join("D", "A", "B");
+                .parentJoining("D", "A", "B");
 
         // When / Then
         assertThatThrownBy(builder::anyTreeJoiningAllLeaves)

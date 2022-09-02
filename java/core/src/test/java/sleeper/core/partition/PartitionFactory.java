@@ -38,7 +38,7 @@ public class PartitionFactory {
         rowKeyTypes = schema.getRowKeyTypes();
     }
 
-    public Partition join(String parentId, Partition left, Partition right) {
+    public Partition parentJoining(String parentId, Partition left, Partition right) {
         return parent(Arrays.asList(left, right), parentId, singleRange(left).getMin(), singleRange(right).getMax());
     }
 

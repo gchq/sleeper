@@ -63,15 +63,15 @@ public class PartitionsBuilder {
         int numLeaves = partitions.size();
         for (int i = 1; i < numLeaves; i++) {
             Partition right = partitions.get(i);
-            left = add(factory.join(UUID.randomUUID().toString(), left, right));
+            left = add(factory.parentJoining(UUID.randomUUID().toString(), left, right));
         }
         return this;
     }
 
-    public PartitionsBuilder join(String parentId, String leftId, String rightId) {
+    public PartitionsBuilder parentJoining(String parentId, String leftId, String rightId) {
         Partition left = partitionById(leftId);
         Partition right = partitionById(rightId);
-        add(factory.join(parentId, left, right));
+        add(factory.parentJoining(parentId, left, right));
         return this;
     }
 
