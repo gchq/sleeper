@@ -105,18 +105,12 @@ public class QuerySerDeTest {
         Query query = querySerDe.fromJson(serialisedQuery);
 
         // Then
-        if (query instanceof LeafPartitionQuery) {
-            fail("Query should be of class Query");
-        }
-        if (!(query instanceof Query)) {
-            fail("Query should be of class Query");
-        }
+        assertThat(query).isNotInstanceOf(LeafPartitionQuery.class);
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        assertThat(query.getRegions()).hasSize(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, 1, true, 2, false));
-        assertThat(query.getRegions().get(0)).isEqualTo(expectedRegion);
+        assertThat(query.getRegions()).containsExactly(expectedRegion);
         assertThat(query.getRequestedValueFields()).isEqualTo(Collections.singletonList("value1"));
     }
 
@@ -151,18 +145,12 @@ public class QuerySerDeTest {
         Query query = querySerDe.fromJson(serialisedQuery);
 
         // Then
-        if (query instanceof LeafPartitionQuery) {
-            fail("Query should be of class Query");
-        }
-        if (!(query instanceof Query)) {
-            fail("Query should be of class Query");
-        }
+        assertThat(query).isNotInstanceOf(LeafPartitionQuery.class);
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        assertThat(query.getRegions()).hasSize(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, 1, true, 2, true));
-        assertThat(query.getRegions().get(0)).isEqualTo(expectedRegion);
+        assertThat(query.getRegions()).containsExactly(expectedRegion);
         assertThat(query.getRequestedValueFields()).isNull();
     }
 
@@ -197,18 +185,12 @@ public class QuerySerDeTest {
         Query query = querySerDe.fromJson(serialisedQuery);
 
         // Then
-        if (query instanceof LeafPartitionQuery) {
-            fail("Query should be of class Query");
-        }
-        if (!(query instanceof Query)) {
-            fail("Query should be of class Query");
-        }
+        assertThat(query).isNotInstanceOf(LeafPartitionQuery.class);
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        assertThat(query.getRegions()).hasSize(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, 1, false, 2, true));
-        assertThat(query.getRegions().get(0)).isEqualTo(expectedRegion);
+        assertThat(query.getRegions()).containsExactly(expectedRegion);
         assertThat(query.getRequestedValueFields()).isNull();
     }
 
@@ -243,18 +225,12 @@ public class QuerySerDeTest {
         Query query = querySerDe.fromJson(serialisedQuery);
 
         // Then
-        if (query instanceof LeafPartitionQuery) {
-            fail("Query should be of class Query");
-        }
-        if (!(query instanceof Query)) {
-            fail("Query should be of class Query");
-        }
+        assertThat(query).isNotInstanceOf(LeafPartitionQuery.class);
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        assertThat(query.getRegions()).hasSize(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, 1, false, 2, false));
-        assertThat(query.getRegions().get(0)).isEqualTo(expectedRegion);
+        assertThat(query.getRegions()).containsExactly(expectedRegion);
         assertThat(query.getRequestedValueFields()).isNull();
     }
 
@@ -290,18 +266,12 @@ public class QuerySerDeTest {
         Query query = querySerDe.fromJson(serialisedQuery);
 
         // Then
-        if (query instanceof LeafPartitionQuery) {
-            fail("Query should be of class Query");
-        }
-        if (!(query instanceof Query)) {
-            fail("Query should be of class Query");
-        }
+        assertThat(query).isNotInstanceOf(LeafPartitionQuery.class);
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        assertThat(query.getRegions()).hasSize(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, 1, false, null, false));
-        assertThat(query.getRegions().get(0)).isEqualTo(expectedRegion);
+        assertThat(query.getRegions()).containsExactly(expectedRegion);
         assertThat(query.getRequestedValueFields()).isNull();
     }
 

@@ -86,8 +86,7 @@ public class ExecutorFactoryIT {
         Executor executor = executorFactory.createExecutor();
 
         // Then
-        assertThat(executor)
-                .isInstanceOf(EmrExecutor.class);
+        assertThat(executor).isInstanceOf(EmrExecutor.class);
 
         s3Client.shutdown();
     }
@@ -106,8 +105,7 @@ public class ExecutorFactoryIT {
         Executor executor = executorFactory.createExecutor();
 
         // Then
-        assertThat(executor)
-                .isInstanceOf(StateMachineExecutor.class);
+        assertThat(executor).isInstanceOf(StateMachineExecutor.class);
 
         s3Client.shutdown();
     }
