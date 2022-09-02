@@ -37,12 +37,6 @@ public class Schema {
     private final List<Field> sortKeyFields;
     private final List<Field> valueFields;
 
-    public Schema() {
-        this.rowKeyFields = new ArrayList<>();
-        this.sortKeyFields = new ArrayList<>();
-        this.valueFields = new ArrayList<>();
-    }
-
     private Schema(Builder builder) {
         rowKeyFields = new ArrayList<>(builder.validRowKeyFields());
         sortKeyFields = new ArrayList<>(builder.validSortKeyFields());
@@ -55,16 +49,6 @@ public class Schema {
         return new Builder();
     }
 
-    public void setRowKeyFields(List<Field> rowKeyFields) {
-        validateRowKeys(rowKeyFields);
-        this.rowKeyFields.clear();
-        this.rowKeyFields.addAll(rowKeyFields);
-    }
-
-    public void setRowKeyFields(Field... rowKeyFields) {
-        setRowKeyFields(Arrays.asList(rowKeyFields));
-    }
-
     public List<Field> getRowKeyFields() {
         return rowKeyFields;
     }
@@ -73,31 +57,12 @@ public class Schema {
         return rowKeyFields.stream().map(Field::getType).map(t -> (PrimitiveType) t).collect(Collectors.toList());
     }
 
-    public void setSortKeyFields(List<Field> sortKeyFields) {
-        validateSortKeys(sortKeyFields);
-        this.sortKeyFields.clear();
-        this.sortKeyFields.addAll(sortKeyFields);
-    }
-
-    public void setSortKeyFields(Field... sortKeyFields) {
-        setSortKeyFields(Arrays.asList(sortKeyFields));
-    }
-
     public List<Field> getSortKeyFields() {
         return sortKeyFields;
     }
 
     public List<PrimitiveType> getSortKeyTypes() {
         return sortKeyFields.stream().map(Field::getType).map(t -> (PrimitiveType) t).collect(Collectors.toList());
-    }
-
-    public void setValueFields(List<Field> valueFields) {
-        this.valueFields.clear();
-        this.valueFields.addAll(valueFields);
-    }
-
-    public void setValueFields(Field... valueFields) {
-        setValueFields(Arrays.asList(valueFields));
     }
 
     public List<Field> getValueFields() {
