@@ -57,7 +57,7 @@ public class SchemaSerDeTest {
                 "      \"type\": \"IntType\"\n" +
                 "    },\n" +
                 "    {\n" +
-                "      \"name\": \"column1\",\n" +
+                "      \"name\": \"column2\",\n" +
                 "      \"type\": \"LongType\"\n" +
                 "    }\n" +
                 "  ],\n" +
