@@ -28,99 +28,9 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class PartitionsBuilderTest {
-
-    @Test
-    public void canBuildPartitionsRootFirst() {
-        // Given
-        Field field = new Field("key1", new StringType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-
-        // When
-        PartitionsBuilder builder = new PartitionsBuilder(schema);
-        Partition root = builder.partition("A", "", null);
-        Partition mid = builder.child(root, "B", "", "def");
-        builder.child(mid, "C", "", "abc");
-        builder.child(mid, "D", "abc", "def");
-        builder.child(root, "E", "def", null);
-
-        // Then
-        List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
-        List<Partition> expectedPartitions = Arrays.asList(
-                new Partition(rowKeyTypes, new Region(new Range(field, "", null)),
-                        "A", false, null, Arrays.asList("B", "E"), 0),
-                new Partition(rowKeyTypes, new Region(new Range(field, "", "def")),
-                        "B", false, "A", Arrays.asList("C", "D"), 0),
-                new Partition(rowKeyTypes, new Region(new Range(field, "", "abc")),
-                        "C", true, "B", Collections.emptyList(), -1),
-                new Partition(rowKeyTypes, new Region(new Range(field, "abc", "def")),
-                        "D", true, "B", Collections.emptyList(), -1),
-                new Partition(rowKeyTypes, new Region(new Range(field, "def", null)),
-                        "E", true, "A", Collections.emptyList(), -1));
-        assertThat(builder.buildList()).isEqualTo(expectedPartitions);
-        assertThat(builder.buildTree()).isEqualTo(new PartitionTree(schema, expectedPartitions));
-    }
-
-    @Test
-    public void canBuildPartitionsLeafFirst() {
-        // Given
-        Field field = new Field("key1", new StringType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-
-        // When
-        PartitionsBuilder builder = new PartitionsBuilder(schema);
-        Partition a = builder.partition("A", "", "abc");
-        Partition b = builder.partition("B", "abc", "def");
-        Partition c = builder.partition("C", "def", null);
-        Partition mid = builder.parent(Arrays.asList(a, b), "D", "", "def");
-        Partition root = builder.parent(Arrays.asList(mid, c), "E", "", null);
-
-        // Then
-        List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
-        List<Partition> expectedPartitions = Arrays.asList(
-                new Partition(rowKeyTypes, new Region(new Range(field, "", "abc")),
-                        "A", true, "D", Collections.emptyList(), -1),
-                new Partition(rowKeyTypes, new Region(new Range(field, "abc", "def")),
-                        "B", true, "D", Collections.emptyList(), -1),
-                new Partition(rowKeyTypes, new Region(new Range(field, "def", null)),
-                        "C", true, "E", Collections.emptyList(), -1),
-                new Partition(rowKeyTypes, new Region(new Range(field, "", "def")),
-                        "D", false, "E", Arrays.asList("A", "B"), 0),
-                new Partition(rowKeyTypes, new Region(new Range(field, "", null)),
-                        "E", false, null, Arrays.asList("D", "C"), 0));
-        assertThat(builder.buildList()).isEqualTo(expectedPartitions);
-        assertThat(builder.buildTree()).isEqualTo(new PartitionTree(schema, expectedPartitions));
-    }
-
-    @Test
-    public void canBuildPartitionsSpecifyingSplitPoints() {
-        // Given
-        Field field = new Field("key1", new StringType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-
-        // When
-        PartitionsBuilder builder = new PartitionsBuilder(schema)
-                .root("A", "", null)
-                .split("A", "B", "C", "abc")
-                .split("C", "D", "E", "def");
-
-        // Then
-        List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
-        List<Partition> expectedPartitions = Arrays.asList(
-                new Partition(rowKeyTypes, new Region(new Range(field, "", null)),
-                        "A", false, null, Arrays.asList("B", "C"), 0),
-                new Partition(rowKeyTypes, new Region(new Range(field, "", "abc")),
-                        "B", true, "A", Collections.emptyList(), -1),
-                new Partition(rowKeyTypes, new Region(new Range(field, "abc", null)),
-                        "C", false, "A", Arrays.asList("D", "E"), 0),
-                new Partition(rowKeyTypes, new Region(new Range(field, "abc", "def")),
-                        "D", true, "C", Collections.emptyList(), -1),
-                new Partition(rowKeyTypes, new Region(new Range(field, "def", null)),
-                        "E", true, "C", Collections.emptyList(), -1));
-        assertThat(builder.buildList()).isEqualTo(expectedPartitions);
-        assertThat(builder.buildTree()).isEqualTo(new PartitionTree(schema, expectedPartitions));
-    }
 
     @Test
     public void canBuildPartitionsSpecifyingSplitPointsLeavesFirst() {
@@ -133,8 +43,8 @@ public class PartitionsBuilderTest {
                 .leavesWithSplits(
                         Arrays.asList("A", "B", "C"),
                         Arrays.asList("aaa", "bbb"))
-                .join("D", "A", "B")
-                .join("E", "D", "C");
+                .parentJoining("D", "A", "B")
+                .parentJoining("E", "D", "C");
 
         // Then
         List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
@@ -154,25 +64,39 @@ public class PartitionsBuilderTest {
     }
 
     @Test
-    public void canBuildPartitionsSpecifyingSplitPointsLeavesFirstJoinAllLeftFirst() {
+    public void canBuildPartitionsSpecifyingSplitPointsLeavesFirstWhenOnlyCareAboutLeaves() {
         // Given
         Field field = new Field("key1", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
 
-        // When
+        // When I only care about leaf partitions, so I want any tree without caring about
+        // the structure or the non-leaf IDs
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .leavesWithSplits(
+                        Arrays.asList("A", "B", "C"),
+                        Arrays.asList("aaa", "bbb"))
+                .anyTreeJoiningAllLeaves()
+                .buildTree();
+
+        // Then all leaves have a path to the root partition
+        assertThat(tree.getAllAncestors("A")).endsWith(tree.getRootPartition());
+        assertThat(tree.getAllAncestors("B")).endsWith(tree.getRootPartition());
+        assertThat(tree.getAllAncestors("C")).endsWith(tree.getRootPartition());
+    }
+
+    @Test
+    public void failJoiningAllLeavesIfNonLeafSpecified() {
+        // Given
+        Field field = new Field("key1", new StringType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         PartitionsBuilder builder = new PartitionsBuilder(schema)
                 .leavesWithSplits(
                         Arrays.asList("A", "B", "C"),
                         Arrays.asList("aaa", "bbb"))
-                .joinAllLeftFirst("D", "E");
+                .parentJoining("D", "A", "B");
 
-        // Then
-        assertThat(builder.buildList()).isEqualTo(new PartitionsBuilder(schema)
-                .leavesWithSplits(
-                        Arrays.asList("A", "B", "C"),
-                        Arrays.asList("aaa", "bbb"))
-                .join("D", "A", "B")
-                .join("E", "D", "C")
-                .buildList());
+        // When / Then
+        assertThatThrownBy(builder::anyTreeJoiningAllLeaves)
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

@@ -58,32 +58,31 @@ public class PartitionTreeNearestCommonAncestorTest {
     @Test
     public void shouldGetMidPartitionForPartitionsWithSameMidParent() {
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
-        PartitionsBuilder builder = new PartitionsBuilder(schema);
-        Partition a = builder.partition("A", "", "abc");
-        Partition b = builder.partition("B", "abc", "def");
-        Partition c = builder.partition("C", "def", null);
-        Partition mid = builder.parent(Arrays.asList(a, b), "D", "", "def");
-        Partition root = builder.parent(Arrays.asList(mid, c), "E", "", null);
-        PartitionTree tree = builder.buildTree();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .leavesWithSplits(
+                        Arrays.asList("A", "B", "C"),
+                        Arrays.asList("abc", "def"))
+                .parentJoining("D", "A", "B")
+                .parentJoining("E", "D", "C")
+                .buildTree();
 
         assertThat(tree.getNearestCommonAncestor(Key.create("a"), Key.create("d")))
-                .isEqualTo(mid);
+                .isEqualTo(tree.getPartition("D"));
     }
 
     @Test
     public void shouldGetMidPartitionForPartitionsWithSeparatedMidAncestor() {
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
-        PartitionsBuilder builder = new PartitionsBuilder(schema);
-        Partition a = builder.partition("A", "", "abc");
-        Partition b = builder.partition("B", "abc", "def");
-        Partition c = builder.partition("C", "def", "ghi");
-        Partition d = builder.partition("D", "ghi", null);
-        Partition e = builder.parent(Arrays.asList(a, b), "E", "", "def");
-        Partition f = builder.parent(Arrays.asList(e, c), "F", "", "ghi");
-        Partition g = builder.parent(Arrays.asList(f, d), "G", "", null);
-        PartitionTree tree = builder.buildTree();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .leavesWithSplits(
+                        Arrays.asList("A", "B", "C", "D"),
+                        Arrays.asList("abc", "def", "ghi"))
+                .parentJoining("E", "A", "B")
+                .parentJoining("F", "E", "C")
+                .parentJoining("G", "F", "D")
+                .buildTree();
 
         assertThat(tree.getNearestCommonAncestor(Key.create("a"), Key.create("f")))
-                .isEqualTo(f);
+                .isEqualTo(tree.getPartition("F"));
     }
 }
