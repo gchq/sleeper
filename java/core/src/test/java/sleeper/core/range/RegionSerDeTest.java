@@ -34,8 +34,7 @@ public class RegionSerDeTest {
     public void shouldSerDeCorrectlyIntKey() {
         // Given
         Field field = new Field("key", new IntType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
@@ -57,8 +56,7 @@ public class RegionSerDeTest {
     public void shouldSerDeCorrectlyIntKeyNullMax() {
         // Given
         Field field = new Field("key", new IntType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
@@ -80,8 +78,7 @@ public class RegionSerDeTest {
     public void shouldSerDeCorrectlyLongKey() {
         // Given
         Field field = new Field("key", new LongType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
@@ -103,8 +100,7 @@ public class RegionSerDeTest {
     public void shouldSerDeCorrectlyLongKeyNullMax() {
         // Given
         Field field = new Field("key", new LongType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
@@ -126,8 +122,7 @@ public class RegionSerDeTest {
     public void shouldSerDeCorrectlyStringKey() {
         // Given
         Field field = new Field("key", new StringType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
@@ -149,8 +144,7 @@ public class RegionSerDeTest {
     public void shouldDeserialsieCorrectlyStringKeyBase64Encoded() {
         // Given
         Field field = new Field("key", new StringType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         String jsonRegion = "{\"key\":{\"min\":\"A\",\"minInclusive\":false,\"max\":\"B\",\"maxInclusive\":false},\"stringsBase64Encoded\":false}";
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
@@ -167,8 +161,7 @@ public class RegionSerDeTest {
     public void shouldSerDeCorrectlyStringKeyNullMax() {
         // Given
         Field field = new Field("key", new StringType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
@@ -190,8 +183,7 @@ public class RegionSerDeTest {
     public void shouldSerDeCorrectlyByteArrayKey() {
         // Given
         Field field = new Field("key", new ByteArrayType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
@@ -213,8 +205,7 @@ public class RegionSerDeTest {
     public void shouldSerDeCorrectlyByteArrayKeyNullMax() {
         // Given
         Field field = new Field("key", new ByteArrayType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
@@ -239,8 +230,7 @@ public class RegionSerDeTest {
         Field field2 = new Field("key2", new LongType());
         Field field3 = new Field("key3", new StringType());
         Field field4 = new Field("key4", new ByteArrayType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field1, field2, field3, field4);
+        Schema schema = Schema.builder().rowKeyFields(field1, field2, field3, field4).build();
         Range range1 = new Range(field1, 1, true, 10, true);
         Range range2 = new Range(field2, 100L, true, 1000L, false);
         Range range3 = new Range(field3, "B", false, "G", true);

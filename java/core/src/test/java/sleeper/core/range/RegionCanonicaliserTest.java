@@ -31,10 +31,9 @@ public class RegionCanonicaliserTest {
     @Test
     public void shouldAnswerIsRegionInCanonicalFormCorrectly() {
         // Given
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new IntType());
         Field field2 = new Field("key2", new LongType());
-        schema.setRowKeyFields(field1, field2);
+        Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field1, 1, 10);
         Range range2 = rangeFactory.createRange(field2, 100L, true, 200L, true);
@@ -51,10 +50,9 @@ public class RegionCanonicaliserTest {
     @Test
     public void shouldCanonicaliseRegionCorrectly() {
         // Given
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new IntType());
         Field field2 = new Field("key2", new LongType());
-        schema.setRowKeyFields(field1, field2);
+        Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field1, 1, 10);
         Range range2 = rangeFactory.createRange(field2, 100L, true, 200L, true);
