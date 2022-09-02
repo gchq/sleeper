@@ -88,23 +88,14 @@ public class IngestRecordsFromIteratorIT {
     public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
 
     private final Field field = new Field("key", new LongType());
-    private final Schema schema = Schema.builder()
-            .rowKeyFields(field)
-            .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
-            .build();
+    private final Schema schema = schemaWithRowKeys(field);
 
-    private final Field field1 = new Field("key1", new ByteArrayType());
-    private final Field field2 = new Field("key2", new ByteArrayType());
-    private final Schema schema2DimByteArrayKey = Schema.builder()
-            .rowKeyFields(field1, field2)
-            .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
-            .build();
-
-    private final Schema schemaAggregationIteratorTest = Schema.builder()
-            .rowKeyFields(new Field("key", new ByteArrayType()))
-            .sortKeyFields(new Field("sort", new LongType()))
-            .valueFields(new Field("value", new LongType()))
-            .build();
+    private Schema schemaWithRowKeys(Field... fields) {
+        return Schema.builder()
+                .rowKeyFields(fields)
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
+    }
 
     public static List<Record> getRecords() {
         List<Record> records = new ArrayList<>();
@@ -444,6 +435,8 @@ public class IngestRecordsFromIteratorIT {
     @Test
     public void shouldWriteRecordsSplitByPartitionByteArrayKey() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
+        Field field = new Field("key", new ByteArrayType());
+        Schema schema = schemaWithRowKeys(field);
         Partition rootPartition = new Partition();
         rootPartition.setRowKeyTypes(new ByteArrayType());
         rootPartition.setId("root");
@@ -568,7 +561,9 @@ public class IngestRecordsFromIteratorIT {
     @Test
     public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = schema2DimByteArrayKey;
+        Field field1 = new Field("key1", new ByteArrayType());
+        Field field2 = new Field("key2", new ByteArrayType());
+        Schema schema = schemaWithRowKeys(field1, field2);
         Partition rootPartition = new Partition();
         rootPartition.setRowKeyTypes(new ByteArrayType(), new ByteArrayType());
         rootPartition.setId("root");
@@ -1246,7 +1241,12 @@ public class IngestRecordsFromIteratorIT {
     @Test
     public void shouldApplyIterator() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = schemaAggregationIteratorTest;
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new ByteArrayType()))
+                .sortKeyFields(new Field("sort", new LongType()))
+                .valueFields(new Field("value", new LongType()))
+                .build();
+
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
