@@ -243,9 +243,9 @@ public class PartitionsFromSplitPoints {
     }
 
     public static List<Region> leafRegionsFromSplitPoints(Schema schema, List<Object> splitPoints) {
+        RangeFactory rangeFactoryStatic = new RangeFactory(schema);
         List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
         List<Field> rowKeyFields = schema.getRowKeyFields();
-        RangeFactory rangeFactory = new RangeFactory(schema);
         List<Object> partitionBoundaries = new ArrayList<>();
         Type type = rowKeyTypes.get(0);
         partitionBoundaries.add(getMinimum(type));
@@ -256,14 +256,14 @@ public class PartitionsFromSplitPoints {
         List<Range> ranges = new ArrayList<>();
         for (Field rowKeyField : rowKeyFields.subList(1, rowKeyFields.size())) {
             Type rowKeyType = rowKeyField.getType();
-            Range range = rangeFactory.createRange(rowKeyField, getMinimum(rowKeyType), true, null, false);
+            Range range = rangeFactoryStatic.createRange(rowKeyField, getMinimum(rowKeyType), true, null, false);
             ranges.add(range);
         }
 
         List<Region> leafRegions = new ArrayList<>();
         for (int i = 0; i < partitionBoundaries.size() - 1; i++) {
             List<Range> rangesForThisRegion = new ArrayList<>();
-            Range rangeForDim0 = rangeFactory.createRange(rowKeyFields.get(0), partitionBoundaries.get(i), true, partitionBoundaries.get(i + 1), false);
+            Range rangeForDim0 = rangeFactoryStatic.createRange(rowKeyFields.get(0), partitionBoundaries.get(i), true, partitionBoundaries.get(i + 1), false);
             rangesForThisRegion.add(rangeForDim0);
             rangesForThisRegion.addAll(ranges);
             Region region = new Region(rangesForThisRegion);
