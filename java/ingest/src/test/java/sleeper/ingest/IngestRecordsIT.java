@@ -88,6 +88,25 @@ public class IngestRecordsIT {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
 
+    private final Field field = new Field("key", new LongType());
+    private final Schema schema = Schema.builder()
+            .rowKeyFields(field)
+            .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+            .build();
+
+    private final Field field1 = new Field("key1", new ByteArrayType());
+    private final Field field2 = new Field("key2", new ByteArrayType());
+    private final Schema schema2DimByteArrayKey = Schema.builder()
+            .rowKeyFields(field1, field2)
+            .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+            .build();
+
+    private final Schema schemaAggregationIteratorTest = Schema.builder()
+            .rowKeyFields(new Field("key", new ByteArrayType()))
+            .sortKeyFields(new Field("sort", new LongType()))
+            .valueFields(new Field("value", new LongType()))
+            .build();
+
     public static List<Record> getRecords() {
         List<Record> records = new ArrayList<>();
         Record record1 = new Record();
@@ -279,9 +298,6 @@ public class IngestRecordsIT {
     @Test
     public void shouldWriteRecordsCorrectly() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         DynamoDBStateStore stateStore = getStateStore(schema);
         String localDir = folder.newFolder().getAbsolutePath();
 
@@ -349,10 +365,6 @@ public class IngestRecordsIT {
     @Test
     public void shouldWriteRecordsSplitByPartitionLongKey() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         Partition rootPartition = new Partition();
         rootPartition.setRowKeyTypes(new LongType());
         rootPartition.setId("root");
@@ -476,10 +488,6 @@ public class IngestRecordsIT {
     @Test
     public void shouldWriteRecordsSplitByPartitionByteArrayKey() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         Partition rootPartition = new Partition();
         rootPartition.setRowKeyTypes(new ByteArrayType());
         rootPartition.setId("root");
@@ -610,11 +618,7 @@ public class IngestRecordsIT {
     @Test
     public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field1 = new Field("key1", new ByteArrayType());
-        Field field2 = new Field("key2", new ByteArrayType());
-        schema.setRowKeyFields(field1, field2);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = schema2DimByteArrayKey;
         Partition rootPartition = new Partition();
         rootPartition.setRowKeyTypes(new ByteArrayType(), new ByteArrayType());
         rootPartition.setId("root");
@@ -751,11 +755,7 @@ public class IngestRecordsIT {
     @Test
     public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKeyWhenSplitOnDim1() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field1 = new Field("key1", new IntType());
-        Field field2 = new Field("key2", new LongType());
-        schema.setRowKeyFields(field1, field2);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = schema2DimByteArrayKey;
         // The original root partition was split on the second dimension.
         // Ordering (sorted using the first dimension with the second dimension
         // used to break ties):
@@ -915,10 +915,6 @@ public class IngestRecordsIT {
     @Test
     public void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         Partition rootPartition = new Partition();
         rootPartition.setRowKeyTypes(new LongType());
         rootPartition.setId("root");
@@ -1013,9 +1009,6 @@ public class IngestRecordsIT {
     @Test
     public void shouldWriteDuplicateRecords() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
@@ -1084,10 +1077,6 @@ public class IngestRecordsIT {
     @Test
     public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         Partition rootPartition = new Partition();
         rootPartition.setRowKeyTypes(new LongType());
         rootPartition.setId("root");
@@ -1266,10 +1255,6 @@ public class IngestRecordsIT {
     @Test
     public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         Partition rootPartition = new Partition();
         rootPartition.setRowKeyTypes(new LongType());
         rootPartition.setId("root");
@@ -1404,9 +1389,6 @@ public class IngestRecordsIT {
     @Test
     public void shouldSortRecords() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
@@ -1476,9 +1458,6 @@ public class IngestRecordsIT {
     @Test
     public void shouldWriteNoRecordsSuccessfully() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
@@ -1511,10 +1490,7 @@ public class IngestRecordsIT {
     @Test
     public void shouldApplyIterator() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new LongType()));
+        Schema schema = schemaAggregationIteratorTest;
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
