@@ -26,6 +26,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * A convenience class for specifying partitions.
+ * <p>
+ * Note that a shorthand is used for cases where we have a schema with only one row key field.
+ * This will not be useful in the general case.
+ */
 public class PartitionFactory {
 
     private final Schema schema;
@@ -38,8 +44,13 @@ public class PartitionFactory {
         rowKeyTypes = schema.getRowKeyTypes();
     }
 
-    public Partition parentJoining(String parentId, Partition left, Partition right) {
-        return parent(Arrays.asList(left, right), parentId, singleRange(left).getMin(), singleRange(right).getMax());
+    public Partition partition(String id, Object min, Object max) {
+        return partition(id, new Region(rangeFactory.createRange(singleRowKeyField(), min, max)));
+    }
+
+    public Partition partition(String id, Region region) {
+        return new Partition(rowKeyTypes, region,
+                id, true, null, Collections.emptyList(), -1);
     }
 
     public Partition child(Partition parent, String id, Object min, Object max) {
@@ -51,7 +62,11 @@ public class PartitionFactory {
         return child;
     }
 
-    public Partition parent(List<Partition> children, String id, Object min, Object max) {
+    public Partition parentJoining(String parentId, Partition left, Partition right) {
+        return parent(Arrays.asList(left, right), parentId, singleRange(left).getMin(), singleRange(right).getMax());
+    }
+
+    private Partition parent(List<Partition> children, String id, Object min, Object max) {
         Partition parent = partition(id, min, max);
         parent.setChildPartitionIds(children.stream()
                 .map(Partition::getId)
@@ -62,16 +77,7 @@ public class PartitionFactory {
         return parent;
     }
 
-    public Partition partition(String id, Object min, Object max) {
-        return partition(id, new Region(rangeFactory.createRange(singleRowKeyField(), min, max)));
-    }
-
-    public Partition partition(String id, Region region) {
-        return new Partition(rowKeyTypes, region,
-                id, true, null, Collections.emptyList(), -1);
-    }
-
-    public Range singleRange(Partition partition) {
+    private Range singleRange(Partition partition) {
         return partition.getRegion().getRange(singleRowKeyField().getName());
     }
 
