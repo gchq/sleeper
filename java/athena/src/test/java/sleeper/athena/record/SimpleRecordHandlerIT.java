@@ -38,7 +38,6 @@ import sleeper.athena.TestUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
-import sleeper.core.schema.Schema;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
@@ -279,7 +278,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(new ParquetRecordReader(new Path(file), new Schema()));
+        ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(new ParquetRecordReader(new Path(file), SCHEMA));
         while (parquetReaderIterator.hasNext()) {
             parquetReaderIterator.next();
         }
