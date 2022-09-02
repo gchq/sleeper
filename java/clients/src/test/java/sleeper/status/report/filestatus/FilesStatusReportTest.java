@@ -46,7 +46,13 @@ public class FilesStatusReportTest {
                 .leavesWithSplits(
                         Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H"),
                         Arrays.asList("aaa", "bbb", "ccc", "ddd", "eee", "fff", "ggg"))
-                .joinAllLeftFirst("I", "J", "K", "L", "M", "N", "O")
+                .join("I", "A", "B")
+                .join("J", "I", "C")
+                .join("K", "J", "D")
+                .join("L", "K", "E")
+                .join("M", "L", "F")
+                .join("N", "M", "G")
+                .join("O", "N", "H")
                 .buildList();
         FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
         List<FileInfo> activeFiles = Arrays.asList(
@@ -81,7 +87,8 @@ public class FilesStatusReportTest {
                 .leavesWithSplits(
                         Arrays.asList("A", "B", "C"),
                         Arrays.asList("beeblebrox", "wowbagger"))
-                .joinAllLeftFirst("D", "E")
+                .join("D", "A", "B")
+                .join("E", "D", "C")
                 .buildList();
         FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
         List<FileInfo> activeFiles = Arrays.asList(
