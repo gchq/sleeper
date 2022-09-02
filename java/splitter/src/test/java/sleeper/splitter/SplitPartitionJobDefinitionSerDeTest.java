@@ -41,9 +41,8 @@ public class SplitPartitionJobDefinitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithIntKey() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new IntType());
         partition.setId("123");
@@ -85,9 +84,8 @@ public class SplitPartitionJobDefinitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithLongKey() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new LongType());
         partition.setId("123");
@@ -129,9 +127,8 @@ public class SplitPartitionJobDefinitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithStringKey() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new StringType());
         partition.setId("123");
@@ -173,9 +170,8 @@ public class SplitPartitionJobDefinitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithStringKeyWithNullMax() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new StringType());
         partition.setId("123");
@@ -217,9 +213,8 @@ public class SplitPartitionJobDefinitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithByteArrayKey() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new ByteArrayType());
         partition.setId("123");
@@ -261,9 +256,8 @@ public class SplitPartitionJobDefinitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithByteArrayKeyWithNullMax() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new ByteArrayType());
         partition.setId("123");

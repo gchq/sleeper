@@ -77,6 +77,9 @@ public class SplitPartitionIT {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
 
+    private final Field field = new Field("key", new IntType());
+    private final Schema schema = Schema.builder().rowKeyFields(field).build();
+
     @BeforeClass
     public static void initDynamoClient() {
         AwsClientBuilder.EndpointConfiguration endpointConfiguration =
@@ -109,8 +112,6 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForIntKeyCorrectly()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
         StateStore stateStore = getStateStore(schema);
         String path = folder.newFolder().getAbsolutePath();
         String path2 = folder.newFolder().getAbsolutePath();
@@ -175,9 +176,6 @@ public class SplitPartitionIT {
     public void shouldNotSplitPartitionForIntKeyIfItCannotBeSplitBecausePartitionIsOnePoint()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
         // Non-leaf partitions
         Range rootRange = new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, null);
         Partition rootPartition = new Partition(
@@ -281,9 +279,6 @@ public class SplitPartitionIT {
     public void shouldNotSplitPartitionForIntKeyIfItCannotBeSplitBecauseDataIsConstant()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
         // Non-leaf partitions
         Range rootRange = new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, null);
         Partition rootPartition = new Partition(
@@ -396,8 +391,9 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForIntMultidimensionalKeyOnFirstDimensionCorrectly()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
+                .build();
         StateStore stateStore = getStateStore(schema);
         String path = folder.newFolder().getAbsolutePath();
         String path2 = folder.newFolder().getAbsolutePath();
@@ -476,8 +472,9 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForIntMultidimensionalKeyOnSecondDimensionCorrectlyWhenMinIsMax()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
+                .build();
         StateStore stateStore = getStateStore(schema);
         String path = folder.newFolder().getAbsolutePath();
         String path2 = folder.newFolder().getAbsolutePath();
@@ -556,8 +553,9 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForIntMultidimensionalKeyOnSecondDimensionCorrectlyWhenMinIsMedian()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
+                .build();
         StateStore stateStore = getStateStore(schema);
         String path = folder.newFolder().getAbsolutePath();
         String path2 = folder.newFolder().getAbsolutePath();
@@ -641,8 +639,7 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForLongKeyCorrectly()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new LongType())).build();
         StateStore stateStore = getStateStore(schema);
         String path = folder.newFolder().getAbsolutePath();
         String path2 = folder.newFolder().getAbsolutePath();
@@ -711,8 +708,7 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForStringKeyCorrectly()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new StringType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
         StateStore stateStore = getStateStore(schema);
         String path = folder.newFolder().getAbsolutePath();
         String path2 = folder.newFolder().getAbsolutePath();
@@ -791,8 +787,7 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForByteArrayKeyCorrectly()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
         StateStore stateStore = getStateStore(schema);
         String path = folder.newFolder().getAbsolutePath();
         String path2 = folder.newFolder().getAbsolutePath();
@@ -863,9 +858,7 @@ public class SplitPartitionIT {
     public void shouldNotSplitPartitionForByteArrayKeyIfItCannotBeSplitBecausePartitionIsOnePoint()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
         // Non-leaf partitions
         Range rootRange = new RangeFactory(schema).createRange(field, new byte[]{0}, null);
         Partition rootPartition = new Partition(
@@ -988,9 +981,7 @@ public class SplitPartitionIT {
     public void shouldNotSplitPartitionForByteArrayKeyIfItCannotBeSplitBecauseDataIsConstant()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
         // Non-leaf partitions
         Range rootRange = new RangeFactory(schema).createRange(field, new byte[]{0}, null);
         Partition rootPartition = new Partition(
@@ -1109,8 +1100,9 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForByteArrayMultidimensionalKeyOnFirstDimensionCorrectly()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()))
+                .build();
         StateStore stateStore = getStateStore(schema);
         String path = folder.newFolder().getAbsolutePath();
         String path2 = folder.newFolder().getAbsolutePath();
@@ -1191,8 +1183,9 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForByteArrayMultidimensionalKeyOnSecondDimensionCorrectly()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()))
+                .build();
         StateStore stateStore = getStateStore(schema);
         String path = folder.newFolder().getAbsolutePath();
         String path2 = folder.newFolder().getAbsolutePath();
