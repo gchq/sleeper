@@ -115,9 +115,9 @@ public interface FileInfoStore {
     List<FileInfo> getActiveFilesWithNoJobId() throws StateStoreException;
 
     /**
-     * Returns a {@link Map} from the partition id to a {@List} of the filenames.
+     * Returns a {@link Map} from the partition id to a {@link List} of the filenames.
      *
-     * @return a {@link Map} from the partition id to a {@List} of the filenames
+     * @return a {@link Map} from the partition id to a {@link List} of the filenames
      * @throws StateStoreException if query fails
      */
     Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException;
