@@ -50,16 +50,13 @@ public abstract class AbstractMetadataHandlerIT {
     @ClassRule
     public static TemporaryFolder tempDir = new TemporaryFolder();
 
-    protected static final Schema TIME_SERIES_SCHEMA = new Schema();
-
-    static {
-        TIME_SERIES_SCHEMA.setRowKeyFields(
-                new Field("year", new IntType()),
-                new Field("month", new IntType()),
-                new Field("day", new IntType())
-        );
-        TIME_SERIES_SCHEMA.setValueFields(new Field("count", new LongType()));
-    }
+    protected static final Schema TIME_SERIES_SCHEMA = Schema.builder()
+            .rowKeyFields(
+                    new Field("year", new IntType()),
+                    new Field("month", new IntType()),
+                    new Field("day", new IntType()))
+            .valueFields(new Field("count", new LongType()))
+            .build();
 
     @Before
     public void setUpCredentials() {

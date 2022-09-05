@@ -593,11 +593,12 @@ public class QueryExecutorIT {
             throws StateStoreException, InterruptedException,
             IOException, IteratorException, ObjectFactoryException, QueryException {
         // Given
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
-        schema.setRowKeyFields(field1, field2);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(field1, field2)
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
         InstanceProperties instanceProperties = new InstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
@@ -721,11 +722,12 @@ public class QueryExecutorIT {
             throws StateStoreException, InterruptedException, QueryException,
             IOException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new StringType());
         Field field2 = new Field("key2", new StringType());
-        schema.setRowKeyFields(field1, field2);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(field1, field2)
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
         List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
         InstanceProperties instanceProperties = new InstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
@@ -1061,11 +1063,12 @@ public class QueryExecutorIT {
             throws StateStoreException, InterruptedException,
             IOException, IteratorException, ObjectFactoryException, QueryException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("value1", new LongType()));
-        schema.setValueFields(new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(field)
+                .sortKeyFields(new Field("value1", new LongType()))
+                .valueFields(new Field("value2", new LongType()))
+                .build();
         InstanceProperties instanceProperties = new InstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
@@ -1119,10 +1122,11 @@ public class QueryExecutorIT {
             throws StateStoreException, InterruptedException,
             IOException, IteratorException, ObjectFactoryException, QueryException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("id", new StringType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("timestamp", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(field)
+                .valueFields(new Field("timestamp", new LongType()))
+                .build();
         InstanceProperties instanceProperties = new InstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
@@ -1280,17 +1284,17 @@ public class QueryExecutorIT {
     }
 
     protected Schema getLongKeySchema() {
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
-        return schema;
+        return Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
     }
 
     protected Schema getSecurityLabelSchema() {
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value", new LongType()), new Field("securityLabel", new StringType()));
-        return schema;
+        return Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .valueFields(new Field("value", new LongType()), new Field("securityLabel", new StringType()))
+                .build();
     }
 
     protected void ingestData(InstanceProperties instanceProperties, StateStore stateStore, Schema schema, Iterator<Record> recordIterator)
