@@ -127,9 +127,6 @@ public class S3StateStore implements StateStore {
         this.dynamoRevisionIdTable = Objects.requireNonNull(dynamoRevisionIdTable, "dynamoRevisionIdTable must not be null");
         this.tableSchema = Objects.requireNonNull(tableSchema, "tableSchema must not be null");
         this.rowKeyTypes = this.tableSchema.getRowKeyTypes();
-        if (this.rowKeyTypes.isEmpty()) {
-            throw new IllegalArgumentException("rowKeyTypes must not be empty");
-        }
         this.garbageCollectorDelayBeforeDeletionInSeconds = garbageCollectorDelayBeforeDeletionInSeconds;
         this.dynamoDB = Objects.requireNonNull(dynamoDB, "dynamoDB must not be null");
         this.keySerDe = new KeySerDe(rowKeyTypes);
@@ -137,11 +134,6 @@ public class S3StateStore implements StateStore {
         this.partitionSchema = initialisePartitionSchema();
         this.conf = conf;
         this.regionSerDe = new RegionSerDe(this.tableSchema);
-    }
-
-    @Override
-    public List<PrimitiveType> getRowKeyTypes() {
-        return Collections.unmodifiableList(rowKeyTypes);
     }
 
     @Override
