@@ -25,12 +25,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -39,6 +33,13 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
+
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Serialises a {@link Region} to and from a JSON string.
@@ -66,7 +67,7 @@ public class RegionSerDe {
             throw new RuntimeException("Exception creating Gson", e);
         }
     }
-    
+
     public String toJson(Region region) {
         return gson.toJson(region);
     }
@@ -81,18 +82,18 @@ public class RegionSerDe {
     public Region fromJson(String jsonSchema) {
         return gson.fromJson(jsonSchema, Region.class);
     }
-    
+
     public static class RegionJsonSerDe implements JsonSerializer<Region>, JsonDeserializer<Region> {
         private final Schema schema;
-        
+
         public RegionJsonSerDe(Schema schema) {
             this.schema = schema;
         }
-        
+
         @Override
         public JsonElement serialize(Region region, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
             JsonObject json = new JsonObject();
-            List<Range> ranges  = region.getRanges();
+            List<Range> ranges = region.getRanges();
             for (Range range : ranges) {
                 json.add(range.getFieldName(), convertRangeToJsonObject(range));
             }
@@ -106,12 +107,12 @@ public class RegionSerDe {
                 throw new JsonParseException("Expected JsonObject, got " + jsonElement);
             }
             JsonObject jsonObject = (JsonObject) jsonElement;
-            
+
             boolean stringsBase64Encoded = true;
             if (jsonObject.has(STRINGS_BASE64_ENCODED)) {
                 stringsBase64Encoded = jsonObject.get(STRINGS_BASE64_ENCODED).getAsBoolean();
             }
-            
+
             List<Range> ranges = new ArrayList<>();
             Set<Map.Entry<String, JsonElement>> entries = jsonObject.entrySet();
             for (Map.Entry<String, JsonElement> entry : entries) {
@@ -127,7 +128,7 @@ public class RegionSerDe {
             }
             return new Region(ranges);
         }
-        
+
         private JsonObject convertRangeToJsonObject(Range range) {
             Optional<Type> optional = schema.getRowKeyFields()
                     .stream()
@@ -138,7 +139,7 @@ public class RegionSerDe {
                 throw new JsonParseException("Cannot find type of field " + range.getFieldName() + " in schema");
             }
             PrimitiveType type = (PrimitiveType) optional.get();
-            
+
             JsonObject json = new JsonObject();
             addObject(json, type, MIN, range.getMin());
             if (range.isMinInclusive()) {
@@ -152,10 +153,10 @@ public class RegionSerDe {
             } else {
                 json.addProperty(MAX_INCLUSIVE, Boolean.FALSE);
             }
-            
+
             return json;
         }
-        
+
         private void addObject(JsonObject json, PrimitiveType type, String key, Object object) {
             if (null == object) {
                 json.add(key, null);
@@ -178,7 +179,7 @@ public class RegionSerDe {
                 throw new JsonParseException("Unknown primitive type: " + type);
             }
         }
-        
+
         private Range convertJsonObjectToRange(String fieldName, JsonObject json, boolean stringsBase64Encoded) {
             Object min = getObject(MIN, fieldName, json, stringsBase64Encoded);
             boolean minInclusive = json.has(MIN_INCLUSIVE) ?
@@ -188,7 +189,7 @@ public class RegionSerDe {
                     json.get(MAX_INCLUSIVE).getAsBoolean() : false;
             return new Range(schema.getField(fieldName).get(), min, minInclusive, max, maxInclusive);
         }
-        
+
         private Object getObject(String key, String fieldName, JsonObject json, boolean stringsBase64Encoded) {
             if (!json.has(key)) {
                 throw new JsonParseException("Missing " + key + " in " + json);
@@ -204,7 +205,7 @@ public class RegionSerDe {
             if (!optional.isPresent()) {
                 throw new JsonParseException("Cannot find type of field " + fieldName + " in schema");
             }
-            
+
             Object object;
             PrimitiveType type = (PrimitiveType) optional.get();
             if (type instanceof IntType) {

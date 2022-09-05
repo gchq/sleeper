@@ -26,10 +26,10 @@ import java.util.Objects;
 public class Field {
     private String name;
     private Type type;
-    
+
     public Field() {
     }
-    
+
     public Field(String name, Type type) {
         setName(name);
         setType(type);
