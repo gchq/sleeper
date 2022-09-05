@@ -35,7 +35,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     USER_JARS("sleeper.userjars"),
     TAGS_FILE("sleeper.tags.file"),
     TAGS("sleeper.tags"),
-    STACK_TAG_NAME("sleeper.stack.tag.name"),
+    STACK_TAG_NAME("sleeper.stack.tag.name", "DeploymentStack"),
     RETAIN_INFRA_AFTER_DESTROY("sleeper.retain.infra.after.destroy", "true", Utils::isTrueOrFalse),
     OPTIONAL_STACKS("sleeper.optional.stacks",
             "CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrBulkImportStack,DashboardStack"),
