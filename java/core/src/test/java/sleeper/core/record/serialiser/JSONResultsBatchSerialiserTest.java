@@ -28,7 +28,7 @@ import sleeper.core.schema.type.StringType;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class JSONResultsBatchSerialiserTest {
 
@@ -59,6 +59,6 @@ public class JSONResultsBatchSerialiserTest {
         ResultsBatch deserialised = serialiser.deserialise(serialised);
 
         // Then
-        assertEquals(resultsBatch, deserialised);
+        assertThat(deserialised).isEqualTo(resultsBatch);
     }
 }

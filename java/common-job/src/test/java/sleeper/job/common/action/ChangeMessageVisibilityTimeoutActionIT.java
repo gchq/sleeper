@@ -31,7 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ChangeMessageVisibilityTimeoutActionIT {
 
@@ -73,11 +73,11 @@ public class ChangeMessageVisibilityTimeoutActionIT {
                 .withQueueUrl(queueUrl)
                 .withMaxNumberOfMessages(1);
         ReceiveMessageResult result = sqs.receiveMessage(receiveMessageRequest);
-        assertEquals(1, result.getMessages().size());
+        assertThat(result.getMessages()).hasSize(1);
         //  - Sleep for 2.5 seconds, then check that message has reappeared
         Thread.sleep(2500L);
         result = sqs.receiveMessage(receiveMessageRequest);
-        assertEquals(1, result.getMessages().size());
+        assertThat(result.getMessages()).hasSize(1);
         String receiptHandle = result.getMessages().get(0).getReceiptHandle();
 
         // When
@@ -94,11 +94,11 @@ public class ChangeMessageVisibilityTimeoutActionIT {
                 .withMaxNumberOfMessages(1)
                 .withWaitTimeSeconds(0);
         result = sqs.receiveMessage(receiveMessageRequest);
-        assertEquals(0, result.getMessages().size());
+        assertThat(result.getMessages()).isEmpty();
         // - Sleep for a further 6 seconds, then check that message has reappeared
         Thread.sleep(6000L);
         result = sqs.receiveMessage(receiveMessageRequest);
-        assertEquals(1, result.getMessages().size());
+        assertThat(result.getMessages()).hasSize(1);
 
         sqs.shutdown();
     }

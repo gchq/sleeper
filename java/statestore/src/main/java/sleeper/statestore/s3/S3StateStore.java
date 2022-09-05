@@ -32,6 +32,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.key.KeySerDe;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.range.RegionSerDe;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -68,7 +69,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIM
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
-import sleeper.core.range.RegionSerDe;
 
 /**
  * An implementation of {@link StateStore} that stores the information in Parquet files in S3. A DynamoDB table is
@@ -182,7 +182,7 @@ public class S3StateStore implements StateStore {
             list.forEach(f -> fileNameToFileInfo.put(f.getFilename(), f));
             for (FileInfo fileInfo : filesToBeMarkedReadyForGC) {
                 if (!fileNameToFileInfo.containsKey(fileInfo.getFilename())
-                    || !fileNameToFileInfo.get(fileInfo.getFilename()).getFileStatus().equals(FileInfo.FileStatus.ACTIVE)) {
+                        || !fileNameToFileInfo.get(fileInfo.getFilename()).getFileStatus().equals(FileInfo.FileStatus.ACTIVE)) {
                     return "Files in filesToBeMarkedReadyForGC should be active: file " + fileInfo.getFilename() + " is not active";
                 }
             }
@@ -696,35 +696,29 @@ public class S3StateStore implements StateStore {
     }
 
     private Schema initialiseFileInfoSchema() {
-        List<Field> rowKeyFields = new ArrayList<>();
-        rowKeyFields.add(new Field("fileName", new StringType()));
-        List<Field> valueFields = new ArrayList<>();
-        valueFields.add(new Field("fileStatus", new StringType()));
-        valueFields.add(new Field("partitionId", new StringType()));
-        valueFields.add(new Field("lastStateStoreUpdateTime", new LongType()));
-        valueFields.add(new Field("numberOfRecords", new LongType()));
-        valueFields.add(new Field("jobId", new StringType()));
-        valueFields.add(new Field("minRowKeys", new ByteArrayType()));
-        valueFields.add(new Field("maxRowKeys", new ByteArrayType()));
-        Schema schema = new Schema();
-        schema.setRowKeyFields(rowKeyFields);
-        schema.setValueFields(valueFields);
-        return schema;
+        return Schema.builder()
+                .rowKeyFields(new Field("fileName", new StringType()))
+                .valueFields(
+                        new Field("fileStatus", new StringType()),
+                        new Field("partitionId", new StringType()),
+                        new Field("lastStateStoreUpdateTime", new LongType()),
+                        new Field("numberOfRecords", new LongType()),
+                        new Field("jobId", new StringType()),
+                        new Field("minRowKeys", new ByteArrayType()),
+                        new Field("maxRowKeys", new ByteArrayType()))
+                .build();
     }
 
     private Schema initialisePartitionSchema() {
-        List<Field> rowKeyFields = new ArrayList<>();
-        rowKeyFields.add(new Field("partitionId", new StringType()));
-        List<Field> valueFields = new ArrayList<>();
-        valueFields.add(new Field("leafPartition", new StringType()));
-        valueFields.add(new Field("parentPartitionId", new StringType()));
-        valueFields.add(new Field("childPartitionIds", new ListType(new StringType())));
-        valueFields.add(new Field("region", new StringType()));
-        valueFields.add(new Field("dimension", new IntType()));
-        Schema schema = new Schema();
-        schema.setRowKeyFields(rowKeyFields);
-        schema.setValueFields(valueFields);
-        return schema;
+        return Schema.builder()
+                .rowKeyFields(new Field("partitionId", new StringType()))
+                .valueFields(
+                        new Field("leafPartition", new StringType()),
+                        new Field("parentPartitionId", new StringType()),
+                        new Field("childPartitionIds", new ListType(new StringType())),
+                        new Field("region", new StringType()),
+                        new Field("dimension", new IntType()))
+                .build();
     }
 
     private String getFilesPath(RevisionId revisionId) {

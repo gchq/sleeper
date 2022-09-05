@@ -31,7 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class DeleteMessageActionIT {
 
@@ -73,7 +73,7 @@ public class DeleteMessageActionIT {
                 .withQueueUrl(queueUrl)
                 .withMaxNumberOfMessages(1);
         ReceiveMessageResult result = sqs.receiveMessage(receiveMessageRequest);
-        assertEquals(1, result.getMessages().size());
+        assertThat(result.getMessages()).hasSize(1);
         String receiptHandle = result.getMessages().get(0).getReceiptHandle();
 
         // When
@@ -89,7 +89,7 @@ public class DeleteMessageActionIT {
                 .withMaxNumberOfMessages(1)
                 .withWaitTimeSeconds(0);
         result = sqs.receiveMessage(receiveMessageRequest);
-        assertEquals(0, result.getMessages().size());
+        assertThat(result.getMessages()).isEmpty();
 
         sqs.shutdown();
     }

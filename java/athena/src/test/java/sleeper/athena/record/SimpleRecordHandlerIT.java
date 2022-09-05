@@ -49,10 +49,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -102,8 +99,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertTrue(response instanceof ReadRecordsResponse);
-        assertEquals(0, ((ReadRecordsResponse) response).getRecordCount());
+        assertThat(response).isInstanceOf(ReadRecordsResponse.class);
+        assertThat(((ReadRecordsResponse) response).getRecordCount()).isZero();
     }
 
     @Test
@@ -143,8 +140,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertTrue(response instanceof ReadRecordsResponse);
-        assertEquals(0, ((ReadRecordsResponse) response).getRecordCount());
+        assertThat(response).isInstanceOf(ReadRecordsResponse.class);
+        assertThat(((ReadRecordsResponse) response).getRecordCount()).isZero();
     }
 
     @Test
@@ -195,8 +192,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertTrue(response instanceof ReadRecordsResponse);
-        assertEquals(61, ((ReadRecordsResponse) response).getRecordCount());
+        assertThat(response).isInstanceOf(ReadRecordsResponse.class);
+        assertThat(((ReadRecordsResponse) response).getRecordCount()).isEqualTo(61);
     }
 
     @Test
@@ -243,8 +240,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertTrue(response instanceof ReadRecordsResponse);
-        assertEquals(6, ((ReadRecordsResponse) response).getRecordCount());
+        assertThat(response).isInstanceOf(ReadRecordsResponse.class);
+        assertThat(((ReadRecordsResponse) response).getRecordCount()).isEqualTo(6);
         Block records = ((ReadRecordsResponse) response).getRecords();
         assertFieldContainedValue(records, 0, "str", new Text("2018-01-05"));
         assertFieldContainedValue(records, 5, "str", new Text("2018-01-10"));
@@ -289,8 +286,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         long numberOfRecords = parquetReaderIterator.getNumberOfRecordsRead();
 
-        assertTrue(response instanceof ReadRecordsResponse);
-        assertEquals(numberOfRecords, ((ReadRecordsResponse) response).getRecordCount());
+        assertThat(response).isInstanceOf(ReadRecordsResponse.class);
+        assertThat(((ReadRecordsResponse) response).getRecordCount()).isEqualTo(numberOfRecords);
     }
 
     @Test
@@ -304,8 +301,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         String file = stateStore.getLeafPartitions().stream()
                 .map(Partition::getId)
                 .map(partitionToActiveFilesMap::get)
-                .filter(list -> list.size() == 1)   // Ensure the partition has a single file, otherwise the file might
-                                                    // not contain the entirety of Feb
+                // Ensure the partition has a single file, otherwise the file might not contain the entirety of Feb
+                .filter(list -> list.size() == 1)
                 .flatMap(List::stream)
                 .findAny()
                 .orElseThrow(RuntimeException::new);
@@ -327,9 +324,9 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         org.apache.arrow.vector.types.pojo.Schema schemaWithoutDay = new org.apache.arrow.vector.types.pojo.Schema(
                 createArrowSchema().getFields()
-                .stream()
-                .filter(field -> !field.getName().equals("day"))
-                .collect(Collectors.toList()));
+                        .stream()
+                        .filter(field -> !field.getName().equals("day"))
+                        .collect(Collectors.toList()));
 
 
         RecordResponse response = sleeperRecordHandler.doReadRecords(new BlockAllocatorImpl(), new ReadRecordsRequest(
@@ -347,11 +344,11 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        assertTrue(response instanceof ReadRecordsResponse);
-        // assertEquals(28, ((ReadRecordsResponse) response).getRecordCount());
+        assertThat(response).isInstanceOf(ReadRecordsResponse.class);
+//        assertThat(((ReadRecordsResponse) response).getRecordCount()).isEqualTo(28);
         Block records = ((ReadRecordsResponse) response).getRecords();
         // Just to show the difference
-        assertNotNull(records.getFieldVector("month"));
-        assertNull(records.getFieldVector("day"));
+        assertThat(records.getFieldVector("month")).isNotNull();
+        assertThat(records.getFieldVector("day")).isNull();
     }
 }

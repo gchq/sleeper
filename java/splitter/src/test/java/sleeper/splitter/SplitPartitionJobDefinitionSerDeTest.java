@@ -15,10 +15,6 @@
  */
 package sleeper.splitter;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
@@ -33,6 +29,12 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.splitter.FindPartitionsToSplitIT.TestTablePropertiesProvider;
 import sleeper.statestore.FileInfo;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class SplitPartitionJobDefinitionSerDeTest {
 
@@ -77,7 +79,7 @@ public class SplitPartitionJobDefinitionSerDeTest {
         SplitPartitionJobDefinition deserialised = jobDefinitionSerDe.fromJson(serialised);
 
         // Then
-        assertEquals(jobDefinition, deserialised);
+        assertThat(deserialised).isEqualTo(jobDefinition);
     }
 
     @Test
@@ -121,7 +123,7 @@ public class SplitPartitionJobDefinitionSerDeTest {
         SplitPartitionJobDefinition deserialised = jobDefinitionSerDe.fromJson(serialised);
 
         // Then
-        assertEquals(jobDefinition, deserialised);
+        assertThat(deserialised).isEqualTo(jobDefinition);
     }
 
     @Test
@@ -165,7 +167,7 @@ public class SplitPartitionJobDefinitionSerDeTest {
         SplitPartitionJobDefinition deserialised = jobDefinitionSerDe.fromJson(serialised);
 
         // Then
-        assertEquals(jobDefinition, deserialised);
+        assertThat(deserialised).isEqualTo(jobDefinition);
     }
 
     @Test
@@ -209,7 +211,7 @@ public class SplitPartitionJobDefinitionSerDeTest {
         SplitPartitionJobDefinition deserialised = jobDefinitionSerDe.fromJson(serialised);
 
         // Then
-        assertEquals(jobDefinition, deserialised);
+        assertThat(deserialised).isEqualTo(jobDefinition);
     }
 
     @Test
@@ -253,7 +255,7 @@ public class SplitPartitionJobDefinitionSerDeTest {
         SplitPartitionJobDefinition deserialised = jobDefinitionSerDe.fromJson(serialised);
 
         // Then
-        assertEquals(jobDefinition, deserialised);
+        assertThat(deserialised).isEqualTo(jobDefinition);
     }
 
     @Test
@@ -297,6 +299,6 @@ public class SplitPartitionJobDefinitionSerDeTest {
         SplitPartitionJobDefinition deserialised = jobDefinitionSerDe.fromJson(serialised);
 
         // Then
-        assertEquals(jobDefinition, deserialised);
+        assertThat(deserialised).isEqualTo(jobDefinition);
     }
 }
