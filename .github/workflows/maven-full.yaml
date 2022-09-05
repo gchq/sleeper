@@ -22,3 +22,7 @@ jobs:
       - name: Publish Test Report
         if: ${{ always() }}
         uses: scacap/action-surefire-report@v1
+      - uses: jwgmeligmeyling/checkstyle-github-action@v1.2
+        if: ${{ always() }}
+        with:
+          path: '**/checkstyle-result.xml'
