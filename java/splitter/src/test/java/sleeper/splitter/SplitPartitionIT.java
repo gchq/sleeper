@@ -858,7 +858,8 @@ public class SplitPartitionIT {
     public void shouldNotSplitPartitionForByteArrayKeyIfItCannotBeSplitBecausePartitionIsOnePoint()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
+        Field field = new Field("key", new ByteArrayType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         // Non-leaf partitions
         Range rootRange = new RangeFactory(schema).createRange(field, new byte[]{0}, null);
         Partition rootPartition = new Partition(
@@ -981,7 +982,8 @@ public class SplitPartitionIT {
     public void shouldNotSplitPartitionForByteArrayKeyIfItCannotBeSplitBecauseDataIsConstant()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
+        Field field = new Field("key", new ByteArrayType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         // Non-leaf partitions
         Range rootRange = new RangeFactory(schema).createRange(field, new byte[]{0}, null);
         Partition rootPartition = new Partition(
