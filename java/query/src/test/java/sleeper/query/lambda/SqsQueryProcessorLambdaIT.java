@@ -143,20 +143,19 @@ public class SqsQueryProcessorLambdaIT {
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
 
-    private static final Schema SCHEMA = new Schema();
-
-    static {
-        SCHEMA.setRowKeyFields(
-                new Field("year", new IntType()),
-                new Field("month", new IntType()),
-                new Field("day", new IntType())
-        );
-        SCHEMA.setSortKeyFields(new Field("timestamp", new LongType()));
-        SCHEMA.setValueFields(new Field("count", new LongType()),
-                new Field("map", new MapType(new StringType(), new StringType())),
-                new Field("str", new StringType()),
-                new Field("list", new ListType(new StringType())));
-    }
+    private static final Schema SCHEMA = Schema.builder()
+            .rowKeyFields(
+                    new Field("year", new IntType()),
+                    new Field("month", new IntType()),
+                    new Field("day", new IntType()))
+            .sortKeyFields(
+                    new Field("timestamp", new LongType()))
+            .valueFields(
+                    new Field("count", new LongType()),
+                    new Field("map", new MapType(new StringType(), new StringType())),
+                    new Field("str", new StringType()),
+                    new Field("list", new ListType(new StringType())))
+            .build();
 
     @Test
     public void shouldSetStatusOfQueryToCompletedIfLeadingToNoSubQueries() throws ObjectFactoryException, IOException {

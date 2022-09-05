@@ -38,8 +38,7 @@ public class PartitionsFromSplitPointsTest {
     @Test
     public void shouldCreateTreeWithOneRootNodeIfNoSplitPoints() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("id", new LongType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
         PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, Collections.emptyList());
 
         // When
@@ -64,8 +63,7 @@ public class PartitionsFromSplitPointsTest {
     @Test
     public void shouldCreateTreeWithOneRootAndTwoChildrenIfOneSplitPoint() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("id", new LongType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
         List<Object> splitPoints = Collections.singletonList(0L);
         PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, splitPoints);
 
@@ -131,8 +129,7 @@ public class PartitionsFromSplitPointsTest {
     @Test
     public void shouldCreateTreeWithThreeLayersIfTwoSplitPoints() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("id", new LongType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
         List<Object> splitPoints = Arrays.asList(0L, 100L);
         PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, splitPoints);
 
@@ -229,8 +226,7 @@ public class PartitionsFromSplitPointsTest {
     @Test
     public void shouldCreateTreeWithXLayersIf63SplitPoints() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("id", new LongType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
         List<Object> splitPoints = new ArrayList<>();
         for (int i = 0; i < 63; i++) {
             splitPoints.add((long) i);

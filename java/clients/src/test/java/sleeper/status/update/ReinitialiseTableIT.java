@@ -111,12 +111,10 @@ public class ReinitialiseTableIT {
     private static final String SPLIT_PARTITION_STRING_2 = "beta";
     private static final String S3_STATE_STORE_PARTITIONS_FILENAME = "statestore/partitions/file4.parquet";
     private static final String S3_STATE_STORE_FILES_FILENAME = "statestore/files/file5.parquet";
-    private static final Schema KEY_VALUE_SCHEMA = new Schema();
-
-    static {
-        KEY_VALUE_SCHEMA.setRowKeyFields(new Field("key", new StringType()));
-        KEY_VALUE_SCHEMA.setValueFields(new Field("value1", new StringType()), new Field("value2", new StringType()));
-    }
+    private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
+            .rowKeyFields(new Field("key", new StringType()))
+            .valueFields(new Field("value1", new StringType()), new Field("value2", new StringType()))
+            .build();
 
     @ClassRule
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))

@@ -42,9 +42,6 @@ public class SplitPartition {
 
     public void splitPartition(Partition partition, List<String> fileNames)
             throws StateStoreException, IOException {
-        if (stateStore.getRowKeyTypes().isEmpty()) {
-            throw new StateStoreException("Invalid StateStore - there must be at least one row key");
-        }
         new SplitMultiDimensionalPartitionImpl(stateStore, schema, partition, fileNames, conf)
                 .splitPartition();
     }

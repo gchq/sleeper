@@ -85,7 +85,7 @@ public class BasicCompactionStrategyTest {
         fileInfos.add(fileInfo2);
 
         // When
-        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, fileInfos, partitions);
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
 
         // Then
         assertThat(compactionJobs).hasSize(1);
@@ -134,7 +134,7 @@ public class BasicCompactionStrategyTest {
         }
 
         // When
-        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, fileInfos, partitions);
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
 
         // Then
         assertThat(compactionJobs).hasSize(10).isEqualTo(IntStream.range(0, 10).mapToObj(i -> {
@@ -195,7 +195,7 @@ public class BasicCompactionStrategyTest {
         fileInfos.add(fileInfo2);
 
         // When
-        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, fileInfos, partitions);
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -289,7 +289,7 @@ public class BasicCompactionStrategyTest {
         fileInfos.add(fileInfo6);
 
         // When
-        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, fileInfos, partitions);
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
 
         // Then
         assertThat(compactionJobs).hasSize(3);
@@ -330,9 +330,8 @@ public class BasicCompactionStrategyTest {
     @Test
     public void shouldCreateSplittingJobs() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, "bucket");
         TableProperties tableProperties = new TableProperties(instanceProperties);
@@ -389,7 +388,7 @@ public class BasicCompactionStrategyTest {
         fileInfos.add(fileInfo2);
 
         // When
-        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, fileInfos, partitions);
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
 
         // Then
         assertThat(compactionJobs).hasSize(1);

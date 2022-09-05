@@ -296,9 +296,10 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
     public void shouldHandleStringRowKeyTypes() throws Exception {
         // Given
         InstanceProperties instanceProperties = getInstanceProperties();
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new StringType()));
-        schema.setValueFields(new Field("value", new StringType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value", new StringType()))
+                .build();
 
         TableProperties tableProperties = createEmptyTable(instanceProperties, schema);
 

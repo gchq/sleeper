@@ -181,9 +181,7 @@ public class PartitionTest {
         partition1.setLeafPartition(true);
         partition1.setParentPartitionId("P");
         partition1.setChildPartitionIds(Arrays.asList("C1", "C2"));
-        Schema schema2 = new Schema();
         Field field2 = new Field("key", new ByteArrayType());
-        schema2.setRowKeyFields(field2);
         Partition partition2 = new Partition();
         partition2.setRowKeyTypes(new ByteArrayType());
         partition2.setId("0---100");
@@ -273,9 +271,7 @@ public class PartitionTest {
     @Test
     public void shouldThrowIllegalArgumentExceptionIfRegionNotInCanonicalForm() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
         Partition partition = new Partition();
         partition.setRowKeyTypes(new IntType());
         partition.setId("1---10");
@@ -289,9 +285,8 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWithIntKey() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new IntType());
         partition.setId("1---10");
@@ -316,9 +311,8 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWithIntKeyAndNullMax() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new IntType());
         partition.setId("1---null");
@@ -354,9 +348,8 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWithLongKey() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new LongType());
         partition.setId("1---10");
@@ -381,9 +374,8 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWithLongKeyAndNullMax() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new LongType());
         partition.setId("1---10");
@@ -419,9 +411,8 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWithStringKey() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new StringType());
         partition.setId("A---D");
@@ -446,9 +437,8 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWithStringKeyAndEmptyStringAndNullBoundaries() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new StringType());
         partition.setId("---null");
@@ -473,9 +463,8 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWithStringKeyAndNullBoundary() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new StringType());
         partition.setId("---null");
@@ -502,9 +491,8 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWithByteArrayKeyAndEmptyByteArrayAndNullBoundaries() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new ByteArrayType());
         partition.setId("---null");
@@ -527,9 +515,8 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWithByteArrayKeyAndNullBoundary() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new ByteArrayType());
         partition.setId("---null");
@@ -554,9 +541,8 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWithByteArrayKey() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new ByteArrayType());
         partition.setId("id");
@@ -585,10 +571,9 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWith2IntRowKeys() {
         // Given
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new IntType());
         Field field2 = new Field("key2", new IntType());
-        schema.setRowKeyFields(field1, field2);
+        Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new IntType(), new IntType());
         partition.setId("1---10");
@@ -618,10 +603,9 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWith2StringRowKeys() {
         // Given
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new StringType());
         Field field2 = new Field("key2", new StringType());
-        schema.setRowKeyFields(field1, field2);
+        Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new StringType(), new StringType());
         partition.setId("1---10");
@@ -651,10 +635,9 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWith2ByteArrayRowKeys() {
         // Given
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new ByteArrayType());
         Field field2 = new Field("key2", new ByteArrayType());
-        schema.setRowKeyFields(field1, field2);
+        Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new ByteArrayType(), new ByteArrayType());
         partition.setId("1---10");
