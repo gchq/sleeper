@@ -80,16 +80,22 @@ public class InitialiseStateStoreIT {
         return dynamoDBStateStoreCreator.create();
     }
 
+    private final Field field = new Field("key", new IntType());
+    private final Schema schema = schemaWithRowKeys(field);
+
+    private Schema schemaWithRowKeys(Field... rowKeys) {
+        return Schema.builder()
+                .rowKeyFields(rowKeys)
+                .sortKeyFields(new Field("sort", new LongType()))
+                .valueFields(new Field("value", new ByteArrayType()))
+                .build();
+    }
+
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithIntKeyAndNoSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.EMPTY_LIST);
+        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.emptyList());
 
         // When
         initialiseStateStore.run();
@@ -111,11 +117,6 @@ public class InitialiseStateStoreIT {
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithIntKeyAndOneSplitPoint() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10);
@@ -170,11 +171,6 @@ public class InitialiseStateStoreIT {
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithIntKeyAndMultipleSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10);
@@ -278,14 +274,11 @@ public class InitialiseStateStoreIT {
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithIntKeyAndMultipleSplitPointsAndMultiDimRowKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field0 = new Field("key0", new IntType());
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
         Field field3 = new Field("key3", new ByteArrayType());
-        schema.setRowKeyFields(field0, field1, field2, field3);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field0, field1, field2, field3);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10);
@@ -400,13 +393,10 @@ public class InitialiseStateStoreIT {
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithStringKeyAndNoSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field);
         StateStore dynamoDBStateStore = getStateStore(schema);
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.EMPTY_LIST);
+        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.emptyList());
 
         // When
         initialiseStateStore.run();
@@ -430,11 +420,8 @@ public class InitialiseStateStoreIT {
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithStringKeyAndOneSplitPoint() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add("E");
@@ -489,11 +476,8 @@ public class InitialiseStateStoreIT {
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithStringKeyAndMultipleSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add("E");
@@ -597,14 +581,11 @@ public class InitialiseStateStoreIT {
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithStringKeyAndMultipleSplitPointsAndMultiDimRowKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field0 = new Field("key0", new StringType());
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
         Field field3 = new Field("key3", new ByteArrayType());
-        schema.setRowKeyFields(field0, field1, field2, field3);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field0, field1, field2, field3);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add("E");
@@ -719,13 +700,10 @@ public class InitialiseStateStoreIT {
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithByteArrayKeyAndNoSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field);
         StateStore dynamoDBStateStore = getStateStore(schema);
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.EMPTY_LIST);
+        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.emptyList());
 
         // When
         initialiseStateStore.run();
@@ -750,11 +728,8 @@ public class InitialiseStateStoreIT {
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithByteArrayKeyAndOneSplitPoint() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(new byte[]{10});
@@ -809,11 +784,8 @@ public class InitialiseStateStoreIT {
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithByteArrayKeyAndMultipleSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(new byte[]{10});
@@ -923,14 +895,11 @@ public class InitialiseStateStoreIT {
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithByteArrayKeyAndMultipleSplitPointsAndMultiDimRowKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field0 = new Field("key0", new ByteArrayType());
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
         Field field3 = new Field("key3", new ByteArrayType());
-        schema.setRowKeyFields(field0, field1, field2, field3);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field0, field1, field2, field3);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(new byte[]{10});
@@ -1045,10 +1014,7 @@ public class InitialiseStateStoreIT {
     @Test
     public void shouldThrowExceptionIfSplitPointIsOfWrongType() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(new Field("key", new IntType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(Long.MIN_VALUE);
@@ -1062,10 +1028,7 @@ public class InitialiseStateStoreIT {
     @Test
     public void shouldThrowExceptionIfDuplicateSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(new Field("key", new IntType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(0);
@@ -1080,10 +1043,7 @@ public class InitialiseStateStoreIT {
     @Test
     public void shouldThrowExceptionIfSplitPointsAreInWrongOrder() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(new Field("key", new IntType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(1);

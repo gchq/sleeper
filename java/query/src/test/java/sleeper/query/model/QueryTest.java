@@ -36,9 +36,8 @@ public class QueryTest {
     @Test
     public void testEqualsAndHashcode() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field, 1L, true, 10L, true);
         Range range2 = rangeFactory.createRange(field, 1L, true, 10L, true);
@@ -93,9 +92,8 @@ public class QueryTest {
     @Test
     public void testEqualsAndHashcodeWithNullIterator() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createRange(field, 1L, true, 10L, true);
         Region region = new Region(range);
@@ -136,9 +134,8 @@ public class QueryTest {
     @Test
     public void testEqualsAndHashcodeWithMultipleRanges() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field, 1L, true, 10L, true);
         Range range2 = rangeFactory.createRange(field, 100L, true, 200L, true);
@@ -181,9 +178,8 @@ public class QueryTest {
     @Test
     public void testEqualsAndHashcodeWithByteArray() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field, new byte[]{10}, true, new byte[]{20}, true);
         Range range2 = rangeFactory.createRange(field, new byte[]{11}, true, new byte[]{20}, true);

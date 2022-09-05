@@ -42,9 +42,8 @@ public class RangeQueryUtilsTest {
     @Test
     public void shouldGiveCorrectPredicateIntKey() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         List<Field> rowKeyFields = schema.getRowKeyFields();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createExactRange(field, 1);
@@ -81,9 +80,8 @@ public class RangeQueryUtilsTest {
     @Test
     public void shouldGiveCorrectPredicateLongKey() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         List<Field> rowKeyFields = schema.getRowKeyFields();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createExactRange(field, 1L);
@@ -120,9 +118,8 @@ public class RangeQueryUtilsTest {
     @Test
     public void shouldGiveCorrectPredicateStringKey() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         List<Field> rowKeyFields = schema.getRowKeyFields();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createExactRange(field, "B");
@@ -159,9 +156,8 @@ public class RangeQueryUtilsTest {
     @Test
     public void shouldGiveCorrectPredicateByteArrayKey() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         List<Field> rowKeyFields = schema.getRowKeyFields();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createExactRange(field, new byte[]{10, 20});
@@ -198,9 +194,8 @@ public class RangeQueryUtilsTest {
     @Test
     public void shouldGiveCorrectPredicateIntKeyMultipleRanges() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         List<Field> rowKeyFields = schema.getRowKeyFields();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createExactRange(field, 1);
@@ -248,10 +243,9 @@ public class RangeQueryUtilsTest {
     @Test
     public void shouldGiveCorrectPredicateMultidimKeyMultipleRanges() {
         // Given
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new ByteArrayType());
         Field field2 = new Field("key2", new IntType());
-        schema.setRowKeyFields(field1, field2);
+        Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
         List<Field> rowKeyFields = schema.getRowKeyFields();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field1, new byte[]{10}, new byte[]{20});

@@ -35,9 +35,8 @@ public class LeafPartitionQueryTest {
     @Test
     public void testEqualsAndHashcode() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field, 1L, true, 10L, true);
         Range range2 = rangeFactory.createRange(field, 1L, true, 11L, true);
@@ -132,9 +131,8 @@ public class LeafPartitionQueryTest {
     @Test
     public void testEqualsAndHashcodeWhenOnlyRangeIsDifferent() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field, 1L, true, 10L, true);
         Range range2 = rangeFactory.createRange(field, 1L, true, 11L, true);
@@ -187,9 +185,8 @@ public class LeafPartitionQueryTest {
     @Test
     public void testEqualsAndHashcodeWithByteArray() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field, new byte[]{1}, true, new byte[]{10}, true);
         Range range2 = rangeFactory.createRange(field, new byte[]{20}, true, new byte[]{30}, true);

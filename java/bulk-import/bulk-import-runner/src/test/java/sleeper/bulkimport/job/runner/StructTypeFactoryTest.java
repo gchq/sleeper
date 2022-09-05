@@ -36,15 +36,17 @@ public class StructTypeFactoryTest {
     @Test
     public void shouldCreateCorrectStructType() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new IntType()), new Field("key2", new LongType()));
-        schema.setSortKeyFields(new Field("sort1", new StringType()), new Field("sort2", new ByteArrayType()));
-        schema.setValueFields(new Field("value1", new IntType()),
-                new Field("value2", new LongType()),
-                new Field("value3", new StringType()),
-                new Field("value4", new ByteArrayType()),
-                new Field("value5", new ListType(new LongType())),
-                new Field("value6", new MapType(new IntType(), new StringType())));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new LongType()))
+                .sortKeyFields(new Field("sort1", new StringType()), new Field("sort2", new ByteArrayType()))
+                .valueFields(
+                        new Field("value1", new IntType()),
+                        new Field("value2", new LongType()),
+                        new Field("value3", new StringType()),
+                        new Field("value4", new ByteArrayType()),
+                        new Field("value5", new ListType(new LongType())),
+                        new Field("value6", new MapType(new IntType(), new StringType())))
+                .build();
         StructTypeFactory structTypeFactory = new StructTypeFactory();
 
         // When

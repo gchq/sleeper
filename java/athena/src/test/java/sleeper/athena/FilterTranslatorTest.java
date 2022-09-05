@@ -60,20 +60,18 @@ public class FilterTranslatorTest {
     @ClassRule
     public static TemporaryFolder tempDir = new TemporaryFolder();
 
-    private static final Schema SCHEMA = new Schema();
-
-    static {
-        SCHEMA.setRowKeyFields(new Field("int", new IntType()));
-        SCHEMA.setSortKeyFields(new Field("long", new LongType()));
-        SCHEMA.setValueFields(new Field("string", new StringType()),
-                new Field("bytes", new ByteArrayType()),
-                new Field("list", new ListType(new StringType())));
-    }
+    private static final Schema SCHEMA = Schema.builder()
+            .rowKeyFields(new Field("int", new IntType()))
+            .sortKeyFields(new Field("long", new LongType()))
+            .valueFields(new Field("string", new StringType()),
+                    new Field("bytes", new ByteArrayType()),
+                    new Field("list", new ListType(new StringType())))
+            .build();
 
     @Test
     public void shouldTranslateNullValueSetIntoNull() {
         // When
-        FilterPredicate filterPredicate = new FilterTranslator(new Schema()).toPredicate(null);
+        FilterPredicate filterPredicate = new FilterTranslator(SCHEMA).toPredicate(null);
 
         // Then
         assertThat(filterPredicate).isNull();
@@ -82,7 +80,7 @@ public class FilterTranslatorTest {
     @Test
     public void shouldTranslateEmptyMapIntoNull() {
         // When
-        FilterPredicate filterPredicate = new FilterTranslator(new Schema()).toPredicate(new HashMap<>());
+        FilterPredicate filterPredicate = new FilterTranslator(SCHEMA).toPredicate(new HashMap<>());
 
         // Then
         assertThat(filterPredicate).isNull();

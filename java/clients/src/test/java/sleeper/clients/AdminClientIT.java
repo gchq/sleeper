@@ -62,12 +62,10 @@ public class AdminClientIT {
     private final PrintStream standardOut = System.out;
     private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
 
-    private static final Schema KEY_VALUE_SCHEMA = new Schema();
-
-    static {
-        KEY_VALUE_SCHEMA.setRowKeyFields(new Field("key", new StringType()));
-        KEY_VALUE_SCHEMA.setValueFields(new Field("value", new StringType()));
-    }
+    private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
+            .rowKeyFields(new Field("key", new StringType()))
+            .valueFields(new Field("value", new StringType()))
+            .build();
 
     private static final String INSTANCE_ID = "instance";
     private static final String CONFIG_BUCKET_NAME = "sleeper-" + INSTANCE_ID + "-config";
