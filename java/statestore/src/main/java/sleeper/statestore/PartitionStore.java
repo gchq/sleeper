@@ -31,7 +31,7 @@ public interface PartitionStore {
      * @param splitPartition The {@link Partition} to be updated
      * @param newPartition1  The first new {@link Partition}
      * @param newPartition2  The second new {@link Partition}
-     * @throws StateStoreException
+     * @throws StateStoreException if split is not valid or update fails
      */
     void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition,
                                                    Partition newPartition1,
@@ -41,7 +41,7 @@ public interface PartitionStore {
      * Returns all the {@link Partition}s.
      *
      * @return All the {@link Partition}s
-     * @throws StateStoreException
+     * @throws StateStoreException if query fails
      */
     List<Partition> getAllPartitions() throws StateStoreException;
 
@@ -49,7 +49,7 @@ public interface PartitionStore {
      * Returns all the [@link Partition}s which are leaf partitions.
      *
      * @return All the {@link Partition}s which are leaf partitions.
-     * @throws StateStoreException
+     * @throws StateStoreException if query fails
      */
     List<Partition> getLeafPartitions() throws StateStoreException;
 
@@ -57,7 +57,7 @@ public interface PartitionStore {
      * Initialises the store with a single root {@link Partition} covering all
      * keys.
      *
-     * @throws StateStoreException
+     * @throws StateStoreException if update fails
      */
     void initialise() throws StateStoreException;
 
@@ -65,7 +65,7 @@ public interface PartitionStore {
      * Initialises store with the list of {@link Partition}s.
      *
      * @param partitions The initial list of {@link Partition}s
-     * @throws StateStoreException
+     * @throws StateStoreException if partitions not provided or update fails
      */
     void initialise(List<Partition> partitions) throws StateStoreException;
 }
