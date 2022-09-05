@@ -16,11 +16,6 @@
 package sleeper.core.partition;
 
 import com.facebook.collections.ByteArray;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.core.range.Range;
@@ -34,6 +29,12 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
 /**
  * Given a list of split points that split the first dimension of the row keys into partitions, this class
  * constructs a full tree of partitions, up to a single root.
@@ -46,8 +47,8 @@ public class PartitionsFromSplitPoints {
     private final List<PrimitiveType> rowKeyTypes;
     private final List<Object> splitPoints;
 
-    public PartitionsFromSplitPoints(Schema schema,
-            List<Object> splitPoints) {
+    public PartitionsFromSplitPoints(
+            Schema schema, List<Object> splitPoints) {
         this.schema = schema;
         this.rowKeyFields = schema.getRowKeyFields();
         this.rowKeyTypes = new ArrayList<>();
@@ -67,7 +68,7 @@ public class PartitionsFromSplitPoints {
 
         validateSplitPoints();
         LOGGER.info("Split points are valid");
-        
+
         // There is at least 1 split point. Use the split points to create leaf partitions.
         List<Partition> leafPartitions = createLeafPartitions();
         List<Partition> allPartitions = new ArrayList<>(leafPartitions);
@@ -82,7 +83,7 @@ public class PartitionsFromSplitPoints {
 
     private List<Partition> addLayer(List<Partition> partitionsInLayer, List<Partition> allPartitions) {
         List<Partition> parents = new ArrayList<>();
-        for (int i = 0; i < partitionsInLayer.size(); i+=2) {
+        for (int i = 0; i < partitionsInLayer.size(); i += 2) {
             if (i <= partitionsInLayer.size() - 2) {
                 Partition leftPartition = partitionsInLayer.get(i);
                 Partition rightPartition = partitionsInLayer.get(i + 1);
@@ -130,31 +131,11 @@ public class PartitionsFromSplitPoints {
     }
 
     private List<Partition> createLeafPartitions() {
-        List<Object> partitionBoundaries = new ArrayList<>();
-        Type type = rowKeyTypes.get(0);
-        partitionBoundaries.add(getMinimum(type));
-        for (Object splitPoint : splitPoints) {
-            partitionBoundaries.add(splitPoint);
-        }
-        partitionBoundaries.add(null);
-
-        // Create ranges for the other dimensions
-        List<Range> ranges = new ArrayList<>();
-        for (int i = 1; i < rowKeyFields.size(); i++) {
-            Type rowKeyType = schema.getField(rowKeyFields.get(i).getName()).get().getType();
-            Range range = new Range(rowKeyFields.get(i), getMinimum(rowKeyType), true, null, false);
-            ranges.add(range);
-        }
-        
+        List<Region> leafRegions = leafRegionsFromSplitPoints(schema, splitPoints);
         List<Partition> leafPartitions = new ArrayList<>();
-        for (int i = 0; i < partitionBoundaries.size() - 1; i++) {
+        for (Region region : leafRegions) {
             Partition partition = new Partition();
             partition.setRowKeyTypes(rowKeyTypes);
-            List<Range> rangesForThisRegion = new ArrayList<>();
-            Range rangeForDim0 = new Range(rowKeyFields.get(0), partitionBoundaries.get(i), true, partitionBoundaries.get(i + 1), false);
-            rangesForThisRegion.add(rangeForDim0);
-            rangesForThisRegion.addAll(ranges);
-            Region region = new Region(rangesForThisRegion);
             partition.setRegion(region);
             partition.setId(UUID.randomUUID().toString());
             partition.setLeafPartition(true);
@@ -184,13 +165,13 @@ public class PartitionsFromSplitPoints {
         rootPartition.setDimension(-1);
         return rootPartition;
     }
-    
+
     private Range getRangeCoveringWholeDimension(Field field) {
         Range range = new Range(field, getMinimum(field.getType()), true, null, false);
         return range;
     }
 
-    private Object getMinimum(Type type) {
+    private static Object getMinimum(Type type) {
         if (type instanceof IntType) {
             return Integer.MIN_VALUE;
         }
@@ -252,4 +233,39 @@ public class PartitionsFromSplitPoints {
         }
         return (Comparable) obj;
     }
+
+    public static List<Region> leafRegionsFromSplitPoints(Schema schema, List<Object> splitPoints) {
+        List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
+        List<Field> rowKeyFields = schema.getRowKeyFields();
+
+        List<Object> partitionBoundaries = new ArrayList<>();
+        Type type = rowKeyTypes.get(0);
+        partitionBoundaries.add(getMinimum(type));
+        partitionBoundaries.addAll(splitPoints);
+        partitionBoundaries.add(null);
+
+        // Create ranges for the other dimensions
+        List<Range> ranges = new ArrayList<>();
+        for (Field rowKeyField : rowKeyFields.subList(1, rowKeyFields.size())) {
+            Type rowKeyType = rowKeyField.getType();
+            Range range = new Range(rowKeyField, getMinimum(rowKeyType), true, null, false);
+            ranges.add(range);
+        }
+
+        List<Region> leafRegions = new ArrayList<>();
+        for (int i = 0; i < partitionBoundaries.size() - 1; i++) {
+            List<Range> rangesForThisRegion = new ArrayList<>();
+            Range rangeForDim0 = new Range(rowKeyFields.get(0), partitionBoundaries.get(i), true, partitionBoundaries.get(i + 1), false);
+            rangesForThisRegion.add(rangeForDim0);
+            rangesForThisRegion.addAll(ranges);
+            Region region = new Region(rangesForThisRegion);
+            leafRegions.add(region);
+        }
+        return leafRegions;
+    }
+
+    public static PartitionTree treeFrom(Schema schema, List<Object> splitPoints) {
+        return new PartitionTree(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct());
+    }
+
 }
