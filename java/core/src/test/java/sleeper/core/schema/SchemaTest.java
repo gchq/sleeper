@@ -189,4 +189,20 @@ public class SchemaTest {
                         .valueFields(Collections.emptyList())
                         .build());
     }
+
+    @Test
+    public void setNoSortAndValueFieldsByDefault() {
+        // Given
+        Field rowKeyField = new Field("column1", new IntType());
+
+        // When / Then
+        assertThat(Schema.builder()
+                .rowKeyFields(rowKeyField)
+                .build())
+                .isEqualTo(Schema.builder()
+                        .rowKeyFields(rowKeyField)
+                        .sortKeyFields(Collections.emptyList())
+                        .valueFields(Collections.emptyList())
+                        .build());
+    }
 }

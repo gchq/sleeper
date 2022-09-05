@@ -293,9 +293,7 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords).hasSize(2);
-        assertThat(readRecords.get(0)).isEqualTo(getRecords().get(0));
-        assertThat(readRecords.get(1)).isEqualTo(getRecords().get(1));
+        assertThat(readRecords).containsExactly(getRecords().get(0), getRecords().get(1));
         //  - Local files should have been deleted
         assertThat(Files.walk(Paths.get(localDir)).filter(Files::isRegularFile).count()).isZero();
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
@@ -394,8 +392,7 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords).hasSize(1);
-        assertThat(readRecords.get(0)).isEqualTo(getRecords().get(0));
+        assertThat(readRecords).containsExactly(getRecords().get(0));
         reader = new ParquetRecordReader.Builder(new Path(activeFiles.get(1).getFilename()), schema).build();
         readRecords.clear();
         record = reader.read();
@@ -404,8 +401,7 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords).hasSize(1);
-        assertThat(readRecords.get(0)).isEqualTo(getRecords().get(1));
+        assertThat(readRecords).containsExactly(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
@@ -519,9 +515,9 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords).hasSize(2);
-        assertThat(readRecords.get(0)).isEqualTo(getRecordsByteArrayKey().get(0));
-        assertThat(readRecords.get(1)).isEqualTo(getRecordsByteArrayKey().get(1));
+        assertThat(readRecords).containsExactly(
+                getRecordsByteArrayKey().get(0),
+                getRecordsByteArrayKey().get(1));
         reader = new ParquetRecordReader.Builder(
                 new Path(activeFilesSortedByNumberOfLines.get(0).getFilename()), schema).build();
         readRecords.clear();
@@ -531,8 +527,7 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords).hasSize(1);
-        assertThat(readRecords.get(0)).isEqualTo(getRecordsByteArrayKey().get(2));
+        assertThat(readRecords).containsExactly(getRecordsByteArrayKey().get(2));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFilesSortedByNumberOfLines.get(1).getFilename().replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
@@ -653,9 +648,9 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords).hasSize(2);
-        assertThat(readRecords.get(0)).isEqualTo(getRecords2DimByteArrayKey().get(0));
-        assertThat(readRecords.get(1)).isEqualTo(getRecords2DimByteArrayKey().get(4));
+        assertThat(readRecords).containsExactly(
+                getRecords2DimByteArrayKey().get(0),
+                getRecords2DimByteArrayKey().get(4));
         reader = new ParquetRecordReader.Builder(
                 new Path(activeFilesSortedByNumberOfLines.get(1).getFilename()), schema).build();
         readRecords.clear();
@@ -665,10 +660,10 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords).hasSize(3);
-        assertThat(readRecords.get(0)).isEqualTo(getRecords2DimByteArrayKey().get(1));
-        assertThat(readRecords.get(1)).isEqualTo(getRecords2DimByteArrayKey().get(2));
-        assertThat(readRecords.get(2)).isEqualTo(getRecords2DimByteArrayKey().get(3));
+        assertThat(readRecords).containsExactly(
+                getRecords2DimByteArrayKey().get(1),
+                getRecords2DimByteArrayKey().get(2),
+                getRecords2DimByteArrayKey().get(3));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFilesSortedByNumberOfLines.get(0).getFilename().replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
@@ -773,9 +768,9 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords).hasSize(2);
-        assertThat(readRecords.get(0)).isEqualTo(getRecordsInFirstPartitionOnly().get(1));
-        assertThat(readRecords.get(1)).isEqualTo(getRecordsInFirstPartitionOnly().get(0));
+        assertThat(readRecords).containsExactly(
+                getRecordsInFirstPartitionOnly().get(1),
+                getRecordsInFirstPartitionOnly().get(0));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = fileInfo.getFilename().replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
@@ -820,7 +815,7 @@ public class IngestRecordsFromIteratorIT {
 
         // Then:
         //  - Check the correct number of records were written
-        assertThat(numWritten).isEqualTo(2 * getRecords().size());
+        assertThat(numWritten).isEqualTo(2L * getRecords().size());
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         assertThat(activeFiles).hasSize(1);
@@ -839,11 +834,9 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords).hasSize(4);
-        assertThat(readRecords.get(0)).isEqualTo(getRecords().get(0));
-        assertThat(readRecords.get(1)).isEqualTo(getRecords().get(0));
-        assertThat(readRecords.get(2)).isEqualTo(getRecords().get(1));
-        assertThat(readRecords.get(3)).isEqualTo(getRecords().get(1));
+        assertThat(readRecords).containsExactly(
+                getRecords().get(0), getRecords().get(0),
+                getRecords().get(1), getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = fileInfo.getFilename().replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
@@ -1314,18 +1307,16 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords.size()).isEqualTo(2L);
 
         Record expectedRecord1 = new Record();
         expectedRecord1.put("key", new byte[]{1, 1});
         expectedRecord1.put("sort", 2L);
         expectedRecord1.put("value", 7L);
-        assertThat(readRecords.get(0)).isEqualTo(expectedRecord1);
         Record expectedRecord2 = new Record();
         expectedRecord2.put("key", new byte[]{11, 2});
         expectedRecord2.put("sort", 1L);
         expectedRecord2.put("value", 4L);
-        assertThat(readRecords.get(1)).isEqualTo(expectedRecord2);
+        assertThat(readRecords).containsExactly(expectedRecord1, expectedRecord2);
 
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");

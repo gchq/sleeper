@@ -301,8 +301,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         String file = stateStore.getLeafPartitions().stream()
                 .map(Partition::getId)
                 .map(partitionToActiveFilesMap::get)
-                .filter(list -> list.size() == 1)   // Ensure the partition has a single file, otherwise the file might
-                // not contain the entirety of Feb
+                // Ensure the partition has a single file, otherwise the file might not contain the entirety of Feb
+                .filter(list -> list.size() == 1)
                 .flatMap(List::stream)
                 .findAny()
                 .orElseThrow(RuntimeException::new);
@@ -345,7 +345,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // Then
         assertThat(response).isInstanceOf(ReadRecordsResponse.class);
-        // assertEquals(28, ((ReadRecordsResponse) response).getRecordCount());
+//        assertThat(((ReadRecordsResponse) response).getRecordCount()).isEqualTo(28);
         Block records = ((ReadRecordsResponse) response).getRecords();
         // Just to show the difference
         assertThat(records.getFieldVector("month")).isNotNull();
