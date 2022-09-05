@@ -15,14 +15,15 @@
  */
 package sleeper.cdk.stack;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-
+import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sns.subscriptions.EmailSubscription;
 import software.constructs.Construct;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 /**
  * The {@link Stack} that creates an SNS {@link Topic} that emails alerts if
@@ -31,21 +32,24 @@ import software.constructs.Construct;
 public class TopicStack extends NestedStack {
     private final Topic topic;
 
-    public TopicStack(Construct scope,
-                      String id,
-                      InstanceProperties instanceProperties) {
+    public TopicStack(
+            Construct scope,
+            String id,
+            InstanceProperties instanceProperties) {
         super(scope, id);
 
         // SNS Topic for errors (triggered by things arriving on dead letter queues)
         // Add alarm to send message to SNS if there are any messages on the dead letter queue
         this.topic = Topic.Builder
-            .create(this, "ErrorsTopic")
-            .topicName(instanceProperties.get(ID) + "-ErrorsTopic")
-            .build();
+                .create(this, "ErrorsTopic")
+                .topicName(instanceProperties.get(ID) + "-ErrorsTopic")
+                .build();
         String emailAddress = instanceProperties.get(EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION);
         if (null != emailAddress && !emailAddress.isEmpty()) {
             topic.addSubscription(new EmailSubscription(emailAddress));
         }
+
+        Utils.addStackTagIfSet(this, instanceProperties);
     }
 
     public Topic getTopic() {
