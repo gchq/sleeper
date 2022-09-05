@@ -1,12 +1,12 @@
 #!/bin/bash
 # Copyright 2022 Crown Copyright
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,7 +27,7 @@ INSTANCE_ID=$(fgrep sleeper.id ${INSTANCE_PROPERTIES} | cut -d'=' -f2)
 CONFIG_BUCKET=$(cat ${GENERATED_DIR}/configBucket.txt)
 TABLE_BUCKET=$(cat ${GENERATED_DIR}/tableBucket.txt)
 QUERY_BUCKET=$(cat ${GENERATED_DIR}/queryResultsBucket.txt)
-RETAIN_INFRA=`grep sleeper.retain.infra.after.destroy ${INSTANCE_PROPERTIES} | cut -d'=' -f2`
+RETAIN_INFRA=`grep sleeper.retain.infra.after.destroy ${INSTANCE_PROPERTIES} | cut -d'=' -f2 | awk '{print tolower($0)}'`
 
 echo "RETAIN_INFRA:${RETAIN_INFRA}"
 echo "PROJECT_ROOT:${PROJECT_ROOT}"
@@ -43,7 +43,7 @@ pushd ${PROJECT_ROOT}
 echo "Pausing the system"
 java -cp java/clients/target/clients-*-utility.jar "sleeper.status.update.PauseSystem" ${INSTANCE_ID}
 
-if [[ "${RETAIN_INFRA,,}" == "false" ]]; then
+if [[ "${RETAIN_INFRA}" == "false" ]]; then
   echo "Removing all data from config, table and query results buckets"
   # Don't fail script if buckets don't exist
   aws s3 rm s3://${CONFIG_BUCKET} --recursive || true
