@@ -14,7 +14,8 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>sleeper</groupId>
@@ -78,6 +79,8 @@
         <mockito.version>3.3.3</mockito.version>
         <testcontainers.version>1.16.2</testcontainers.version>
         <wiremock.version>2.32.0</wiremock.version>
+        <assertj.version>3.23.1</assertj.version>
+        <jsonunit.version>2.22.1</jsonunit.version>
         <!-- Maven plugins -->
         <release.plugin.version>3.0.0-M4</release.plugin.version>
         <surefire.plugin.version>3.0.0-M5</surefire.plugin.version>
@@ -165,6 +168,18 @@
                 <version>${mockito.version}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>net.javacrumbs.json-unit</groupId>
+                <artifactId>json-unit-assertj</artifactId>
+                <version>${jsonunit.version}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -172,6 +187,11 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

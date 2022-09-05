@@ -15,16 +15,7 @@
  */
 package sleeper.bulkimport.job.runner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.stream.Collectors;
-
+import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.spark.sql.Row;
@@ -32,9 +23,6 @@ import org.apache.spark.sql.RowFactory;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
-import com.google.common.collect.Lists;
-
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
@@ -45,6 +33,15 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetRecordReader;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 public class FileWritingIteratorTest {
 
@@ -90,7 +87,7 @@ public class FileWritingIteratorTest {
                 new Configuration());
 
         // Then
-        assertFalse(fileWritingIterator.hasNext());
+        assertThat(fileWritingIterator).isExhausted();
     }
 
     @Test
@@ -109,7 +106,7 @@ public class FileWritingIteratorTest {
                 new Configuration());
 
         // Then
-        assertTrue(fileWritingIterator.hasNext());
+        assertThat(fileWritingIterator).hasNext();
     }
 
     @Test
@@ -127,18 +124,14 @@ public class FileWritingIteratorTest {
                 createInstanceProperties(), createTableProperties(),
                 new Configuration());
 
-        List<Row> rows = new ArrayList<>();
-
-        while (fileWritingIterator.hasNext()) {
-            rows.add(fileWritingIterator.next());
-        }
-
         // Then
-        assertEquals(2, rows.size());
-        assertEquals("a", rows.get(0).getString(0));
-        assertEquals(2L, rows.get(0).getLong(2));
-        assertEquals("b", rows.get(1).getString(0));
-        assertEquals(2L, rows.get(1).getLong(2));
+        assertThat(fileWritingIterator).toIterable()
+                .extracting(
+                        row -> row.getString(0),
+                        row -> row.getLong(2))
+                .containsExactly(
+                        tuple("a", 2L),
+                        tuple("b", 2L));
     }
 
     @Test
@@ -156,18 +149,16 @@ public class FileWritingIteratorTest {
                 createInstanceProperties(), createTableProperties(),
                 new Configuration());
 
-        List<Row> rows = new ArrayList<>();
-
-        while (fileWritingIterator.hasNext()) {
-            rows.add(fileWritingIterator.next());
-        }
-
-        checkData(rows.get(0).getString(1), Lists.newArrayList(
-                RowFactory.create("a", 1, 2, "a"),
-                RowFactory.create("b", 1, 2, "a")));
-        checkData(rows.get(1).getString(1), Lists.newArrayList(
-                RowFactory.create("c", 1, 2, "b"),
-                RowFactory.create("d", 1, 2, "b")));
+        // Then
+        assertThat(fileWritingIterator).toIterable()
+                .extracting(row -> readRecords(row.getString(1)))
+                .containsExactly(
+                        Arrays.asList(
+                                createRecord("a", 1, 2, "a"),
+                                createRecord("b", 1, 2, "a")),
+                        Arrays.asList(
+                                createRecord("c", 1, 2, "b"),
+                                createRecord("d", 1, 2, "b")));
     }
 
     @Test
@@ -186,20 +177,22 @@ public class FileWritingIteratorTest {
                 createInstanceProperties(), createTableProperties(),
                 new Configuration());
 
-        List<Row> rows = new ArrayList<>();
+        // Then
+        assertThat(fileWritingIterator).toIterable()
+                .extracting(row -> readRecords(row.getString(1)))
+                .containsExactly(
+                        Arrays.asList(
+                                createRecord("a", 1, 2, "a"),
+                                createRecord("b", 1, 2, "a")),
+                        Arrays.asList(
+                                createRecord("c", 1, 2, "b"),
+                                createRecord("d", 1, 2, "b")),
+                        Arrays.asList(
+                                createRecord("e", 1, 2, "c")));
+    }
 
-        while (fileWritingIterator.hasNext()) {
-            rows.add(fileWritingIterator.next());
-        }
-
-        checkData(rows.get(0).getString(1), Lists.newArrayList(
-                RowFactory.create("a", 1, 2, "a"),
-                RowFactory.create("b", 1, 2, "a")));
-        checkData(rows.get(1).getString(1), Lists.newArrayList(
-                RowFactory.create("c", 1, 2, "b"),
-                RowFactory.create("d", 1, 2, "b")));
-        checkData(rows.get(2).getString(1), Lists.newArrayList(
-                RowFactory.create("e", 1, 2, "c")));
+    private Record createRecord(Object... values) {
+        return createRecord(RowFactory.create(values), createSchema());
     }
 
     private Record createRecord(Row row, Schema schema) {
@@ -212,12 +205,8 @@ public class FileWritingIteratorTest {
         return record;
     }
 
-    private void checkData(String path, List<Row> expectedRows) {
-        try {
-            ParquetRecordReader reader = new ParquetRecordReader(new Path(path), createSchema());
-            List<Record> expected = expectedRows.stream()
-                    .map(row -> this.createRecord(row, createSchema()))
-                    .collect(Collectors.toList());
+    private List<Record> readRecords(String path) {
+        try (ParquetRecordReader reader = new ParquetRecordReader(new Path(path), createSchema())) {
             List<Record> records = new ArrayList<>();
             Record record = reader.read();
             while (null != record) {
@@ -225,8 +214,7 @@ public class FileWritingIteratorTest {
                 record = reader.read();
             }
             reader.close();
-
-            assertEquals(expected, records);
+            return records;
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }

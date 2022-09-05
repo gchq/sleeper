@@ -15,11 +15,11 @@
  */
 package sleeper.core.key;
 
-import java.util.Arrays;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
 import org.junit.Test;
+
+import java.util.Arrays;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class KeyTest {
 
@@ -27,39 +27,39 @@ public class KeyTest {
     public void shouldAllowNullKey() {
         // Given
         Key key = Key.create(null);
-        
+
         // When
         Object o = key.get(0);
 
         // Then
-        assertNull(o);
+        assertThat(o).isNull();
     }
-    
+
     @Test
     public void testEqualsAndHashCode() {
         // Given
         Key key1 = Key.create(Arrays.asList(1, 2));
         Key key2 = Key.create(Arrays.asList(1, 2));
         Key key3 = Key.create(Arrays.asList(1, 3));
-        
+
         // When / Then
-        assertEquals(key1, key2);
-        assertEquals(key1.hashCode(), key2.hashCode());
-        assertNotEquals(key1, key3);
-        assertNotEquals(key1.hashCode(), key3.hashCode());
+        assertThat(key2).isEqualTo(key1)
+                .hasSameHashCodeAs(key1);
+        assertThat(key3).isNotEqualTo(key1);
+        assertThat(key3.hashCode()).isNotEqualTo(key1.hashCode());
     }
-    
+
     @Test
     public void testEqualsAndHashCodeWhenNull() {
         // Given
         Key key1 = Key.create(null);
         Key key2 = Key.create(null);
         Key key3 = Key.create(1);
-        
+
         // When / Then
-        assertEquals(key1, key2);
-        assertEquals(key1.hashCode(), key2.hashCode());
-        assertNotEquals(key1, key3);
-        assertNotEquals(key1.hashCode(), key3.hashCode());
+        assertThat(key2).isEqualTo(key1)
+                .hasSameHashCodeAs(key1);
+        assertThat(key3).isNotEqualTo(key1);
+        assertThat(key3.hashCode()).isNotEqualTo(key1.hashCode());
     }
 }
