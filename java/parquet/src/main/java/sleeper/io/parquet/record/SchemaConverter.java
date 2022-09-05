@@ -37,6 +37,9 @@ import java.util.List;
  */
 public class SchemaConverter {
 
+    private SchemaConverter() {
+    }
+
     public static MessageType getSchema(Schema schema) {
         List<Field> types = schema.getAllFields();
         List<org.apache.parquet.schema.Type> primitiveTypes = new ArrayList<>();
