@@ -177,9 +177,6 @@
         <module name="SimplifyBooleanReturn">
             <property name="id" value="simplifyBooleanReturn"/>
         </module>
-        <module name="FinalClass">
-            <property name="id" value="finalClass"/>
-        </module>
         <module name="HideUtilityClassConstructor">
             <property name="id" value="hideUtilityClassConstructor"/>
         </module>
