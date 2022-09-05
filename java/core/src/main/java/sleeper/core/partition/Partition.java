@@ -15,21 +15,22 @@
  */
 package sleeper.core.partition;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import sleeper.core.key.Key;
 import sleeper.core.range.Region;
 import sleeper.core.range.RegionCanonicaliser;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.PrimitiveType;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
 /**
  * A Partition is a Region of key space, with additional information that allows
  * the position of the partition in the tree of partitions to be identified,
  * e.g. it has a unique id, the id of its parent partition, the id of any child
  * partitions, and if it has been split the dimension it was split on.
- * 
+ * <p>
  * The {@link Region} must be in canonical form, i.e. all the ranges must contain
  * their minimum but not contain their maximum.
  */
@@ -45,7 +46,8 @@ public class Partition {
     public Partition() {
     }
 
-    public Partition(List<PrimitiveType> rowKeyTypes,
+    public Partition(
+            List<PrimitiveType> rowKeyTypes,
             Region region,
             String id,
             boolean leafPartition,

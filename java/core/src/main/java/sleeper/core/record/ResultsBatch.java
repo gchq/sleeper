@@ -47,8 +47,12 @@ public class ResultsBatch {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         ResultsBatch that = (ResultsBatch) o;
 
         return new EqualsBuilder()
