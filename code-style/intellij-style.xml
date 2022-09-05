@@ -35,7 +35,7 @@
             <package name="" withSubpackages="true" static="true"/>
         </value>
     </option>
-    <option name="RIGHT_MARGIN" value="80"/>
+    <option name="RIGHT_MARGIN" value="120"/>
     <XML>
         <option name="XML_LEGACY_SETTINGS_IMPORTED" value="true"/>
     </XML>
