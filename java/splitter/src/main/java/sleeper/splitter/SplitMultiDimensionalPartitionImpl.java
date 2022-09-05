@@ -15,6 +15,7 @@
  */
 package sleeper.splitter;
 
+import com.facebook.collections.Array;
 import com.facebook.collections.ByteArray;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
@@ -47,6 +48,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import sleeper.core.range.Range;
+import sleeper.core.range.Region;
+import sleeper.core.schema.Field;
 
 /**
  * Identifies the median value of the first dimension. If that leads to a valid
@@ -277,28 +282,31 @@ public class SplitMultiDimensionalPartitionImpl {
         LOGGER.info("Splitting partition {} on split point {} in dimension {}", partition.getId(), splitPoint, dimension);
 
         // New partitions
-        Partition leftChild = new Partition();
-        leftChild.setRowKeyTypes(rowKeyTypes);
         List<Range> leftChildRanges = removeRange(partition.getRegion().getRanges(), fieldToSplitOn.getName());
         Range rangeForSplitDimensionLeftChild = rangeFactory.createRange(fieldToSplitOn, partition.getRegion().getRange(fieldToSplitOn.getName()).getMin(), splitPoint);
         leftChildRanges.add(rangeForSplitDimensionLeftChild);
         Region leftChildRegion = new Region(leftChildRanges);
-        leftChild.setRegion(leftChildRegion);
-        leftChild.setId(UUID.randomUUID().toString());
-        leftChild.setParentPartitionId(partition.getId());
-        leftChild.setLeafPartition(true);
-        leftChild.setChildPartitionIds(new ArrayList<>());
-        Partition rightChild = new Partition();
-        rightChild.setRowKeyTypes(rowKeyTypes);
+        Partition leftChild = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(leftChildRegion)
+                .id(UUID.randomUUID().toString())
+                .leafPartition(true)
+                .parentPartitionId(partition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
+
         List<Range> rightChildRanges = removeRange(partition.getRegion().getRanges(), fieldToSplitOn.getName());
         Range rangeForSplitDimensionRightChild = rangeFactory.createRange(fieldToSplitOn, splitPoint, partition.getRegion().getRange(fieldToSplitOn.getName()).getMax());
         rightChildRanges.add(rangeForSplitDimensionRightChild);
         Region rightChildRegion = new Region(rightChildRanges);
-        rightChild.setRegion(rightChildRegion);
-        rightChild.setId(UUID.randomUUID().toString());
-        rightChild.setParentPartitionId(partition.getId());
-        rightChild.setLeafPartition(true);
-        rightChild.setChildPartitionIds(new ArrayList<>());
+        Partition rightChild = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(rightChildRegion)
+                .id(UUID.randomUUID().toString())
+                .leafPartition(true)
+                .parentPartitionId(partition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
 
         // Updated split partition
         partition.setLeafPartition(false);
