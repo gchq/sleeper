@@ -24,9 +24,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class AgeOffIteratorTest {
 
@@ -37,18 +35,15 @@ public class AgeOffIteratorTest {
         Iterator<Record> iterator = records.iterator();
         AgeOffIterator ageOffIterator = new AgeOffIterator();
         ageOffIterator.init("timestamp,1000000", new Schema());
-        
+
         // When
         Iterator<Record> filtered = ageOffIterator.apply(new WrappedIterator<>(iterator));
-        
+
         // Then
-        assertTrue(filtered.hasNext());
-        assertEquals(records.get(1), filtered.next());
-        assertTrue(filtered.hasNext());
-        assertEquals(records.get(4), filtered.next());
-        assertFalse(filtered.hasNext());
+        assertThat(filtered).toIterable()
+                .containsExactly(records.get(1), records.get(4));
     }
-    
+
     private static List<Record> getData() {
         List<Record> records = new ArrayList<>();
         Record record1 = new Record();

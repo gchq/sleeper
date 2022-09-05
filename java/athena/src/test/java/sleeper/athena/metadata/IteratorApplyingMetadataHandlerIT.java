@@ -39,33 +39,34 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import org.apache.arrow.vector.complex.reader.FieldReader;
+import org.apache.arrow.vector.types.Types;
+import org.apache.hadoop.conf.Configuration;
+import org.junit.Test;
+import sleeper.athena.TestUtils;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.partition.Partition;
+import sleeper.core.schema.Field;
+import sleeper.splitter.SplitPartition;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.arrow.vector.complex.reader.FieldReader;
-import org.apache.arrow.vector.types.Types;
-import org.apache.hadoop.conf.Configuration;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
-import org.junit.Test;
 import static org.mockito.Mockito.mock;
-import sleeper.athena.TestUtils;
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.MAX_ROW_KEY_PREFIX;
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.MIN_ROW_KEY_PREFIX;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
-import sleeper.configuration.properties.InstanceProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import sleeper.configuration.properties.table.TableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import sleeper.core.partition.Partition;
-import sleeper.core.schema.Field;
-import sleeper.splitter.SplitPartition;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT {
 
@@ -101,7 +102,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
         // Then
         List<Partition> leafPartitions = stateStore.getLeafPartitions();
         Block partitions = getTableLayoutResponse.getPartitions();
-        assertEquals(4, partitions.getRowCount());
+        assertThat(partitions.getRowCount()).isEqualTo(4);
         for (int i = 0; i < leafPartitions.size(); i++) {
             Partition partition = leafPartitions.get(i);
             for (Field field : TIME_SERIES_SCHEMA.getRowKeyFields()) {
@@ -109,13 +110,13 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 FieldReader reader = partitions.getFieldReader(fieldName);
                 reader.setPosition(i);
                 Object o = reader.readObject();
-                assertEquals(partition.getRegion().getRange(field.getName()).getMin(), o);
-                
+                assertThat(o).isEqualTo(partition.getRegion().getRange(field.getName()).getMin());
+
                 fieldName = MAX_ROW_KEY_PREFIX + "-" + field.getName();
                 reader = partitions.getFieldReader(fieldName);
                 reader.setPosition(i);
                 o = reader.readObject();
-                assertEquals(partition.getRegion().getRange(field.getName()).getMax(), o);
+                assertThat(o).isEqualTo(partition.getRegion().getRange(field.getName()).getMax());
             }
         }
     }
@@ -151,7 +152,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
 
         // Then
         Set<Split> splits = getSplitsResponse.getSplits();
-        assertEquals(3, splits.size());
+        assertThat(splits).hasSize(3);
 
         validateSplit(splits, 25);
         validateSplit(splits, 26);
@@ -193,15 +194,15 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
 
         GetTableLayoutResponse getTableLayoutResponse = sleeperMetadataHandler.doGetTableLayout(new BlockAllocatorImpl(),
                 new GetTableLayoutRequest(TestUtils.createIdentity(),
-                    "abc", "cde",
-                    tableName,
-                    queryConstraints, getTableResponse.getSchema(),
-                    getTableResponse.getPartitionColumns()
-        ));
+                        "abc", "cde",
+                        tableName,
+                        queryConstraints, getTableResponse.getSchema(),
+                        getTableResponse.getPartitionColumns()
+                ));
 
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();
-        assertEquals(2, partitions.getRowCount());
+        assertThat(partitions.getRowCount()).isEqualTo(2);
     }
 
     @Test
@@ -223,7 +224,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
                 .collect(Collectors.toList()).get(0);
-        
+
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         SplitPartition splitPartition = new SplitPartition(stateStore, table.getSchema(), new Configuration());
         splitPartition.splitPartition(partition2018, partitionToActiveFilesMap.get(partition2018.getId()));
@@ -254,13 +255,13 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
 
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();
-        assertEquals(1, partitions.getRowCount());
+        assertThat(partitions.getRowCount()).isOne();
         FieldReader yearReader = partitions.getFieldReader("_MaxRowKey-year");
         FieldReader monthReader = partitions.getFieldReader("_MaxRowKey-month");
         FieldReader dayReader = partitions.getFieldReader("_MaxRowKey-day");
-        assertEquals(2019, yearReader.readObject());
-        assertEquals(firstHalfOf2018.getRegion().getRange("month").getMax(), monthReader.readObject());
-        assertNull(dayReader.readObject());
+        assertThat(yearReader.readObject()).isEqualTo(2019);
+        assertThat(monthReader.readObject()).isEqualTo(firstHalfOf2018.getRegion().getRange("month").getMax());
+        assertThat(dayReader.readObject()).isNull();
     }
 
     @Test
@@ -312,24 +313,24 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
 
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();
-        assertEquals(1, partitions.getRowCount());
+        assertThat(partitions.getRowCount()).isOne();
         FieldReader yearReader = partitions.getFieldReader("_MinRowKey-year");
         FieldReader monthReader = partitions.getFieldReader("_MinRowKey-month");
         FieldReader dayReader = partitions.getFieldReader("_MinRowKey-day");
-        assertEquals(2018, yearReader.readObject());
-        assertEquals(firstHalfOf2018.getRegion().getRange("month").getMax(), monthReader.readObject());
-        assertEquals(Integer.MIN_VALUE, dayReader.readObject());
+        assertThat(yearReader.readObject()).isEqualTo(2018);
+        assertThat(monthReader.readObject()).isEqualTo(firstHalfOf2018.getRegion().getRange("month").getMax());
+        assertThat(dayReader.readObject()).isEqualTo(Integer.MIN_VALUE);
     }
 
     private void validateSplit(Set<Split> splits, Integer expectedValue) {
         long matched = splits.stream()
                 .filter(split -> split.getProperty("_MinRowKey-year").equals(expectedValue.toString()))
                 .map(split -> {
-                    assertEquals(Integer.toString(expectedValue + 1), split.getProperty("_MaxRowKey-year"));
-                    assertEquals("", split.getProperty("_MinRowKey-month"));
-                    assertNull(split.getProperty("_MaxRowKey-month"));
-                    assertEquals("[\"s3a://table/partition-" + expectedValue + "/file1.parquet\"," +
-                            "\"s3a://table/partition-" + expectedValue + "/file2.parquet\"]", split.getProperty(RELEVANT_FILES_FIELD));
+                    assertThat(split.getProperty("_MaxRowKey-year")).isEqualTo(Integer.toString(expectedValue + 1));
+                    assertThat(split.getProperty("_MinRowKey-month")).isEmpty();
+                    assertThat(split.getProperty("_MaxRowKey-month")).isNull();
+                    assertThat(split.getProperty(RELEVANT_FILES_FIELD)).isEqualTo("[\"s3a://table/partition-" + expectedValue + "/file1.parquet\"," +
+                            "\"s3a://table/partition-" + expectedValue + "/file2.parquet\"]");
                     return split;
                 })
                 .count();

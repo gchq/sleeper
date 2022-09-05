@@ -15,11 +15,6 @@
  */
 package sleeper.core.range;
 
-import java.util.Arrays;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import sleeper.core.key.Key;
 import sleeper.core.schema.Field;
@@ -29,8 +24,12 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
+import java.util.Arrays;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 public class RegionTest {
-    
+
     @Test
     public void equalsAndHashcodeShouldWorkCorrectlyIntKey() {
         // Given
@@ -41,7 +40,7 @@ public class RegionTest {
         Region region2 = new Region(rangeFactory.createRange("key", 1, true, 2, true));
         Region region3 = new Region(rangeFactory.createRange("key", 1, true, 4, true));
         Region region4 = new Region(rangeFactory.createRange("key", 1, true, 4, false));
-        
+
         // When
         boolean equals1 = region1.equals(region2);
         boolean equals2 = region1.equals(region3);
@@ -50,16 +49,16 @@ public class RegionTest {
         int hashCode2 = region2.hashCode();
         int hashCode3 = region3.hashCode();
         int hashCode4 = region4.hashCode();
-        
+
         // Then
-        assertTrue(equals1);
-        assertFalse(equals2);
-        assertFalse(equals3);
-        assertEquals(hashCode1, hashCode2);
-        assertNotEquals(hashCode1, hashCode3);
-        assertNotEquals(hashCode3, hashCode4);
+        assertThat(equals1).isTrue();
+        assertThat(equals2).isFalse();
+        assertThat(equals3).isFalse();
+        assertThat(hashCode2).isEqualTo(hashCode1);
+        assertThat(hashCode3).isNotEqualTo(hashCode1);
+        assertThat(hashCode4).isNotEqualTo(hashCode3);
     }
-    
+
     @Test
     public void equalsAndHashcodeShouldWorkCorrectlyLongKey() {
         // Given
@@ -70,7 +69,7 @@ public class RegionTest {
         Region region2 = new Region(rangeFactory.createRange("key", 1L, true, 2L, true));
         Region region3 = new Region(rangeFactory.createRange("key", 1L, true, 4L, true));
         Region region4 = new Region(rangeFactory.createRange("key", 1L, true, 4L, false));
-        
+
         // When
         boolean equals1 = region1.equals(region2);
         boolean equals2 = region1.equals(region3);
@@ -79,16 +78,16 @@ public class RegionTest {
         int hashCode2 = region2.hashCode();
         int hashCode3 = region3.hashCode();
         int hashCode4 = region4.hashCode();
-        
+
         // Then
-        assertTrue(equals1);
-        assertFalse(equals2);
-        assertFalse(equals3);
-        assertEquals(hashCode1, hashCode2);
-        assertNotEquals(hashCode1, hashCode3);
-        assertNotEquals(hashCode3, hashCode4);
+        assertThat(equals1).isTrue();
+        assertThat(equals2).isFalse();
+        assertThat(equals3).isFalse();
+        assertThat(hashCode2).isEqualTo(hashCode1);
+        assertThat(hashCode3).isNotEqualTo(hashCode1);
+        assertThat(hashCode4).isNotEqualTo(hashCode3);
     }
-    
+
     @Test
     public void equalsAndHashcodeShouldWorkCorrectlyStringKey() {
         // Given
@@ -99,7 +98,7 @@ public class RegionTest {
         Region region2 = new Region(rangeFactory.createRange("key", "1", true, "2", true));
         Region region3 = new Region(rangeFactory.createRange("key", "1", true, "4", true));
         Region region4 = new Region(rangeFactory.createRange("key", "1", true, "4", false));
-        
+
         // When
         boolean equals1 = region1.equals(region2);
         boolean equals2 = region1.equals(region3);
@@ -108,16 +107,16 @@ public class RegionTest {
         int hashCode2 = region2.hashCode();
         int hashCode3 = region3.hashCode();
         int hashCode4 = region4.hashCode();
-        
+
         // Then
-        assertTrue(equals1);
-        assertFalse(equals2);
-        assertFalse(equals3);
-        assertEquals(hashCode1, hashCode2);
-        assertNotEquals(hashCode1, hashCode3);
-        assertNotEquals(hashCode3, hashCode4);
+        assertThat(equals1).isTrue();
+        assertThat(equals2).isFalse();
+        assertThat(equals3).isFalse();
+        assertThat(hashCode2).isEqualTo(hashCode1);
+        assertThat(hashCode3).isNotEqualTo(hashCode1);
+        assertThat(hashCode4).isNotEqualTo(hashCode3);
     }
-    
+
     @Test
     public void equalsAndHashcodeShouldWorkCorrectlyByteArrayKey() {
         // Given
@@ -128,7 +127,7 @@ public class RegionTest {
         Region region2 = new Region(rangeFactory.createRange("key", new byte[]{1}, true, new byte[]{2}, true));
         Region region3 = new Region(rangeFactory.createRange("key", new byte[]{1}, true, new byte[]{4}, true));
         Region region4 = new Region(rangeFactory.createRange("key", new byte[]{1}, true, new byte[]{4}, false));
-        
+
         // When
         boolean equals1 = region1.equals(region2);
         boolean equals2 = region1.equals(region3);
@@ -137,16 +136,16 @@ public class RegionTest {
         int hashCode2 = region2.hashCode();
         int hashCode3 = region3.hashCode();
         int hashCode4 = region4.hashCode();
-        
+
         // Then
-        assertTrue(equals1);
-        assertFalse(equals2);
-        assertFalse(equals3);
-        assertEquals(hashCode1, hashCode2);
-        assertNotEquals(hashCode1, hashCode3);
-        assertNotEquals(hashCode3, hashCode4);
+        assertThat(equals1).isTrue();
+        assertThat(equals2).isFalse();
+        assertThat(equals3).isFalse();
+        assertThat(hashCode2).isEqualTo(hashCode1);
+        assertThat(hashCode3).isNotEqualTo(hashCode1);
+        assertThat(hashCode4).isNotEqualTo(hashCode3);
     }
-    
+
     @Test
     public void equalsAndHashcodeShouldWorkCorrectlyIntKeyNullMax() {
         // Given
@@ -156,21 +155,21 @@ public class RegionTest {
         Region region1 = new Region(rangeFactory.createRange("key", 1, true, null, true));
         Region region2 = new Region(rangeFactory.createRange("key", 1, true, null, true));
         Region region3 = new Region(rangeFactory.createRange("key", 1, true, 4, true));
-        
+
         // When
         boolean equals1 = region1.equals(region2);
         boolean equals2 = region1.equals(region3);
         int hashCode1 = region1.hashCode();
         int hashCode2 = region2.hashCode();
         int hashCode3 = region3.hashCode();
-        
+
         // Then
-        assertTrue(equals1);
-        assertFalse(equals2);
-        assertEquals(hashCode1, hashCode2);
-        assertNotEquals(hashCode1, hashCode3);
+        assertThat(equals1).isTrue();
+        assertThat(equals2).isFalse();
+        assertThat(hashCode2).isEqualTo(hashCode1);
+        assertThat(hashCode3).isNotEqualTo(hashCode1);
     }
- 
+
     @Test
     public void equalsAndHashcodeShouldWorkCorrectlyLongKeyNullMax() {
         // Given
@@ -180,21 +179,21 @@ public class RegionTest {
         Region region1 = new Region(rangeFactory.createRange("key", 1L, true, null, true));
         Region region2 = new Region(rangeFactory.createRange("key", 1L, true, null, true));
         Region region3 = new Region(rangeFactory.createRange("key", 1L, true, 4L, true));
-        
+
         // When
         boolean equals1 = region1.equals(region2);
         boolean equals2 = region1.equals(region3);
         int hashCode1 = region1.hashCode();
         int hashCode2 = region2.hashCode();
         int hashCode3 = region3.hashCode();
-        
+
         // Then
-        assertTrue(equals1);
-        assertFalse(equals2);
-        assertEquals(hashCode1, hashCode2);
-        assertNotEquals(hashCode1, hashCode3);
+        assertThat(equals1).isTrue();
+        assertThat(equals2).isFalse();
+        assertThat(hashCode2).isEqualTo(hashCode1);
+        assertThat(hashCode3).isNotEqualTo(hashCode1);
     }
-    
+
     @Test
     public void equalsAndHashcodeShouldWorkCorrectlyStringKeyNullMax() {
         // Given
@@ -204,21 +203,21 @@ public class RegionTest {
         Region region1 = new Region(rangeFactory.createRange("key", "1", true, null, true));
         Region region2 = new Region(rangeFactory.createRange("key", "1", true, null, true));
         Region region3 = new Region(rangeFactory.createRange("key", "1", true, "4", true));
-        
+
         // When
         boolean equals1 = region1.equals(region2);
         boolean equals2 = region1.equals(region3);
         int hashCode1 = region1.hashCode();
         int hashCode2 = region2.hashCode();
         int hashCode3 = region3.hashCode();
-        
+
         // Then
-        assertTrue(equals1);
-        assertFalse(equals2);
-        assertEquals(hashCode1, hashCode2);
-        assertNotEquals(hashCode1, hashCode3);
+        assertThat(equals1).isTrue();
+        assertThat(equals2).isFalse();
+        assertThat(hashCode2).isEqualTo(hashCode1);
+        assertThat(hashCode3).isNotEqualTo(hashCode1);
     }
-    
+
     @Test
     public void equalsAndHashcodeShouldWorkCorrectlyByteArrayKeyNullMax() {
         // Given
@@ -228,21 +227,21 @@ public class RegionTest {
         Region region1 = new Region(rangeFactory.createRange("key", new byte[]{1}, true, null, true));
         Region region2 = new Region(rangeFactory.createRange("key", new byte[]{1}, true, null, true));
         Region region3 = new Region(rangeFactory.createRange("key", new byte[]{1}, true, new byte[]{4}, true));
-        
+
         // When
         boolean equals1 = region1.equals(region2);
         boolean equals2 = region1.equals(region3);
         int hashCode1 = region1.hashCode();
         int hashCode2 = region2.hashCode();
         int hashCode3 = region3.hashCode();
-        
+
         // Then
-        assertTrue(equals1);
-        assertFalse(equals2);
-        assertEquals(hashCode1, hashCode2);
-        assertNotEquals(hashCode1, hashCode3);
+        assertThat(equals1).isTrue();
+        assertThat(equals2).isFalse();
+        assertThat(hashCode2).isEqualTo(hashCode1);
+        assertThat(hashCode3).isNotEqualTo(hashCode1);
     }
-    
+
     @Test
     public void isKeyInRegionShouldWorkCorrectlyIntKey() {
         // Given
@@ -258,7 +257,7 @@ public class RegionTest {
         Key key4 = Key.create(10);
         Key key5 = Key.create(100);
         Key key6 = Key.create(Integer.MAX_VALUE);
-        
+
         // When
         boolean test1 = region1.isKeyInRegion(schema, key1);
         boolean test2 = region1.isKeyInRegion(schema, key2);
@@ -269,19 +268,19 @@ public class RegionTest {
         boolean test7 = region3.isKeyInRegion(schema, key5);
         boolean test8 = region3.isKeyInRegion(schema, key6);
         boolean test9 = region3.isKeyInRegion(schema, key4);
-        
+
         // Then
-        assertFalse(test1);
-        assertTrue(test2);
-        assertTrue(test3);
-        assertTrue(test4);
-        assertFalse(test5);
-        assertFalse(test6);
-        assertTrue(test7);
-        assertTrue(test8);
-        assertFalse(test9);
+        assertThat(test1).isFalse();
+        assertThat(test2).isTrue();
+        assertThat(test3).isTrue();
+        assertThat(test4).isTrue();
+        assertThat(test5).isFalse();
+        assertThat(test6).isFalse();
+        assertThat(test7).isTrue();
+        assertThat(test8).isTrue();
+        assertThat(test9).isFalse();
     }
-    
+
     @Test
     public void isKeyInRegionShouldWorkCorrectlyLongKey() {
         // Given
@@ -297,7 +296,7 @@ public class RegionTest {
         Key key4 = Key.create(10L);
         Key key5 = Key.create(100L);
         Key key6 = Key.create(Long.MAX_VALUE);
-        
+
         // When
         boolean test1 = region1.isKeyInRegion(schema, key1);
         boolean test2 = region1.isKeyInRegion(schema, key2);
@@ -308,19 +307,19 @@ public class RegionTest {
         boolean test7 = region3.isKeyInRegion(schema, key5);
         boolean test8 = region3.isKeyInRegion(schema, key6);
         boolean test9 = region3.isKeyInRegion(schema, key4);
-        
+
         // Then
-        assertFalse(test1);
-        assertTrue(test2);
-        assertTrue(test3);
-        assertTrue(test4);
-        assertFalse(test5);
-        assertFalse(test6);
-        assertTrue(test7);
-        assertTrue(test8);
-        assertFalse(test9);
+        assertThat(test1).isFalse();
+        assertThat(test2).isTrue();
+        assertThat(test3).isTrue();
+        assertThat(test4).isTrue();
+        assertThat(test5).isFalse();
+        assertThat(test6).isFalse();
+        assertThat(test7).isTrue();
+        assertThat(test8).isTrue();
+        assertThat(test9).isFalse();
     }
-    
+
     @Test
     public void isKeyInRegionShouldWorkCorrectlyStringKey() {
         // Given
@@ -336,7 +335,7 @@ public class RegionTest {
         Key key4 = Key.create("8");
         Key key5 = Key.create("9");
         Key key6 = Key.create("99");
-        
+
         // When
         boolean test1 = region1.isKeyInRegion(schema, key1);
         boolean test2 = region1.isKeyInRegion(schema, key2);
@@ -347,19 +346,19 @@ public class RegionTest {
         boolean test7 = region3.isKeyInRegion(schema, key5);
         boolean test8 = region3.isKeyInRegion(schema, key6);
         boolean test9 = region3.isKeyInRegion(schema, key4);
-        
+
         // Then
-        assertFalse(test1);
-        assertTrue(test2);
-        assertTrue(test3);
-        assertTrue(test4);
-        assertFalse(test5);
-        assertFalse(test6);
-        assertTrue(test7);
-        assertTrue(test8);
-        assertFalse(test9);
+        assertThat(test1).isFalse();
+        assertThat(test2).isTrue();
+        assertThat(test3).isTrue();
+        assertThat(test4).isTrue();
+        assertThat(test5).isFalse();
+        assertThat(test6).isFalse();
+        assertThat(test7).isTrue();
+        assertThat(test8).isTrue();
+        assertThat(test9).isFalse();
     }
-    
+
     @Test
     public void isKeyInRegionShouldWorkCorrectlyByteArrayKey() {
         // Given
@@ -375,7 +374,7 @@ public class RegionTest {
         Key key4 = Key.create(new byte[]{10});
         Key key5 = Key.create(new byte[]{20});
         Key key6 = Key.create(new byte[]{100});
-        
+
         // When
         boolean test1 = region1.isKeyInRegion(schema, key1);
         boolean test2 = region1.isKeyInRegion(schema, key2);
@@ -386,19 +385,19 @@ public class RegionTest {
         boolean test7 = region3.isKeyInRegion(schema, key5);
         boolean test8 = region3.isKeyInRegion(schema, key6);
         boolean test9 = region3.isKeyInRegion(schema, key4);
-        
+
         // Then
-        assertFalse(test1);
-        assertTrue(test2);
-        assertTrue(test3);
-        assertTrue(test4);
-        assertFalse(test5);
-        assertFalse(test6);
-        assertTrue(test7);
-        assertTrue(test8);
-        assertFalse(test9);
+        assertThat(test1).isFalse();
+        assertThat(test2).isTrue();
+        assertThat(test3).isTrue();
+        assertThat(test4).isTrue();
+        assertThat(test5).isFalse();
+        assertThat(test6).isFalse();
+        assertThat(test7).isTrue();
+        assertThat(test8).isTrue();
+        assertThat(test9).isFalse();
     }
-    
+
     @Test
     public void isKeyInRegionShouldWorkCorrectlyMultidimensionalKey() {
         // Given
@@ -416,7 +415,7 @@ public class RegionTest {
         Key key4 = Key.create(Arrays.asList(new byte[]{1}, 10));
         Key key5 = Key.create(Arrays.asList(new byte[]{1}, 20));
         Key key6 = Key.create(Arrays.asList(new byte[]{10}, 11));
-        
+
         // When
         boolean test1 = region.isKeyInRegion(schema, key1);
         boolean test2 = region.isKeyInRegion(schema, key2);
@@ -424,16 +423,16 @@ public class RegionTest {
         boolean test4 = region.isKeyInRegion(schema, key4);
         boolean test5 = region.isKeyInRegion(schema, key5);
         boolean test6 = region.isKeyInRegion(schema, key4);
-        
+
         // Then
-        assertFalse(test1);
-        assertFalse(test2);
-        assertFalse(test3);
-        assertTrue(test4);
-        assertFalse(test5);
-        assertTrue(test6);
+        assertThat(test1).isFalse();
+        assertThat(test2).isFalse();
+        assertThat(test3).isFalse();
+        assertThat(test4).isTrue();
+        assertThat(test5).isFalse();
+        assertThat(test6).isTrue();
     }
-    
+
     @Test
     public void shouldGiveCorrectAnswerForDoRegionsOverlapOneDimIntKey() {
         // Given
@@ -442,28 +441,28 @@ public class RegionTest {
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Range range0 = rangeFactory.createRange("key", 1, true, 10, false);
         Region region0 = new Region(range0);
-        
+
         // When / Then 1
         Range range1 = rangeFactory.createRange("key", 1, true, 2, false);
         Region region1 = new Region(range1);
-        assertTrue(region0.doesRegionOverlap(region1));
-        
+        assertThat(region0.doesRegionOverlap(region1)).isTrue();
+
         // When / Then 2
         Range range2 = rangeFactory.createRange("key", -10, true, 1, false);
         Region region2 = new Region(range2);
-        assertFalse(region0.doesRegionOverlap(region2));
-        
+        assertThat(region0.doesRegionOverlap(region2)).isFalse();
+
         // When / Then 3
         Range range3 = rangeFactory.createRange("key", 10, true, null, false);
         Region region3 = new Region(range3);
-        assertFalse(region0.doesRegionOverlap(region3));
-        
+        assertThat(region0.doesRegionOverlap(region3)).isFalse();
+
         // When / Then 3
         Range range4 = rangeFactory.createRange("key", 9, true, null, false);
         Region region4 = new Region(range4);
-        assertTrue(region0.doesRegionOverlap(region4));
+        assertThat(region0.doesRegionOverlap(region4)).isTrue();
     }
-    
+
     @Test
     public void shouldGiveCorrectAnswerForDoRegionsOverlapOneDimLongKey() {
         // Given
@@ -472,28 +471,28 @@ public class RegionTest {
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Range range0 = rangeFactory.createRange("key", 1L, true, 10L, false);
         Region region0 = new Region(range0);
-        
+
         // When / Then 1
         Range range1 = rangeFactory.createRange("key", 1L, true, 2L, false);
         Region region1 = new Region(range1);
-        assertTrue(region0.doesRegionOverlap(region1));
-        
+        assertThat(region0.doesRegionOverlap(region1)).isTrue();
+
         // When / Then 2
         Range range2 = rangeFactory.createRange("key", -10L, true, 1L, false);
         Region region2 = new Region(range2);
-        assertFalse(region0.doesRegionOverlap(region2));
-        
+        assertThat(region0.doesRegionOverlap(region2)).isFalse();
+
         // When / Then 3
         Range range3 = rangeFactory.createRange("key", 10L, true, null, false);
         Region region3 = new Region(range3);
-        assertFalse(region0.doesRegionOverlap(region3));
-        
+        assertThat(region0.doesRegionOverlap(region3)).isFalse();
+
         // When / Then 3
         Range range4 = rangeFactory.createRange("key", 9L, true, null, false);
         Region region4 = new Region(range4);
-        assertTrue(region0.doesRegionOverlap(region4));
+        assertThat(region0.doesRegionOverlap(region4)).isTrue();
     }
-    
+
     @Test
     public void shouldGiveCorrectAnswerForDoRegionsOverlapOneDimStringKey() {
         // Given
@@ -502,28 +501,28 @@ public class RegionTest {
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Range range0 = rangeFactory.createRange("key", "E", true, "P", false);
         Region region0 = new Region(range0);
-        
+
         // When / Then 1
         Range range1 = rangeFactory.createRange("key", "E", true, "F", false);
         Region region1 = new Region(range1);
-        assertTrue(region0.doesRegionOverlap(region1));
-        
+        assertThat(region0.doesRegionOverlap(region1)).isTrue();
+
         // When / Then 2
         Range range2 = rangeFactory.createRange("key", "A", true, "E", false);
         Region region2 = new Region(range2);
-        assertFalse(region0.doesRegionOverlap(region2));
-        
+        assertThat(region0.doesRegionOverlap(region2)).isFalse();
+
         // When / Then 3
         Range range3 = rangeFactory.createRange("key", "P", true, null, false);
         Region region3 = new Region(range3);
-        assertFalse(region0.doesRegionOverlap(region3));
-        
+        assertThat(region0.doesRegionOverlap(region3)).isFalse();
+
         // When / Then 3
         Range range4 = rangeFactory.createRange("key", "N", true, null, false);
         Region region4 = new Region(range4);
-        assertTrue(region0.doesRegionOverlap(region4));
+        assertThat(region0.doesRegionOverlap(region4)).isTrue();
     }
-    
+
     @Test
     public void shouldGiveCorrectAnswerForDoRegionsOverlapOneDimByteArrayKey() {
         // Given
@@ -532,34 +531,34 @@ public class RegionTest {
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Range range0 = rangeFactory.createRange("key", new byte[]{1}, true, new byte[]{10}, false);
         Region region0 = new Region(range0);
-        
+
         // When / Then 1
         Range range1 = rangeFactory.createRange("key", new byte[]{1}, true, new byte[]{9, 8}, false);
         Region region1 = new Region(range1);
-        assertTrue(region0.doesRegionOverlap(region1));
-        
+        assertThat(region0.doesRegionOverlap(region1)).isTrue();
+
         // When / Then 2
         Range range2 = rangeFactory.createRange("key", new byte[]{0}, true, new byte[]{1}, false);
         Region region2 = new Region(range2);
-        assertFalse(region0.doesRegionOverlap(region2));
-        
+        assertThat(region0.doesRegionOverlap(region2)).isFalse();
+
         // When / Then 3
         Range range3 = rangeFactory.createRange("key", new byte[]{10}, true, null, false);
         Region region3 = new Region(range3);
-        assertFalse(region0.doesRegionOverlap(region3));
-        
+        assertThat(region0.doesRegionOverlap(region3)).isFalse();
+
         // When / Then 3
         Range range4 = rangeFactory.createRange("key", new byte[]{9}, true, null, false);
         Region region4 = new Region(range4);
-        assertTrue(region0.doesRegionOverlap(region4));
+        assertThat(region0.doesRegionOverlap(region4)).isTrue();
     }
-    
-    @Test 
+
+    @Test
     public void shouldGiveCorrectAnswerForDoRegionsOverlapWithMultidimensionalIntKey() {
         // Given
         Schema schema = new Schema();
         schema.setRowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()));
-        
+
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Range range1 = rangeFactory.createRange("key1", 1, true, 10, false);
         Range range2 = rangeFactory.createRange("key2", 200, true, 300, false);
@@ -587,7 +586,7 @@ public class RegionTest {
         Range range12 = rangeFactory.createRange("key2", 220, true, 230, false);
         Region region1 = new Region(Arrays.asList(range11, range12));
         boolean doesRegion1OverlapRegion0 = region0.doesRegionOverlap(region1);
-        
+
         // Region 2:
         //      300  +-----------+
         //           |           |
@@ -601,7 +600,7 @@ public class RegionTest {
         Range range22 = rangeFactory.createRange("key2", 220, true, 230, false);
         Region region2 = new Region(Arrays.asList(range21, range22));
         boolean doesRegion2OverlapRegion0 = region0.doesRegionOverlap(region2);
-        
+
         // Region 3:
         //                      350 +---+
         //                          |   | <------ range does not overlap partition
@@ -637,7 +636,7 @@ public class RegionTest {
         Range range42 = rangeFactory.createRange("key2", 320, true, 350, false);
         Region region4 = new Region(Arrays.asList(range41, range42));
         boolean doesRegion4OverlapRegion0 = region0.doesRegionOverlap(region4);
-        
+
         // Region 5:
         //      350     +---+
         //              |   | <------ range overlaps partition
@@ -669,7 +668,7 @@ public class RegionTest {
         Range range62 = rangeFactory.createRange("key2", 280, true, 350, false);
         Region region6 = new Region(Arrays.asList(range61, range62));
         boolean doesRegion6OverlapRegion0 = region0.doesRegionOverlap(region6);
-        
+
         // Region 7:
         // 350 +---+
         //     |   | <------ range does not overlap partition
@@ -685,7 +684,7 @@ public class RegionTest {
         Range range72 = rangeFactory.createRange("key2", 280, true, 350, false);
         Region region7 = new Region(Arrays.asList(range71, range72));
         boolean doesRegion7OverlapRegion0 = region0.doesRegionOverlap(region7);
-        
+
         //  Region 8:
         //320 +-------------------------+
         //    |                         |
@@ -703,7 +702,7 @@ public class RegionTest {
         Range range82 = rangeFactory.createRange("key2", 150, true, 320, false);
         Region region8 = new Region(Arrays.asList(range81, range82));
         boolean doesRegion8OverlapRegion0 = region0.doesRegionOverlap(region8);
-        
+
         // Region 9:
         //      300  +-----------+
         //      290  |           +----+
@@ -749,7 +748,7 @@ public class RegionTest {
         Range range112 = rangeFactory.createRange("key2", 280, false, 350, false);
         Region region11 = new Region(Arrays.asList(range111, range112));
         boolean doesRegion11OverlapRegion0 = region0.doesRegionOverlap(region11);
-        
+
         // Region 12 - Region is exclusive of min, inclusive of max:
         // 350 +-----+
         //     |     | <------ range does overlap partition
@@ -765,22 +764,22 @@ public class RegionTest {
         Range range122 = rangeFactory.createRange("key2", 280, false, 350, true);
         Region region12 = new Region(Arrays.asList(range121, range122));
         boolean doesRegion12OverlapRegion0 = region0.doesRegionOverlap(region12);
-        
+
         // Then
-        assertTrue(doesRegion1OverlapRegion0);
-        assertFalse(doesRegion2OverlapRegion0);
-        assertFalse(doesRegion3OverlapRegion0);
-        assertFalse(doesRegion4OverlapRegion0);
-        assertTrue(doesRegion5OverlapRegion0);
-        assertTrue(doesRegion6OverlapRegion0);
-        assertFalse(doesRegion7OverlapRegion0);
-        assertTrue(doesRegion8OverlapRegion0);
-        assertFalse(doesRegion9OverlapRegion0);
-        assertTrue(doesRegion10OverlapRegion0);
-        assertFalse(doesRegion11OverlapRegion0);
-        assertTrue(doesRegion12OverlapRegion0);
+        assertThat(doesRegion1OverlapRegion0).isTrue();
+        assertThat(doesRegion2OverlapRegion0).isFalse();
+        assertThat(doesRegion3OverlapRegion0).isFalse();
+        assertThat(doesRegion4OverlapRegion0).isFalse();
+        assertThat(doesRegion5OverlapRegion0).isTrue();
+        assertThat(doesRegion6OverlapRegion0).isTrue();
+        assertThat(doesRegion7OverlapRegion0).isFalse();
+        assertThat(doesRegion8OverlapRegion0).isTrue();
+        assertThat(doesRegion9OverlapRegion0).isFalse();
+        assertThat(doesRegion10OverlapRegion0).isTrue();
+        assertThat(doesRegion11OverlapRegion0).isFalse();
+        assertThat(doesRegion12OverlapRegion0).isTrue();
     }
-    
+
     @Test
     public void shouldGiveCorrectAnswerForDoRegionsOverlapWithMultidimensionalStringKey() {
         // Given
@@ -813,7 +812,7 @@ public class RegionTest {
         Range range12 = rangeFactory.createRange("key2", "R", true, "T", false);
         Region region1 = new Region(Arrays.asList(range11, range12));
         boolean doesRegion1OverlapRegion0 = region0.doesRegionOverlap(region1);
-        
+
         // Region 2:
         //        V  +-----------+
         //           |           |
@@ -827,7 +826,7 @@ public class RegionTest {
         Range range22 = rangeFactory.createRange("key2", "R", true, "T", false);
         Region region2 = new Region(Arrays.asList(range21, range22));
         boolean doesRegion2OverlapRegion0 = region0.doesRegionOverlap(region2);
-        
+
         // Region 3:
         //                        Z +---+
         //                          |   | <------ range does not overlap partition
@@ -863,7 +862,7 @@ public class RegionTest {
         Range range42 = rangeFactory.createRange("key2", "X", true, "Z", false);
         Region region4 = new Region(Arrays.asList(range41, range42));
         boolean doesRegion4OverlapRegion0 = region0.doesRegionOverlap(region4);
-        
+
         // Region 5:
         //        Z     +---+
         //              |   | <------ range overlaps partition
@@ -895,7 +894,7 @@ public class RegionTest {
         Range range62 = rangeFactory.createRange("key2", "R", true, "Z", false);
         Region region6 = new Region(Arrays.asList(range61, range62));
         boolean doesRegion6OverlapRegion0 = region0.doesRegionOverlap(region6);
-        
+
         // Region 7:
         //   Z +---+
         //     |   | <------ range does not overlap partition
@@ -911,7 +910,7 @@ public class RegionTest {
         Range range72 = rangeFactory.createRange("key2", "R", true, "Z", false);
         Region region7 = new Region(Arrays.asList(range71, range72));
         boolean doesRegion7OverlapRegion0 = region0.doesRegionOverlap(region7);
-        
+
         //  Region 8:
         //  Z +-------------------------+
         //    |                         |
@@ -929,7 +928,7 @@ public class RegionTest {
         Range range82 = rangeFactory.createRange("key2", "0", true, "Z", false);
         Region region8 = new Region(Arrays.asList(range81, range82));
         boolean doesRegion8OverlapRegion0 = region0.doesRegionOverlap(region8);
-        
+
         // Region 9:
         //        V  +-----------+
         //        T  |           +----+
@@ -975,7 +974,7 @@ public class RegionTest {
         Range range112 = rangeFactory.createRange("key2", "R", false, "Z", false);
         Region region11 = new Region(Arrays.asList(range111, range112));
         boolean doesRegion11OverlapRegion0 = region0.doesRegionOverlap(region11);
-        
+
         // Region 12 - Region is exclusive of min, inclusive of max:
         //   Z +-----+
         //     |     | <------ range does overlap partition
@@ -991,22 +990,22 @@ public class RegionTest {
         Range range122 = rangeFactory.createRange("key2", "R", false, "Z", true);
         Region region12 = new Region(Arrays.asList(range121, range122));
         boolean doesRegion12OverlapRegion0 = region0.doesRegionOverlap(region12);
-        
+
         // Then
-        assertTrue(doesRegion1OverlapRegion0);
-        assertFalse(doesRegion2OverlapRegion0);
-        assertFalse(doesRegion3OverlapRegion0);
-        assertFalse(doesRegion4OverlapRegion0);
-        assertTrue(doesRegion5OverlapRegion0);
-        assertTrue(doesRegion6OverlapRegion0);
-        assertFalse(doesRegion7OverlapRegion0);
-        assertTrue(doesRegion8OverlapRegion0);
-        assertFalse(doesRegion9OverlapRegion0);
-        assertTrue(doesRegion10OverlapRegion0);
-        assertFalse(doesRegion11OverlapRegion0);
-        assertTrue(doesRegion12OverlapRegion0);
+        assertThat(doesRegion1OverlapRegion0).isTrue();
+        assertThat(doesRegion2OverlapRegion0).isFalse();
+        assertThat(doesRegion3OverlapRegion0).isFalse();
+        assertThat(doesRegion4OverlapRegion0).isFalse();
+        assertThat(doesRegion5OverlapRegion0).isTrue();
+        assertThat(doesRegion6OverlapRegion0).isTrue();
+        assertThat(doesRegion7OverlapRegion0).isFalse();
+        assertThat(doesRegion8OverlapRegion0).isTrue();
+        assertThat(doesRegion9OverlapRegion0).isFalse();
+        assertThat(doesRegion10OverlapRegion0).isTrue();
+        assertThat(doesRegion11OverlapRegion0).isFalse();
+        assertThat(doesRegion12OverlapRegion0).isTrue();
     }
-  
+
     @Test
     public void shouldGiveCorrectAnswerForDoRegionsOverlapWithMultidimensionalStringKeyAndNullBoundaries() {
         // Given
@@ -1016,7 +1015,7 @@ public class RegionTest {
         Range range1 = rangeFactory.createRange("key1", "A", true, null, false);
         Range range2 = rangeFactory.createRange("key2", "P", true, null, false);
         Region region0 = new Region(Arrays.asList(range1, range2));
-        
+
         // When
         // Region 0:
         //     null  +-----------+
@@ -1039,7 +1038,7 @@ public class RegionTest {
         Range range12 = rangeFactory.createRange("key2", "R", true, "T", false);
         Region region1 = new Region(Arrays.asList(range11, range12));
         boolean doesRegion1OverlapRegion0 = region0.doesRegionOverlap(region1);
-         
+
         // Region 2:
         //     null  +--+---+----+
         //        Z  |  +---+    |
@@ -1068,7 +1067,7 @@ public class RegionTest {
         Range range32 = rangeFactory.createRange("key2", "R", true, null, false);
         Region region3 = new Region(Arrays.asList(range31, range32));
         boolean doesRegion3OverlapRegion0 = region0.doesRegionOverlap(region3);
-        
+
         // Region 4:
         //        <------ range does not overlap partition
         //null +---+ +-----------+
@@ -1083,7 +1082,7 @@ public class RegionTest {
         Range range42 = rangeFactory.createRange("key2", "R", true, null, false);
         Region region4 = new Region(Arrays.asList(range41, range42));
         boolean doesRegion4OverlapRegion0 = region0.doesRegionOverlap(region4);
-        
+
         //  Region 5:
         //    +-null-+-----------+
         //    |      |           |
@@ -1096,15 +1095,15 @@ public class RegionTest {
         Range range52 = rangeFactory.createRange("key2", "P", true, null, false);
         Region region5 = new Region(Arrays.asList(range51, range52));
         boolean doesRegion5OverlapRegion0 = region0.doesRegionOverlap(region5);
-        
+
         // Then
-        assertTrue(doesRegion1OverlapRegion0);
-        assertTrue(doesRegion2OverlapRegion0);
-        assertTrue(doesRegion3OverlapRegion0);
-        assertFalse(doesRegion4OverlapRegion0);
-        assertTrue(doesRegion5OverlapRegion0);
+        assertThat(doesRegion1OverlapRegion0).isTrue();
+        assertThat(doesRegion2OverlapRegion0).isTrue();
+        assertThat(doesRegion3OverlapRegion0).isTrue();
+        assertThat(doesRegion4OverlapRegion0).isFalse();
+        assertThat(doesRegion5OverlapRegion0).isTrue();
     }
-  
+
     @Test
     public void shouldGiveCorrectAnswerForDoesRangeOverlapPartitionWithMultidimensionalByteArrayKey() {
         // Given
@@ -1137,7 +1136,7 @@ public class RegionTest {
         Range range12 = rangeFactory.createRange("key2", new byte[]{22}, true, new byte[]{26}, false);
         Region region1 = new Region(Arrays.asList(range11, range12));
         boolean doesRegion1OverlapRegion0 = region0.doesRegionOverlap(region1);
-        
+
         // Region 2:
         //     [30]  +-----------+
         //           |           |
@@ -1151,7 +1150,7 @@ public class RegionTest {
         Range range22 = rangeFactory.createRange("key2", new byte[]{22}, true, new byte[]{26}, false);
         Region region2 = new Region(Arrays.asList(range21, range22));
         boolean doesRegion2OverlapRegion0 = region0.doesRegionOverlap(region2);
-        
+
         // Region 3:
         //                     [40] +---+
         //                          |   | <------ range does not overlap partition
@@ -1187,7 +1186,7 @@ public class RegionTest {
         Range range42 = rangeFactory.createRange("key2", new byte[]{35}, true, new byte[]{40}, false);
         Region region4 = new Region(Arrays.asList(range41, range42));
         boolean doesRegion4OverlapRegion0 = region0.doesRegionOverlap(region4);
-        
+
         // Region 5:
         //     [35]     +---+
         //              |   | <------ range overlaps partition
@@ -1219,7 +1218,7 @@ public class RegionTest {
         Range range62 = rangeFactory.createRange("key2", new byte[]{25}, true, new byte[]{35}, false);
         Region region6 = new Region(Arrays.asList(range61, range62));
         boolean doesRegion6OverlapRegion0 = region0.doesRegionOverlap(region6);
-        
+
         // Region 7:
         // [35]+---+
         //     |   | <------ range does not overlap partition
@@ -1235,7 +1234,7 @@ public class RegionTest {
         Range range72 = rangeFactory.createRange("key2", new byte[]{25}, true, new byte[]{35}, false);
         Region region7 = new Region(Arrays.asList(range71, range72));
         boolean doesRegion7OverlapRegion0 = region0.doesRegionOverlap(region7);
-        
+
         //  Region 8:
         //[40]+-------------------------+
         //    |                         |
@@ -1253,7 +1252,7 @@ public class RegionTest {
         Range range82 = rangeFactory.createRange("key2", new byte[]{10}, true, new byte[]{40}, false);
         Region region8 = new Region(Arrays.asList(range81, range82));
         boolean doesRegion8OverlapRegion0 = region0.doesRegionOverlap(region8);
-        
+
         // Region 9:
         //     [40]  +-----------+
         //     [38]  |           +----+
@@ -1269,15 +1268,15 @@ public class RegionTest {
         boolean doesRegion9OverlapRegion0 = region0.doesRegionOverlap(region9);
 
         // Then
-        assertTrue(doesRegion1OverlapRegion0);
-        assertFalse(doesRegion2OverlapRegion0);
-        assertFalse(doesRegion3OverlapRegion0);
-        assertFalse(doesRegion4OverlapRegion0);
-        assertTrue(doesRegion5OverlapRegion0);
-        assertTrue(doesRegion6OverlapRegion0);
-        assertFalse(doesRegion7OverlapRegion0);
-        assertTrue(doesRegion8OverlapRegion0);
-        assertFalse(doesRegion9OverlapRegion0);
+        assertThat(doesRegion1OverlapRegion0).isTrue();
+        assertThat(doesRegion2OverlapRegion0).isFalse();
+        assertThat(doesRegion3OverlapRegion0).isFalse();
+        assertThat(doesRegion4OverlapRegion0).isFalse();
+        assertThat(doesRegion5OverlapRegion0).isTrue();
+        assertThat(doesRegion6OverlapRegion0).isTrue();
+        assertThat(doesRegion7OverlapRegion0).isFalse();
+        assertThat(doesRegion8OverlapRegion0).isTrue();
+        assertThat(doesRegion9OverlapRegion0).isFalse();
     }
 
     @Test
@@ -1312,7 +1311,7 @@ public class RegionTest {
         Range range12 = rangeFactory.createRange("key2", "R", true, "T", false);
         Region region1 = new Region(Arrays.asList(range11, range12));
         boolean doesRegion1OverlapRegion0 = region0.doesRegionOverlap(region1);
-        
+
         // Region 2:
         //        V  +-----------+
         //           |           |
@@ -1326,7 +1325,7 @@ public class RegionTest {
         Range range22 = rangeFactory.createRange("key2", "R", true, "T", false);
         Region region2 = new Region(Arrays.asList(range21, range22));
         boolean doesRegion2OverlapRegion0 = region0.doesRegionOverlap(region2);
-        
+
         // Region 3:
         //                        Z +---+
         //                          |   | <------ range does not overlap partition
@@ -1362,7 +1361,7 @@ public class RegionTest {
         Range range42 = rangeFactory.createRange("key2", "X", true, "Z", false);
         Region region4 = new Region(Arrays.asList(range41, range42));
         boolean doesRegion4OverlapRegion0 = region0.doesRegionOverlap(region4);
-        
+
         // Region 5:
         //        Z     +---+
         //              |   | <------ range overlaps partition
@@ -1394,7 +1393,7 @@ public class RegionTest {
         Range range62 = rangeFactory.createRange("key2", "R", true, "Z", false);
         Region region6 = new Region(Arrays.asList(range61, range62));
         boolean doesRegion6OverlapRegion0 = region0.doesRegionOverlap(region6);
-        
+
         // Region 7:
         //   Z +---+
         //     |   | <------ range does not overlap partition
@@ -1410,7 +1409,7 @@ public class RegionTest {
         Range range72 = rangeFactory.createRange("key2", "R", true, "Z", false);
         Region region7 = new Region(Arrays.asList(range71, range72));
         boolean doesRegion7OverlapRegion0 = region0.doesRegionOverlap(region7);
-        
+
         //  Region 8:
         //  Z +-------------------------+
         //    |                         |
@@ -1428,7 +1427,7 @@ public class RegionTest {
         Range range82 = rangeFactory.createRange("key2", "A", true, "Z", false);
         Region region8 = new Region(Arrays.asList(range81, range82));
         boolean doesRegion8OverlapRegion0 = region0.doesRegionOverlap(region8);
-        
+
         // Region 9:
         //        V  +-----------+
         //        T  |           +----+
@@ -1444,14 +1443,14 @@ public class RegionTest {
         boolean doesRegion9OverlapRegion0 = region0.doesRegionOverlap(region9);
 
         // Then
-        assertTrue(doesRegion1OverlapRegion0);
-        assertFalse(doesRegion2OverlapRegion0);
-        assertFalse(doesRegion3OverlapRegion0);
-        assertFalse(doesRegion4OverlapRegion0);
-        assertTrue(doesRegion5OverlapRegion0);
-        assertTrue(doesRegion6OverlapRegion0);
-        assertFalse(doesRegion7OverlapRegion0);
-        assertTrue(doesRegion8OverlapRegion0);
-        assertFalse(doesRegion9OverlapRegion0);
+        assertThat(doesRegion1OverlapRegion0).isTrue();
+        assertThat(doesRegion2OverlapRegion0).isFalse();
+        assertThat(doesRegion3OverlapRegion0).isFalse();
+        assertThat(doesRegion4OverlapRegion0).isFalse();
+        assertThat(doesRegion5OverlapRegion0).isTrue();
+        assertThat(doesRegion6OverlapRegion0).isTrue();
+        assertThat(doesRegion7OverlapRegion0).isFalse();
+        assertThat(doesRegion8OverlapRegion0).isTrue();
+        assertThat(doesRegion9OverlapRegion0).isFalse();
     }
 }

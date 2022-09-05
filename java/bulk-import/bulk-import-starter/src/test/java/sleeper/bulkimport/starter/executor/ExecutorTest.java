@@ -18,9 +18,6 @@ package sleeper.bulkimport.starter.executor;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.common.collect.Lists;
-import java.util.Map;
-import java.util.UUID;
-import static org.junit.Assert.*;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -29,9 +26,15 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Schema;
+
+import java.util.Map;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 
 public class ExecutorTest {
 
@@ -67,7 +70,7 @@ public class ExecutorTest {
         executorMock.runJob(importJob);
 
         // Then
-        assertTrue(executorMock.isRunJobOnPlatformCalled());
+        assertThat(executorMock.isRunJobOnPlatformCalled()).isTrue();
         s3.shutdown();
     }
 
@@ -86,8 +89,9 @@ public class ExecutorTest {
         ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, s3);
 
         // When
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> executorMock.runJob(importJob));
-        assertEquals(getExpectedErrorMessage("The input files must be set to a non-null and non-empty value."), exception.getMessage());
+        assertThatThrownBy(() -> executorMock.runJob(importJob))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(getExpectedErrorMessage("The input files must be set to a non-null and non-empty value."));
         s3.shutdown();
     }
 
@@ -108,9 +112,9 @@ public class ExecutorTest {
 
         // When
         executorMock.runJob(importJob);
-        
+
         // Then
-        assertTrue(executorMock.isRunJobOnPlatformCalled());
+        assertThat(executorMock.isRunJobOnPlatformCalled()).isTrue();
         s3.shutdown();
     }
 
@@ -125,10 +129,11 @@ public class ExecutorTest {
                 .build();
         TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(new Schema());
         ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, s3);
-        
+
         // When / Then
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> executorMock.runJob(importJob));
-        assertEquals(getExpectedErrorMessage("Table does not exist."), exception.getMessage());
+        assertThatThrownBy(() -> executorMock.runJob(importJob))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(getExpectedErrorMessage("Table does not exist."));
         s3.shutdown();
     }
 
@@ -145,8 +150,9 @@ public class ExecutorTest {
         ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, null);
 
         // When / Then
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> executorMock.runJob(importJob));
-        assertEquals(getExpectedErrorMessage("Job IDs are only allowed to be up to 63 characters long."), exception.getMessage());
+        assertThatThrownBy(() -> executorMock.runJob(importJob))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(getExpectedErrorMessage("Job IDs are only allowed to be up to 63 characters long."));
     }
 
     @Test
@@ -160,8 +166,9 @@ public class ExecutorTest {
         ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, null);
 
         // When / Then
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> executorMock.runJob(importJob));
-        assertEquals(getExpectedErrorMessage("The table name must be set to a non-null value."), exception.getMessage());
+        assertThatThrownBy(() -> executorMock.runJob(importJob))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(getExpectedErrorMessage("The table name must be set to a non-null value."));
     }
 
     @Test
@@ -176,8 +183,9 @@ public class ExecutorTest {
         ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, null);
 
         // When / Then
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> executorMock.runJob(importJob));
-        assertEquals(getExpectedErrorMessage("Job Ids must only contain lowercase alphanumerics and dashes."), exception.getMessage());
+        assertThatThrownBy(() -> executorMock.runJob(importJob))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(getExpectedErrorMessage("Job Ids must only contain lowercase alphanumerics and dashes."));
     }
 
     @Test
@@ -189,14 +197,14 @@ public class ExecutorTest {
         executorMock.runJob(null);
 
         // Then
-        assertFalse(executorMock.isRunJobOnPlatformCalled());
+        assertThat(executorMock.isRunJobOnPlatformCalled()).isFalse();
     }
 
     private String getExpectedErrorMessage(String message) {
         return "The bulk import job failed validation with the following checks failing: \n"
                 + message;
     }
-     
+
     private static class ExecutorMock extends Executor {
         private boolean runJobOnPlatformCalled = false;
 
@@ -217,7 +225,7 @@ public class ExecutorTest {
 
         @Override
         protected Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec,
-            TableProperties tableProperties, InstanceProperties instanceProperties) {
+                                                            TableProperties tableProperties, InstanceProperties instanceProperties) {
             return null;
         }
 
@@ -226,21 +234,21 @@ public class ExecutorTest {
             return null;
         }
     }
-    
+
     private static class TestTablePropertiesProvider extends TablePropertiesProvider {
         private final Schema schema;
         private final long splitThreshold;
-        
+
         TestTablePropertiesProvider(Schema schema, long splitThreshold) {
             super(null, null);
             this.schema = schema;
             this.splitThreshold = splitThreshold;
         }
-        
+
         TestTablePropertiesProvider(Schema schema) {
             this(schema, 1_000_000_000L);
         }
-        
+
         @Override
         public TableProperties getTableProperties(String tableName) {
             if (tableName.equals("table-that-does-not-exist")) {

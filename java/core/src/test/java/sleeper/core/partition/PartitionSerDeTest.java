@@ -15,10 +15,6 @@
  */
 package sleeper.core.partition;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
@@ -28,6 +24,12 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class PartitionSerDeTest {
 
@@ -49,15 +51,15 @@ public class PartitionSerDeTest {
         childPartitionIds.add("id2");
         partition.setChildPartitionIds(childPartitionIds);
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
-        
+
         // When
         String serialisedPartition = partitionSerDe.toJson(partition);
         Partition deserialisedPartition = partitionSerDe.fromJson(serialisedPartition);
-        
+
         // Then
-        assertEquals(partition, deserialisedPartition);
+        assertThat(deserialisedPartition).isEqualTo(partition);
     }
- 
+
     @Test
     public void shouldSerialiseAndDeserialiseWithLongKeyCorrectly() throws IOException {
         // Given
@@ -76,15 +78,15 @@ public class PartitionSerDeTest {
         childPartitionIds.add("id2");
         partition.setChildPartitionIds(childPartitionIds);
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
-        
+
         // When
         String serialisedPartition = partitionSerDe.toJson(partition);
         Partition deserialisedPartition = partitionSerDe.fromJson(serialisedPartition);
-        
+
         // Then
-        assertEquals(partition, deserialisedPartition);
+        assertThat(deserialisedPartition).isEqualTo(partition);
     }
- 
+
     @Test
     public void shouldSerialiseAndDeserialiseWithStringKeyCorrectly() throws IOException {
         // Given
@@ -103,13 +105,13 @@ public class PartitionSerDeTest {
         childPartitionIds.add("id2");
         partition.setChildPartitionIds(childPartitionIds);
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
-        
+
         // When
         String serialisedPartition = partitionSerDe.toJson(partition);
         Partition deserialisedPartition = partitionSerDe.fromJson(serialisedPartition);
-        
+
         // Then
-        assertEquals(partition, deserialisedPartition);
+        assertThat(deserialisedPartition).isEqualTo(partition);
     }
 
     @Test
@@ -130,15 +132,15 @@ public class PartitionSerDeTest {
         childPartitionIds.add("id2");
         partition.setChildPartitionIds(childPartitionIds);
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
-        
+
         // When
         String serialisedPartition = partitionSerDe.toJson(partition);
         Partition deserialisedPartition = partitionSerDe.fromJson(serialisedPartition);
-        
+
         // Then
-        assertEquals(partition, deserialisedPartition);
+        assertThat(deserialisedPartition).isEqualTo(partition);
     }
-    
+
     @Test
     public void shouldSerialiseAndDeserialiseWithByteArrayKeyCorrectly() throws IOException {
         // Given
@@ -157,15 +159,15 @@ public class PartitionSerDeTest {
         childPartitionIds.add("id2");
         partition.setChildPartitionIds(childPartitionIds);
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
-        
+
         // When
         String serialisedPartition = partitionSerDe.toJson(partition);
         Partition deserialisedPartition = partitionSerDe.fromJson(serialisedPartition);
-        
+
         // Then
-        assertEquals(partition, deserialisedPartition);
+        assertThat(deserialisedPartition).isEqualTo(partition);
     }
- 
+
     @Test
     public void shouldSerialiseAndDeserialiseWithByteArrayKeyWithNullMaxCorrectly() throws IOException {
         // Given
@@ -184,12 +186,12 @@ public class PartitionSerDeTest {
         childPartitionIds.add("id2");
         partition.setChildPartitionIds(childPartitionIds);
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
-        
+
         // When
         String serialisedPartition = partitionSerDe.toJson(partition);
         Partition deserialisedPartition = partitionSerDe.fromJson(serialisedPartition);
-        
+
         // Then
-        assertEquals(partition, deserialisedPartition);
+        assertThat(deserialisedPartition).isEqualTo(partition);
     }
 }

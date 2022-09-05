@@ -19,7 +19,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class IngestJobSerDeTest {
 
@@ -33,6 +33,6 @@ public class IngestJobSerDeTest {
         IngestJob deserialisedJob = ingestJobSerDe.fromJson(ingestJobSerDe.toJson(ingestJob));
 
         // Then
-        assertEquals(ingestJob, deserialisedJob);
+        assertThat(deserialisedJob).isEqualTo(ingestJob);
     }
 }

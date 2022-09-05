@@ -15,14 +15,6 @@
  */
 package sleeper.query.model;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.UUID;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
@@ -31,6 +23,13 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class QueryTest {
 
@@ -83,12 +82,12 @@ public class QueryTest {
         int hashCode4 = query4.hashCode();
 
         // Then
-        assertTrue(test1);
-        assertFalse(test2);
-        assertFalse(test3);
-        assertEquals(hashCode1, hashCode2);
-        assertNotEquals(hashCode1, hashCode3);
-        assertNotEquals(hashCode1, hashCode4);
+        assertThat(test1).isTrue();
+        assertThat(test2).isFalse();
+        assertThat(test3).isFalse();
+        assertThat(hashCode2).isEqualTo(hashCode1);
+        assertThat(hashCode3).isNotEqualTo(hashCode1);
+        assertThat(hashCode4).isNotEqualTo(hashCode1);
     }
 
     @Test
@@ -128,12 +127,12 @@ public class QueryTest {
         int hashCode3 = query3.hashCode();
 
         // Then
-        assertTrue(test1);
-        assertFalse(test2);
-        assertEquals(hashCode1, hashCode2);
-        assertNotEquals(hashCode1, hashCode3);
+        assertThat(test1).isTrue();
+        assertThat(test2).isFalse();
+        assertThat(hashCode2).isEqualTo(hashCode1);
+        assertThat(hashCode3).isNotEqualTo(hashCode1);
     }
-    
+
     @Test
     public void testEqualsAndHashcodeWithMultipleRanges() {
         // Given
@@ -173,10 +172,10 @@ public class QueryTest {
         int hashCode3 = query3.hashCode();
 
         // Then
-        assertTrue(test1);
-        assertFalse(test2);
-        assertEquals(hashCode1, hashCode2);
-        assertNotEquals(hashCode1, hashCode3);
+        assertThat(test1).isTrue();
+        assertThat(test2).isFalse();
+        assertThat(hashCode2).isEqualTo(hashCode1);
+        assertThat(hashCode3).isNotEqualTo(hashCode1);
     }
 
     @Test
@@ -203,9 +202,9 @@ public class QueryTest {
         int hashCode3 = query3.hashCode();
 
         // Then
-        assertTrue(test1);
-        assertFalse(test2);
-        assertEquals(hashCode1, hashCode2);
-        assertNotEquals(hashCode1, hashCode3);
+        assertThat(test1).isTrue();
+        assertThat(test2).isFalse();
+        assertThat(hashCode2).isEqualTo(hashCode1);
+        assertThat(hashCode3).isNotEqualTo(hashCode1);
     }
 }

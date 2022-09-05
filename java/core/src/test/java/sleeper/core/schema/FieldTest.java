@@ -15,13 +15,11 @@
  */
 package sleeper.core.schema;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class FieldTest {
 
@@ -32,7 +30,7 @@ public class FieldTest {
         Field field2 = new Field("key", new IntType());
         Field field3 = new Field("key", new LongType());
         Field field4 = new Field("key2", new LongType());
-        
+
         // When
         boolean equals1 = field1.equals(field2);
         boolean equals2 = field1.equals(field3);
@@ -41,13 +39,13 @@ public class FieldTest {
         int hashCode2 = field2.hashCode();
         int hashCode3 = field3.hashCode();
         int hashCode4 = field4.hashCode();
-        
+
         // Then
-        assertTrue(equals1);
-        assertFalse(equals2);
-        assertFalse(equals3);
-        assertEquals(hashCode1, hashCode2);
-        assertNotEquals(hashCode1, hashCode3);
-        assertNotEquals(hashCode3, hashCode4);
+        assertThat(equals1).isTrue();
+        assertThat(equals2).isFalse();
+        assertThat(equals3).isFalse();
+        assertThat(hashCode2).isEqualTo(hashCode1);
+        assertThat(hashCode3).isNotEqualTo(hashCode1);
+        assertThat(hashCode4).isNotEqualTo(hashCode3);
     }
 }

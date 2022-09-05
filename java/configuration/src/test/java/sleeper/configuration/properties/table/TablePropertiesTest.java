@@ -21,9 +21,8 @@ import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.Properties;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -37,12 +36,10 @@ public class TablePropertiesTest {
                 "sleeper.table.name=myTable\n" +
                 "sleeper.table.schema={}\n" +
                 "sleeper.table.compression.codec=madeUp";
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
         // When / Then
-        try {
-            new TableProperties(new InstanceProperties()).loadFromString(input);
-        } catch (Exception e) {
-            assertEquals("Property sleeper.table.compression.codec was invalid. It was \"madeUp\"", e.getMessage());
-        }
+        assertThatThrownBy(() -> tableProperties.loadFromString(input))
+                .hasMessage("Property sleeper.table.compression.codec was invalid. It was \"madeUp\"");
     }
 
     @Test
@@ -50,12 +47,10 @@ public class TablePropertiesTest {
         // Given
         String input = "" +
                 "sleeper.table.schema={}\n";
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
         // When / Then
-        try {
-            new TableProperties(new InstanceProperties()).loadFromString(input);
-        } catch (Exception e) {
-            assertEquals("Property sleeper.table.name was invalid. It was \"null\"", e.getMessage());
-        }
+        assertThatThrownBy(() -> tableProperties.loadFromString(input))
+                .hasMessage("Property sleeper.table.name was invalid. It was \"null\"");
     }
 
     @Test
@@ -63,12 +58,10 @@ public class TablePropertiesTest {
         // Given
         String input = "" +
                 "sleeper.table.name=myTable\n";
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
         // When / Then
-        try {
-            new TableProperties(new InstanceProperties()).loadFromString(input);
-        } catch (Exception e) {
-            assertEquals("Property sleeper.table.schema was invalid. It was \"null\"", e.getMessage());
-        }
+        assertThatThrownBy(() -> tableProperties.loadFromString(input))
+                .hasMessage("Property sleeper.table.schema was invalid. It was \"null\"");
     }
 
     @Test
@@ -81,7 +74,7 @@ public class TablePropertiesTest {
         TableProperties tableProperties = new TableProperties(instanceProperties);
 
         // Then
-        assertEquals("20", tableProperties.get(PAGE_SIZE));
+        assertThat(tableProperties.get(PAGE_SIZE)).isEqualTo("20");
     }
 
     @Test
@@ -109,7 +102,7 @@ public class TablePropertiesTest {
         };
 
         // Then
-        assertEquals("id", tableProperties.get(defaultingProperty));
+        assertThat(tableProperties.get(defaultingProperty)).isEqualTo("id");
     }
 
     @Test
@@ -149,13 +142,9 @@ public class TablePropertiesTest {
         };
 
         // Then
-        try {
-            tableProperties.get(defaultingProperty);
-            fail("Exception expected");
-        } catch (RuntimeException e) {
-            assertEquals("Unable to process SleeperProperty, should have either been null, an " +
-                    "instance property or a table property", e.getMessage());
-        }
+        assertThatThrownBy(() -> tableProperties.get(defaultingProperty))
+                .hasMessage("Unable to process SleeperProperty, should have either been null, an " +
+                        "instance property or a table property");
     }
 
     @Test
@@ -168,7 +157,7 @@ public class TablePropertiesTest {
         TableProperties duplicateProperties = new TableProperties(instanceProperties);
 
         // Then
-        assertEquals(tableProperties, duplicateProperties);
+        assertThat(duplicateProperties).isEqualTo(tableProperties);
     }
 
     @Test
@@ -187,6 +176,6 @@ public class TablePropertiesTest {
         TableProperties differentTableProperties = new TableProperties(differentInstanceProperties);
 
         // Then
-        assertNotEquals(tableProperties, differentTableProperties);
+        assertThat(differentTableProperties).isNotEqualTo(tableProperties);
     }
 }
