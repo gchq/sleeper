@@ -31,8 +31,8 @@ import sleeper.core.schema.SchemaSerDe;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TableProperties extends SleeperProperties<ITableProperty> {
@@ -71,7 +71,8 @@ public class TableProperties extends SleeperProperties<ITableProperty> {
         Arrays.stream(TableProperty.values()).filter(prop -> !prop.validationPredicate().test(get(prop)))
                 .forEach(prop -> {
                     throw new IllegalArgumentException("Property " + prop.getPropertyName() +
-                            " was invalid. It was \"" + get(prop) + "\""); });
+                            " was invalid. It was \"" + get(prop) + "\"");
+                });
     }
 
     @Override
@@ -110,9 +111,12 @@ public class TableProperties extends SleeperProperties<ITableProperty> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         TableProperties that = (TableProperties) o;
 
