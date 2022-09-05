@@ -125,10 +125,10 @@ public class GarbageCollectorIT {
     }
 
     private Schema getSchema() {
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setValueFields(new Field("value", new StringType()));
-        return schema;
+        return Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .valueFields(new Field("value", new StringType()))
+                .build();
     }
 
     @Test

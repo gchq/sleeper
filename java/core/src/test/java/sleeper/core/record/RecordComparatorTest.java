@@ -30,9 +30,10 @@ public class RecordComparatorTest {
     @Test
     public void shouldCompareCorrectlyWithIntRowKeyAndNoSortKeys() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setValueFields(new Field("value", new IntType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .valueFields(new Field("value", new IntType()))
+                .build();
         Record record1 = new Record();
         record1.put("key", 1);
         record1.put("value", 100);
@@ -60,9 +61,10 @@ public class RecordComparatorTest {
     @Test
     public void shouldCompareCorrectlyWithLongRowKeyAndNoSortKeys() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .valueFields(new Field("value", new LongType()))
+                .build();
         Record record1 = new Record();
         record1.put("key", 1L);
         record1.put("value", 100L);
@@ -90,9 +92,10 @@ public class RecordComparatorTest {
     @Test
     public void shouldCompareCorrectlyWithStringRowKeyAndNoSortKeys() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new StringType()));
-        schema.setValueFields(new Field("value", new StringType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value", new StringType()))
+                .build();
         Record record1 = new Record();
         record1.put("key", "1");
         record1.put("value", "100");
@@ -120,9 +123,10 @@ public class RecordComparatorTest {
     @Test
     public void shouldCompareCorrectlyWithByteArrayRowKeyAndNoSortKeys() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new ByteArrayType()))
+                .valueFields(new Field("value", new ByteArrayType()))
+                .build();
         Record record1 = new Record();
         record1.put("key", new byte[]{1});
         record1.put("value", new byte[]{10});
@@ -150,10 +154,11 @@ public class RecordComparatorTest {
     @Test
     public void shouldCompareCorrectlyWithIntRowKeyAndIntSortKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setSortKeyFields(new Field("sort", new IntType()));
-        schema.setValueFields(new Field("value", new IntType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .sortKeyFields(new Field("sort", new IntType()))
+                .valueFields(new Field("value", new IntType()))
+                .build();
         Record record1 = new Record();
         record1.put("key", 1);
         record1.put("sort", 2);
@@ -192,10 +197,11 @@ public class RecordComparatorTest {
     @Test
     public void shouldCompareCorrectlyWithByteArrayRowKeyAndByteArraySortKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
-        schema.setSortKeyFields(new Field("sort", new ByteArrayType()));
-        schema.setValueFields(new Field("value", new IntType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new ByteArrayType()))
+                .sortKeyFields(new Field("sort", new ByteArrayType()))
+                .valueFields(new Field("value", new IntType()))
+                .build();
         Record record1 = new Record();
         record1.put("key", new byte[]{1, 2});
         record1.put("sort", new byte[]{50, 51});
@@ -234,10 +240,11 @@ public class RecordComparatorTest {
     @Test
     public void shouldCompareCorrectlyWithMultidimensionalByteArrayRowKeyAndMultidimensionalByteArraySortKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()));
-        schema.setSortKeyFields(new Field("sort1", new ByteArrayType()), new Field("sort2", new ByteArrayType()));
-        schema.setValueFields(new Field("value", new IntType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()))
+                .sortKeyFields(new Field("sort1", new ByteArrayType()), new Field("sort2", new ByteArrayType()))
+                .valueFields(new Field("value", new IntType()))
+                .build();
         Record record1 = new Record();
         record1.put("key1", new byte[]{1, 2});
         record1.put("key2", new byte[]{1, 2});
