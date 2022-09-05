@@ -44,9 +44,8 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
 
@@ -80,13 +79,11 @@ public class ConfigValidatorIT {
     public void shouldNotThrowAnErrorWithValidConfiguration() throws IOException {
         // Given
         instanceProperties.set(ID, "valid-id");
-        setupTablesPropertiesFile(instanceProperties, "example-valid-table" , "sleeper.statestore.dynamodb.DynamoDBStateStore");
+        setupTablesPropertiesFile(instanceProperties, "example-valid-table", "sleeper.statestore.dynamodb.DynamoDBStateStore");
 
-        // When
-        configValidator.validate(instanceProperties);
-
-        // Then
-        assertTrue("no exception is thrown", true);
+        // When / Then
+        assertThatCode(() -> configValidator.validate(instanceProperties))
+                .doesNotThrowAnyException();
     }
 
     @Test
@@ -98,8 +95,9 @@ public class ConfigValidatorIT {
         amazonS3.createBucket(bucketName);
 
         // When / Then
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> configValidator.validate(instanceProperties));
-        assertEquals("Sleeper table bucket exists: sleeper-valid-id-table-example-table", exception.getMessage());
+        assertThatThrownBy(() -> configValidator.validate(instanceProperties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Sleeper table bucket exists: sleeper-valid-id-table-example-table");
         amazonS3.deleteBucket(bucketName);
     }
 
@@ -108,12 +106,13 @@ public class ConfigValidatorIT {
         // Given
         String bucketName = String.join("-", "sleeper", "valid-id", "query-results");
         instanceProperties.set(ID, "valid-id");
-        setupTablesPropertiesFile(instanceProperties, "example-table" , "sleeper.statestore.dynamodb.DynamoDBStateStore");
+        setupTablesPropertiesFile(instanceProperties, "example-table", "sleeper.statestore.dynamodb.DynamoDBStateStore");
         amazonS3.createBucket(bucketName);
 
         // When / Then
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> configValidator.validate(instanceProperties));
-        assertEquals("Sleeper query results bucket exists: " + bucketName, exception.getMessage());
+        assertThatThrownBy(() -> configValidator.validate(instanceProperties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Sleeper query results bucket exists: " + bucketName);
         amazonS3.deleteBucket(bucketName);
     }
 
@@ -121,11 +120,12 @@ public class ConfigValidatorIT {
     public void shouldThrowAnErrorWhenTableNameIsNotValid() throws IOException {
         // Given
         instanceProperties.set(ID, "valid-id");
-        setupTablesPropertiesFile(instanceProperties, "example--invalid-name-tab$$-le" , "sleeper.statestore.dynamodb.DynamoDBStateStore");
+        setupTablesPropertiesFile(instanceProperties, "example--invalid-name-tab$$-le", "sleeper.statestore.dynamodb.DynamoDBStateStore");
 
         // When / Then
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> configValidator.validate(instanceProperties));
-        assertEquals("Sleeper table bucket name is illegal: sleeper-valid-id-table-example--invalid-name-tab$$-le", exception.getMessage());
+        assertThatThrownBy(() -> configValidator.validate(instanceProperties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Sleeper table bucket name is illegal: sleeper-valid-id-table-example--invalid-name-tab$$-le");
     }
 
     @Test
@@ -134,8 +134,9 @@ public class ConfigValidatorIT {
         instanceProperties.set(ID, "aa$$aa");
 
         // When / Then
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> configValidator.validate(instanceProperties));
-        assertEquals("Sleeper instance id is illegal: aa$$aa", exception.getMessage());
+        assertThatThrownBy(() -> configValidator.validate(instanceProperties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Sleeper instance id is illegal: aa$$aa");
     }
 
     @Test
@@ -152,32 +153,31 @@ public class ConfigValidatorIT {
     public void shouldThrowAnErrorWhenADynamoTableExistsWithSameNameAsTablePartitions() throws IOException {
         checkErrorIsThrownWhenTableExists("sleeper-valid-id-table-example-table-partitions");
     }
-    
+
     @Test
     public void checkNoErrorIsThrownWhenTableExistsButUsingS3StateStore() throws IOException {
         // Given
         String dynamoTable = "sleeper-valid-id-table-example-table-partitions";
         instanceProperties.set(ID, "valid-id");
-        setupTablesPropertiesFile(instanceProperties, "example-table" , "sleeper.statestore.s3.S3StateStore");
+        setupTablesPropertiesFile(instanceProperties, "example-table", "sleeper.statestore.s3.S3StateStore");
         createDynamoTable(dynamoTable);
 
         // When
-        configValidator.validate(instanceProperties);
-
-        // Then
-        assertTrue("no exception is thrown", true);
+        assertThatCode(() -> configValidator.validate(instanceProperties))
+                .doesNotThrowAnyException();
         amazonDynamoDB.deleteTable(dynamoTable);
     }
 
     private void checkErrorIsThrownWhenTableExists(String dynamoTable) throws IOException {
         // Given
         instanceProperties.set(ID, "valid-id");
-        setupTablesPropertiesFile(instanceProperties, "example-table" , "sleeper.statestore.dynamodb.DynamoDBStateStore");
+        setupTablesPropertiesFile(instanceProperties, "example-table", "sleeper.statestore.dynamodb.DynamoDBStateStore");
         createDynamoTable(dynamoTable);
 
         // When
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> configValidator.validate(instanceProperties));
-        assertEquals("Sleeper DynamoDBTable exists: " + dynamoTable, exception.getMessage());
+        assertThatThrownBy(() -> configValidator.validate(instanceProperties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Sleeper DynamoDBTable exists: " + dynamoTable);
         amazonDynamoDB.deleteTable(dynamoTable);
     }
 
@@ -209,7 +209,7 @@ public class ConfigValidatorIT {
                 .withKeySchema(keySchemaElements)
                 .withBillingMode(BillingMode.PAY_PER_REQUEST);
         amazonDynamoDB.createTable(request);
-        
+
     }
 
     private void setupTablesPropertiesFile(InstanceProperties instanceProperties, String tableName, String stateStore) throws IOException {

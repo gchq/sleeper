@@ -15,13 +15,13 @@
  */
 package sleeper.bulkimport.job;
 
-import static org.junit.Assert.assertEquals;
+import com.google.common.collect.Lists;
+import org.junit.Test;
 
 import java.util.HashMap;
 
-import org.junit.Test;
-
-import com.google.common.collect.Lists;
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class BulkImportJobSerDeTest {
 
@@ -34,7 +34,7 @@ public class BulkImportJobSerDeTest {
         BulkImportJob bulkImportJob = new BulkImportJobSerDe().fromJson("{}");
 
         // Then
-        assertEquals(empty, bulkImportJob);
+        assertThat(bulkImportJob).isEqualTo(empty);
     }
 
     @Test
@@ -50,7 +50,7 @@ public class BulkImportJobSerDeTest {
                 .build();
 
         // When
-        BulkImportJob bulkImportJob = new BulkImportJobSerDe().fromJson(
+        BulkImportJob bulkImportJob = new BulkImportJobSerDe().fromJson("" +
                 "{" +
                 "   \"id\": \"myJob\"," +
                 "   \"className\": \"com.example.MyClass\"," +
@@ -61,7 +61,7 @@ public class BulkImportJobSerDeTest {
                 "}");
 
         // Then
-        assertEquals(expected, bulkImportJob);
+        assertThat(bulkImportJob).isEqualTo(expected);
     }
 
     @Test
@@ -73,7 +73,7 @@ public class BulkImportJobSerDeTest {
         String serialised = new BulkImportJobSerDe().toJson(emptyJob);
 
         // Then
-        assertEquals("{}", serialised);
+        assertThat(serialised).isEqualTo("{}");
     }
 
     @Test
@@ -92,21 +92,20 @@ public class BulkImportJobSerDeTest {
         String serialised = new BulkImportJobSerDe().toJson(fullJob);
 
         // Then
-        String expected =
+        assertThatJson(serialised).isEqualTo("" +
                 "{" +
-                "\"className\":\"com.example.MyClass\"," +
-                "\"files\":[\"a/b/c.parquet\"]," +
-                "\"id\":\"myJob\"," +
-                "\"sparkConf\":{" +
-                "\"key\":\"value\"" +
-                "}" +
-                "}";
-        assertEquals(expected, serialised);
+                "    \"className\":\"com.example.MyClass\"," +
+                "    \"files\":[\"a/b/c.parquet\"]," +
+                "    \"id\":\"myJob\"," +
+                "    \"sparkConf\":{" +
+                "        \"key\":\"value\"" +
+                "    }" +
+                "}");
     }
-    
+
     @Test
     public void shouldBeAbleToDeserialiseSerialisedJob() {
-    	 // Given
+        // Given
         HashMap<String, String> sparkConf = new HashMap<>();
         sparkConf.put("key", "value");
         BulkImportJob fullJob = new BulkImportJob.Builder()
@@ -122,6 +121,6 @@ public class BulkImportJobSerDeTest {
         BulkImportJob job = serDe.fromJson(serDe.toJson(fullJob));
 
         // Then
-        assertEquals(fullJob, job);
+        assertThat(job).isEqualTo(fullJob);
     }
 }

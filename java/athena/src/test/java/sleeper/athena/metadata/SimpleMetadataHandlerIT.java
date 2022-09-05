@@ -18,7 +18,6 @@ package sleeper.athena.metadata;
 import com.amazonaws.athena.connector.lambda.data.Block;
 import com.amazonaws.athena.connector.lambda.data.BlockAllocatorImpl;
 import com.amazonaws.athena.connector.lambda.data.SchemaBuilder;
-import com.amazonaws.athena.connector.lambda.domain.Split;
 import com.amazonaws.athena.connector.lambda.domain.TableName;
 import com.amazonaws.athena.connector.lambda.domain.predicate.Constraints;
 import com.amazonaws.athena.connector.lambda.metadata.GetSplitsRequest;
@@ -26,18 +25,14 @@ import com.amazonaws.athena.connector.lambda.metadata.GetSplitsResponse;
 import com.amazonaws.athena.connector.lambda.security.EncryptionKeyFactory;
 import com.amazonaws.services.athena.AmazonAthena;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
-import org.apache.curator.shaded.com.google.common.collect.Lists;
 import org.junit.Test;
 import sleeper.athena.TestUtils;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -59,16 +54,9 @@ public class SimpleMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 new Constraints(new HashMap<>()), "continue"));
 
         // Then
-        Set<Split> splits = getSplitsResponse.getSplits();
-        assertEquals(2, splits.size());
-
-        List<String> files = splits.stream()
-                .map(Split::getProperties)
-                .map(props -> props.get(RELEVANT_FILES_FIELD))
-                .sorted()
-                .collect(Collectors.toList());
-
-        assertEquals(Lists.newArrayList("a/b/c.parquet", "d/e/f.parquet"), files);
+        assertThat(getSplitsResponse.getSplits())
+                .extracting(split -> split.getProperties().get(RELEVANT_FILES_FIELD))
+                .containsExactlyInAnyOrder("a/b/c.parquet", "d/e/f.parquet");
     }
 
     @Test
@@ -87,16 +75,9 @@ public class SimpleMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 new Constraints(new HashMap<>()), "continue"));
 
         // Then
-        Set<Split> splits = getSplitsResponse.getSplits();
-        assertEquals(3, splits.size());
-
-        List<String> files = splits.stream()
-                .map(Split::getProperties)
-                .map(props -> props.get(RELEVANT_FILES_FIELD))
-                .sorted()
-                .collect(Collectors.toList());
-
-        assertEquals(Lists.newArrayList("a/b/c.parquet", "d/e/f.parquet", "g/h/i.parquet"), files);
+        assertThat(getSplitsResponse.getSplits())
+                .extracting(split -> split.getProperties().get(RELEVANT_FILES_FIELD))
+                .containsExactlyInAnyOrder("a/b/c.parquet", "d/e/f.parquet", "g/h/i.parquet");
     }
 
     private Block createPartitionsBlock(String... jsonSerialisedLists) {

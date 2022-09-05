@@ -15,9 +15,6 @@
  */
 package sleeper.core.range;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.schema.Field;
@@ -25,8 +22,11 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 public class RangeFactoryTest {
-    
+
     @Test
     public void shouldCreateCorrectRangesForIntKey() {
         // Given
@@ -34,7 +34,7 @@ public class RangeFactoryTest {
         Field field = new Field("key", new IntType());
         schema.setRowKeyFields(field);
         RangeFactory rangeFactory = new RangeFactory(schema);
-        
+
         // When
         Range range1 = rangeFactory.createRange(field, 1, true, 10, true);
         Range range2 = rangeFactory.createRange(field, 1, true, 10, false);
@@ -42,43 +42,45 @@ public class RangeFactoryTest {
         Range range4 = rangeFactory.createRange(field, 1, false, 10, false);
         Range range5 = rangeFactory.createRange(field, Integer.MIN_VALUE, true, null, true);
         Range range6 = rangeFactory.createExactRange(field, 1);
-        
+
         // Then
-        assertEquals(1, range1.getMin());
-        assertTrue(range1.isMinInclusive());
-        assertEquals(10, range1.getMax());
-        assertTrue(range1.isMaxInclusive());
-        assertEquals(1, range2.getMin());
-        assertTrue(range2.isMinInclusive());
-        assertEquals(10, range2.getMax());
-        assertFalse(range2.isMaxInclusive());
-        assertEquals(1, range3.getMin());
-        assertFalse(range3.isMinInclusive());
-        assertEquals(10, range3.getMax());
-        assertTrue(range3.isMaxInclusive());
-        assertEquals(1, range4.getMin());
-        assertFalse(range4.isMinInclusive());
-        assertEquals(10, range4.getMax());
-        assertFalse(range4.isMinInclusive());
-        assertEquals(Integer.MIN_VALUE, range5.getMin());
-        assertTrue(range5.isMinInclusive()); // If max is null, maxInclusive should be set to false
-        assertEquals(null, range5.getMax());
-        assertFalse(range4.isMaxInclusive());
-        assertEquals(1, range6.getMin());
-        assertTrue(range6.isMinInclusive());
-        assertEquals(1, range6.getMax());
-        assertTrue(range6.isMaxInclusive());
+        assertThat(range1.getMin()).isEqualTo(1);
+        assertThat(range1.isMinInclusive()).isTrue();
+        assertThat(range1.getMax()).isEqualTo(10);
+        assertThat(range1.isMaxInclusive()).isTrue();
+        assertThat(range2.getMin()).isEqualTo(1);
+        assertThat(range2.isMinInclusive()).isTrue();
+        assertThat(range2.getMax()).isEqualTo(10);
+        assertThat(range2.isMaxInclusive()).isFalse();
+        assertThat(range3.getMin()).isEqualTo(1);
+        assertThat(range3.isMinInclusive()).isFalse();
+        assertThat(range3.getMax()).isEqualTo(10);
+        assertThat(range3.isMaxInclusive()).isTrue();
+        assertThat(range4.getMin()).isEqualTo(1);
+        assertThat(range4.isMinInclusive()).isFalse();
+        assertThat(range4.getMax()).isEqualTo(10);
+        assertThat(range4.isMinInclusive()).isFalse();
+        assertThat(range5.getMin()).isEqualTo(Integer.MIN_VALUE);
+        assertThat(range5.isMinInclusive()).isTrue(); // If max is null, maxInclusive should be set to false
+        assertThat(range5.getMax()).isNull();
+        assertThat(range4.isMaxInclusive()).isFalse();
+        assertThat(range6.getMin()).isEqualTo(1);
+        assertThat(range6.isMinInclusive()).isTrue();
+        assertThat(range6.getMax()).isEqualTo(1);
+        assertThat(range6.isMaxInclusive()).isTrue();
     }
-    
-    @Test(expected = IllegalArgumentException.class)
+
+    @Test
     public void shouldNotAcceptNullMin() {
         // Given
         Schema schema = new Schema();
         Field field = new Field("key", new StringType());
         schema.setRowKeyFields(field);
         RangeFactory rangeFactory = new RangeFactory(schema);
-        
+
         // When / Then
-        rangeFactory.createRange(field, null, false, "A", true);
+        assertThatThrownBy(() ->
+                rangeFactory.createRange(field, null, false, "A", true))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }
