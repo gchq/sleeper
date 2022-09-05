@@ -54,13 +54,14 @@ public class DynamoDBStateStore implements StateStore {
                 dynamoDB);
     }
 
-    public DynamoDBStateStore(String activeFileInfoTablename,
-                              String readyForGCFileInfoTablename,
-                              String partitionTablename,
-                              Schema schema,
-                              int garbageCollectorDelayBeforeDeletionInSeconds,
-                              boolean stronglyConsistentReads,
-                              AmazonDynamoDB dynamoDB) {
+    public DynamoDBStateStore(
+            String activeFileInfoTablename,
+            String readyForGCFileInfoTablename,
+            String partitionTablename,
+            Schema schema,
+            int garbageCollectorDelayBeforeDeletionInSeconds,
+            boolean stronglyConsistentReads,
+            AmazonDynamoDB dynamoDB) {
         this.filesStore = DynamoDBFileInfoStore.builder()
                 .dynamoDB(dynamoDB).schema(schema)
                 .activeTablename(activeFileInfoTablename).readyForGCTablename(readyForGCFileInfoTablename)
