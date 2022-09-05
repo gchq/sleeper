@@ -60,12 +60,12 @@ public class ParquetReaderIterator implements CloseableIterator<Record> {
         }
         return copy;
     }
-    
+
     @Override
     public void close() throws IOException {
         reader.close();
     }
-    
+
     public long getNumberOfRecordsRead() {
         return recordsRead;
     }

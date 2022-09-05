@@ -15,8 +15,6 @@
  */
 package sleeper.io.parquet.record;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
@@ -30,6 +28,9 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Converts a Sleeper {@link Schema} into a Parquet {@link MessageType}.
@@ -68,7 +69,7 @@ public class SchemaConverter {
         }
         return new MessageType("record", primitiveTypes);
     }
-    
+
     private static PrimitiveType getParquetPrimitiveTypeFromSleeperPrimitiveType(String name, sleeper.core.schema.type.PrimitiveType primitiveType) {
         if (primitiveType instanceof IntType) {
             return Types.required(PrimitiveType.PrimitiveTypeName.INT32)

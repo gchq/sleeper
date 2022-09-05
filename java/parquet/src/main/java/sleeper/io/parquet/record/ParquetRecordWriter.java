@@ -15,17 +15,16 @@
  */
 package sleeper.io.parquet.record;
 
-import java.io.IOException;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.api.WriteSupport;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.schema.MessageType;
-
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+
+import java.io.IOException;
 
 /**
  * Uses a {@link RecordWriteSupport} to write data to Parquet.
@@ -60,7 +59,7 @@ public class ParquetRecordWriter extends ParquetWriter<Record> {
         protected WriteSupport<Record> getWriteSupport(Configuration conf) {
             return (WriteSupport<Record>) new RecordWriteSupport(path, messageType, schema);
         }
-        
+
         @Override
         protected Builder self() {
             return (Builder) this;
