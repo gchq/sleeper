@@ -15,17 +15,21 @@
  */
 package sleeper.compaction.strategy.impl;
 
-import sleeper.compaction.strategy.CompactionStrategy;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.partition.Partition;
+import sleeper.statestore.FileInfo;
 
-/**
- * A simple {@link CompactionStrategy} that lists the active files for a partition in increasing order of the number
- * of records they contain, and iterates through this list creating compaction jobs with at most
- * maximumNumberOfFilesToCompact files in each.
- */
-public class BasicCompactionStrategy extends DelegatingCompactionStrategy {
+import java.util.List;
 
-    public BasicCompactionStrategy() {
-        super(new BasicLeafStrategy());
+public interface ShouldCreateJobsStrategy {
+
+    default void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
     }
 
+    long maxCompactionJobsToCreate(Partition partition, List<FileInfo> activeFilesWithJobId, List<FileInfo> activeFilesWithNoJobId);
+
+    static ShouldCreateJobsStrategy yes() {
+        return (partition, activeFilesWithJobId, activeFilesWithNoJobId) -> Long.MAX_VALUE;
+    }
 }
