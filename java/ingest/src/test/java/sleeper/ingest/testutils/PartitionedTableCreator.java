@@ -6,6 +6,7 @@ import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -74,8 +75,9 @@ public class PartitionedTableCreator {
         Object splitPoint = keyContainingSplitPoint.get(dimensionToSplitOn);
         Stream<Range> parentRangesWithoutSplitDimensionStream = parentPartition.getRegion().getRanges().stream()
                 .filter(range -> !(range.getFieldName().equals(fieldToSplitOn.getName())));
+        RangeFactory rangeFactory = new RangeFactory(sleeperSchema);
         Range parentRangeForSplitDimension = parentPartition.getRegion().getRange(fieldToSplitOn.getName());
-        Range childRangeForSplitDimension = new Range(
+        Range childRangeForSplitDimension = rangeFactory.createRange(
                 fieldToSplitOn,
                 isLeftSplit ? parentRangeForSplitDimension.getMin() : splitPoint,
                 isLeftSplit ? splitPoint : parentRangeForSplitDimension.getMax());
