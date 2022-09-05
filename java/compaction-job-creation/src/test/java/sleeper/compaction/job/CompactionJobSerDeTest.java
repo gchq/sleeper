@@ -33,6 +33,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.table.job.TableCreator;
 
@@ -87,6 +88,19 @@ public class CompactionJobSerDeTest {
         tableCreator.createTable(tableProperties);
     }
 
+    private Schema schemaWithStringKey() {
+        return Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+    }
+
+    private Schema schemaWith2StringKeysAndOneOfType(PrimitiveType type) {
+        return Schema.builder()
+                .rowKeyFields(
+                        new Field("key1", new StringType()),
+                        new Field("key2", new StringType()),
+                        new Field("key3", type))
+                .build();
+    }
+
     @Test
     public void shouldSerDeCorrectlyForNonSplittingJobWithNoIterator() throws IOException {
         // Given
@@ -98,8 +112,7 @@ public class CompactionJobSerDeTest {
         compactionJob.setOutputFile("outputfile");
         compactionJob.setPartitionId("partition1");
         compactionJob.setIsSplittingJob(false);
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new StringType()));
+        Schema schema = schemaWithStringKey();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
@@ -128,8 +141,7 @@ public class CompactionJobSerDeTest {
         compactionJob.setIsSplittingJob(false);
         compactionJob.setIteratorClassName("Iterator.class");
         compactionJob.setIteratorConfig("config1");
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new StringType()));
+        Schema schema = schemaWithStringKey();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
@@ -159,8 +171,7 @@ public class CompactionJobSerDeTest {
         compactionJob.setSplitPoint("G");
         compactionJob.setDimension(2);
         compactionJob.setChildPartitions(Arrays.asList("childPartition1", "childPartition2"));
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new StringType()), new Field("key2", new StringType()), new Field("key3", new StringType()));
+        Schema schema = schemaWith2StringKeysAndOneOfType(new StringType());
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
@@ -192,8 +203,7 @@ public class CompactionJobSerDeTest {
         compactionJob.setIteratorConfig("config1");
         compactionJob.setDimension(2);
         compactionJob.setChildPartitions(Arrays.asList("childPartition1", "childPartition2"));
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new StringType()), new Field("key2", new StringType()), new Field("key3", new IntType()));
+        Schema schema = schemaWith2StringKeysAndOneOfType(new IntType());
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
@@ -225,8 +235,7 @@ public class CompactionJobSerDeTest {
         compactionJob.setIteratorConfig("config1");
         compactionJob.setDimension(2);
         compactionJob.setChildPartitions(Arrays.asList("childPartition1", "childPartition2"));
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new StringType()), new Field("key2", new StringType()), new Field("key3", new LongType()));
+        Schema schema = schemaWith2StringKeysAndOneOfType(new LongType());
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
@@ -258,8 +267,7 @@ public class CompactionJobSerDeTest {
         compactionJob.setIteratorConfig("config1");
         compactionJob.setDimension(2);
         compactionJob.setChildPartitions(Arrays.asList("childPartition1", "childPartition2"));
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new StringType()), new Field("key2", new StringType()), new Field("key3", new StringType()));
+        Schema schema = schemaWith2StringKeysAndOneOfType(new StringType());
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
@@ -291,8 +299,7 @@ public class CompactionJobSerDeTest {
         compactionJob.setIteratorConfig("config1");
         compactionJob.setDimension(2);
         compactionJob.setChildPartitions(Arrays.asList("childPartition1", "childPartition2"));
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new StringType()), new Field("key2", new StringType()), new Field("key3", new ByteArrayType()));
+        Schema schema = schemaWith2StringKeysAndOneOfType(new ByteArrayType());
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);

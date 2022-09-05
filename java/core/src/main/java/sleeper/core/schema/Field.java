@@ -24,33 +24,20 @@ import java.util.Objects;
  * and a {@link Type}.
  */
 public class Field {
-    private String name;
-    private Type type;
-
-    public Field() {
-    }
+    private final String name;
+    private final Type type;
 
     public Field(String name, Type type) {
-        setName(name);
-        setType(type);
+        this.name = Objects.requireNonNull(name, "name must not be null");
+        this.type = Objects.requireNonNull(type, "type must not be null");
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        Objects.requireNonNull(name, "name must not be null");
-        this.name = name;
-    }
-
     public Type getType() {
         return type;
-    }
-
-    public void setType(Type type) {
-        Objects.requireNonNull(type, "type must not be null");
-        this.type = type;
     }
 
     @Override
@@ -60,10 +47,7 @@ public class Field {
 
     @Override
     public int hashCode() {
-        int hash = 5;
-        hash = 31 * hash + Objects.hashCode(this.name);
-        hash = 31 * hash + Objects.hashCode(this.type);
-        return hash;
+        return Objects.hash(name, type);
     }
 
     @Override
@@ -71,19 +55,11 @@ public class Field {
         if (this == obj) {
             return true;
         }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
+        if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
         final Field other = (Field) obj;
-        if (!Objects.equals(this.name, other.name)) {
-            return false;
-        }
-        if (!Objects.equals(this.type, other.type)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(name, other.name) &&
+                Objects.equals(type, other.type);
     }
 }

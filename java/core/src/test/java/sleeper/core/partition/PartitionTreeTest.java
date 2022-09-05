@@ -46,8 +46,7 @@ public class PartitionTreeTest {
     @Test
     public void shouldReturnCorrectChildren() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("id", new LongType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Region rootRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
         Partition root = new Partition(LONG_TYPE, rootRegion, ROOT, false, null, Arrays.asList(L1_LEFT, L1_RIGHT), -1);
@@ -86,8 +85,7 @@ public class PartitionTreeTest {
     @Test
     public void shouldReturnCorrectAncestors() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("id", new LongType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Region rootRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
         Partition root = new Partition(LONG_TYPE, rootRegion, ROOT, false, null, Arrays.asList(L1_LEFT, L1_RIGHT), -1);
@@ -130,8 +128,7 @@ public class PartitionTreeTest {
     @Test
     public void shouldReturnRootIfOnlyPartitionAndAskedForLeafPartitionContainingKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("id", new LongType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
 
         Region region = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
@@ -149,8 +146,7 @@ public class PartitionTreeTest {
     @Test
     public void shouldReturnCorrectLeafWhenAskedForLeafPartitionContainingKeyInTwoLevelTree() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("id", new LongType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Region rootRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
         Partition root = new Partition(LONG_TYPE, rootRegion, ROOT, false, null, Arrays.asList(L1_LEFT, L1_RIGHT), -1);
@@ -195,8 +191,7 @@ public class PartitionTreeTest {
     @Test
     public void shouldReturnCorrectLeafWhenAskedForLeafPartitionContainingKeyInThreeLevelTree() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("id", new LongType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Region rootRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
         Partition root = new Partition(LONG_TYPE, rootRegion, ROOT, false, null, Arrays.asList(L1_LEFT, L1_RIGHT), -1);

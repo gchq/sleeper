@@ -36,9 +36,8 @@ public class PartitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithIntKeyCorrectly() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setId("id");
         partition.setRowKeyTypes(new IntType());
@@ -63,9 +62,8 @@ public class PartitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithLongKeyCorrectly() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setId("id");
         partition.setRowKeyTypes(new LongType());
@@ -90,9 +88,8 @@ public class PartitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithStringKeyCorrectly() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setId("id");
         partition.setRowKeyTypes(new StringType());
@@ -117,9 +114,8 @@ public class PartitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithStringKeyWithNullMaxCorrectly() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setId("id");
         partition.setRowKeyTypes(new StringType());
@@ -144,9 +140,8 @@ public class PartitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithByteArrayKeyCorrectly() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setId("id");
         partition.setRowKeyTypes(new ByteArrayType());
@@ -171,9 +166,8 @@ public class PartitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithByteArrayKeyWithNullMaxCorrectly() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setId("id");
         partition.setRowKeyTypes(new ByteArrayType());
