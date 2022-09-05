@@ -207,15 +207,15 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>${checkstyle.plugin.version}</version>
                 <configuration>
-                    <configLocation>code-style/checkstyle.xml</configLocation>
+                    <configLocation>${project.basedir}/../code-style/checkstyle.xml</configLocation>
                     <suppressionsLocation>
-                        code-style/checkstyle-suppressions.xml
+                        ${project.basedir}/../code-style/checkstyle-suppressions.xml
                     </suppressionsLocation>
                     <suppressionsFileExpression>checkstyle.suppressions.file</suppressionsFileExpression>
                     <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
-                    <headerLocation>code-style/licenseHeader.txt</headerLocation>
+                    <headerLocation>${project.basedir}/../code-style/licenseHeader.txt</headerLocation>
                     <excludes>**/generated/**/*</excludes>
                     <sourceDirectories>
                         <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
@@ -227,11 +227,11 @@
                         <id>validate</id>
                         <phase>test</phase>
                         <configuration>
-                            <configLocation>code-style/checkstyle.xml</configLocation>
+                            <configLocation>${project.basedir}/../code-style/checkstyle.xml</configLocation>
                             <encoding>UTF-8</encoding>
                             <consoleOutput>true</consoleOutput>
                             <failsOnError>true</failsOnError>
-                            <headerLocation>code-style/licenseHeader.txt</headerLocation>
+                            <headerLocation>${project.basedir}/../code-style/licenseHeader.txt</headerLocation>
                         </configuration>
                         <goals>
                             <goal>check</goal>
@@ -361,6 +361,13 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <id>style</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <skipITs>true</skipITs>
+            </properties>
         </profile>
     </profiles>
 </project>
