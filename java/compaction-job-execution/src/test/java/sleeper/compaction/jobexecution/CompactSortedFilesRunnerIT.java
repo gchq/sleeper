@@ -24,15 +24,7 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 import org.apache.hadoop.fs.Path;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -44,14 +36,8 @@ import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.key.Key;
 import sleeper.core.record.Record;
@@ -66,6 +52,19 @@ import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.table.job.TableCreator;
 import sleeper.table.util.StateStoreProvider;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class CompactSortedFilesRunnerIT {
 
@@ -96,10 +95,10 @@ public class CompactSortedFilesRunnerIT {
     }
 
     private Schema createSchema() {
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
-        return schema;
+        return Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
     }
 
     private InstanceProperties createProperties(AmazonS3 s3) {
@@ -224,7 +223,7 @@ public class CompactSortedFilesRunnerIT {
             record.put("value2", 123456789L);
             writer4.write(record);
         }
-        writer4.close();     
+        writer4.close();
         //  - Update Dynamo state store with details of files
         stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
         //  - Create two compaction jobs and put on queue
@@ -251,28 +250,25 @@ public class CompactSortedFilesRunnerIT {
                 .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .withMessageBody(job2Json);
         sqsClient.sendMessage(sendMessageRequest);
-        
+
         // When
         CompactSortedFilesRunner runner = new CompactSortedFilesRunner(
                 instanceProperties, new ObjectFactory(new InstanceProperties(), null, ""),
                 tablePropertiesProvider, stateStoreProvider, instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqsClient,
                 1, 5);
         runner.run();
-        
+
         // Then
         //  - There should be no messages left on the queue
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .withWaitTimeSeconds(2);
         ReceiveMessageResult result = sqsClient.receiveMessage(receiveMessageRequest);
-        assertTrue(result.getMessages().isEmpty());
+        assertThat(result.getMessages()).isEmpty();
         // - Check DynamoDBStateStore has correct active files
-        List<FileInfo> activeFiles = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider).getActiveFiles()
-                .stream()
-                .sorted(Comparator.comparing(FileInfo::getFilename))
-                .collect(Collectors.toList());
-        assertEquals(2, activeFiles.size());
-        assertEquals(compactionJob1.getOutputFile(), activeFiles.get(0).getFilename());
-        assertEquals(compactionJob2.getOutputFile(), activeFiles.get(1).getFilename());
+        List<FileInfo> activeFiles = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider).getActiveFiles();
+        assertThat(activeFiles)
+                .extracting(FileInfo::getFilename)
+                .containsExactlyInAnyOrder(compactionJob1.getOutputFile(), compactionJob2.getOutputFile());
     }
 }

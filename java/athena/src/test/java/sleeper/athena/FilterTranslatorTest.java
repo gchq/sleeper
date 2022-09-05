@@ -53,40 +53,37 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class FilterTranslatorTest {
 
     @ClassRule
     public static TemporaryFolder tempDir = new TemporaryFolder();
 
-    private static final Schema SCHEMA = new Schema();
-
-    static {
-        SCHEMA.setRowKeyFields(new Field("int", new IntType()));
-        SCHEMA.setSortKeyFields(new Field("long", new LongType()));
-        SCHEMA.setValueFields(new Field("string", new StringType()),
-                new Field("bytes", new ByteArrayType()),
-                new Field("list", new ListType(new StringType())));
-    }
+    private static final Schema SCHEMA = Schema.builder()
+            .rowKeyFields(new Field("int", new IntType()))
+            .sortKeyFields(new Field("long", new LongType()))
+            .valueFields(new Field("string", new StringType()),
+                    new Field("bytes", new ByteArrayType()),
+                    new Field("list", new ListType(new StringType())))
+            .build();
 
     @Test
     public void shouldTranslateNullValueSetIntoNull() {
         // When
-        FilterPredicate filterPredicate = new FilterTranslator(new Schema()).toPredicate(null);
+        FilterPredicate filterPredicate = new FilterTranslator(SCHEMA).toPredicate(null);
 
         // Then
-        assertNull(filterPredicate);
+        assertThat(filterPredicate).isNull();
     }
 
     @Test
     public void shouldTranslateEmptyMapIntoNull() {
         // When
-        FilterPredicate filterPredicate = new FilterTranslator(new Schema()).toPredicate(new HashMap<>());
+        FilterPredicate filterPredicate = new FilterTranslator(SCHEMA).toPredicate(new HashMap<>());
 
         // Then
-        assertNull(filterPredicate);
+        assertThat(filterPredicate).isNull();
     }
 
     @Test
@@ -109,7 +106,7 @@ public class FilterTranslatorTest {
         List<Record> expectedRecords = generateRecords(1, 3);
         List<Record> actualRecords = readData(dataFile, filterPredicate);
 
-        assertEquals(expectedRecords, actualRecords);
+        assertThat(actualRecords).isEqualTo(expectedRecords);
     }
 
     @Test
@@ -132,7 +129,7 @@ public class FilterTranslatorTest {
         List<Record> expectedRecords = generateRecords(1, 3);
         List<Record> actualRecords = readData(dataFile, filterPredicate);
 
-        assertEquals(expectedRecords, actualRecords);
+        assertThat(actualRecords).isEqualTo(expectedRecords);
     }
 
     @Test
@@ -155,7 +152,7 @@ public class FilterTranslatorTest {
         List<Record> expectedRecords = generateRecords(1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19);
         List<Record> actualRecords = readData(dataFile, filterPredicate);
 
-        assertEquals(expectedRecords, actualRecords);
+        assertThat(actualRecords).isEqualTo(expectedRecords);
     }
 
     @Test
@@ -181,7 +178,7 @@ public class FilterTranslatorTest {
         List<Record> expectedRecords = generateRecords(1);
         List<Record> actualRecords = readData(dataFile, filterPredicate);
 
-        assertEquals(expectedRecords, actualRecords);
+        assertThat(actualRecords).isEqualTo(expectedRecords);
     }
 
     @Test
@@ -195,10 +192,10 @@ public class FilterTranslatorTest {
         // When
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("int", SortedRangeSet.of(Range
-                .range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                        1, true, 3, false),
+                        .range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
+                                1, true, 3, false),
                 Range.range(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                                5, true, 8, false)));
+                        5, true, 8, false)));
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
@@ -206,7 +203,7 @@ public class FilterTranslatorTest {
         List<Record> expectedRecords = generateRecords(1, 2, 5, 6, 7);
         List<Record> actualRecords = readData(dataFile, filterPredicate);
 
-        assertEquals(expectedRecords, actualRecords);
+        assertThat(actualRecords).isEqualTo(expectedRecords);
     }
 
     @Test
@@ -229,7 +226,7 @@ public class FilterTranslatorTest {
         List<Record> expectedRecords = generateRecords(1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19);
         List<Record> actualRecords = readData(dataFile, filterPredicate);
 
-        assertEquals(expectedRecords, actualRecords);
+        assertThat(actualRecords).isEqualTo(expectedRecords);
 
     }
 
@@ -244,8 +241,8 @@ public class FilterTranslatorTest {
         // When
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("int", SortedRangeSet.of(Range
-                        .greaterThanOrEqual(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
-                                15)));
+                .greaterThanOrEqual(new BlockAllocatorImpl(), Types.MinorType.INT.getType(),
+                        15)));
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
@@ -253,7 +250,7 @@ public class FilterTranslatorTest {
         List<Record> expectedRecords = generateRecords(15, 16, 17, 18, 19);
         List<Record> actualRecords = readData(dataFile, filterPredicate);
 
-        assertEquals(expectedRecords, actualRecords);
+        assertThat(actualRecords).isEqualTo(expectedRecords);
     }
 
     @Test
@@ -276,7 +273,7 @@ public class FilterTranslatorTest {
         List<Record> expectedRecords = generateRecords(2, 4);
         List<Record> actualRecords = readData(dataFile, filterPredicate);
 
-        assertEquals(expectedRecords, actualRecords);
+        assertThat(actualRecords).isEqualTo(expectedRecords);
     }
 
     @Test
@@ -285,7 +282,7 @@ public class FilterTranslatorTest {
         FilterPredicate and = FilterTranslator.and(null, null);
 
         // Then
-        assertNull(and);
+        assertThat(and).isNull();
     }
 
     @Test
@@ -297,7 +294,7 @@ public class FilterTranslatorTest {
         FilterPredicate and = FilterTranslator.and(lhs, null);
 
         // Then
-        assertEquals(lhs, and);
+        assertThat(and).isEqualTo(lhs);
     }
 
     @Test
@@ -309,7 +306,7 @@ public class FilterTranslatorTest {
         FilterPredicate and = FilterTranslator.and(null, rhs);
 
         // Then
-        assertEquals(rhs, and);
+        assertThat(and).isEqualTo(rhs);
     }
 
     @Test
@@ -322,7 +319,7 @@ public class FilterTranslatorTest {
         FilterPredicate and = FilterTranslator.and(lhs, rhs);
 
         // Then
-        assertEquals(FilterApi.and(lhs, rhs), and);
+        assertThat(and).isEqualTo(FilterApi.and(lhs, rhs));
     }
 
     @Test
@@ -331,7 +328,7 @@ public class FilterTranslatorTest {
         FilterPredicate or = FilterTranslator.or(null, null);
 
         // Then
-        assertNull(or);
+        assertThat(or).isNull();
     }
 
     @Test
@@ -343,7 +340,7 @@ public class FilterTranslatorTest {
         FilterPredicate or = FilterTranslator.or(lhs, null);
 
         // Then
-        assertEquals(lhs, or);
+        assertThat(or).isEqualTo(lhs);
     }
 
     @Test
@@ -355,7 +352,7 @@ public class FilterTranslatorTest {
         FilterPredicate or = FilterTranslator.or(null, rhs);
 
         // Then
-        assertEquals(rhs, or);
+        assertThat(or).isEqualTo(rhs);
     }
 
     @Test
@@ -368,7 +365,7 @@ public class FilterTranslatorTest {
         FilterPredicate or = FilterTranslator.or(lhs, rhs);
 
         // Then
-        assertEquals(FilterApi.or(lhs, rhs), or);
+        assertThat(or).isEqualTo(FilterApi.or(lhs, rhs));
     }
 
     @Test
@@ -382,16 +379,16 @@ public class FilterTranslatorTest {
         // When
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("int", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
-                Types.MinorType.INT.getType(), true, false)
+                        Types.MinorType.INT.getType(), true, false)
                 .add(1).add(3).add(5).build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(1,3,5);
+        List<Record> expectedRecords = generateRecords(1, 3, 5);
         List<Record> actualRecords = readData(dataFile, filterPredicate);
 
-        assertEquals(expectedRecords, actualRecords);
+        assertThat(actualRecords).isEqualTo(expectedRecords);
     }
 
     @Test
@@ -405,7 +402,7 @@ public class FilterTranslatorTest {
         // When
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("int", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
-                Types.MinorType.INT.getType(), false, false)
+                        Types.MinorType.INT.getType(), false, false)
                 .add(0).add(1).add(2).add(3).build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
@@ -414,7 +411,7 @@ public class FilterTranslatorTest {
         List<Record> expectedRecords = generateRecords(4, 20);
         List<Record> actualRecords = readData(dataFile, filterPredicate);
 
-        assertEquals(expectedRecords, actualRecords);
+        assertThat(actualRecords).isEqualTo(expectedRecords);
     }
 
     @Test
@@ -428,16 +425,16 @@ public class FilterTranslatorTest {
         // When
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("long", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
-                Types.MinorType.BIGINT.getType(), true, false)
+                        Types.MinorType.BIGINT.getType(), true, false)
                 .add(1_000_000_000L).add(3_000_000_000L).add(5_000_000_000L).build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(1,3,5);
+        List<Record> expectedRecords = generateRecords(1, 3, 5);
         List<Record> actualRecords = readData(dataFile, filterPredicate);
 
-        assertEquals(expectedRecords, actualRecords);
+        assertThat(actualRecords).isEqualTo(expectedRecords);
     }
 
     @Test
@@ -451,7 +448,7 @@ public class FilterTranslatorTest {
         // When
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("long", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
-                Types.MinorType.BIGINT.getType(), false, false)
+                        Types.MinorType.BIGINT.getType(), false, false)
                 .add(0L).add(1_000_000_000L).add(2_000_000_000L).add(3_000_000_000L).build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
@@ -460,7 +457,7 @@ public class FilterTranslatorTest {
         List<Record> expectedRecords = generateRecords(4, 20);
         List<Record> actualRecords = readData(dataFile, filterPredicate);
 
-        assertEquals(expectedRecords, actualRecords);
+        assertThat(actualRecords).isEqualTo(expectedRecords);
     }
 
     @Test
@@ -474,16 +471,16 @@ public class FilterTranslatorTest {
         // When
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("string", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
-                Types.MinorType.VARCHAR.getType(), true, false)
+                        Types.MinorType.VARCHAR.getType(), true, false)
                 .add("1").add("3").add("5").build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(1,3,5);
+        List<Record> expectedRecords = generateRecords(1, 3, 5);
         List<Record> actualRecords = readData(dataFile, filterPredicate);
 
-        assertEquals(expectedRecords, actualRecords);
+        assertThat(actualRecords).isEqualTo(expectedRecords);
     }
 
     @Test
@@ -497,7 +494,7 @@ public class FilterTranslatorTest {
         // When
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("string", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
-                Types.MinorType.VARCHAR.getType(), false, false)
+                        Types.MinorType.VARCHAR.getType(), false, false)
                 .add("0").add("1").add("2").add("3").build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
@@ -506,7 +503,7 @@ public class FilterTranslatorTest {
         List<Record> expectedRecords = generateRecords(4, 20);
         List<Record> actualRecords = readData(dataFile, filterPredicate);
 
-        assertEquals(expectedRecords, actualRecords);
+        assertThat(actualRecords).isEqualTo(expectedRecords);
     }
 
     @Test
@@ -520,16 +517,16 @@ public class FilterTranslatorTest {
         // When
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("bytes", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
-                Types.MinorType.VARBINARY.getType(), true, false)
+                        Types.MinorType.VARBINARY.getType(), true, false)
                 .add("1".getBytes()).add("3".getBytes()).add("5".getBytes()).build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        List<Record> expectedRecords = generateRecords(1,3,5);
+        List<Record> expectedRecords = generateRecords(1, 3, 5);
         List<Record> actualRecords = readData(dataFile, filterPredicate);
 
-        assertEquals(expectedRecords, actualRecords);
+        assertThat(actualRecords).isEqualTo(expectedRecords);
     }
 
     @Test
@@ -543,7 +540,7 @@ public class FilterTranslatorTest {
         // When
         Map<String, ValueSet> summary = new HashMap<>();
         summary.put("bytes", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
-                Types.MinorType.VARBINARY.getType(), false, false)
+                        Types.MinorType.VARBINARY.getType(), false, false)
                 .add("0".getBytes()).add("1".getBytes()).add("2".getBytes()).add("3".getBytes()).build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
@@ -552,7 +549,7 @@ public class FilterTranslatorTest {
         List<Record> expectedRecords = generateRecords(4, 20);
         List<Record> actualRecords = readData(dataFile, filterPredicate);
 
-        assertEquals(expectedRecords, actualRecords);
+        assertThat(actualRecords).isEqualTo(expectedRecords);
     }
 
     @Test
@@ -570,7 +567,7 @@ public class FilterTranslatorTest {
                         4, false, 8, false)));
 
         summary.put("string", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
-                Types.MinorType.VARCHAR.getType(), false, false)
+                        Types.MinorType.VARCHAR.getType(), false, false)
                 .add("5").add("7").build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
@@ -579,7 +576,7 @@ public class FilterTranslatorTest {
         List<Record> expectedRecords = generateRecords(6);
         List<Record> actualRecords = readData(dataFile, filterPredicate);
 
-        assertEquals(expectedRecords, actualRecords);
+        assertThat(actualRecords).isEqualTo(expectedRecords);
     }
 
     @Test
@@ -597,7 +594,7 @@ public class FilterTranslatorTest {
                         4, false, 8, false)));
 
         summary.put("string", EquatableValueSet.newBuilder(new BlockAllocatorImpl(),
-                Types.MinorType.VARCHAR.getType(), true, false)
+                        Types.MinorType.VARCHAR.getType(), true, false)
                 .add("9").add("10").build());
 
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
@@ -605,7 +602,7 @@ public class FilterTranslatorTest {
         // Then
         List<Record> actualRecords = readData(dataFile, filterPredicate);
 
-        assertEquals(new ArrayList<>(), actualRecords);
+        assertThat(actualRecords).isEqualTo(new ArrayList<>());
     }
 
     @Test
@@ -620,7 +617,7 @@ public class FilterTranslatorTest {
         FilterPredicate filterPredicate = filterTranslator.toPredicate(summary);
 
         // Then
-        assertNull(filterPredicate);
+        assertThat(filterPredicate).isNull();
     }
 
     @Test
@@ -643,7 +640,7 @@ public class FilterTranslatorTest {
         List<Record> expected = generateRecords(4);
         List<Record> actualRecords = readData(dataFile, filterPredicate);
 
-        assertEquals(expected, actualRecords);
+        assertThat(actualRecords).isEqualTo(expected);
     }
 
     private List<Record> readData(String dataFile, FilterPredicate filterPredicate) throws IOException {

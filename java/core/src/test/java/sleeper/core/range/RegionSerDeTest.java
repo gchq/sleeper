@@ -15,9 +15,6 @@
  */
 package sleeper.core.range;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -26,27 +23,31 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
+import java.util.Arrays;
+import java.util.HashSet;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 public class RegionSerDeTest {
 
     @Test
     public void shouldSerDeCorrectlyIntKey() {
         // Given
         Field field = new Field("key", new IntType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
                 Range range = new Range(field, 1, minInclusive, 10, maxInclusive);
                 Region region = new Region(range);
-                
+
                 // When
                 String serialisedRegion = regionSerDe.toJson(region);
                 Region deserialisedRegion = regionSerDe.fromJson(serialisedRegion);
 
                 // Then
-                assertEquals(region, deserialisedRegion);
+                assertThat(deserialisedRegion).isEqualTo(region);
             }
         }
     }
@@ -55,21 +56,20 @@ public class RegionSerDeTest {
     public void shouldSerDeCorrectlyIntKeyNullMax() {
         // Given
         Field field = new Field("key", new IntType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
                 Range range = new Range(field, 1, minInclusive, null, maxInclusive);
                 Region region = new Region(range);
-                
+
                 // When
                 String serialisedRegion = regionSerDe.toJson(region);
                 Region deserialisedRegion = regionSerDe.fromJson(serialisedRegion);
 
                 // Then
-                assertEquals(region, deserialisedRegion);
+                assertThat(deserialisedRegion).isEqualTo(region);
             }
         }
     }
@@ -78,21 +78,20 @@ public class RegionSerDeTest {
     public void shouldSerDeCorrectlyLongKey() {
         // Given
         Field field = new Field("key", new LongType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
                 Range range = new Range(field, 1L, minInclusive, 10L, maxInclusive);
                 Region region = new Region(range);
-                
+
                 // When
                 String serialisedRegion = regionSerDe.toJson(region);
                 Region deserialisedRegion = regionSerDe.fromJson(serialisedRegion);
 
                 // Then
-                assertEquals(region, deserialisedRegion);
+                assertThat(deserialisedRegion).isEqualTo(region);
             }
         }
     }
@@ -101,8 +100,7 @@ public class RegionSerDeTest {
     public void shouldSerDeCorrectlyLongKeyNullMax() {
         // Given
         Field field = new Field("key", new LongType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
@@ -115,7 +113,7 @@ public class RegionSerDeTest {
                 Region deserialisedRegion = regionSerDe.fromJson(serialisedRegion);
 
                 // Then
-                assertEquals(region, deserialisedRegion);
+                assertThat(deserialisedRegion).isEqualTo(region);
             }
         }
     }
@@ -124,8 +122,7 @@ public class RegionSerDeTest {
     public void shouldSerDeCorrectlyStringKey() {
         // Given
         Field field = new Field("key", new StringType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
@@ -138,7 +135,7 @@ public class RegionSerDeTest {
                 Region deserialisedRegion = regionSerDe.fromJson(serialisedRegion);
 
                 // Then
-                assertEquals(region, deserialisedRegion);
+                assertThat(deserialisedRegion).isEqualTo(region);
             }
         }
     }
@@ -147,8 +144,7 @@ public class RegionSerDeTest {
     public void shouldDeserialsieCorrectlyStringKeyBase64Encoded() {
         // Given
         Field field = new Field("key", new StringType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         String jsonRegion = "{\"key\":{\"min\":\"A\",\"minInclusive\":false,\"max\":\"B\",\"maxInclusive\":false},\"stringsBase64Encoded\":false}";
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
@@ -158,15 +154,14 @@ public class RegionSerDeTest {
         // Then
         Range expectedRange = new Range(field, "A", false, "B", false);
         Region expectedRegion = new Region(expectedRange);
-        assertEquals(expectedRegion, region);
+        assertThat(region).isEqualTo(expectedRegion);
     }
 
     @Test
     public void shouldSerDeCorrectlyStringKeyNullMax() {
         // Given
         Field field = new Field("key", new StringType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
@@ -179,7 +174,7 @@ public class RegionSerDeTest {
                 Region deserialisedRegion = regionSerDe.fromJson(serialisedRegion);
 
                 // Then
-                assertEquals(region, deserialisedRegion);
+                assertThat(deserialisedRegion).isEqualTo(region);
             }
         }
     }
@@ -188,21 +183,20 @@ public class RegionSerDeTest {
     public void shouldSerDeCorrectlyByteArrayKey() {
         // Given
         Field field = new Field("key", new ByteArrayType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
                 Range range = new Range(field, new byte[]{10, 11, 12}, minInclusive, new byte[]{15}, maxInclusive);
                 Region region = new Region(range);
-                
+
                 // When
                 String serialisedRegion = regionSerDe.toJson(region);
                 Region deserialisedRegion = regionSerDe.fromJson(serialisedRegion);
 
                 // Then
-                assertEquals(region, deserialisedRegion);
+                assertThat(deserialisedRegion).isEqualTo(region);
             }
         }
     }
@@ -211,25 +205,24 @@ public class RegionSerDeTest {
     public void shouldSerDeCorrectlyByteArrayKeyNullMax() {
         // Given
         Field field = new Field("key", new ByteArrayType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
 
         for (boolean minInclusive : new HashSet<>(Arrays.asList(true, false))) {
             for (boolean maxInclusive : new HashSet<>(Arrays.asList(true, false))) {
                 Range range = new Range(field, new byte[]{10, 11, 12}, minInclusive, null, maxInclusive);
                 Region region = new Region(range);
-                
+
                 // When
                 String serialisedRegion = regionSerDe.toJson(region);
                 Region deserialisedRegion = regionSerDe.fromJson(serialisedRegion);
 
                 // Then
-                assertEquals(region, deserialisedRegion);
+                assertThat(deserialisedRegion).isEqualTo(region);
             }
         }
     }
-    
+
     @Test
     public void shouldSerDeCorrectlyMultipleRanges() {
         // Given
@@ -237,8 +230,7 @@ public class RegionSerDeTest {
         Field field2 = new Field("key2", new LongType());
         Field field3 = new Field("key3", new StringType());
         Field field4 = new Field("key4", new ByteArrayType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field1, field2, field3, field4);
+        Schema schema = Schema.builder().rowKeyFields(field1, field2, field3, field4).build();
         Range range1 = new Range(field1, 1, true, 10, true);
         Range range2 = new Range(field2, 100L, true, 1000L, false);
         Range range3 = new Range(field3, "B", false, "G", true);
@@ -251,6 +243,6 @@ public class RegionSerDeTest {
         Region deserialisedRegion = regionSerDe.fromJson(serialisedRegion);
 
         // Then
-        assertEquals(region, deserialisedRegion);
+        assertThat(deserialisedRegion).isEqualTo(region);
     }
 }

@@ -18,15 +18,16 @@ package sleeper.core.iterator.impl;
 import org.junit.Test;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class AgeOffIteratorTest {
 
@@ -36,19 +37,23 @@ public class AgeOffIteratorTest {
         List<Record> records = getData();
         Iterator<Record> iterator = records.iterator();
         AgeOffIterator ageOffIterator = new AgeOffIterator();
-        ageOffIterator.init("timestamp,1000000", new Schema());
-        
+        ageOffIterator.init("timestamp,1000000", getSchema());
+
         // When
         Iterator<Record> filtered = ageOffIterator.apply(new WrappedIterator<>(iterator));
-        
+
         // Then
-        assertTrue(filtered.hasNext());
-        assertEquals(records.get(1), filtered.next());
-        assertTrue(filtered.hasNext());
-        assertEquals(records.get(4), filtered.next());
-        assertFalse(filtered.hasNext());
+        assertThat(filtered).toIterable()
+                .containsExactly(records.get(1), records.get(4));
     }
-    
+
+    private static Schema getSchema() {
+        return Schema.builder()
+                .rowKeyFields(new Field("id", new StringType()))
+                .valueFields(new Field("timestamp", new LongType()))
+                .build();
+    }
+
     private static List<Record> getData() {
         List<Record> records = new ArrayList<>();
         Record record1 = new Record();

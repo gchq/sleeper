@@ -15,13 +15,6 @@
  */
 package sleeper.query.model;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
@@ -31,14 +24,19 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 public class LeafPartitionQueryTest {
 
     @Test
     public void testEqualsAndHashcode() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field, 1L, true, 10L, true);
         Range range2 = rangeFactory.createRange(field, 1L, true, 11L, true);
@@ -118,24 +116,23 @@ public class LeafPartitionQueryTest {
         int hashCode6 = query6.hashCode();
 
         // Then
-        assertTrue(test1);
-        assertFalse(test2);
-        assertFalse(test3);
-        assertFalse(test4);
-        assertFalse(test5);
-        assertEquals(hashCode1, hashCode2);
-        assertNotEquals(hashCode1, hashCode3);
-        assertNotEquals(hashCode1, hashCode4);
-        assertNotEquals(hashCode1, hashCode5);
-        assertNotEquals(hashCode1, hashCode6);
+        assertThat(test1).isTrue();
+        assertThat(test2).isFalse();
+        assertThat(test3).isFalse();
+        assertThat(test4).isFalse();
+        assertThat(test5).isFalse();
+        assertThat(hashCode2).isEqualTo(hashCode1);
+        assertThat(hashCode3).isNotEqualTo(hashCode1);
+        assertThat(hashCode4).isNotEqualTo(hashCode1);
+        assertThat(hashCode5).isNotEqualTo(hashCode1);
+        assertThat(hashCode6).isNotEqualTo(hashCode1);
     }
 
     @Test
     public void testEqualsAndHashcodeWhenOnlyRangeIsDifferent() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field, 1L, true, 10L, true);
         Range range2 = rangeFactory.createRange(field, 1L, true, 11L, true);
@@ -179,18 +176,17 @@ public class LeafPartitionQueryTest {
         int hashCode3 = query3.hashCode();
 
         // Then
-        assertTrue(test1);
-        assertFalse(test2);
-        assertEquals(hashCode1, hashCode2);
-        assertNotEquals(hashCode1, hashCode3);
+        assertThat(test1).isTrue();
+        assertThat(test2).isFalse();
+        assertThat(hashCode2).isEqualTo(hashCode1);
+        assertThat(hashCode3).isNotEqualTo(hashCode1);
     }
 
     @Test
     public void testEqualsAndHashcodeWithByteArray() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field, new byte[]{1}, true, new byte[]{10}, true);
         Range range2 = rangeFactory.createRange(field, new byte[]{20}, true, new byte[]{30}, true);
@@ -236,9 +232,9 @@ public class LeafPartitionQueryTest {
         int hashCode3 = query3.hashCode();
 
         // Then
-        assertTrue(test1);
-        assertFalse(test2);
-        assertEquals(hashCode1, hashCode2);
-        assertNotEquals(hashCode1, hashCode3);
+        assertThat(test1).isTrue();
+        assertThat(test2).isFalse();
+        assertThat(hashCode2).isEqualTo(hashCode1);
+        assertThat(hashCode3).isNotEqualTo(hashCode1);
     }
 }

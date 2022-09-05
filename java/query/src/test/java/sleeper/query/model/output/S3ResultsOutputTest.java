@@ -29,7 +29,11 @@ import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.*;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.ListType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.MapType;
+import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.query.model.Query;
 
@@ -39,14 +43,21 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.*;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_RESULTS_PAGE_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_RESULTS_ROW_GROUP_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.query.model.output.S3ResultsOutput.PAGE_SIZE;
 import static sleeper.query.model.output.S3ResultsOutput.ROW_GROUP_SIZE;
 
@@ -54,16 +65,17 @@ public class S3ResultsOutputTest {
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
 
-    InstanceProperties instanceProperties;
-    Schema schema = new Schema();
-    List<Record> recordList;
+    InstanceProperties instanceProperties = new InstanceProperties();
+    Schema schema = setupSchema();
+    List<Record> recordList = setupData();
     String outputDir;
 
     @Before
     public void setup() throws IOException {
-        setupInstanceProperties();
-        setupSchema();
-        setupData();
+        outputDir = tempDir.newFolder().getAbsolutePath();
+        String queryResultsBucket = UUID.randomUUID().toString();
+        instanceProperties.set(QUERY_RESULTS_BUCKET, queryResultsBucket);
+        instanceProperties.set(FILE_SYSTEM, outputDir + "/");
     }
 
     @Test
@@ -78,8 +90,8 @@ public class S3ResultsOutputTest {
         //Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
-        assertEquals("Results list matches records", recordList, getRecordsFromOutput(pathToResultsFile));
-        assertEquals("There is only one block as rowGroup size is large", 1, numberOfBlocks);
+        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(recordList);
+        assertThat(numberOfBlocks).as("There is only one block as rowGroup size is large").isOne();
     }
 
     @Test
@@ -97,8 +109,8 @@ public class S3ResultsOutputTest {
         //Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
-        assertEquals("Results list matches records", recordList, getRecordsFromOutput(pathToResultsFile));
-        assertTrue("There are several blocks as rowGroup size is small", numberOfBlocks > 10);
+        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(recordList);
+        assertThat(numberOfBlocks).as("There are several blocks as rowGroup size is small").isGreaterThan(10);
     }
 
     @Test
@@ -115,8 +127,8 @@ public class S3ResultsOutputTest {
         //Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
-        assertEquals("Results list matches records", recordList, getRecordsFromOutput(pathToResultsFile));
-        assertTrue("There are several blocks as rowGroup size is small", numberOfBlocks > 10);
+        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(recordList);
+        assertThat(numberOfBlocks).as("There are several blocks as rowGroup size is small").isGreaterThan(10);
     }
 
     private String getParquetFilesWithinDirPath(String dir) throws IOException {
@@ -129,7 +141,7 @@ public class S3ResultsOutputTest {
                     .filter(s -> s.endsWith(".parquet"))
                     .collect(Collectors.toList());
 
-            assertEquals("one results Parquet file in dir", 1, files.size());
+            assertThat(files).as("one results Parquet file in dir").hasSize(1);
             return files.get(0);
         }
     }
@@ -158,33 +170,28 @@ public class S3ResultsOutputTest {
         return records;
     }
 
-    private void setupInstanceProperties() throws IOException {
-        outputDir = tempDir.newFolder().getAbsolutePath();
-        instanceProperties = new InstanceProperties();
-        String queryResultsBucket = UUID.randomUUID().toString();
-        instanceProperties.set(QUERY_RESULTS_BUCKET, queryResultsBucket);
-        instanceProperties.set(FILE_SYSTEM, outputDir + "/");
+    private static Schema setupSchema() {
+        return Schema.builder()
+                .rowKeyFields(
+                        new Field("year", new IntType()),
+                        new Field("month", new IntType()),
+                        new Field("day", new IntType()))
+                .sortKeyFields(
+                        new Field("timestamp", new LongType()))
+                .valueFields(
+                        new Field("count", new LongType()),
+                        new Field("map", new MapType(new StringType(), new StringType())),
+                        new Field("str", new StringType()),
+                        new Field("list", new ListType(new StringType())))
+                .build();
     }
 
-    private void setupSchema() {
-        schema.setRowKeyFields(
-                new Field("year", new IntType()),
-                new Field("month", new IntType()),
-                new Field("day", new IntType())
-        );
-        schema.setSortKeyFields(new Field("timestamp", new LongType()));
-        schema.setValueFields(new Field("count", new LongType()),
-                new Field("map", new MapType(new StringType(), new StringType())),
-                new Field("str", new StringType()),
-                new Field("list", new ListType(new StringType())));
-    }
-
-    private void setupData() {
+    private static List<Record> setupData() {
         int minYear = 2010;
         int maxYear = 2020;
         LocalDate startDate = LocalDate.of(minYear, 1, 1);
         LocalDate endDate = LocalDate.of(maxYear, 12, 31);
-        recordList = new ArrayList<>();
+        List<Record> recordList = new ArrayList<>();
         for (LocalDate date = startDate; date.isBefore(endDate); date = date.plusDays(1)) {
             Record record = new Record();
             record.put("year", date.getYear());
@@ -199,6 +206,6 @@ public class S3ResultsOutputTest {
             record.put("str", date.toString());
             recordList.add(record);
         }
-
+        return recordList;
     }
 }

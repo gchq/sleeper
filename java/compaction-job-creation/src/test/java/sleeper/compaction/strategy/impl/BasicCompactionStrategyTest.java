@@ -15,21 +15,11 @@
  */
 package sleeper.compaction.strategy.impl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import org.apache.commons.lang3.tuple.MutablePair;
-import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.configuration.properties.InstanceProperties;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import sleeper.configuration.properties.table.TableProperties;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
@@ -39,6 +29,20 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.statestore.FileInfo;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class BasicCompactionStrategyTest {
 
@@ -81,10 +85,10 @@ public class BasicCompactionStrategyTest {
         fileInfos.add(fileInfo2);
 
         // When
-        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, fileInfos, partitions);
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
 
         // Then
-        assertEquals(1, compactionJobs.size());
+        assertThat(compactionJobs).hasSize(1);
         CompactionJob expectedCompactionJob = new CompactionJob("table", compactionJobs.get(0).getId()); // Job id is a UUID so we don't know what it will be
         expectedCompactionJob.setPartitionId(partition.getId());
         expectedCompactionJob.setInputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()));
@@ -95,7 +99,7 @@ public class BasicCompactionStrategyTest {
         expectedCompactionJob.setDimension(-1);
         expectedCompactionJob.setIteratorClassName(null);
         expectedCompactionJob.setIteratorConfig(null);
-        assertEquals(expectedCompactionJob, compactionJobs.get(0));
+        assertThat(compactionJobs).containsExactly(expectedCompactionJob);
     }
 
     @Test
@@ -130,12 +134,10 @@ public class BasicCompactionStrategyTest {
         }
 
         // When
-        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, fileInfos, partitions);
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
 
         // Then
-        assertEquals(10, compactionJobs.size());
-        List<CompactionJob> expectedJobs = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
+        assertThat(compactionJobs).hasSize(10).isEqualTo(IntStream.range(0, 10).mapToObj(i -> {
             CompactionJob expectedCompactionJob = new CompactionJob("table", compactionJobs.get(i).getId()); // Job id is a UUID so we don't know what it will be
             expectedCompactionJob.setPartitionId(partition.getId());
             List<String> inputFiles = new ArrayList<>();
@@ -150,12 +152,8 @@ public class BasicCompactionStrategyTest {
             expectedCompactionJob.setDimension(-1);
             expectedCompactionJob.setIteratorClassName(null);
             expectedCompactionJob.setIteratorConfig(null);
-            expectedJobs.add(expectedCompactionJob);
-        }
-        for (int i = 0; i < 10; i++) {
-            assertEquals(expectedJobs.get(i), compactionJobs.get(i));
-        }
-        assertEquals(expectedJobs, compactionJobs);
+            return expectedCompactionJob;
+        }).collect(Collectors.toList()));
     }
 
     @Test
@@ -197,10 +195,10 @@ public class BasicCompactionStrategyTest {
         fileInfos.add(fileInfo2);
 
         // When
-        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, fileInfos, partitions);
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
 
         // Then
-        assertEquals(0, compactionJobs.size());
+        assertThat(compactionJobs).isEmpty();
     }
 
     @Test
@@ -291,10 +289,10 @@ public class BasicCompactionStrategyTest {
         fileInfos.add(fileInfo6);
 
         // When
-        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, fileInfos, partitions);
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
 
         // Then
-        assertEquals(3, compactionJobs.size());
+        assertThat(compactionJobs).hasSize(3);
         CompactionJob expectedCompactionJob1 = new CompactionJob("table", compactionJobs.get(0).getId()); // Job id is a UUID so we don't know what it will be
         expectedCompactionJob1.setPartitionId("left");
         expectedCompactionJob1.setInputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()));
@@ -305,7 +303,6 @@ public class BasicCompactionStrategyTest {
         expectedCompactionJob1.setDimension(-1);
         expectedCompactionJob1.setIteratorClassName(null);
         expectedCompactionJob1.setIteratorConfig(null);
-        assertEquals(expectedCompactionJob1, compactionJobs.get(0));
         CompactionJob expectedCompactionJob2 = new CompactionJob("table", compactionJobs.get(1).getId()); // Job id is a UUID so we don't know what it will be
         expectedCompactionJob2.setPartitionId("left");
         expectedCompactionJob2.setInputFiles(Arrays.asList(fileInfo3.getFilename(), fileInfo4.getFilename()));
@@ -316,7 +313,6 @@ public class BasicCompactionStrategyTest {
         expectedCompactionJob2.setDimension(-1);
         expectedCompactionJob2.setIteratorClassName(null);
         expectedCompactionJob2.setIteratorConfig(null);
-        assertEquals(expectedCompactionJob2, compactionJobs.get(1));
         CompactionJob expectedCompactionJob3 = new CompactionJob("table", compactionJobs.get(2).getId()); // Job id is a UUID so we don't know what it will be
         expectedCompactionJob3.setPartitionId("right");
         expectedCompactionJob3.setInputFiles(Arrays.asList(fileInfo5.getFilename(), fileInfo6.getFilename()));
@@ -327,15 +323,15 @@ public class BasicCompactionStrategyTest {
         expectedCompactionJob3.setDimension(-1);
         expectedCompactionJob3.setIteratorClassName(null);
         expectedCompactionJob3.setIteratorConfig(null);
-        assertEquals(expectedCompactionJob3, compactionJobs.get(2));
+        assertThat(compactionJobs).containsExactly(
+                expectedCompactionJob1, expectedCompactionJob2, expectedCompactionJob3);
     }
 
     @Test
     public void shouldCreateSplittingJobs() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, "bucket");
         TableProperties tableProperties = new TableProperties(instanceProperties);
@@ -392,10 +388,10 @@ public class BasicCompactionStrategyTest {
         fileInfos.add(fileInfo2);
 
         // When
-        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, fileInfos, partitions);
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
 
         // Then
-        assertEquals(1, compactionJobs.size());
+        assertThat(compactionJobs).hasSize(1);
         CompactionJob expectedCompactionJob = new CompactionJob("table", compactionJobs.get(0).getId()); // Job id is a UUID so we don't know what it will be
         expectedCompactionJob.setPartitionId("root");
         expectedCompactionJob.setInputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()));
@@ -409,6 +405,6 @@ public class BasicCompactionStrategyTest {
         expectedCompactionJob.setDimension(0);
         expectedCompactionJob.setIteratorClassName(null);
         expectedCompactionJob.setIteratorConfig(null);
-        assertEquals(expectedCompactionJob, compactionJobs.get(0));
+        assertThat(compactionJobs).containsExactly(expectedCompactionJob);
     }
 }

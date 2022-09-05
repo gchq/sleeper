@@ -15,10 +15,6 @@
  */
 package sleeper.splitter;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
@@ -34,14 +30,19 @@ import sleeper.core.schema.type.StringType;
 import sleeper.splitter.FindPartitionsToSplitIT.TestTablePropertiesProvider;
 import sleeper.statestore.FileInfo;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 public class SplitPartitionJobDefinitionSerDeTest {
 
     @Test
     public void shouldSerialiseAndDeserialiseWithIntKey() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new IntType());
         partition.setId("123");
@@ -77,15 +78,14 @@ public class SplitPartitionJobDefinitionSerDeTest {
         SplitPartitionJobDefinition deserialised = jobDefinitionSerDe.fromJson(serialised);
 
         // Then
-        assertEquals(jobDefinition, deserialised);
+        assertThat(deserialised).isEqualTo(jobDefinition);
     }
 
     @Test
     public void shouldSerialiseAndDeserialiseWithLongKey() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new LongType());
         partition.setId("123");
@@ -121,15 +121,14 @@ public class SplitPartitionJobDefinitionSerDeTest {
         SplitPartitionJobDefinition deserialised = jobDefinitionSerDe.fromJson(serialised);
 
         // Then
-        assertEquals(jobDefinition, deserialised);
+        assertThat(deserialised).isEqualTo(jobDefinition);
     }
 
     @Test
     public void shouldSerialiseAndDeserialiseWithStringKey() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new StringType());
         partition.setId("123");
@@ -165,15 +164,14 @@ public class SplitPartitionJobDefinitionSerDeTest {
         SplitPartitionJobDefinition deserialised = jobDefinitionSerDe.fromJson(serialised);
 
         // Then
-        assertEquals(jobDefinition, deserialised);
+        assertThat(deserialised).isEqualTo(jobDefinition);
     }
 
     @Test
     public void shouldSerialiseAndDeserialiseWithStringKeyWithNullMax() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new StringType());
         partition.setId("123");
@@ -209,15 +207,14 @@ public class SplitPartitionJobDefinitionSerDeTest {
         SplitPartitionJobDefinition deserialised = jobDefinitionSerDe.fromJson(serialised);
 
         // Then
-        assertEquals(jobDefinition, deserialised);
+        assertThat(deserialised).isEqualTo(jobDefinition);
     }
 
     @Test
     public void shouldSerialiseAndDeserialiseWithByteArrayKey() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new ByteArrayType());
         partition.setId("123");
@@ -253,15 +250,14 @@ public class SplitPartitionJobDefinitionSerDeTest {
         SplitPartitionJobDefinition deserialised = jobDefinitionSerDe.fromJson(serialised);
 
         // Then
-        assertEquals(jobDefinition, deserialised);
+        assertThat(deserialised).isEqualTo(jobDefinition);
     }
 
     @Test
     public void shouldSerialiseAndDeserialiseWithByteArrayKeyWithNullMax() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Partition partition = new Partition();
         partition.setRowKeyTypes(new ByteArrayType());
         partition.setId("123");
@@ -297,6 +293,6 @@ public class SplitPartitionJobDefinitionSerDeTest {
         SplitPartitionJobDefinition deserialised = jobDefinitionSerDe.fromJson(serialised);
 
         // Then
-        assertEquals(jobDefinition, deserialised);
+        assertThat(deserialised).isEqualTo(jobDefinition);
     }
 }

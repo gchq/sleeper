@@ -28,7 +28,6 @@ import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -36,14 +35,20 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.GenericContainer;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
+import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.schema.type.Type;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -52,7 +57,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -61,16 +65,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
-import sleeper.core.key.Key;
-import sleeper.core.range.Range;
-import sleeper.core.range.Range.RangeFactory;
-import sleeper.core.range.Region;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class S3StateStoreIT {
     private static final int DYNAMO_PORT = 8000;
@@ -145,11 +142,25 @@ public class S3StateStoreIT {
         return getStateStoreFromSplitPoints(schema, Collections.EMPTY_LIST);
     }
 
+    private Schema schemaWithSingleRowKeyType(PrimitiveType type) {
+        return Schema.builder().rowKeyFields(new Field("key", type)).build();
+    }
+
+    private Schema schemaWithTwoRowKeyTypes(PrimitiveType type1, PrimitiveType type2) {
+        return Schema.builder().rowKeyFields(new Field("key1", type1), new Field("key2", type2)).build();
+    }
+
+    private Schema schemaWithKeyAndValueWithTypes(PrimitiveType keyType, Type valueType) {
+        return Schema.builder()
+                .rowKeyFields(new Field("key", keyType))
+                .valueFields(new Field("value", valueType))
+                .build();
+    }
+
     @Test
     public void shouldReturnCorrectFileInfoForLongRowKey() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new LongType());
@@ -165,23 +176,21 @@ public class S3StateStoreIT {
         stateStore.addFile(fileInfo);
 
         // Then
-        List<FileInfo> fileInfos = stateStore.getActiveFiles();
-        assertEquals(1, fileInfos.size());
-        assertEquals(1, fileInfos.get(0).getRowKeyTypes().size());
-        assertEquals(new LongType(), fileInfos.get(0).getRowKeyTypes().get(0));
-        assertEquals("abc", fileInfos.get(0).getFilename());
-        assertEquals(FileInfo.FileStatus.ACTIVE, fileInfos.get(0).getFileStatus());
-        assertEquals("1", fileInfos.get(0).getPartitionId());
-        assertEquals(Key.create(1L), fileInfos.get(0).getMinRowKey());
-        assertEquals(Key.create(10L), fileInfos.get(0).getMaxRowKey());
-        assertEquals(1_000_000L, fileInfos.get(0).getLastStateStoreUpdateTime().longValue());
+        assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
+            assertThat(found.getRowKeyTypes()).containsExactly(new LongType());
+            assertThat(found.getFilename()).isEqualTo("abc");
+            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
+            assertThat(found.getPartitionId()).isEqualTo("1");
+            assertThat(found.getMinRowKey()).isEqualTo(Key.create(1L));
+            assertThat(found.getMaxRowKey()).isEqualTo(Key.create(10L));
+            assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        });
     }
 
     @Test
     public void shouldReturnCorrectFileInfoForByteArrayKey() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
+        Schema schema = schemaWithSingleRowKeyType(new ByteArrayType());
         StateStore stateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new ByteArrayType());
@@ -189,7 +198,7 @@ public class S3StateStoreIT {
         fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
         fileInfo.setPartitionId("1");
         fileInfo.setMinRowKey(Key.create(new byte[]{1}));
-        fileInfo.setMaxRowKey(Key.create(new byte[]{10} ));
+        fileInfo.setMaxRowKey(Key.create(new byte[]{10}));
         fileInfo.setLastStateStoreUpdateTime(1_000_000L);
         fileInfo.setNumberOfRecords(1L);
 
@@ -197,25 +206,23 @@ public class S3StateStoreIT {
         stateStore.addFile(fileInfo);
 
         // Then
-        List<FileInfo> fileInfos = stateStore.getActiveFiles();
-        assertEquals(1, fileInfos.size());
-        assertEquals(1, fileInfos.get(0).getRowKeyTypes().size());
-        assertEquals(new ByteArrayType(), fileInfos.get(0).getRowKeyTypes().get(0));
-        assertEquals("abc", fileInfos.get(0).getFilename());
-        assertEquals(FileInfo.FileStatus.ACTIVE, fileInfos.get(0).getFileStatus());
-        assertEquals("1", fileInfos.get(0).getPartitionId());
-        assertEquals(1, fileInfos.get(0).getMinRowKey().size());
-        assertArrayEquals(new byte[]{1}, (byte[]) fileInfos.get(0).getMinRowKey().get(0));
-        assertEquals(1, fileInfos.get(0).getMaxRowKey().size());
-        assertArrayEquals(new byte[]{10}, (byte[]) fileInfos.get(0).getMaxRowKey().get(0));
-        assertEquals(1_000_000L, fileInfos.get(0).getLastStateStoreUpdateTime().longValue());
+        assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
+            assertThat(found.getRowKeyTypes()).containsExactly(new ByteArrayType());
+            assertThat(found.getFilename()).isEqualTo("abc");
+            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
+            assertThat(found.getPartitionId()).isEqualTo("1");
+            assertThat(found.getMinRowKey().size()).isOne();
+            assertThat((byte[]) found.getMinRowKey().get(0)).containsExactly(new byte[]{1});
+            assertThat(found.getMaxRowKey().size()).isOne();
+            assertThat((byte[]) found.getMaxRowKey().get(0)).containsExactly(new byte[]{10});
+            assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        });
     }
 
     @Test
     public void shouldReturnCorrectFileInfoFor2DimensionalByteArrayKey() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()));
+        Schema schema = schemaWithTwoRowKeyTypes(new ByteArrayType(), new ByteArrayType());
         StateStore stateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new ByteArrayType(), new ByteArrayType());
@@ -231,28 +238,25 @@ public class S3StateStoreIT {
         stateStore.addFile(fileInfo);
 
         // Then
-        List<FileInfo> fileInfos = stateStore.getActiveFiles();
-        assertEquals(1, fileInfos.size());
-        assertEquals(2, fileInfos.get(0).getRowKeyTypes().size());
-        assertEquals(new ByteArrayType(), fileInfos.get(0).getRowKeyTypes().get(0));
-        assertEquals(new ByteArrayType(), fileInfos.get(0).getRowKeyTypes().get(1));
-        assertEquals("abc", fileInfos.get(0).getFilename());
-        assertEquals(FileInfo.FileStatus.ACTIVE, fileInfos.get(0).getFileStatus());
-        assertEquals("1", fileInfos.get(0).getPartitionId());
-        assertEquals(2, fileInfos.get(0).getMinRowKey().size());
-        assertArrayEquals(new byte[]{1}, (byte[]) fileInfos.get(0).getMinRowKey().get(0));
-        assertArrayEquals(new byte[]{2}, (byte[]) fileInfos.get(0).getMinRowKey().get(1));
-        assertEquals(2, fileInfos.get(0).getMaxRowKey().size());
-        assertArrayEquals(new byte[]{10}, (byte[]) fileInfos.get(0).getMaxRowKey().get(0));
-        assertArrayEquals(new byte[]{11}, (byte[]) fileInfos.get(0).getMaxRowKey().get(1));
-        assertEquals(1_000_000L, fileInfos.get(0).getLastStateStoreUpdateTime().longValue());
+        assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
+            assertThat(found.getRowKeyTypes()).containsExactly(new ByteArrayType(), new ByteArrayType());
+            assertThat(found.getFilename()).isEqualTo("abc");
+            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
+            assertThat(found.getPartitionId()).isEqualTo("1");
+            assertThat(found.getMinRowKey().size()).isEqualTo(2);
+            assertThat((byte[]) found.getMinRowKey().get(0)).containsExactly(new byte[]{1});
+            assertThat((byte[]) found.getMinRowKey().get(1)).containsExactly(new byte[]{2});
+            assertThat(found.getMaxRowKey().size()).isEqualTo(2);
+            assertThat((byte[]) found.getMaxRowKey().get(0)).containsExactly(new byte[]{10});
+            assertThat((byte[]) found.getMaxRowKey().get(1)).containsExactly(new byte[]{11});
+            assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        });
     }
 
     @Test
     public void shouldReturnCorrectFileInfoForMultidimensionalRowKey() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new LongType()), new Field("key2", new StringType()));
+        Schema schema = schemaWithTwoRowKeyTypes(new LongType(), new StringType());
         StateStore stateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new LongType(), new StringType());
@@ -268,25 +272,21 @@ public class S3StateStoreIT {
         stateStore.addFile(fileInfo);
 
         // Then
-        List<FileInfo> fileInfos = stateStore.getActiveFiles();
-        assertEquals(1, fileInfos.size());
-        assertEquals("abc", fileInfo.getFilename());
-        assertEquals(2, fileInfos.get(0).getRowKeyTypes().size());
-        assertEquals(new LongType(), fileInfos.get(0).getRowKeyTypes().get(0));
-        assertEquals(new StringType(), fileInfos.get(0).getRowKeyTypes().get(1));
-        assertEquals("abc", fileInfos.get(0).getFilename());
-        assertEquals(FileInfo.FileStatus.ACTIVE, fileInfos.get(0).getFileStatus());
-        assertEquals("1", fileInfos.get(0).getPartitionId());
-        assertEquals(Key.create(Arrays.asList(1L, "Z")), fileInfos.get(0).getMinRowKey());
-        assertEquals(Key.create(Arrays.asList(10L, "A")), fileInfos.get(0).getMaxRowKey());
-        assertEquals(1_000_000L, fileInfos.get(0).getLastStateStoreUpdateTime().longValue());
+        assertThat(stateStore.getActiveFiles()).singleElement().satisfies(found -> {
+            assertThat(found.getRowKeyTypes()).containsExactly(new LongType(), new StringType());
+            assertThat(found.getFilename()).isEqualTo("abc");
+            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
+            assertThat(found.getPartitionId()).isEqualTo("1");
+            assertThat(found.getMinRowKey()).isEqualTo(Key.create(Arrays.asList(1L, "Z")));
+            assertThat(found.getMaxRowKey()).isEqualTo(Key.create(Arrays.asList(10L, "A")));
+            assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        });
     }
 
     @Test
     public void shouldReturnAllFileInfos() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
         Set<FileInfo> expected = new HashSet<>();
         for (int i = 0; i < 10000; i++) {
@@ -307,15 +307,13 @@ public class S3StateStoreIT {
         List<FileInfo> fileInfos = stateStore.getActiveFiles();
 
         // Then
-        assertEquals(10000, fileInfos.size());
-        assertEquals(expected, new HashSet<>(fileInfos));
+        assertThat(fileInfos).hasSize(10000).containsExactlyInAnyOrderElementsOf(expected);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testExceptionThrownWhenAddingFileInfoWithMissingFilename() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new LongType());
@@ -327,14 +325,14 @@ public class S3StateStoreIT {
         fileInfo.setNumberOfRecords(1L);
 
         // When / Then
-        stateStore.addFile(fileInfo);
+        assertThatThrownBy(() -> stateStore.addFile(fileInfo))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testExceptionThrownWhenAddingFileInfoWithMissingStatus() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new LongType());
@@ -346,14 +344,14 @@ public class S3StateStoreIT {
         fileInfo.setNumberOfRecords(1L);
 
         // When / Then
-        stateStore.addFile(fileInfo);
+        assertThatThrownBy(() -> stateStore.addFile(fileInfo))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testExceptionThrownWhenAddingFileInfoWithMissingPartition() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new LongType());
@@ -365,14 +363,14 @@ public class S3StateStoreIT {
         fileInfo.setNumberOfRecords(1L);
 
         // When / Then
-        stateStore.addFile(fileInfo);
+        assertThatThrownBy(() -> stateStore.addFile(fileInfo))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void shouldAddFilesUnderContention() throws IOException, StateStoreException, InterruptedException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
         ExecutorService executorService = Executors.newFixedThreadPool(20);
         List<FileInfo> files = new ArrayList<>();
@@ -410,17 +408,14 @@ public class S3StateStoreIT {
             retries++;
             activeFiles = stateStore.getActiveFiles();
         }
-        assertEquals(20, activeFiles.size());
-        assertEquals(new HashSet<>(files), new HashSet<>(activeFiles));
+        assertThat(activeFiles).hasSize(20).containsExactlyInAnyOrderElementsOf(files);
         executorService.shutdown();
     }
 
     @Test
     public void testGetFilesThatAreReadyForGC() throws IOException, InterruptedException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setValueFields(new Field("value", new StringType()));
+        Schema schema = schemaWithKeyAndValueWithTypes(new IntType(), new StringType());
         StateStore stateStore = getStateStore(schema, 5);
         Partition partition = stateStore.getAllPartitions().get(0);
         //  - A file which should be garbage collected immediately
@@ -460,39 +455,22 @@ public class S3StateStoreIT {
 
         // When 1
         Iterator<FileInfo> readyForGCFilesIterator = stateStore.getReadyForGCFiles();
-        List<FileInfo> readyForGCFiles = new ArrayList<>();
-        while (readyForGCFilesIterator.hasNext()) {
-            readyForGCFiles.add(readyForGCFilesIterator.next());
-        }
 
         // Then 1
-        assertEquals(1, readyForGCFiles.size());
-        assertEquals(fileInfo1, readyForGCFiles.get(0));
+        assertThat(readyForGCFilesIterator).toIterable().containsExactly(fileInfo1);
 
         // When 2
         Thread.sleep(9000L);
         readyForGCFilesIterator = stateStore.getReadyForGCFiles();
-        readyForGCFiles.clear();
-        while (readyForGCFilesIterator.hasNext()) {
-            readyForGCFiles.add(readyForGCFilesIterator.next());
-        }
 
         // Then 2
-        assertEquals(2, readyForGCFiles.size());
-        if (readyForGCFiles.get(0).getFilename().equals(fileInfo1.getFilename())) {
-            assertEquals(fileInfo1, readyForGCFiles.get(0));
-            assertEquals(fileInfo3, readyForGCFiles.get(1));
-        } else {
-            assertEquals(fileInfo3, readyForGCFiles.get(0));
-            assertEquals(fileInfo1, readyForGCFiles.get(1));
-        }
+        assertThat(readyForGCFilesIterator).toIterable().containsExactlyInAnyOrder(fileInfo1, fileInfo3);
     }
 
     @Test
     public void shouldReturnOnlyActiveFilesWithNoJobId() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
         FileInfo fileInfo1 = new FileInfo();
         fileInfo1.setRowKeyTypes(new LongType());
@@ -530,18 +508,13 @@ public class S3StateStoreIT {
         List<FileInfo> fileInfos = stateStore.getActiveFilesWithNoJobId();
 
         // Then
-        assertEquals(2, fileInfos.size());
-        List<FileInfo> expectedFileInfos = new ArrayList<>();
-        expectedFileInfos.add(fileInfo1);
-        expectedFileInfos.add(fileInfo2);
-        assertEquals(expectedFileInfos, fileInfos);
+        assertThat(fileInfos).containsExactly(fileInfo1, fileInfo2);
     }
 
     @Test
     public void shouldDeleteReadyForGCFile() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
         FileInfo fileInfo1 = new FileInfo();
         fileInfo1.setRowKeyTypes(new LongType());
@@ -565,20 +538,16 @@ public class S3StateStoreIT {
 
         // When
         stateStore.deleteReadyForGCFile(fileInfo2);
-        List<FileInfo> active = stateStore.getActiveFiles();
-        Iterator<FileInfo> readyForGC = stateStore.getReadyForGCFiles();
 
         // Then
-        assertEquals(1, active.size());
-        assertFalse(readyForGC.hasNext());
-        assertEquals(fileInfo1, active.get(0));
+        assertThat(stateStore.getActiveFiles()).containsExactly(fileInfo1);
+        assertThat(stateStore.getReadyForGCFiles()).isExhausted();
     }
 
-    @Test(expected = StateStoreException.class)
+    @Test
     public void shouldNotDeleteReadyForGCFileIfNotMarkedAsReadyForGC() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
         FileInfo fileInfo1 = new FileInfo();
         fileInfo1.setRowKeyTypes(new LongType());
@@ -601,14 +570,14 @@ public class S3StateStoreIT {
         stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2));
 
         // When
-        stateStore.deleteReadyForGCFile(fileInfo1);
+        assertThatThrownBy(() -> stateStore.deleteReadyForGCFile(fileInfo1))
+                .isInstanceOf(StateStoreException.class);
     }
 
     @Test
     public void shouldAtomicallyUpdateStatusToReadyForGCAndCreateNewActiveFile() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
@@ -636,24 +605,16 @@ public class S3StateStoreIT {
 
         // When
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToMoveToReadyForGC, newFileInfo);
-        List<FileInfo> filesReadyForGC = new ArrayList<>();
-        Iterator<FileInfo> filesReadyForGCIterator = stateStore.getReadyForGCFiles();
-        while (filesReadyForGCIterator.hasNext()) {
-            filesReadyForGC.add(filesReadyForGCIterator.next());
-        }
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
 
         // Then
-        assertEquals(4, filesReadyForGC.size());
-        assertEquals(1, activeFiles.size());
-        assertEquals(newFileInfo, activeFiles.get(0));
+        assertThat(stateStore.getActiveFiles()).containsExactly(newFileInfo);
+        assertThat(stateStore.getReadyForGCFiles()).toIterable().hasSize(4);
     }
 
     @Test
     public void shouldAtomicallyUpdateStatusToReadyForGCAndCreateNewActiveFilesForSplittingJob() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
@@ -690,28 +651,16 @@ public class S3StateStoreIT {
 
         // When
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo);
-        List<FileInfo> filesReadyForGC = new ArrayList<>();
-        Iterator<FileInfo> filesReadyForGCIterator = stateStore.getReadyForGCFiles();
-        while (filesReadyForGCIterator.hasNext()) {
-            filesReadyForGC.add(filesReadyForGCIterator.next());
-        }
-        List<FileInfo> activeFiles = stateStore.getActiveFiles()
-                .stream()
-                .sorted(Comparator.comparing(FileInfo::getFilename)) // Put the left file first to make the following tests simpler
-                .collect(Collectors.toList());
 
         // Then
-        assertEquals(4, filesReadyForGC.size());
-        assertEquals(2, activeFiles.size());
-        assertEquals(newLeftFileInfo, activeFiles.get(0));
-        assertEquals(newRightFileInfo, activeFiles.get(1));
+        assertThat(stateStore.getActiveFiles()).containsExactlyInAnyOrder(newLeftFileInfo, newRightFileInfo);
+        assertThat(stateStore.getReadyForGCFiles()).toIterable().hasSize(4);
     }
 
-    @Test(expected = StateStoreException.class)
+    @Test
     public void atomicallyUpdateStatusToReadyForGCAndCreateNewActiveFileShouldFailIfFilesNotActive() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
@@ -740,14 +689,15 @@ public class S3StateStoreIT {
         newFileInfo.setNumberOfRecords(1L);
 
         // When / Then
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToMoveToReadyForGC, newFileInfo);
+        assertThatThrownBy(() ->
+                stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToMoveToReadyForGC, newFileInfo))
+                .isInstanceOf(StateStoreException.class);
     }
 
-    @Test(expected = StateStoreException.class)
+    @Test
     public void atomicallyUpdateStatusToReadyForGCAndCreateNewActiveFilesShouldFailIfFilesNotActive() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
@@ -786,14 +736,15 @@ public class S3StateStoreIT {
         stateStore.addFiles(filesToMoveToReadyForGC);
 
         // When / Then
-        stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo);
+        assertThatThrownBy(() ->
+                stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo))
+                .isInstanceOf(StateStoreException.class);
     }
 
     @Test
     public void shouldAtomicallyUpdateJobStatusOfFiles() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> files = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
@@ -815,23 +766,17 @@ public class S3StateStoreIT {
         stateStore.atomicallyUpdateJobStatusOfFiles(jobId, files);
 
         // Then
-        Set<FileInfo> updatedFiles = new HashSet<>(stateStore.getActiveFiles());
-        assertEquals(4, updatedFiles.size());
-        Set<FileInfo> expectedFiles = files.stream()
-                .map(f -> {
-                    f.setJobId(jobId);
-                    return f;
-                })
-                .collect(Collectors.toSet());
-        assertEquals(expectedFiles, updatedFiles);
-        assertFalse(stateStore.getReadyForGCFiles().hasNext());
+        assertThat(stateStore.getActiveFiles()).hasSize(4)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId")
+                .containsExactlyInAnyOrderElementsOf(files)
+                .extracting(FileInfo::getJobId).containsOnly(jobId);
+        assertThat(stateStore.getReadyForGCFiles()).isExhausted();
     }
 
-    @Test(expected = StateStoreException.class)
+    @Test
     public void shouldNotAtomicallyCreateJobAndUpdateJobStatusOfFilesWhenJobIdAlreadySet() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> files = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
@@ -851,65 +796,54 @@ public class S3StateStoreIT {
         String jobId = UUID.randomUUID().toString();
 
         // When / Then
-        stateStore.atomicallyUpdateJobStatusOfFiles(jobId, files);
+        assertThatThrownBy(() ->
+                stateStore.atomicallyUpdateJobStatusOfFiles(jobId, files))
+                .isInstanceOf(StateStoreException.class);
     }
 
     @Test
     public void shouldCorrectlyInitialisePartitionsWithLongKeyType() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         List<Partition> partitions = new PartitionsFromSplitPoints(schema, Collections.singletonList(100L))
                 .construct();
         StateStore stateStore = getStateStore(schema, partitions);
 
-        // When
-        List<Partition> allPartitions = stateStore.getAllPartitions();
-
-        // Then
-        assertEquals(new HashSet<>(partitions), new HashSet<>(allPartitions));
+        // When / Then
+        assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions);
     }
 
     @Test
     public void shouldCorrectlyInitialisePartitionsWithStringKeyType() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new StringType()));
+        Schema schema = schemaWithSingleRowKeyType(new StringType());
         List<Partition> partitions = new PartitionsFromSplitPoints(schema, Collections.singletonList("A"))
                 .construct();
         StateStore stateStore = getStateStore(schema, partitions);
 
-        // When
-        List<Partition> allPartitions = stateStore.getAllPartitions();
-
-        // Then
-        assertEquals(new HashSet<>(partitions), new HashSet<>(allPartitions));
+        // When / Then
+        assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions);
     }
 
     @Test
     public void shouldCorrectlyInitialisePartitionsWithByteArrayKeyType() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
+        Schema schema = schemaWithSingleRowKeyType(new ByteArrayType());
         byte[] min = new byte[]{1, 2, 3, 4};
         List<Partition> partitions = new PartitionsFromSplitPoints(schema, Arrays.asList(min))
                 .construct();
         StateStore stateStore = getStateStore(schema, partitions);
 
-        // When
-        List<Partition> allPartitions = stateStore.getAllPartitions();
-
-        // Then
-        assertEquals(new HashSet<>(partitions), new HashSet<>(allPartitions));
+        // When / Then
+        assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions);
     }
 
     @Test
     public void shouldCorrectlyStorePartitionWithMultidimensionalKeyType() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new ByteArrayType());
         Field field2 = new Field("key2", new ByteArrayType());
-        schema.setRowKeyFields(field1, field2);
+        Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
         byte[] min1 = new byte[]{1, 2, 3, 4};
         byte[] min2 = new byte[]{99, 5};
         byte[] max1 = new byte[]{5, 6, 7, 8, 9};
@@ -925,21 +859,20 @@ public class S3StateStoreIT {
         Partition retrievedPartition = stateStore.getAllPartitions().get(0);
 
         // Then
-        Assert.assertArrayEquals((byte[]) partition.getRegion().getRange("key1").getMin(), (byte[]) retrievedPartition.getRegion().getRange("key1").getMin());
-        Assert.assertArrayEquals((byte[]) partition.getRegion().getRange("key1").getMax(), (byte[]) retrievedPartition.getRegion().getRange("key1").getMax());
-        Assert.assertArrayEquals((byte[]) partition.getRegion().getRange("key2").getMin(), (byte[]) retrievedPartition.getRegion().getRange("key2").getMin());
-        Assert.assertArrayEquals((byte[]) partition.getRegion().getRange("key2").getMax(), (byte[]) retrievedPartition.getRegion().getRange("key2").getMax());
-        assertEquals(partition.getId(), retrievedPartition.getId());
-        assertEquals(partition.getParentPartitionId(), retrievedPartition.getParentPartitionId());
-        assertEquals(partition.getChildPartitionIds(), retrievedPartition.getChildPartitionIds());
+        assertThat((byte[]) retrievedPartition.getRegion().getRange("key1").getMin()).containsExactly((byte[]) partition.getRegion().getRange("key1").getMin());
+        assertThat((byte[]) retrievedPartition.getRegion().getRange("key1").getMax()).containsExactly((byte[]) partition.getRegion().getRange("key1").getMax());
+        assertThat((byte[]) retrievedPartition.getRegion().getRange("key2").getMin()).containsExactly((byte[]) partition.getRegion().getRange("key2").getMin());
+        assertThat((byte[]) retrievedPartition.getRegion().getRange("key2").getMax()).containsExactly((byte[]) partition.getRegion().getRange("key2").getMax());
+        assertThat(retrievedPartition.getId()).isEqualTo(partition.getId());
+        assertThat(retrievedPartition.getParentPartitionId()).isEqualTo(partition.getParentPartitionId());
+        assertThat(retrievedPartition.getChildPartitionIds()).isEqualTo(partition.getChildPartitionIds());
     }
 
     @Test
     public void shouldCorrectlyStoreNonLeafPartitionWithByteArrayKeyType() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         byte[] min = new byte[]{1, 2, 3, 4};
         byte[] max = new byte[]{5, 6, 7, 8, 9};
         Range range = new RangeFactory(schema).createRange(field.getName(), min, max);
@@ -952,20 +885,19 @@ public class S3StateStoreIT {
         Partition retrievedPartition = stateStore.getAllPartitions().get(0);
 
         // Then
-        Assert.assertArrayEquals((byte[]) partition.getRegion().getRange("key").getMin(), (byte[]) retrievedPartition.getRegion().getRange("key").getMin());
-        Assert.assertArrayEquals((byte[]) partition.getRegion().getRange("key").getMax(), (byte[]) retrievedPartition.getRegion().getRange("key").getMax());
-        assertEquals(partition.getId(), retrievedPartition.getId());
-        assertEquals(partition.getParentPartitionId(), retrievedPartition.getParentPartitionId());
-        assertEquals(partition.getChildPartitionIds(), retrievedPartition.getChildPartitionIds());
-        assertEquals(partition.getDimension(), retrievedPartition.getDimension());
+        assertThat((byte[]) retrievedPartition.getRegion().getRange("key").getMin()).containsExactly((byte[]) partition.getRegion().getRange("key").getMin());
+        assertThat((byte[]) retrievedPartition.getRegion().getRange("key").getMax()).containsExactly((byte[]) partition.getRegion().getRange("key").getMax());
+        assertThat(retrievedPartition.getId()).isEqualTo(partition.getId());
+        assertThat(retrievedPartition.getParentPartitionId()).isEqualTo(partition.getParentPartitionId());
+        assertThat(retrievedPartition.getChildPartitionIds()).isEqualTo(partition.getChildPartitionIds());
+        assertThat(retrievedPartition.getDimension()).isEqualTo(partition.getDimension());
     }
 
     @Test
     public void shouldReturnCorrectPartitionToFileMapping() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> files = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
@@ -986,22 +918,21 @@ public class S3StateStoreIT {
         Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
 
         // Then
-        assertEquals(5, partitionToFileMapping.entrySet().size());
+        assertThat(partitionToFileMapping.entrySet()).hasSize(5);
         for (int i = 0; i < 5; i++) {
-            assertEquals(2, partitionToFileMapping.get("" + i).size());
+            assertThat(partitionToFileMapping.get("" + i)).hasSize(2);
             Set<String> expected = new HashSet<>();
             expected.add(files.get(i).getFilename());
             expected.add(files.get(i + 5).getFilename());
-            assertEquals(expected, new HashSet<>(partitionToFileMapping.get("" + i)));
+            assertThat(new HashSet<>(partitionToFileMapping.get("" + i))).isEqualTo(expected);
         }
     }
 
     @Test
     public void shouldReturnAllPartitions() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Region region0 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 1L));
         Partition partition0 = new Partition(schema.getRowKeyTypes(), region0, "id0", true, "root", new ArrayList<>(), -1);
         Region region1 = new Region(new RangeFactory(schema).createRange(field, 1L, 100L));
@@ -1026,18 +957,14 @@ public class S3StateStoreIT {
         });
 
         // Then
-        assertEquals(partition0, retrievedPartitions.get(0));
-        assertEquals(partition1, retrievedPartitions.get(1));
-        assertEquals(partition2, retrievedPartitions.get(2));
-        assertEquals(partition3, retrievedPartitions.get(3));
+        assertThat(retrievedPartitions).containsExactly(partition0, partition1, partition2, partition3);
     }
 
     @Test
     public void shouldReturnLeafPartitions() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition rootPartition = dynamoDBStateStore.getAllPartitions().get(0);
         Region region1 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 1L));
@@ -1069,17 +996,14 @@ public class S3StateStoreIT {
         });
 
         // Then
-        assertEquals(partition1, retrievedPartitions.get(0));
-        assertEquals(partition3, retrievedPartitions.get(1));
-        assertEquals(partition4, retrievedPartitions.get(2));
+        assertThat(retrievedPartitions).containsExactly(partition1, partition3, partition4);
     }
 
     @Test
     public void shouldUpdatePartitions() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
 
@@ -1108,22 +1032,16 @@ public class S3StateStoreIT {
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
 
         // Then
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertEquals(new HashSet<>(Arrays.asList(parentPartition, childPartition1, childPartition2)), new HashSet<>(partitions));
+        assertThat(dynamoDBStateStore.getAllPartitions())
+                .containsExactlyInAnyOrder(parentPartition, childPartition1, childPartition2);
     }
 
-    @Test(expected = StateStoreException.class)
+    @Test
     public void shouldNotUpdatePartitionsIfLeafStatusChanges() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        StateStore dynamoDBStateStore = null;
-        try {
-            dynamoDBStateStore = getStateStore(schema);
-        } catch (StateStoreException e) {
-            fail(e.getMessage());
-        }
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
@@ -1141,28 +1059,24 @@ public class S3StateStoreIT {
         childPartition2.setId("child2");
         Region region2 = new Region(new RangeFactory(schema).createRange(field, 0L, null));
         childPartition2.setRegion(region2);
-        
+
         childPartition2.setChildPartitionIds(new ArrayList<>());
         childPartition2.setParentPartitionId(parentPartition.getId());
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
 
         // When / Then
         //  - Attempting to split something that has already been split should fail
-        dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
+        assertThatThrownBy(() ->
+                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2))
+                .isInstanceOf(StateStoreException.class);
     }
 
-    @Test(expected = StateStoreException.class)
+    @Test
     public void shouldThrowExceptionWithPartitionSplitRequestWhereParentIsLeaf() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        StateStore dynamoDBStateStore = null;
-        try {
-            dynamoDBStateStore = getStateStore(schema);
-        } catch (StateStoreException e) {
-            fail(e.getMessage());
-        }
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
         Partition childPartition1 = new Partition();
@@ -1183,21 +1097,17 @@ public class S3StateStoreIT {
         childPartition2.setParentPartitionId("parent");
 
         // When / Then
-        dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
+        assertThatThrownBy(() ->
+                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2))
+                .isInstanceOf(StateStoreException.class);
     }
 
-    @Test(expected = StateStoreException.class)
+    @Test
     public void shouldThrowExceptionWithPartitionSplitRequestWhereChildrenWrong() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        StateStore dynamoDBStateStore = null;
-        try {
-            dynamoDBStateStore = getStateStore(schema);
-        } catch (StateStoreException e) {
-            fail(e.getMessage());
-        }
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child3", "child2")); // Wrong children
@@ -1219,21 +1129,17 @@ public class S3StateStoreIT {
         childPartition2.setParentPartitionId("parent");
 
         // When / Then
-        dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
+        assertThatThrownBy(() ->
+                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2))
+                .isInstanceOf(StateStoreException.class);
     }
 
-    @Test(expected = StateStoreException.class)
+    @Test
     public void shouldThrowExceptionWithPartitionSplitRequestWhereParentWrong() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        StateStore dynamoDBStateStore = null;
-        try {
-            dynamoDBStateStore = getStateStore(schema);
-        } catch (StateStoreException e) {
-            fail(e.getMessage());
-        }
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
@@ -1255,21 +1161,17 @@ public class S3StateStoreIT {
         childPartition2.setParentPartitionId("parent");
 
         // When / Then
-        dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
+        assertThatThrownBy(() ->
+                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2))
+                .isInstanceOf(StateStoreException.class);
     }
 
-    @Test(expected = StateStoreException.class)
+    @Test
     public void shouldThrowExceptionWithPartitionSplitRequestWhereNewPartitionIsNotLeaf() throws IOException, StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        StateStore dynamoDBStateStore = null;
-        try {
-            dynamoDBStateStore = getStateStore(schema);
-        } catch (StateStoreException e) {
-            fail(e.getMessage());
-        }
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
@@ -1291,82 +1193,80 @@ public class S3StateStoreIT {
         childPartition2.setParentPartitionId("parent");
 
         // When / Then
-        dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
+        assertThatThrownBy(() ->
+                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2))
+                .isInstanceOf(StateStoreException.class);
     }
 
     @Test
     public void shouldInitialiseRootPartitionCorrectlyForIntKey() throws StateStoreException, IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         StateStore dynamoDBStateStore = getStateStore(schema);
 
         // When
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
 
         // Then
-        assertEquals(1, partitions.size());
+        assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, null));
         Partition expectedPartition = new Partition(schema.getRowKeyTypes(),
                 expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
-        assertEquals(expectedPartition, partitions.get(0));
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
     public void shouldInitialiseRootPartitionCorrectlyForLongKey() throws StateStoreException, IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         StateStore dynamoDBStateStore = getStateStore(schema);
 
         // When
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
 
         // Then
-        assertEquals(1, partitions.size());
+        assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null));
         Partition expectedPartition = new Partition(Collections.singletonList(new LongType()),
                 expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
-        assertEquals(expectedPartition, partitions.get(0));
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
     public void shouldInitialiseRootPartitionCorrectlyForStringKey() throws StateStoreException, IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         StateStore dynamoDBStateStore = getStateStore(schema);
 
         // When
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
 
         // Then
-        assertEquals(1, partitions.size());
+        assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, "", null));
         Partition expectedPartition = new Partition(Collections.singletonList(new StringType()),
                 expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
-        assertEquals(expectedPartition, partitions.get(0));
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
     public void shouldInitialiseRootPartitionCorrectlyForByteArrayKey() throws StateStoreException, IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         StateStore dynamoDBStateStore = getStateStore(schema);
 
         // When
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
 
         // Then
-        assertEquals(1, partitions.size());
+        assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, new byte[]{}, null));
         Partition expectedPartition = new Partition(Collections.singletonList(new ByteArrayType()),
                 expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
-        assertEquals(expectedPartition, partitions.get(0));
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 }

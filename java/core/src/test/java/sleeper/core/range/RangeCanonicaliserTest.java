@@ -15,58 +15,55 @@
  */
 package sleeper.core.range;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 public class RangeCanonicaliserTest {
-    
+
     @Test
     public void shouldAnswerIsRangeInCanonicalFormCorrectly() {
-       // Given
-       Schema schema = new Schema();
-       Field field = new Field("key", new IntType());
-       schema.setRowKeyFields(field);
-       RangeFactory rangeFactory = new RangeFactory(schema);
-       Range range1 = rangeFactory.createRange(field, 1, 10);
-       Range range2 = rangeFactory.createRange(field, 1, true, 10, true);
-       Range range3 = rangeFactory.createRange(field, 1, false, 10, true);
-       Range range4 = rangeFactory.createRange(field, 1, false, 10, false);
-       
-       // When / Then
-       assertTrue(RangeCanonicaliser.isRangeInCanonicalForm(range1));
-       assertFalse(RangeCanonicaliser.isRangeInCanonicalForm(range2));
-       assertFalse(RangeCanonicaliser.isRangeInCanonicalForm(range3));
-       assertFalse(RangeCanonicaliser.isRangeInCanonicalForm(range4));
+        // Given
+        Field field = new Field("key", new IntType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        Range range1 = rangeFactory.createRange(field, 1, 10);
+        Range range2 = rangeFactory.createRange(field, 1, true, 10, true);
+        Range range3 = rangeFactory.createRange(field, 1, false, 10, true);
+        Range range4 = rangeFactory.createRange(field, 1, false, 10, false);
+
+        // When / Then
+        assertThat(RangeCanonicaliser.isRangeInCanonicalForm(range1)).isTrue();
+        assertThat(RangeCanonicaliser.isRangeInCanonicalForm(range2)).isFalse();
+        assertThat(RangeCanonicaliser.isRangeInCanonicalForm(range3)).isFalse();
+        assertThat(RangeCanonicaliser.isRangeInCanonicalForm(range4)).isFalse();
     }
-    
+
     @Test
     public void shouldCanonicaliseRangeCorrectly() {
-       // Given
-       Schema schema = new Schema();
-       Field field = new Field("key", new IntType());
-       schema.setRowKeyFields(field);
-       RangeFactory rangeFactory = new RangeFactory(schema);
-       Range range1 = rangeFactory.createRange(field, 1, 10);
-       Range range2 = rangeFactory.createRange(field, 1, true, 10, true);
-       Range range3 = rangeFactory.createRange(field, 1, false, 10, true);
-       Range range4 = rangeFactory.createRange(field, 1, false, 10, false);
-       
-       // When
-       Range canonicalisedRange1 = RangeCanonicaliser.canonicaliseRange(range1);
-       Range canonicalisedRange2 = RangeCanonicaliser.canonicaliseRange(range2);
-       Range canonicalisedRange3 = RangeCanonicaliser.canonicaliseRange(range3);
-       Range canonicalisedRange4 = RangeCanonicaliser.canonicaliseRange(range4);
-       
-       // Then
-       assertEquals(range1, canonicalisedRange1);
-       assertEquals(rangeFactory.createRange(field, 1, 11), canonicalisedRange2);
-       assertEquals(rangeFactory.createRange(field, 2, 11), canonicalisedRange3);
-       assertEquals(rangeFactory.createRange(field, 2, 10), canonicalisedRange4);
+        // Given
+        Field field = new Field("key", new IntType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        Range range1 = rangeFactory.createRange(field, 1, 10);
+        Range range2 = rangeFactory.createRange(field, 1, true, 10, true);
+        Range range3 = rangeFactory.createRange(field, 1, false, 10, true);
+        Range range4 = rangeFactory.createRange(field, 1, false, 10, false);
+
+        // When
+        Range canonicalisedRange1 = RangeCanonicaliser.canonicaliseRange(range1);
+        Range canonicalisedRange2 = RangeCanonicaliser.canonicaliseRange(range2);
+        Range canonicalisedRange3 = RangeCanonicaliser.canonicaliseRange(range3);
+        Range canonicalisedRange4 = RangeCanonicaliser.canonicaliseRange(range4);
+
+        // Then
+        assertThat(canonicalisedRange1).isEqualTo(range1);
+        assertThat(canonicalisedRange2).isEqualTo(rangeFactory.createRange(field, 1, 11));
+        assertThat(canonicalisedRange3).isEqualTo(rangeFactory.createRange(field, 2, 11));
+        assertThat(canonicalisedRange4).isEqualTo(rangeFactory.createRange(field, 2, 10));
     }
 }

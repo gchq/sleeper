@@ -23,28 +23,28 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class SchemaSerDeTest {
 
     @Test
     public void shouldSerDeCorrectly() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("column1", new IntType()), new Field("column1", new LongType()));
-        schema.setSortKeyFields(new Field("column3", new StringType()), new Field("column4", new ByteArrayType()));
-        schema.setValueFields(
-                new Field("column5", new MapType(new IntType(), new StringType())),
-                new Field("column6", new ByteArrayType()),
-                new Field("column7", new ListType(new StringType()))
-        );
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new IntType()), new Field("column2", new LongType()))
+                .sortKeyFields(new Field("column3", new StringType()), new Field("column4", new ByteArrayType()))
+                .valueFields(
+                        new Field("column5", new MapType(new IntType(), new StringType())),
+                        new Field("column6", new ByteArrayType()),
+                        new Field("column7", new ListType(new StringType())))
+                .build();
         SchemaSerDe schemaSerDe = new SchemaSerDe();
 
         // When
         Schema read = schemaSerDe.fromJson(schemaSerDe.toJson(schema));
 
         // Then
-        assertEquals(schema, read);
+        assertThat(read).isEqualTo(schema);
     }
 
     @Test
@@ -57,7 +57,7 @@ public class SchemaSerDeTest {
                 "      \"type\": \"IntType\"\n" +
                 "    },\n" +
                 "    {\n" +
-                "      \"name\": \"column1\",\n" +
+                "      \"name\": \"column2\",\n" +
                 "      \"type\": \"LongType\"\n" +
                 "    }\n" +
                 "  ],\n" +
@@ -101,14 +101,14 @@ public class SchemaSerDeTest {
         Schema deserialisedSchema = schemaSerDe.fromJson(jsonSchema);
 
         // Then
-        Schema expectedSchema = new Schema();
-        expectedSchema.setRowKeyFields(new Field("column1", new IntType()), new Field("column1", new LongType()));
-        expectedSchema.setSortKeyFields(new Field("column3", new StringType()), new Field("column4", new ByteArrayType()));
-        expectedSchema.setValueFields(
-                new Field("column5", new MapType(new IntType(), new StringType())),
-                new Field("column6", new ByteArrayType()),
-                new Field("column7", new ListType(new StringType()))
-        );
-        assertEquals(expectedSchema, deserialisedSchema);
+        Schema expectedSchema = Schema.builder()
+                .rowKeyFields(new Field("column1", new IntType()), new Field("column2", new LongType()))
+                .sortKeyFields(new Field("column3", new StringType()), new Field("column4", new ByteArrayType()))
+                .valueFields(
+                        new Field("column5", new MapType(new IntType(), new StringType())),
+                        new Field("column6", new ByteArrayType()),
+                        new Field("column7", new ListType(new StringType())))
+                .build();
+        assertThat(deserialisedSchema).isEqualTo(expectedSchema);
     }
 }

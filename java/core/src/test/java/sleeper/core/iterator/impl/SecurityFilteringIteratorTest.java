@@ -18,54 +18,60 @@ package sleeper.core.iterator.impl;
 import org.junit.Test;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class SecurityFilteringIteratorTest {
-    
+
     @Test
     public void shouldFilter() {
         // Given
         List<Record> records = getData();
         Iterator<Record> iterator = records.iterator();
         SecurityFilteringIterator securityFilteringIterator = new SecurityFilteringIterator();
-        securityFilteringIterator.init("securityLabel,public", new Schema());
-        
+        securityFilteringIterator.init("securityLabel,public", getSchema());
+
         // When
         Iterator<Record> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
-        
+
         // Then
-        assertTrue(filtered.hasNext());
-        assertEquals(records.get(0), filtered.next());
-        assertTrue(filtered.hasNext());
-        assertEquals(records.get(2), filtered.next());
-        assertFalse(filtered.hasNext());
+        assertThat(filtered).toIterable()
+                .containsExactly(records.get(0), records.get(2));
     }
-    
+
     @Test
     public void shouldAllowRecordsWithEmptyVisibilitiesEvenIfNoAuths() {
         // Given
         List<Record> records = getData();
         Iterator<Record> iterator = records.iterator();
         SecurityFilteringIterator securityFilteringIterator = new SecurityFilteringIterator();
-        securityFilteringIterator.init("securityLabel", new Schema());
-        
+        securityFilteringIterator.init("securityLabel", getSchema());
+
         // When
         Iterator<Record> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
-        
+
         // Then
-        assertTrue(filtered.hasNext());
-        assertEquals(records.get(2), filtered.next());
-        assertFalse(filtered.hasNext());
+        assertThat(filtered).toIterable()
+                .containsExactly(records.get(2));
     }
-    
+
+    private static Schema getSchema() {
+        return Schema.builder()
+                .rowKeyFields(new Field("field1", new StringType()))
+                .valueFields(
+                        new Field("field2", new LongType()),
+                        new Field("securityLabel", new StringType()))
+                .build();
+    }
+
     private static List<Record> getData() {
         List<Record> records = new ArrayList<>();
         Record record1 = new Record();

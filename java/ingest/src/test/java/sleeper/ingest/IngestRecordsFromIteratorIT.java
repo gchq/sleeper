@@ -66,10 +66,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class IngestRecordsFromIteratorIT {
     private static final int DYNAMO_PORT = 8000;
@@ -80,6 +86,16 @@ public class IngestRecordsFromIteratorIT {
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+
+    private final Field field = new Field("key", new LongType());
+    private final Schema schema = schemaWithRowKeys(field);
+
+    private Schema schemaWithRowKeys(Field... fields) {
+        return Schema.builder()
+                .rowKeyFields(fields)
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
+    }
 
     public static List<Record> getRecords() {
         List<Record> records = new ArrayList<>();
@@ -243,9 +259,6 @@ public class IngestRecordsFromIteratorIT {
     @Test
     public void shouldWriteRecordsCorrectly() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         DynamoDBStateStore stateStore = getStateStore(schema);
         String localDir = folder.newFolder().getAbsolutePath();
 
@@ -268,15 +281,15 @@ public class IngestRecordsFromIteratorIT {
 
         // Then:
         //  - Check the correct number of records were written
-        assertEquals(getRecords().size(), numWritten);
+        assertThat(numWritten).isEqualTo(getRecords().size());
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertEquals(1, activeFiles.size());
+        assertThat(activeFiles).hasSize(1);
         FileInfo fileInfo = activeFiles.get(0);
-        assertEquals(1L, (long) fileInfo.getMinRowKey().get(0));
-        assertEquals(3L, (long) fileInfo.getMaxRowKey().get(0));
-        assertEquals(2L, fileInfo.getNumberOfRecords().longValue());
-        assertEquals(stateStore.getAllPartitions().get(0).getId(), fileInfo.getPartitionId());
+        assertThat((long) fileInfo.getMinRowKey().get(0)).isOne();
+        assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(3L);
+        assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
+        assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         //  - Read file and check it has correct records
         ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(fileInfo.getFilename()), schema).build();
         List<Record> readRecords = new ArrayList<>();
@@ -287,31 +300,25 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertEquals(2, readRecords.size());
-        assertEquals(getRecords().get(0), readRecords.get(0));
-        assertEquals(getRecords().get(1), readRecords.get(1));
+        assertThat(readRecords).containsExactly(getRecords().get(0), getRecords().get(1));
         //  - Local files should have been deleted
-        assertEquals(0, Files.walk(Paths.get(localDir)).filter(Files::isRegularFile).count());
+        assertThat(Files.walk(Paths.get(localDir)).filter(Files::isRegularFile).count()).isZero();
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = fileInfo.getFilename().replace(".parquet", ".sketches");
-        assertTrue(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS));
+        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
         Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
         ItemsSketch<Long> expectedSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         getRecords().forEach(r -> expectedSketch.update((Long) r.get("key")));
-        assertEquals(expectedSketch.getMinValue(), readSketches.getQuantilesSketch("key").getMinValue());
-        assertEquals(expectedSketch.getMaxValue(), readSketches.getQuantilesSketch("key").getMaxValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch.getMinValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch.getMaxValue());
         for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertEquals(expectedSketch.getQuantile(d), readSketches.getQuantilesSketch("key").getQuantile(d));
+            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch.getQuantile(d));
         }
     }
 
     @Test
     public void shouldWriteRecordsSplitByPartitionLongKey() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         Partition rootPartition = new Partition();
         rootPartition.setRowKeyTypes(new LongType());
         rootPartition.setId("root");
@@ -361,23 +368,23 @@ public class IngestRecordsFromIteratorIT {
 
         // Then:
         //  - Check the correct number of records were written
-        assertEquals(getRecords().size(), numWritten);
+        assertThat(numWritten).isEqualTo(getRecords().size());
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles()
                 .stream()
                 .sorted((f1, f2) -> (int) (((long) f1.getMinRowKey().get(0)) - ((long) f2.getMinRowKey().get(0))))
                 .collect(Collectors.toList());
-        assertEquals(2, activeFiles.size());
+        assertThat(activeFiles).hasSize(2);
         FileInfo fileInfo = activeFiles.get(0);
-        assertEquals(1L, (long) fileInfo.getMinRowKey().get(0));
-        assertEquals(1L, (long) fileInfo.getMaxRowKey().get(0));
-        assertEquals(1L, fileInfo.getNumberOfRecords().longValue());
-        assertEquals(partition1.getId(), fileInfo.getPartitionId());
+        assertThat((long) fileInfo.getMinRowKey().get(0)).isOne();
+        assertThat((long) fileInfo.getMaxRowKey().get(0)).isOne();
+        assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
+        assertThat(fileInfo.getPartitionId()).isEqualTo(partition1.getId());
         fileInfo = activeFiles.get(1);
-        assertEquals(3L, (long) fileInfo.getMinRowKey().get(0));
-        assertEquals(3L, (long) fileInfo.getMaxRowKey().get(0));
-        assertEquals(1L, fileInfo.getNumberOfRecords().longValue());
-        assertEquals(partition2.getId(), fileInfo.getPartitionId());
+        assertThat((long) fileInfo.getMinRowKey().get(0)).isEqualTo(3L);
+        assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(3L);
+        assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
+        assertThat(fileInfo.getPartitionId()).isEqualTo(partition2.getId());
         //  - Read files and check they have the correct records
         ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(activeFiles.get(0).getFilename()), schema).build();
         List<Record> readRecords = new ArrayList<>();
@@ -388,8 +395,7 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertEquals(1, readRecords.size());
-        assertEquals(getRecords().get(0), readRecords.get(0));
+        assertThat(readRecords).containsExactly(getRecords().get(0));
         reader = new ParquetRecordReader.Builder(new Path(activeFiles.get(1).getFilename()), schema).build();
         readRecords.clear();
         record = reader.read();
@@ -398,42 +404,39 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertEquals(1, readRecords.size());
-        assertEquals(getRecords().get(1), readRecords.get(0));
+        assertThat(readRecords).containsExactly(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");
-        assertTrue(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS));
+        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
         Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
         ItemsSketch<Long> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         getRecords().stream()
                 .filter(r -> ((long) r.get("key")) < 2L)
                 .forEach(r -> expectedSketch0.update((Long) r.get("key")));
-        assertEquals(expectedSketch0.getMinValue(), readSketches.getQuantilesSketch("key").getMinValue());
-        assertEquals(expectedSketch0.getMaxValue(), readSketches.getQuantilesSketch("key").getMaxValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch0.getMinValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
         for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertEquals(expectedSketch0.getQuantile(d), readSketches.getQuantilesSketch("key").getQuantile(d));
+            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
         }
         sketchFile = activeFiles.get(1).getFilename().replace(".parquet", ".sketches");
-        assertTrue(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS));
+        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
         readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
         ItemsSketch<Long> expectedSketch1 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         getRecords().stream()
                 .filter(r -> ((long) r.get("key")) >= 2L)
                 .forEach(r -> expectedSketch1.update((Long) r.get("key")));
-        assertEquals(expectedSketch1.getMinValue(), readSketches.getQuantilesSketch("key").getMinValue());
-        assertEquals(expectedSketch1.getMaxValue(), readSketches.getQuantilesSketch("key").getMaxValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch1.getMinValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch1.getMaxValue());
         for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertEquals(expectedSketch1.getQuantile(d), readSketches.getQuantilesSketch("key").getQuantile(d));
+            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch1.getQuantile(d));
         }
     }
 
     @Test
     public void shouldWriteRecordsSplitByPartitionByteArrayKey() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = schemaWithRowKeys(field);
         Partition rootPartition = new Partition();
         rootPartition.setRowKeyTypes(new ByteArrayType());
         rootPartition.setId("root");
@@ -483,25 +486,25 @@ public class IngestRecordsFromIteratorIT {
 
         // Then:
         //  - Check the correct number of records were written
-        assertEquals(getRecordsByteArrayKey().size(), numWritten);
+        assertThat(numWritten).isEqualTo(getRecordsByteArrayKey().size());
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertEquals(2, activeFiles.size());
+        assertThat(activeFiles).hasSize(2);
         //  - Sort by number of lines so that we know which file corresponds to
         //      which partition
         List<FileInfo> activeFilesSortedByNumberOfLines = activeFiles.stream()
                 .sorted((f1, f2) -> (int) (f1.getNumberOfRecords() - f2.getNumberOfRecords()))
                 .collect(Collectors.toList());
         FileInfo fileInfo = activeFilesSortedByNumberOfLines.get(1);
-        assertArrayEquals(new byte[]{1, 1}, (byte[]) fileInfo.getMinRowKey().get(0));
-        assertArrayEquals(new byte[]{2, 2}, (byte[]) fileInfo.getMaxRowKey().get(0));
-        assertEquals(2L, fileInfo.getNumberOfRecords().longValue());
-        assertEquals(partition1.getId(), fileInfo.getPartitionId());
+        assertThat((byte[]) fileInfo.getMinRowKey().get(0)).containsExactly(new byte[]{1, 1});
+        assertThat((byte[]) fileInfo.getMaxRowKey().get(0)).containsExactly(new byte[]{2, 2});
+        assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
+        assertThat(fileInfo.getPartitionId()).isEqualTo(partition1.getId());
         fileInfo = activeFilesSortedByNumberOfLines.get(0);
-        assertArrayEquals(new byte[]{64, 65}, (byte[]) fileInfo.getMinRowKey().get(0));
-        assertArrayEquals(new byte[]{64, 65}, (byte[]) fileInfo.getMaxRowKey().get(0));
-        assertEquals(1L, fileInfo.getNumberOfRecords().longValue());
-        assertEquals(partition2.getId(), fileInfo.getPartitionId());
+        assertThat((byte[]) fileInfo.getMinRowKey().get(0)).containsExactly(new byte[]{64, 65});
+        assertThat((byte[]) fileInfo.getMaxRowKey().get(0)).containsExactly(new byte[]{64, 65});
+        assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
+        assertThat(fileInfo.getPartitionId()).isEqualTo(partition2.getId());
         //  - Read files and check they have the correct records
         ParquetReader<Record> reader = new ParquetRecordReader.Builder(
                 new Path(activeFilesSortedByNumberOfLines.get(1).getFilename()), schema).build();
@@ -513,9 +516,9 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertEquals(2, readRecords.size());
-        assertEquals(getRecordsByteArrayKey().get(0), readRecords.get(0));
-        assertEquals(getRecordsByteArrayKey().get(1), readRecords.get(1));
+        assertThat(readRecords).containsExactly(
+                getRecordsByteArrayKey().get(0),
+                getRecordsByteArrayKey().get(1));
         reader = new ParquetRecordReader.Builder(
                 new Path(activeFilesSortedByNumberOfLines.get(0).getFilename()), schema).build();
         readRecords.clear();
@@ -525,45 +528,42 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertEquals(1, readRecords.size());
-        assertEquals(getRecordsByteArrayKey().get(2), readRecords.get(0));
+        assertThat(readRecords).containsExactly(getRecordsByteArrayKey().get(2));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFilesSortedByNumberOfLines.get(1).getFilename().replace(".parquet", ".sketches");
-        assertTrue(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS));
+        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
         Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
         ItemsSketch<ByteArray> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         getRecordsByteArrayKey().stream()
                 .map(r -> ByteArray.wrap((byte[]) r.get("key")))
                 .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{64, 64})) < 0)
                 .forEach(expectedSketch0::update);
-        assertEquals(expectedSketch0.getMinValue(), readSketches.getQuantilesSketch("key").getMinValue());
-        assertEquals(expectedSketch0.getMaxValue(), readSketches.getQuantilesSketch("key").getMaxValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch0.getMinValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
         for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertEquals(expectedSketch0.getQuantile(d), readSketches.getQuantilesSketch("key").getQuantile(d));
+            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
         }
         sketchFile = activeFilesSortedByNumberOfLines.get(0).getFilename().replace(".parquet", ".sketches");
-        assertTrue(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS));
+        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
         readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
         ItemsSketch<ByteArray> expectedSketch1 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         getRecordsByteArrayKey().stream()
                 .map(r -> ByteArray.wrap((byte[]) r.get("key")))
                 .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{64, 64})) >= 0)
                 .forEach(expectedSketch1::update);
-        assertEquals(expectedSketch1.getMinValue(), readSketches.getQuantilesSketch("key").getMinValue());
-        assertEquals(expectedSketch1.getMaxValue(), readSketches.getQuantilesSketch("key").getMaxValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch1.getMinValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch1.getMaxValue());
         for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertEquals(expectedSketch1.getQuantile(d), readSketches.getQuantilesSketch("key").getQuantile(d));
+            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch1.getQuantile(d));
         }
     }
 
     @Test
     public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new ByteArrayType());
         Field field2 = new Field("key2", new ByteArrayType());
-        schema.setRowKeyFields(field1, field2);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = schemaWithRowKeys(field1, field2);
         Partition rootPartition = new Partition();
         rootPartition.setRowKeyTypes(new ByteArrayType(), new ByteArrayType());
         rootPartition.setId("root");
@@ -617,25 +617,25 @@ public class IngestRecordsFromIteratorIT {
 
         // Then:
         //  - Check the correct number of records were written
-        assertEquals(getRecords2DimByteArrayKey().size(), numWritten);
+        assertThat(numWritten).isEqualTo(getRecords2DimByteArrayKey().size());
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertEquals(2, activeFiles.size());
+        assertThat(activeFiles).hasSize(2);
         //  - Sort by number of lines so that we know which file corresponds to
         //      which partition
         List<FileInfo> activeFilesSortedByNumberOfLines = activeFiles.stream()
                 .sorted((f1, f2) -> (int) (f1.getNumberOfRecords() - f2.getNumberOfRecords()))
                 .collect(Collectors.toList());
         FileInfo fileInfo = activeFilesSortedByNumberOfLines.get(0);
-        assertArrayEquals(new byte[]{1, 1}, (byte[]) fileInfo.getMinRowKey().get(0));
-        assertArrayEquals(new byte[]{5}, (byte[]) fileInfo.getMaxRowKey().get(0));
-        assertEquals(2L, fileInfo.getNumberOfRecords().longValue());
-        assertEquals(stateStore.getAllPartitions().get(0).getId(), fileInfo.getPartitionId());
+        assertThat((byte[]) fileInfo.getMinRowKey().get(0)).containsExactly(new byte[]{1, 1});
+        assertThat((byte[]) fileInfo.getMaxRowKey().get(0)).containsExactly(new byte[]{5});
+        assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
+        assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         fileInfo = activeFilesSortedByNumberOfLines.get(1);
-        assertArrayEquals(new byte[]{11, 2}, (byte[]) fileInfo.getMinRowKey().get(0));
-        assertArrayEquals(new byte[]{64, 65}, (byte[]) fileInfo.getMaxRowKey().get(0));
-        assertEquals(3L, fileInfo.getNumberOfRecords().longValue());
-        assertEquals(stateStore.getAllPartitions().get(1).getId(), fileInfo.getPartitionId());
+        assertThat((byte[]) fileInfo.getMinRowKey().get(0)).containsExactly(new byte[]{11, 2});
+        assertThat((byte[]) fileInfo.getMaxRowKey().get(0)).containsExactly(new byte[]{64, 65});
+        assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(3L);
+        assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(1).getId());
         //  - Read files and check they have the correct records
         ParquetReader<Record> reader = new ParquetRecordReader.Builder(
                 new Path(activeFilesSortedByNumberOfLines.get(0).getFilename()), schema).build();
@@ -647,9 +647,9 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertEquals(2, readRecords.size());
-        assertEquals(getRecords2DimByteArrayKey().get(0), readRecords.get(0));
-        assertEquals(getRecords2DimByteArrayKey().get(4), readRecords.get(1));
+        assertThat(readRecords).containsExactly(
+                getRecords2DimByteArrayKey().get(0),
+                getRecords2DimByteArrayKey().get(4));
         reader = new ParquetRecordReader.Builder(
                 new Path(activeFilesSortedByNumberOfLines.get(1).getFilename()), schema).build();
         readRecords.clear();
@@ -659,46 +659,42 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertEquals(3, readRecords.size());
-        assertEquals(getRecords2DimByteArrayKey().get(1), readRecords.get(0));
-        assertEquals(getRecords2DimByteArrayKey().get(2), readRecords.get(1));
-        assertEquals(getRecords2DimByteArrayKey().get(3), readRecords.get(2));
+        assertThat(readRecords).containsExactly(
+                getRecords2DimByteArrayKey().get(1),
+                getRecords2DimByteArrayKey().get(2),
+                getRecords2DimByteArrayKey().get(3));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFilesSortedByNumberOfLines.get(0).getFilename().replace(".parquet", ".sketches");
-        assertTrue(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS));
+        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
         Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
         ItemsSketch<ByteArray> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         getRecords2DimByteArrayKey().stream()
                 .map(r -> ByteArray.wrap((byte[]) r.get("key1")))
                 .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{10})) < 0)
                 .forEach(expectedSketch0::update);
-        assertEquals(expectedSketch0.getMinValue(), readSketches.getQuantilesSketch("key1").getMinValue());
-        assertEquals(expectedSketch0.getMaxValue(), readSketches.getQuantilesSketch("key1").getMaxValue());
+        assertThat(readSketches.getQuantilesSketch("key1").getMinValue()).isEqualTo(expectedSketch0.getMinValue());
+        assertThat(readSketches.getQuantilesSketch("key1").getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
         for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertEquals(expectedSketch0.getQuantile(d), readSketches.getQuantilesSketch("key1").getQuantile(d));
+            assertThat(readSketches.getQuantilesSketch("key1").getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
         }
         sketchFile = activeFilesSortedByNumberOfLines.get(1).getFilename().replace(".parquet", ".sketches");
-        assertTrue(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS));
+        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
         readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
         ItemsSketch<ByteArray> expectedSketch1 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         getRecords2DimByteArrayKey().stream()
                 .map(r -> ByteArray.wrap((byte[]) r.get("key1")))
                 .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{10})) >= 0)
                 .forEach(expectedSketch1::update);
-        assertEquals(expectedSketch1.getMinValue(), readSketches.getQuantilesSketch("key1").getMinValue());
-        assertEquals(expectedSketch1.getMaxValue(), readSketches.getQuantilesSketch("key1").getMaxValue());
+        assertThat(readSketches.getQuantilesSketch("key1").getMinValue()).isEqualTo(expectedSketch1.getMinValue());
+        assertThat(readSketches.getQuantilesSketch("key1").getMaxValue()).isEqualTo(expectedSketch1.getMaxValue());
         for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertEquals(expectedSketch1.getQuantile(d), readSketches.getQuantilesSketch("key1").getQuantile(d));
+            assertThat(readSketches.getQuantilesSketch("key1").getQuantile(d)).isEqualTo(expectedSketch1.getQuantile(d));
         }
     }
 
     @Test
     public void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         Partition rootPartition = new Partition();
         rootPartition.setRowKeyTypes(new LongType());
         rootPartition.setId("root");
@@ -748,15 +744,15 @@ public class IngestRecordsFromIteratorIT {
 
         // Then:
         //  - Check the correct number of records were written
-        assertEquals(getRecordsInFirstPartitionOnly().size(), numWritten);
+        assertThat(numWritten).isEqualTo(getRecordsInFirstPartitionOnly().size());
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertEquals(1, activeFiles.size());
+        assertThat(activeFiles).hasSize(1);
         FileInfo fileInfo = activeFiles.get(0);
-        assertEquals(0L, (long) fileInfo.getMinRowKey().get(0));
-        assertEquals(1L, (long) fileInfo.getMaxRowKey().get(0));
-        assertEquals(2L, fileInfo.getNumberOfRecords().longValue());
-        assertEquals(partition1.getId(), fileInfo.getPartitionId());
+        assertThat((long) fileInfo.getMinRowKey().get(0)).isZero();
+        assertThat((long) fileInfo.getMaxRowKey().get(0)).isOne();
+        assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
+        assertThat(fileInfo.getPartitionId()).isEqualTo(partition1.getId());
         //  - Read files and check they have the correct records
         ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(activeFiles.get(0).getFilename()), schema).build();
         List<Record> readRecords = new ArrayList<>();
@@ -767,30 +763,27 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertEquals(2, readRecords.size());
-        assertEquals(getRecordsInFirstPartitionOnly().get(1), readRecords.get(0));
-        assertEquals(getRecordsInFirstPartitionOnly().get(0), readRecords.get(1));
+        assertThat(readRecords).containsExactly(
+                getRecordsInFirstPartitionOnly().get(1),
+                getRecordsInFirstPartitionOnly().get(0));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = fileInfo.getFilename().replace(".parquet", ".sketches");
-        assertTrue(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS));
+        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
         Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
         ItemsSketch<Long> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         getRecordsInFirstPartitionOnly().stream()
                 .filter(r -> ((long) r.get("key")) < 2L)
                 .forEach(r -> expectedSketch0.update((Long) r.get("key")));
-        assertEquals(expectedSketch0.getMinValue(), readSketches.getQuantilesSketch("key").getMinValue());
-        assertEquals(expectedSketch0.getMaxValue(), readSketches.getQuantilesSketch("key").getMaxValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch0.getMinValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
         for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertEquals(expectedSketch0.getQuantile(d), readSketches.getQuantilesSketch("key").getQuantile(d));
+            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
         }
     }
 
     @Test
     public void shouldWriteDuplicateRecords() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
@@ -814,15 +807,15 @@ public class IngestRecordsFromIteratorIT {
 
         // Then:
         //  - Check the correct number of records were written
-        assertEquals(2 * getRecords().size(), numWritten);
+        assertThat(numWritten).isEqualTo(2L * getRecords().size());
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertEquals(1, activeFiles.size());
+        assertThat(activeFiles).hasSize(1);
         FileInfo fileInfo = activeFiles.get(0);
-        assertEquals(1L, (long) fileInfo.getMinRowKey().get(0));
-        assertEquals(3L, (long) fileInfo.getMaxRowKey().get(0));
-        assertEquals(4L, fileInfo.getNumberOfRecords().longValue());
-        assertEquals(stateStore.getAllPartitions().get(0).getId(), fileInfo.getPartitionId());
+        assertThat((long) fileInfo.getMinRowKey().get(0)).isOne();
+        assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(3L);
+        assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(4L);
+        assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         //  - Read file and check it has correct records
         ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(fileInfo.getFilename()), schema).build();
         List<Record> readRecords = new ArrayList<>();
@@ -833,31 +826,25 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertEquals(4, readRecords.size());
-        assertEquals(getRecords().get(0), readRecords.get(0));
-        assertEquals(getRecords().get(0), readRecords.get(1));
-        assertEquals(getRecords().get(1), readRecords.get(2));
-        assertEquals(getRecords().get(1), readRecords.get(3));
+        assertThat(readRecords).containsExactly(
+                getRecords().get(0), getRecords().get(0),
+                getRecords().get(1), getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = fileInfo.getFilename().replace(".parquet", ".sketches");
-        assertTrue(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS));
+        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
         Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
         ItemsSketch<Long> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         records.forEach(r -> expectedSketch0.update((Long) r.get("key")));
-        assertEquals(expectedSketch0.getMinValue(), readSketches.getQuantilesSketch("key").getMinValue());
-        assertEquals(expectedSketch0.getMaxValue(), readSketches.getQuantilesSketch("key").getMaxValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch0.getMinValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
         for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertEquals(expectedSketch0.getQuantile(d), readSketches.getQuantilesSketch("key").getQuantile(d));
+            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
         }
     }
 
     @Test
     public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         Partition rootPartition = new Partition();
         rootPartition.setRowKeyTypes(new LongType());
         rootPartition.setId("root");
@@ -908,10 +895,10 @@ public class IngestRecordsFromIteratorIT {
 
         // Then:
         //  - Check the correct number of records were written
-        assertEquals(records.size(), numWritten);
+        assertThat(numWritten).isEqualTo(records.size());
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertEquals(2, activeFiles.size());
+        assertThat(activeFiles).hasSize(2);
 
         //  - Make sure the first file in the list is the one that belongs to the
         //      smallest partition
@@ -929,22 +916,22 @@ public class IngestRecordsFromIteratorIT {
                 .min(Comparator.comparing(r -> ((Long) r.get("key"))))
                 .get()
                 .get("key");
-        assertEquals(minLeftFile, (long) fileInfo.getMinRowKey().get(0));
+        assertThat((long) fileInfo.getMinRowKey().get(0)).isEqualTo(minLeftFile);
 
         long maxLeftFile = (long) records.stream()
                 .filter(r -> ((long) r.get("key")) < 2L)
                 .max(Comparator.comparing(r -> ((Long) r.get("key"))))
                 .get()
                 .get("key");
-        assertEquals(maxLeftFile, (long) fileInfo.getMaxRowKey().get(0));
+        assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(maxLeftFile);
 
         long recordsInLeftFile = records.stream()
                 .filter(r -> ((long) r.get("key")) < 2L)
                 .count();
 
-        assertEquals(recordsInLeftFile, fileInfo.getNumberOfRecords().longValue());
+        assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(recordsInLeftFile);
 
-        assertEquals(partition1.getId(), fileInfo.getPartitionId());
+        assertThat(fileInfo.getPartitionId()).isEqualTo(partition1.getId());
         fileInfo = activeFiles.get(1);
 
         long minRightFile = (long) records.stream()
@@ -952,21 +939,21 @@ public class IngestRecordsFromIteratorIT {
                 .min(Comparator.comparing(r -> ((Long) r.get("key"))))
                 .get()
                 .get("key");
-        assertEquals(minRightFile, (long) fileInfo.getMinRowKey().get(0));
+        assertThat((long) fileInfo.getMinRowKey().get(0)).isEqualTo(minRightFile);
 
         long maxRightFile = (long) records.stream()
                 .filter(r -> ((long) r.get("key")) >= 2L)
                 .max(Comparator.comparing(r -> ((Long) r.get("key"))))
                 .get()
                 .get("key");
-        assertEquals(maxRightFile, (long) fileInfo.getMaxRowKey().get(0));
+        assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(maxRightFile);
 
         long recordsInRightFile = records.stream()
                 .filter(r -> ((long) r.get("key")) >= 2L)
                 .count();
 
-        assertEquals(recordsInRightFile, fileInfo.getNumberOfRecords().longValue());
-        assertEquals(partition2.getId(), fileInfo.getPartitionId());
+        assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(recordsInRightFile);
+        assertThat(fileInfo.getPartitionId()).isEqualTo(partition2.getId());
 
         //  - Read files and check they have the correct records
         ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(activeFiles.get(0).getFilename()), schema).build();
@@ -978,13 +965,13 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertEquals(recordsInLeftFile, readRecords.size());
+        assertThat(readRecords.size()).isEqualTo(recordsInLeftFile);
 
         List<Record> expectedRecords = records.stream()
                 .filter(r -> ((long) r.get("key")) < 2L)
                 .sorted(Comparator.comparing(r -> ((Long) r.get("key"))))
                 .collect(Collectors.toList());
-        assertEquals(expectedRecords, readRecords);
+        assertThat(readRecords).isEqualTo(expectedRecords);
         reader = new ParquetRecordReader.Builder(new Path(activeFiles.get(1).getFilename()), schema).build();
         readRecords.clear();
         record = reader.read();
@@ -993,48 +980,44 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertEquals(recordsInRightFile, readRecords.size());
+        assertThat(readRecords.size()).isEqualTo(recordsInRightFile);
 
         expectedRecords = records.stream()
                 .filter(r -> ((long) r.get("key")) >= 2L)
                 .sorted(Comparator.comparing(r -> ((Long) r.get("key"))))
                 .collect(Collectors.toList());
-        assertEquals(expectedRecords, readRecords);
+        assertThat(readRecords).isEqualTo(expectedRecords);
 
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");
-        assertTrue(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS));
+        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
         Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
         ItemsSketch<Long> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         records.stream()
                 .filter(r -> ((long) r.get("key")) < 2L)
                 .forEach(r -> expectedSketch0.update((Long) r.get("key")));
-        assertEquals(expectedSketch0.getMinValue(), readSketches.getQuantilesSketch("key").getMinValue());
-        assertEquals(expectedSketch0.getMaxValue(), readSketches.getQuantilesSketch("key").getMaxValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch0.getMinValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
         for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertEquals(expectedSketch0.getQuantile(d), readSketches.getQuantilesSketch("key").getQuantile(d));
+            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
         }
         sketchFile = activeFiles.get(1).getFilename().replace(".parquet", ".sketches");
-        assertTrue(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS));
+        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
         readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
         ItemsSketch<Long> expectedSketch1 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         records.stream()
                 .filter(r -> ((long) r.get("key")) >= 2L)
                 .forEach(r -> expectedSketch1.update((Long) r.get("key")));
-        assertEquals(expectedSketch1.getMinValue(), readSketches.getQuantilesSketch("key").getMinValue());
-        assertEquals(expectedSketch1.getMaxValue(), readSketches.getQuantilesSketch("key").getMaxValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch1.getMinValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch1.getMaxValue());
         for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertEquals(expectedSketch1.getQuantile(d), readSketches.getQuantilesSketch("key").getQuantile(d));
+            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch1.getQuantile(d));
         }
     }
 
     @Test
     public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         Partition rootPartition = new Partition();
         rootPartition.setRowKeyTypes(new LongType());
         rootPartition.setId("root");
@@ -1085,11 +1068,11 @@ public class IngestRecordsFromIteratorIT {
 
         // Then:
         //  - Check the correct number of records were written
-        assertEquals(records.size(), numWritten);
+        assertThat(numWritten).isEqualTo(records.size());
         //  - Check that the correct number of files have been written
         Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
-        assertEquals(40, partitionToFileMapping.get(partition1.getId()).size());
-        assertEquals(40, partitionToFileMapping.get(partition2.getId()).size());
+        assertThat(partitionToFileMapping.get(partition1.getId())).hasSize(40);
+        assertThat(partitionToFileMapping.get(partition2.getId())).hasSize(40);
         //  - Check that the files in each partition contain the correct data
         List<CloseableIterator<Record>> inputIterators = new ArrayList<>();
         for (String file : partitionToFileMapping.get(partition1.getId())) {
@@ -1107,22 +1090,22 @@ public class IngestRecordsFromIteratorIT {
                 .filter(r -> ((long) r.get("key")) < 2L)
                 .sorted(Comparator.comparing(r -> ((Long) r.get("key"))))
                 .collect(Collectors.toList());
-        assertEquals(expectedRecords, recordsInPartition1);
+        assertThat(recordsInPartition1).isEqualTo(expectedRecords);
         //  - Merge the sketch files for the partition and check it has the right properties
         ItemsUnion<Long> union = ItemsUnion.getInstance(1024, Comparator.naturalOrder());
         for (String file : partitionToFileMapping.get(partition1.getId())) {
             String sketchFile = file.replace(".parquet", ".sketches");
-            assertTrue(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS));
+            assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
             Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
             union.update(readSketches.getQuantilesSketch("key"));
         }
         ItemsSketch<Long> readSketch0 = union.getResult();
         ItemsSketch<Long> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         expectedRecords.forEach(r -> expectedSketch0.update((Long) r.get("key")));
-        assertEquals(expectedSketch0.getMinValue(), readSketch0.getMinValue());
-        assertEquals(expectedSketch0.getMaxValue(), readSketch0.getMaxValue());
+        assertThat(readSketch0.getMinValue()).isEqualTo(expectedSketch0.getMinValue());
+        assertThat(readSketch0.getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
         for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertEquals(expectedSketch0.getQuantile(d), readSketch0.getQuantile(d));
+            assertThat(readSketch0.getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
         }
 
         // Repeat for the second partition
@@ -1142,31 +1125,28 @@ public class IngestRecordsFromIteratorIT {
                 .filter(r -> ((long) r.get("key")) >= 2L)
                 .sorted(Comparator.comparing(r -> ((Long) r.get("key"))))
                 .collect(Collectors.toList());
-        assertEquals(expectedRecords2, recordsInPartition2);
+        assertThat(recordsInPartition2).isEqualTo(expectedRecords2);
         //  - Merge the sketch files for the partition and check it has the right properties
         ItemsUnion<Long> union2 = ItemsUnion.getInstance(1024, Comparator.naturalOrder());
         for (String file : partitionToFileMapping.get(partition2.getId())) {
             String sketchFile = file.replace(".parquet", ".sketches");
-            assertTrue(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS));
+            assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
             Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
             union2.update(readSketches.getQuantilesSketch("key"));
         }
         ItemsSketch<Long> readSketch1 = union2.getResult();
         ItemsSketch<Long> expectedSketch1 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         expectedRecords2.forEach(r -> expectedSketch1.update((Long) r.get("key")));
-        assertEquals(expectedSketch1.getMinValue(), readSketch1.getMinValue());
-        assertEquals(expectedSketch1.getMaxValue(), readSketch1.getMaxValue());
+        assertThat(readSketch1.getMinValue()).isEqualTo(expectedSketch1.getMinValue());
+        assertThat(readSketch1.getMaxValue()).isEqualTo(expectedSketch1.getMaxValue());
         for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertEquals(expectedSketch1.getQuantile(d), readSketch1.getQuantile(d));
+            assertThat(readSketch1.getQuantile(d)).isEqualTo(expectedSketch1.getQuantile(d));
         }
     }
 
     @Test
     public void shouldSortRecords() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
@@ -1188,15 +1168,15 @@ public class IngestRecordsFromIteratorIT {
 
         // Then:
         //  - Check the correct number of records were written
-        assertEquals(getUnsortedRecords().size(), numWritten);
+        assertThat(numWritten).isEqualTo(getUnsortedRecords().size());
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertEquals(1, activeFiles.size());
+        assertThat(activeFiles).hasSize(1);
         FileInfo fileInfo = activeFiles.get(0);
-        assertEquals(1L, (long) fileInfo.getMinRowKey().get(0));
-        assertEquals(10L, (long) fileInfo.getMaxRowKey().get(0));
-        assertEquals(20L, fileInfo.getNumberOfRecords().longValue());
-        assertEquals(stateStore.getAllPartitions().get(0).getId(), fileInfo.getPartitionId());
+        assertThat((long) fileInfo.getMinRowKey().get(0)).isOne();
+        assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(10L);
+        assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(20L);
+        assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         //  - Read file and check it has correct records
         ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(fileInfo.getFilename()), schema).build();
         List<Record> readRecords = new ArrayList<>();
@@ -1207,33 +1187,30 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertEquals(20L, readRecords.size());
+        assertThat(readRecords.size()).isEqualTo(20L);
         List<Record> sortedRecords = new ArrayList<>(getUnsortedRecords());
         sortedRecords.sort(Comparator.comparing(o -> ((Long) o.get("key"))));
         int i = 0;
         for (Record record1 : sortedRecords) {
-            assertEquals(record1, readRecords.get(i));
+            assertThat(readRecords.get(i)).isEqualTo(record1);
             i++;
         }
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");
-        assertTrue(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS));
+        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
         Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
         ItemsSketch<Long> expectedSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         getUnsortedRecords().forEach(r -> expectedSketch.update((Long) r.get("key")));
-        assertEquals(expectedSketch.getMinValue(), readSketches.getQuantilesSketch("key").getMinValue());
-        assertEquals(expectedSketch.getMaxValue(), readSketches.getQuantilesSketch("key").getMaxValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch.getMinValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch.getMaxValue());
         for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertEquals(expectedSketch.getQuantile(d), readSketches.getQuantilesSketch("key").getQuantile(d));
+            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch.getQuantile(d));
         }
     }
 
     @Test
     public void shouldWriteNoRecordsSuccessfully() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
@@ -1255,19 +1232,21 @@ public class IngestRecordsFromIteratorIT {
 
         // Then:
         //  - Check the correct number of records were written
-        assertEquals(0L, numWritten);
+        assertThat(numWritten).isZero();
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertEquals(0, activeFiles.size());
+        assertThat(activeFiles).isEmpty();
     }
 
     @Test
     public void shouldApplyIterator() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new ByteArrayType()))
+                .sortKeyFields(new Field("sort", new LongType()))
+                .valueFields(new Field("value", new LongType()))
+                .build();
+
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
@@ -1289,15 +1268,15 @@ public class IngestRecordsFromIteratorIT {
 
         // Then:
         //  - Check the correct number of records were written
-        assertEquals(2L, numWritten);
+        assertThat(numWritten).isEqualTo(2L);
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertEquals(1, activeFiles.size());
+        assertThat(activeFiles).hasSize(1);
         FileInfo fileInfo = activeFiles.get(0);
-        assertArrayEquals(new byte[]{1, 1}, (byte[]) fileInfo.getMinRowKey().get(0));
-        assertArrayEquals(new byte[]{11, 2}, (byte[]) fileInfo.getMaxRowKey().get(0));
-        assertEquals(2L, fileInfo.getNumberOfRecords().longValue());
-        assertEquals(stateStore.getAllPartitions().get(0).getId(), fileInfo.getPartitionId());
+        assertThat((byte[]) fileInfo.getMinRowKey().get(0)).containsExactly(new byte[]{1, 1});
+        assertThat((byte[]) fileInfo.getMaxRowKey().get(0)).containsExactly(new byte[]{11, 2});
+        assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
+        assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         //  - Read file and check it has correct records
         ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(fileInfo.getFilename()), schema).build();
         List<Record> readRecords = new ArrayList<>();
@@ -1308,22 +1287,20 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertEquals(2L, readRecords.size());
 
         Record expectedRecord1 = new Record();
         expectedRecord1.put("key", new byte[]{1, 1});
         expectedRecord1.put("sort", 2L);
         expectedRecord1.put("value", 7L);
-        assertEquals(expectedRecord1, readRecords.get(0));
         Record expectedRecord2 = new Record();
         expectedRecord2.put("key", new byte[]{11, 2});
         expectedRecord2.put("sort", 1L);
         expectedRecord2.put("value", 4L);
-        assertEquals(expectedRecord2, readRecords.get(1));
+        assertThat(readRecords).containsExactly(expectedRecord1, expectedRecord2);
 
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");
-        assertTrue(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS));
+        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
         Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
         ItemsSketch<ByteArray> expectedSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         AdditionIterator additionIterator = new AdditionIterator();
@@ -1334,10 +1311,10 @@ public class IngestRecordsFromIteratorIT {
         while (aggregatedRecords.hasNext()) {
             expectedSketch.update(ByteArray.wrap((byte[]) aggregatedRecords.next().get("key")));
         }
-        assertEquals(expectedSketch.getMinValue(), readSketches.getQuantilesSketch("key").getMinValue());
-        assertEquals(expectedSketch.getMaxValue(), readSketches.getQuantilesSketch("key").getMaxValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch.getMinValue());
+        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch.getMaxValue());
         for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertEquals(expectedSketch.getQuantile(d), readSketches.getQuantilesSketch("key").getQuantile(d));
+            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch.getQuantile(d));
         }
     }
 }

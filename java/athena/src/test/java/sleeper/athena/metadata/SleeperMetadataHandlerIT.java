@@ -54,16 +54,13 @@ import sleeper.splitter.SplitPartition;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -98,7 +95,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
 
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
                 new GetTableRequest(TestUtils.createIdentity(),
-                "abc", "def", tableName));
+                        "abc", "def", tableName));
 
         BlockAllocatorImpl blockAllocator = new BlockAllocatorImpl();
         Map<String, ValueSet> predicate = new HashMap<>();
@@ -118,11 +115,11 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
 
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();
-        assertEquals(1, partitions.getRowCount());
+        assertThat(partitions.getRowCount()).isOne();
         FieldReader partitionReader = partitions.getFieldReader(RELEVANT_FILES_FIELD);
         partitionReader.setPosition(0);
-        List<String> files =  (List<String>) new Gson().fromJson(partitionReader.readObject().toString(), List.class);
-        assertEquals(relevantFiles, files);
+        List<String> files = (List<String>) new Gson().fromJson(partitionReader.readObject().toString(), List.class);
+        assertThat(files).isEqualTo(relevantFiles);
     }
 
     @Test
@@ -168,14 +165,14 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
 
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();
-        assertEquals(2, partitions.getRowCount());
+        assertThat(partitions.getRowCount()).isEqualTo(2);
         FieldReader partitionReader = partitions.getFieldReader(RELEVANT_FILES_FIELD);
         partitionReader.setPosition(0);
         Object files = new Gson().fromJson(partitionReader.readObject().toString(), List.class);
-        assertEquals(relevantFiles.get(0), files);
+        assertThat(files).isEqualTo(relevantFiles.get(0));
         partitionReader.setPosition(1);
         files = new Gson().fromJson(partitionReader.readObject().toString(), List.class);
-        assertEquals(relevantFiles.get(1), files);
+        assertThat(files).isEqualTo(relevantFiles.get(1));
     }
 
     @Test
@@ -226,11 +223,11 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
 
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();
-        assertEquals(1, partitions.getRowCount());
+        assertThat(partitions.getRowCount()).isOne();
         FieldReader partitionReader = partitions.getFieldReader(RELEVANT_FILES_FIELD);
         partitionReader.setPosition(0);
-        Object files =  new Gson().fromJson(partitionReader.readObject().toString(), List.class);
-        assertEquals(relevantFiles.get(0), files);
+        Object files = new Gson().fromJson(partitionReader.readObject().toString(), List.class);
+        assertThat(files).isEqualTo(relevantFiles.get(0));
     }
 
     @Test
@@ -276,12 +273,12 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
 
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();
-        assertEquals(4, partitions.getRowCount());
+        assertThat(partitions.getRowCount()).isEqualTo(4);
         FieldReader partitionFilesReader = partitions.getFieldReader(RELEVANT_FILES_FIELD);
         for (int i = 0; i < 4; i++) {
             partitionFilesReader.setPosition(i);
             Object o = new Gson().fromJson(partitionFilesReader.readObject().toString(), List.class);
-            assertEquals(relevantFiles.get(i), o);
+            assertThat(o).isEqualTo(relevantFiles.get(i));
         }
     }
 
@@ -327,13 +324,13 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
 
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();
-        assertEquals(4, partitions.getRowCount());
+        assertThat(partitions.getRowCount()).isEqualTo(4);
 
         FieldReader partitionFilesReader = partitions.getFieldReader(RELEVANT_FILES_FIELD);
         for (int i = 0; i < 4; i++) {
             partitionFilesReader.setPosition(i);
             Object o = new Gson().fromJson(partitionFilesReader.readObject().toString(), List.class);
-            assertEquals(relevantFiles.get(i), o);
+            assertThat(o).isEqualTo(relevantFiles.get(i));
         }
     }
 
@@ -360,7 +357,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 .build();
 
         org.apache.arrow.vector.types.pojo.Schema schema = getTableResponse.getSchema();
-        assertEquals(arrowSchema, schema);
+        assertThat(schema).isEqualTo(arrowSchema);
     }
 
     @Test
@@ -407,15 +404,15 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
 
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();
-        assertEquals(2, partitions.getRowCount());
+        assertThat(partitions.getRowCount()).isEqualTo(2);
 
         FieldReader partitionReader = partitions.getFieldReader(RELEVANT_FILES_FIELD);
         for (int i = 0; i < 2; i++) {
             partitionReader.setPosition(i);
-            assertEquals(relevantFiles.get(i), new Gson().fromJson(partitionReader.readObject().toString(), List.class));
+            assertThat(new Gson().fromJson(partitionReader.readObject().toString(), List.class)).isEqualTo(relevantFiles.get(i));
         }
 
-        assertEquals(2, sleeperMetadataHandler.writeExtraPartitionDataCalled);
+        assertThat(sleeperMetadataHandler.writeExtraPartitionDataCalled).isEqualTo(2);
     }
 
     @Test
@@ -431,9 +428,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         ListSchemasResponse listSchemasResponse = sleeperMetadataHandler.doListSchemaNames(new BlockAllocatorImpl(), new ListSchemasRequest(TestUtils.createIdentity(), "abc", "def"));
 
         // Then
-        Collection<String> schemas = listSchemasResponse.getSchemas();
-        assertEquals(1, schemas.size());
-        assertTrue(schemas.contains(instance.get(ID)));
+        assertThat(listSchemasResponse.getSchemas()).containsExactly(instance.get(ID));
     }
 
     @Test
@@ -453,11 +448,10 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 new ListTablesRequest(TestUtils.createIdentity(), "abc", "def", "mySchema", "next", -1));
 
         // Then
-        Collection<TableName> tables = listTablesResponse.getTables();
-        assertEquals(3, tables.size());
-
-        Lists.newArrayList(table1, table2, table3)
-                .forEach(tableName -> assertTrue(tables.contains(new TableName("mySchema", tableName))));
+        assertThat(listTablesResponse.getTables()).containsExactlyInAnyOrder(
+                new TableName("mySchema", table1),
+                new TableName("mySchema", table2),
+                new TableName("mySchema", table3));
     }
 
     @Test
@@ -476,14 +470,12 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 new ListTablesRequest(TestUtils.createIdentity(), "abc", "def", "mySchema", null, 1));
 
         // Then
-        Collection<TableName> tables = listTablesResponse.getTables();
-        assertEquals(1, tables.size());
 
         // Order the tables
         List<String> sorted = Lists.newArrayList(table1, table2).stream().sorted().collect(Collectors.toList());
 
-        assertEquals("1", listTablesResponse.getNextToken());
-        assertTrue(tables.contains(new TableName("mySchema", sorted.get(0))));
+        assertThat(listTablesResponse.getNextToken()).isEqualTo("1");
+        assertThat(listTablesResponse.getTables()).containsExactly(new TableName("mySchema", sorted.get(0)));
     }
 
     @Test
@@ -504,10 +496,8 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 new ListTablesRequest(TestUtils.createIdentity(), "abc", "def", "mySchema", "1", 1));
 
         // Then
-        Collection<TableName> tables = listTablesResponse.getTables();
-        assertNull(listTablesResponse.getNextToken());
-        assertEquals(1, tables.size());
-        assertTrue(tables.contains(new TableName("mySchema", sorted.get(1))));
+        assertThat(listTablesResponse.getNextToken()).isNull();
+        assertThat(listTablesResponse.getTables()).containsExactly(new TableName("mySchema", sorted.get(1)));
     }
 
     @Test
@@ -556,7 +546,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
 
         // Then
         Block partitions = getTableLayoutResponse.getPartitions();
-        assertEquals(2, partitions.getRowCount());
+        assertThat(partitions.getRowCount()).isEqualTo(2);
     }
 
     @Test
@@ -571,7 +561,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         handler.enhancePartitionSchema(new SchemaBuilder(), null);
 
         // Then
-        assertEquals(1, handler.schemaEnhancementsCalled);
+        assertThat(handler.schemaEnhancementsCalled).isOne();
 
     }
 
