@@ -45,7 +45,7 @@ public class CreateCompactionJob {
         for (FileInfo fileInfo : inputFiles) {
             if (!partitionId.equals(fileInfo.getPartitionId())) {
                 throw new IllegalArgumentException("Found file with partition which is different to the provided partition (partition = "
-                        + partitionId + ", FileInfo = " + fileInfo);
+                        + partitionId + ", FileInfo = " + fileInfo + ")");
             }
         }
     }
