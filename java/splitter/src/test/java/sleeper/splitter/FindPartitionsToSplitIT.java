@@ -64,11 +64,7 @@ public class FindPartitionsToSplitIT {
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
 
-    private static final Schema SCHEMA = new Schema();
-
-    static {
-        SCHEMA.setRowKeyFields(new Field("key", new IntType()));
-    }
+    private static final Schema SCHEMA = Schema.builder().rowKeyFields(new Field("key", new IntType())).build();
 
     private AmazonDynamoDB createDynamoClient() {
         return AmazonDynamoDBClientBuilder.standard()

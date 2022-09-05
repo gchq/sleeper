@@ -41,13 +41,15 @@ public class ParquetReaderIteratorTest {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
 
+    private final Schema schema = Schema.builder()
+            .rowKeyFields(new Field("column1", new LongType()))
+            .sortKeyFields(new Field("column2", new LongType()))
+            .valueFields(new Field("column3", new LongType()))
+            .build();
+
     @Test
     public void shouldReturnCorrectIterator() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("column1", new LongType()));
-        schema.setSortKeyFields(new Field("column2", new LongType()));
-        schema.setValueFields(new Field("column3", new LongType()));
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
@@ -79,10 +81,6 @@ public class ParquetReaderIteratorTest {
     @Test
     public void shouldReturnCorrectIteratorWhenNoRecordsInReader() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("column1", new LongType()));
-        schema.setSortKeyFields(new Field("column2", new LongType()));
-        schema.setValueFields(new Field("column3", new LongType()));
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();

@@ -83,10 +83,10 @@ public class AdditionIteratorTest {
     }
 
     private static Schema getSchema1() {
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("id", new StringType()));
-        schema.setValueFields(new Field("count", new LongType()));
-        return schema;
+        return Schema.builder()
+                .rowKeyFields(new Field("id", new StringType()))
+                .valueFields(new Field("count", new LongType()))
+                .build();
     }
 
     private static List<Record> getData1() {
@@ -119,10 +119,10 @@ public class AdditionIteratorTest {
     }
 
     private static Schema getSchema2() {
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("id", new ByteArrayType()));
-        schema.setValueFields(new Field("count", new LongType()));
-        return schema;
+        return Schema.builder()
+                .rowKeyFields(new Field("id", new ByteArrayType()))
+                .valueFields(new Field("count", new LongType()))
+                .build();
     }
 
     private static List<Record> getData2() {

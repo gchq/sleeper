@@ -31,6 +31,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.InitialiseStateStore;
 import sleeper.statestore.StateStore;
@@ -73,13 +74,18 @@ public class ExportSplitPointsTest {
         return dynamoDBStateStoreCreator.create();
     }
 
+    private Schema schemaWithKeyType(PrimitiveType type) {
+        return Schema.builder()
+                .rowKeyFields(new Field("key", type))
+                .sortKeyFields(new Field("sort", new LongType()))
+                .valueFields(new Field("value", new ByteArrayType()))
+                .build();
+    }
+
     @Test
     public void shouldExportCorrectSplitPointsIntType() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithKeyType(new IntType());
         StateStore stateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10);
@@ -98,10 +104,7 @@ public class ExportSplitPointsTest {
     @Test
     public void shouldExportCorrectSplitPointsLongType() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10L);
@@ -120,10 +123,7 @@ public class ExportSplitPointsTest {
     @Test
     public void shouldExportCorrectSplitPointsStringType() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new StringType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithKeyType(new StringType());
         StateStore stateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add("A");
@@ -142,10 +142,7 @@ public class ExportSplitPointsTest {
     @Test
     public void shouldExportCorrectSplitPointsByteArrayType() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithKeyType(new ByteArrayType());
         StateStore stateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(new byte[]{10});

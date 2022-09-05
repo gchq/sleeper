@@ -72,7 +72,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     MAX_IN_MEMORY_BATCH_SIZE("sleeper.ingest.memory.max.batch.size", "1000000"),
 
     // Arrow ingest
-    ARROW_INGEST_WORKING_BUFFER_BYTES("sleeper.ingest.arrow.working.buffer.bytes", "134217728"),                    // 128M
+    ARROW_INGEST_WORKING_BUFFER_BYTES("sleeper.ingest.arrow.working.buffer.bytes", "268435456"),                    // 256M
     ARROW_INGEST_BATCH_BUFFER_BYTES("sleeper.ingest.arrow.batch.buffer.bytes", "1073741824"),                       // 1G
     ARROW_INGEST_MAX_LOCAL_STORE_BYTES("sleeper.ingest.arrow.max.local.store.bytes", "17179869184"),                // 16G
     ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS("sleeper.ingest.arrow.max.single.write.to.file.records", "1024"), // 1K
@@ -133,11 +133,11 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     BULK_IMPORT_PERSISTENT_EMR_SPARK_MEMORY_FRACTION("sleeper.bulk.import.persistent.emr.spark.memory.fraction", "0.80"),
     BULK_IMPORT_PERSISTENT_EMR_SPARK_MEMORY_STORAGE_FRACTION("sleeper.bulk.import.persistent.emr.spark.memory.storage.fraction", "0.30"),
     BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS("sleeper.bulk.import.persistent.emr.spark.executor.extra.java.options",
-    "-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'"),
+            "-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'"),
     BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_EXTRA_JAVA_OPTIONS("sleeper.bulk.import.persistent.emr.spark.executor.extra.java.options",
-        BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS.getDefaultValue()),
+            BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS.getDefaultValue()),
     BULK_IMPORT_PERSISTENT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES("sleeper.bulk.import.persistent.emr.spark.yarn.scheduler.reporter.thread.max.failures",
-        "5"),
+            "5"),
     BULK_IMPORT_PERSISTENT_EMR_SPARK_STORAGE_LEVEL("sleeper.bulk.import.persistent.emr.spark.storage.level", "MEMORY_AND_DISK_SER"),
     BULK_IMPORT_PERSISTENT_EMR_SPARK_RDD_COMPRESS("sleeper.bulk.import.persistent.emr.spark.rdd.compress", "true"),
     BULK_IMPORT_PERSISTENT_EMR_SPARK_SHUFFLE_COMPRESS("sleeper.bulk.import.persistent.emr.spark.shuffle.compress", "true"),
