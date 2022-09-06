@@ -50,16 +50,51 @@ public class PartitionsBuilderTest {
         // Then
         List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
         List<Partition> expectedPartitions = Arrays.asList(
-                new Partition(rowKeyTypes, new Region(rangeFactory.createRange(field, "", "aaa")),
-                        "A", true, "D", Collections.emptyList(), -1),
-                new Partition(rowKeyTypes, new Region(rangeFactory.createRange(field, "aaa", "bbb")),
-                        "B", true, "D", Collections.emptyList(), -1),
-                new Partition(rowKeyTypes, new Region(rangeFactory.createRange(field, "bbb", null)),
-                        "C", true, "E", Collections.emptyList(), -1),
-                new Partition(rowKeyTypes, new Region(rangeFactory.createRange(field, "", "bbb")),
-                        "D", false, "E", Arrays.asList("A", "B"), 0),
-                new Partition(rowKeyTypes, new Region(rangeFactory.createRange(field, "", null)),
-                        "E", false, null, Arrays.asList("D", "C"), 0));
+                Partition.builder()
+                        .rowKeyTypes(rowKeyTypes)
+                        .region(new Region(rangeFactory.createRange(field, "", "aaa")))
+                        .id("A")
+                        .leafPartition(true)
+                        .parentPartitionId("D")
+                        .childPartitionIds(Collections.emptyList())
+                        .dimension(-1)
+                        .build(),
+                Partition.builder()
+                        .rowKeyTypes(rowKeyTypes)
+                        .region(new Region(rangeFactory.createRange(field, "aaa", "bbb")))
+                        .id("B")
+                        .leafPartition(true)
+                        .parentPartitionId("D")
+                        .childPartitionIds(Collections.emptyList())
+                        .dimension(-1)
+                        .build(),
+                Partition.builder()
+                        .rowKeyTypes(rowKeyTypes)
+                        .region(new Region(rangeFactory.createRange(field, "bbb", null)))
+                        .id("C")
+                        .leafPartition(true)
+                        .parentPartitionId("E")
+                        .childPartitionIds(Collections.emptyList())
+                        .dimension(-1)
+                        .build(),
+                Partition.builder()
+                        .rowKeyTypes(rowKeyTypes)
+                        .region(new Region(rangeFactory.createRange(field, "", "bbb")))
+                        .id("D")
+                        .leafPartition(false)
+                        .parentPartitionId("E")
+                        .childPartitionIds(Arrays.asList("A", "B"))
+                        .dimension(0)
+                        .build(),
+                Partition.builder()
+                        .rowKeyTypes(rowKeyTypes)
+                        .region(new Region(rangeFactory.createRange(field, "", null)))
+                        .id("E")
+                        .leafPartition(false)
+                        .parentPartitionId(null)
+                        .childPartitionIds(Arrays.asList("D", "C"))
+                        .dimension(0)
+                        .build());
         assertThat(builder.buildList()).isEqualTo(expectedPartitions);
         assertThat(builder.buildTree()).isEqualTo(new PartitionTree(schema, expectedPartitions));
     }

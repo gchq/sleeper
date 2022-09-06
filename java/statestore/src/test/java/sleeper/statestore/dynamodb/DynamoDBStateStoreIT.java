@@ -696,8 +696,15 @@ public class DynamoDBStateStoreIT {
         byte[] min = new byte[]{1, 2, 3, 4};
         byte[] max = new byte[]{5, 6, 7, 8, 9};
         Range range = new RangeFactory(schema).createRange("key", min, max);
-        Partition partition = new Partition(schema.getRowKeyTypes(),
-                new Region(range), "id", false, "P", new ArrayList<>(), 0);
+        Partition partition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range))
+                .id("id")
+                .leafPartition(false)
+                .parentPartitionId("P")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(0)
+                .build();
         StateStore dynamoDBStateStore = getStateStore(schema, Collections.singletonList(partition));
 
         // When
@@ -753,13 +760,45 @@ public class DynamoDBStateStoreIT {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Region region0 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, 1L));
-        Partition partition0 = new Partition(schema.getRowKeyTypes(), region0, "id0", true, "root", new ArrayList<>(), -1);
+        Partition partition0 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region0)
+                .id("id0")
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         Region region1 = new Region(rangeFactory.createRange(field, 1L, 100L));
-        Partition partition1 = new Partition(schema.getRowKeyTypes(), region1, "id1", true, "root", new ArrayList<>(), -1);
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region1)
+                .id("id1")
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         Region region2 = new Region(rangeFactory.createRange(field, 100L, 200L));
-        Partition partition2 = new Partition(schema.getRowKeyTypes(), region2, "id2", true, "root", new ArrayList<>(), -1);
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region2)
+                .id("id2")
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         Region region3 = new Region(rangeFactory.createRange(field, 200L, null));
-        Partition partition3 = new Partition(schema.getRowKeyTypes(), region3, "id3", true, "root", new ArrayList<>(), -1);
+        Partition partition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region3)
+                .id("id3")
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         StateStore dynamoDBStateStore = getStateStore(schema, Arrays.asList(partition0, partition1, partition2, partition3));
 
         // When
@@ -788,16 +827,48 @@ public class DynamoDBStateStoreIT {
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition rootPartition = dynamoDBStateStore.getAllPartitions().get(0);
         Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, 1L));
-        Partition partition1 = new Partition(schema.getRowKeyTypes(), region1, "id1", true, rootPartition.getId(), new ArrayList<>(), -1);
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region1)
+                .id("id1")
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         Region region2 = new Region(rangeFactory.createRange(field, 1L, null));
-        Partition partition2 = new Partition(schema.getRowKeyTypes(), region2, "id2", true, rootPartition.getId(), new ArrayList<>(), -1);
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region2)
+                .id("id2")
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         rootPartition.setLeafPartition(false);
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, partition1, partition2);
         Region region3 = new Region(rangeFactory.createRange(field, 1L, 9L));
-        Partition partition3 = new Partition(schema.getRowKeyTypes(), region3, "id3", true, partition2.getId(), new ArrayList<>(), -1);
+        Partition partition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region3)
+                .id("id3")
+                .leafPartition(true)
+                .parentPartitionId(partition2.getId())
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         Region region4 = new Region(rangeFactory.createRange(field, 9L, null));
-        Partition partition4 = new Partition(schema.getRowKeyTypes(), region4, "id4", true, partition2.getId(), new ArrayList<>(), -1);
+        Partition partition4 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region4)
+                .id("id4")
+                .leafPartition(true)
+                .parentPartitionId(partition2.getId())
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         partition2.setLeafPartition(false);
         partition2.setChildPartitionIds(Arrays.asList(partition3.getId(), partition4.getId()));
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(partition2, partition3, partition4);
@@ -1049,8 +1120,15 @@ public class DynamoDBStateStoreIT {
         // Then
         assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, Integer.MIN_VALUE, null));
-        Partition expectedPartition = new Partition(schema.getRowKeyTypes(),
-                expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
+        Partition expectedPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedRegion)
+                .id(partitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         assertThat(partitions).containsExactly(expectedPartition);
     }
 
@@ -1068,8 +1146,15 @@ public class DynamoDBStateStoreIT {
         // Then
         assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
-        Partition expectedPartition = new Partition(Collections.singletonList(new LongType()),
-                expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
+        Partition expectedPartition = Partition.builder()
+                .rowKeyTypes(Collections.singletonList(new LongType()))
+                .region(expectedRegion)
+                .id(partitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         assertThat(partitions).containsExactly(expectedPartition);
     }
 
@@ -1087,8 +1172,15 @@ public class DynamoDBStateStoreIT {
         // Then
         assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, "", null));
-        Partition expectedPartition = new Partition(Collections.singletonList(new StringType()),
-                expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
+        Partition expectedPartition = Partition.builder()
+                .rowKeyTypes(Collections.singletonList(new StringType()))
+                .region(expectedRegion)
+                .id(partitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         assertThat(partitions).containsExactly(expectedPartition);
     }
 
@@ -1106,8 +1198,15 @@ public class DynamoDBStateStoreIT {
         // Then
         assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, new byte[]{}, null));
-        Partition expectedPartition = new Partition(Collections.singletonList(new ByteArrayType()),
-                expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
+        Partition expectedPartition = Partition.builder()
+                .rowKeyTypes(Collections.singletonList(new ByteArrayType()))
+                .region(expectedRegion)
+                .id(partitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         assertThat(partitions).containsExactly(expectedPartition);
     }
 }
