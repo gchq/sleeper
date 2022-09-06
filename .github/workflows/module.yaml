@@ -25,7 +25,11 @@ jobs:
       - name: Publish Test Report
         if: ${{ always() }}
         uses: scacap/action-surefire-report@v1
-      - uses: jwgmeligmeyling/checkstyle-github-action@v1.2
+        with:
+          check_name: Test Report for ${{ inputs.module }}
+      - name: Publish Checkstyle Report
         if: ${{ always() }}
+        uses: jwgmeligmeyling/checkstyle-github-action@v1.2
         with:
           path: '**/checkstyle-result.xml'
+          name: Checkstyle for ${{ inputs.module }}
