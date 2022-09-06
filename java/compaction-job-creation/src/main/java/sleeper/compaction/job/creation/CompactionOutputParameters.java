@@ -17,7 +17,7 @@ package sleeper.compaction.job.creation;
 
 import sleeper.compaction.job.CompactionJob;
 
-public interface CompactionOutput {
+public interface CompactionOutputParameters {
 
     void set(CompactionJob job);
 }

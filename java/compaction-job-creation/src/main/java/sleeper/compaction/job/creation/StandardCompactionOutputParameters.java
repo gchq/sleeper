@@ -19,11 +19,11 @@ import sleeper.compaction.job.CompactionJob;
 
 import java.util.Objects;
 
-public class CompactionOutputStandard implements CompactionOutput {
+public class StandardCompactionOutputParameters implements CompactionOutputParameters {
 
     private final String outputFilePath;
 
-    public CompactionOutputStandard(String outputFilePath) {
+    public StandardCompactionOutputParameters(String outputFilePath) {
         this.outputFilePath = Objects.requireNonNull(outputFilePath, "outputFilePath must not be null");
     }
 

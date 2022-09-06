@@ -21,7 +21,7 @@ import sleeper.compaction.job.CompactionJob;
 import java.util.Arrays;
 import java.util.Objects;
 
-public class CompactionOutputSplitting implements CompactionOutput {
+public class SplittingCompactionOutputParameters implements CompactionOutputParameters {
 
     private final String leftPartitionId;
     private final String rightPartitionId;
@@ -30,7 +30,7 @@ public class CompactionOutputSplitting implements CompactionOutput {
     private final Object splitPoint;
     private final int dimension;
 
-    private CompactionOutputSplitting(Builder builder) {
+    private SplittingCompactionOutputParameters(Builder builder) {
         leftPartitionId = Objects.requireNonNull(builder.leftPartitionId, "leftPartitionId must not be null");
         rightPartitionId = Objects.requireNonNull(builder.rightPartitionId, "rightPartitionId must not be null");
         leftOutputFile = Objects.requireNonNull(builder.leftOutputFile, "leftOutputFile must not be null");
@@ -93,8 +93,8 @@ public class CompactionOutputSplitting implements CompactionOutput {
             return this;
         }
 
-        public CompactionOutputSplitting build() {
-            return new CompactionOutputSplitting(this);
+        public SplittingCompactionOutputParameters build() {
+            return new SplittingCompactionOutputParameters(this);
         }
     }
 }

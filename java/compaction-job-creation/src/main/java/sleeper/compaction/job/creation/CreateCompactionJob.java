@@ -29,7 +29,7 @@ public class CreateCompactionJob {
     private final String partitionId;
     private final String tableName;
     private final List<FileInfo> inputFiles;
-    private final CompactionOutput output;
+    private final CompactionOutputParameters output;
     private final String iteratorClassName;
     private final String iteratorConfig;
 
@@ -71,7 +71,7 @@ public class CreateCompactionJob {
         private String partitionId;
         private String tableName;
         private List<FileInfo> inputFiles;
-        private CompactionOutput output;
+        private CompactionOutputParameters output;
         private String iteratorClassName;
         private String iteratorConfig;
 
@@ -99,12 +99,12 @@ public class CreateCompactionJob {
         }
 
         public Builder outputFilePath(String outputFilePath) {
-            this.output = new CompactionOutputStandard(outputFilePath);
+            this.output = new StandardCompactionOutputParameters(outputFilePath);
             return this;
         }
 
-        public Builder splitting(Function<CompactionOutputSplitting.Builder, CompactionOutputSplitting> config) {
-            output = config.apply(CompactionOutputSplitting.builder());
+        public Builder splitting(Function<SplittingCompactionOutputParameters.Builder, SplittingCompactionOutputParameters> config) {
+            output = config.apply(SplittingCompactionOutputParameters.builder());
             return this;
         }
 
