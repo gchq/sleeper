@@ -15,11 +15,13 @@
  */
 package sleeper.compaction.strategy.impl;
 
-import sleeper.compaction.strategy.CompactionStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.strategy.CompactionStrategy;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfo;
 
@@ -30,8 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import sleeper.compaction.job.CompactionJob;
-import sleeper.configuration.properties.table.TableProperty;
 
 import static sleeper.configuration.properties.table.TableProperty.SIZE_RATIO_COMPACTION_STRATEGY_RATIO;
 
@@ -44,12 +44,12 @@ import static sleeper.configuration.properties.table.TableProperty.SIZE_RATIO_CO
  * is removed from the list of files and the test is repeated. This continues
  * until either a set of files matching the criteria is found, or there is only
  * one file left.
- * 
+ * <p>
  * If this results in a group of files of size less than or equal to
  * sleeper.table.compaction.files.batch.size then a compaction job is created
  * for these files. Otherwise the files are split into batches and jobs are
  * created as long as the batch also meets the criteria.
- * 
+ * <p>
  * The table property sleeper.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition
  * controls how many jobs can be running concurrently for each partition.
  */
@@ -90,7 +90,7 @@ public class SizeRatioCompactionStrategy extends AbstractCompactionStrategy {
             if (null == partition) {
                 throw new RuntimeException("Cannot find partition for partition id " + partitionId);
             }
-            
+
             if (partition.isLeafPartition()) {
                 long numConcurrentCompactionJobs = getNumberOfCurrentCompactionJobs(partitionId, activeFilesWithJobId);
                 if (numConcurrentCompactionJobs >= maxConcurrentCompactionJobsPerPartition) {
@@ -121,7 +121,7 @@ public class SizeRatioCompactionStrategy extends AbstractCompactionStrategy {
                 .collect(Collectors.toSet())
                 .size();
     }
-    
+
     @Override
     protected List<CompactionJob> createJobsForLeafPartition(Partition partition, List<FileInfo> fileInfos) {
         // Find files that meet criteria, i.e. sum of file sizes excluding largest
@@ -132,7 +132,7 @@ public class SizeRatioCompactionStrategy extends AbstractCompactionStrategy {
             return Collections.EMPTY_LIST;
         }
         LOGGER.info("For partition {} there is a list of {} files that meet the criteria", partition.getId(), filesThatMeetCriteria.size());
-        
+
         // Iterate through these files, batching into groups of compactionFilesBatchSize
         // and creating a job for each group as long as it meets the criteria.
         List<CompactionJob> compactionJobs = new ArrayList<>();
@@ -160,13 +160,13 @@ public class SizeRatioCompactionStrategy extends AbstractCompactionStrategy {
                 }
             }
         }
-        
+
         return compactionJobs;
     }
 
     private List<FileInfo> getListOfFilesThatMeetsCriteria(Partition partition, List<FileInfo> fileInfos) {
         List<FileInfo> filesInAscendingOrder = getFilesInAscendingOrder(partition, fileInfos);
-        
+
         while (filesInAscendingOrder.size() > 1) {
             List<Long> fileSizes = filesInAscendingOrder.stream().map(FileInfo::getNumberOfRecords).collect(Collectors.toList());
             if (meetsCriteria(fileSizes)) {
@@ -177,7 +177,7 @@ public class SizeRatioCompactionStrategy extends AbstractCompactionStrategy {
         }
         return null;
     }
-    
+
     private boolean meetsCriteria(List<Long> fileSizesInAscendingOrder) {
         if (fileSizesInAscendingOrder.isEmpty() || 1 == fileSizesInAscendingOrder.size()) {
             return false;
@@ -192,4 +192,4 @@ public class SizeRatioCompactionStrategy extends AbstractCompactionStrategy {
         LOGGER.info("Ratio * largestFileSize <= sumOfOtherFileSizes {}", (ratio * largestFileSize <= sumOfOtherFileSizes));
         return ratio * largestFileSize <= sumOfOtherFileSizes;
     }
-  }
+}

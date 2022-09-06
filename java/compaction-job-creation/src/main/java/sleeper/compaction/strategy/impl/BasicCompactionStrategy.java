@@ -15,18 +15,19 @@
  */
 package sleeper.compaction.strategy.impl;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.strategy.CompactionStrategy;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfo;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A simple {@link CompactionStrategy} that lists the active files for a partition in increasing order of the number

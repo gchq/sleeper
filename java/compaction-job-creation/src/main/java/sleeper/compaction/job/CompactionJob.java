@@ -89,7 +89,7 @@ public class CompactionJob {
 
     /**
      * Checks that there are no duplicate entries present in the list of files.
-     * 
+     *
      * @param <T>   generic type of list
      * @param files list of entries to check
      * @throws IllegalArgumentException if there are any duplicate entries
@@ -167,8 +167,12 @@ public class CompactionJob {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         CompactionJob compactionJob = (CompactionJob) o;
         return isSplittingJob == compactionJob.isSplittingJob &&
                 Objects.equals(splitPoint, compactionJob.splitPoint) &&
