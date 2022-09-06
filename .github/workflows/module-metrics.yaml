@@ -17,3 +17,4 @@ jobs:
     uses: ./.github/workflows/module.yaml
     with:
       module: metrics
+      publishTestReport: false

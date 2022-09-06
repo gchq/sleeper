@@ -4,6 +4,10 @@ on:
       module:
         required: true
         type: string
+      publishTestReport:
+        default: true
+        required: false
+        type: boolean
 
 jobs:
   build:
@@ -23,7 +27,7 @@ jobs:
         run: mvn --batch-mode verify -pl ${{ inputs.module }}
         working-directory: ./java
       - name: Publish Test Report
-        if: ${{ always() }}
+        if: ${{ always() && inputs.publishTestReport }}
         uses: scacap/action-surefire-report@v1
         with:
           check_name: Test Report for ${{ inputs.module }}
