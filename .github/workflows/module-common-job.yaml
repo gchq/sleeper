@@ -1,0 +1,14 @@
+name: Build Common Job Module
+on:
+  push:
+    paths:
+      - '.github/workflows/module-common-job.yaml'
+      - '.github/workflows/module.yaml'
+      - 'java/common-job/**'
+      - 'java/core/**'
+
+jobs:
+  module-workflow:
+    uses: ./.github/workflows/module.yaml
+    with:
+      module: common-job

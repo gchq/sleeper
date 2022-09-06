@@ -1,0 +1,16 @@
+name: Build State Store Module
+on:
+  push:
+    paths:
+      - '.github/workflows/module-statestore.yaml'
+      - '.github/workflows/module.yaml'
+      - 'java/statestore/**'
+      - 'java/parquet/**'
+      - 'java/configuration/**'
+      - 'java/core/**'
+
+jobs:
+  module-workflow:
+    uses: ./.github/workflows/module.yaml
+    with:
+      module: statestore
