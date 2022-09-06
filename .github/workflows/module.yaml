@@ -17,7 +17,7 @@ jobs:
           distribution: 'adopt'
           cache: 'maven'
       - name: Compile
-        run: mvn --batch-mode install -am -pl ${{ inputs.module }} -Pquick
+        run: mvn --batch-mode clean install -am -pl ${{ inputs.module }} -Pquick
         working-directory: ./java
       - name: Test
         run: mvn --batch-mode verify -pl ${{ inputs.module }}
