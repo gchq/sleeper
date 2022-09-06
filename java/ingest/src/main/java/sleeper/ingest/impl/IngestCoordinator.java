@@ -51,7 +51,7 @@ import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
  *     <li>When the {@link RecordBatch} is full, the data is retrieved from the {@link RecordBatch} as {@link Record} objects, in sorted order</li>
  *     <li>The sorted rows are passed to an {@link IngesterIntoPartitions} object, which uses {@link PartitionFileWriter} objects to create the partition files in the appropriate file system, possibly asynchronously</li>
  *     <li>Once all of the partition files have been created, the Sleeper {@link StateStore} is updated to include the new partition files</li>
- *     <li>The {@link RecordBatch}</li> is cleared, its resources freed, and a new one is created to accept more data</li>
+ *     <li>The {@link RecordBatch} is cleared, its resources freed, and a new one is created to accept more data</li>
  *     <li>So long as this {@link IngestCoordinator} remains open, more data can be supplied and more partition files will be created if required</li>
  *     <li>When this {@link IngestCoordinator} is closed, any remaining data is written to partition files and a {@link CompletableFuture} is returned that will complete once all of the files have been fully ingested and any intermediate files removed</li>
  * </ul>
