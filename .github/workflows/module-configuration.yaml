@@ -18,7 +18,7 @@ jobs:
           distribution: 'adopt'
           cache: 'maven'
       - name: Compile
-        run: mvn --batch-mode compile -am -pl configuration
+        run: mvn --batch-mode install -am -pl configuration -Pquick
         working-directory: ./java
       - name: Test
         run: mvn --batch-mode verify -pl configuration
