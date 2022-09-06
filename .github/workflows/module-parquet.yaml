@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/module-parquet.yaml'
       - '.github/workflows/module.yaml'
+      - 'java/pom.xml'
       - 'java/parquet/**'
       - 'java/configuration/**'
       - 'java/core/**'
