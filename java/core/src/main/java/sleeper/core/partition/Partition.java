@@ -43,25 +43,6 @@ public class Partition {
     private List<String> childPartitionIds;
     private int dimension = -1; // -1 used to indicate that it has not been split yet; when it has been split, indicates which dimension was used to split on.
 
-    public Partition() {
-    }
-
-    public Partition(List<PrimitiveType> rowKeyTypes,
-                     Region region,
-                     String id,
-                     boolean leafPartition,
-                     String parentPartitionId,
-                     List<String> childPartitionIds,
-                     int dimension) {
-        setRowKeyTypes(rowKeyTypes);
-        setRegion(region);
-        setId(id);
-        setLeafPartition(leafPartition);
-        setParentPartitionId(parentPartitionId);
-        setChildPartitionIds(childPartitionIds);
-        setDimension(dimension);
-    }
-
     private Partition(Partition.Builder builder) {
         setRowKeyTypes(builder.getRowKeyTypes());
         if (null != builder.getRegion()) {
