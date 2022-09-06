@@ -16,7 +16,6 @@
 package sleeper.core.partition;
 
 import org.junit.Test;
-import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;

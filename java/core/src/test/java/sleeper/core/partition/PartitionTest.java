@@ -52,7 +52,7 @@ public class PartitionTest {
         // Given
 
         Field field1 = new Field("key", new IntType());
-        Schema schema1 = Schema.builder().rowKeyFields(field1).build();;
+        Schema schema1 = Schema.builder().rowKeyFields(field1).build();
         Partition partition1 = createMidPartition(schema1, 10, 100);
 
         Field field2 = new Field("key", new IntType());
@@ -170,7 +170,7 @@ public class PartitionTest {
         // Given
         Field field11 = new Field("key1", new ByteArrayType());
         Field field12 = new Field("key2", new ByteArrayType());
-        Schema schema1 = Schema.builder().rowKeyFields(field11,field12).build();
+        Schema schema1 = Schema.builder().rowKeyFields(field11, field12).build();
         RangeFactory rangeFactory1 = new RangeFactory(schema1);
         Partition partition1 = new Partition();
         partition1.setRowKeyTypes(new ByteArrayType(), new ByteArrayType());
@@ -186,7 +186,7 @@ public class PartitionTest {
 
         Field field21 = new Field("key1", new ByteArrayType());
         Field field22 = new Field("key2", new ByteArrayType());
-        Schema schema2 = Schema.builder().rowKeyFields(field21,field22).build();
+        Schema schema2 = Schema.builder().rowKeyFields(field21, field22).build();
         RangeFactory rangeFactory2 = new RangeFactory(schema2);
         Partition partition2 = new Partition();
         partition2.setRowKeyTypes(new ByteArrayType(), new ByteArrayType());
@@ -202,7 +202,7 @@ public class PartitionTest {
 
         Field field31 = new Field("key1", new ByteArrayType());
         Field field32 = new Field("key2", new ByteArrayType());
-        Schema schema3 = Schema.builder().rowKeyFields(field31,field32).build();
+        Schema schema3 = Schema.builder().rowKeyFields(field31, field32).build();
         RangeFactory rangeFactory3 = new RangeFactory(schema3);
         Partition partition3 = new Partition();
         partition3.setRowKeyTypes(new ByteArrayType(), new ByteArrayType());

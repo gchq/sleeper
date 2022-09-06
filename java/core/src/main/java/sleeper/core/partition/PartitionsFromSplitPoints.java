@@ -16,11 +16,6 @@
 package sleeper.core.partition;
 
 import com.facebook.collections.ByteArray;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.core.range.Range;
