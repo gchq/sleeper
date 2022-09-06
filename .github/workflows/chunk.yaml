@@ -33,4 +33,4 @@ jobs:
         if: ${{ always() && inputs.publishTestReport }}
         uses: scacap/action-surefire-report@v1
         with:
-          check_name: Test Report for ${{ inputs.chunkName }}
+          check_name: Tests for chunk ${{ inputs.chunkName }}
