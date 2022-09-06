@@ -18,7 +18,6 @@ package sleeper.ingest.impl.partitionfilewriter;
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
@@ -85,10 +84,10 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
 
     /**
      * Warning: this constructor allows a bespoke Hadoop configuration to be specified, but it will not always be used
-     * due an underlying cache in the underlying {@link FileSystem} object. This {@link FileSystem} object maintains a
+     * due an underlying cache in the underlying {@link org.apache.hadoop.fs.FileSystem} object. This {@link org.apache.hadoop.fs.FileSystem} object maintains a
      * cache of file systems and the first time that it creates a {@link org.apache.hadoop.fs.s3a.S3AFileSystem} object,
      * the provided Hadoop configuration will be used. Thereafter, the Hadoop configuration will be ignored until {@link
-     * FileSystem#closeAll()} is called. This is strange behaviour and can cause errors which are difficult to
+     * org.apache.hadoop.fs.FileSystem#closeAll()} is called. This is strange behaviour and can cause errors which are difficult to
      * diagnose.
      *
      * @param sleeperSchema           The schema of the records in the partition
