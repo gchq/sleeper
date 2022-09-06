@@ -733,22 +733,23 @@ public class CompactSortedFilesIT {
         }
         writer2.close();
         //  - Split root partition
+        Range leftRange = new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 100L);
+        Partition leftPartition = Partition.builder()
+                .leafPartition(true)
+                .region(new Region(leftRange))
+                .id(Long.MIN_VALUE + "---100")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
+        Range rightRange = new RangeFactory(schema).createRange(field, 100L, null);
+        Partition rightPartition = Partition.builder()
+                .leafPartition(true)
+                .region(new Region(rightRange))
+                .id("100---")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         rootPartition.setLeafPartition(false);
-        Partition leftPartition = new Partition();
-        leftPartition.setLeafPartition(true);
-
-        Range leftRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, 100L);
-        leftPartition.setRegion(new Region(leftRange));
-        leftPartition.setId(Long.MIN_VALUE + "---100");
-        leftPartition.setParentPartitionId(rootPartition.getId());
-        leftPartition.setChildPartitionIds(new ArrayList<>());
-        Partition rightPartition = new Partition();
-        rightPartition.setLeafPartition(true);
-        Range rightRange = new Range.RangeFactory(schema).createRange(field, 100L, null);
-        rightPartition.setRegion(new Region(rightRange));
-        rightPartition.setId("100---");
-        rightPartition.setParentPartitionId(rootPartition.getId());
-        rightPartition.setChildPartitionIds(new ArrayList<>());
         rootPartition.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
         dynamoStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
         //  - Update Dynamo state store with details of files
@@ -912,25 +913,31 @@ public class CompactSortedFilesIT {
                 .collect(Collectors.toList());
         writer2.close();
         //  - Split root partition
+        Range leftRange = new RangeFactory(schema).createRange(
+                field1,
+                leftPartitionRecords.get(0).get("key1"),
+                leftPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
+        Partition leftPartition = Partition.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .leafPartition(true)
+                .region(new Region(leftRange))
+                .id("left")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
+        Range rightRange = new RangeFactory(schema).createRange(
+                field1,
+                rightPartitionRecords.get(0).get("key1"),
+                rightPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
+        Partition rightPartition = Partition.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .leafPartition(true)
+                .region(new Region(rightRange))
+                .id("right")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         rootPartition.setLeafPartition(false);
-        Partition leftPartition = new Partition();
-        leftPartition.setRowKeyTypes(new LongType(), new StringType());
-        leftPartition.setLeafPartition(true);
-        Range leftRange = new RangeFactory(schema)
-                .createRange(field1, leftPartitionRecords.get(0).get("key1"), leftPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
-        leftPartition.setRegion(new Region(leftRange));
-        leftPartition.setId("left");
-        leftPartition.setParentPartitionId(rootPartition.getId());
-        leftPartition.setChildPartitionIds(new ArrayList<>());
-        Partition rightPartition = new Partition();
-        rightPartition.setRowKeyTypes(new LongType(), new StringType());
-        rightPartition.setLeafPartition(true);
-        Range rightRange = new RangeFactory(schema)
-                .createRange(field1, rightPartitionRecords.get(0).get("key1"), rightPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
-        rightPartition.setRegion(new Region(rightRange));
-        rightPartition.setId("right");
-        rightPartition.setParentPartitionId(rootPartition.getId());
-        rightPartition.setChildPartitionIds(new ArrayList<>());
         rootPartition.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
         dynamoStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
         //  - Update Dynamo state store with details of files
@@ -1075,24 +1082,30 @@ public class CompactSortedFilesIT {
         writer2.close();
         //  - Split root partition
         rootPartition.setLeafPartition(false);
-        Partition leftPartition = new Partition();
-        leftPartition.setRowKeyTypes(new LongType(), new StringType());
-        leftPartition.setLeafPartition(true);
-        Range leftRange = new RangeFactory(schema)
-                .createRange(field1, leftPartitionRecords.get(0).get("key1"), leftPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
-        leftPartition.setRegion(new Region(leftRange));
-        leftPartition.setId("left");
-        leftPartition.setParentPartitionId(rootPartition.getId());
-        leftPartition.setChildPartitionIds(new ArrayList<>());
-        Partition rightPartition = new Partition();
-        rightPartition.setRowKeyTypes(new LongType(), new StringType());
-        rightPartition.setLeafPartition(true);
-        Range rightRange = new RangeFactory(schema)
-                .createRange(field1, rightPartitionRecords.get(0).get("key1"), rightPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
-        rightPartition.setRegion(new Region(rightRange));
-        rightPartition.setId("right");
-        rightPartition.setParentPartitionId(rootPartition.getId());
-        rightPartition.setChildPartitionIds(new ArrayList<>());
+        Range leftRange = new RangeFactory(schema).createRange(
+                field1,
+                leftPartitionRecords.get(0).get("key1"),
+                leftPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
+        Partition leftPartition = Partition.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .leafPartition(true)
+                .region(new Region(leftRange))
+                .id("left")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
+        Range rightRange = new RangeFactory(schema).createRange(
+                field1,
+                rightPartitionRecords.get(0).get("key1"),
+                rightPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
+        Partition rightPartition = Partition.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .leafPartition(true)
+                .region(new Region(rightRange))
+                .id("right")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         rootPartition.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
         dynamoStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
         //  - Update Dynamo state store with details of files
@@ -1225,21 +1238,23 @@ public class CompactSortedFilesIT {
         }
         writer2.close();
         //  - Split root partition
-        rootPartition.setLeafPartition(false);
-        Partition leftPartition = new Partition();
-        leftPartition.setLeafPartition(true);
         Range leftRange = new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 100L);
-        leftPartition.setRegion(new Region(leftRange));
-        leftPartition.setId(Long.MIN_VALUE + "---100");
-        leftPartition.setParentPartitionId(rootPartition.getId());
-        leftPartition.setChildPartitionIds(new ArrayList<>());
-        Partition rightPartition = new Partition();
-        rightPartition.setLeafPartition(true);
+        Partition leftPartition = Partition.builder()
+                .leafPartition(true)
+                .region(new Region(leftRange))
+                .id(Long.MIN_VALUE + "---100")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         Range rightRange = new RangeFactory(schema).createRange(field, 100L, null);
-        rightPartition.setRegion(new Region(rightRange));
-        rightPartition.setId("100---");
-        rightPartition.setParentPartitionId(rootPartition.getId());
-        rightPartition.setChildPartitionIds(new ArrayList<>());
+        Partition rightPartition = Partition.builder()
+                .leafPartition(true)
+                .region(new Region(rightRange))
+                .id("100---")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
+        rootPartition.setLeafPartition(false);
         rootPartition.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
         dynamoStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
         //  - Update Dynamo state store with details of files
@@ -1500,21 +1515,23 @@ public class CompactSortedFilesIT {
         }
         writer2.close();
         //  - Split root partition
-        rootPartition.setLeafPartition(false);
-        Partition leftPartition = new Partition();
-        leftPartition.setLeafPartition(true);
         Range leftRange = new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 100L);
-        leftPartition.setRegion(new Region(leftRange));
-        leftPartition.setId(Long.MIN_VALUE + "---100");
-        leftPartition.setParentPartitionId(rootPartition.getId());
-        leftPartition.setChildPartitionIds(new ArrayList<>());
-        Partition rightPartition = new Partition();
-        rightPartition.setLeafPartition(true);
+        Partition leftPartition = Partition.builder()
+                .leafPartition(true)
+                .region(new Region(leftRange))
+                .id(Long.MIN_VALUE + "---100")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         Range rightRange = new RangeFactory(schema).createRange(field, 100L, null);
-        rightPartition.setRegion(new Region(rightRange));
-        rightPartition.setId("100---");
-        rightPartition.setParentPartitionId(rootPartition.getId());
-        rightPartition.setChildPartitionIds(new ArrayList<>());
+        Partition rightPartition = Partition.builder()
+                .leafPartition(true)
+                .region(new Region(rightRange))
+                .id("100---")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
+        rootPartition.setLeafPartition(false);
         rootPartition.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
         dynamoStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
         //  - Update Dynamo state store with details of files

@@ -832,24 +832,26 @@ public class DynamoDBStateStoreIT {
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
         parentPartition.setDimension(1);
-        Partition childPartition1 = new Partition();
-        childPartition1.setRowKeyTypes(new LongType());
-        childPartition1.setLeafPartition(true);
-        childPartition1.setId("child1");
         Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, 0L));
-        childPartition1.setRegion(region1);
-        childPartition1.setChildPartitionIds(new ArrayList<>());
-        childPartition1.setParentPartitionId(parentPartition.getId());
-        childPartition1.setDimension(-1);
-        Partition childPartition2 = new Partition();
-        childPartition2.setRowKeyTypes(new LongType());
-        childPartition2.setLeafPartition(true);
-        childPartition2.setId("child2");
+        Partition childPartition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child1")
+                .region(region1)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId(parentPartition.getId())
+                .dimension(-1)
+                .build();
         Region region2 = new Region(rangeFactory.createRange(field, 0L, null));
-        childPartition2.setRegion(region2);
-        childPartition2.setChildPartitionIds(new ArrayList<>());
-        childPartition2.setParentPartitionId(parentPartition.getId());
-        childPartition2.setDimension(-1);
+        Partition childPartition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child2")
+                .region(region2)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId(parentPartition.getId())
+                .dimension(-1)
+                .build();
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
 
         // Then
@@ -867,23 +869,24 @@ public class DynamoDBStateStoreIT {
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
-        Partition childPartition1 = new Partition();
-        childPartition1.setRowKeyTypes(new LongType());
-        childPartition1.setLeafPartition(true);
-        childPartition1.setId("child1");
         Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, 0L));
-        childPartition1.setRegion(region1);
-        childPartition1.setChildPartitionIds(new ArrayList<>());
-        childPartition1.setParentPartitionId(parentPartition.getId());
-        Partition childPartition2 = new Partition();
-        childPartition2.setRowKeyTypes(new LongType());
-        childPartition2.setLeafPartition(true);
-        childPartition2.setId("child2");
+        Partition childPartition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child1")
+                .region(region1)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId(parentPartition.getId())
+                .build();
         Region region2 = new Region(rangeFactory.createRange(field, 0L, null));
-        childPartition2.setRegion(region2);
-
-        childPartition2.setChildPartitionIds(new ArrayList<>());
-        childPartition2.setParentPartitionId(parentPartition.getId());
+        Partition childPartition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child2")
+                .region(region2)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId(parentPartition.getId())
+                .build();
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
 
         // When / Then
@@ -902,22 +905,24 @@ public class DynamoDBStateStoreIT {
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
-        Partition childPartition1 = new Partition();
-        childPartition1.setRowKeyTypes(new LongType());
-        childPartition1.setLeafPartition(true);
-        childPartition1.setId("child1");
         Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
-        childPartition1.setRegion(region1);
-        childPartition1.setChildPartitionIds(new ArrayList<>());
-        childPartition1.setParentPartitionId("parent");
-        Partition childPartition2 = new Partition();
-        childPartition2.setRowKeyTypes(new LongType());
-        childPartition2.setLeafPartition(true);
-        childPartition2.setId("child2");
+        Partition childPartition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child1")
+                .region(region1)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
         Region region2 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
-        childPartition2.setRegion(region2);
-        childPartition2.setChildPartitionIds(new ArrayList<>());
-        childPartition2.setParentPartitionId("parent");
+        Partition childPartition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child2")
+                .region(region2)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
 
         // When / Then
         assertThatThrownBy(() ->
@@ -935,22 +940,24 @@ public class DynamoDBStateStoreIT {
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child3", "child2")); // Wrong children
-        Partition childPartition1 = new Partition();
-        childPartition1.setRowKeyTypes(new LongType());
-        childPartition1.setLeafPartition(true);
-        childPartition1.setId("child1");
         Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
-        childPartition1.setRegion(region1);
-        childPartition1.setChildPartitionIds(new ArrayList<>());
-        childPartition1.setParentPartitionId("parent");
-        Partition childPartition2 = new Partition();
-        childPartition2.setRowKeyTypes(new LongType());
-        childPartition2.setLeafPartition(true);
-        childPartition2.setId("child2");
+        Partition childPartition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child1")
+                .region(region1)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
         Region region2 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
-        childPartition2.setRegion(region2);
-        childPartition2.setChildPartitionIds(new ArrayList<>());
-        childPartition2.setParentPartitionId("parent");
+        Partition childPartition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child2")
+                .region(region2)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
 
         // When / Then
         assertThatThrownBy(() ->
@@ -968,22 +975,24 @@ public class DynamoDBStateStoreIT {
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
-        Partition childPartition1 = new Partition();
-        childPartition1.setRowKeyTypes(new LongType());
-        childPartition1.setLeafPartition(true);
-        childPartition1.setId("child1");
         Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
-        childPartition1.setRegion(region1);
-        childPartition1.setChildPartitionIds(new ArrayList<>());
-        childPartition1.setParentPartitionId("notparent"); // Wrong parent
-        Partition childPartition2 = new Partition();
-        childPartition2.setRowKeyTypes(new LongType());
-        childPartition2.setLeafPartition(true);
-        childPartition2.setId("child2");
+        Partition childPartition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child1")
+                .region(region1)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("notparent") // Wrong parent
+                .build();
         Region region2 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
-        childPartition2.setRegion(region2);
-        childPartition2.setChildPartitionIds(new ArrayList<>());
-        childPartition2.setParentPartitionId("parent");
+        Partition childPartition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child2")
+                .region(region2)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
 
         // When / Then
         assertThatThrownBy(() ->
@@ -1001,22 +1010,24 @@ public class DynamoDBStateStoreIT {
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
-        Partition childPartition1 = new Partition();
-        childPartition1.setRowKeyTypes(new LongType());
-        childPartition1.setLeafPartition(true);
-        childPartition1.setId("child1");
         Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, 0L));
-        childPartition1.setRegion(region1);
-        childPartition1.setChildPartitionIds(new ArrayList<>());
-        childPartition1.setParentPartitionId("parent");
-        Partition childPartition2 = new Partition();
-        childPartition2.setRowKeyTypes(new LongType());
-        childPartition2.setLeafPartition(false); // Not leaf
-        childPartition2.setId("child2");
+        Partition childPartition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child1")
+                .region(region1)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
         Region region2 = new Region(rangeFactory.createRange(field, 0L, Long.MAX_VALUE));
-        childPartition2.setRegion(region2);
-        childPartition2.setChildPartitionIds(new ArrayList<>());
-        childPartition2.setParentPartitionId("parent");
+        Partition childPartition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(false) // Not leaf
+                .id("child2")
+                .region(region2)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
 
         // When / Then
         assertThatThrownBy(() ->
