@@ -3,26 +3,11 @@ on:
   push:
     paths:
       - '.github/workflows/module-core.yaml'
+      - '.github/workflows/module.yaml'
       - 'java/core/**'
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
-        with:
-          java-version: '8'
-          distribution: 'adopt'
-          cache: 'maven'
-      - name: Build & Test
-        run: mvn --batch-mode verify -am -pl core
-        working-directory: ./java
-      - name: Publish Test Report
-        if: ${{ always() }}
-        uses: scacap/action-surefire-report@v1
-      - uses: jwgmeligmeyling/checkstyle-github-action@v1.2
-        if: ${{ always() }}
-        with:
-          path: '**/checkstyle-result.xml'
+  module-workflow:
+    uses: ./.github/workflows/module.yml
+    with:
+      module: core
