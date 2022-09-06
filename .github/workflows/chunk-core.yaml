@@ -1,0 +1,19 @@
+name: Build Core Modules
+on:
+  push:
+    paths:
+      - '.github/workflows/chunk-core.yaml'
+      - '.github/workflows/chunk.yaml'
+      - 'java/pom.xml'
+      - 'java/bulk-import/pom.xml'
+      - 'java/bulk-import/bulk-import-common/**'
+      - 'java/common-job/**'
+      - 'java/configuration/**'
+      - 'java/core/**'
+
+jobs:
+  module-workflow:
+    uses: ./.github/workflows/chunk.yaml
+    with:
+      chunkName: Core
+      moduleList: core,common-job,configuration,bulk-import/bulk-import-common
