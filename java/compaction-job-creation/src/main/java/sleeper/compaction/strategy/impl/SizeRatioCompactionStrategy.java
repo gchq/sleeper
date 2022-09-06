@@ -18,7 +18,6 @@ package sleeper.compaction.strategy.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.strategy.CompactionStrategy;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
@@ -36,7 +35,7 @@ import java.util.stream.Collectors;
 import static sleeper.configuration.properties.table.TableProperty.SIZE_RATIO_COMPACTION_STRATEGY_RATIO;
 
 /**
- * A {@link CompactionStrategy} that is similar to the strategy used in Accumulo.
+ * A {@link sleeper.compaction.strategy.CompactionStrategy} that is similar to the strategy used in Accumulo.
  * Given files sorted into increasing size order, it tests whether the sum of the
  * sizes of the files excluding the largest is greater than or equal to a ratio
  * (3 by default) times the size of the largest. If this test is met then a
