@@ -9,6 +9,7 @@ on:
       - 'java/bulk-import/bulk-import-common/**'
       - 'java/common-job/**'
       - 'java/parquet/**'
+      - 'java/sketches/**'
       - 'java/configuration/**'
       - 'java/core/**'
 
@@ -17,4 +18,4 @@ jobs:
     uses: ./.github/workflows/chunk.yaml
     with:
       chunkName: Common
-      moduleList: core,configuration,parquet,common-job,bulk-import/bulk-import-common
+      moduleList: core,configuration,sketches,parquet,common-job,bulk-import/bulk-import-common
