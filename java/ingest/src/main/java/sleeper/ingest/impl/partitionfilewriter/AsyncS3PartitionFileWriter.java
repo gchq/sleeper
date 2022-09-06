@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package sleeper.ingest.impl.partitionfilewriter;
 
 import com.facebook.collections.ByteArray;
@@ -190,7 +205,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * @param s3BucketName        The S3 bucket to put the file into
      * @param s3Key               The S3 key of the uploaded file
      * @param hadoopConfiguration The Hadoop configuration to use when deleting the local file
-     * @return The {@link CompletableFuture<PutObjectResponse>} which was returned by the {@link
+     * @return The {@link CompletableFuture} which was returned by the {@link
      * S3AsyncClient#putObject} method.
      */
     private static CompletableFuture<PutObjectResponse> asyncUploadLocalFileToS3ThenDeleteLocalCopy(

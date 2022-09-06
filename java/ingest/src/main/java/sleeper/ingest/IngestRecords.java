@@ -16,7 +16,6 @@
 package sleeper.ingest;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactory;
@@ -74,9 +73,9 @@ public class IngestRecords {
 
     /**
      * This version of the constructor allows a bespoke Hadoop configuration to be specified. The underlying {@link
-     * FileSystem} object maintains a cache of file systems and the first time that it creates a {@link
+     * org.apache.hadoop.fs.FileSystem} object maintains a cache of file systems and the first time that it creates a {@link
      * org.apache.hadoop.fs.s3a.S3AFileSystem} object, the provided Hadoop configuration will be used. Thereafter, the
-     * Hadoop configuration will be ignored until {@link FileSystem#closeAll()} is called. This is not ideal behaviour.
+     * Hadoop configuration will be ignored until {@link org.apache.hadoop.fs.FileSystem#closeAll()} is called. This is not ideal behaviour.
      */
     public IngestRecords(ObjectFactory objectFactory,
                          String localDir,

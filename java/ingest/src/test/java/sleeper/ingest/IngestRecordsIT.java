@@ -1492,7 +1492,6 @@ public class IngestRecordsIT {
                 .sortKeyFields(new Field("sort", new LongType()))
                 .valueFields(new Field("value", new LongType()))
                 .build();
-        ;
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
