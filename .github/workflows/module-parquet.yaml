@@ -5,6 +5,7 @@ on:
       - '.github/workflows/module-parquet.yaml'
       - '.github/workflows/module.yaml'
       - 'code-style/checkstyle*.xml'
+      - 'java/pom.xml'
       - 'java/parquet/**'
       - 'java/configuration/**'
       - 'java/core/**'

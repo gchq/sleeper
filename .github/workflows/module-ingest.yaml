@@ -5,6 +5,7 @@ on:
       - '.github/workflows/module-ingest.yaml'
       - '.github/workflows/module.yaml'
       - 'code-style/checkstyle*.xml'
+      - 'java/pom.xml'
       - 'java/ingest/**'
       - 'java/common-job/**'
       - 'java/sketches/**'

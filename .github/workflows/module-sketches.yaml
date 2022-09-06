@@ -5,6 +5,7 @@ on:
       - '.github/workflows/module-sketches.yaml'
       - '.github/workflows/module.yaml'
       - 'code-style/checkstyle*.xml'
+      - 'java/pom.xml'
       - 'java/sketches/**'
       - 'java/core/**'
 

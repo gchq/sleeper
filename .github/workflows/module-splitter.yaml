@@ -5,6 +5,7 @@ on:
       - '.github/workflows/module-splitter.yaml'
       - '.github/workflows/module.yaml'
       - 'code-style/checkstyle*.xml'
+      - 'java/pom.xml'
       - 'java/splitter/**'
       - 'java/ingest/**'
       - 'java/common-job/**'

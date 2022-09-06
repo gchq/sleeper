@@ -5,6 +5,8 @@ on:
       - '.github/workflows/module-bulk-import-starter.yaml'
       - '.github/workflows/module.yaml'
       - 'code-style/checkstyle*.xml'
+      - 'java/pom.xml'
+      - 'java/bulk-import/pom.xml'
       - 'java/bulk-import/bulk-import-starter/**'
       - 'java/bulk-import/bulk-import-common/**'
       - 'java/configuration/**'

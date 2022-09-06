@@ -5,6 +5,7 @@ on:
       - '.github/workflows/module-metrics.yaml'
       - '.github/workflows/module.yaml'
       - 'code-style/checkstyle*.xml'
+      - 'java/pom.xml'
       - 'java/metrics/**'
       - 'java/tables/**'
       - 'java/statestore/**'

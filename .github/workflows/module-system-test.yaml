@@ -5,6 +5,7 @@ on:
       - '.github/workflows/module-system-test.yaml'
       - '.github/workflows/module.yaml'
       - 'code-style/checkstyle*.xml'
+      - 'java/pom.xml'
       - 'java/cdk/**'
       - 'java/bulk-import/bulk-import-common/**'
       - 'java/clients/**'

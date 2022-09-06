@@ -5,6 +5,7 @@ on:
       - '.github/workflows/module-cdk.yaml'
       - '.github/workflows/module.yaml'
       - 'code-style/checkstyle*.xml'
+      - 'java/pom.xml'
       - 'java/cdk/**'
       - 'java/tables/**'
       - 'java/statestore/**'

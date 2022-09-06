@@ -5,6 +5,7 @@ on:
       - '.github/workflows/module-tables.yaml'
       - '.github/workflows/module.yaml'
       - 'code-style/checkstyle*.xml'
+      - 'java/pom.xml'
       - 'java/tables/**'
       - 'java/statestore/**'
       - 'java/parquet/**'

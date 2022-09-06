@@ -5,6 +5,7 @@ on:
       - '.github/workflows/module-compaction-job-execution.yaml'
       - '.github/workflows/module.yaml'
       - 'code-style/checkstyle*.xml'
+      - 'java/pom.xml'
       - 'java/compaction-job-execution/**'
       - 'java/compaction-job-creation/**'
       - 'java/ingest/**'

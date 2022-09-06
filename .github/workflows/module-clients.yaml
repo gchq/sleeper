@@ -5,6 +5,7 @@ on:
       - '.github/workflows/module-clients.yaml'
       - '.github/workflows/module.yaml'
       - 'code-style/checkstyle*.xml'
+      - 'java/pom.xml'
       - 'java/clients/**'
       - 'java/query/**'
       - 'java/splitter/**'

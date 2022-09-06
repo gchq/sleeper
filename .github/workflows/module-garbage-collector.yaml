@@ -5,6 +5,7 @@ on:
       - '.github/workflows/module-garbage-collector.yaml'
       - '.github/workflows/module.yaml'
       - 'code-style/checkstyle*.xml'
+      - 'java/pom.xml'
       - 'java/garbage-collector/**'
       - 'java/tables/**'
       - 'java/statestore/**'

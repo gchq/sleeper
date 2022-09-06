@@ -5,6 +5,7 @@ on:
       - '.github/workflows/module-query.yaml'
       - '.github/workflows/module.yaml'
       - 'code-style/checkstyle*.xml'
+      - 'java/pom.xml'
       - 'java/query/**'
       - 'java/ingest/**'
       - 'java/common-job/**'
