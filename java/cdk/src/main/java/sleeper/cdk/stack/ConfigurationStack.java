@@ -15,9 +15,7 @@
  */
 package sleeper.cdk.stack;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-
+import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
@@ -25,6 +23,9 @@ import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.constructs.Construct;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 /**
  * This configuration stack deploys the config bucket used to store the Sleeper
@@ -44,5 +45,7 @@ public class ConfigurationStack extends NestedStack {
                 .build();
 
         instanceProperties.set(CONFIG_BUCKET, configBucket.getBucketName());
+
+        Utils.addStackTagIfSet(this, instanceProperties);
     }
 }

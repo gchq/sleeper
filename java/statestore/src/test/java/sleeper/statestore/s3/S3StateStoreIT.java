@@ -844,12 +844,13 @@ public class S3StateStoreIT {
         Field field1 = new Field("key1", new ByteArrayType());
         Field field2 = new Field("key2", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         byte[] min1 = new byte[]{1, 2, 3, 4};
         byte[] min2 = new byte[]{99, 5};
         byte[] max1 = new byte[]{5, 6, 7, 8, 9};
         byte[] max2 = new byte[]{101, 0};
-        Range range1 = new Range(field1, min1, max1);
-        Range range2 = new Range(field2, min2, max2);
+        Range range1 = rangeFactory.createRange(field1, min1, max1);
+        Range range2 = rangeFactory.createRange(field2, min2, max2);
         Region region = new Region(Arrays.asList(range1, range2));
         Partition partition = new Partition(schema.getRowKeyTypes(),
                 region, "id", true, "P", new ArrayList<>(), -1);

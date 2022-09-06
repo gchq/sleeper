@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -73,6 +74,7 @@ public class SplitMultiDimensionalPartitionImpl {
     private final Partition partition;
     private final List<String> fileNames; // These should be active files for the partition
     private final Configuration conf;
+    private final RangeFactory rangeFactory;
 
     public SplitMultiDimensionalPartitionImpl(StateStore stateStore,
                                               Schema schema,
@@ -85,6 +87,7 @@ public class SplitMultiDimensionalPartitionImpl {
         this.partition = partition;
         this.fileNames = fileNames;
         this.conf = conf;
+        this.rangeFactory = new RangeFactory(schema);
     }
 
     void splitPartition() throws StateStoreException, IOException {
@@ -277,7 +280,7 @@ public class SplitMultiDimensionalPartitionImpl {
         Partition leftChild = new Partition();
         leftChild.setRowKeyTypes(rowKeyTypes);
         List<Range> leftChildRanges = removeRange(partition.getRegion().getRanges(), fieldToSplitOn.getName());
-        Range rangeForSplitDimensionLeftChild = new Range(fieldToSplitOn, partition.getRegion().getRange(fieldToSplitOn.getName()).getMin(), splitPoint);
+        Range rangeForSplitDimensionLeftChild = rangeFactory.createRange(fieldToSplitOn, partition.getRegion().getRange(fieldToSplitOn.getName()).getMin(), splitPoint);
         leftChildRanges.add(rangeForSplitDimensionLeftChild);
         Region leftChildRegion = new Region(leftChildRanges);
         leftChild.setRegion(leftChildRegion);
@@ -288,7 +291,7 @@ public class SplitMultiDimensionalPartitionImpl {
         Partition rightChild = new Partition();
         rightChild.setRowKeyTypes(rowKeyTypes);
         List<Range> rightChildRanges = removeRange(partition.getRegion().getRanges(), fieldToSplitOn.getName());
-        Range rangeForSplitDimensionRightChild = new Range(fieldToSplitOn, splitPoint, partition.getRegion().getRange(fieldToSplitOn.getName()).getMax());
+        Range rangeForSplitDimensionRightChild = rangeFactory.createRange(fieldToSplitOn, splitPoint, partition.getRegion().getRange(fieldToSplitOn.getName()).getMax());
         rightChildRanges.add(rangeForSplitDimensionRightChild);
         Region rightChildRegion = new Region(rightChildRanges);
         rightChild.setRegion(rightChildRegion);
