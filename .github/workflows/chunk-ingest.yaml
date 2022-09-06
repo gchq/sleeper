@@ -2,8 +2,8 @@ name: Build Ingest Module
 on:
   push:
     paths:
-      - '.github/workflows/module-ingest.yaml'
-      - '.github/workflows/module.yaml'
+      - '.github/workflows/chunk-ingest.yaml'
+      - '.github/workflows/chunk.yaml'
       - 'java/pom.xml'
       - 'java/ingest/**'
       - 'java/common-job/**'
@@ -16,6 +16,7 @@ on:
 
 jobs:
   module-workflow:
-    uses: ./.github/workflows/module.yaml
+    uses: ./.github/workflows/chunk.yaml
     with:
-      module: ingest
+      chunkName: Ingest
+      moduleList: ingest

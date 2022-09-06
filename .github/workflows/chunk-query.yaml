@@ -1,13 +1,11 @@
-name: Build Clients Module
+name: Build Query Module
 on:
   push:
     paths:
-      - '.github/workflows/module-clients.yaml'
-      - '.github/workflows/module.yaml'
+      - '.github/workflows/chunk-query.yaml'
+      - '.github/workflows/chunk.yaml'
       - 'java/pom.xml'
-      - 'java/clients/**'
       - 'java/query/**'
-      - 'java/splitter/**'
       - 'java/ingest/**'
       - 'java/common-job/**'
       - 'java/sketches/**'
@@ -19,6 +17,7 @@ on:
 
 jobs:
   module-workflow:
-    uses: ./.github/workflows/module.yaml
+    uses: ./.github/workflows/chunk.yaml
     with:
-      module: clients
+      chunkName: Query
+      moduleList: query

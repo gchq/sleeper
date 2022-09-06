@@ -2,8 +2,8 @@ name: Build State Store Module
 on:
   push:
     paths:
-      - '.github/workflows/module-statestore.yaml'
-      - '.github/workflows/module.yaml'
+      - '.github/workflows/chunk-statestore.yaml'
+      - '.github/workflows/chunk.yaml'
       - 'java/pom.xml'
       - 'java/statestore/**'
       - 'java/parquet/**'
@@ -12,6 +12,7 @@ on:
 
 jobs:
   module-workflow:
-    uses: ./.github/workflows/module.yaml
+    uses: ./.github/workflows/chunk.yaml
     with:
-      module: statestore
+      chunkName: State Store
+      moduleList: statestore

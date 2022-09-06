@@ -2,8 +2,8 @@ name: Build Athena Module
 on:
   push:
     paths:
-      - '.github/workflows/module-athena.yaml'
-      - '.github/workflows/module.yaml'
+      - '.github/workflows/chunk-athena.yaml'
+      - '.github/workflows/chunk.yaml'
       - 'java/pom.xml'
       - 'java/athena/**'
       - 'java/query/**'
@@ -19,6 +19,7 @@ on:
 
 jobs:
   module-workflow:
-    uses: ./.github/workflows/module.yaml
+    uses: ./.github/workflows/chunk.yaml
     with:
-      module: athena
+      chunkName: Athena
+      moduleList: athena
