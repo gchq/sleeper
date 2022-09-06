@@ -1,0 +1,15 @@
+name: Build Parquet Module
+on:
+  push:
+    paths:
+      - '.github/workflows/module-parquet.yaml'
+      - '.github/workflows/module.yaml'
+      - 'java/parquet/**'
+      - 'java/configuration/**'
+      - 'java/core/**'
+
+jobs:
+  module-workflow:
+    uses: ./.github/workflows/module.yaml
+    with:
+      module: parquet

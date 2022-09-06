@@ -1,0 +1,16 @@
+name: Build Bulk Import Starter Module
+on:
+  push:
+    paths:
+      - '.github/workflows/module-bulk-import-starter.yaml'
+      - '.github/workflows/module.yaml'
+      - 'java/bulk-import/bulk-import-starter/**'
+      - 'java/bulk-import/bulk-import-common/**'
+      - 'java/configuration/**'
+      - 'java/core/**'
+
+jobs:
+  module-workflow:
+    uses: ./.github/workflows/module.yaml
+    with:
+      module: bulk-import/bulk-import-starter

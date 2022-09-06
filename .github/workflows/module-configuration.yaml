@@ -1,0 +1,14 @@
+name: Build Configuration Module
+on:
+  push:
+    paths:
+      - '.github/workflows/module-configuration.yaml'
+      - '.github/workflows/module.yaml'
+      - 'java/configuration/**'
+      - 'java/core/**'
+
+jobs:
+  module-workflow:
+    uses: ./.github/workflows/module.yaml
+    with:
+      module: core

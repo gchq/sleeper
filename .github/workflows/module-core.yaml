@@ -1,0 +1,13 @@
+name: Build Core Module
+on:
+  push:
+    paths:
+      - '.github/workflows/module-core.yaml'
+      - '.github/workflows/module.yaml'
+      - 'java/core/**'
+
+jobs:
+  module-workflow:
+    uses: ./.github/workflows/module.yaml
+    with:
+      module: core

@@ -1,0 +1,17 @@
+name: Build Tables Module
+on:
+  push:
+    paths:
+      - '.github/workflows/module-tables.yaml'
+      - '.github/workflows/module.yaml'
+      - 'java/tables/**'
+      - 'java/statestore/**'
+      - 'java/parquet/**'
+      - 'java/configuration/**'
+      - 'java/core/**'
+
+jobs:
+  module-workflow:
+    uses: ./.github/workflows/module.yaml
+    with:
+      module: tables

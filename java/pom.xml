@@ -369,5 +369,27 @@
                 <skipITs>true</skipITs>
             </properties>
         </profile>
+        <profile>
+            <id>skipShade</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-shade-plugin</artifactId>
+                            <version>${shade.plugin.version}</version>
+                            <executions>
+                                <execution>
+                                    <phase>none</phase>
+                                    <goals>
+                                        <goal>shade</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
     </profiles>
 </project>
