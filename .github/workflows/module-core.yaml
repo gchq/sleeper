@@ -8,6 +8,6 @@ on:
 
 jobs:
   module-workflow:
-    uses: ./.github/workflows/module.yml
+    uses: ./.github/workflows/module.yaml
     with:
       module: core
