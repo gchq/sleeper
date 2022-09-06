@@ -108,9 +108,10 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeCorrectlyAndDynamoUpdatedLongKey() throws IOException, StateStoreException, IteratorException, ObjectFactoryException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
         //  - Create two files of sorted data
         String folderName = folder.newFolder().getAbsolutePath();
         String file1 = folderName + "/file1.parquet";
@@ -223,9 +224,10 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeCorrectlyAndDynamoUpdatedStringKey() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new StringType()));
-        schema.setValueFields(new Field("value1", new StringType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value1", new StringType()), new Field("value2", new LongType()))
+                .build();
         //  - Create two files of sorted data
         String folderName = folder.newFolder().getAbsolutePath();
         String file1 = folderName + "/file1.parquet";
@@ -342,9 +344,10 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeCorrectlyAndDynamoUpdatedByteArrayKey() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
-        schema.setValueFields(new Field("value1", new ByteArrayType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new ByteArrayType()))
+                .valueFields(new Field("value1", new ByteArrayType()), new Field("value2", new LongType()))
+                .build();
         //  - Create two files of sorted data
         String folderName = folder.newFolder().getAbsolutePath();
         String file1 = folderName + "/file1.parquet";
@@ -483,9 +486,10 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeCorrectlyWhenSomeAreEmpty() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
         //  - Create two files of sorted data
         String folderName = folder.newFolder().getAbsolutePath();
         String file1 = folderName + "/file1.parquet";
@@ -586,9 +590,10 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeCorrectlyWhenAllAreEmpty() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
         //  - Create two empty files
         String folderName = folder.newFolder().getAbsolutePath();
         String file1 = folderName + "/file1.parquet";
@@ -667,10 +672,11 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeAndSplitCorrectlyAndDynamoUpdated() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(field)
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
         //  - Create DynamoDBStateStore
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator("fsmascadu", schema, dynamoDBClient);
         DynamoDBStateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
@@ -833,11 +839,12 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeAndSplitCorrectlyWith2DimKeySplitOnFirstKey() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
-        schema.setRowKeyFields(field1, field2);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(field1, field2)
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
         //  - Create DynamoDBStateStore
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator("fsmascw2dksofk", schema, dynamoDBClient);
         DynamoDBStateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
@@ -994,11 +1001,12 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeAndSplitCorrectlyWith2DimKeySplitOnSecondKey() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
-        schema.setRowKeyFields(field1, field2);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(field1, field2)
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
         //  - Create DynamoDBStateStore
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator("fsmascw2dksosk", schema, dynamoDBClient);
         DynamoDBStateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
@@ -1155,10 +1163,11 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeAndSplitCorrectlyWhenOneChildFileIsEmpty() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(field)
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
         //  - Create DynamoDBStateStore
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator("fsmascwocfie", schema, dynamoDBClient);
         DynamoDBStateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
@@ -1310,9 +1319,10 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeAndApplyIteratorCorrectlyLongKey() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("timestamp", new LongType()), new Field("value", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .valueFields(new Field("timestamp", new LongType()), new Field("value", new LongType()))
+                .build();
         //  - Create two files of sorted data
         String folderName = folder.newFolder().getAbsolutePath();
         String file1 = folderName + "/file1.parquet";
@@ -1429,10 +1439,11 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeAndSplitAndApplyIteratorCorrectlyLongKey() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("timestamp", new LongType()), new Field("value", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(field)
+                .valueFields(new Field("timestamp", new LongType()), new Field("value", new LongType()))
+                .build();
         //  - Create DynamoDBStateStore
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator("fsmasaaicadu", schema, dynamoDBClient);
         DynamoDBStateStore dynamoStateStore = dynamoDBStateStoreCreator.create();

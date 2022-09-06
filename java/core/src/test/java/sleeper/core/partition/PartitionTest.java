@@ -18,6 +18,7 @@ package sleeper.core.partition;
 import org.junit.Test;
 import sleeper.core.key.Key;
 import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -36,35 +37,31 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class PartitionTest {
 
+    private Partition createMidPartition(Schema schema, Object splitPoint1, Object splitPoint2) {
+        PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema);
+        return partitionsBuilder.leavesWithSplits(
+                        Arrays.asList("C1", "C2", "C3"),
+                        Arrays.asList(splitPoint1, splitPoint2))
+                .parentJoining("M", "C1", "C2")
+                .parentJoining("P", "M", "C3")
+                .buildTree().getPartition("M");
+    }
+
     @Test
     public void testEqualsAndHashcodeWithIntKeyWithNulls() {
         // Given
+
         Field field1 = new Field("key", new IntType());
-        Partition partition1 = new Partition();
-        partition1.setRowKeyTypes(new IntType());
-        partition1.setId("0---100");
-        Region region1 = new Region(new Range(field1, 0, true, null, false));
-        partition1.setRegion(region1);
-        partition1.setLeafPartition(true);
-        partition1.setParentPartitionId("P");
-        partition1.setChildPartitionIds(Arrays.asList("C1", "C2"));
+        Schema schema1 = Schema.builder().rowKeyFields(field1).build();;
+        Partition partition1 = createMidPartition(schema1, 10, 100);
+
         Field field2 = new Field("key", new IntType());
-        Partition partition2 = new Partition();
-        partition2.setRowKeyTypes(new IntType());
-        partition2.setId("0---100");
-        Region region2 = new Region(new Range(field2, 0, true, null, false));
-        partition2.setRegion(region2);
-        partition2.setLeafPartition(true);
-        partition2.setParentPartitionId("P");
-        partition2.setChildPartitionIds(Arrays.asList("C1", "C2"));
-        Partition partition3 = new Partition();
-        partition3.setRowKeyTypes(new IntType());
-        partition3.setId("0---100");
-        Region region3 = new Region(new Range(field2, 0, true, 100, false));
-        partition3.setRegion(region3);
-        partition3.setLeafPartition(true);
-        partition3.setParentPartitionId("P");
-        partition3.setChildPartitionIds(Arrays.asList("C1", "C2"));
+        Schema schema2 = Schema.builder().rowKeyFields(field2).build();
+        Partition partition2 = createMidPartition(schema2, 10, 100);
+
+        Field field3 = new Field("key", new IntType());
+        Schema schema3 = Schema.builder().rowKeyFields(field3).build();
+        Partition partition3 = createMidPartition(schema3, 10, 200);
 
         // When
         boolean test1 = partition1.equals(partition2);
@@ -83,32 +80,18 @@ public class PartitionTest {
     @Test
     public void testEqualsAndHashcodeWithLongKey() {
         // Given
+
         Field field1 = new Field("key", new LongType());
-        Partition partition1 = new Partition();
-        partition1.setRowKeyTypes(new LongType());
-        partition1.setId("0---100");
-        Region region1 = new Region(new Range(field1, 0L, true, 100L, false));
-        partition1.setRegion(region1);
-        partition1.setLeafPartition(true);
-        partition1.setParentPartitionId("P");
-        partition1.setChildPartitionIds(Arrays.asList("C1", "C2"));
+        Schema schema1 = Schema.builder().rowKeyFields(field1).build();
+        Partition partition1 = createMidPartition(schema1, 0L, 100L);
+
         Field field2 = new Field("key", new LongType());
-        Partition partition2 = new Partition();
-        partition2.setRowKeyTypes(new LongType());
-        partition2.setId("0---100");
-        Region region2 = new Region(new Range(field2, 0L, true, 100L, false));
-        partition2.setRegion(region2);
-        partition2.setLeafPartition(true);
-        partition2.setParentPartitionId("P");
-        partition2.setChildPartitionIds(Arrays.asList("C1", "C2"));
-        Partition partition3 = new Partition();
-        partition3.setRowKeyTypes(new LongType());
-        partition3.setId("0---100");
-        Region region3 = new Region(new Range(field2, 0L, true, 100L, false));
-        partition3.setRegion(region3);
-        partition3.setLeafPartition(true);
-        partition3.setParentPartitionId("P");
-        partition3.setChildPartitionIds(Collections.singletonList("C1"));
+        Schema schema2 = Schema.builder().rowKeyFields(field2).build();
+        Partition partition2 = createMidPartition(schema2, 0L, 100L);
+
+        Field field3 = new Field("key", new LongType());
+        Schema schema3 = Schema.builder().rowKeyFields(field3).build();
+        Partition partition3 = createMidPartition(schema3, 0L, 200L);
 
         // When
         boolean test1 = partition1.equals(partition2);
@@ -128,32 +111,16 @@ public class PartitionTest {
     public void testEqualsAndHashcodeWithLongKeyDifferentTypes() {
         // Given
         Field field1 = new Field("key", new LongType());
-        Partition partition1 = new Partition();
-        partition1.setRowKeyTypes(new LongType());
-        partition1.setId("0---100");
-        Region region1 = new Region(new Range(field1, 0L, true, 100L, false));
-        partition1.setRegion(region1);
-        partition1.setLeafPartition(true);
-        partition1.setParentPartitionId("P");
-        partition1.setChildPartitionIds(Arrays.asList("C1", "C2"));
-        Field field2 = new Field("key", new LongType());
-        Partition partition2 = new Partition();
-        partition2.setRowKeyTypes(new LongType());
-        partition2.setId("0---100");
-        Region region2 = new Region(new Range(field2, 0L, true, 100L, false));
-        partition2.setRegion(region2);
-        partition2.setLeafPartition(true);
-        partition2.setParentPartitionId("P");
-        partition2.setChildPartitionIds(Arrays.asList("C1", "C2"));
-        Partition partition3 = new Partition();
-        partition3.setRowKeyTypes(new ByteArrayType());
-        partition3.setId("0---100");
-        Region region3 = new Region(new Range(field1, 0L, true, 100L, false));
-        partition3.setRegion(region3);
+        Schema schema1 = Schema.builder().rowKeyFields(field1).build();
+        Partition partition1 = createMidPartition(schema1, 0L, 100L);
 
-        partition3.setLeafPartition(true);
-        partition3.setParentPartitionId("P");
-        partition3.setChildPartitionIds(Arrays.asList("C1", "C2"));
+        Field field2 = new Field("key", new LongType());
+        Schema schema2 = Schema.builder().rowKeyFields(field2).build();
+        Partition partition2 = createMidPartition(schema2, 0L, 100L);
+
+        Field field3 = new Field("key", new ByteArrayType());
+        Schema schema3 = Schema.builder().rowKeyFields(field3).build();
+        Partition partition3 = createMidPartition(schema3, new byte[]{0, 1}, new byte[]{101, 1});
 
         // When
         boolean test1 = partition1.equals(partition2);
@@ -173,33 +140,16 @@ public class PartitionTest {
     public void testEqualsAndHashcodeWithByteArrayKey() {
         // Given
         Field field1 = new Field("key", new ByteArrayType());
-        Partition partition1 = new Partition();
-        partition1.setRowKeyTypes(new ByteArrayType());
-        partition1.setId("0---100");
-        Region region1 = new Region(new Range(field1, new byte[]{(byte) 0}, true, new byte[]{(byte) 100}, false));
-        partition1.setRegion(region1);
-        partition1.setLeafPartition(true);
-        partition1.setParentPartitionId("P");
-        partition1.setChildPartitionIds(Arrays.asList("C1", "C2"));
-        Schema schema2 = new Schema();
+        Schema schema1 = Schema.builder().rowKeyFields(field1).build();
+        Partition partition1 = createMidPartition(schema1, new byte[]{0, 1}, new byte[]{100, 1});
+
         Field field2 = new Field("key", new ByteArrayType());
-        schema2.setRowKeyFields(field2);
-        Partition partition2 = new Partition();
-        partition2.setRowKeyTypes(new ByteArrayType());
-        partition2.setId("0---100");
-        Region region2 = new Region(new Range(field2, new byte[]{(byte) 0}, true, new byte[]{(byte) 100}, false));
-        partition2.setRegion(region2);
-        partition2.setLeafPartition(true);
-        partition2.setParentPartitionId("P");
-        partition2.setChildPartitionIds(Arrays.asList("C1", "C2"));
-        Partition partition3 = new Partition();
-        partition3.setRowKeyTypes(new ByteArrayType());
-        partition3.setId("0---100");
-        Region region3 = new Region(new Range(field1, new byte[]{(byte) 0}, true, new byte[]{(byte) 100}, false));
-        partition3.setRegion(region3);
-        partition3.setLeafPartition(true);
-        partition3.setParentPartitionId("P");
-        partition3.setChildPartitionIds(Collections.singletonList("C1"));
+        Schema schema2 = Schema.builder().rowKeyFields(field2).build();
+        Partition partition2 = createMidPartition(schema2, new byte[]{0, 1}, new byte[]{100, 1});
+
+        Field field3 = new Field("key", new ByteArrayType());
+        Schema schema3 = Schema.builder().rowKeyFields(field3).build();
+        Partition partition3 = createMidPartition(schema3, new byte[]{0, 1}, new byte[]{101, 1});
 
         // When
         boolean test1 = partition1.equals(partition2);
@@ -220,36 +170,46 @@ public class PartitionTest {
         // Given
         Field field11 = new Field("key1", new ByteArrayType());
         Field field12 = new Field("key2", new ByteArrayType());
+        Schema schema1 = Schema.builder().rowKeyFields(field11,field12).build();
+        RangeFactory rangeFactory1 = new RangeFactory(schema1);
         Partition partition1 = new Partition();
         partition1.setRowKeyTypes(new ByteArrayType(), new ByteArrayType());
         partition1.setId("id1");
         List<Range> ranges1 = new ArrayList<>();
-        ranges1.add(new Range(field11, new byte[]{0, 1}, true, new byte[]{99}, false));
-        ranges1.add(new Range(field12, new byte[]{100, 99}, true, new byte[]{101, 99, 99}, false));
+        ranges1.add(rangeFactory1.createRange(field11, new byte[]{0, 1}, true, new byte[]{99}, false));
+        ranges1.add(rangeFactory1.createRange(field12, new byte[]{100, 99}, true, new byte[]{101, 99, 99}, false));
         Region region1 = new Region(ranges1);
         partition1.setRegion(region1);
         partition1.setLeafPartition(true);
         partition1.setParentPartitionId("P");
         partition1.setChildPartitionIds(Arrays.asList("C1", "C2"));
+
         Field field21 = new Field("key1", new ByteArrayType());
         Field field22 = new Field("key2", new ByteArrayType());
+        Schema schema2 = Schema.builder().rowKeyFields(field21,field22).build();
+        RangeFactory rangeFactory2 = new RangeFactory(schema2);
         Partition partition2 = new Partition();
         partition2.setRowKeyTypes(new ByteArrayType(), new ByteArrayType());
         partition2.setId("id1");
         List<Range> ranges2 = new ArrayList<>();
-        ranges2.add(new Range(field21, new byte[]{0, 1}, true, new byte[]{99}, false));
-        ranges2.add(new Range(field22, new byte[]{100, 99}, true, new byte[]{101, 99, 99}, false));
+        ranges2.add(rangeFactory2.createRange(field21, new byte[]{0, 1}, true, new byte[]{99}, false));
+        ranges2.add(rangeFactory2.createRange(field22, new byte[]{100, 99}, true, new byte[]{101, 99, 99}, false));
         Region region2 = new Region(ranges2);
         partition2.setRegion(region2);
         partition2.setLeafPartition(true);
         partition2.setParentPartitionId("P");
         partition2.setChildPartitionIds(Arrays.asList("C1", "C2"));
+
+        Field field31 = new Field("key1", new ByteArrayType());
+        Field field32 = new Field("key2", new ByteArrayType());
+        Schema schema3 = Schema.builder().rowKeyFields(field31,field32).build();
+        RangeFactory rangeFactory3 = new RangeFactory(schema3);
         Partition partition3 = new Partition();
         partition3.setRowKeyTypes(new ByteArrayType(), new ByteArrayType());
         partition3.setId("id1");
         List<Range> ranges3 = new ArrayList<>();
-        ranges3.add(new Range(field21, new byte[]{0, 1}, true, new byte[]{99}, false));
-        ranges3.add(new Range(field22, new byte[]{100, 99}, true, new byte[]{101, 99, 99}, false));
+        ranges3.add(rangeFactory3.createRange(field31, new byte[]{0, 1}, true, new byte[]{99}, false));
+        ranges3.add(rangeFactory3.createRange(field32, new byte[]{100, 99}, true, new byte[]{101, 99, 99}, false));
         Region region3 = new Region(ranges3);
         partition3.setRegion(region3);
         partition3.setLeafPartition(true);
@@ -273,13 +233,13 @@ public class PartitionTest {
     @Test
     public void shouldThrowIllegalArgumentExceptionIfRegionNotInCanonicalForm() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         Partition partition = new Partition();
         partition.setRowKeyTypes(new IntType());
         partition.setId("1---10");
-        Region region = new Region(new Range(field, 1, true, 10, true));
+        Region region = new Region(rangeFactory.createRange(field, 1, true, 10, true));
 
         // When / Then
         assertThatThrownBy(() -> partition.setRegion(region))
@@ -289,18 +249,9 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWithIntKey() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new IntType());
-        partition.setId("1---10");
-        Range range = new Range(field, 1, true, 10, false);
-        Region region = new Region(range);
-        partition.setRegion(region);
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId("P");
-        partition.setChildPartitionIds(Arrays.asList("C1", "C2"));
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        Partition partition = createMidPartition(schema, 1, 10);
 
         // When
         boolean is1InPartition = partition.isRowKeyInPartition(schema, Key.create(1));
@@ -316,13 +267,13 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWithIntKeyAndNullMax() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         Partition partition = new Partition();
         partition.setRowKeyTypes(new IntType());
         partition.setId("1---null");
-        Range range = new Range(field, 1, true, null, false);
+        Range range = rangeFactory.createRange(field, 1, true, null, false);
         Region region = new Region(range);
         partition.setRegion(region);
         partition.setLeafPartition(true);
@@ -342,7 +293,7 @@ public class PartitionTest {
         assertThat(isMaxIntInPartition).isTrue();
 
         // When 2
-        range = new Range(field, Integer.MIN_VALUE, true, null, false);
+        range = rangeFactory.createRange(field, Integer.MIN_VALUE, true, null, false);
         region = new Region(range);
         partition.setRegion(region);
         boolean isIntMinValueInPartition = partition.isRowKeyInPartition(schema, Key.create(Integer.MIN_VALUE));
@@ -354,18 +305,9 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWithLongKey() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new LongType());
-        partition.setId("1---10");
-        Range range = new Range(field, 1L, true, 10L, false);
-        Region region = new Region(range);
-        partition.setRegion(region);
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId("P");
-        partition.setChildPartitionIds(Arrays.asList("C1", "C2"));
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        Partition partition = createMidPartition(schema, 1L, 10L);
 
         // When
         boolean is1InPartition = partition.isRowKeyInPartition(schema, Key.create(1L));
@@ -381,13 +323,13 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWithLongKeyAndNullMax() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         Partition partition = new Partition();
         partition.setRowKeyTypes(new LongType());
         partition.setId("1---10");
-        Range range = new Range(field, 1L, true, null, false);
+        Range range = rangeFactory.createRange(field, 1L, true, null, false);
         Region region = new Region(range);
         partition.setRegion(region);
         partition.setLeafPartition(true);
@@ -407,7 +349,7 @@ public class PartitionTest {
         assertThat(isMaxLongInPartition).isTrue();
 
         // When 2
-        range = new Range(field, Long.MIN_VALUE, true, null, false);
+        range = rangeFactory.createRange(field, Long.MIN_VALUE, true, null, false);
         region = new Region(range);
         partition.setRegion(region);
         boolean isLongMinValueInPartition = partition.isRowKeyInPartition(schema, Key.create(Long.MIN_VALUE));
@@ -419,18 +361,9 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWithStringKey() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new StringType());
-        partition.setId("A---D");
-        Range range = new Range(field, "A", true, "D", false);
-        Region region = new Region(range);
-        partition.setRegion(region);
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId("P");
-        partition.setChildPartitionIds(Arrays.asList("C1", "C2"));
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        Partition partition = createMidPartition(schema, "A", "D");
 
         // When
         boolean isAInPartition = partition.isRowKeyInPartition(schema, Key.create("A"));
@@ -446,13 +379,13 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWithStringKeyAndEmptyStringAndNullBoundaries() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         Partition partition = new Partition();
         partition.setRowKeyTypes(new StringType());
         partition.setId("---null");
-        Range range = new Range(field, "", true, null, false);
+        Range range = rangeFactory.createRange(field, "", true, null, false);
         Region region = new Region(range);
         partition.setRegion(region);
         partition.setLeafPartition(true);
@@ -473,13 +406,13 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWithStringKeyAndNullBoundary() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         Partition partition = new Partition();
         partition.setRowKeyTypes(new StringType());
         partition.setId("---null");
-        Range range = new Range(field, "G", true, null, false);
+        Range range = rangeFactory.createRange(field, "G", true, null, false);
         Region region = new Region(range);
         partition.setRegion(region);
         partition.setLeafPartition(true);
@@ -502,13 +435,13 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWithByteArrayKeyAndEmptyByteArrayAndNullBoundaries() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         Partition partition = new Partition();
         partition.setRowKeyTypes(new ByteArrayType());
         partition.setId("---null");
-        Range range = new Range(field, new byte[]{}, true, null, false);
+        Range range = rangeFactory.createRange(field, new byte[]{}, true, null, false);
         Region region = new Region(range);
         partition.setRegion(region);
         partition.setLeafPartition(true);
@@ -527,13 +460,13 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWithByteArrayKeyAndNullBoundary() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         Partition partition = new Partition();
         partition.setRowKeyTypes(new ByteArrayType());
         partition.setId("---null");
-        Range range = new Range(field, new byte[]{10, 11}, true, null, false);
+        Range range = rangeFactory.createRange(field, new byte[]{10, 11}, true, null, false);
         Region region = new Region(range);
         partition.setRegion(region);
         partition.setLeafPartition(true);
@@ -554,18 +487,9 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWithByteArrayKey() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new ByteArrayType());
-        partition.setId("id");
-        Range range = new Range(field, new byte[]{1, 64}, true, new byte[]{1, 88}, false);
-        Region region = new Region(range);
-        partition.setRegion(region);
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId("P");
-        partition.setChildPartitionIds(Arrays.asList("C1", "C2"));
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        Partition partition = createMidPartition(schema, new byte[]{1, 64}, new byte[]{1, 88});
 
         // When
         boolean is164InPartition = partition.isRowKeyInPartition(schema, Key.create(new byte[]{1, 64}));
@@ -585,15 +509,15 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWith2IntRowKeys() {
         // Given
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new IntType());
         Field field2 = new Field("key2", new IntType());
-        schema.setRowKeyFields(field1, field2);
+        Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         Partition partition = new Partition();
         partition.setRowKeyTypes(new IntType(), new IntType());
         partition.setId("1---10");
-        Range range1 = new Range(field1, 1, true, 2, false);
-        Range range2 = new Range(field2, 5, true, 10, false);
+        Range range1 = rangeFactory.createRange(field1, 1, true, 2, false);
+        Range range2 = rangeFactory.createRange(field2, 5, true, 10, false);
         Region region = new Region(Arrays.asList(range1, range2));
         partition.setRegion(region);
         partition.setLeafPartition(true);
@@ -618,15 +542,15 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWith2StringRowKeys() {
         // Given
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new StringType());
         Field field2 = new Field("key2", new StringType());
-        schema.setRowKeyFields(field1, field2);
+        Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         Partition partition = new Partition();
         partition.setRowKeyTypes(new StringType(), new StringType());
         partition.setId("1---10");
-        Range range1 = new Range(field1, "A", true, "B", false);
-        Range range2 = new Range(field2, "A", true, "B", false);
+        Range range1 = rangeFactory.createRange(field1, "A", true, "B", false);
+        Range range2 = rangeFactory.createRange(field2, "A", true, "B", false);
         Region region = new Region(Arrays.asList(range1, range2));
         partition.setRegion(region);
         partition.setLeafPartition(true);
@@ -651,15 +575,15 @@ public class PartitionTest {
     @Test
     public void shouldGiveCorrectAnswerForIsRowKeyInPartitionWith2ByteArrayRowKeys() {
         // Given
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new ByteArrayType());
         Field field2 = new Field("key2", new ByteArrayType());
-        schema.setRowKeyFields(field1, field2);
+        Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         Partition partition = new Partition();
         partition.setRowKeyTypes(new ByteArrayType(), new ByteArrayType());
         partition.setId("1---10");
-        Range range1 = new Range(field1, new byte[]{1, 2}, true, new byte[]{5}, false);
-        Range range2 = new Range(field2, new byte[]{10, 11, 12}, true, new byte[]{12, 12, 12}, false);
+        Range range1 = rangeFactory.createRange(field1, new byte[]{1, 2}, true, new byte[]{5}, false);
+        Range range2 = rangeFactory.createRange(field2, new byte[]{10, 11, 12}, true, new byte[]{12, 12, 12}, false);
         Region region = new Region(Arrays.asList(range1, range2));
         partition.setRegion(region);
         partition.setLeafPartition(true);

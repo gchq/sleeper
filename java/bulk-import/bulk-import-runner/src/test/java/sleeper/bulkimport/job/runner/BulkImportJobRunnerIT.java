@@ -183,14 +183,14 @@ public class BulkImportJobRunnerIT {
     }
 
     private Schema getSchema() {
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(
-                new Field("value1", new StringType()),
-                new Field("value2", new ListType(new IntType())),
-                new Field("value3", new MapType(new StringType(), new LongType())));
-        return schema;
+        return Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .sortKeyFields(new Field("sort", new LongType()))
+                .valueFields(
+                        new Field("value1", new StringType()),
+                        new Field("value2", new ListType(new IntType())),
+                        new Field("value3", new MapType(new StringType(), new LongType())))
+                .build();
     }
 
     @Test

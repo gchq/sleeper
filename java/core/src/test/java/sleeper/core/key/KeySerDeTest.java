@@ -34,11 +34,12 @@ public class KeySerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseCorrectly() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("rowkey1", new IntType()),
+        Schema schema = Schema.builder().rowKeyFields(
+                new Field("rowkey1", new IntType()),
                 new Field("rowkey2", new LongType()),
                 new Field("rowkey3", new StringType()),
-                new Field("rowkey4", new ByteArrayType()));
+                new Field("rowkey4", new ByteArrayType())
+        ).build();
         KeySerDe keySerDe = new KeySerDe(schema);
         List<Object> keys = new ArrayList<>();
         keys.add(1);
@@ -62,8 +63,7 @@ public class KeySerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseNullIntKeyCorrectly() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("rowkey1", new IntType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("rowkey1", new IntType())).build();
         KeySerDe keySerDe = new KeySerDe(schema);
         Key key = Key.create(null);
 
@@ -79,8 +79,7 @@ public class KeySerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseNullLongKeyCorrectly() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("rowkey1", new LongType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("rowkey1", new LongType())).build();
         KeySerDe keySerDe = new KeySerDe(schema);
         Key key = Key.create(null);
 
@@ -96,8 +95,7 @@ public class KeySerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseNullStringKeyCorrectly() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("rowkey1", new StringType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("rowkey1", new StringType())).build();
         KeySerDe keySerDe = new KeySerDe(schema);
         Key key = Key.create(null);
 
@@ -113,8 +111,7 @@ public class KeySerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseNullByteArrayKeyCorrectly() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("rowkey1", new ByteArrayType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("rowkey1", new ByteArrayType())).build();
         KeySerDe keySerDe = new KeySerDe(schema);
         Key key = Key.create(null);
 
@@ -130,11 +127,12 @@ public class KeySerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseCorrectlyWhenThereAreFewerKeysThanInSchema() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("rowkey1", new IntType()),
+        Schema schema = Schema.builder().rowKeyFields(
+                new Field("rowkey1", new IntType()),
                 new Field("rowkey2", new LongType()),
                 new Field("rowkey3", new StringType()),
-                new Field("rowkey4", new ByteArrayType()));
+                new Field("rowkey4", new ByteArrayType())
+        ).build();
         KeySerDe keySerDe = new KeySerDe(schema);
         List<Object> keys1 = new ArrayList<>();
         keys1.add(1);

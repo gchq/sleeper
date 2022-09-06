@@ -31,23 +31,26 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SchemaTest {
 
+    private static Schema.Builder equalsTestBuilder() {
+        return Schema.builder()
+                .rowKeyFields(
+                        new Field("column1", new IntType()),
+                        new Field("column2", new StringType()))
+                .sortKeyFields(
+                        new Field("column3", new IntType()))
+                .valueFields(
+                        new Field("column4", new MapType(new IntType(), new ByteArrayType())),
+                        new Field("column5", new ListType(new StringType())));
+    }
+
     @Test
     public void equalsShouldReturnCorrectResults() {
         // Given
-        Schema schema1 = new Schema();
-        schema1.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new StringType()));
-        schema1.setSortKeyFields(new Field("column3", new IntType()));
-        schema1.setValueFields(new Field("column4", new MapType(new IntType(), new ByteArrayType())),
-                new Field("column5", new ListType(new StringType())));
-        Schema schema2 = new Schema();
-        schema2.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new StringType()));
-        schema2.setSortKeyFields(new Field("column3", new IntType()));
-        schema2.setValueFields(new Field("column4", new MapType(new IntType(), new ByteArrayType())),
-                new Field("column5", new ListType(new StringType())));
-        Schema schema3 = new Schema();
-        schema3.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new StringType()));
-        schema3.setSortKeyFields(new Field("column3", new IntType()));
-        schema3.setValueFields(new Field("column4", new MapType(new IntType(), new StringType())));
+        Schema schema1 = equalsTestBuilder().build();
+        Schema schema2 = equalsTestBuilder().build();
+        Schema schema3 = equalsTestBuilder()
+                .valueFields(new Field("column4", new MapType(new IntType(), new StringType())))
+                .build();
 
         // When
         boolean test1 = schema1.equals(schema2);
@@ -64,12 +67,8 @@ public class SchemaTest {
         Field allowField = new Field("column1", new IntType());
         Field refuseField = new Field("column2", new MapType(new IntType(), new ByteArrayType()));
         Schema.Builder builder = Schema.builder().rowKeyFields(allowField, refuseField);
-        Schema schema = new Schema();
 
         // When / Then
-        assertThatThrownBy(() -> schema.setRowKeyFields(allowField, refuseField))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContainingAll("Row key", "type");
         assertThatThrownBy(builder::build)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContainingAll("Row key", "type");
@@ -83,13 +82,8 @@ public class SchemaTest {
                 new Field("column2", new StringType()));
         Field refuseField = new Field("column3", new MapType(new IntType(), new ByteArrayType()));
         Schema.Builder builder = Schema.builder().rowKeyFields(rowKeyFields).sortKeyFields(refuseField);
-        Schema schema = new Schema();
-        schema.setRowKeyFields(rowKeyFields);
 
         // When / Then
-        assertThatThrownBy(() -> schema.setSortKeyFields(refuseField))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContainingAll("Sort key", "type");
         assertThatThrownBy(builder::build)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContainingAll("Sort key", "type");
@@ -101,12 +95,8 @@ public class SchemaTest {
         Field allowField = new Field("column1", new IntType());
         Field refuseField = new Field("column2", new ListType(new IntType()));
         Schema.Builder builder = Schema.builder().rowKeyFields(allowField, refuseField);
-        Schema schema = new Schema();
 
         // When / Then
-        assertThatThrownBy(() -> schema.setRowKeyFields(allowField, refuseField))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContainingAll("Row key", "type");
         assertThatThrownBy(builder::build)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContainingAll("Row key", "type");
@@ -120,13 +110,8 @@ public class SchemaTest {
                 new Field("column2", new StringType()));
         Field refuseField = new Field("column3", new ListType(new IntType()));
         Schema.Builder builder = Schema.builder().rowKeyFields(rowKeyFields).sortKeyFields(refuseField);
-        Schema schema = new Schema();
-        schema.setRowKeyFields(rowKeyFields);
 
         // When / Then
-        assertThatThrownBy(() -> schema.setSortKeyFields(refuseField))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContainingAll("Sort key", "type");
         assertThatThrownBy(builder::build)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContainingAll("Sort key", "type");

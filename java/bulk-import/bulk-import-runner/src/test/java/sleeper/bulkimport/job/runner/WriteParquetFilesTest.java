@@ -159,12 +159,11 @@ public class WriteParquetFilesTest {
     }
 
     private Schema getSchema() {
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(
-                new Field("value", new StringType()));
-        return schema;
+        return Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .sortKeyFields(new Field("sort", new LongType()))
+                .valueFields(new Field("value", new StringType()))
+                .build();
     }
 
     private List<Record> readRecords(String filename, Schema schema) {

@@ -25,7 +25,9 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.schema.type.Type;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,13 +38,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class MergingIteratorTest {
 
+    private Schema schemaWithKeySortAndValueTypes(PrimitiveType keyType, PrimitiveType sortType, Type valueType) {
+        return Schema.builder()
+                .rowKeyFields(new Field("key", keyType))
+                .sortKeyFields(new Field("sort", sortType))
+                .valueFields(new Field("value", valueType))
+                .build();
+    }
+
     @Test
     public void shouldMergeSortedIterablesCorrectlyIntKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setSortKeyFields(new Field("sort", new IntType()));
-        schema.setValueFields(new Field("value", new IntType()));
+        Schema schema = schemaWithKeySortAndValueTypes(new IntType(), new IntType(), new IntType());
         List<Record> list1 = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key", 1);
@@ -95,10 +102,7 @@ public class MergingIteratorTest {
     @Test
     public void shouldMergeSortedIterablesCorrectlyLongKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new StringType()));
+        Schema schema = schemaWithKeySortAndValueTypes(new LongType(), new LongType(), new StringType());
         List<Record> list1 = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key", 1L);
@@ -151,10 +155,7 @@ public class MergingIteratorTest {
     @Test
     public void shouldMergeSortedIterablesCorrectlyStringKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new StringType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new StringType()));
+        Schema schema = schemaWithKeySortAndValueTypes(new StringType(), new LongType(), new StringType());
         List<Record> list1 = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key", "A");
@@ -207,10 +208,7 @@ public class MergingIteratorTest {
     @Test
     public void shouldMergeSortedIterablesCorrectlyByteArrayKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new StringType()));
+        Schema schema = schemaWithKeySortAndValueTypes(new ByteArrayType(), new LongType(), new StringType());
         List<Record> list1 = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key", new byte[]{1});
@@ -263,9 +261,10 @@ public class MergingIteratorTest {
     @Test
     public void shouldMergeSortedIterablesCorrectlyWhenNoSortKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setValueFields(new Field("value", new IntType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .valueFields(new Field("value", new IntType()))
+                .build();
         List<Record> list1 = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key", 1);
@@ -311,9 +310,10 @@ public class MergingIteratorTest {
     @Test
     public void shouldMergeSortedIterablesCorrectlyWhenOneIsEmpty() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setValueFields(new Field("value", new IntType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .valueFields(new Field("value", new IntType()))
+                .build();
         List<Record> list1 = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key", 1);

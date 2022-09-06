@@ -17,6 +17,7 @@ package sleeper.core.partition;
 
 import org.junit.Test;
 import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -36,14 +37,14 @@ public class PartitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithIntKeyCorrectly() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         Partition partition = new Partition();
         partition.setId("id");
         partition.setRowKeyTypes(new IntType());
         partition.setLeafPartition(true);
-        Region region = new Region(new Range(field, 0, true, 10, false));
+        Region region = new Region(rangeFactory.createRange(field, 0, true, 10, false));
         partition.setRegion(region);
         partition.setParentPartitionId(null);
         List<String> childPartitionIds = new ArrayList<>();
@@ -63,14 +64,14 @@ public class PartitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithLongKeyCorrectly() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         Partition partition = new Partition();
         partition.setId("id");
         partition.setRowKeyTypes(new LongType());
         partition.setLeafPartition(true);
-        Region region = new Region(new Range(field, 1L, true, 10L, false));
+        Region region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
         partition.setRegion(region);
         partition.setParentPartitionId(null);
         List<String> childPartitionIds = new ArrayList<>();
@@ -90,14 +91,14 @@ public class PartitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithStringKeyCorrectly() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         Partition partition = new Partition();
         partition.setId("id");
         partition.setRowKeyTypes(new StringType());
         partition.setLeafPartition(true);
-        Region region = new Region(new Range(field, "A", true, "Z", false));
+        Region region = new Region(rangeFactory.createRange(field, "A", true, "Z", false));
         partition.setRegion(region);
         partition.setParentPartitionId(null);
         List<String> childPartitionIds = new ArrayList<>();
@@ -117,14 +118,14 @@ public class PartitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithStringKeyWithNullMaxCorrectly() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         Partition partition = new Partition();
         partition.setId("id");
         partition.setRowKeyTypes(new StringType());
         partition.setLeafPartition(true);
-        Region region = new Region(new Range(field, "", true, null, false));
+        Region region = new Region(rangeFactory.createRange(field, "", true, null, false));
         partition.setRegion(region);
         partition.setParentPartitionId(null);
         List<String> childPartitionIds = new ArrayList<>();
@@ -144,14 +145,14 @@ public class PartitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithByteArrayKeyCorrectly() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         Partition partition = new Partition();
         partition.setId("id");
         partition.setRowKeyTypes(new ByteArrayType());
         partition.setLeafPartition(true);
-        Region region = new Region(new Range(field, new byte[]{0}, true, new byte[]{64, 64}, false));
+        Region region = new Region(rangeFactory.createRange(field, new byte[]{0}, true, new byte[]{64, 64}, false));
         partition.setRegion(region);
         partition.setParentPartitionId(null);
         List<String> childPartitionIds = new ArrayList<>();
@@ -171,14 +172,14 @@ public class PartitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithByteArrayKeyWithNullMaxCorrectly() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         Partition partition = new Partition();
         partition.setId("id");
         partition.setRowKeyTypes(new ByteArrayType());
         partition.setLeafPartition(true);
-        Region region = new Region(new Range(field, new byte[]{}, true, null, false));
+        Region region = new Region(rangeFactory.createRange(field, new byte[]{}, true, null, false));
         partition.setRegion(region);
         partition.setParentPartitionId(null);
         List<String> childPartitionIds = new ArrayList<>();

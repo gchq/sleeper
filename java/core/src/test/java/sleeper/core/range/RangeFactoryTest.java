@@ -30,9 +30,8 @@ public class RangeFactoryTest {
     @Test
     public void shouldCreateCorrectRangesForIntKey() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When
@@ -73,9 +72,8 @@ public class RangeFactoryTest {
     @Test
     public void shouldNotAcceptNullMin() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When / Then
