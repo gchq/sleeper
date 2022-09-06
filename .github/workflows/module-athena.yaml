@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/module-athena.yaml'
       - '.github/workflows/module.yaml'
+      - 'code-style/checkstyle*.xml'
       - 'java/athena/**'
       - 'java/query/**'
       - 'java/splitter/**'

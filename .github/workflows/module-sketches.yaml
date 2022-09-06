@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/module-sketches.yaml'
       - '.github/workflows/module.yaml'
+      - 'code-style/checkstyle*.xml'
       - 'java/sketches/**'
       - 'java/core/**'
 

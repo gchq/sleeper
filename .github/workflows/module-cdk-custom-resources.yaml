@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/module-cdk-custom-resources.yaml'
       - '.github/workflows/module.yaml'
+      - 'code-style/checkstyle*.xml'
       - 'java/cdk-custom-resources/**'
       - 'java/tables/**'
       - 'java/statestore/**'

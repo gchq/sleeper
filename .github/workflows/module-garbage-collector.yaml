@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/module-garbage-collector.yaml'
       - '.github/workflows/module.yaml'
+      - 'code-style/checkstyle*.xml'
       - 'java/garbage-collector/**'
       - 'java/tables/**'
       - 'java/statestore/**'

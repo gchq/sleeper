@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/module-configuration.yaml'
       - '.github/workflows/module.yaml'
+      - 'code-style/checkstyle*.xml'
       - 'java/configuration/**'
       - 'java/core/**'
 
