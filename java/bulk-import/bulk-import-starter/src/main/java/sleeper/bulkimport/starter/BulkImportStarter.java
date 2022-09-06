@@ -26,7 +26,6 @@ import com.amazonaws.services.stepfunctions.AWSStepFunctions;
 import com.amazonaws.services.stepfunctions.AWSStepFunctionsClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.Executor;
 import sleeper.bulkimport.starter.executor.ExecutorFactory;
@@ -34,7 +33,7 @@ import sleeper.bulkimport.starter.executor.ExecutorFactory;
 import java.io.IOException;
 
 /**
- * The {@link BulkImportStarter} consumes {@link BulkImportJob} messages from SQS and starts executes them using
+ * The {@link BulkImportStarter} consumes {@link sleeper.bulkimport.job.BulkImportJob} messages from SQS and starts executes them using
  * an {@link Executor}.
  */
 public class BulkImportStarter implements RequestHandler<SQSEvent, Void> {
