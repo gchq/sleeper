@@ -693,22 +693,24 @@ public class ReinitialiseTableIT {
 
         //  - Split root partition
         rootPartition.setLeafPartition(false);
-        Partition leftPartition = new Partition();
-        leftPartition.setLeafPartition(true);
         Range leftRange = new RangeFactory(KEY_VALUE_SCHEMA).createRange(KEY_VALUE_SCHEMA.getRowKeyFields().get(0), "0", "eee");
         Region leftRegion = new Region(leftRange);
-        leftPartition.setRegion(leftRegion);
-        leftPartition.setId("0" + "---eee");
-        leftPartition.setParentPartitionId(rootPartition.getId());
-        leftPartition.setChildPartitionIds(new ArrayList<>());
-        Partition rightPartition = new Partition();
-        rightPartition.setLeafPartition(true);
+        Partition leftPartition = Partition.builder()
+                .leafPartition(true)
+                .region(leftRegion)
+                .id("0" + "---eee")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         Range rightRange = new RangeFactory(KEY_VALUE_SCHEMA).createRange(KEY_VALUE_SCHEMA.getRowKeyFields().get(0), "eee", "zzz");
         Region rightRegion = new Region(rightRange);
-        rightPartition.setRegion(rightRegion);
-        rightPartition.setId("eee---zzz");
-        rightPartition.setParentPartitionId(rootPartition.getId());
-        rightPartition.setChildPartitionIds(new ArrayList<>());
+        Partition rightPartition = Partition.builder()
+                .leafPartition(true)
+                .region(rightRegion)
+                .id("eee---zzz")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         rootPartition.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
 

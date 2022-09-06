@@ -40,17 +40,15 @@ public class PartitionSerDeTest {
         Field field = new Field("key", new IntType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
-        Partition partition = new Partition();
-        partition.setId("id");
-        partition.setRowKeyTypes(new IntType());
-        partition.setLeafPartition(true);
         Region region = new Region(rangeFactory.createRange(field, 0, true, 10, false));
-        partition.setRegion(region);
-        partition.setParentPartitionId(null);
-        List<String> childPartitionIds = new ArrayList<>();
-        childPartitionIds.add("id1");
-        childPartitionIds.add("id2");
-        partition.setChildPartitionIds(childPartitionIds);
+        Partition partition = Partition.builder()
+                .id("id")
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .leafPartition(true)
+                .region(region)
+                .parentPartitionId(null)
+                .childPartitionIds("id1", "id2")
+                .build();
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
 
         // When
@@ -67,17 +65,15 @@ public class PartitionSerDeTest {
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
-        Partition partition = new Partition();
-        partition.setId("id");
-        partition.setRowKeyTypes(new LongType());
-        partition.setLeafPartition(true);
         Region region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
-        partition.setRegion(region);
-        partition.setParentPartitionId(null);
-        List<String> childPartitionIds = new ArrayList<>();
-        childPartitionIds.add("id1");
-        childPartitionIds.add("id2");
-        partition.setChildPartitionIds(childPartitionIds);
+        Partition partition = Partition.builder()
+                .id("id")
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .leafPartition(true)
+                .region(region)
+                .parentPartitionId(null)
+                .childPartitionIds("id1", "id2")
+                .build();
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
 
         // When
@@ -94,17 +90,15 @@ public class PartitionSerDeTest {
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
-        Partition partition = new Partition();
-        partition.setId("id");
-        partition.setRowKeyTypes(new StringType());
-        partition.setLeafPartition(true);
         Region region = new Region(rangeFactory.createRange(field, "A", true, "Z", false));
-        partition.setRegion(region);
-        partition.setParentPartitionId(null);
-        List<String> childPartitionIds = new ArrayList<>();
-        childPartitionIds.add("id1");
-        childPartitionIds.add("id2");
-        partition.setChildPartitionIds(childPartitionIds);
+        Partition partition = Partition.builder()
+                .id("id")
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .leafPartition(true)
+                .region(region)
+                .parentPartitionId(null)
+                .childPartitionIds("id1", "id2")
+                .build();
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
 
         // When
@@ -121,17 +115,15 @@ public class PartitionSerDeTest {
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
-        Partition partition = new Partition();
-        partition.setId("id");
-        partition.setRowKeyTypes(new StringType());
-        partition.setLeafPartition(true);
         Region region = new Region(rangeFactory.createRange(field, "", true, null, false));
-        partition.setRegion(region);
-        partition.setParentPartitionId(null);
-        List<String> childPartitionIds = new ArrayList<>();
-        childPartitionIds.add("id1");
-        childPartitionIds.add("id2");
-        partition.setChildPartitionIds(childPartitionIds);
+        Partition partition = Partition.builder()
+                .id("id")
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .leafPartition(true)
+                .region(region)
+                .parentPartitionId(null)
+                .childPartitionIds("id1", "id2")
+                .build();
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
 
         // When
@@ -148,17 +140,15 @@ public class PartitionSerDeTest {
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
-        Partition partition = new Partition();
-        partition.setId("id");
-        partition.setRowKeyTypes(new ByteArrayType());
-        partition.setLeafPartition(true);
         Region region = new Region(rangeFactory.createRange(field, new byte[]{0}, true, new byte[]{64, 64}, false));
-        partition.setRegion(region);
-        partition.setParentPartitionId(null);
-        List<String> childPartitionIds = new ArrayList<>();
-        childPartitionIds.add("id1");
-        childPartitionIds.add("id2");
-        partition.setChildPartitionIds(childPartitionIds);
+        Partition partition = Partition.builder()
+                .id("id")
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .leafPartition(true)
+                .region(region)
+                .parentPartitionId(null)
+                .childPartitionIds("id1", "id2")
+                .build();
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
 
         // When
@@ -175,17 +165,15 @@ public class PartitionSerDeTest {
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
-        Partition partition = new Partition();
-        partition.setId("id");
-        partition.setRowKeyTypes(new ByteArrayType());
-        partition.setLeafPartition(true);
         Region region = new Region(rangeFactory.createRange(field, new byte[]{}, true, null, false));
-        partition.setRegion(region);
-        partition.setParentPartitionId(null);
-        List<String> childPartitionIds = new ArrayList<>();
-        childPartitionIds.add("id1");
-        childPartitionIds.add("id2");
-        partition.setChildPartitionIds(childPartitionIds);
+        Partition partition = Partition.builder()
+                .id("id")
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .leafPartition(true)
+                .region(region)
+                .parentPartitionId(null)
+                .childPartitionIds("id1", "id2")
+                .build();
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
 
         // When

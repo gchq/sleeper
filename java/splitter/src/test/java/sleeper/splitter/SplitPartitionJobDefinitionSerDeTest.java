@@ -43,14 +43,15 @@ public class SplitPartitionJobDefinitionSerDeTest {
         // Given
         Field field = new Field("key", new IntType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new IntType());
-        partition.setId("123");
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(new ArrayList<>());
         Range range = new RangeFactory(schema).createRange(field, 1, 10);
-        partition.setRegion(new Region(range));
+        Partition partition = Partition.builder()
+                .rowKeyTypes(new IntType())
+                .id("123")
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .region(new Region(range))
+                .build();
         FileInfo fileInfo1 = new FileInfo();
         fileInfo1.setRowKeyTypes(new IntType());
         fileInfo1.setFilename("f1");
@@ -86,14 +87,15 @@ public class SplitPartitionJobDefinitionSerDeTest {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new LongType());
-        partition.setId("123");
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(new ArrayList<>());
         Range range = new RangeFactory(schema).createRange(field, 1L, 10L);
-        partition.setRegion(new Region(range));
+        Partition partition = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .id("123")
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .region(new Region(range))
+                .build();
         FileInfo fileInfo1 = new FileInfo();
         fileInfo1.setRowKeyTypes(new LongType());
         fileInfo1.setFilename("f1");
@@ -129,14 +131,15 @@ public class SplitPartitionJobDefinitionSerDeTest {
         // Given
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new StringType());
-        partition.setId("123");
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(new ArrayList<>());
         Range range = new RangeFactory(schema).createRange(field, "A", "Z");
-        partition.setRegion(new Region(range));
+        Partition partition = Partition.builder()
+                .rowKeyTypes(new StringType())
+                .id("123")
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .region(new Region(range))
+                .build();
         FileInfo fileInfo1 = new FileInfo();
         fileInfo1.setRowKeyTypes(new StringType());
         fileInfo1.setFilename("f1");
@@ -172,14 +175,15 @@ public class SplitPartitionJobDefinitionSerDeTest {
         // Given
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new StringType());
-        partition.setId("123");
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(new ArrayList<>());
         Range range = new RangeFactory(schema).createRange(field, "", null);
-        partition.setRegion(new Region(range));
+        Partition partition = Partition.builder()
+                .rowKeyTypes(new StringType())
+                .id("123")
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .region(new Region(range))
+                .build();
         FileInfo fileInfo1 = new FileInfo();
         fileInfo1.setRowKeyTypes(new StringType());
         fileInfo1.setFilename("f1");
@@ -215,14 +219,15 @@ public class SplitPartitionJobDefinitionSerDeTest {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new ByteArrayType());
-        partition.setId("123");
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(new ArrayList<>());
         Range range = new RangeFactory(schema).createRange(field, new byte[]{}, new byte[]{64, 64});
-        partition.setRegion(new Region(range));
+        Partition partition = Partition.builder()
+                .rowKeyTypes(new ByteArrayType())
+                .id("123")
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .region(new Region(range))
+                .build();
         FileInfo fileInfo1 = new FileInfo();
         fileInfo1.setRowKeyTypes(new ByteArrayType());
         fileInfo1.setFilename("f1");
@@ -258,14 +263,15 @@ public class SplitPartitionJobDefinitionSerDeTest {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new ByteArrayType());
-        partition.setId("123");
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(new ArrayList<>());
         Range range = new RangeFactory(schema).createRange(field, new byte[]{}, null);
-        partition.setRegion(new Region(range));
+        Partition partition = Partition.builder()
+                .rowKeyTypes(new ByteArrayType())
+                .id("123")
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .region(new Region(range))
+                .build();
         FileInfo fileInfo1 = new FileInfo();
         fileInfo1.setRowKeyTypes(new ByteArrayType());
         fileInfo1.setFilename("f1");

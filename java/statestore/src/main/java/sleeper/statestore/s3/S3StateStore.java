@@ -835,18 +835,18 @@ public class S3StateStore implements StateStore {
     }
 
     private Partition getPartitionFromRecord(Record record) throws IOException {
-        Partition partition = new Partition();
-        partition.setId((String) record.get("partitionId"));
-        partition.setLeafPartition(record.get("leafPartition").equals("true"));
-        partition.setRowKeyTypes(rowKeyTypes);
+        Partition.Builder partitionBuilder = Partition.builder()
+                .id((String) record.get("partitionId"))
+                .leafPartition(record.get("leafPartition").equals("true"))
+                .rowKeyTypes(rowKeyTypes)
+                .childPartitionIds((List<String>) record.get("childPartitionIds"))
+                .region(regionSerDe.fromJson((String) record.get("region")))
+                .dimension((int) record.get("dimension"));
         String parentPartitionId = (String) record.get("parentPartitionId");
         if (!"null".equals(parentPartitionId)) {
-            partition.setParentPartitionId(parentPartitionId);
+            partitionBuilder.parentPartitionId(parentPartitionId);
         }
-        partition.setChildPartitionIds((List<String>) record.get("childPartitionIds"));
-        partition.setRegion(regionSerDe.fromJson((String) record.get("region")));
-        partition.setDimension((int) record.get("dimension"));
-        return partition;
+        return partitionBuilder.build();
     }
 
     @Override

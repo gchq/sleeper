@@ -49,8 +49,15 @@ public class PartitionFactory {
     }
 
     public Partition partition(String id, Region region) {
-        return new Partition(rowKeyTypes, region,
-                id, true, null, Collections.emptyList(), -1);
+        return Partition.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .region(region)
+                .id(id)
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
     }
 
     public Partition child(Partition parent, String id, Object min, Object max) {
