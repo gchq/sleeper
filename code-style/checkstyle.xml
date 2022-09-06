@@ -108,15 +108,6 @@
             <property name="option" value="bottom"/>
             <property name="sortStaticImportsAlphabetically" value="true"/>
         </module>
-        <module name="MethodLength">
-            <property name="id" value="methodLengthMax"/>
-            <property name="max" value="200"/>
-        </module>
-
-        <module name="ParameterNumber">
-            <property name="id" value="parameterNumber"/>
-            <property name="max" value="12"/>
-        </module>
         <module name="EmptyForIteratorPad">
             <property name="id" value="emptyForIterator"/>
         </module>
