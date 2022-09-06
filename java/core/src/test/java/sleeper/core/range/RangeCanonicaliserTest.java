@@ -28,9 +28,8 @@ public class RangeCanonicaliserTest {
     @Test
     public void shouldAnswerIsRangeInCanonicalFormCorrectly() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field, 1, 10);
         Range range2 = rangeFactory.createRange(field, 1, true, 10, true);
@@ -47,9 +46,8 @@ public class RangeCanonicaliserTest {
     @Test
     public void shouldCanonicaliseRangeCorrectly() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field, 1, 10);
         Range range2 = rangeFactory.createRange(field, 1, true, 10, true);

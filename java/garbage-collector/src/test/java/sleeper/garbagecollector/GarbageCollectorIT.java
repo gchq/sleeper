@@ -125,10 +125,10 @@ public class GarbageCollectorIT {
     }
 
     private Schema getSchema() {
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setValueFields(new Field("value", new StringType()));
-        return schema;
+        return Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .valueFields(new Field("value", new StringType()))
+                .build();
     }
 
     @Test
@@ -225,8 +225,7 @@ public class GarbageCollectorIT {
         assertThat(Files.exists(new File(file1).toPath())).isFalse();
         //  - The active file should still be there
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles).hasSize(1);
-        assertThat(activeFiles.get(0)).isEqualTo(fileInfo2);
+        assertThat(activeFiles).containsExactly(fileInfo2);
         //  - The ready for GC table should still have 1 item in (but it's not returned by getReadyForGCFiles()
         //      because it is less than 10 seconds since it was marked as ready for GC). As the StateStore API
         //      does not have a method to return all values in the ready for gc table, we query the table
@@ -235,8 +234,9 @@ public class GarbageCollectorIT {
                 .withTableName(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME))
                 .withConsistentRead(true);
         ScanResult scanResult = dynamoDBClient.scan(scanRequest);
-        assertThat(scanResult.getItems()).hasSize(1);
-        assertThat(scanResult.getItems().get(0).get(DynamoDBStateStore.FILE_NAME).getS()).isEqualTo(file3);
+        assertThat(scanResult.getItems())
+                .extracting(item -> item.get(DynamoDBStateStore.FILE_NAME).getS())
+                .containsExactly(file3);
 
         s3Client.shutdown();
         dynamoDBClient.shutdown();

@@ -44,7 +44,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.Assert.fail;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 @RunWith(Parameterized.class)
@@ -71,13 +70,15 @@ public class QuerySerDeTest {
         return new QuerySerDe(Collections.singletonMap(tableName, schema));
     }
 
+    private final Field field = new Field("key", new IntType());
+    private final Schema schema = Schema.builder()
+            .rowKeyFields(field)
+            .valueFields(new Field("value1", new StringType()), new Field("value2", new StringType()))
+            .build();
+
     @Test
     public void shouldSerDeFromJSONStringMinInclusiveMaxExclusive() {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new StringType()), new Field("value2", new StringType()));
         RangeFactory rangeFactory = new RangeFactory(schema);
         QuerySerDe querySerDe = generateQuerySerDe("my-table", schema);
         String serialisedQuery = "{\n" +
@@ -105,28 +106,18 @@ public class QuerySerDeTest {
         Query query = querySerDe.fromJson(serialisedQuery);
 
         // Then
-        if (query instanceof LeafPartitionQuery) {
-            fail("Query should be of class Query");
-        }
-        if (!(query instanceof Query)) {
-            fail("Query should be of class Query");
-        }
+        assertThat(query).isNotInstanceOf(LeafPartitionQuery.class);
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        assertThat(query.getRegions()).hasSize(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, 1, true, 2, false));
-        assertThat(query.getRegions().get(0)).isEqualTo(expectedRegion);
+        assertThat(query.getRegions()).containsExactly(expectedRegion);
         assertThat(query.getRequestedValueFields()).isEqualTo(Collections.singletonList("value1"));
     }
 
     @Test
     public void shouldSerDeFromJSONStringMinInclusiveMaxInclusive() {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new StringType()), new Field("value2", new StringType()));
         RangeFactory rangeFactory = new RangeFactory(schema);
         QuerySerDe querySerDe = generateQuerySerDe("my-table", schema);
         String serialisedQuery = "{\n" +
@@ -151,28 +142,18 @@ public class QuerySerDeTest {
         Query query = querySerDe.fromJson(serialisedQuery);
 
         // Then
-        if (query instanceof LeafPartitionQuery) {
-            fail("Query should be of class Query");
-        }
-        if (!(query instanceof Query)) {
-            fail("Query should be of class Query");
-        }
+        assertThat(query).isNotInstanceOf(LeafPartitionQuery.class);
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        assertThat(query.getRegions()).hasSize(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, 1, true, 2, true));
-        assertThat(query.getRegions().get(0)).isEqualTo(expectedRegion);
+        assertThat(query.getRegions()).containsExactly(expectedRegion);
         assertThat(query.getRequestedValueFields()).isNull();
     }
 
     @Test
     public void shouldSerDeFromJSONStringMinExclusiveMaxInclusive() {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new StringType()), new Field("value2", new StringType()));
         RangeFactory rangeFactory = new RangeFactory(schema);
         QuerySerDe querySerDe = generateQuerySerDe("my-table", schema);
         String serialisedQuery = "{\n" +
@@ -197,28 +178,18 @@ public class QuerySerDeTest {
         Query query = querySerDe.fromJson(serialisedQuery);
 
         // Then
-        if (query instanceof LeafPartitionQuery) {
-            fail("Query should be of class Query");
-        }
-        if (!(query instanceof Query)) {
-            fail("Query should be of class Query");
-        }
+        assertThat(query).isNotInstanceOf(LeafPartitionQuery.class);
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        assertThat(query.getRegions()).hasSize(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, 1, false, 2, true));
-        assertThat(query.getRegions().get(0)).isEqualTo(expectedRegion);
+        assertThat(query.getRegions()).containsExactly(expectedRegion);
         assertThat(query.getRequestedValueFields()).isNull();
     }
 
     @Test
     public void shouldSerDeFromJSONStringMinExclusiveMaxExclusive() {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new StringType()), new Field("value2", new StringType()));
         RangeFactory rangeFactory = new RangeFactory(schema);
         QuerySerDe querySerDe = generateQuerySerDe("my-table", schema);
         String serialisedQuery = "{\n" +
@@ -243,28 +214,18 @@ public class QuerySerDeTest {
         Query query = querySerDe.fromJson(serialisedQuery);
 
         // Then
-        if (query instanceof LeafPartitionQuery) {
-            fail("Query should be of class Query");
-        }
-        if (!(query instanceof Query)) {
-            fail("Query should be of class Query");
-        }
+        assertThat(query).isNotInstanceOf(LeafPartitionQuery.class);
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        assertThat(query.getRegions()).hasSize(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, 1, false, 2, false));
-        assertThat(query.getRegions().get(0)).isEqualTo(expectedRegion);
+        assertThat(query.getRegions()).containsExactly(expectedRegion);
         assertThat(query.getRequestedValueFields()).isNull();
     }
 
     @Test
     public void shouldSerDeFromJSONStringMinExclusiveNullMax() {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new StringType()), new Field("value2", new StringType()));
         RangeFactory rangeFactory = new RangeFactory(schema);
         TestPropertiesProvider testPropertiesProvider = new TestPropertiesProvider("my-table", schema);
         QuerySerDe querySerDe = new QuerySerDe(testPropertiesProvider);
@@ -290,27 +251,20 @@ public class QuerySerDeTest {
         Query query = querySerDe.fromJson(serialisedQuery);
 
         // Then
-        if (query instanceof LeafPartitionQuery) {
-            fail("Query should be of class Query");
-        }
-        if (!(query instanceof Query)) {
-            fail("Query should be of class Query");
-        }
+        assertThat(query).isNotInstanceOf(LeafPartitionQuery.class);
         assertThat(query.getQueryId()).isEqualTo("my-query");
         assertThat(query.getTableName()).isEqualTo("my-table");
         assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        assertThat(query.getRegions()).hasSize(1);
         Region expectedRegion = new Region(rangeFactory.createRange(field, 1, false, null, false));
-        assertThat(query.getRegions().get(0)).isEqualTo(expectedRegion);
+        assertThat(query.getRegions()).containsExactly(expectedRegion);
         assertThat(query.getRequestedValueFields()).isNull();
     }
 
     @Test
     public void shouldSerDeWhenSchemaHasIntKey() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         TestPropertiesProvider testPropertiesProvider = new TestPropertiesProvider(tableName, schema);
@@ -328,9 +282,8 @@ public class QuerySerDeTest {
     @Test
     public void shouldSerDeWhenSchemaHasLongKey() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         Region region = new Region(rangeFactory.createExactRange(field, 1L));
@@ -347,9 +300,8 @@ public class QuerySerDeTest {
     @Test
     public void shouldSerDeWhenSchemaHasStringKey() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         Region region = new Region(rangeFactory.createExactRange(field, "1"));
@@ -366,9 +318,8 @@ public class QuerySerDeTest {
     @Test
     public void shouldSerDeWhenSchemaHasByteArrayKey() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         Region region = new Region(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
@@ -385,9 +336,8 @@ public class QuerySerDeTest {
     @Test
     public void shouldSerDeMultipleByteArrayRegions() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         Region region1 = new Region(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
@@ -405,9 +355,8 @@ public class QuerySerDeTest {
     @Test
     public void shouldSerDeByteArrayRegionWithPublisherConfig() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         Region region1 = new Region(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
@@ -430,9 +379,8 @@ public class QuerySerDeTest {
     @Test
     public void shouldSerDeIntKeyQueryDifferentIncludeExcludes() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         Region region1 = new Region(rangeFactory.createRange(field, 1, true, 2, true));
@@ -452,9 +400,8 @@ public class QuerySerDeTest {
     @Test
     public void shouldSerDeLongKeyQueryDifferentIncludeExcludes() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         Region region1 = new Region(rangeFactory.createRange(field, 1L, true, 2L, true));
@@ -474,9 +421,8 @@ public class QuerySerDeTest {
     @Test
     public void shouldSerDeStringKeyQueryDifferentIncludeExcludes() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         Region region1 = new Region(rangeFactory.createRange(field, "1", true, "2", true));
@@ -496,9 +442,8 @@ public class QuerySerDeTest {
     @Test
     public void shouldSerDeStringKeyQueryWithNull() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         Region region = new Region(rangeFactory.createRange(field, "A", true, null, false));
@@ -515,9 +460,8 @@ public class QuerySerDeTest {
     @Test
     public void shouldSerDeByteArrayKeyQueryDifferentIncludeExcludes() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         Region region1 = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, true, new byte[]{4}, true));
@@ -537,9 +481,8 @@ public class QuerySerDeTest {
     @Test
     public void shouldSerDeByteArrayQueryWithNull() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         Region region = new Region(rangeFactory.createRange(field, new byte[]{1, 2}, true, null, false));
@@ -556,9 +499,8 @@ public class QuerySerDeTest {
     @Test
     public void shouldSerDeByteArrayKeyLeafPartitionQuery() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         List<String> files = new ArrayList<>();
@@ -584,9 +526,8 @@ public class QuerySerDeTest {
     @Test
     public void shouldSerDeMultipleByteArrayKeyLeafPartitionQuery() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         List<String> files = new ArrayList<>();
@@ -611,9 +552,8 @@ public class QuerySerDeTest {
     @Test
     public void shouldSerDeIntKeyWithIterator() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         Region region = new Region(rangeFactory.createRange(field, 1, true, 5, true));
@@ -633,9 +573,8 @@ public class QuerySerDeTest {
     @Test
     public void shouldThrowExceptionWithNullTableName() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         String tableName = UUID.randomUUID().toString();
         Region region = new Region(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
@@ -661,8 +600,7 @@ public class QuerySerDeTest {
     @Test
     public void shouldThrowExceptionNoTableName() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
         String tableName = UUID.randomUUID().toString();
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema);
 

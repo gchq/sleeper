@@ -80,23 +80,27 @@ public class InitialiseStateStoreIT {
         return dynamoDBStateStoreCreator.create();
     }
 
+    private final Field field = new Field("key", new IntType());
+    private final Schema schema = schemaWithRowKeys(field);
+
+    private Schema schemaWithRowKeys(Field... rowKeys) {
+        return Schema.builder()
+                .rowKeyFields(rowKeys)
+                .sortKeyFields(new Field("sort", new LongType()))
+                .valueFields(new Field("value", new ByteArrayType()))
+                .build();
+    }
+
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithIntKeyAndNoSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.EMPTY_LIST);
+        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.emptyList());
 
         // When
         initialiseStateStore.run();
 
         // Then
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, null));
         Partition expectedPartition = new Partition(
                 schema.getRowKeyTypes(),
@@ -107,17 +111,12 @@ public class InitialiseStateStoreIT {
                 Collections.emptyList(),
                 -1
         );
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(dynamoDBStateStore.getAllPartitions()).containsExactly(expectedPartition);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithIntKeyAndOneSplitPoint() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10);
@@ -166,18 +165,12 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
+        assertThat(leafPartitions).containsExactly(expectedLeafPartition0, expectedLeafPartition1);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithIntKeyAndMultipleSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10);
@@ -273,25 +266,19 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(internalPartitions.get(0)).isEqualTo(expectedInternalPartition0);
-        assertThat(internalPartitions.get(1)).isEqualTo(expectedInternalPartition1);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
-        assertThat(leafPartitions.get(2)).isEqualTo(expectedLeafPartition2);
-        assertThat(leafPartitions.get(3)).isEqualTo(expectedLeafPartition3);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithIntKeyAndMultipleSplitPointsAndMultiDimRowKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field0 = new Field("key0", new IntType());
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
         Field field3 = new Field("key3", new ByteArrayType());
-        schema.setRowKeyFields(field0, field1, field2, field3);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field0, field1, field2, field3);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10);
@@ -398,24 +385,18 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(internalPartitions.get(0)).isEqualTo(expectedInternalPartition0);
-        assertThat(internalPartitions.get(1)).isEqualTo(expectedInternalPartition1);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
-        assertThat(leafPartitions.get(2)).isEqualTo(expectedLeafPartition2);
-        assertThat(leafPartitions.get(3)).isEqualTo(expectedLeafPartition3);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithStringKeyAndNoSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field);
         StateStore dynamoDBStateStore = getStateStore(schema);
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.EMPTY_LIST);
+        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.emptyList());
 
         // When
         initialiseStateStore.run();
@@ -433,17 +414,14 @@ public class InitialiseStateStoreIT {
                 Collections.emptyList(),
                 -1
         );
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithStringKeyAndOneSplitPoint() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add("E");
@@ -492,18 +470,14 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
+        assertThat(leafPartitions).containsExactly(expectedLeafPartition0, expectedLeafPartition1);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithStringKeyAndMultipleSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add("E");
@@ -599,25 +573,19 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(internalPartitions.get(0)).isEqualTo(expectedInternalPartition0);
-        assertThat(internalPartitions.get(1)).isEqualTo(expectedInternalPartition1);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
-        assertThat(leafPartitions.get(2)).isEqualTo(expectedLeafPartition2);
-        assertThat(leafPartitions.get(3)).isEqualTo(expectedLeafPartition3);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithStringKeyAndMultipleSplitPointsAndMultiDimRowKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field0 = new Field("key0", new StringType());
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
         Field field3 = new Field("key3", new ByteArrayType());
-        schema.setRowKeyFields(field0, field1, field2, field3);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field0, field1, field2, field3);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add("E");
@@ -724,24 +692,18 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(internalPartitions.get(0)).isEqualTo(expectedInternalPartition0);
-        assertThat(internalPartitions.get(1)).isEqualTo(expectedInternalPartition1);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
-        assertThat(leafPartitions.get(2)).isEqualTo(expectedLeafPartition2);
-        assertThat(leafPartitions.get(3)).isEqualTo(expectedLeafPartition3);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithByteArrayKeyAndNoSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field);
         StateStore dynamoDBStateStore = getStateStore(schema);
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.EMPTY_LIST);
+        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.emptyList());
 
         // When
         initialiseStateStore.run();
@@ -760,17 +722,14 @@ public class InitialiseStateStoreIT {
                 Collections.emptyList(),
                 -1
         );
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithByteArrayKeyAndOneSplitPoint() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(new byte[]{10});
@@ -819,18 +778,14 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
+        assertThat(leafPartitions).containsExactly(expectedLeafPartition0, expectedLeafPartition1);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithByteArrayKeyAndMultipleSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(new byte[]{10});
@@ -932,25 +887,19 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(internalPartitions.get(0)).isEqualTo(expectedInternalPartition0);
-        assertThat(internalPartitions.get(1)).isEqualTo(expectedInternalPartition1);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
-        assertThat(leafPartitions.get(2)).isEqualTo(expectedLeafPartition2);
-        assertThat(leafPartitions.get(3)).isEqualTo(expectedLeafPartition3);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithByteArrayKeyAndMultipleSplitPointsAndMultiDimRowKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field0 = new Field("key0", new ByteArrayType());
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
         Field field3 = new Field("key3", new ByteArrayType());
-        schema.setRowKeyFields(field0, field1, field2, field3);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field0, field1, field2, field3);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(new byte[]{10});
@@ -1057,21 +1006,15 @@ public class InitialiseStateStoreIT {
         );
 
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
-        assertThat(internalPartitions.get(0)).isEqualTo(expectedInternalPartition0);
-        assertThat(internalPartitions.get(1)).isEqualTo(expectedInternalPartition1);
-        assertThat(leafPartitions.get(0)).isEqualTo(expectedLeafPartition0);
-        assertThat(leafPartitions.get(1)).isEqualTo(expectedLeafPartition1);
-        assertThat(leafPartitions.get(2)).isEqualTo(expectedLeafPartition2);
-        assertThat(leafPartitions.get(3)).isEqualTo(expectedLeafPartition3);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
     @Test
     public void shouldThrowExceptionIfSplitPointIsOfWrongType() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(new Field("key", new IntType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(Long.MIN_VALUE);
@@ -1085,10 +1028,7 @@ public class InitialiseStateStoreIT {
     @Test
     public void shouldThrowExceptionIfDuplicateSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(new Field("key", new IntType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(0);
@@ -1103,10 +1043,7 @@ public class InitialiseStateStoreIT {
     @Test
     public void shouldThrowExceptionIfSplitPointsAreInWrongOrder() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(new Field("key", new IntType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(1);

@@ -38,12 +38,10 @@ public class TablePropertiesIT {
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3);
 
-    private static final Schema KEY_VALUE_SCHEMA = new Schema();
-
-    static {
-        KEY_VALUE_SCHEMA.setRowKeyFields(new Field("key", new StringType()));
-        KEY_VALUE_SCHEMA.setValueFields(new Field("value", new StringType()));
-    }
+    private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
+            .rowKeyFields(new Field("key", new StringType()))
+            .valueFields(new Field("value", new StringType()))
+            .build();
 
     private AmazonS3 getS3Client() {
         return AmazonS3ClientBuilder.standard()
@@ -90,6 +88,6 @@ public class TablePropertiesIT {
         tableProperties.loadFromS3(s3Client, "test");
 
         // Then
-        assertThat(validProperties).isEqualTo(tableProperties);
+        assertThat(tableProperties).isEqualTo(validProperties);
     }
 }

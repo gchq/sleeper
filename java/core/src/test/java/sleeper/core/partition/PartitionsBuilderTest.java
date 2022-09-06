@@ -16,7 +16,7 @@
 package sleeper.core.partition;
 
 import org.junit.Test;
-import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -37,6 +37,7 @@ public class PartitionsBuilderTest {
         // Given
         Field field = new Field("key1", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
 
         // When
         PartitionsBuilder builder = new PartitionsBuilder(schema)
@@ -49,15 +50,15 @@ public class PartitionsBuilderTest {
         // Then
         List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
         List<Partition> expectedPartitions = Arrays.asList(
-                new Partition(rowKeyTypes, new Region(new Range(field, "", "aaa")),
+                new Partition(rowKeyTypes, new Region(rangeFactory.createRange(field, "", "aaa")),
                         "A", true, "D", Collections.emptyList(), -1),
-                new Partition(rowKeyTypes, new Region(new Range(field, "aaa", "bbb")),
+                new Partition(rowKeyTypes, new Region(rangeFactory.createRange(field, "aaa", "bbb")),
                         "B", true, "D", Collections.emptyList(), -1),
-                new Partition(rowKeyTypes, new Region(new Range(field, "bbb", null)),
+                new Partition(rowKeyTypes, new Region(rangeFactory.createRange(field, "bbb", null)),
                         "C", true, "E", Collections.emptyList(), -1),
-                new Partition(rowKeyTypes, new Region(new Range(field, "", "bbb")),
+                new Partition(rowKeyTypes, new Region(rangeFactory.createRange(field, "", "bbb")),
                         "D", false, "E", Arrays.asList("A", "B"), 0),
-                new Partition(rowKeyTypes, new Region(new Range(field, "", null)),
+                new Partition(rowKeyTypes, new Region(rangeFactory.createRange(field, "", null)),
                         "E", false, null, Arrays.asList("D", "C"), 0));
         assertThat(builder.buildList()).isEqualTo(expectedPartitions);
         assertThat(builder.buildTree()).isEqualTo(new PartitionTree(schema, expectedPartitions));

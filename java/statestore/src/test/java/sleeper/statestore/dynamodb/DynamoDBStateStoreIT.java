@@ -37,7 +37,9 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.schema.type.Type;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -45,14 +47,11 @@ import sleeper.statestore.StateStoreException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -112,11 +111,25 @@ public class DynamoDBStateStoreIT {
         return getStateStoreFromSplitPoints(schema, Collections.EMPTY_LIST);
     }
 
+    private Schema schemaWithSingleRowKeyType(PrimitiveType type) {
+        return Schema.builder().rowKeyFields(new Field("key", type)).build();
+    }
+
+    private Schema schemaWithTwoRowKeyTypes(PrimitiveType type1, PrimitiveType type2) {
+        return Schema.builder().rowKeyFields(new Field("key1", type1), new Field("key2", type2)).build();
+    }
+
+    private Schema schemaWithKeyAndValueWithTypes(PrimitiveType keyType, Type valueType) {
+        return Schema.builder()
+                .rowKeyFields(new Field("key", keyType))
+                .valueFields(new Field("value", valueType))
+                .build();
+    }
+
     @Test
     public void shouldReturnCorrectFileInfoForLongRowKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new LongType());
@@ -131,23 +144,21 @@ public class DynamoDBStateStoreIT {
         dynamoDBStateStore.addFile(fileInfo);
 
         // Then
-        List<FileInfo> fileInfos = dynamoDBStateStore.getActiveFiles();
-        assertThat(fileInfos).hasSize(1);
-        assertThat(fileInfos.get(0).getRowKeyTypes()).hasSize(1);
-        assertThat(fileInfos.get(0).getRowKeyTypes().get(0)).isEqualTo(new LongType());
-        assertThat(fileInfos.get(0).getFilename()).isEqualTo("abc");
-        assertThat(fileInfos.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
-        assertThat(fileInfos.get(0).getPartitionId()).isEqualTo("1");
-        assertThat(fileInfos.get(0).getMinRowKey()).isEqualTo(Key.create(1L));
-        assertThat(fileInfos.get(0).getMaxRowKey()).isEqualTo(Key.create(10L));
-        assertThat(fileInfos.get(0).getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
+            assertThat(found.getRowKeyTypes()).containsExactly(new LongType());
+            assertThat(found.getFilename()).isEqualTo("abc");
+            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
+            assertThat(found.getPartitionId()).isEqualTo("1");
+            assertThat(found.getMinRowKey()).isEqualTo(Key.create(1L));
+            assertThat(found.getMaxRowKey()).isEqualTo(Key.create(10L));
+            assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        });
     }
 
     @Test
     public void shouldReturnCorrectFileInfoForByteArrayKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
+        Schema schema = schemaWithSingleRowKeyType(new ByteArrayType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new ByteArrayType());
@@ -162,25 +173,23 @@ public class DynamoDBStateStoreIT {
         dynamoDBStateStore.addFile(fileInfo);
 
         // Then
-        List<FileInfo> fileInfos = dynamoDBStateStore.getActiveFiles();
-        assertThat(fileInfos).hasSize(1);
-        assertThat(fileInfos.get(0).getRowKeyTypes()).hasSize(1);
-        assertThat(fileInfos.get(0).getRowKeyTypes().get(0)).isEqualTo(new ByteArrayType());
-        assertThat(fileInfos.get(0).getFilename()).isEqualTo("abc");
-        assertThat(fileInfos.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
-        assertThat(fileInfos.get(0).getPartitionId()).isEqualTo("1");
-        assertThat(fileInfos.get(0).getMinRowKey().size()).isOne();
-        assertThat((byte[]) fileInfos.get(0).getMinRowKey().get(0)).containsExactly(new byte[]{1});
-        assertThat(fileInfos.get(0).getMaxRowKey().size()).isOne();
-        assertThat((byte[]) fileInfos.get(0).getMaxRowKey().get(0)).containsExactly(new byte[]{10});
-        assertThat(fileInfos.get(0).getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
+            assertThat(found.getRowKeyTypes()).containsExactly(new ByteArrayType());
+            assertThat(found.getFilename()).isEqualTo("abc");
+            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
+            assertThat(found.getPartitionId()).isEqualTo("1");
+            assertThat(found.getMinRowKey().size()).isOne();
+            assertThat((byte[]) found.getMinRowKey().get(0)).containsExactly(new byte[]{1});
+            assertThat(found.getMaxRowKey().size()).isOne();
+            assertThat((byte[]) found.getMaxRowKey().get(0)).containsExactly(new byte[]{10});
+            assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        });
     }
 
     @Test
     public void shouldReturnCorrectFileInfoFor2DimensionalByteArrayKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()));
+        Schema schema = schemaWithTwoRowKeyTypes(new ByteArrayType(), new ByteArrayType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new ByteArrayType(), new ByteArrayType());
@@ -195,28 +204,25 @@ public class DynamoDBStateStoreIT {
         dynamoDBStateStore.addFile(fileInfo);
 
         // Then
-        List<FileInfo> fileInfos = dynamoDBStateStore.getActiveFiles();
-        assertThat(fileInfos).hasSize(1);
-        assertThat(fileInfos.get(0).getRowKeyTypes()).hasSize(2);
-        assertThat(fileInfos.get(0).getRowKeyTypes().get(0)).isEqualTo(new ByteArrayType());
-        assertThat(fileInfos.get(0).getRowKeyTypes().get(1)).isEqualTo(new ByteArrayType());
-        assertThat(fileInfos.get(0).getFilename()).isEqualTo("abc");
-        assertThat(fileInfos.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
-        assertThat(fileInfos.get(0).getPartitionId()).isEqualTo("1");
-        assertThat(fileInfos.get(0).getMinRowKey().size()).isEqualTo(2);
-        assertThat((byte[]) fileInfos.get(0).getMinRowKey().get(0)).containsExactly(new byte[]{1});
-        assertThat((byte[]) fileInfos.get(0).getMinRowKey().get(1)).containsExactly(new byte[]{2});
-        assertThat(fileInfos.get(0).getMaxRowKey().size()).isEqualTo(2);
-        assertThat((byte[]) fileInfos.get(0).getMaxRowKey().get(0)).containsExactly(new byte[]{10});
-        assertThat((byte[]) fileInfos.get(0).getMaxRowKey().get(1)).containsExactly(new byte[]{11});
-        assertThat(fileInfos.get(0).getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
+            assertThat(found.getRowKeyTypes()).containsExactly(new ByteArrayType(), new ByteArrayType());
+            assertThat(found.getFilename()).isEqualTo("abc");
+            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
+            assertThat(found.getPartitionId()).isEqualTo("1");
+            assertThat(found.getMinRowKey().size()).isEqualTo(2);
+            assertThat((byte[]) found.getMinRowKey().get(0)).containsExactly(new byte[]{1});
+            assertThat((byte[]) found.getMinRowKey().get(1)).containsExactly(new byte[]{2});
+            assertThat(found.getMaxRowKey().size()).isEqualTo(2);
+            assertThat((byte[]) found.getMaxRowKey().get(0)).containsExactly(new byte[]{10});
+            assertThat((byte[]) found.getMaxRowKey().get(1)).containsExactly(new byte[]{11});
+            assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        });
     }
 
     @Test
     public void shouldReturnCorrectFileInfoForMultidimensionalRowKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new LongType()), new Field("key2", new StringType()));
+        Schema schema = schemaWithTwoRowKeyTypes(new LongType(), new StringType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new LongType(), new StringType());
@@ -231,25 +237,21 @@ public class DynamoDBStateStoreIT {
         dynamoDBStateStore.addFile(fileInfo);
 
         // Then
-        List<FileInfo> fileInfos = dynamoDBStateStore.getActiveFiles();
-        assertThat(fileInfos).hasSize(1);
-        assertThat(fileInfo.getFilename()).isEqualTo("abc");
-        assertThat(fileInfos.get(0).getRowKeyTypes()).hasSize(2);
-        assertThat(fileInfos.get(0).getRowKeyTypes().get(0)).isEqualTo(new LongType());
-        assertThat(fileInfos.get(0).getRowKeyTypes().get(1)).isEqualTo(new StringType());
-        assertThat(fileInfos.get(0).getFilename()).isEqualTo("abc");
-        assertThat(fileInfos.get(0).getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
-        assertThat(fileInfos.get(0).getPartitionId()).isEqualTo("1");
-        assertThat(fileInfos.get(0).getMinRowKey()).isEqualTo(Key.create(Arrays.asList(1L, "Z")));
-        assertThat(fileInfos.get(0).getMaxRowKey()).isEqualTo(Key.create(Arrays.asList(10L, "A")));
-        assertThat(fileInfos.get(0).getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
+            assertThat(found.getRowKeyTypes()).containsExactly(new LongType(), new StringType());
+            assertThat(found.getFilename()).isEqualTo("abc");
+            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
+            assertThat(found.getPartitionId()).isEqualTo("1");
+            assertThat(found.getMinRowKey()).isEqualTo(Key.create(Arrays.asList(1L, "Z")));
+            assertThat(found.getMaxRowKey()).isEqualTo(Key.create(Arrays.asList(10L, "A")));
+            assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        });
     }
 
     @Test
     public void shouldReturnAllFileInfos() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         Set<FileInfo> expected = new HashSet<>();
         for (int i = 0; i < 10000; i++) { // 10,000 figure chosen to ensure results returned from Dynamo are paged
@@ -269,15 +271,13 @@ public class DynamoDBStateStoreIT {
         List<FileInfo> fileInfos = dynamoDBStateStore.getActiveFiles();
 
         // Then
-        assertThat(fileInfos).hasSize(10000);
-        assertThat(new HashSet<>(fileInfos)).isEqualTo(expected);
+        assertThat(fileInfos).hasSize(10000).containsExactlyInAnyOrderElementsOf(expected);
     }
 
     @Test
     public void testExceptionThrownWhenAddingFileInfoWithMissingFilename() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new LongType());
@@ -295,8 +295,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void testExceptionThrownWhenAddingFileInfoWithMissingStatus() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new LongType());
@@ -314,8 +313,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void testExceptionThrownWhenAddingFileInfoWithMissingPartition() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new LongType());
@@ -333,9 +331,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void testGetFilesThatAreReadyForGC() throws InterruptedException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setValueFields(new Field("value", new StringType()));
+        Schema schema = schemaWithKeyAndValueWithTypes(new IntType(), new StringType());
         StateStore stateStore = getStateStore(schema, 5);
         Partition partition = stateStore.getAllPartitions().get(0);
         //  - A file which should be garbage collected immediately
@@ -373,42 +369,18 @@ public class DynamoDBStateStoreIT {
         fileInfo3.setLastStateStoreUpdateTime(System.currentTimeMillis());
         stateStore.addFile(fileInfo3);
 
-        // When 1
-        Iterator<FileInfo> readyForGCFilesIterator = stateStore.getReadyForGCFiles();
-        List<FileInfo> readyForGCFiles = new ArrayList<>();
-        while (readyForGCFilesIterator.hasNext()) {
-            readyForGCFiles.add(readyForGCFilesIterator.next());
-        }
+        // When / Then 1
+        assertThat(stateStore.getReadyForGCFiles()).toIterable().containsExactly(fileInfo1);
 
-        // Then 1
-        assertThat(readyForGCFiles).hasSize(1);
-        assertThat(readyForGCFiles.get(0)).isEqualTo(fileInfo1);
-
-        // When 2
+        // When / Then 2
         Thread.sleep(9000L);
-        readyForGCFilesIterator = stateStore.getReadyForGCFiles();
-        readyForGCFiles.clear();
-        while (readyForGCFilesIterator.hasNext()) {
-            readyForGCFiles.add(readyForGCFilesIterator.next());
-        }
-
-        // Then 2
-        assertThat(readyForGCFiles).hasSize(2);
-        if (readyForGCFiles.get(0).getFilename().equals(fileInfo1.getFilename())) {
-            assertThat(readyForGCFiles.get(0)).isEqualTo(fileInfo1);
-            assertThat(readyForGCFiles.get(1)).isEqualTo(fileInfo3);
-        } else {
-            assertThat(readyForGCFiles.get(0)).isEqualTo(fileInfo3);
-            assertThat(readyForGCFiles.get(1)).isEqualTo(fileInfo1);
-        }
+        assertThat(stateStore.getReadyForGCFiles()).toIterable().containsExactly(fileInfo1, fileInfo3);
     }
 
     @Test
     public void shouldReturnOnlyActiveFilesWithNoJobId() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value", new StringType()));
+        Schema schema = schemaWithKeyAndValueWithTypes(new LongType(), new StringType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         FileInfo fileInfo1 = new FileInfo();
         fileInfo1.setRowKeyTypes(new LongType());
@@ -443,18 +415,13 @@ public class DynamoDBStateStoreIT {
         List<FileInfo> fileInfos = dynamoDBStateStore.getActiveFilesWithNoJobId();
 
         // Then
-        assertThat(fileInfos).hasSize(2);
-        List<FileInfo> expectedFileInfos = new ArrayList<>();
-        expectedFileInfos.add(fileInfo1);
-        expectedFileInfos.add(fileInfo2);
-        assertThat(fileInfos).isEqualTo(expectedFileInfos);
+        assertThat(fileInfos).containsExactly(fileInfo1, fileInfo2);
     }
 
     @Test
     public void shouldReturnOnlyActiveFilesWithNoJobIdWhenPaging() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         Set<FileInfo> expected = new HashSet<>();
         for (int i = 0; i < 10000; i++) { // 10,000 figure chosen to ensure results returned from Dyanmo are paged
@@ -474,15 +441,13 @@ public class DynamoDBStateStoreIT {
         List<FileInfo> fileInfos = dynamoDBStateStore.getActiveFilesWithNoJobId();
 
         // Then
-        assertThat(fileInfos).hasSize(10000);
-        assertThat(new HashSet<>(fileInfos)).isEqualTo(expected);
+        assertThat(fileInfos).hasSize(10000).containsExactlyInAnyOrderElementsOf(expected);
     }
 
     @Test
     public void shouldDeleteReadyForGCFile() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         FileInfo fileInfo1 = new FileInfo();
         fileInfo1.setRowKeyTypes(new LongType());
@@ -505,20 +470,16 @@ public class DynamoDBStateStoreIT {
 
         // When
         dynamoDBStateStore.deleteReadyForGCFile(fileInfo2);
-        List<FileInfo> active = dynamoDBStateStore.getActiveFiles();
-        Iterator<FileInfo> readyForGC = dynamoDBStateStore.getReadyForGCFiles();
 
         // Then
-        assertThat(active).hasSize(1);
-        assertThat(readyForGC.hasNext()).isFalse();
-        assertThat(active.get(0)).isEqualTo(fileInfo1);
+        assertThat(dynamoDBStateStore.getActiveFiles()).containsExactly(fileInfo1);
+        assertThat(dynamoDBStateStore.getReadyForGCFiles()).isExhausted();
     }
 
     @Test
     public void shouldAtomicallyUpdateStatusToReadyForGCAndCreateNewActiveFile() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
@@ -542,24 +503,16 @@ public class DynamoDBStateStoreIT {
 
         // When
         dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToMoveToReadyForGC, newFileInfo);
-        List<FileInfo> filesReadyForGC = new ArrayList<>();
-        Iterator<FileInfo> filesReadyForGCIterator = dynamoDBStateStore.getReadyForGCFiles();
-        while (filesReadyForGCIterator.hasNext()) {
-            filesReadyForGC.add(filesReadyForGCIterator.next());
-        }
-        List<FileInfo> activeFiles = dynamoDBStateStore.getActiveFiles();
 
         // Then
-        assertThat(filesReadyForGC).hasSize(4);
-        assertThat(activeFiles).hasSize(1);
-        assertThat(activeFiles.get(0)).isEqualTo(newFileInfo);
+        assertThat(dynamoDBStateStore.getActiveFiles()).containsExactly(newFileInfo);
+        assertThat(dynamoDBStateStore.getReadyForGCFiles()).toIterable().hasSize(4);
     }
 
     @Test
     public void shouldAtomicallyUpdateStatusToReadyForGCAndCreateNewActiveFilesForSplittingJob() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
@@ -589,28 +542,16 @@ public class DynamoDBStateStoreIT {
 
         // When
         dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo);
-        List<FileInfo> filesReadyForGC = new ArrayList<>();
-        Iterator<FileInfo> filesReadyForGCIterator = dynamoDBStateStore.getReadyForGCFiles();
-        while (filesReadyForGCIterator.hasNext()) {
-            filesReadyForGC.add(filesReadyForGCIterator.next());
-        }
-        List<FileInfo> activeFiles = dynamoDBStateStore.getActiveFiles()
-                .stream()
-                .sorted(Comparator.comparing(FileInfo::getFilename)) // Put the left file first to make the following tests simpler
-                .collect(Collectors.toList());
 
         // Then
-        assertThat(filesReadyForGC).hasSize(4);
-        assertThat(activeFiles).hasSize(2);
-        assertThat(activeFiles.get(0)).isEqualTo(newLeftFileInfo);
-        assertThat(activeFiles.get(1)).isEqualTo(newRightFileInfo);
+        assertThat(dynamoDBStateStore.getActiveFiles()).containsExactlyInAnyOrder(newLeftFileInfo, newRightFileInfo);
+        assertThat(dynamoDBStateStore.getReadyForGCFiles()).toIterable().hasSize(4);
     }
 
     @Test
     public void atomicallyUpdateStatusToReadyForGCAndCreateNewActiveFileShouldFailIfFilesNotActive() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
@@ -641,8 +582,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldAtomicallyUpdateJobStatusOfFiles() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<FileInfo> files = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
@@ -663,23 +603,17 @@ public class DynamoDBStateStoreIT {
         dynamoDBStateStore.atomicallyUpdateJobStatusOfFiles(jobId, files);
 
         // Then
-        Set<FileInfo> updatedFiles = new HashSet<>(dynamoDBStateStore.getActiveFiles());
-        assertThat(updatedFiles).hasSize(4);
-        Set<FileInfo> expectedFiles = files.stream()
-                .map(f -> {
-                    f.setJobId(jobId);
-                    return f;
-                })
-                .collect(Collectors.toSet());
-        assertThat(updatedFiles).isEqualTo(expectedFiles);
-        assertThat(dynamoDBStateStore.getReadyForGCFiles().hasNext()).isFalse();
+        assertThat(dynamoDBStateStore.getActiveFiles())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId")
+                .containsExactlyInAnyOrderElementsOf(files)
+                .extracting(FileInfo::getJobId).containsOnly(jobId);
+        assertThat(dynamoDBStateStore.getReadyForGCFiles()).isExhausted();
     }
 
     @Test
     public void shouldNotAtomicallyCreateJobAndUpdateJobStatusOfFilesWhenJobIdAlreadySet() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<FileInfo> files = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
@@ -706,80 +640,62 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldCorrectlyInitialisePartitionsWithLongKeyType() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         List<Partition> partitions = new PartitionsFromSplitPoints(schema, Collections.singletonList(100L))
                 .construct();
         StateStore stateStore = getStateStore(schema, partitions);
 
-        // When
-        List<Partition> allPartitions = stateStore.getAllPartitions();
-
-        // Then
-        assertThat(new HashSet<>(allPartitions)).isEqualTo(new HashSet<>(partitions));
+        // When / Then
+        assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions);
     }
 
     @Test
     public void shouldCorrectlyInitialisePartitionsWithStringKeyType() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new StringType()));
+        Schema schema = schemaWithSingleRowKeyType(new StringType());
         List<Partition> partitions = new PartitionsFromSplitPoints(schema, Collections.singletonList("B"))
                 .construct();
         StateStore stateStore = getStateStore(schema, partitions);
 
-        // When
-        List<Partition> allPartitions = stateStore.getAllPartitions();
-
-        // Then
-        assertThat(new HashSet<>(allPartitions)).isEqualTo(new HashSet<>(partitions));
+        // When / Then
+        assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions);
     }
 
     @Test
     public void shouldCorrectlyInitialisePartitionsWithByteArrayKeyType() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
+        Schema schema = schemaWithSingleRowKeyType(new ByteArrayType());
         byte[] splitPoint1 = new byte[]{1, 2, 3, 4};
         byte[] splitPoint2 = new byte[]{5, 6, 7, 8, 9};
         List<Partition> partitions = new PartitionsFromSplitPoints(schema, Arrays.asList(splitPoint1, splitPoint2))
                 .construct();
         StateStore stateStore = getStateStore(schema, partitions);
 
-        // When
-        List<Partition> allPartitions = stateStore.getAllPartitions();
-
-        // Then
-        assertThat(new HashSet<>(allPartitions)).isEqualTo(new HashSet<>(partitions));
+        // When / Then
+        assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions);
     }
 
     @Test
     public void shouldCorrectlyInitialisePartitionsWithMultidimensionalKeyType() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()));
+        Schema schema = schemaWithTwoRowKeyTypes(new ByteArrayType(), new ByteArrayType());
         byte[] splitPoint1 = new byte[]{1, 2, 3, 4};
         byte[] splitPoint2 = new byte[]{5, 6, 7, 8, 9};
         List<Partition> partitions = new PartitionsFromSplitPoints(schema, Arrays.asList(splitPoint1, splitPoint2))
                 .construct();
         StateStore stateStore = getStateStore(schema, partitions);
 
-        // When
-        List<Partition> allPartitions = stateStore.getAllPartitions();
-
-        // Then
-        assertThat(new HashSet<>(allPartitions)).isEqualTo(new HashSet<>(partitions));
+        // When / Then
+        assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrderElementsOf(partitions);
     }
 
     @Test
     public void shouldCorrectlyStoreNonLeafPartitionWithByteArrayKeyType() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = schemaWithSingleRowKeyType(new ByteArrayType());
         byte[] min = new byte[]{1, 2, 3, 4};
         byte[] max = new byte[]{5, 6, 7, 8, 9};
-        Range range = new RangeFactory(schema).createRange(field.getName(), min, max);
+        Range range = new RangeFactory(schema).createRange("key", min, max);
         Partition partition = new Partition(schema.getRowKeyTypes(),
                 new Region(range), "id", false, "P", new ArrayList<>(), 0);
         StateStore dynamoDBStateStore = getStateStore(schema, Collections.singletonList(partition));
@@ -801,9 +717,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldReturnCorrectPartitionToFileMapping() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<FileInfo> files = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
@@ -835,16 +749,16 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldReturnAllPartitions() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        Region region0 = new Region(new Range(field, Long.MIN_VALUE, 1L));
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        Region region0 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, 1L));
         Partition partition0 = new Partition(schema.getRowKeyTypes(), region0, "id0", true, "root", new ArrayList<>(), -1);
-        Region region1 = new Region(new Range(field, 1L, 100L));
+        Region region1 = new Region(rangeFactory.createRange(field, 1L, 100L));
         Partition partition1 = new Partition(schema.getRowKeyTypes(), region1, "id1", true, "root", new ArrayList<>(), -1);
-        Region region2 = new Region(new Range(field, 100L, 200L));
+        Region region2 = new Region(rangeFactory.createRange(field, 100L, 200L));
         Partition partition2 = new Partition(schema.getRowKeyTypes(), region2, "id2", true, "root", new ArrayList<>(), -1);
-        Region region3 = new Region(new Range(field, 200L, null));
+        Region region3 = new Region(rangeFactory.createRange(field, 200L, null));
         Partition partition3 = new Partition(schema.getRowKeyTypes(), region3, "id3", true, "root", new ArrayList<>(), -1);
         StateStore dynamoDBStateStore = getStateStore(schema, Arrays.asList(partition0, partition1, partition2, partition3));
 
@@ -862,30 +776,27 @@ public class DynamoDBStateStoreIT {
         });
 
         // Then
-        assertThat(retrievedPartitions.get(0)).isEqualTo(partition0);
-        assertThat(retrievedPartitions.get(1)).isEqualTo(partition1);
-        assertThat(retrievedPartitions.get(2)).isEqualTo(partition2);
-        assertThat(retrievedPartitions.get(3)).isEqualTo(partition3);
+        assertThat(retrievedPartitions).containsExactly(partition0, partition1, partition2, partition3);
     }
 
     @Test
     public void shouldReturnLeafPartitions() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition rootPartition = dynamoDBStateStore.getAllPartitions().get(0);
-        Region region1 = new Region(new Range(field, Long.MIN_VALUE, 1L));
+        Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, 1L));
         Partition partition1 = new Partition(schema.getRowKeyTypes(), region1, "id1", true, rootPartition.getId(), new ArrayList<>(), -1);
-        Region region2 = new Region(new Range(field, 1L, null));
+        Region region2 = new Region(rangeFactory.createRange(field, 1L, null));
         Partition partition2 = new Partition(schema.getRowKeyTypes(), region2, "id2", true, rootPartition.getId(), new ArrayList<>(), -1);
         rootPartition.setLeafPartition(false);
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, partition1, partition2);
-        Region region3 = new Region(new Range(field, 1L, 9L));
+        Region region3 = new Region(rangeFactory.createRange(field, 1L, 9L));
         Partition partition3 = new Partition(schema.getRowKeyTypes(), region3, "id3", true, partition2.getId(), new ArrayList<>(), -1);
-        Region region4 = new Region(new Range(field, 9L, null));
+        Region region4 = new Region(rangeFactory.createRange(field, 9L, null));
         Partition partition4 = new Partition(schema.getRowKeyTypes(), region4, "id4", true, partition2.getId(), new ArrayList<>(), -1);
         partition2.setLeafPartition(false);
         partition2.setChildPartitionIds(Arrays.asList(partition3.getId(), partition4.getId()));
@@ -905,17 +816,15 @@ public class DynamoDBStateStoreIT {
         });
 
         // Then
-        assertThat(retrievedPartitions.get(0)).isEqualTo(partition1);
-        assertThat(retrievedPartitions.get(1)).isEqualTo(partition3);
-        assertThat(retrievedPartitions.get(2)).isEqualTo(partition4);
+        assertThat(retrievedPartitions).containsExactly(partition1, partition3, partition4);
     }
 
     @Test
     public void shouldUpdatePartitions() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
 
@@ -927,7 +836,7 @@ public class DynamoDBStateStoreIT {
         childPartition1.setRowKeyTypes(new LongType());
         childPartition1.setLeafPartition(true);
         childPartition1.setId("child1");
-        Region region1 = new Region(new Range(field, Long.MIN_VALUE, 0L));
+        Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, 0L));
         childPartition1.setRegion(region1);
         childPartition1.setChildPartitionIds(new ArrayList<>());
         childPartition1.setParentPartitionId(parentPartition.getId());
@@ -936,7 +845,7 @@ public class DynamoDBStateStoreIT {
         childPartition2.setRowKeyTypes(new LongType());
         childPartition2.setLeafPartition(true);
         childPartition2.setId("child2");
-        Region region2 = new Region(new Range(field, 0L, null));
+        Region region2 = new Region(rangeFactory.createRange(field, 0L, null));
         childPartition2.setRegion(region2);
         childPartition2.setChildPartitionIds(new ArrayList<>());
         childPartition2.setParentPartitionId(parentPartition.getId());
@@ -944,16 +853,16 @@ public class DynamoDBStateStoreIT {
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
 
         // Then
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertThat(new HashSet<>(partitions)).isEqualTo(new HashSet<>(Arrays.asList(parentPartition, childPartition1, childPartition2)));
+        assertThat(dynamoDBStateStore.getAllPartitions())
+                .containsExactlyInAnyOrder(parentPartition, childPartition1, childPartition2);
     }
 
     @Test
     public void shouldNotUpdatePartitionsIfLeafStatusChanges() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
@@ -962,7 +871,7 @@ public class DynamoDBStateStoreIT {
         childPartition1.setRowKeyTypes(new LongType());
         childPartition1.setLeafPartition(true);
         childPartition1.setId("child1");
-        Region region1 = new Region(new Range(field, Long.MIN_VALUE, 0L));
+        Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, 0L));
         childPartition1.setRegion(region1);
         childPartition1.setChildPartitionIds(new ArrayList<>());
         childPartition1.setParentPartitionId(parentPartition.getId());
@@ -970,7 +879,7 @@ public class DynamoDBStateStoreIT {
         childPartition2.setRowKeyTypes(new LongType());
         childPartition2.setLeafPartition(true);
         childPartition2.setId("child2");
-        Region region2 = new Region(new Range(field, 0L, null));
+        Region region2 = new Region(rangeFactory.createRange(field, 0L, null));
         childPartition2.setRegion(region2);
 
         childPartition2.setChildPartitionIds(new ArrayList<>());
@@ -987,9 +896,9 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldThrowExceptionWithPartitionSplitRequestWhereParentIsLeaf() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
@@ -997,7 +906,7 @@ public class DynamoDBStateStoreIT {
         childPartition1.setRowKeyTypes(new LongType());
         childPartition1.setLeafPartition(true);
         childPartition1.setId("child1");
-        Region region1 = new Region(new Range(field, Long.MIN_VALUE, null));
+        Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
         childPartition1.setRegion(region1);
         childPartition1.setChildPartitionIds(new ArrayList<>());
         childPartition1.setParentPartitionId("parent");
@@ -1005,7 +914,7 @@ public class DynamoDBStateStoreIT {
         childPartition2.setRowKeyTypes(new LongType());
         childPartition2.setLeafPartition(true);
         childPartition2.setId("child2");
-        Region region2 = new Region(new Range(field, Long.MIN_VALUE, null));
+        Region region2 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
         childPartition2.setRegion(region2);
         childPartition2.setChildPartitionIds(new ArrayList<>());
         childPartition2.setParentPartitionId("parent");
@@ -1019,9 +928,9 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldThrowExceptionWithPartitionSplitRequestWhereChildrenWrong() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
@@ -1030,7 +939,7 @@ public class DynamoDBStateStoreIT {
         childPartition1.setRowKeyTypes(new LongType());
         childPartition1.setLeafPartition(true);
         childPartition1.setId("child1");
-        Region region1 = new Region(new Range(field, Long.MIN_VALUE, null));
+        Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
         childPartition1.setRegion(region1);
         childPartition1.setChildPartitionIds(new ArrayList<>());
         childPartition1.setParentPartitionId("parent");
@@ -1038,7 +947,7 @@ public class DynamoDBStateStoreIT {
         childPartition2.setRowKeyTypes(new LongType());
         childPartition2.setLeafPartition(true);
         childPartition2.setId("child2");
-        Region region2 = new Region(new Range(field, Long.MIN_VALUE, null));
+        Region region2 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
         childPartition2.setRegion(region2);
         childPartition2.setChildPartitionIds(new ArrayList<>());
         childPartition2.setParentPartitionId("parent");
@@ -1052,9 +961,9 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldThrowExceptionWithPartitionSplitRequestWhereParentWrong() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
@@ -1063,7 +972,7 @@ public class DynamoDBStateStoreIT {
         childPartition1.setRowKeyTypes(new LongType());
         childPartition1.setLeafPartition(true);
         childPartition1.setId("child1");
-        Region region1 = new Region(new Range(field, Long.MIN_VALUE, null));
+        Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
         childPartition1.setRegion(region1);
         childPartition1.setChildPartitionIds(new ArrayList<>());
         childPartition1.setParentPartitionId("notparent"); // Wrong parent
@@ -1071,7 +980,7 @@ public class DynamoDBStateStoreIT {
         childPartition2.setRowKeyTypes(new LongType());
         childPartition2.setLeafPartition(true);
         childPartition2.setId("child2");
-        Region region2 = new Region(new Range(field, Long.MIN_VALUE, null));
+        Region region2 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
         childPartition2.setRegion(region2);
         childPartition2.setChildPartitionIds(new ArrayList<>());
         childPartition2.setParentPartitionId("parent");
@@ -1085,9 +994,9 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldThrowExceptionWithPartitionSplitRequestWhereNewPartitionIsNotLeaf() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
@@ -1096,7 +1005,7 @@ public class DynamoDBStateStoreIT {
         childPartition1.setRowKeyTypes(new LongType());
         childPartition1.setLeafPartition(true);
         childPartition1.setId("child1");
-        Region region1 = new Region(new Range(field, Long.MIN_VALUE, 0L));
+        Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, 0L));
         childPartition1.setRegion(region1);
         childPartition1.setChildPartitionIds(new ArrayList<>());
         childPartition1.setParentPartitionId("parent");
@@ -1104,7 +1013,7 @@ public class DynamoDBStateStoreIT {
         childPartition2.setRowKeyTypes(new LongType());
         childPartition2.setLeafPartition(false); // Not leaf
         childPartition2.setId("child2");
-        Region region2 = new Region(new Range(field, 0L, Long.MAX_VALUE));
+        Region region2 = new Region(rangeFactory.createRange(field, 0L, Long.MAX_VALUE));
         childPartition2.setRegion(region2);
         childPartition2.setChildPartitionIds(new ArrayList<>());
         childPartition2.setParentPartitionId("parent");
@@ -1118,9 +1027,9 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldInitialiseRootPartitionCorrectlyForIntKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
 
         // When
@@ -1128,18 +1037,18 @@ public class DynamoDBStateStoreIT {
 
         // Then
         assertThat(partitions).hasSize(1);
-        Region expectedRegion = new Region(new Range(field, Integer.MIN_VALUE, null));
+        Region expectedRegion = new Region(rangeFactory.createRange(field, Integer.MIN_VALUE, null));
         Partition expectedPartition = new Partition(schema.getRowKeyTypes(),
                 expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
     public void shouldInitialiseRootPartitionCorrectlyForLongKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
 
         // When
@@ -1147,18 +1056,18 @@ public class DynamoDBStateStoreIT {
 
         // Then
         assertThat(partitions).hasSize(1);
-        Region expectedRegion = new Region(new Range(field, Long.MIN_VALUE, null));
+        Region expectedRegion = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
         Partition expectedPartition = new Partition(Collections.singletonList(new LongType()),
                 expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
     public void shouldInitialiseRootPartitionCorrectlyForStringKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
 
         // When
@@ -1166,18 +1075,18 @@ public class DynamoDBStateStoreIT {
 
         // Then
         assertThat(partitions).hasSize(1);
-        Region expectedRegion = new Region(new Range(field, "", null));
+        Region expectedRegion = new Region(rangeFactory.createRange(field, "", null));
         Partition expectedPartition = new Partition(Collections.singletonList(new StringType()),
                 expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
     public void shouldInitialiseRootPartitionCorrectlyForByteArrayKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
 
         // When
@@ -1185,9 +1094,9 @@ public class DynamoDBStateStoreIT {
 
         // Then
         assertThat(partitions).hasSize(1);
-        Region expectedRegion = new Region(new Range(field, new byte[]{}, null));
+        Region expectedRegion = new Region(rangeFactory.createRange(field, new byte[]{}, null));
         Partition expectedPartition = new Partition(Collections.singletonList(new ByteArrayType()),
                 expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
-        assertThat(partitions.get(0)).isEqualTo(expectedPartition);
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 }

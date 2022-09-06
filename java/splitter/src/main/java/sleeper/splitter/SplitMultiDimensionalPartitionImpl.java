@@ -25,6 +25,10 @@ import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.core.partition.Partition;
+import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
+import sleeper.core.range.Region;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
@@ -43,9 +47,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import sleeper.core.range.Range;
-import sleeper.core.range.Region;
-import sleeper.core.schema.Field;
 
 /**
  * Identifies the median value of the first dimension. If that leads to a valid
@@ -66,12 +67,14 @@ import sleeper.core.schema.Field;
  */
 public class SplitMultiDimensionalPartitionImpl {
     private static final Logger LOGGER = LoggerFactory.getLogger(SplitMultiDimensionalPartitionImpl.class);
-    
+
     private final StateStore stateStore;
     private final Schema schema;
+    private final List<PrimitiveType> rowKeyTypes;
     private final Partition partition;
     private final List<String> fileNames; // These should be active files for the partition
     private final Configuration conf;
+    private final RangeFactory rangeFactory;
 
     public SplitMultiDimensionalPartitionImpl(StateStore stateStore,
                                               Schema schema,
@@ -80,15 +83,16 @@ public class SplitMultiDimensionalPartitionImpl {
                                               Configuration conf) {
         this.stateStore = stateStore;
         this.schema = schema;
+        this.rowKeyTypes = schema.getRowKeyTypes();
         this.partition = partition;
         this.fileNames = fileNames;
         this.conf = conf;
+        this.rangeFactory = new RangeFactory(schema);
     }
 
     void splitPartition() throws StateStoreException, IOException {
-        List<PrimitiveType> rowKeyTypes = stateStore.getRowKeyTypes();
         for (int dimension = 0; dimension < rowKeyTypes.size(); dimension++) {
-            PrimitiveType rowKeyType = stateStore.getRowKeyTypes().get(dimension);
+            PrimitiveType rowKeyType = rowKeyTypes.get(dimension);
             LOGGER.info("Testing field {} of type {} (dimension {}) to see if it can be split",
                     schema.getRowKeyFieldNames().get(dimension), rowKeyType, dimension);
             if (rowKeyType instanceof IntType) {
@@ -266,17 +270,17 @@ public class SplitMultiDimensionalPartitionImpl {
                 .filter(r -> !r.getFieldName().equals(rangeToRemove))
                 .collect(Collectors.toList());
     }
-    
+
     private void splitPartition(Partition partition, Object splitPoint, int dimension)
             throws StateStoreException {
         Field fieldToSplitOn = schema.getRowKeyFields().get(dimension);
         LOGGER.info("Splitting partition {} on split point {} in dimension {}", partition.getId(), splitPoint, dimension);
-        
+
         // New partitions
         Partition leftChild = new Partition();
-        leftChild.setRowKeyTypes(schema.getRowKeyTypes());
+        leftChild.setRowKeyTypes(rowKeyTypes);
         List<Range> leftChildRanges = removeRange(partition.getRegion().getRanges(), fieldToSplitOn.getName());
-        Range rangeForSplitDimensionLeftChild = new Range(fieldToSplitOn, partition.getRegion().getRange(fieldToSplitOn.getName()).getMin(), splitPoint);
+        Range rangeForSplitDimensionLeftChild = rangeFactory.createRange(fieldToSplitOn, partition.getRegion().getRange(fieldToSplitOn.getName()).getMin(), splitPoint);
         leftChildRanges.add(rangeForSplitDimensionLeftChild);
         Region leftChildRegion = new Region(leftChildRanges);
         leftChild.setRegion(leftChildRegion);
@@ -285,9 +289,9 @@ public class SplitMultiDimensionalPartitionImpl {
         leftChild.setLeafPartition(true);
         leftChild.setChildPartitionIds(new ArrayList<>());
         Partition rightChild = new Partition();
-        rightChild.setRowKeyTypes(schema.getRowKeyTypes());
+        rightChild.setRowKeyTypes(rowKeyTypes);
         List<Range> rightChildRanges = removeRange(partition.getRegion().getRanges(), fieldToSplitOn.getName());
-        Range rangeForSplitDimensionRightChild = new Range(fieldToSplitOn, splitPoint, partition.getRegion().getRange(fieldToSplitOn.getName()).getMax());
+        Range rangeForSplitDimensionRightChild = rangeFactory.createRange(fieldToSplitOn, splitPoint, partition.getRegion().getRange(fieldToSplitOn.getName()).getMax());
         rightChildRanges.add(rangeForSplitDimensionRightChild);
         Region rightChildRegion = new Region(rightChildRanges);
         rightChild.setRegion(rightChildRegion);

@@ -87,6 +87,16 @@ public class IngestRecordsFromIteratorIT {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
 
+    private final Field field = new Field("key", new LongType());
+    private final Schema schema = schemaWithRowKeys(field);
+
+    private Schema schemaWithRowKeys(Field... fields) {
+        return Schema.builder()
+                .rowKeyFields(fields)
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
+    }
+
     public static List<Record> getRecords() {
         List<Record> records = new ArrayList<>();
         Record record1 = new Record();
@@ -249,9 +259,6 @@ public class IngestRecordsFromIteratorIT {
     @Test
     public void shouldWriteRecordsCorrectly() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         DynamoDBStateStore stateStore = getStateStore(schema);
         String localDir = folder.newFolder().getAbsolutePath();
 
@@ -293,9 +300,7 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords).hasSize(2);
-        assertThat(readRecords.get(0)).isEqualTo(getRecords().get(0));
-        assertThat(readRecords.get(1)).isEqualTo(getRecords().get(1));
+        assertThat(readRecords).containsExactly(getRecords().get(0), getRecords().get(1));
         //  - Local files should have been deleted
         assertThat(Files.walk(Paths.get(localDir)).filter(Files::isRegularFile).count()).isZero();
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
@@ -314,10 +319,6 @@ public class IngestRecordsFromIteratorIT {
     @Test
     public void shouldWriteRecordsSplitByPartitionLongKey() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         Partition rootPartition = new Partition();
         rootPartition.setRowKeyTypes(new LongType());
         rootPartition.setId("root");
@@ -394,8 +395,7 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords).hasSize(1);
-        assertThat(readRecords.get(0)).isEqualTo(getRecords().get(0));
+        assertThat(readRecords).containsExactly(getRecords().get(0));
         reader = new ParquetRecordReader.Builder(new Path(activeFiles.get(1).getFilename()), schema).build();
         readRecords.clear();
         record = reader.read();
@@ -404,8 +404,7 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords).hasSize(1);
-        assertThat(readRecords.get(0)).isEqualTo(getRecords().get(1));
+        assertThat(readRecords).containsExactly(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
@@ -436,10 +435,8 @@ public class IngestRecordsFromIteratorIT {
     @Test
     public void shouldWriteRecordsSplitByPartitionByteArrayKey() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = schemaWithRowKeys(field);
         Partition rootPartition = new Partition();
         rootPartition.setRowKeyTypes(new ByteArrayType());
         rootPartition.setId("root");
@@ -519,9 +516,9 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords).hasSize(2);
-        assertThat(readRecords.get(0)).isEqualTo(getRecordsByteArrayKey().get(0));
-        assertThat(readRecords.get(1)).isEqualTo(getRecordsByteArrayKey().get(1));
+        assertThat(readRecords).containsExactly(
+                getRecordsByteArrayKey().get(0),
+                getRecordsByteArrayKey().get(1));
         reader = new ParquetRecordReader.Builder(
                 new Path(activeFilesSortedByNumberOfLines.get(0).getFilename()), schema).build();
         readRecords.clear();
@@ -531,8 +528,7 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords).hasSize(1);
-        assertThat(readRecords.get(0)).isEqualTo(getRecordsByteArrayKey().get(2));
+        assertThat(readRecords).containsExactly(getRecordsByteArrayKey().get(2));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFilesSortedByNumberOfLines.get(1).getFilename().replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
@@ -565,11 +561,9 @@ public class IngestRecordsFromIteratorIT {
     @Test
     public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new ByteArrayType());
         Field field2 = new Field("key2", new ByteArrayType());
-        schema.setRowKeyFields(field1, field2);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = schemaWithRowKeys(field1, field2);
         Partition rootPartition = new Partition();
         rootPartition.setRowKeyTypes(new ByteArrayType(), new ByteArrayType());
         rootPartition.setId("root");
@@ -653,9 +647,9 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords).hasSize(2);
-        assertThat(readRecords.get(0)).isEqualTo(getRecords2DimByteArrayKey().get(0));
-        assertThat(readRecords.get(1)).isEqualTo(getRecords2DimByteArrayKey().get(4));
+        assertThat(readRecords).containsExactly(
+                getRecords2DimByteArrayKey().get(0),
+                getRecords2DimByteArrayKey().get(4));
         reader = new ParquetRecordReader.Builder(
                 new Path(activeFilesSortedByNumberOfLines.get(1).getFilename()), schema).build();
         readRecords.clear();
@@ -665,10 +659,10 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords).hasSize(3);
-        assertThat(readRecords.get(0)).isEqualTo(getRecords2DimByteArrayKey().get(1));
-        assertThat(readRecords.get(1)).isEqualTo(getRecords2DimByteArrayKey().get(2));
-        assertThat(readRecords.get(2)).isEqualTo(getRecords2DimByteArrayKey().get(3));
+        assertThat(readRecords).containsExactly(
+                getRecords2DimByteArrayKey().get(1),
+                getRecords2DimByteArrayKey().get(2),
+                getRecords2DimByteArrayKey().get(3));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFilesSortedByNumberOfLines.get(0).getFilename().replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
@@ -701,10 +695,6 @@ public class IngestRecordsFromIteratorIT {
     @Test
     public void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         Partition rootPartition = new Partition();
         rootPartition.setRowKeyTypes(new LongType());
         rootPartition.setId("root");
@@ -773,9 +763,9 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords).hasSize(2);
-        assertThat(readRecords.get(0)).isEqualTo(getRecordsInFirstPartitionOnly().get(1));
-        assertThat(readRecords.get(1)).isEqualTo(getRecordsInFirstPartitionOnly().get(0));
+        assertThat(readRecords).containsExactly(
+                getRecordsInFirstPartitionOnly().get(1),
+                getRecordsInFirstPartitionOnly().get(0));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = fileInfo.getFilename().replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
@@ -794,9 +784,6 @@ public class IngestRecordsFromIteratorIT {
     @Test
     public void shouldWriteDuplicateRecords() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
@@ -820,7 +807,7 @@ public class IngestRecordsFromIteratorIT {
 
         // Then:
         //  - Check the correct number of records were written
-        assertThat(numWritten).isEqualTo(2 * getRecords().size());
+        assertThat(numWritten).isEqualTo(2L * getRecords().size());
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         assertThat(activeFiles).hasSize(1);
@@ -839,11 +826,9 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords).hasSize(4);
-        assertThat(readRecords.get(0)).isEqualTo(getRecords().get(0));
-        assertThat(readRecords.get(1)).isEqualTo(getRecords().get(0));
-        assertThat(readRecords.get(2)).isEqualTo(getRecords().get(1));
-        assertThat(readRecords.get(3)).isEqualTo(getRecords().get(1));
+        assertThat(readRecords).containsExactly(
+                getRecords().get(0), getRecords().get(0),
+                getRecords().get(1), getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = fileInfo.getFilename().replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
@@ -860,10 +845,6 @@ public class IngestRecordsFromIteratorIT {
     @Test
     public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         Partition rootPartition = new Partition();
         rootPartition.setRowKeyTypes(new LongType());
         rootPartition.setId("root");
@@ -1037,10 +1018,6 @@ public class IngestRecordsFromIteratorIT {
     @Test
     public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         Partition rootPartition = new Partition();
         rootPartition.setRowKeyTypes(new LongType());
         rootPartition.setId("root");
@@ -1170,9 +1147,6 @@ public class IngestRecordsFromIteratorIT {
     @Test
     public void shouldSortRecords() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
@@ -1237,9 +1211,6 @@ public class IngestRecordsFromIteratorIT {
     @Test
     public void shouldWriteNoRecordsSuccessfully() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
@@ -1270,10 +1241,12 @@ public class IngestRecordsFromIteratorIT {
     @Test
     public void shouldApplyIterator() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new ByteArrayType()))
+                .sortKeyFields(new Field("sort", new LongType()))
+                .valueFields(new Field("value", new LongType()))
+                .build();
+
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
@@ -1314,18 +1287,16 @@ public class IngestRecordsFromIteratorIT {
             record = reader.read();
         }
         reader.close();
-        assertThat(readRecords.size()).isEqualTo(2L);
 
         Record expectedRecord1 = new Record();
         expectedRecord1.put("key", new byte[]{1, 1});
         expectedRecord1.put("sort", 2L);
         expectedRecord1.put("value", 7L);
-        assertThat(readRecords.get(0)).isEqualTo(expectedRecord1);
         Record expectedRecord2 = new Record();
         expectedRecord2.put("key", new byte[]{11, 2});
         expectedRecord2.put("sort", 1L);
         expectedRecord2.put("value", 4L);
-        assertThat(readRecords.get(1)).isEqualTo(expectedRecord2);
+        assertThat(readRecords).containsExactly(expectedRecord1, expectedRecord2);
 
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");

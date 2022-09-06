@@ -51,9 +51,10 @@ public class ParquetRecordReaderTest {
     @Test
     public void shouldReadRecordsCorrectlyWithIntKey() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("column1", new IntType()));
-        schema.setValueFields(new Field("column2", new StringType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new IntType()))
+                .valueFields(new Field("column2", new StringType()))
+                .build();
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
@@ -86,9 +87,10 @@ public class ParquetRecordReaderTest {
     @Test
     public void shouldReadRecordsCorrectlyWithByteArrayKey() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("column1", new ByteArrayType()));
-        schema.setValueFields(new Field("column2", new StringType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new ByteArrayType()))
+                .valueFields(new Field("column2", new StringType()))
+                .build();
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
@@ -122,10 +124,12 @@ public class ParquetRecordReaderTest {
     @Test
     public void shouldReadRecordsCorrectlyWithByteArrayKeyAndMapValue() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("column1", new ByteArrayType()));
-        schema.setValueFields(new Field("column2", new StringType()),
-                new Field("column3", new MapType(new StringType(), new LongType())));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new ByteArrayType()))
+                .valueFields(
+                        new Field("column2", new StringType()),
+                        new Field("column3", new MapType(new StringType(), new LongType())))
+                .build();
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
@@ -165,10 +169,12 @@ public class ParquetRecordReaderTest {
     @Test
     public void shouldReadRecordsCorrectlyWithByteArrayKeyAndEmptyMapValue() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("column1", new ByteArrayType()));
-        schema.setValueFields(new Field("column2", new StringType()),
-                new Field("column3", new MapType(new StringType(), new LongType())));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new ByteArrayType()))
+                .valueFields(
+                        new Field("column2", new StringType()),
+                        new Field("column3", new MapType(new StringType(), new LongType())))
+                .build();
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
@@ -208,10 +214,12 @@ public class ParquetRecordReaderTest {
     @Test
     public void shouldReadRecordsCorrectlyWithByteArrayKeyAndListValue() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("column1", new ByteArrayType()));
-        schema.setValueFields(new Field("column2", new StringType()),
-                new Field("column3", new ListType(new StringType())));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new ByteArrayType()))
+                .valueFields(
+                        new Field("column2", new StringType()),
+                        new Field("column3", new ListType(new StringType())))
+                .build();
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
@@ -251,10 +259,12 @@ public class ParquetRecordReaderTest {
     @Test
     public void shouldReadRecordsCorrectlyWithByteArrayKeyAndEmptyListValue() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("column1", new ByteArrayType()));
-        schema.setValueFields(new Field("column2", new StringType()),
-                new Field("column3", new ListType(new StringType())));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new ByteArrayType()))
+                .valueFields(
+                        new Field("column2", new StringType()),
+                        new Field("column3", new ListType(new StringType())))
+                .build();
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
@@ -294,9 +304,10 @@ public class ParquetRecordReaderTest {
     @Test
     public void shouldReadRecordsCorrectlyWithASubsetOfTheSchema() throws IOException {
         // Given
-        Schema writeSchema = new Schema();
-        writeSchema.setRowKeyFields(new Field("column1", new StringType()));
-        writeSchema.setValueFields(new Field("column2", new StringType()));
+        Schema writeSchema = Schema.builder()
+                .rowKeyFields(new Field("column1", new StringType()))
+                .valueFields(new Field("column2", new StringType()))
+                .build();
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(writeSchema), writeSchema)
                 .build();
@@ -311,8 +322,7 @@ public class ParquetRecordReaderTest {
         Record record2 = new Record(map2);
         writer.write(record2);
         writer.close();
-        Schema readSchema = new Schema();
-        readSchema.setRowKeyFields(new Field("column1", new StringType()));
+        Schema readSchema = Schema.builder().rowKeyFields(new Field("column1", new StringType())).build();
 
         // When
         ParquetReader<Record> reader = new ParquetRecordReader.Builder(path, readSchema).build();

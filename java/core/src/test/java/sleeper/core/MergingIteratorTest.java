@@ -25,23 +25,31 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.schema.type.Type;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class MergingIteratorTest {
 
+    private Schema schemaWithKeySortAndValueTypes(PrimitiveType keyType, PrimitiveType sortType, Type valueType) {
+        return Schema.builder()
+                .rowKeyFields(new Field("key", keyType))
+                .sortKeyFields(new Field("sort", sortType))
+                .valueFields(new Field("value", valueType))
+                .build();
+    }
+
     @Test
     public void shouldMergeSortedIterablesCorrectlyIntKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setSortKeyFields(new Field("sort", new IntType()));
-        schema.setValueFields(new Field("value", new IntType()));
+        Schema schema = schemaWithKeySortAndValueTypes(new IntType(), new IntType(), new IntType());
         List<Record> list1 = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key", 1);
@@ -79,35 +87,22 @@ public class MergingIteratorTest {
         list2.add(record5);
         list2.add(record6);
         list2.add(record7);
+
+        // When
         CloseableIterator<Record> iterator1 = new WrappedIterator<>(list1.iterator());
         CloseableIterator<Record> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
 
-        // When
-        List<Record> mergedIterable = new ArrayList<>();
-        while (mergingIterator.hasNext()) {
-            mergedIterable.add(mergingIterator.next());
-        }
-
         // Then
+        assertThat(mergingIterator).toIterable().containsExactly(
+                record1, record4, record2, record5, record3, record6, record7);
         assertThat(mergingIterator.getNumberOfRecordsRead()).isEqualTo(7L);
-        assertThat(mergedIterable).hasSize(7);
-        assertThat(mergedIterable.get(0)).isEqualTo(record1);
-        assertThat(mergedIterable.get(1)).isEqualTo(record4);
-        assertThat(mergedIterable.get(2)).isEqualTo(record2);
-        assertThat(mergedIterable.get(3)).isEqualTo(record5);
-        assertThat(mergedIterable.get(4)).isEqualTo(record3);
-        assertThat(mergedIterable.get(5)).isEqualTo(record6);
-        assertThat(mergedIterable.get(6)).isEqualTo(record7);
     }
 
     @Test
     public void shouldMergeSortedIterablesCorrectlyLongKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new StringType()));
+        Schema schema = schemaWithKeySortAndValueTypes(new LongType(), new LongType(), new StringType());
         List<Record> list1 = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key", 1L);
@@ -145,35 +140,22 @@ public class MergingIteratorTest {
         list2.add(record5);
         list2.add(record6);
         list2.add(record7);
+
+        // When
         CloseableIterator<Record> iterator1 = new WrappedIterator<>(list1.iterator());
         CloseableIterator<Record> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
 
-        // When
-        List<Record> mergedIterable = new ArrayList<>();
-        while (mergingIterator.hasNext()) {
-            mergedIterable.add(mergingIterator.next());
-        }
-
         // Then
+        assertThat(mergingIterator).toIterable().containsExactly(
+                record1, record4, record2, record5, record3, record6, record7);
         assertThat(mergingIterator.getNumberOfRecordsRead()).isEqualTo(7L);
-        assertThat(mergedIterable).hasSize(7);
-        assertThat(mergedIterable.get(0)).isEqualTo(record1);
-        assertThat(mergedIterable.get(1)).isEqualTo(record4);
-        assertThat(mergedIterable.get(2)).isEqualTo(record2);
-        assertThat(mergedIterable.get(3)).isEqualTo(record5);
-        assertThat(mergedIterable.get(4)).isEqualTo(record3);
-        assertThat(mergedIterable.get(5)).isEqualTo(record6);
-        assertThat(mergedIterable.get(6)).isEqualTo(record7);
     }
 
     @Test
     public void shouldMergeSortedIterablesCorrectlyStringKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new StringType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new StringType()));
+        Schema schema = schemaWithKeySortAndValueTypes(new StringType(), new LongType(), new StringType());
         List<Record> list1 = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key", "A");
@@ -211,35 +193,22 @@ public class MergingIteratorTest {
         list2.add(record5);
         list2.add(record6);
         list2.add(record7);
+
+        // When
         CloseableIterator<Record> iterator1 = new WrappedIterator<>(list1.iterator());
         CloseableIterator<Record> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
 
-        // When
-        List<Record> mergedIterable = new ArrayList<>();
-        while (mergingIterator.hasNext()) {
-            mergedIterable.add(mergingIterator.next());
-        }
-
         // Then
+        assertThat(mergingIterator).toIterable().containsExactly(
+                record1, record4, record2, record5, record3, record6, record7);
         assertThat(mergingIterator.getNumberOfRecordsRead()).isEqualTo(7L);
-        assertThat(mergedIterable).hasSize(7);
-        assertThat(mergedIterable.get(0)).isEqualTo(record1);
-        assertThat(mergedIterable.get(1)).isEqualTo(record4);
-        assertThat(mergedIterable.get(2)).isEqualTo(record2);
-        assertThat(mergedIterable.get(3)).isEqualTo(record5);
-        assertThat(mergedIterable.get(4)).isEqualTo(record3);
-        assertThat(mergedIterable.get(5)).isEqualTo(record6);
-        assertThat(mergedIterable.get(6)).isEqualTo(record7);
     }
 
     @Test
     public void shouldMergeSortedIterablesCorrectlyByteArrayKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new StringType()));
+        Schema schema = schemaWithKeySortAndValueTypes(new ByteArrayType(), new LongType(), new StringType());
         List<Record> list1 = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key", new byte[]{1});
@@ -277,34 +246,25 @@ public class MergingIteratorTest {
         list2.add(record5);
         list2.add(record6);
         list2.add(record7);
+
+        // When
         CloseableIterator<Record> iterator1 = new WrappedIterator<>(list1.iterator());
         CloseableIterator<Record> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
 
-        // When
-        List<Record> mergedIterable = new ArrayList<>();
-        while (mergingIterator.hasNext()) {
-            mergedIterable.add(mergingIterator.next());
-        }
-
         // Then
+        assertThat(mergingIterator).toIterable().containsExactly(
+                record1, record4, record2, record5, record3, record6, record7);
         assertThat(mergingIterator.getNumberOfRecordsRead()).isEqualTo(7L);
-        assertThat(mergedIterable).hasSize(7);
-        assertThat(mergedIterable.get(0)).isEqualTo(record1);
-        assertThat(mergedIterable.get(1)).isEqualTo(record4);
-        assertThat(mergedIterable.get(2)).isEqualTo(record2);
-        assertThat(mergedIterable.get(3)).isEqualTo(record5);
-        assertThat(mergedIterable.get(4)).isEqualTo(record3);
-        assertThat(mergedIterable.get(5)).isEqualTo(record6);
-        assertThat(mergedIterable.get(6)).isEqualTo(record7);
     }
 
     @Test
     public void shouldMergeSortedIterablesCorrectlyWhenNoSortKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setValueFields(new Field("value", new IntType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .valueFields(new Field("value", new IntType()))
+                .build();
         List<Record> list1 = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key", 1);
@@ -335,34 +295,25 @@ public class MergingIteratorTest {
         list2.add(record5);
         list2.add(record6);
         list2.add(record7);
+
+        // When
         CloseableIterator<Record> iterator1 = new WrappedIterator<>(list1.iterator());
         CloseableIterator<Record> iterator2 = new WrappedIterator<>(list2.iterator());
         MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
 
-        // When
-        List<Record> mergedIterable = new ArrayList<>();
-        while (mergingIterator.hasNext()) {
-            mergedIterable.add(mergingIterator.next());
-        }
-
         // Then
+        assertThat(mergingIterator).toIterable().containsExactly(
+                record1, record2, record4, record5, record3, record6, record7);
         assertThat(mergingIterator.getNumberOfRecordsRead()).isEqualTo(7L);
-        assertThat(mergedIterable).hasSize(7);
-        assertThat(mergedIterable.get(0)).isEqualTo(record1);
-        assertThat(mergedIterable.get(1)).isEqualTo(record2);
-        assertThat(mergedIterable.get(2)).isEqualTo(record4);
-        assertThat(mergedIterable.get(3)).isEqualTo(record5);
-        assertThat(mergedIterable.get(4)).isEqualTo(record3);
-        assertThat(mergedIterable.get(5)).isEqualTo(record6);
-        assertThat(mergedIterable.get(6)).isEqualTo(record7);
     }
 
     @Test
     public void shouldMergeSortedIterablesCorrectlyWhenOneIsEmpty() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setValueFields(new Field("value", new IntType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .valueFields(new Field("value", new IntType()))
+                .build();
         List<Record> list1 = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key", 1);
@@ -376,22 +327,15 @@ public class MergingIteratorTest {
         list1.add(record1);
         list1.add(record2);
         list1.add(record3);
-        List<Record> list2 = new ArrayList<>();
-        CloseableIterator<Record> iterator1 = new WrappedIterator<>(list1.iterator());
-        CloseableIterator<Record> iterator2 = new WrappedIterator<>(list2.iterator());
-        MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
 
         // When
-        List<Record> mergedIterable = new ArrayList<>();
-        while (mergingIterator.hasNext()) {
-            mergedIterable.add(mergingIterator.next());
-        }
+        CloseableIterator<Record> iterator1 = new WrappedIterator<>(list1.iterator());
+        CloseableIterator<Record> iterator2 = new WrappedIterator<>(Collections.emptyIterator());
+        MergingIterator mergingIterator = new MergingIterator(schema, Arrays.asList(iterator1, iterator2));
 
         // Then
+        assertThat(mergingIterator).toIterable().containsExactly(
+                record1, record2, record3);
         assertThat(mergingIterator.getNumberOfRecordsRead()).isEqualTo(3L);
-        assertThat(mergedIterable).hasSize(3);
-        assertThat(mergedIterable.get(0)).isEqualTo(record1);
-        assertThat(mergedIterable.get(1)).isEqualTo(record2);
-        assertThat(mergedIterable.get(2)).isEqualTo(record3);
     }
 }

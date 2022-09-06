@@ -26,7 +26,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -76,11 +75,9 @@ public class IngestJobUtilsTest {
         List<Path> pathsForIngest = IngestJobUtils.getPaths(files, conf, "");
 
         // Then
-        assertThat(pathsForIngest).hasSize(2);
-        List<String> pathsForIngestString = pathsForIngest.stream()
-                .map(path -> path.toUri().getPath())
-                .collect(Collectors.toList());
-        assertThat(pathsForIngestString).contains(localDir + "/file-0.parquet", localDir + "/file-1.parquet");
+        assertThat(pathsForIngest)
+                .extracting(path -> path.toUri().getPath())
+                .containsExactlyInAnyOrder(localDir + "/file-0.parquet", localDir + "/file-1.parquet");
     }
 
     @Test
@@ -102,11 +99,9 @@ public class IngestJobUtilsTest {
         List<Path> pathsForIngest = IngestJobUtils.getPaths(files, conf, "");
 
         // Then
-        assertThat(pathsForIngest).hasSize(2);
-        List<String> pathsForIngestString = pathsForIngest.stream()
-                .map(path -> path.toUri().getPath())
-                .collect(Collectors.toList());
-        assertThat(pathsForIngestString).contains(localDir + "/file-0.parquet", localDir + "/file-2.csv");
+        assertThat(pathsForIngest)
+                .extracting(path -> path.toUri().getPath())
+                .containsExactlyInAnyOrder(localDir + "/file-0.parquet", localDir + "/file-2.csv");
     }
 
     @Test
@@ -130,11 +125,12 @@ public class IngestJobUtilsTest {
         List<Path> pathsForIngest = IngestJobUtils.getPaths(files, conf, "");
 
         // Then
-        assertThat(pathsForIngest).hasSize(6);
-        List<String> pathsForIngestString = pathsForIngest.stream()
-                .map(path -> path.toUri().getPath())
-                .collect(Collectors.toList());
-        assertThat(pathsForIngestString).contains(localDir + "/dir-0/file-0.parquet", localDir + "/dir-0/file-1.parquet", localDir + "/dir-1/file-0.parquet", localDir + "/dir-1/file-1.parquet", localDir + "/dir-2/file-0.parquet", localDir + "/dir-2/file-1.parquet");
+        assertThat(pathsForIngest)
+                .extracting(path -> path.toUri().getPath())
+                .containsExactlyInAnyOrder(
+                        localDir + "/dir-0/file-0.parquet", localDir + "/dir-0/file-1.parquet",
+                        localDir + "/dir-1/file-0.parquet", localDir + "/dir-1/file-1.parquet",
+                        localDir + "/dir-2/file-0.parquet", localDir + "/dir-2/file-1.parquet");
     }
 
     @Test
@@ -163,10 +159,11 @@ public class IngestJobUtilsTest {
         List<Path> pathsForIngest = IngestJobUtils.getPaths(files, conf, "");
 
         // Then
-        assertThat(pathsForIngest).hasSize(5);
-        List<String> pathsForIngestString = pathsForIngest.stream()
-                .map(path -> path.toUri().getPath())
-                .collect(Collectors.toList());
-        assertThat(pathsForIngestString).contains(localDir + "/dir-0/file-0.parquet", localDir + "/dir-0/file-1.parquet", localDir + "/dir-0/dir-nested/file-0.parquet", localDir + "/dir-1/file-0.parquet", localDir + "/dir-1/file-1.parquet");
+        assertThat(pathsForIngest)
+                .extracting(path -> path.toUri().getPath())
+                .containsExactlyInAnyOrder(
+                        localDir + "/dir-0/file-0.parquet", localDir + "/dir-0/file-1.parquet",
+                        localDir + "/dir-0/dir-nested/file-0.parquet",
+                        localDir + "/dir-1/file-0.parquet", localDir + "/dir-1/file-1.parquet");
     }
 }

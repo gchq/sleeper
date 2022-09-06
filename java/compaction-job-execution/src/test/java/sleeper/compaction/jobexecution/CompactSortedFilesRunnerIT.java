@@ -55,10 +55,8 @@ import sleeper.table.util.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
@@ -97,10 +95,10 @@ public class CompactSortedFilesRunnerIT {
     }
 
     private Schema createSchema() {
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
-        return schema;
+        return Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
     }
 
     private InstanceProperties createProperties(AmazonS3 s3) {
@@ -268,12 +266,9 @@ public class CompactSortedFilesRunnerIT {
         ReceiveMessageResult result = sqsClient.receiveMessage(receiveMessageRequest);
         assertThat(result.getMessages()).isEmpty();
         // - Check DynamoDBStateStore has correct active files
-        List<FileInfo> activeFiles = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider).getActiveFiles()
-                .stream()
-                .sorted(Comparator.comparing(FileInfo::getFilename))
-                .collect(Collectors.toList());
-        assertThat(activeFiles).hasSize(2);
-        assertThat(activeFiles.get(0).getFilename()).isEqualTo(compactionJob1.getOutputFile());
-        assertThat(activeFiles.get(1).getFilename()).isEqualTo(compactionJob2.getOutputFile());
+        List<FileInfo> activeFiles = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider).getActiveFiles();
+        assertThat(activeFiles)
+                .extracting(FileInfo::getFilename)
+                .containsExactlyInAnyOrder(compactionJob1.getOutputFile(), compactionJob2.getOutputFile());
     }
 }

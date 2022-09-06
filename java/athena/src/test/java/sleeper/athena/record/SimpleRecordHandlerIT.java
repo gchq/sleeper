@@ -38,7 +38,6 @@ import sleeper.athena.TestUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
-import sleeper.core.schema.Schema;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
@@ -279,7 +278,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         ));
 
         // Then
-        ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(new ParquetRecordReader(new Path(file), new Schema()));
+        ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(new ParquetRecordReader(new Path(file), SCHEMA));
         while (parquetReaderIterator.hasNext()) {
             parquetReaderIterator.next();
         }
@@ -301,8 +300,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         String file = stateStore.getLeafPartitions().stream()
                 .map(Partition::getId)
                 .map(partitionToActiveFilesMap::get)
-                .filter(list -> list.size() == 1)   // Ensure the partition has a single file, otherwise the file might
-                // not contain the entirety of Feb
+                // Ensure the partition has a single file, otherwise the file might not contain the entirety of Feb
+                .filter(list -> list.size() == 1)
                 .flatMap(List::stream)
                 .findAny()
                 .orElseThrow(RuntimeException::new);
@@ -345,7 +344,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // Then
         assertThat(response).isInstanceOf(ReadRecordsResponse.class);
-        // assertEquals(28, ((ReadRecordsResponse) response).getRecordCount());
+//        assertThat(((ReadRecordsResponse) response).getRecordCount()).isEqualTo(28);
         Block records = ((ReadRecordsResponse) response).getRecords();
         // Just to show the difference
         assertThat(records.getFieldVector("month")).isNotNull();

@@ -19,7 +19,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -35,7 +34,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,15 +47,13 @@ public class TableCreatorIT {
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 
-    private static final Schema KEY_VALUE_SCHEMA = new Schema();
+    private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
+            .rowKeyFields(new Field("key", new StringType()))
+            .valueFields(new Field("value", new StringType()))
+            .build();
 
     @ClassRule
     public static TemporaryFolder tempDir = new TemporaryFolder();
-
-    static {
-        KEY_VALUE_SCHEMA.setRowKeyFields(new Field("key", new StringType()));
-        KEY_VALUE_SCHEMA.setValueFields(new Field("value", new StringType()));
-    }
 
     private AmazonS3 s3Client;
     private AmazonDynamoDB dynamoClient;
@@ -187,13 +183,10 @@ public class TableCreatorIT {
 
         // Then
         String instanceId = instanceProperties.get(ID);
-        List<String> expectedTables = Lists.newArrayList(
+        assertThat(dynamoClient.listTables().getTableNames()).contains(
                 "sleeper-" + instanceId + "-table-mytable-active-files",
                 "sleeper-" + instanceId + "-table-mytable-gc-files",
                 "sleeper-" + instanceId + "-table-mytable-partitions");
-        List<String> tableNames = dynamoClient.listTables().getTableNames();
-
-        assertThat(tableNames).containsAll(expectedTables);
     }
 
     @Test

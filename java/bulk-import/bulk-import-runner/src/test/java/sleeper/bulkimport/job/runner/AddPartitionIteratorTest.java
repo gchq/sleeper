@@ -39,10 +39,11 @@ public class AddPartitionIteratorTest {
     @Test
     public void shouldAddPartitionField() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new StringType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .sortKeyFields(new Field("sort", new LongType()))
+                .valueFields(new Field("value", new StringType()))
+                .build();
         Row row1 = RowFactory.create(1, 2L, "3");
         Row row2 = RowFactory.create(4, 5L, "6");
         Iterator<Row> rows = Arrays.asList(row1, row2).iterator();
@@ -54,14 +55,9 @@ public class AddPartitionIteratorTest {
         AddPartitionIterator addPartitionIterator = new AddPartitionIterator(rows, schema, partitionTree);
 
         // When / Then
-        assertThat(addPartitionIterator.hasNext()).isTrue();
-        Row readRow1 = addPartitionIterator.next();
         Row expectedRow1 = RowFactory.create(1, 2L, "3", partition1);
-        assertThat(readRow1).isEqualTo(expectedRow1);
-        assertThat(addPartitionIterator.hasNext()).isTrue();
-        Row readRow2 = addPartitionIterator.next();
         Row expectedRow2 = RowFactory.create(4, 5L, "6", partition2);
-        assertThat(readRow2).isEqualTo(expectedRow2);
-        assertThat(addPartitionIterator.hasNext()).isFalse();
+        assertThat(addPartitionIterator).toIterable()
+                .containsExactly(expectedRow1, expectedRow2);
     }
 }

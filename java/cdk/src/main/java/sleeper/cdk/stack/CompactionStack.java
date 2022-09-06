@@ -15,39 +15,6 @@
  */
 package sleeper.cdk.stack;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_MEMORY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.ContainerConstants;
@@ -86,11 +53,44 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_MEMORY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+
 /**
  * A {@link Stack} to deploy the {@link Queue}s, ECS {@link Cluster}s,
  * {@link FargateTaskDefinition}s, {@link Function}s, CloudWatch {@link Rule}s
  * needed to perform compaction jobs. Specifically, there is:
- *
+ * <p>
  * - a lambda, that is periodically triggered by a CloudWatch rule, to query the
  * state store for information about active files with no job id, to create
  * compaction job definitions as appropriate and post them to a queue;
@@ -99,7 +99,7 @@ import software.constructs.Construct;
  * - a lambda, that is periodically triggered by a CloudWatch rule, to look at
  * the size of the queue and the number of running tasks and create more tasks
  * if necessary.
- *
+ * <p>
  * Note that there are two of each of the above: one for non-splitting compaction
  * jobs and one for splitting compaction jobs.
  */
@@ -119,12 +119,13 @@ public class CompactionStack extends NestedStack {
     private Queue splittingDLQ;
     private final InstanceProperties instanceProperties;
 
-    public CompactionStack(Construct scope,
-                           String id,
-                           Topic topic,
-                           List<StateStoreStack> stateStoreStacks,
-                           List<IBucket> dataBuckets,
-                           InstanceProperties instanceProperties) {
+    public CompactionStack(
+            Construct scope,
+            String id,
+            Topic topic,
+            List<StateStoreStack> stateStoreStacks,
+            List<IBucket> dataBuckets,
+            InstanceProperties instanceProperties) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
 
@@ -171,6 +172,8 @@ public class CompactionStack extends NestedStack {
 
         // Lambda to create splitting compaction tasks
         lambdaToCreateSplittingCompactionTasks(configBucket, jarsBucket, splittingCompactionJobsQueue);
+
+        Utils.addStackTagIfSet(this, instanceProperties);
     }
 
     // TODO Code duplication because we have separate queues for splitting compaction
