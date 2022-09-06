@@ -46,7 +46,7 @@ public class BulkImportStarter implements RequestHandler<SQSEvent, Void> {
     public BulkImportStarter() throws IOException {
         this(AmazonS3ClientBuilder.defaultClient(), AmazonElasticMapReduceClientBuilder.defaultClient(), AWSStepFunctionsClientBuilder.defaultClient());
     }
-    
+
     public BulkImportStarter(AmazonS3 s3Client, AmazonElasticMapReduce emrClient, AWSStepFunctions stepFunctionsClient) throws IOException {
         this(new ExecutorFactory(s3Client, emrClient, stepFunctionsClient).createExecutor());
     }
