@@ -122,4 +122,6 @@ public interface FileInfoStore {
      */
     Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException;
 
+    void initialise() throws StateStoreException;
+
 }

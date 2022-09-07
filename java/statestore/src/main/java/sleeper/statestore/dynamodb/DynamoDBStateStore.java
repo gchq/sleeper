@@ -17,15 +17,9 @@ package sleeper.statestore.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
-import sleeper.statestore.FileInfo;
+import sleeper.statestore.DelegatingStateStore;
 import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
-
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
@@ -36,13 +30,11 @@ import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_
 /**
  * An implementation of {@link StateStore} that uses DynamoDB to store the state.
  */
-public class DynamoDBStateStore implements StateStore {
+public class DynamoDBStateStore extends DelegatingStateStore {
 
     public static final String FILE_NAME = DynamoDBFileInfoFormat.NAME;
     public static final String PARTITION_ID = DynamoDBPartitionFormat.ID;
 
-    private final DynamoDBFileInfoStore filesStore;
-    private final DynamoDBPartitionStore partitionsStore;
 
     public DynamoDBStateStore(TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
         this(tableProperties.get(ACTIVE_FILEINFO_TABLENAME),
@@ -62,101 +54,14 @@ public class DynamoDBStateStore implements StateStore {
             int garbageCollectorDelayBeforeDeletionInSeconds,
             boolean stronglyConsistentReads,
             AmazonDynamoDB dynamoDB) {
-        this.filesStore = DynamoDBFileInfoStore.builder()
+        super(DynamoDBFileInfoStore.builder()
                 .dynamoDB(dynamoDB).schema(schema)
                 .activeTablename(activeFileInfoTablename).readyForGCTablename(readyForGCFileInfoTablename)
                 .stronglyConsistentReads(stronglyConsistentReads)
                 .garbageCollectorDelayBeforeDeletionInSeconds(garbageCollectorDelayBeforeDeletionInSeconds)
-                .build();
-        this.partitionsStore = DynamoDBPartitionStore.builder()
+                .build(), DynamoDBPartitionStore.builder()
                 .dynamoDB(dynamoDB).schema(schema)
                 .tableName(partitionTablename).stronglyConsistentReads(stronglyConsistentReads)
-                .build();
+                .build());
     }
-
-    @Override
-    public void addFile(FileInfo fileInfo) throws StateStoreException {
-        filesStore.addFile(fileInfo);
-    }
-
-    @Override
-    public void addFiles(List<FileInfo> fileInfos) throws StateStoreException {
-        filesStore.addFiles(fileInfos);
-    }
-
-    @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(
-            List<FileInfo> filesToBeMarkedReadyForGC,
-            FileInfo newActiveFile) throws StateStoreException {
-        filesStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToBeMarkedReadyForGC, newActiveFile);
-    }
-
-    @Override
-    public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-            List<FileInfo> filesToBeMarkedReadyForGC, FileInfo leftFileInfo, FileInfo rightFileInfo) throws StateStoreException {
-        filesStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(
-                filesToBeMarkedReadyForGC, leftFileInfo, rightFileInfo);
-    }
-
-    /**
-     * Atomically updates the job field of the given files to the given id, as long as
-     * the compactionJob field is currently null.
-     */
-    @Override
-    public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> files)
-            throws StateStoreException {
-        filesStore.atomicallyUpdateJobStatusOfFiles(jobId, files);
-    }
-
-    @Override
-    public void deleteReadyForGCFile(FileInfo fileInfo) throws StateStoreException {
-        filesStore.deleteReadyForGCFile(fileInfo);
-    }
-
-    @Override
-    public List<FileInfo> getActiveFiles() throws StateStoreException {
-        return filesStore.getActiveFiles();
-    }
-
-    @Override
-    public Iterator<FileInfo> getReadyForGCFiles() {
-        return filesStore.getReadyForGCFiles();
-    }
-
-    @Override
-    public List<FileInfo> getActiveFilesWithNoJobId() throws StateStoreException {
-        return filesStore.getActiveFilesWithNoJobId();
-    }
-
-    @Override
-    public Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException {
-        return filesStore.getPartitionToActiveFilesMap();
-    }
-
-    @Override
-    public void atomicallyUpdatePartitionAndCreateNewOnes(
-            Partition splitPartition, Partition newPartition1, Partition newPartition2) throws StateStoreException {
-        partitionsStore.atomicallyUpdatePartitionAndCreateNewOnes(splitPartition, newPartition1, newPartition2);
-    }
-
-    @Override
-    public List<Partition> getAllPartitions() throws StateStoreException {
-        return partitionsStore.getAllPartitions();
-    }
-
-    @Override
-    public List<Partition> getLeafPartitions() throws StateStoreException {
-        return partitionsStore.getLeafPartitions();
-    }
-
-    @Override
-    public void initialise() throws StateStoreException {
-        partitionsStore.initialise();
-    }
-
-    @Override
-    public void initialise(List<Partition> initialPartitions) throws StateStoreException {
-        partitionsStore.initialise(initialPartitions);
-    }
-
 }

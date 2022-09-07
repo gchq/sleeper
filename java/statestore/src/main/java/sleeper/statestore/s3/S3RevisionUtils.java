@@ -102,7 +102,7 @@ public class S3RevisionUtils {
         return new RevisionId(nextRevision.toString(), UUID.randomUUID().toString());
     }
 
-    protected static class RevisionId {
+    public static class RevisionId {
         private final String revision;
         private final String uuid;
 
