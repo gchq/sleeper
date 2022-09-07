@@ -78,6 +78,7 @@ jobs:
           workflow: chunk-statestore.yaml
           branch: ${{ github.ref_name }}
       - name: Report results
+        working-directory: ./java/build
         run: |
           echo "chunks=athena,bulk-import,cdk,clients,common,compaction,data,ingest,query,statestore" >> status.properties
           echo "athena.status=${{ steps.athena.outputs.status }}" >> status.properties
@@ -100,3 +101,4 @@ jobs:
           echo "query.conclusion=${{ steps.query.outputs.conclusion }}" >> status.properties
           echo "statestore.status=${{ steps.statestore.outputs.status }}" >> status.properties
           echo "statestore.conclusion=${{ steps.statestore.outputs.conclusion }}" >> status.properties
+          mvn exec:java -Dexec.mainClass=sleeper.build.status.CheckGitHubStatus -Dexec.args=status.properties
