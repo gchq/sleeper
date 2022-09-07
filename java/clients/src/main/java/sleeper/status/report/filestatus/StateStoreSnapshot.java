@@ -23,13 +23,13 @@ import sleeper.statestore.StateStoreException;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class StateStoreFiles {
+public class StateStoreSnapshot {
 
     private final List<FileInfo> active;
     private final StateStoreReadyForGC readyForGC;
     private final List<Partition> partitions;
 
-    private StateStoreFiles(Builder builder) {
+    private StateStoreSnapshot(Builder builder) {
         active = builder.active;
         readyForGC = builder.readyForGC;
         partitions = builder.partitions;
@@ -59,7 +59,7 @@ public class StateStoreFiles {
         return readyForGC;
     }
 
-    public static StateStoreFiles from(StateStore stateStore, int maxNumberOfReadyForGCFilesToCount) throws StateStoreException {
+    public static StateStoreSnapshot from(StateStore stateStore, int maxNumberOfReadyForGCFilesToCount) throws StateStoreException {
         return builder()
                 .active(stateStore.getActiveFiles())
                 .readyForGC(StateStoreReadyForGC.from(stateStore, maxNumberOfReadyForGCFilesToCount))
@@ -94,8 +94,8 @@ public class StateStoreFiles {
             return this;
         }
 
-        public StateStoreFiles build() {
-            return new StateStoreFiles(this);
+        public StateStoreSnapshot build() {
+            return new StateStoreSnapshot(this);
         }
     }
 }

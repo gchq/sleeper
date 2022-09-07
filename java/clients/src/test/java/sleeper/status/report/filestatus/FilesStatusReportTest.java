@@ -66,7 +66,7 @@ public class FilesStatusReportTest {
                 fileInfoFactory.leafFile(50000008, "ghi", "gz"));
 
         // When
-        FileStatus status = FileStatusCollector.run(StateStoreFiles.builder()
+        FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
                 .partitions(partitions).active(activeFiles)
                 .readyForGC(StateStoreReadyForGC.none())
                 .build());
@@ -96,7 +96,7 @@ public class FilesStatusReportTest {
                 fileInfoFactory.middleFile(50000002, "arthur dent", "beeblebrox, zaphod"));
 
         // When
-        FileStatus status = FileStatusCollector.run(StateStoreFiles.builder()
+        FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
                 .partitions(partitions).active(activeFiles)
                 .readyForGC(StateStoreReadyForGC.none())
                 .build());

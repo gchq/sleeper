@@ -120,7 +120,7 @@ public class StandardFileStatusReporterRecordCountTest {
         List<FileInfo> activeFiles = Collections.singletonList(
                 fileInfoFactory.leafFile(recordCount, "arthur", "ford"));
 
-        return FileStatusCollector.run(StateStoreFiles.builder()
+        return FileStatusCollector.run(StateStoreSnapshot.builder()
                 .partitions(partitions).active(activeFiles)
                 .readyForGC(StateStoreReadyForGC.none())
                 .build());
