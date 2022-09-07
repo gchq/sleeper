@@ -127,7 +127,15 @@ public class PartitionSerDe {
             }
             Region region = regionJsonSerDe.deserialize(json.get(REGION), null, context);
             int dimension = json.get(DIMENSION).getAsInt();
-            return new Partition(schema.getRowKeyTypes(), region, partitionId, isLeafPartition, parentPartitionId, childPartitionIds, dimension);
+            return Partition.builder()
+                    .rowKeyTypes(schema.getRowKeyTypes())
+                    .region(region)
+                    .id(partitionId)
+                    .leafPartition(isLeafPartition)
+                    .parentPartitionId(parentPartitionId)
+                    .childPartitionIds(childPartitionIds)
+                    .dimension(dimension)
+                    .build();
         }
     }
 }

@@ -103,13 +103,14 @@ public class PartitionedTableCreator {
         List<Range> childRanges = Stream.of(parentRangesWithoutSplitDimensionStream, Stream.of(childRangeForSplitDimension))
                 .flatMap(Function.identity())
                 .collect(Collectors.toList());
-        return new Partition(
-                sleeperSchema.getRowKeyTypes(),
-                new Region(childRanges),
-                UUID.randomUUID().toString(),
-                true,
-                parentPartition.getId(),
-                new ArrayList<>(),
-                -1);
+        return Partition.builder()
+                .rowKeyTypes(sleeperSchema.getRowKeyTypes())
+                .region(new Region(childRanges))
+                .id(UUID.randomUUID().toString())
+                .leafPartition(true)
+                .parentPartitionId(parentPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
     }
 }
