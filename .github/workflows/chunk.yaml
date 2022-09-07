@@ -39,4 +39,4 @@ jobs:
         uses: jwgmeligmeyling/checkstyle-github-action@v1.2
         with:
           path: '**/checkstyle-result.xml'
-          name: Checkstyle for ${{ inputs.module }}
+          name: Checkstyle for ${{ inputs.chunkName }}
