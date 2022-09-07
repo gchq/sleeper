@@ -15,7 +15,6 @@
  */
 package sleeper.splitter;
 
-import com.facebook.collections.Array;
 import com.facebook.collections.ByteArray;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
@@ -48,10 +47,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import sleeper.core.range.Range;
-import sleeper.core.range.Region;
-import sleeper.core.schema.Field;
 
 /**
  * Identifies the median value of the first dimension. If that leads to a valid
