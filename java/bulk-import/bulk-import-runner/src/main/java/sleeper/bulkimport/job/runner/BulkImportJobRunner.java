@@ -45,7 +45,6 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
-import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.statestore.FileInfo;
@@ -65,7 +64,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_
 
 /**
  * This abstract class executes a Spark job that reads in input Parquet files and writes
- * out files of {@link Record}s. Concrete subclasses of this class must implement
+ * out files of {@link sleeper.core.record.Record}s. Concrete subclasses of this class must implement
  * a method which takes in a {@link Dataset} of {@link Row}s where a field has
  * been added that contains the Sleeper partition that the row is in and writes
  * the data to files in S3 and returns a list of the {@link FileInfo}s that
