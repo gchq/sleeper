@@ -62,6 +62,9 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TestUtils {
 
+    private TestUtils() {
+    }
+
     public static InstanceProperties createInstance(AmazonS3 s3Client) {
         String configBucket = s3Client.createBucket(UUID.randomUUID().toString()).getName();
         InstanceProperties instanceProperties = new InstanceProperties();
@@ -135,7 +138,8 @@ public class TestUtils {
                     null,
                     10
             ).write();
-        } catch (IOException | StateStoreException | InterruptedException | IteratorException | ObjectFactoryException e) {
+        } catch (IOException | StateStoreException | InterruptedException | IteratorException |
+                 ObjectFactoryException e) {
             throw new RuntimeException("Failed to Ingest data", e);
         } finally {
             dynamoClient.shutdown();

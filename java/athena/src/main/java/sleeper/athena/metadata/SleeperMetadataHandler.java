@@ -35,7 +35,6 @@ import com.amazonaws.athena.connector.lambda.metadata.GetTableResponse;
 import com.amazonaws.athena.connector.lambda.metadata.ListSchemasRequest;
 import com.amazonaws.athena.connector.lambda.metadata.ListSchemasResponse;
 import com.amazonaws.athena.connector.lambda.metadata.ListTablesRequest;
-import static com.amazonaws.athena.connector.lambda.metadata.ListTablesRequest.UNLIMITED_PAGE_SIZE_VALUE;
 import com.amazonaws.athena.connector.lambda.metadata.ListTablesResponse;
 import com.amazonaws.athena.connector.lambda.security.EncryptionKeyFactory;
 import com.amazonaws.services.athena.AmazonAthena;
@@ -46,18 +45,11 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.InstanceProperties;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.key.Key;
@@ -77,6 +69,16 @@ import sleeper.statestore.StateStore;
 import sleeper.table.job.TableLister;
 import sleeper.table.util.StateStoreProvider;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static com.amazonaws.athena.connector.lambda.metadata.ListTablesRequest.UNLIMITED_PAGE_SIZE_VALUE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+
 /**
  * The {@link SleeperMetadataHandler} deals with requests about the layout for a Sleeper instance. It provides information
  * about the tables and schemas of those tables. When a query is run, Athena will first make a request to this handler
@@ -85,7 +87,7 @@ import sleeper.table.util.StateStoreProvider;
  */
 public abstract class SleeperMetadataHandler extends MetadataHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperMetadataHandler.class);
-    
+
     public static final String SOURCE_TYPE = "Sleeper";
     public static final String RELEVANT_FILES_FIELD = "_SleeperRelevantFiles";
     private AmazonS3 s3Client;
@@ -107,13 +109,13 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
     }
 
     public SleeperMetadataHandler(AmazonS3 s3Client,
-                                           AmazonDynamoDB dynamoDBClient,
-                                           String configBucket,
-                                           EncryptionKeyFactory encryptionKeyFactory,
-                                           AWSSecretsManager secretsManager,
-                                           AmazonAthena athena,
-                                           String spillBucket,
-                                           String spillPrefix) throws IOException {
+                                  AmazonDynamoDB dynamoDBClient,
+                                  String configBucket,
+                                  EncryptionKeyFactory encryptionKeyFactory,
+                                  AWSSecretsManager secretsManager,
+                                  AmazonAthena athena,
+                                  String spillBucket,
+                                  String spillPrefix) throws IOException {
         super(encryptionKeyFactory, secretsManager, athena, SOURCE_TYPE, spillBucket, spillPrefix);
         this.s3Client = s3Client;
         this.instanceProperties = new InstanceProperties();
@@ -126,9 +128,9 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
      * Used to get the set of schemas (aka databases) that this source contains. Using the tableLister to list the
      * tables in this instance.
      *
-     * @param blockAllocator Tool for creating and managing Apache Arrow Blocks.
+     * @param blockAllocator     Tool for creating and managing Apache Arrow Blocks.
      * @param listSchemasRequest Provides details on who made the request and which Athena catalog they are querying.
-     * @return A ListSchemasResponse which primarily contains a Set<String> of schema names and a catalog name
+     * @return A ListSchemasResponse which primarily contains a Set of schema names and a catalog name
      * corresponding the Athena catalog that was queried.
      */
     @Override
@@ -141,9 +143,9 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
      * Used to get a paginated list of tables that this source contains. In Sleeper the Schema is coupled to the table
      * so we can just use the schema name in the request.
      *
-     * @param blockAllocator Tool for creating and managing Apache Arrow Blocks.
+     * @param blockAllocator    Tool for creating and managing Apache Arrow Blocks.
      * @param listTablesRequest Provides details on who made the request and which Athena catalog and database they are querying.
-     * @return A ListTablesResponse which primarily contains a List<TableName> enumerating the tables in this
+     * @return A ListTablesResponse which primarily contains a List enumerating the TableNames in this
      * catalog, database tuple. It also contains the catalog name corresponding the Athena catalog that was queried.
      * @implNote A complete (un-paginated) list of tables should be returned if the request's pageSize is set to
      * ListTablesRequest.UNLIMITED_PAGE_SIZE_VALUE.
@@ -179,8 +181,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
                 nextToken = String.valueOf(pageSize);
                 // nextToken is removed to include only the paginated results.
                 tables = paginatedTables.subList(0, pageSize);
-            }
-            else {
+            } else {
                 // Paginated list contains all remaining tables - end of the pagination.
                 tables = paginatedTables;
             }
@@ -195,11 +196,11 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
      * keys when we return a result from {@code this.getPartitions()}. This usually results in Athena throwing away
      * partitions that we actually want to read.
      *
-     * @param blockAllocator Tool for creating and managing Apache Arrow Blocks.
+     * @param blockAllocator  Tool for creating and managing Apache Arrow Blocks.
      * @param getTableRequest Provides details on who made the request and which Athena catalog, database, and table they are querying.
      * @return A GetTableResponse which primarily contains:
      * 1. An Apache Arrow Schema object describing the table's columns, types, and descriptions.
-     * 2. A Set<String> onf partition column names (or empty if the table isn't partitioned).
+     * 2. A Set of partition column names (or empty if the table isn't partitioned).
      * 3. A TableName object confirming the schema and table name the response is for.
      * 4. A catalog name corresponding the Athena catalog that was queried.
      */
@@ -219,8 +220,9 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
     /**
      * Add an extra column which will be available to the GetSplits method but not to Athena. This column is used
      * for saying which Sleeper partitions are relevant to the query
+     *
      * @param partitionSchemaBuilder the builder
-     * @param request the request
+     * @param request                the request
      */
     @Override
     public void enhancePartitionSchema(SchemaBuilder partitionSchemaBuilder, GetTableLayoutRequest request) {
@@ -232,8 +234,9 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
     /**
      * In addition to the _SleeperRelevantFiles field, add other fields that you may want to add. This will depend on
      * the implementation of {@code writeExtraPartitionDataToBlock()}
+     *
      * @param partitionSchemaBuilder the schema builder
-     * @param request the request
+     * @param request                the request
      */
     protected abstract void addExtraSchemaEnhancements(SchemaBuilder partitionSchemaBuilder, GetTableLayoutRequest request);
 
@@ -242,9 +245,9 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
      * It iterates through the partitions, eliminating those which don't contain data that satisfy the key requirements.
      * At the end of processing it returns the relevant partitions for this query.
      *
-     * @param blockWriter Used to write rows (partitions) into the Apache Arrow response.
+     * @param blockWriter           Used to write rows (partitions) into the Apache Arrow response.
      * @param getTableLayoutRequest Provides details of the catalog, database, and table being queried as well as any filter predicate.
-     * @param queryStatusChecker A QueryStatusChecker that you can use to stop doing work for a query that has already terminated
+     * @param queryStatusChecker    A QueryStatusChecker that you can use to stop doing work for a query that has already terminated
      * @note Partitions are partially opaque to Amazon Athena in that it only understands your partition columns and
      * how to filter out partitions that do not meet the query's constraints. Any additional columns you add to the
      * partition data are ignored by Athena but passed on to calls on GetSplits. Also note that the BlockWriter handlers
@@ -296,20 +299,22 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
      * Allows per implementation customisation to the GetPartitions. Implementations may want to add extra information
      * in addition to the relevant files to the partition block. Implementations should note that any additions here
      * need to be reflected in the {@code addExtraSchemaEnhancements()} method.
-     *
+     * <p>
      * By the time this method is called, the partition has already been validated and deemed necessary to query.
+     *
      * @param partition the partition being queried
-     * @param block the block of data to write to
-     * @param rowNum the row number to write to
+     * @param block     the block of data to write to
+     * @param rowNum    the row number to write to
      */
     protected abstract void writeExtraPartitionDataToBlock(Partition partition, Block block, int rowNum);
 
     /**
      * Iterates through the row keys and tests and tests the ValueSets against the min and max provided. If all the
      * row keys pass the test, it returns true, otherwise it returns false.
-     * @param partition The partition being checked.
+     *
+     * @param partition    The partition being checked.
      * @param rowKeyFields The Schema row key fields
-     * @param valueSets The ValueSets to test
+     * @param valueSets    The ValueSets to test
      * @return true if valid, false if not
      */
     private boolean isValid(Partition partition, List<Field> rowKeyFields, Map<String, ValueSet> valueSets) {
@@ -355,8 +360,9 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
 
     /**
      * Gets files from the leaf partition all the way up to the root of the tree.
-     * @param leafPartition The leaf partition which the files may relate to
-     * @param partitionTree A tree of all the partitions
+     *
+     * @param leafPartition          The leaf partition which the files may relate to
+     * @param partitionTree          A tree of all the partitions
      * @param partitionToActiveFiles A dictionary of partitions to their active files
      * @return All the files that relate (or could relate to) a leaf partition
      */
@@ -376,6 +382,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
 
     /**
      * Returns the TableProperties associated with a table name
+     *
      * @param tableName the name of the table
      * @return the table properties
      */
@@ -385,6 +392,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
 
     /**
      * The StateStore associated with a list of table properties
+     *
      * @param tableProperties the table properties
      * @return a statestore
      */
@@ -394,6 +402,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
 
     /**
      * Converts a primitive type in Sleeper to an Arrow type.
+     *
      * @param type the primitive type
      * @return The equivalent Arrow type
      */
@@ -410,7 +419,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
             throw new RuntimeException("Unexpected primitive type: " + type);
         }
     }
-    
+
     private boolean partitionMatchesRange(PrimitiveType type, ValueSet keyPredicate, Object min, Object max) {
         Ranges ranges = keyPredicate.getRanges();
         Range partitionRange;
