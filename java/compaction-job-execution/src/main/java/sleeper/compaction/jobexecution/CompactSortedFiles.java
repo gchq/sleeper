@@ -224,10 +224,10 @@ public class CompactSortedFiles {
 
         // Create writers
         ParquetRecordWriter leftWriter = new ParquetRecordWriter(new Path(compactionJob.getOutputFiles().getLeft()), messageType, schema,
-                CompressionCodecName.fromConf(compressionCodec), rowGroupSize, pageSize);//4 * 1024 * 1024, DEFAULT_PAGE_SIZE);
+                CompressionCodecName.fromConf(compressionCodec), rowGroupSize, pageSize); //4 * 1024 * 1024, DEFAULT_PAGE_SIZE);
         LOGGER.debug("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFiles().getLeft());
         ParquetRecordWriter rightWriter = new ParquetRecordWriter(new Path(compactionJob.getOutputFiles().getRight()), messageType, schema,
-                CompressionCodecName.fromConf(compressionCodec), rowGroupSize, pageSize);//4 * 1024 * 1024, DEFAULT_PAGE_SIZE);
+                CompressionCodecName.fromConf(compressionCodec), rowGroupSize, pageSize); //4 * 1024 * 1024, DEFAULT_PAGE_SIZE);
         LOGGER.debug("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFiles().getRight());
 
         Map<String, ItemsSketch> leftKeyFieldToSketch = getSketches();
