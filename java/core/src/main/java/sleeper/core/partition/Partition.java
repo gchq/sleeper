@@ -16,6 +16,7 @@
 package sleeper.core.partition;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import sleeper.core.key.Key;
@@ -42,23 +43,20 @@ public class Partition {
     private List<String> childPartitionIds;
     private int dimension = -1; // -1 used to indicate that it has not been split yet; when it has been split, indicates which dimension was used to split on.
 
-    public Partition() {
+    private Partition(Partition.Builder builder) {
+        setRowKeyTypes(builder.getRowKeyTypes());
+        if (null != builder.getRegion()) {
+            setRegion(builder.getRegion());
+        }
+        setId(builder.getId());
+        setLeafPartition(builder.isLeafPartition());
+        setParentPartitionId(builder.getParentPartitionId());
+        setChildPartitionIds(builder.getChildPartitionIds());
+        setDimension(builder.getDimension());
     }
 
-    public Partition(List<PrimitiveType> rowKeyTypes,
-            Region region,
-            String id,
-            boolean leafPartition,
-            String parentPartitionId,
-            List<String> childPartitionIds,
-            int dimension) {
-        setRowKeyTypes(rowKeyTypes);
-        setRegion(region);
-        setId(id);
-        setLeafPartition(leafPartition);
-        setParentPartitionId(parentPartitionId);
-        setChildPartitionIds(childPartitionIds);
-        setDimension(dimension);
+    public static Builder builder() {
+        return new Partition.Builder();
     }
 
     public List<PrimitiveType> getRowKeyTypes() {
@@ -177,5 +175,92 @@ public class Partition {
                 + ", childPartitionIds=" + getChildPartitionIds()
                 + ", dimension=" + dimension
                 + '}';
+    }
+
+    public static final class Builder {
+        private List<PrimitiveType> rowKeyTypes;
+        private Region region;
+        private String id;
+        private boolean leafPartition;
+        private String parentPartitionId;
+        private List<String> childPartitionIds;
+        private int dimension;
+
+        public Builder rowKeyTypes(List<PrimitiveType> rowKeyTypes) {
+            this.rowKeyTypes = rowKeyTypes;
+            return this;
+        }
+
+        public Builder rowKeyTypes(PrimitiveType... rowKeyTypes) {
+            return this.rowKeyTypes(Arrays.asList(rowKeyTypes));
+        }
+
+        public Builder region(Region region) {
+            this.region = region;
+            return this;
+        }
+
+        public Builder id(String id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder leafPartition(boolean leafPartition) {
+            this.leafPartition = leafPartition;
+            return this;
+        }
+
+
+        public Builder parentPartitionId(String parentPartitionId) {
+            this.parentPartitionId = parentPartitionId;
+            return this;
+        }
+
+
+        public Builder childPartitionIds(List<String> childPartitionIds) {
+            this.childPartitionIds = childPartitionIds;
+            return this;
+        }
+
+        public Builder childPartitionIds(String... childPartitionIds) {
+            return this.childPartitionIds(Arrays.asList(childPartitionIds));
+        }
+
+        public Builder dimension(int dimension) {
+            this.dimension = dimension;
+            return this;
+        }
+
+        public List<PrimitiveType> getRowKeyTypes() {
+            return rowKeyTypes;
+        }
+
+        public Region getRegion() {
+            return region;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public boolean isLeafPartition() {
+            return leafPartition;
+        }
+
+        public String getParentPartitionId() {
+            return parentPartitionId;
+        }
+
+        public List<String> getChildPartitionIds() {
+            return childPartitionIds;
+        }
+
+        public int getDimension() {
+            return dimension;
+        }
+
+        public Partition build() {
+            return new Partition(this);
+        }
     }
 }

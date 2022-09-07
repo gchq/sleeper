@@ -42,11 +42,25 @@ public class PartitionFactoryTest {
 
         List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
         assertThat(parent).isEqualTo(
-                new Partition(rowKeyTypes, new Region(rangeFactory.createRange(key, "", null)),
-                        "parent", false, null, Collections.singletonList("child"), 0));
+                Partition.builder()
+                        .rowKeyTypes(rowKeyTypes)
+                        .region(new Region(rangeFactory.createRange(key, "", null)))
+                        .id("parent")
+                        .leafPartition(false)
+                        .parentPartitionId(null)
+                        .childPartitionIds(Collections.singletonList("child"))
+                        .dimension(0)
+                        .build());
         assertThat(child).isEqualTo(
-                new Partition(rowKeyTypes, new Region(rangeFactory.createRange(key, "", "aaa")),
-                        "child", true, "parent", Collections.emptyList(), -1));
+                Partition.builder()
+                        .rowKeyTypes(rowKeyTypes)
+                        .region(new Region(rangeFactory.createRange(key, "", "aaa")))
+                        .id("child")
+                        .leafPartition(true)
+                        .parentPartitionId("parent")
+                        .childPartitionIds(Collections.emptyList())
+                        .dimension(-1)
+                        .build());
     }
 
     @Test
@@ -61,13 +75,34 @@ public class PartitionFactoryTest {
 
         List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
         assertThat(a).isEqualTo(
-                new Partition(rowKeyTypes, new Region(rangeFactory.createRange(key, "", "aaa")),
-                        "A", true, "parent", Collections.emptyList(), -1));
+                Partition.builder()
+                        .rowKeyTypes(rowKeyTypes)
+                        .region(new Region(rangeFactory.createRange(key, "", "aaa")))
+                        .id("A")
+                        .leafPartition(true)
+                        .parentPartitionId("parent")
+                        .childPartitionIds(Collections.emptyList())
+                        .dimension(-1)
+                        .build());
         assertThat(b).isEqualTo(
-                new Partition(rowKeyTypes, new Region(rangeFactory.createRange(key, "aaa", null)),
-                        "B", true, "parent", Collections.emptyList(), -1));
+                Partition.builder()
+                        .rowKeyTypes(rowKeyTypes)
+                        .region(new Region(rangeFactory.createRange(key, "aaa", null)))
+                        .id("B")
+                        .leafPartition(true)
+                        .parentPartitionId("parent")
+                        .childPartitionIds(Collections.emptyList())
+                        .dimension(-1)
+                        .build());
         assertThat(parent).isEqualTo(
-                new Partition(rowKeyTypes, new Region(rangeFactory.createRange(key, "", null)),
-                        "parent", false, null, Arrays.asList("A", "B"), 0));
+                Partition.builder()
+                        .rowKeyTypes(rowKeyTypes)
+                        .region(new Region(rangeFactory.createRange(key, "", null)))
+                        .id("parent")
+                        .leafPartition(false)
+                        .parentPartitionId(null)
+                        .childPartitionIds("A", "B")
+                        .dimension(0)
+                        .build());
     }
 }
