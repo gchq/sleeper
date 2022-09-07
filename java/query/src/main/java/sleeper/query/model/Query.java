@@ -15,12 +15,13 @@
  */
 package sleeper.query.model;
 
+import sleeper.core.range.Region;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import sleeper.core.range.Region;
 
 /**
  * A {@link Query} is a request for records with rowkeys that fall within one of
@@ -43,11 +44,11 @@ public class Query {
         this.resultsPublisherConfig = Collections.emptyMap();
         this.statusReportDestinations = Collections.emptyList();
     }
-    
+
     public String getQueryId() {
         return queryId;
     }
-    
+
     public List<Region> getRegions() {
         return regions;
     }
@@ -55,7 +56,7 @@ public class Query {
     public void setQueryTimeIteratorClassName(String queryTimeIteratorClassName) {
         this.queryTimeIteratorClassName = queryTimeIteratorClassName;
     }
-    
+
     public String getQueryTimeIteratorClassName() {
         return queryTimeIteratorClassName;
     }
@@ -63,7 +64,7 @@ public class Query {
     public void setQueryTimeIteratorConfig(String queryTimeIteratorConfig) {
         this.queryTimeIteratorConfig = queryTimeIteratorConfig;
     }
-    
+
     public String getQueryTimeIteratorConfig() {
         return queryTimeIteratorConfig;
     }
@@ -71,7 +72,7 @@ public class Query {
     public void setResultsPublisherConfig(Map<String, String> resultsPublisherConfig) {
         this.resultsPublisherConfig = resultsPublisherConfig;
     }
-    
+
     public Map<String, String> getResultsPublisherConfig() {
         return resultsPublisherConfig;
     }
@@ -83,7 +84,7 @@ public class Query {
     public void setRequestedValueFields(List<String> requestedValueFields) {
         this.requestedValueFields = requestedValueFields;
     }
-    
+
     public List<String> getRequestedValueFields() {
         return requestedValueFields;
     }
@@ -99,7 +100,7 @@ public class Query {
     public void addStatusReportDestination(Map<String, String> statusReportDestination) {
         this.statusReportDestinations.add(statusReportDestination);
     }
-    
+
     @Override
     public int hashCode() {
         int hash = 7;
@@ -162,39 +163,39 @@ public class Query {
                 + ", requestedValueFields=" + requestedValueFields
                 + ", statusReportDestinations=" + statusReportDestinations + '}';
     }
-    
+
     public static class Builder {
         private final Query query;
-        
+
         public Builder(String tableName, String queryId, List<Region> regions) {
             this.query = new Query(tableName, queryId, regions);
             validateRegions(regions);
         }
-        
+
         public Builder(String tableName, String queryId, Region region) {
             this(tableName, queryId, Collections.singletonList(region));
         }
-        
+
         public Builder setQueryTimeIteratorClassName(String queryTimeIteratorClassName) {
             query.setQueryTimeIteratorClassName(queryTimeIteratorClassName);
             return this;
         }
-        
+
         public Builder setQueryTimeIteratorConfig(String queryTimeIteratorConfig) {
             query.setQueryTimeIteratorConfig(queryTimeIteratorConfig);
             return this;
         }
-        
+
         public Builder setResultsPublisherConfig(Map<String, String> resultsPublisherConfig) {
             query.setResultsPublisherConfig(resultsPublisherConfig);
             return this;
         }
-        
+
         public Builder setRequestedValueFields(List<String> requestedValueFields) {
             query.setRequestedValueFields(requestedValueFields);
             return this;
         }
-        
+
         public Builder setStatusReportDestinations(List<Map<String, String>> statusReportDestinations) {
             query.setStatusReportDestinations(statusReportDestinations);
             return this;
@@ -204,7 +205,7 @@ public class Query {
             return query;
         }
     }
-    
+
     private static void validateRegions(List<Region> regions) {
         if (null == regions) {
             throw new IllegalArgumentException("Regions cannot be null");

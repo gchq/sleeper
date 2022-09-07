@@ -15,21 +15,19 @@
  */
 package sleeper.query.tracker;
 
+import com.amazonaws.auth.AWSCredentials;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sleeper.query.model.LeafPartitionQuery;
+import sleeper.query.model.Query;
+import sleeper.query.model.output.ResultsOutputInfo;
+import sleeper.query.model.output.WebSocketOutput;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import com.amazonaws.auth.AWSCredentials;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
-import sleeper.query.model.output.ResultsOutputInfo;
-import sleeper.query.model.output.WebSocketOutput;
 
 public class WebSocketQueryStatusReportDestination extends WebSocketOutput implements QueryStatusReportListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketQueryStatusReportDestination.class);

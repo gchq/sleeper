@@ -17,16 +17,9 @@ package sleeper.query.model.output;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.InstanceProperties;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_PROCESSING_LAMBDA_RESULTS_BATCH_SIZE;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
 import sleeper.core.record.ResultsBatch;
@@ -34,12 +27,21 @@ import sleeper.core.record.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
 import sleeper.query.model.Query;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_PROCESSING_LAMBDA_RESULTS_BATCH_SIZE;
+
 /**
  * An implementation of {@link ResultsOutput} that writes results to an SQS queue.
  */
 public class SQSResultsOutput implements ResultsOutput {
     private static final Logger LOGGER = LoggerFactory.getLogger(SQSResultsOutput.class);
-    
+
     public static final String SQS = "SQS";
     public static final String SQS_RESULTS_URL = "sqsResultsUrl";
     public static final String BATCH_SIZE = "batchSize";

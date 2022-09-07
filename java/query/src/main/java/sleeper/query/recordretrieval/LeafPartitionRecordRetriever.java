@@ -15,16 +15,6 @@
  */
 package sleeper.query.recordretrieval;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -41,16 +31,27 @@ import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 import sleeper.io.parquet.record.ParquetRecordReader;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+
 /**
  * A {@link LeafPartitionRecordRetriever} pulls back records for a single leaf partition according to
- * a provided predicate. 
+ * a provided predicate.
  */
 public class LeafPartitionRecordRetriever {
     private static final Logger LOGGER = LoggerFactory.getLogger(LeafPartitionRecordRetriever.class);
-    
+
     private final Configuration filesConfig;
     private final ExecutorService executorService;
-    
+
     public LeafPartitionRecordRetriever(ExecutorService executorService, Configuration conf) {
         this.executorService = executorService;
         this.filesConfig = conf;
@@ -113,7 +114,7 @@ public class LeafPartitionRecordRetriever {
 
         return new MergingIterator(dataReadSchema, iterators);
     }
-    
+
     private ParquetReader<Record> createParquetReader(Schema readSchema, String fileName, FilterPredicate filterPredicate)
             throws IOException {
         // NB Do not create a ParquetReaderIterator here as that forces the
