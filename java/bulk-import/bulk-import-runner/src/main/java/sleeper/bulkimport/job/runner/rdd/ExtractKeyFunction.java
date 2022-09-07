@@ -15,14 +15,13 @@
  */
 package sleeper.bulkimport.job.runner.rdd;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.sql.Row;
-
 import scala.Tuple2;
 import sleeper.core.key.Key;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * An {@link ExtractKeyFunction} is a function which extracts the first n
@@ -30,7 +29,7 @@ import sleeper.core.key.Key;
  */
 public class ExtractKeyFunction implements PairFunction<Row, Key, Row> {
     private static final long serialVersionUID = 4328608066452390263L;
-    
+
     private final int numRowKeys;
 
     public ExtractKeyFunction(int numRowKeys) {
