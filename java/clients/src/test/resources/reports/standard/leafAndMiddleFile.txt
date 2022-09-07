@@ -12,6 +12,6 @@ Ready_to_be_garbage_collected:
 Active:
 FileInfo{rowKeyTypes=[StringType{}], filename='A.parquet', partition='A', numberOfRecords=50000001, minKey=Key{[aardvark]}, maxKey=Key{[arthur]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
 FileInfo{rowKeyTypes=[StringType{}], filename='D.parquet', partition='D', numberOfRecords=50000002, minKey=Key{[arthur dent]}, maxKey=Key{[beeblebrox, zaphod]}, fileStatus=ACTIVE, jobId='null', lastStateStoreUpdateTime=1661178000001}
-Total number of records in all active files = 100M (100000003)
-Total number of records in leaf partitions = 50M (50000001)
+Total number of records in all active files = 100M (100,000,003)
+Total number of records in leaf partitions = 50M (50,000,001)
 Percentage of records in leaf partitions = 49.999999500000015
