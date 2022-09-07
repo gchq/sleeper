@@ -1,9 +1,16 @@
 on:
   workflow_call:
     inputs:
-      module:
+      chunkName:
         required: true
         type: string
+      moduleList:
+        required: true
+        type: string
+      publishTestReport:
+        default: true
+        required: false
+        type: boolean
 
 jobs:
   build:
@@ -17,16 +24,16 @@ jobs:
           distribution: 'adopt'
           cache: 'maven'
       - name: Compile
-        run: mvn --batch-mode clean install -am -pl ${{ inputs.module }} -Pquick,skipShade
+        run: mvn --batch-mode clean install -am -pl ${{ inputs.moduleList }} -Pquick,skipShade
         working-directory: ./java
       - name: Test
-        run: mvn --batch-mode verify -pl ${{ inputs.module }}
+        run: mvn --batch-mode verify -pl ${{ inputs.moduleList }}
         working-directory: ./java
       - name: Publish Test Report
-        if: ${{ always() }}
+        if: ${{ always() && inputs.publishTestReport }}
         uses: scacap/action-surefire-report@v1
         with:
-          check_name: Test Report for ${{ inputs.module }}
+          check_name: Tests for chunk ${{ inputs.chunkName }}
       - name: Publish Checkstyle Report
         if: ${{ always() }}
         uses: jwgmeligmeyling/checkstyle-github-action@v1.2

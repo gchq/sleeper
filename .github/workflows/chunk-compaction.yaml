@@ -1,13 +1,13 @@
-name: Build Athena Module
+name: Build Compaction Modules
 on:
   push:
     paths:
-      - '.github/workflows/module-athena.yaml'
-      - '.github/workflows/module.yaml'
+      - '.github/workflows/chunk-compaction.yaml'
+      - '.github/workflows/chunk.yaml'
       - 'code-style/checkstyle*.xml'
       - 'java/pom.xml'
-      - 'java/athena/**'
-      - 'java/query/**'
+      - 'java/compaction-job-execution/**'
+      - 'java/compaction-job-creation/**'
       - 'java/splitter/**'
       - 'java/ingest/**'
       - 'java/common-job/**'
@@ -20,6 +20,7 @@ on:
 
 jobs:
   module-workflow:
-    uses: ./.github/workflows/module.yaml
+    uses: ./.github/workflows/chunk.yaml
     with:
-      module: athena
+      chunkName: Compaction
+      moduleList: compaction-job-execution,compaction-job-creation,splitter

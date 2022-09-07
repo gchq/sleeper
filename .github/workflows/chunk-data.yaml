@@ -1,11 +1,12 @@
-name: Build Garbage Collector Module
+name: Build Data Modules
 on:
   push:
     paths:
-      - '.github/workflows/module-garbage-collector.yaml'
-      - '.github/workflows/module.yaml'
+      - '.github/workflows/chunk-data.yaml'
+      - '.github/workflows/chunk.yaml'
       - 'code-style/checkstyle*.xml'
       - 'java/pom.xml'
+      - 'java/metrics/**'
       - 'java/garbage-collector/**'
       - 'java/tables/**'
       - 'java/statestore/**'
@@ -15,6 +16,7 @@ on:
 
 jobs:
   module-workflow:
-    uses: ./.github/workflows/module.yaml
+    uses: ./.github/workflows/chunk.yaml
     with:
-      module: garbage-collector
+      chunkName: Data
+      moduleList: tables,garbage-collector,metrics

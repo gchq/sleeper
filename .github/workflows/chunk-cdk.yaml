@@ -1,11 +1,15 @@
-name: Build Clients Module
+name: Build CDK Modules
 on:
   push:
     paths:
-      - '.github/workflows/module-clients.yaml'
-      - '.github/workflows/module.yaml'
+      - '.github/workflows/chunk-cdk.yaml'
+      - '.github/workflows/chunk.yaml'
       - 'code-style/checkstyle*.xml'
       - 'java/pom.xml'
+      - 'java/cdk/**'
+      - 'java/cdk-custom-resources/**'
+      - 'java/system-test/**'
+      - 'java/bulk-import/bulk-import-common/**'
       - 'java/clients/**'
       - 'java/query/**'
       - 'java/splitter/**'
@@ -20,6 +24,7 @@ on:
 
 jobs:
   module-workflow:
-    uses: ./.github/workflows/module.yaml
+    uses: ./.github/workflows/chunk.yaml
     with:
-      module: clients
+      chunkName: CDK
+      moduleList: cdk,cdk-custom-resources,system-test

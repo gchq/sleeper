@@ -1,13 +1,11 @@
-name: Build System Test Module
+name: Build Clients Module
 on:
   push:
     paths:
-      - '.github/workflows/module-system-test.yaml'
-      - '.github/workflows/module.yaml'
+      - '.github/workflows/chunk-clients.yaml'
+      - '.github/workflows/chunk.yaml'
       - 'code-style/checkstyle*.xml'
       - 'java/pom.xml'
-      - 'java/cdk/**'
-      - 'java/bulk-import/bulk-import-common/**'
       - 'java/clients/**'
       - 'java/query/**'
       - 'java/splitter/**'
@@ -22,6 +20,7 @@ on:
 
 jobs:
   module-workflow:
-    uses: ./.github/workflows/module.yaml
+    uses: ./.github/workflows/chunk.yaml
     with:
-      module: system-test
+      chunkName: Clients
+      moduleList: clients

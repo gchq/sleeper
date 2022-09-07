@@ -1,12 +1,11 @@
-name: Build Tables Module
+name: Build State Store Module
 on:
   push:
     paths:
-      - '.github/workflows/module-tables.yaml'
-      - '.github/workflows/module.yaml'
+      - '.github/workflows/chunk-statestore.yaml'
+      - '.github/workflows/chunk.yaml'
       - 'code-style/checkstyle*.xml'
       - 'java/pom.xml'
-      - 'java/tables/**'
       - 'java/statestore/**'
       - 'java/parquet/**'
       - 'java/configuration/**'
@@ -14,6 +13,7 @@ on:
 
 jobs:
   module-workflow:
-    uses: ./.github/workflows/module.yaml
+    uses: ./.github/workflows/chunk.yaml
     with:
-      module: tables
+      chunkName: State Store
+      moduleList: statestore
