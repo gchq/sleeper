@@ -24,7 +24,6 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.ingest.IngestRecordsUsingPropertiesSpecifiedMethod;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -33,7 +32,7 @@ import sleeper.systemtest.SystemTestProperties;
 import java.io.IOException;
 
 /**
- * Runs {@link IngestRecordsFromIterator} to write random data.
+ * Runs {@link sleeper.ingest.IngestRecordsFromIterator} to write random data.
  */
 public class UploadMultipleShardedSortedParquetFiles extends WriteRandomDataJob {
 
