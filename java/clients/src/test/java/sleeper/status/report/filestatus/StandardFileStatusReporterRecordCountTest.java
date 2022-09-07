@@ -49,67 +49,87 @@ public class StandardFileStatusReporterRecordCountTest {
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 123K (123456)" + System.lineSeparator());
+                .contains("Total number of records in all active files = 123K (123,456)" + System.lineSeparator());
     }
 
     @Test
     public void shouldReportMCountWhenLowerThan1G() throws Exception {
         // Given
-        FileStatus status = statusWithRecordCount(123456789);
+        FileStatus status = statusWithRecordCount(123_456_789);
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 123M (123456789)" + System.lineSeparator());
+                .contains("Total number of records in all active files = 123M (123,456,789)" + System.lineSeparator());
     }
 
     @Test
     public void shouldReportGCountWhenHigherThan1G() throws Exception {
         // Given
-        FileStatus status = statusWithRecordCount(1234567890);
+        FileStatus status = statusWithRecordCount(123_123_456_789L);
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 1G (1234567890)" + System.lineSeparator());
+                .contains("Total number of records in all active files = 123G (123,123,456,789)" + System.lineSeparator());
     }
 
     @Test
-    public void shouldReportGCountWhenHigherThan1000G() throws Exception {
+    public void shouldReportTCountWhenHigherThan1T() throws Exception {
         // Given
-        FileStatus status = statusWithRecordCount(1234123456789L);
+        FileStatus status = statusWithRecordCount(123_456_123_456_789L);
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 1234G (1234123456789)" + System.lineSeparator());
+                .contains("Total number of records in all active files = 123T (123,456,123,456,789)" + System.lineSeparator());
+    }
+
+    @Test
+    public void shouldReportTCountWhenHigherThan1000T() throws Exception {
+        // Given
+        FileStatus status = statusWithRecordCount(1_234_123_123_456_789L);
+
+        // When / Then
+        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+                .contains("Total number of records in all active files = 1,234T (1,234,123,123,456,789)" + System.lineSeparator());
     }
 
     @Test
     public void shouldRoundUpKCount() throws Exception {
         // Given
-        FileStatus status = statusWithRecordCount(123500);
+        FileStatus status = statusWithRecordCount(123_500);
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 124K (123500)" + System.lineSeparator());
+                .contains("Total number of records in all active files = 124K (123,500)" + System.lineSeparator());
     }
 
     @Test
     public void shouldRoundUpMCount() throws Exception {
         // Given
-        FileStatus status = statusWithRecordCount(123500000);
+        FileStatus status = statusWithRecordCount(123_500_000);
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 124M (123500000)" + System.lineSeparator());
+                .contains("Total number of records in all active files = 124M (123,500,000)" + System.lineSeparator());
     }
 
     @Test
     public void shouldRoundUpGCount() throws Exception {
         // Given
-        FileStatus status = statusWithRecordCount(123500000000L);
+        FileStatus status = statusWithRecordCount(123_500_000_000L);
 
         // When / Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .contains("Total number of records in all active files = 124G (123500000000)" + System.lineSeparator());
+                .contains("Total number of records in all active files = 124G (123,500,000,000)" + System.lineSeparator());
+    }
+
+    @Test
+    public void shouldRoundUpTCount() throws Exception {
+        // Given
+        FileStatus status = statusWithRecordCount(123_500_000_000_000L);
+
+        // When / Then
+        assertThat(status.verboseReportString(StandardFileStatusReporter::new))
+                .contains("Total number of records in all active files = 124T (123,500,000,000,000)" + System.lineSeparator());
     }
 
     private static FileStatus statusWithRecordCount(long recordCount) throws StateStoreException {
