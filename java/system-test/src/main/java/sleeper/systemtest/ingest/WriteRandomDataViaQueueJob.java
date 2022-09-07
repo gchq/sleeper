@@ -18,11 +18,6 @@ package sleeper.systemtest.ingest;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.UUID;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -32,14 +27,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.jars.ObjectFactory;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import sleeper.configuration.properties.table.TableProperties;
-import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.job.IngestJob;
@@ -49,16 +37,31 @@ import sleeper.io.parquet.record.SchemaConverter;
 import sleeper.statestore.StateStore;
 import sleeper.systemtest.SystemTestProperties;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.UUID;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+
 public class WriteRandomDataViaQueueJob extends WriteRandomDataJob {
     private static final Logger LOGGER = LoggerFactory.getLogger(WriteRandomDataViaQueueJob.class);
-    
+
     private final String ingestMode;
 
-    public WriteRandomDataViaQueueJob(String ingestMode,
-                                      ObjectFactory objectFactory,
-                                      SystemTestProperties properties,
-                                      TableProperties tableProperties,
-                                      StateStore stateStore) {
+    public WriteRandomDataViaQueueJob(
+            String ingestMode,
+            ObjectFactory objectFactory,
+            SystemTestProperties properties,
+            TableProperties tableProperties,
+            StateStore stateStore) {
         super(objectFactory, properties, tableProperties, stateStore);
         this.ingestMode = ingestMode;
     }
@@ -133,7 +136,7 @@ public class WriteRandomDataViaQueueJob extends WriteRandomDataJob {
         } else {
             throw new IllegalArgumentException("Unknown ingest mode of " + ingestMode);
         }
-        
+
         sqsClient.sendMessage(sendMessageRequest);
         sqsClient.shutdown();
     }
