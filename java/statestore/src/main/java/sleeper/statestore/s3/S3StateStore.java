@@ -21,7 +21,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.statestore.DelegatingStateStore;
-import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
@@ -80,6 +80,10 @@ public class S3StateStore extends DelegatingStateStore {
                 .dynamoDB(dynamoDB)
                 .conf(conf)
                 .build());
+    }
+
+    public void setInitialFileInfos() throws StateStoreException {
+        fileInfoStore.initialise();
     }
 
     protected static String getZeroPaddedLong(long number) {
