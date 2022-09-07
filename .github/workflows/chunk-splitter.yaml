@@ -2,8 +2,8 @@ name: Build Splitter Module
 on:
   push:
     paths:
-      - '.github/workflows/module-splitter.yaml'
-      - '.github/workflows/module.yaml'
+      - '.github/workflows/chunk-splitter.yaml'
+      - '.github/workflows/chunk.yaml'
       - 'java/pom.xml'
       - 'java/splitter/**'
       - 'java/ingest/**'
@@ -17,6 +17,7 @@ on:
 
 jobs:
   module-workflow:
-    uses: ./.github/workflows/module.yaml
+    uses: ./.github/workflows/chunk.yaml
     with:
-      module: splitter
+      chunkName: Splitter
+      moduleList: splitter
