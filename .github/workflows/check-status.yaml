@@ -1,0 +1,78 @@
+name: Chunk Build Status
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Athena chunk
+        if: ${{ always() }}
+        uses: LASER-Yi/workflow-status@v0.0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: chunk-athena.yaml
+          branch: ${{ github.ref_name }}
+      - name: Check Bulk Import chunk
+        if: ${{ always() }}
+        uses: LASER-Yi/workflow-status@v0.0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: chunk-bulk-import.yaml
+          branch: ${{ github.ref_name }}
+      - name: Check CDK chunk
+        if: ${{ always() }}
+        uses: LASER-Yi/workflow-status@v0.0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: chunk-cdk.yaml
+          branch: ${{ github.ref_name }}
+      - name: Check Clients chunk
+        if: ${{ always() }}
+        uses: LASER-Yi/workflow-status@v0.0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: chunk-clients.yaml
+          branch: ${{ github.ref_name }}
+      - name: Check Common chunk
+        if: ${{ always() }}
+        uses: LASER-Yi/workflow-status@v0.0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: chunk-common.yaml
+          branch: ${{ github.ref_name }}
+      - name: Check Compaction chunk
+        if: ${{ always() }}
+        uses: LASER-Yi/workflow-status@v0.0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: chunk-compaction.yaml
+          branch: ${{ github.ref_name }}
+      - name: Check Data chunk
+        if: ${{ always() }}
+        uses: LASER-Yi/workflow-status@v0.0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: chunk-data.yaml
+          branch: ${{ github.ref_name }}
+      - name: Check Ingest chunk
+        if: ${{ always() }}
+        uses: LASER-Yi/workflow-status@v0.0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: chunk-ingest.yaml
+          branch: ${{ github.ref_name }}
+      - name: Check Query chunk
+        if: ${{ always() }}
+        uses: LASER-Yi/workflow-status@v0.0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: chunk-query.yaml
+          branch: ${{ github.ref_name }}
+      - name: Check State Store chunk
+        if: ${{ always() }}
+        uses: LASER-Yi/workflow-status@v0.0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: chunk-statestore.yaml
+          branch: ${{ github.ref_name }}
