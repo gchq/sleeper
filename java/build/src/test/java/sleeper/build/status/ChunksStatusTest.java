@@ -30,21 +30,61 @@ public class ChunksStatusTest {
     @Test
     public void canFindTwoChunksSuccessful() throws Exception {
         Properties properties = exampleProperties("two-chunks-successful.properties");
+        ChunksStatus status = ChunksStatus.from(properties);
 
-        assertThat(ChunksStatus.from(properties)).isEqualTo(
+        assertThat(status).isEqualTo(
                 ChunksStatus.chunks(
                         ChunkStatus.success("common"),
                         ChunkStatus.success("data")));
+        assertThat(status.isAnyOldFailures()).isFalse();
+        assertThat(status.reportString()).isEqualTo("" +
+                "common: success\n" +
+                "data: success\n");
     }
 
     @Test
     public void canFindOneChunkSuccessfulOneInProgress() throws Exception {
         Properties properties = exampleProperties("one-chunk-successful-one-in-progress.properties");
+        ChunksStatus status = ChunksStatus.from(properties);
 
-        assertThat(ChunksStatus.from(properties)).isEqualTo(
+        assertThat(status).isEqualTo(
                 ChunksStatus.chunks(
                         ChunkStatus.success("common"),
                         ChunkStatus.inProgress("data")));
+        assertThat(status.isAnyOldFailures()).isFalse();
+        assertThat(status.reportString()).isEqualTo("" +
+                "common: success\n" +
+                "data: in_progress\n");
+    }
+
+    @Test
+    public void canFindOneChunkSuccessfulOneFailed() throws Exception {
+        Properties properties = exampleProperties("one-chunk-successful-one-failed.properties");
+        ChunksStatus status = ChunksStatus.from(properties);
+
+        assertThat(status).isEqualTo(
+                ChunksStatus.chunks(
+                        ChunkStatus.success("common"),
+                        ChunkStatus.failure("data")));
+        assertThat(status.isAnyOldFailures()).isTrue();
+        assertThat(status.reportString()).isEqualTo("" +
+                "common: success\n" +
+                "data: failure\n");
+    }
+
+    @Test
+    public void canFindOneChunkSuccessfulOneCancelled() throws Exception {
+        Properties properties = exampleProperties("one-chunk-successful-one-cancelled.properties");
+        ChunksStatus status = ChunksStatus.from(properties);
+
+        assertThat(status).isEqualTo(
+                ChunksStatus.chunks(
+                        ChunkStatus.success("common"),
+                        ChunkStatus.cancelled("data")));
+        assertThat(status.isAnyOldFailures()).isTrue();
+        assertThat(status.reportString()).isEqualTo("" +
+                "common: success\n" +
+                "data: cancelled\n");
     }
 
     private static Properties exampleProperties(String path) throws IOException {

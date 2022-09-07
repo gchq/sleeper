@@ -15,6 +15,8 @@
  */
 package sleeper.build.status;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -33,12 +35,26 @@ public class ChunksStatus {
         return builder().chunks(chunksFrom(properties)).build();
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public boolean isAnyOldFailures() {
+        return chunks.stream().anyMatch(ChunkStatus::isUnsuccessful);
+    }
+
+    public void report(PrintStream out) {
+        chunks.forEach(c -> c.report(out));
+    }
+
+    public String reportString() {
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        report(new PrintStream(os));
+        return os.toString();
     }
 
     public static ChunksStatus chunks(ChunkStatus... chunks) {
         return builder().chunks(chunks).build();
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override

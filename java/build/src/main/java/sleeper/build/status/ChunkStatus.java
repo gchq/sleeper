@@ -15,9 +15,13 @@
  */
 package sleeper.build.status;
 
+import java.io.PrintStream;
 import java.util.Objects;
 
 public class ChunkStatus {
+
+    private static final String COMPLETED = "completed";
+    private static final String SUCCESS = "success";
 
     private final String chunk;
     private final String status;
@@ -33,16 +37,36 @@ public class ChunkStatus {
         return new Builder();
     }
 
+    public void report(PrintStream out) {
+        if (conclusion != null) {
+            out.println(chunk + ": " + conclusion);
+        } else {
+            out.println(chunk + ": " + status);
+        }
+    }
+
+    public boolean isUnsuccessful() {
+        return COMPLETED.equals(status) && !SUCCESS.equals(conclusion);
+    }
+
     public static Builder chunk(String chunk) {
         return builder().chunk(chunk);
     }
 
     public static ChunkStatus success(String chunk) {
-        return chunk(chunk).status("completed").conclusion("success").build();
+        return chunk(chunk).status(COMPLETED).conclusion(SUCCESS).build();
     }
 
     public static ChunkStatus inProgress(String chunk) {
         return chunk(chunk).status("in_progress").build();
+    }
+
+    public static ChunkStatus failure(String chunk) {
+        return chunk(chunk).status(COMPLETED).conclusion("failure").build();
+    }
+
+    public static ChunkStatus cancelled(String chunk) {
+        return chunk(chunk).status(COMPLETED).conclusion("cancelled").build();
     }
 
     @Override
