@@ -36,10 +36,10 @@ public class ChunksStatusTest {
                 ChunksStatus.chunks(
                         ChunkStatus.success("common"),
                         ChunkStatus.success("data")));
-        assertThat(status.isAnyOldFailures()).isFalse();
+        assertThat(status.isFailCheck()).isFalse();
         assertThat(status.reportString()).isEqualTo("" +
-                "common: success\n" +
-                "data: success\n");
+                "common: completed, success\n" +
+                "data: completed, success\n");
     }
 
     @Test
@@ -51,9 +51,9 @@ public class ChunksStatusTest {
                 ChunksStatus.chunks(
                         ChunkStatus.success("common"),
                         ChunkStatus.inProgress("data")));
-        assertThat(status.isAnyOldFailures()).isFalse();
+        assertThat(status.isFailCheck()).isFalse();
         assertThat(status.reportString()).isEqualTo("" +
-                "common: success\n" +
+                "common: completed, success\n" +
                 "data: in_progress\n");
     }
 
@@ -66,10 +66,10 @@ public class ChunksStatusTest {
                 ChunksStatus.chunks(
                         ChunkStatus.success("common"),
                         ChunkStatus.failure("data")));
-        assertThat(status.isAnyOldFailures()).isTrue();
+        assertThat(status.isFailCheck()).isTrue();
         assertThat(status.reportString()).isEqualTo("" +
-                "common: success\n" +
-                "data: failure\n");
+                "common: completed, success\n" +
+                "data: completed, failure\n");
     }
 
     @Test
@@ -81,10 +81,10 @@ public class ChunksStatusTest {
                 ChunksStatus.chunks(
                         ChunkStatus.success("common"),
                         ChunkStatus.cancelled("data")));
-        assertThat(status.isAnyOldFailures()).isTrue();
+        assertThat(status.isFailCheck()).isTrue();
         assertThat(status.reportString()).isEqualTo("" +
-                "common: success\n" +
-                "data: cancelled\n");
+                "common: completed, success\n" +
+                "data: completed, cancelled\n");
     }
 
     private static Properties exampleProperties(String path) throws IOException {

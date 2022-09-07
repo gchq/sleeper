@@ -15,5 +15,31 @@
  */
 package sleeper.build.status;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Properties;
+
 public class CheckGitHubStatus {
+
+    public static void main(String[] args) throws IOException {
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Usage: <properties file path>");
+        }
+        String propertiesFile = args[0];
+        ChunksStatus status = ChunksStatus.from(loadProperties(propertiesFile));
+        status.report(System.out);
+        if (status.isFailCheck()) {
+            System.exit(1);
+        }
+    }
+
+    private static Properties loadProperties(String path) throws IOException {
+        Properties properties = new Properties();
+        try (Reader reader = Files.newBufferedReader(Paths.get(path))) {
+            properties.load(reader);
+        }
+        return properties;
+    }
 }

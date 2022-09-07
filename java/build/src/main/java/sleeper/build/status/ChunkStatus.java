@@ -39,13 +39,13 @@ public class ChunkStatus {
 
     public void report(PrintStream out) {
         if (conclusion != null) {
-            out.println(chunk + ": " + conclusion);
+            out.println(chunk + ": " + status + ", " + conclusion);
         } else {
             out.println(chunk + ": " + status);
         }
     }
 
-    public boolean isUnsuccessful() {
+    public boolean isFailCheck() {
         return COMPLETED.equals(status) && !SUCCESS.equals(conclusion);
     }
 

@@ -35,8 +35,8 @@ public class ChunksStatus {
         return builder().chunks(chunksFrom(properties)).build();
     }
 
-    public boolean isAnyOldFailures() {
-        return chunks.stream().anyMatch(ChunkStatus::isUnsuccessful);
+    public boolean isFailCheck() {
+        return chunks.stream().anyMatch(ChunkStatus::isFailCheck);
     }
 
     public void report(PrintStream out) {
