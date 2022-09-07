@@ -298,6 +298,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         DynamoDBStateStore stateStore = new DynamoDBStateStore(tableProperties, createDynamoClient());
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         String file = stateStore.getLeafPartitions().stream()
+                .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
                 .map(Partition::getId)
                 .map(partitionToActiveFilesMap::get)
                 // Ensure the partition has a single file, otherwise the file might not contain the entirety of Feb
@@ -344,7 +345,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // Then
         assertThat(response).isInstanceOf(ReadRecordsResponse.class);
-//        assertThat(((ReadRecordsResponse) response).getRecordCount()).isEqualTo(28);
+        assertThat(((ReadRecordsResponse) response).getRecordCount()).isEqualTo(28);
         Block records = ((ReadRecordsResponse) response).getRecords();
         // Just to show the difference
         assertThat(records.getFieldVector("month")).isNotNull();
