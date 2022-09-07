@@ -27,7 +27,7 @@ jobs:
         run: mvn --batch-mode clean install -am -pl ${{ inputs.moduleList }} -Pquick,skipShade
         working-directory: ./java
       - name: Test
-        run: mvn --batch-mode verify -pl ${{ inputs.moduleList }}
+        run: mvn --batch-mode --fail-at-end verify -pl ${{ inputs.moduleList }}
         working-directory: ./java
       - name: Publish Test Report
         if: ${{ always() && inputs.publishTestReport }}
