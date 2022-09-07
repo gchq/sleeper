@@ -32,7 +32,7 @@ public class FileInfoFactory {
     public FileInfoFactory(Schema schema, List<Partition> partitions, Instant lastStateStoreUpdate) {
         this.schema = schema;
         this.lastStateStoreUpdate = lastStateStoreUpdate;
-        partitionTree = new PartitionTree(schema, partitions);
+        this.partitionTree = new PartitionTree(schema, partitions);
     }
 
     public FileInfo leafFile(long records, Object min, Object max) {
