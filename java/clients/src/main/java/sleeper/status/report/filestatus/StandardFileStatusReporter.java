@@ -74,9 +74,9 @@ public class StandardFileStatusReporter implements FileStatusReporter {
         strings.forEach(out::println);
     }
 
-    private static final long K_COUNT = 1000;
-    private static final long M_COUNT = 1000000;
-    private static final long G_COUNT = 1000000000;
+    private static final long K_COUNT = 1_000;
+    private static final long M_COUNT = 1_000_000;
+    private static final long G_COUNT = 1_000_000_000;
 
     private static String abbreviatedRecordCount(long records) {
         if (records < K_COUNT) {
