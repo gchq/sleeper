@@ -266,7 +266,7 @@ public class QuerySerDe {
             Schema schema = tableNameToSchemaFunction.apply(tableName);
 
             switch (type) {
-                case LEAF_PARTITION_QUERY: {
+                case LEAF_PARTITION_QUERY:
                     if (!jsonObject.has(PARTITION_REGION) || JsonNull.INSTANCE.equals(jsonObject.get(PARTITION_REGION))) {
                         throw new JsonParseException(PARTITION_REGION + " field must be provided");
                     }
@@ -287,8 +287,7 @@ public class QuerySerDe {
                             .setStatusReportDestinations(statusReportDestinations)
                             .setRequestedValueFields(requestedValueFields)
                             .build();
-                }
-                case QUERY: {
+                case QUERY:
                     List<Region> ranges = new ArrayList<>();
                     if (jsonObject.has(REGIONS)) {
                         ranges.addAll(convertJsonArrayToRegions(schema, jsonObject.getAsJsonArray(REGIONS), typeOfSrc, context));
@@ -300,7 +299,6 @@ public class QuerySerDe {
                             .setStatusReportDestinations(statusReportDestinations)
                             .setRequestedValueFields(requestedValueFields)
                             .build();
-                }
                 default:
                     throw new IllegalArgumentException("Unknown query type: " + type);
             }
