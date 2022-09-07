@@ -43,8 +43,12 @@ public class IngestJob {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         IngestJob ingestJob = (IngestJob) o;
         return Objects.equals(id, ingestJob.id) &&
                 Objects.equals(tableName, ingestJob.tableName) &&

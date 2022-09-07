@@ -25,18 +25,18 @@ import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.tracker.exception.QueryTrackerException;
-import sleeper.configuration.properties.InstanceProperties;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
@@ -47,7 +47,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY
  */
 public class DynamoDBQueryTracker implements QueryStatusReportListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBQueryTracker.class);
-    
+
     public static final String DESTINATION = "DYNAMODB";
     public static final String QUERY_ID = "queryId";
     public static final String LAST_UPDATE_TIME = "lastUpdateTime";

@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
+import sleeper.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStore;
@@ -35,7 +36,6 @@ import sleeper.table.util.StateStoreProvider;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import sleeper.ClientUtils;
 
 /**
  * A utility class to report information about the files in the system and their
@@ -48,17 +48,18 @@ public class FilesStatusReport {
     private final FileStatusCollector fileStatusCollector;
 
     private static final String DEFAULT_STATUS_REPORTER = "STANDARD";
-    private static final Map<String,FileStatusReporter> FILE_STATUS_REPORTERS = new HashMap<>();
+    private static final Map<String, FileStatusReporter> FILE_STATUS_REPORTERS = new HashMap<>();
 
     static {
-        FILE_STATUS_REPORTERS.put(DEFAULT_STATUS_REPORTER , new StandardFileStatusReporter());
-        FILE_STATUS_REPORTERS.put("JSON" , new JsonFileStatusReporter());
-        FILE_STATUS_REPORTERS.put("CSV" , new CVSFileStatusReporter());
+        FILE_STATUS_REPORTERS.put(DEFAULT_STATUS_REPORTER, new StandardFileStatusReporter());
+        FILE_STATUS_REPORTERS.put("JSON", new JsonFileStatusReporter());
+        FILE_STATUS_REPORTERS.put("CSV", new CVSFileStatusReporter());
     }
+
     public FilesStatusReport(StateStore stateStore,
                              int maxNumberOfReadyForGCFilesToCount,
                              boolean verbose) {
-        this(stateStore,maxNumberOfReadyForGCFilesToCount,verbose,DEFAULT_STATUS_REPORTER);
+        this(stateStore, maxNumberOfReadyForGCFilesToCount, verbose, DEFAULT_STATUS_REPORTER);
     }
 
     public FilesStatusReport(StateStore stateStore,
@@ -76,9 +77,9 @@ public class FilesStatusReport {
 
     public void run() throws StateStoreException {
         FileStatus fileStatus = fileStatusCollector.run(this.maxNumberOfReadyForGCFilesToCount);
-        fileStatusReporter.report(fileStatus,verbose);
+        fileStatusReporter.report(fileStatus, verbose);
     }
-    
+
     public static void main(String[] args) throws IOException, StateStoreException {
         if (!(args.length >= 2 && args.length <= 5)) {
             throw new IllegalArgumentException("Usage: <instance id> <table name> <optional_max_num_ready_for_gc_files_to_count> <optional_verbose_true_or_false> <optional_report_type_standard_or_csv_or_json>");
@@ -104,13 +105,13 @@ public class FilesStatusReport {
 
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
-        
+
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(amazonS3, instanceProperties);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
         StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
 
-        new FilesStatusReport(stateStore,maxReadyForGCFiles,verbose,reporterType).run();
+        new FilesStatusReport(stateStore, maxReadyForGCFiles, verbose, reporterType).run();
 
         amazonS3.shutdown();
         dynamoDBClient.shutdown();

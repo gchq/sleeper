@@ -1,10 +1,23 @@
+/*
+ * Copyright 2022 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package sleeper.ingest;
 
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.hadoop.conf.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -31,15 +44,29 @@ import java.util.Locale;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.*;
-import static sleeper.configuration.properties.table.TableProperty.*;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_MAX_LOCAL_STORE_BYTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 
 /**
  * This class provide methods to support ingest into Sleeper, where the way in which that ingest should take place is
  * specified in the instance properties and the table properties.
  */
 public class IngestRecordsUsingPropertiesSpecifiedMethod {
-    private static final Logger LOGGER = LoggerFactory.getLogger(IngestRecordsUsingPropertiesSpecifiedMethod.class);
+
+    private IngestRecordsUsingPropertiesSpecifiedMethod() {
+    }
 
     /**
      * Ingest all of the {@link Record} objects supplied by an iterator. The ingest mechanism is configured using

@@ -64,24 +64,24 @@ class DynamoDBPartitionFormat {
     }
 
     Partition getPartitionFromAttributeValues(Map<String, AttributeValue> item) throws IOException {
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(rowKeyTypes);
-        partition.setId(item.get(ID).getS());
-        partition.setLeafPartition(Boolean.parseBoolean(item.get(IS_LEAF).getS()));
+        Partition.Builder partitionBuilder = Partition.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .id(item.get(ID).getS())
+                .leafPartition(Boolean.parseBoolean(item.get(IS_LEAF).getS()))
+                .region(regionSerDe.fromJson(item.get(REGION).getS()));
+
         if (null != item.get(PARENT_ID)) {
-            partition.setParentPartitionId(item.get(PARENT_ID).getS());
+            partitionBuilder.parentPartitionId(item.get(PARENT_ID).getS());
         }
         if (null != item.get(CHILD_IDS)) {
             String childPartitionIdsString = item.get(CHILD_IDS).getS();
-            partition.setChildPartitionIds(childPartitionsFromString(childPartitionIdsString));
+            partitionBuilder.childPartitionIds(childPartitionsFromString(childPartitionIdsString));
         }
         if (null != item.get(SPLIT_DIMENSION)) {
-            partition.setDimension(Integer.parseInt(item.get(SPLIT_DIMENSION).getN()));
+            partitionBuilder.dimension(Integer.parseInt(item.get(SPLIT_DIMENSION).getN()));
         }
 
-        partition.setRegion(regionSerDe.fromJson(item.get(REGION).getS()));
-
-        return partition;
+        return partitionBuilder.build();
     }
 
     private static String childPartitionsToString(List<String> childPartitionIds) {

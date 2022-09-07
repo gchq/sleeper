@@ -28,7 +28,7 @@ public interface FileInfoStore {
      * Adds a {@link FileInfo}.
      *
      * @param fileInfo The fileInfo to be added
-     * @throws StateStoreException
+     * @throws StateStoreException if update fails
      */
     void addFile(FileInfo fileInfo) throws StateStoreException;
 
@@ -36,7 +36,7 @@ public interface FileInfoStore {
      * Adds a {@link List} of {@link FileInfo}s.
      *
      * @param fileInfos The fileInfos to be added
-     * @throws StateStoreException
+     * @throws StateStoreException if update fails
      */
     void addFiles(List<FileInfo> fileInfos) throws StateStoreException;
 
@@ -47,7 +47,7 @@ public interface FileInfoStore {
      *
      * @param filesToBeMarkedReadyForGC The files to be marked as {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION}
      * @param newActiveFile             The file to be added as an {@link FileInfo.FileStatus.ACTIVE} file
-     * @throws StateStoreException
+     * @throws StateStoreException if update fails
      */
     void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(
             List<FileInfo> filesToBeMarkedReadyForGC,
@@ -61,7 +61,7 @@ public interface FileInfoStore {
      * @param filesToBeMarkedReadyForGC The files to be marked as {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION}.
      * @param leftFileInfo              The first file to be added as an {@link FileInfo.FileStatus.ACTIVE} file
      * @param rightFileInfo             The second file to be added as an {@link FileInfo.FileStatus.ACTIVE} file
-     * @throws StateStoreException
+     * @throws StateStoreException if update fails
      */
     void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC,
                                                                   FileInfo leftFileInfo,
@@ -73,7 +73,7 @@ public interface FileInfoStore {
      *
      * @param jobId     The job id which will be added to the FileInfos
      * @param fileInfos The FileInfos whose status will be updated
-     * @throws StateStoreException
+     * @throws StateStoreException if update fails
      */
     void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos)
             throws StateStoreException;
@@ -82,7 +82,7 @@ public interface FileInfoStore {
      * Deletes this file with the status of {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION}.
      *
      * @param fileInfo The FileInfo to be deleted.
-     * @throws StateStoreException
+     * @throws StateStoreException if update fails
      */
     void deleteReadyForGCFile(FileInfo fileInfo) throws StateStoreException;
 
@@ -90,7 +90,7 @@ public interface FileInfoStore {
      * Returns all {@link FileInfo}s with a status of status.
      *
      * @return a {@code List} of {@code FileInfo.FileStatus}es with the matching status
-     * @throws StateStoreException
+     * @throws StateStoreException if query fails
      */
     List<FileInfo> getActiveFiles() throws StateStoreException;
 
@@ -101,7 +101,7 @@ public interface FileInfoStore {
      * <code>delayBeforeGarbageCollectionInSeconds</code> is taken from the SleeperProperties).
      *
      * @return a {@code List} of size of most max of {@code FileInfo.FileStatus}es with the matching status
-     * @throws StateStoreException
+     * @throws StateStoreException if query fails
      */
     Iterator<FileInfo> getReadyForGCFiles() throws StateStoreException;
 
@@ -110,15 +110,15 @@ public interface FileInfoStore {
      * {@link FileInfo.FileStatus.ACTIVE} which have a null job id.
      *
      * @return a {@code List} of {@code FileInfo.FileStatus}es which are {@link FileInfo.FileStatus.ACTIVE} and have a null job id
-     * @throws StateStoreException
+     * @throws StateStoreException if query fails
      */
     List<FileInfo> getActiveFilesWithNoJobId() throws StateStoreException;
 
     /**
-     * Returns a {@link Map} from the partition id to a {@List} of the filenames.
+     * Returns a {@link Map} from the partition id to a {@link List} of the filenames.
      *
-     * @return a {@link Map} from the partition id to a {@List} of the filenames
-     * @throws StateStoreException
+     * @return a {@link Map} from the partition id to a {@link List} of the filenames
+     * @throws StateStoreException if query fails
      */
     Map<String, List<String>> getPartitionToActiveFilesMap() throws StateStoreException;
 

@@ -15,21 +15,21 @@
  */
 package sleeper.compaction.strategy.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sleeper.compaction.job.CompactionJob;
+import sleeper.core.partition.Partition;
+import sleeper.statestore.FileInfo;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.strategy.CompactionStrategy;
-import sleeper.core.partition.Partition;
-import sleeper.statestore.FileInfo;
 
 /**
- * A simple {@link CompactionStrategy} that lists the active files for a partition in increasing order of the number
+ * A simple {@link sleeper.compaction.strategy.CompactionStrategy} that lists the active files for a partition in increasing order of the number
  * of records they contain, and iterates through this list creating compaction jobs with at most
  * maximumNumberOfFilesToCompact files in each.
  */

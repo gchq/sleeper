@@ -17,20 +17,27 @@ package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.table.TableProperty;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.configuration.properties.InstanceProperties;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.*;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperty;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_CLASS_NAME;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_CORES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_MEMORY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_CORES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_INSTANCES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_MEMORY;
 
 public abstract class Executor {
     private static final Logger LOGGER = LoggerFactory.getLogger(Executor.class);
@@ -66,7 +73,7 @@ public abstract class Executor {
 
     protected List<String> constructArgs(BulkImportJob bulkImportJob) {
         Map<String, String> config = getDefaultSparkConfig(bulkImportJob,
-            bulkImportJob.getPlatformSpec(), tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName()), instanceProperties);
+                bulkImportJob.getPlatformSpec(), tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName()), instanceProperties);
         Map<String, String> userConfig = bulkImportJob.getSparkConf();
         if (null != userConfig) {
             config.putAll(userConfig);

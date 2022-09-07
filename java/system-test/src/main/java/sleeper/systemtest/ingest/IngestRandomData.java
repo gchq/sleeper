@@ -38,6 +38,9 @@ import static sleeper.systemtest.SystemTestProperty.INGEST_MODE;
  */
 public class IngestRandomData {
 
+    private IngestRandomData() {
+    }
+
     public static void main(String[] args) throws IOException, ObjectFactoryException {
         if (args.length != 2) {
             throw new RuntimeException("Wrong number of arguments detected. Usage: IngestRandomData <S3 bucket> <Table name>");

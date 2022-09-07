@@ -25,6 +25,14 @@ import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ResourceInUseException;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.dynamodbv2.model.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.PrimitiveType;
+import sleeper.statestore.StateStoreException;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,18 +40,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.PrimitiveType;
-import sleeper.statestore.StateStoreException;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.PARTITION_ID;
 
@@ -65,7 +67,8 @@ public class DynamoDBStateStoreCreator {
     private final boolean stronglyConsistentReads;
     private final Collection<Tag> tags;
 
-    private DynamoDBStateStoreCreator(String activeFileInfoTablename,
+    private DynamoDBStateStoreCreator(
+            String activeFileInfoTablename,
             String readyForGCFileInfoTablename,
             String partitionTablename,
             Schema schema,
@@ -95,20 +98,23 @@ public class DynamoDBStateStoreCreator {
         }
     }
 
-    public DynamoDBStateStoreCreator(String tablenameStub,
+    public DynamoDBStateStoreCreator(
+            String tablenameStub,
             Schema schema,
             AmazonDynamoDB dynamoDB) {
         this(tablenameStub, schema, 0, dynamoDB);
     }
 
-    public DynamoDBStateStoreCreator(String tablenameStub,
+    public DynamoDBStateStoreCreator(
+            String tablenameStub,
             Schema schema,
             int garbageCollectorDelayBeforeDeletionInSeconds,
             AmazonDynamoDB dynamoDB) {
         this(tablenameStub + "-af", tablenameStub + "-rgcf", tablenameStub + "-p", schema, garbageCollectorDelayBeforeDeletionInSeconds, false, dynamoDB, Collections.EMPTY_MAP);
     }
 
-    public DynamoDBStateStoreCreator(InstanceProperties instanceProperties,
+    public DynamoDBStateStoreCreator(
+            InstanceProperties instanceProperties,
             TableProperties tableProperties,
             AmazonDynamoDB dynamoDB) {
         this(tableProperties.get(ACTIVE_FILEINFO_TABLENAME), tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME),
@@ -146,7 +152,8 @@ public class DynamoDBStateStoreCreator {
         }
     }
 
-    private void initialiseTable(String tableName,
+    private void initialiseTable(
+            String tableName,
             List<AttributeDefinition> attributeDefinitions,
             List<KeySchemaElement> keySchemaElements) {
         CreateTableRequest request = new CreateTableRequest()

@@ -29,7 +29,7 @@ import java.util.Comparator;
  */
 public class SingleKeyComparator implements Comparator<Object> {
     private final PrimitiveType type;
-    
+
     public SingleKeyComparator(PrimitiveType type) {
         if (!(type instanceof IntType)
                 && !(type instanceof LongType)

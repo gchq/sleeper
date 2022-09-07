@@ -15,12 +15,13 @@
  */
 package sleeper.query.model;
 
+import sleeper.core.range.Region;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import sleeper.core.range.Region;
 
 /**
  * A query for records that are within the range of a leaf partition. The
@@ -36,8 +37,9 @@ public class LeafPartitionQuery extends Query {
     private final String leafPartitionId;
     private final Region partitionRegion;
     private final List<String> files;
-    
-    public LeafPartitionQuery(String tableName,
+
+    public LeafPartitionQuery(
+            String tableName,
             String queryId,
             String subQueryId,
             List<Region> regions,
@@ -124,11 +126,12 @@ public class LeafPartitionQuery extends Query {
         }
         return true;
     }
-    
+
     public static class Builder {
         private final LeafPartitionQuery query;
-        
-        public Builder(String tableName,
+
+        public Builder(
+                String tableName,
                 String queryId,
                 String subQueryId,
                 List<Region> regions,
@@ -137,8 +140,9 @@ public class LeafPartitionQuery extends Query {
                 List<String> files) {
             this.query = new LeafPartitionQuery(tableName, queryId, subQueryId, regions, leafPartitionId, partitionRegion, files);
         }
-        
-        public Builder(String tableName,
+
+        public Builder(
+                String tableName,
                 String queryId,
                 String subQueryId,
                 Region region,
@@ -153,22 +157,22 @@ public class LeafPartitionQuery extends Query {
                     partitionRegion,
                     files);
         }
-        
+
         public Builder setQueryTimeIteratorClassName(String queryTimeIteratorClassName) {
             query.setQueryTimeIteratorClassName(queryTimeIteratorClassName);
             return this;
         }
-        
+
         public Builder setQueryTimeIteratorConfig(String queryTimeIteratorConfig) {
             query.setQueryTimeIteratorConfig(queryTimeIteratorConfig);
             return this;
         }
-        
+
         public Builder setResultsPublisherConfig(Map<String, String> resultsPublisherConfig) {
             query.setResultsPublisherConfig(resultsPublisherConfig);
             return this;
         }
-        
+
         public Builder setRequestedValueFields(List<String> requestedValueFields) {
             query.setRequestedValueFields(requestedValueFields);
             return this;

@@ -23,6 +23,9 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIM
 
 public class HadoopConfigurationProvider {
 
+    private HadoopConfigurationProvider() {
+    }
+
     public static Configuration getConfigurationForLambdas(InstanceProperties instanceProperties) {
         Configuration conf = new Configuration();
         conf.set("fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3));
@@ -35,7 +38,7 @@ public class HadoopConfigurationProvider {
         return conf;
     }
 
-    public static  Configuration getConfigurationForECS(InstanceProperties instanceProperties) {
+    public static Configuration getConfigurationForECS(InstanceProperties instanceProperties) {
         Configuration conf = new Configuration();
         conf.set("fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3));
         conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");

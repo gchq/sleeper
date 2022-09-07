@@ -15,19 +15,6 @@
  */
 package sleeper.systemtest.cdk;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
-import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
-import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_TASK_CPU;
-import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_TASK_MEMORY;
-import static sleeper.systemtest.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
-
-import java.util.List;
-
 import sleeper.cdk.Utils;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.systemtest.SystemTestProperties;
@@ -51,6 +38,19 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
+
+import java.util.List;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
+import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_TASK_CPU;
+import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_TASK_MEMORY;
+import static sleeper.systemtest.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
 
 /**
  * A {@link Stack} to deploy the system test components.

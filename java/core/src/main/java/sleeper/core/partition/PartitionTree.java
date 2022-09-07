@@ -156,8 +156,12 @@ public class PartitionTree {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         PartitionTree that = (PartitionTree) o;
         return schema.equals(that.schema)
                 && idToPartition.equals(that.idToPartition);

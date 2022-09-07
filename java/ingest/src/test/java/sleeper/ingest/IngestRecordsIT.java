@@ -356,32 +356,35 @@ public class IngestRecordsIT {
     @Test
     public void shouldWriteRecordsSplitByPartitionLongKey() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Partition rootPartition = new Partition();
-        rootPartition.setRowKeyTypes(new LongType());
-        rootPartition.setId("root");
         Range rootRange = new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
-        rootPartition.setRegion(rootRegion);
-        rootPartition.setLeafPartition(false);
-        rootPartition.setParentPartitionId(null);
-        Partition partition1 = new Partition();
-        partition1.setRowKeyTypes(new LongType());
-        partition1.setId("partition1");
+        Partition rootPartition = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .id("root")
+                .region(rootRegion)
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .build();
         Range range1 = new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 2L);
         Region region1 = new Region(range1);
-        partition1.setRegion(region1);
-        partition1.setLeafPartition(true);
-        partition1.setParentPartitionId(rootPartition.getId());
-        partition1.setChildPartitionIds(new ArrayList<>());
-        Partition partition2 = new Partition();
-        partition2.setRowKeyTypes(new LongType());
-        partition2.setId("partition2");
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .id("partition1")
+                .region(region1)
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         Range range2 = new RangeFactory(schema).createRange(field, 2L, null);
         Region region2 = new Region(range2);
-        partition2.setRegion(region2);
-        partition2.setLeafPartition(true);
-        partition2.setParentPartitionId(rootPartition.getId());
-        partition2.setChildPartitionIds(new ArrayList<>());
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .id("partition2")
+                .region(region2)
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         DynamoDBStateStore stateStore = getStateStore(schema,
                 Arrays.asList(rootPartition, partition1, partition2));
@@ -481,32 +484,35 @@ public class IngestRecordsIT {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = schemaWithRowKeys(field);
-        Partition rootPartition = new Partition();
-        rootPartition.setRowKeyTypes(new ByteArrayType());
-        rootPartition.setId("root");
         Range rootRange = new RangeFactory(schema).createRange(field, new byte[]{}, null);
         Region rootRegion = new Region(rootRange);
-        rootPartition.setRegion(rootRegion);
-        rootPartition.setLeafPartition(false);
-        rootPartition.setParentPartitionId(null);
-        Partition partition1 = new Partition();
-        partition1.setRowKeyTypes(new ByteArrayType());
-        partition1.setId("partition1");
+        Partition rootPartition = Partition.builder()
+                .rowKeyTypes(new ByteArrayType())
+                .id("root")
+                .region(rootRegion)
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .build();
         Range range1 = new RangeFactory(schema).createRange(field, new byte[]{}, new byte[]{64, 64});
         Region region1 = new Region(range1);
-        partition1.setRegion(region1);
-        partition1.setLeafPartition(true);
-        partition1.setParentPartitionId(rootPartition.getId());
-        partition1.setChildPartitionIds(new ArrayList<>());
-        Partition partition2 = new Partition();
-        partition2.setRowKeyTypes(new ByteArrayType());
-        partition2.setId("partition2");
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(new ByteArrayType())
+                .id("partition1")
+                .region(region1)
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         Range range2 = new RangeFactory(schema).createRange(field, new byte[]{64, 64}, null);
         Region region2 = new Region(range2);
-        partition2.setRegion(region2);
-        partition2.setLeafPartition(true);
-        partition2.setParentPartitionId(rootPartition.getId());
-        partition2.setChildPartitionIds(new ArrayList<>());
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(new ByteArrayType())
+                .id("partition2")
+                .region(region2)
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         DynamoDBStateStore stateStore = getStateStore(schema,
                 Arrays.asList(rootPartition, partition1, partition2));
@@ -614,36 +620,39 @@ public class IngestRecordsIT {
         Field field1 = new Field("key1", new ByteArrayType());
         Field field2 = new Field("key2", new ByteArrayType());
         Schema schema = schemaWithRowKeys(field1, field2);
-        Partition rootPartition = new Partition();
-        rootPartition.setRowKeyTypes(new ByteArrayType(), new ByteArrayType());
-        rootPartition.setId("root");
         Range rootRange1 = new RangeFactory(schema).createRange(field1, new byte[]{}, null);
         Range rootRange2 = new RangeFactory(schema).createRange(field2, new byte[]{}, null);
         Region rootRegion = new Region(Arrays.asList(rootRange1, rootRange2));
-        rootPartition.setRegion(rootRegion);
-        rootPartition.setLeafPartition(false);
-        rootPartition.setParentPartitionId(null);
-        rootPartition.setDimension(1);
-        Partition partition1 = new Partition();
-        partition1.setRowKeyTypes(new ByteArrayType(), new ByteArrayType());
-        partition1.setId("id1");
+        Partition rootPartition = Partition.builder()
+                .rowKeyTypes(new ByteArrayType(), new ByteArrayType())
+                .id("root")
+                .region(rootRegion)
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .dimension(1)
+                .build();
         Range range11 = new RangeFactory(schema).createRange(field1, new byte[]{}, new byte[]{10});
         Range range12 = new RangeFactory(schema).createRange(field2, new byte[]{}, null);
         Region region1 = new Region(Arrays.asList(range11, range12));
-        partition1.setRegion(region1);
-        partition1.setLeafPartition(true);
-        partition1.setParentPartitionId(rootPartition.getId());
-        partition1.setChildPartitionIds(new ArrayList<>());
-        Partition partition2 = new Partition();
-        partition2.setRowKeyTypes(new ByteArrayType(), new ByteArrayType());
-        partition2.setId("id2");
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(new ByteArrayType(), new ByteArrayType())
+                .id("id1")
+                .region(region1)
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         Range range21 = new RangeFactory(schema).createRange(field1, new byte[]{10}, null);
         Range range22 = new RangeFactory(schema).createRange(field2, new byte[]{}, null);
         Region region2 = new Region(Arrays.asList(range21, range22));
-        partition2.setRegion(region2);
-        partition2.setLeafPartition(true);
-        partition2.setParentPartitionId(rootPartition.getId());
-        partition2.setChildPartitionIds(new ArrayList<>());
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(new ByteArrayType(), new ByteArrayType())
+                .id("id2")
+                .region(region2)
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         DynamoDBStateStore stateStore = getStateStore(schema,
                 Arrays.asList(rootPartition, partition1, partition2));
@@ -778,38 +787,41 @@ public class IngestRecordsIT {
         //                |
         // Long.MIN_VALUE |----------------------------
         //               Long.MIN_VALUE            null   Dimension 1
-        Partition rootPartition = new Partition();
-        rootPartition.setRowKeyTypes(new IntType(), new LongType());
-        rootPartition.setId("root");
         Range rootRange1 = new RangeFactory(schema).createRange(field1, Integer.MIN_VALUE, null);
         Range rootRange2 = new RangeFactory(schema).createRange(field2, Long.MIN_VALUE, null);
         Region rootRegion = new Region(Arrays.asList(rootRange1, rootRange2));
-        rootPartition.setRegion(rootRegion);
-        rootPartition.setLeafPartition(false);
-        rootPartition.setParentPartitionId(null);
-        rootPartition.setDimension(1);
-        Partition partition1 = new Partition();
-        partition1.setRowKeyTypes(new IntType(), new LongType());
-        partition1.setId("partition1");
+        Partition rootPartition = Partition.builder()
+                .rowKeyTypes(new IntType(), new LongType())
+                .id("root")
+                .region(rootRegion)
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .dimension(1)
+                .build();
         Range partition1Range1 = new RangeFactory(schema).createRange(field1, Integer.MIN_VALUE, null);
         Range partition1Range2 = new RangeFactory(schema).createRange(field2, Long.MIN_VALUE, 10L);
         Region region1 = new Region(Arrays.asList(partition1Range1, partition1Range2));
-        partition1.setRegion(region1);
-        partition1.setLeafPartition(true);
-        partition1.setParentPartitionId("root");
-        partition1.setChildPartitionIds(new ArrayList<>());
-        partition1.setDimension(-1);
-        Partition partition2 = new Partition();
-        partition2.setRowKeyTypes(new IntType(), new LongType());
-        partition2.setId("partition2");
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(new IntType(), new LongType())
+                .id("partition1")
+                .region(region1)
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         Range partition2Range1 = new RangeFactory(schema).createRange(field1, Integer.MIN_VALUE, null);
         Range partition2Range2 = new RangeFactory(schema).createRange(field2, 10L, null);
         Region region2 = new Region(Arrays.asList(partition2Range1, partition2Range2));
-        partition2.setRegion(region2);
-        partition2.setLeafPartition(true);
-        partition2.setParentPartitionId("root");
-        partition2.setChildPartitionIds(new ArrayList<>());
-        partition2.setDimension(-1);
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(new IntType(), new LongType())
+                .id("partition2")
+                .region(region2)
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         DynamoDBStateStore stateStore = getStateStore(schema,
                 Arrays.asList(rootPartition, partition1, partition2));
@@ -912,32 +924,35 @@ public class IngestRecordsIT {
     @Test
     public void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Partition rootPartition = new Partition();
-        rootPartition.setRowKeyTypes(new LongType());
-        rootPartition.setId("root");
         Range rootRange = new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
-        rootPartition.setRegion(rootRegion);
-        rootPartition.setLeafPartition(false);
-        rootPartition.setParentPartitionId(null);
-        Partition partition1 = new Partition();
-        partition1.setRowKeyTypes(new LongType());
-        partition1.setId("partition1");
+        Partition rootPartition = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .id("root")
+                .region(rootRegion)
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .build();
         Range range1 = new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 2L);
         Region region1 = new Region(range1);
-        partition1.setRegion(region1);
-        partition1.setLeafPartition(true);
-        partition1.setParentPartitionId(rootPartition.getId());
-        partition1.setChildPartitionIds(new ArrayList<>());
-        Partition partition2 = new Partition();
-        partition2.setRowKeyTypes(new LongType());
-        partition2.setId("partition2");
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .id("partition1")
+                .region(region1)
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         Range range2 = new RangeFactory(schema).createRange(field, 2L, null);
         Region region2 = new Region(range2);
-        partition2.setRegion(region2);
-        partition2.setLeafPartition(true);
-        partition2.setParentPartitionId(rootPartition.getId());
-        partition2.setChildPartitionIds(new ArrayList<>());
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .id("partition2")
+                .region(region2)
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         DynamoDBStateStore stateStore = getStateStore(schema,
                 Arrays.asList(rootPartition, partition1, partition2));
@@ -1074,32 +1089,35 @@ public class IngestRecordsIT {
     @Test
     public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Partition rootPartition = new Partition();
-        rootPartition.setRowKeyTypes(new LongType());
-        rootPartition.setId("root");
         Range rootRange = new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
-        rootPartition.setRegion(rootRegion);
-        rootPartition.setLeafPartition(false);
-        rootPartition.setParentPartitionId(null);
-        Partition partition1 = new Partition();
-        partition1.setRowKeyTypes(new LongType());
-        partition1.setId("partition1");
+        Partition rootPartition = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .id("root")
+                .region(rootRegion)
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .build();
         Range range1 = new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 2L);
         Region region1 = new Region(range1);
-        partition1.setRegion(region1);
-        partition1.setLeafPartition(true);
-        partition1.setParentPartitionId(rootPartition.getId());
-        partition1.setChildPartitionIds(new ArrayList<>());
-        Partition partition2 = new Partition();
-        partition2.setRowKeyTypes(new LongType());
-        partition2.setId("partition2");
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .id("partition1")
+                .region(region1)
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         Range range2 = new RangeFactory(schema).createRange(field, 2L, null);
         Region region2 = new Region(range2);
-        partition2.setRegion(region2);
-        partition2.setLeafPartition(true);
-        partition2.setParentPartitionId(rootPartition.getId());
-        partition2.setChildPartitionIds(new ArrayList<>());
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .id("partition2")
+                .region(region2)
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         DynamoDBStateStore stateStore = getStateStore(schema,
                 Arrays.asList(rootPartition, partition1, partition2));
@@ -1252,32 +1270,35 @@ public class IngestRecordsIT {
     @Test
     public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
-        Partition rootPartition = new Partition();
-        rootPartition.setRowKeyTypes(new LongType());
-        rootPartition.setId("root");
         Range rootRange = new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
-        rootPartition.setRegion(rootRegion);
-        rootPartition.setLeafPartition(false);
-        rootPartition.setParentPartitionId(null);
-        Partition partition1 = new Partition();
-        partition1.setRowKeyTypes(new LongType());
-        partition1.setId("partition1");
+        Partition rootPartition = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .id("root")
+                .region(rootRegion)
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .build();
         Range range1 = new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 2L);
         Region region1 = new Region(range1);
-        partition1.setRegion(region1);
-        partition1.setLeafPartition(true);
-        partition1.setParentPartitionId(rootPartition.getId());
-        partition1.setChildPartitionIds(new ArrayList<>());
-        Partition partition2 = new Partition();
-        partition2.setRowKeyTypes(new LongType());
-        partition2.setId("partition2");
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .id("partition1")
+                .region(region1)
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         Range range2 = new RangeFactory(schema).createRange(field, 2L, null);
         Region region2 = new Region(range2);
-        partition2.setRegion(region2);
-        partition2.setLeafPartition(true);
-        partition2.setParentPartitionId(rootPartition.getId());
-        partition2.setChildPartitionIds(new ArrayList<>());
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .id("partition2")
+                .region(region2)
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         DynamoDBStateStore stateStore = getStateStore(schema,
                 Arrays.asList(rootPartition, partition1, partition2));
@@ -1492,7 +1513,6 @@ public class IngestRecordsIT {
                 .sortKeyFields(new Field("sort", new LongType()))
                 .valueFields(new Field("value", new LongType()))
                 .build();
-        ;
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When

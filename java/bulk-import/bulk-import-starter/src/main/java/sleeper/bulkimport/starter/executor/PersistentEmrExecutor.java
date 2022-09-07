@@ -16,23 +16,26 @@
 package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.model.*;
+import com.amazonaws.services.elasticmapreduce.model.ActionOnFailure;
+import com.amazonaws.services.elasticmapreduce.model.AddJobFlowStepsRequest;
+import com.amazonaws.services.elasticmapreduce.model.ClusterState;
+import com.amazonaws.services.elasticmapreduce.model.ClusterSummary;
+import com.amazonaws.services.elasticmapreduce.model.HadoopJarStepConfig;
+import com.amazonaws.services.elasticmapreduce.model.ListClustersRequest;
+import com.amazonaws.services.elasticmapreduce.model.ListClustersResult;
+import com.amazonaws.services.elasticmapreduce.model.StepConfig;
 import com.amazonaws.services.s3.AmazonS3;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperty;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.util.UUID;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  *
@@ -43,15 +46,16 @@ public class PersistentEmrExecutor extends AbstractEmrExecutor {
     private final AmazonElasticMapReduce emrClient;
     private String clusterId;
 
-    public PersistentEmrExecutor(AmazonElasticMapReduce emrClient,
-                       InstanceProperties instancePropeties,
-                       TablePropertiesProvider tablePropertiesProvider,
-                       AmazonS3 amazonS3) {
+    public PersistentEmrExecutor(
+            AmazonElasticMapReduce emrClient,
+            InstanceProperties instancePropeties,
+            TablePropertiesProvider tablePropertiesProvider,
+            AmazonS3 amazonS3) {
         super(instancePropeties, tablePropertiesProvider, amazonS3);
         this.emrClient = emrClient;
         this.clusterId = getClusterIdFromName(emrClient, instancePropeties.get(UserDefinedInstanceProperty.ID));
     }
-    
+
     @Override
     public void runJobOnPlatform(BulkImportJob bulkImportJob) {
         String configBucket = instanceProperties.get(CONFIG_BUCKET);
@@ -67,14 +71,14 @@ public class PersistentEmrExecutor extends AbstractEmrExecutor {
         AddJobFlowStepsRequest addJobFlowStepsRequest = new AddJobFlowStepsRequest()
                 .withJobFlowId(clusterId)
                 .withSteps(stepConfig);
-        
+
         LOGGER.info("Adding job flow step {}", addJobFlowStepsRequest.toString());
         emrClient.addJobFlowSteps(addJobFlowStepsRequest);
     }
 
     private static String getClusterIdFromName(AmazonElasticMapReduce emrClient, String instanceId) {
         ListClustersRequest listClustersRequest = new ListClustersRequest()
-            .withClusterStates(ClusterState.BOOTSTRAPPING.name(), ClusterState.RUNNING.name(), ClusterState.STARTING.name(), ClusterState.WAITING.name());
+                .withClusterStates(ClusterState.BOOTSTRAPPING.name(), ClusterState.RUNNING.name(), ClusterState.STARTING.name(), ClusterState.WAITING.name());
         ListClustersResult result = emrClient.listClusters(listClustersRequest);
         String clusterId = null;
         String clusterName = String.join("-", "sleeper", instanceId, "persistentEMR");

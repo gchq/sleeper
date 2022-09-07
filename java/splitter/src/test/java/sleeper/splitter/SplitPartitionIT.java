@@ -178,50 +178,59 @@ public class SplitPartitionIT {
         // Given
         // Non-leaf partitions
         Range rootRange = new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, null);
-        Partition rootPartition = new Partition(
-                schema.getRowKeyTypes(),
-                new Region(rootRange),
-                "root",
-                false,
-                null,
-                null,
-                0);
+        Partition rootPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(rootRange))
+                .region(new Region(rootRange))
+                .id("root")
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .dimension(0)
+                .build();
         Range range12 = new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, 1);
-        Partition partition12 = new Partition(
-                schema.getRowKeyTypes(),
-                new Region(range12),
-                "id12",
-                false,
-                rootPartition.getId(),
-                null,
-                0);
+        Partition partition12 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range12))
+                .id("id12")
+                .leafPartition(false)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(0)
+                .build();
         // Leaf partitions
         Range range1 = new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, 0);
-        Partition partition1 = new Partition(schema.getRowKeyTypes(),
-                new Region(range1),
-                "id1",
-                true,
-                partition12.getId(),
-                null,
-                -1);
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range1))
+                .id("id1")
+                .leafPartition(true)
+                .parentPartitionId(partition12.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         //  - Partition 2 only includes the key 0 (partitions do not include
         //      the maximum key), and so cannot be split.
         Range range2 = new RangeFactory(schema).createRange(field, 0, 1);
-        Partition partition2 = new Partition(schema.getRowKeyTypes(),
-                new Region(range2),
-                "id2",
-                true,
-                partition12.getId(),
-                null,
-                -1);
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range2))
+                .id("id2")
+                .leafPartition(true)
+                .parentPartitionId(partition12.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         Range range3 = new RangeFactory(schema).createRange(field, 1, null);
-        Partition partition3 = new Partition(schema.getRowKeyTypes(),
-                new Region(range3),
-                "id3",
-                true,
-                rootPartition.getId(),
-                null,
-                -1);
+        Partition partition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range3))
+                .id("id3")
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         // Wire up partitions
         rootPartition.setChildPartitionIds(Arrays.asList(partition12.getId(), partition3.getId()));
         partition12.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
@@ -281,50 +290,58 @@ public class SplitPartitionIT {
         // Given
         // Non-leaf partitions
         Range rootRange = new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, null);
-        Partition rootPartition = new Partition(
-                schema.getRowKeyTypes(),
-                new Region(rootRange),
-                "root",
-                false,
-                null,
-                null,
-                0);
+        Partition rootPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(rootRange))
+                .id("root")
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .dimension(0)
+                .build();
         Range range12 = new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, 10);
-        Partition partition12 = new Partition(
-                schema.getRowKeyTypes(),
-                new Region(range12),
-                "id12",
-                false,
-                rootPartition.getId(),
-                null,
-                0);
+        Partition partition12 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range12))
+                .id("id12")
+                .leafPartition(false)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(0)
+                .build();
         // Leaf partitions
         Range range1 = new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, 0);
-        Partition partition1 = new Partition(schema.getRowKeyTypes(),
-                new Region(range1),
-                "id1",
-                true,
-                partition12.getId(),
-                null,
-                -1);
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range1))
+                .id("id1")
+                .leafPartition(true)
+                .parentPartitionId(partition12.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         //  - Partition 2 only includes the key 0 (partitions do not include
         //      the maximum key), and so cannot be split.
         Range range2 = new RangeFactory(schema).createRange(field, 0, 10);
-        Partition partition2 = new Partition(schema.getRowKeyTypes(),
-                new Region(range2),
-                "id2",
-                true,
-                partition12.getId(),
-                null,
-                -1);
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range2))
+                .id("id2")
+                .leafPartition(true)
+                .parentPartitionId(partition12.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         Range range3 = new RangeFactory(schema).createRange(field, 10, null);
-        Partition partition3 = new Partition(schema.getRowKeyTypes(),
-                new Region(range3),
-                "id3",
-                true,
-                rootPartition.getId(),
-                null,
-                -1);
+        Partition partition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range3))
+                .id("id3")
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         // Wire up partitions
         rootPartition.setChildPartitionIds(Arrays.asList(partition12.getId(), partition3.getId()));
         partition12.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
@@ -862,50 +879,58 @@ public class SplitPartitionIT {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         // Non-leaf partitions
         Range rootRange = new RangeFactory(schema).createRange(field, new byte[]{0}, null);
-        Partition rootPartition = new Partition(
-                schema.getRowKeyTypes(),
-                new Region(rootRange),
-                "root",
-                false,
-                null,
-                null,
-                0);
+        Partition rootPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(rootRange))
+                .id("root")
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .dimension(0)
+                .build();
         Range range12 = new RangeFactory(schema).createRange(field, new byte[]{0}, new byte[]{51});
-        Partition partition12 = new Partition(
-                schema.getRowKeyTypes(),
-                new Region(range12),
-                "id12",
-                false,
-                rootPartition.getId(),
-                null,
-                0);
+        Partition partition12 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range12))
+                .id("id12")
+                .leafPartition(false)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(0)
+                .build();
         // Leaf partitions
         Range range1 = new RangeFactory(schema).createRange(field, new byte[]{0}, new byte[]{50});
-        Partition partition1 = new Partition(schema.getRowKeyTypes(),
-                new Region(range1),
-                "id1",
-                true,
-                partition12.getId(),
-                null,
-                -1);
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range1))
+                .id("id1")
+                .leafPartition(true)
+                .parentPartitionId(partition12.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         //  - Partition 2 only includes the key 0 (partitions do not include
         //      the maximum key), and so cannot be split.
         Range range2 = new RangeFactory(schema).createRange(field, new byte[]{50}, new byte[]{51});
-        Partition partition2 = new Partition(schema.getRowKeyTypes(),
-                new Region(range2),
-                "id2",
-                true,
-                partition12.getId(),
-                null,
-                -1);
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range2))
+                .id("id2")
+                .leafPartition(true)
+                .parentPartitionId(partition12.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         Range range3 = new RangeFactory(schema).createRange(field, new byte[]{51}, null);
-        Partition partition3 = new Partition(schema.getRowKeyTypes(),
-                new Region(range3),
-                "id3",
-                true,
-                rootPartition.getId(),
-                null,
-                -1);
+        Partition partition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range3))
+                .id("id3")
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         // Wire up partitions
         rootPartition.setChildPartitionIds(Arrays.asList(partition12.getId(), partition3.getId()));
         partition12.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
@@ -986,50 +1011,58 @@ public class SplitPartitionIT {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         // Non-leaf partitions
         Range rootRange = new RangeFactory(schema).createRange(field, new byte[]{0}, null);
-        Partition rootPartition = new Partition(
-                schema.getRowKeyTypes(),
-                new Region(rootRange),
-                "root",
-                false,
-                null,
-                null,
-                0);
+        Partition rootPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(rootRange))
+                .id("root")
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .dimension(0)
+                .build();
         Range range12 = new RangeFactory(schema).createRange(field, new byte[]{0}, new byte[]{100});
-        Partition partition12 = new Partition(
-                schema.getRowKeyTypes(),
-                new Region(range12),
-                "id12",
-                false,
-                rootPartition.getId(),
-                null,
-                0);
+        Partition partition12 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range12))
+                .id("id12")
+                .leafPartition(false)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(0)
+                .build();
         // Leaf partitions
         Range range1 = new RangeFactory(schema).createRange(field, new byte[]{0}, new byte[]{50});
-        Partition partition1 = new Partition(schema.getRowKeyTypes(),
-                new Region(range1),
-                "id1",
-                true,
-                partition12.getId(),
-                null,
-                -1);
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range1))
+                .id("id1")
+                .leafPartition(true)
+                .parentPartitionId(partition12.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         //  - Partition 2 only includes the key 0 (partitions do not include
         //      the maximum key), and so cannot be split.
         Range range2 = new RangeFactory(schema).createRange(field, new byte[]{50}, new byte[]{100});
-        Partition partition2 = new Partition(schema.getRowKeyTypes(),
-                new Region(range2),
-                "id2",
-                true,
-                partition12.getId(),
-                null,
-                -1);
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range2))
+                .id("id2")
+                .leafPartition(true)
+                .parentPartitionId(partition12.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         Range range3 = new RangeFactory(schema).createRange(field, new byte[]{100}, null);
-        Partition partition3 = new Partition(schema.getRowKeyTypes(),
-                new Region(range3),
-                "id3",
-                true,
-                rootPartition.getId(),
-                null,
-                -1);
+        Partition partition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range3))
+                .id("id3")
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         // Wire up partitions
         rootPartition.setChildPartitionIds(Arrays.asList(partition12.getId(), partition3.getId()));
         partition12.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));

@@ -277,28 +277,31 @@ public class SplitMultiDimensionalPartitionImpl {
         LOGGER.info("Splitting partition {} on split point {} in dimension {}", partition.getId(), splitPoint, dimension);
 
         // New partitions
-        Partition leftChild = new Partition();
-        leftChild.setRowKeyTypes(rowKeyTypes);
         List<Range> leftChildRanges = removeRange(partition.getRegion().getRanges(), fieldToSplitOn.getName());
         Range rangeForSplitDimensionLeftChild = rangeFactory.createRange(fieldToSplitOn, partition.getRegion().getRange(fieldToSplitOn.getName()).getMin(), splitPoint);
         leftChildRanges.add(rangeForSplitDimensionLeftChild);
         Region leftChildRegion = new Region(leftChildRanges);
-        leftChild.setRegion(leftChildRegion);
-        leftChild.setId(UUID.randomUUID().toString());
-        leftChild.setParentPartitionId(partition.getId());
-        leftChild.setLeafPartition(true);
-        leftChild.setChildPartitionIds(new ArrayList<>());
-        Partition rightChild = new Partition();
-        rightChild.setRowKeyTypes(rowKeyTypes);
+        Partition leftChild = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(leftChildRegion)
+                .id(UUID.randomUUID().toString())
+                .leafPartition(true)
+                .parentPartitionId(partition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
+
         List<Range> rightChildRanges = removeRange(partition.getRegion().getRanges(), fieldToSplitOn.getName());
         Range rangeForSplitDimensionRightChild = rangeFactory.createRange(fieldToSplitOn, splitPoint, partition.getRegion().getRange(fieldToSplitOn.getName()).getMax());
         rightChildRanges.add(rangeForSplitDimensionRightChild);
         Region rightChildRegion = new Region(rightChildRanges);
-        rightChild.setRegion(rightChildRegion);
-        rightChild.setId(UUID.randomUUID().toString());
-        rightChild.setParentPartitionId(partition.getId());
-        rightChild.setLeafPartition(true);
-        rightChild.setChildPartitionIds(new ArrayList<>());
+        Partition rightChild = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(rightChildRegion)
+                .id(UUID.randomUUID().toString())
+                .leafPartition(true)
+                .parentPartitionId(partition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
 
         // Updated split partition
         partition.setLeafPartition(false);

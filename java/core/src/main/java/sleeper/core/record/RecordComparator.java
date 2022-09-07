@@ -15,11 +15,11 @@
  */
 package sleeper.core.record;
 
+import sleeper.core.key.Key;
 import sleeper.core.schema.Schema;
 
 import java.util.Comparator;
 import java.util.List;
-import sleeper.core.key.Key;
 
 /**
  * Compares {@link Record}s by row keys then sort keys.
@@ -29,7 +29,7 @@ public class RecordComparator implements Comparator<Record> {
     private final List<String> sortKeyNames;
     private final KeyComparator rowKeyComparator;
     private final KeyComparator sortKeyComparator;
-    
+
     public RecordComparator(Schema schema) {
         this.rowKeyNames = schema.getRowKeyFieldNames();
         this.sortKeyNames = schema.getSortKeyFieldNames();

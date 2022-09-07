@@ -53,7 +53,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPILL
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.USER_JARS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 
-;
 
 public class AthenaStack extends NestedStack {
     public AthenaStack(Construct scope, String id, InstanceProperties instanceProperties,

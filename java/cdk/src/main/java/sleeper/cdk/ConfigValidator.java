@@ -46,6 +46,7 @@ public class ConfigValidator {
         checkQueryResultsBucketDoesNotExist(instanceProperties);
         checkTableConfiguration(instanceProperties);
     }
+
     private void checkQueryResultsBucketDoesNotExist(InstanceProperties instanceProperties) {
         String instanceName = instanceProperties.get(ID);
         String bucketName = String.join("-", "sleeper", instanceName, "query-results");
@@ -65,7 +66,7 @@ public class ConfigValidator {
         String instanceName = instanceProperties.get(ID);
 
         if (instanceProperties.getList(TABLE_PROPERTIES) != null) {
-            for (String propertiesFilePath : instanceProperties.getList(TABLE_PROPERTIES))
+            for (String propertiesFilePath : instanceProperties.getList(TABLE_PROPERTIES)) {
                 try {
                     TableProperties tableProperties = new TableProperties(instanceProperties);
                     tableProperties.load(new FileInputStream(propertiesFilePath));
@@ -79,13 +80,14 @@ public class ConfigValidator {
                 } catch (FileNotFoundException ep) {
                     throw new IllegalArgumentException("Could not find table properties file");
                 }
+            }
         }
     }
 
     private void checkDynamoDBConfigurationForTable(String instanceName, String tableName) {
-        List<String> tableTypes = Arrays.asList("active-files" , "gc-files" , "partitions") ;
+        List<String> tableTypes = Arrays.asList("active-files", "gc-files", "partitions");
         tableTypes.stream().forEach(tableType -> {
-            String dynamodbTableName = String.join("-", "sleeper", instanceName, "table", tableName , tableType);
+            String dynamodbTableName = String.join("-", "sleeper", instanceName, "table", tableName, tableType);
             if (doesDynamoTableExist(dynamodbTableName)) {
                 throw new IllegalArgumentException("Sleeper DynamoDBTable exists: " + dynamodbTableName);
             }
@@ -107,7 +109,7 @@ public class ConfigValidator {
         try {
             amazonDynamoDB.describeTable(name);
         } catch (ResourceNotFoundException e) {
-            tableExists  = false;
+            tableExists = false;
         }
         return tableExists;
     }

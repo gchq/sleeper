@@ -16,11 +16,6 @@
 package sleeper.core.partition;
 
 import com.facebook.collections.ByteArray;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.core.range.Range;
@@ -96,13 +91,6 @@ public class PartitionsFromSplitPoints {
                 Partition leftPartition = partitionsInLayer.get(i);
                 Partition rightPartition = partitionsInLayer.get(i + 1);
 
-                Partition parent = new Partition();
-                parent.setId(UUID.randomUUID().toString());
-                parent.setParentPartitionId(null);
-                parent.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
-                parent.setLeafPartition(false);
-                parent.setDimension(0);
-                parent.setRowKeyTypes(leftPartition.getRowKeyTypes());
                 List<Range> ranges = new ArrayList<>();
                 for (Range range : leftPartition.getRegion().getRanges()) {
                     if (!range.getFieldName().equals(rowKeyFields.get(0).getName())) {
@@ -116,7 +104,15 @@ public class PartitionsFromSplitPoints {
                         false);
                 ranges.add(rangeForDim0);
                 Region region = new Region(ranges);
-                parent.setRegion(region);
+                Partition parent = Partition.builder()
+                        .id(UUID.randomUUID().toString())
+                        .parentPartitionId(null)
+                        .childPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()))
+                        .leafPartition(false)
+                        .dimension(0)
+                        .rowKeyTypes(schema.getRowKeyTypes())
+                        .region(region)
+                        .build();
 
                 leftPartition.setParentPartitionId(parent.getId());
                 rightPartition.setParentPartitionId(parent.getId());
@@ -142,14 +138,15 @@ public class PartitionsFromSplitPoints {
         List<Region> leafRegions = leafRegionsFromSplitPoints(schema, splitPoints);
         List<Partition> leafPartitions = new ArrayList<>();
         for (Region region : leafRegions) {
-            Partition partition = new Partition();
-            partition.setRowKeyTypes(rowKeyTypes);
-            partition.setRegion(region);
-            partition.setId(UUID.randomUUID().toString());
-            partition.setLeafPartition(true);
-            partition.setParentPartitionId(null);
-            partition.setChildPartitionIds(new ArrayList<>());
-            partition.setDimension(-1);
+            Partition partition = Partition.builder()
+                    .rowKeyTypes(schema.getRowKeyTypes())
+                    .region(region)
+                    .id(UUID.randomUUID().toString())
+                    .leafPartition(true)
+                    .parentPartitionId(null)
+                    .childPartitionIds(new ArrayList<>())
+                    .dimension(-1)
+                    .build();
             leafPartitions.add(partition);
         }
         LOGGER.info("Created {} leaf partitions from {} split points", leafPartitions.size(), splitPoints.size());
@@ -158,20 +155,20 @@ public class PartitionsFromSplitPoints {
     }
 
     private Partition createRootPartitionThatIsLeaf() {
-        Partition rootPartition = new Partition();
-        rootPartition.setRowKeyTypes(rowKeyTypes);
         List<Range> ranges = new ArrayList<>();
         for (Field field : rowKeyFields) {
             ranges.add(getRangeCoveringWholeDimension(field));
         }
         Region region = new Region(ranges);
-        rootPartition.setRegion(region);
-        rootPartition.setId("root");
-        rootPartition.setLeafPartition(true);
-        rootPartition.setParentPartitionId(null);
-        rootPartition.setChildPartitionIds(new ArrayList<>());
-        rootPartition.setDimension(-1);
-        return rootPartition;
+        return Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region)
+                .id("root")
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
     }
 
     private Range getRangeCoveringWholeDimension(Field field) {

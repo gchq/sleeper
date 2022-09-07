@@ -1,7 +1,21 @@
+/*
+ * Copyright 2022 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package sleeper.ingest.impl.recordbatch.arrow;
 
 import org.apache.arrow.memory.BufferAllocator;
-import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
@@ -15,7 +29,13 @@ import sleeper.core.iterator.MergingIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.*;
+import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.ListType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.MapType;
+import sleeper.core.schema.type.StringType;
+import sleeper.core.schema.type.Type;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
 
 import java.io.File;
@@ -40,7 +60,7 @@ import static java.util.Objects.requireNonNull;
  * The ingest process works as follows:
  * <ul>
  *     <li>Data is provided to this class through the {@link #append} methods. These are stored in a {@link VectorSchemaRoot}</li>
- *     <li>When an {@link OutOfMemoryException} occurs, the Arrow data is sorted and written to a local file in Arrow format, and the {@link VectorSchemaRoot} is cleared to receive new data</li>
+ *     <li>When an {@link org.apache.arrow.memory.OutOfMemoryException} occurs, the Arrow data is sorted and written to a local file in Arrow format, and the {@link VectorSchemaRoot} is cleared to receive new data</li>
  *     <li>The batch is deemed to be full when the total amount of data on the local disk exceeds a threshold</li>
  *     <li>To retrieve the data, a {@link MergingIterator} is used to create one iterator of records from those local Arrow files. No more data may be appended at this stage</li>
  *     <li>The record batch cannot be reused and {@link #close} will delete all of the local files and free the memory</li>
