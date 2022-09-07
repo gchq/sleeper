@@ -32,6 +32,9 @@ import java.io.IOException;
  */
 public class TrackedQueryProgressReport {
 
+    private TrackedQueryProgressReport() {
+    }
+
     public static void main(String[] args) throws IOException, StateStoreException, QueryTrackerException {
         if (2 != args.length) {
             throw new IllegalArgumentException("Usage: <instance id> <query id>");

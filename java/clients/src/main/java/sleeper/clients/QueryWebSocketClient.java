@@ -97,7 +97,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         private boolean queryComplete = false;
         private long totalRecordsReturned = 0L;
 
-        public Client(URI serverUri, Query query, QuerySerDe querySerDe) throws InterruptedException {
+        private Client(URI serverUri, Query query, QuerySerDe querySerDe) throws InterruptedException {
             super(serverUri);
             this.query = query;
             this.querySerDe = querySerDe;

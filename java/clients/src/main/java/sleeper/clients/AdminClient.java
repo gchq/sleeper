@@ -45,6 +45,9 @@ public class AdminClient {
 
     private static AmazonS3 defaultS3Client;
 
+    private AdminClient() {
+    }
+
     static void printInstancePropertiesReport(AmazonS3 s3Client, String instanceId) throws IOException, AmazonS3Exception {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
