@@ -6,6 +6,7 @@ on:
       - '.github/workflows/chunk.yaml'
       - 'code-style/checkstyle*.xml'
       - 'java/pom.xml'
+      - 'java/build/**'
       - 'java/common-job/**'
       - 'java/parquet/**'
       - 'java/sketches/**'
@@ -17,4 +18,4 @@ jobs:
     uses: ./.github/workflows/chunk.yaml
     with:
       chunkName: Common
-      moduleList: core,configuration,sketches,parquet,common-job
+      moduleList: core,configuration,sketches,parquet,common-job,build
