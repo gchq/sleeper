@@ -23,7 +23,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 

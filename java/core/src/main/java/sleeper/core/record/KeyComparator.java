@@ -16,28 +16,28 @@
 package sleeper.core.record;
 
 import com.facebook.collections.ByteArray;
+import sleeper.core.key.Key;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import sleeper.core.key.Key;
 
 /**
  * Compares keys.
  */
 public class KeyComparator implements Comparator<Key> {
     private final List<PrimitiveType> rowKeyTypes;
-    
+
     public KeyComparator() {
         this.rowKeyTypes = new ArrayList<>();
     }
-    
+
     public KeyComparator(List<PrimitiveType> rowKeyTypes) {
         this.rowKeyTypes = rowKeyTypes;
     }
-    
+
     public KeyComparator(PrimitiveType... rowKeyTypes) {
         this();
         for (PrimitiveType type : rowKeyTypes) {

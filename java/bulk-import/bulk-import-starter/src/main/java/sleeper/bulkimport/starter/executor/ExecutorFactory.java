@@ -18,14 +18,16 @@ package sleeper.bulkimport.starter.executor;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.stepfunctions.AWSStepFunctions;
-import java.io.IOException;
 import sleeper.configuration.properties.InstanceProperties;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 
+import java.io.IOException;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+
 public class ExecutorFactory {
-    private final static String BULK_IMPORT_PLATFORM = "BULK_IMPORT_PLATFORM";
-    
+    private static final String BULK_IMPORT_PLATFORM = "BULK_IMPORT_PLATFORM";
+
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final AmazonS3 s3Client;

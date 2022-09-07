@@ -657,7 +657,9 @@ public class SqsQueryProcessorLambdaIT {
             LocatedFileStatus outputFile = outputFiles.next();
             try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(outputFile.getPath(), SCHEMA).build()) {
                 ParquetReaderIterator it = new ParquetReaderIterator(reader);
-                while (it.hasNext()) it.next();
+                while (it.hasNext()) {
+                    it.next();
+                }
                 numberOfRecordsInOutput = it.getNumberOfRecordsRead();
             }
         }

@@ -17,7 +17,11 @@ package sleeper.ingest.impl;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import sleeper.configuration.jars.ObjectFactory;

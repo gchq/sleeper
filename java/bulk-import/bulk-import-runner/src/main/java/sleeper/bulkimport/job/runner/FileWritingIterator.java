@@ -15,14 +15,7 @@
  */
 package sleeper.bulkimport.job.runner;
 
-import java.io.IOException;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
+import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -32,9 +25,6 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.facebook.collections.ByteArray;
-
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
@@ -50,9 +40,17 @@ import sleeper.io.parquet.record.SchemaConverter;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 
+import java.io.IOException;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 public class FileWritingIterator implements Iterator<Row> {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileWritingIterator.class);
-    
+
     private final Iterator<Row> input;
     private final Schema schema;
     private final List<Field> allSchemaFields;
@@ -172,8 +170,8 @@ public class FileWritingIterator implements Iterator<Row> {
         return keyFieldToSketch;
     }
 
-    private void updateQuantilesSketch(Record record, Map<String, ItemsSketch> keyFieldToSketch,
-            List<Field> rowKeyFields) {
+    private void updateQuantilesSketch(
+            Record record, Map<String, ItemsSketch> keyFieldToSketch, List<Field> rowKeyFields) {
         for (Field rowKeyField : rowKeyFields) {
             if (rowKeyField.getType() instanceof ByteArrayType) {
                 byte[] value = (byte[]) record.get(rowKeyField.getName());

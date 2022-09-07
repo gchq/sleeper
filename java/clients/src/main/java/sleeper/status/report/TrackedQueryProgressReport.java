@@ -19,17 +19,21 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import java.io.IOException;
 import sleeper.ClientUtils;
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.exception.QueryTrackerException;
-import sleeper.configuration.properties.InstanceProperties;
 import sleeper.statestore.StateStoreException;
+
+import java.io.IOException;
 
 /**
  *
  */
 public class TrackedQueryProgressReport {
+
+    private TrackedQueryProgressReport() {
+    }
 
     public static void main(String[] args) throws IOException, StateStoreException, QueryTrackerException {
         if (2 != args.length) {

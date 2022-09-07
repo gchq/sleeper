@@ -216,9 +216,9 @@ public class ExecutorTest {
             return runJobOnPlatformCalled;
         }
 
-        public ExecutorMock(InstanceProperties instanceProperties,
-                            TablePropertiesProvider tablePropertiesProvider,
-                            AmazonS3 s3) {
+        ExecutorMock(InstanceProperties instanceProperties,
+                     TablePropertiesProvider tablePropertiesProvider,
+                     AmazonS3 s3) {
             super(instanceProperties, tablePropertiesProvider, s3);
         }
 

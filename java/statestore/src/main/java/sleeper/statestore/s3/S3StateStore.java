@@ -536,8 +536,12 @@ public class S3StateStore implements StateStore {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof RevisionId)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof RevisionId)) {
+                return false;
+            }
             RevisionId that = (RevisionId) o;
             return Objects.equals(revision, that.revision) && Objects.equals(uuid, that.uuid);
         }

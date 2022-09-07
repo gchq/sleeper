@@ -46,6 +46,9 @@ public interface RecordBatch<INCOMINGDATATYPE> extends AutoCloseable {
     /**
      * Generate an iterator which returns the {@link Record} objects in sort-order. It is the responsibility of the
      * caller to close the iterator. This method may only be called once per {@link RecordBatch}.
+     *
+     * @return the iterator
+     * @throws IOException -
      */
     CloseableIterator<Record> createOrderedRecordIterator() throws IOException;
 

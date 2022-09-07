@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/chunk-bulk-import.yaml'
       - '.github/workflows/chunk.yaml'
+      - 'code-style/checkstyle*.xml'
       - 'java/pom.xml'
       - 'java/bulk-import/pom.xml'
       - 'java/bulk-import/bulk-import-runner/**'

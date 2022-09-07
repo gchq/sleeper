@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/chunk-query.yaml'
       - '.github/workflows/chunk.yaml'
+      - 'code-style/checkstyle*.xml'
       - 'java/pom.xml'
       - 'java/query/**'
       - 'java/ingest/**'

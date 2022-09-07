@@ -32,16 +32,16 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class PartitionTreeTest {
-    private final static String ROOT = "root";
-    private final static String L1_LEFT = "l1_left";
-    private final static String L1_RIGHT = "l1_right";
-    private final static String L2_LEFT_OF_L1L = "l2_left_of_l1l";
-    private final static String L2_RIGHT_OF_L1L = "l2_right_of_l1l";
-    private final static String L2_LEFT_OF_L1R = "l2_left_of_l1r";
-    private final static String L2_RIGHT_OF_L1R = "l2_right_of_l1r";
-    private final static String L3_LEFT_OF_L2_LEFT_OF_L1_LEFT = "l3_left_of_l2_left_of_l1_left";
-    private final static String L3_RIGHT_OF_L2_LEFT_OF_L1_LEFT = "l3_right_of_l2_left_of_l1_left";
-    private final static List<PrimitiveType> LONG_TYPE = Collections.singletonList(new LongType());
+    private static final String ROOT = "root";
+    private static final String L1_LEFT = "l1_left";
+    private static final String L1_RIGHT = "l1_right";
+    private static final String L2_LEFT_OF_L1L = "l2_left_of_l1l";
+    private static final String L2_RIGHT_OF_L1L = "l2_right_of_l1l";
+    private static final String L2_LEFT_OF_L1R = "l2_left_of_l1r";
+    private static final String L2_RIGHT_OF_L1R = "l2_right_of_l1r";
+    private static final String L3_LEFT_OF_L2_LEFT_OF_L1_LEFT = "l3_left_of_l2_left_of_l1_left";
+    private static final String L3_RIGHT_OF_L2_LEFT_OF_L1_LEFT = "l3_right_of_l2_left_of_l1_left";
+    private static final List<PrimitiveType> LONG_TYPE = Collections.singletonList(new LongType());
 
     @Test
     public void shouldReturnCorrectChildren() {

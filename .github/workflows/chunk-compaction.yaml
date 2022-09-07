@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/chunk-compaction.yaml'
       - '.github/workflows/chunk.yaml'
+      - 'code-style/checkstyle*.xml'
       - 'java/pom.xml'
       - 'java/compaction-job-execution/**'
       - 'java/compaction-job-creation/**'

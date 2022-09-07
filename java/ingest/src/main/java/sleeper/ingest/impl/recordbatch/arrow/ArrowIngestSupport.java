@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package sleeper.ingest.impl.recordbatch.arrow;
 
 import org.apache.arrow.algorithm.sort.CompositeVectorComparator;
@@ -5,17 +20,27 @@ import org.apache.arrow.algorithm.sort.DefaultVectorComparators;
 import org.apache.arrow.algorithm.sort.IndexSorter;
 import org.apache.arrow.algorithm.sort.VectorValueComparator;
 import org.apache.arrow.memory.BufferAllocator;
-import org.apache.arrow.vector.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import sleeper.core.schema.type.*;
+import org.apache.arrow.vector.BaseVariableWidthVector;
+import org.apache.arrow.vector.BigIntVector;
+import org.apache.arrow.vector.IntVector;
+import org.apache.arrow.vector.ValueVector;
+import org.apache.arrow.vector.VarBinaryVector;
+import org.apache.arrow.vector.VarCharVector;
+import org.apache.arrow.vector.VectorSchemaRoot;
+import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
+import sleeper.core.schema.type.Type;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 class ArrowIngestSupport {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ArrowIngestSupport.class);
+
+    private ArrowIngestSupport() {
+    }
 
     /**
      * Generate an {@link IntVector} which contains the indices of the rows of the {@link VectorSchemaRoot}, once the
@@ -27,6 +52,11 @@ class ArrowIngestSupport {
      * vectorschemaroot(intvector(1)) and so on.
      * <p>
      * The caller must close the returned vector once it is no longer needed.
+     *
+     * @param bufferAllocator  allocator for the sort order vector
+     * @param sleeperSchema    schema to use to sort by its keys
+     * @param vectorSchemaRoot vector to sort
+     * @return the sort order
      */
     public static IntVector createSortOrderVector(BufferAllocator bufferAllocator,
                                                   sleeper.core.schema.Schema sleeperSchema,
@@ -79,4 +109,3 @@ class ArrowIngestSupport {
         }
     }
 }
- 

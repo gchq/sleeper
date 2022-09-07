@@ -83,8 +83,8 @@ public class LeafPartitionQueryExecutor {
 
         Schema dataReadSchema = createSchemaForDataRead(leafPartitionQuery, tableSchema, compactionIterator, queryIterator);
 
-        FilterPredicate filterPredicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey
-                (tableSchema.getRowKeyFields(), leafPartitionQuery.getRegions(), leafPartitionQuery.getPartitionRegion());
+        FilterPredicate filterPredicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(
+                tableSchema.getRowKeyFields(), leafPartitionQuery.getRegions(), leafPartitionQuery.getPartitionRegion());
 
         LeafPartitionRecordRetriever retriever = new LeafPartitionRecordRetriever(executorService, conf);
 

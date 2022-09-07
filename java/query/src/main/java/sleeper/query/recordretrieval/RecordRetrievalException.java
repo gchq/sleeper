@@ -16,7 +16,7 @@
 package sleeper.query.recordretrieval;
 
 public class RecordRetrievalException extends Exception {
-    
+
     public RecordRetrievalException() {
         super();
     }
@@ -24,7 +24,7 @@ public class RecordRetrievalException extends Exception {
     public RecordRetrievalException(String msg) {
         super(msg);
     }
-    
+
     public RecordRetrievalException(String msg, Throwable cause) {
         super(msg, cause);
     }

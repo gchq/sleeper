@@ -140,3 +140,7 @@ LASER-Yi/workflow-status (https://github.com/marketplace/actions/workflow-status
 ScaCap/action-surefire-report (https://github.com/marketplace/actions/surefire-report)
 
 - Apache License, Version 2.0
+
+jwgmeligmeyling/checkstyle-github-action (https://github.com/marketplace/actions/push-checkstyle-report)
+
+- MIT License

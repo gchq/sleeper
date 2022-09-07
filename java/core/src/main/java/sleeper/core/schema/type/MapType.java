@@ -39,8 +39,12 @@ public class MapType implements Type {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         MapType mapType = (MapType) o;
         return keyType.equals(mapType.keyType) &&
                 valueType.equals(mapType.valueType);
