@@ -16,14 +16,6 @@
 package sleeper.compaction.jobexecution;
 
 import com.facebook.collections.ByteArray;
-import java.io.IOException;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -45,7 +37,6 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.MergingIterator;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.key.Key;
-import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 import sleeper.core.record.Record;
 import sleeper.core.record.SingleKeyComparator;
 import sleeper.core.schema.Field;
@@ -61,6 +52,17 @@ import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.utils.HadoopConfigurationProvider;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 
 /**
  * Executes a compaction {@link CompactionJob}, i.e. compacts N input files into a single
@@ -174,7 +176,7 @@ public class CompactSortedFiles {
         }
         writer.close();
         LOGGER.debug("Compaction job {}: Closed writer", compactionJob.getId());
-        
+
         // Remove the extension (if present), then add one
         String sketchesFilename = compactionJob.getOutputFile();
         sketchesFilename = FilenameUtils.removeExtension(sketchesFilename);
@@ -182,7 +184,7 @@ public class CompactSortedFiles {
         Path sketchesPath = new Path(sketchesFilename);
         new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, new Sketches(keyFieldToSketch), conf);
         LOGGER.info("Compaction job {}: Wrote sketches file to {}", compactionJob.getId(), sketchesPath);
-        
+
         for (CloseableIterator<Record> iterator : inputIterators) {
             iterator.close();
         }
@@ -270,7 +272,7 @@ public class CompactSortedFiles {
                 updateQuantilesSketch(record, rightKeyFieldToSketch);
             }
 
-            if ( (linesWrittenToLeftFile > 0 && 0 == linesWrittenToLeftFile % 1_000_000)
+            if ((linesWrittenToLeftFile > 0 && 0 == linesWrittenToLeftFile % 1_000_000)
                     || (linesWrittenToRightFile > 0 && 0 == linesWrittenToRightFile % 1_000_000)) {
                 LOGGER.info("Compaction job {}: Written {} lines to left file and {} lines to right file",
                         compactionJob.getId(), linesWrittenToLeftFile, linesWrittenToRightFile);
@@ -293,7 +295,7 @@ public class CompactSortedFiles {
         rightSketchesFilename = rightSketchesFilename + ".sketches";
         Path rightSketchesPath = new Path(rightSketchesFilename);
         new SketchesSerDeToS3(schema).saveToHadoopFS(rightSketchesPath, new Sketches(rightKeyFieldToSketch), conf);
-        
+
         LOGGER.info("Wrote sketches to {} and {}", leftSketchesPath, rightSketchesPath);
 
         for (CloseableIterator<Record> iterator : inputIterators) {
