@@ -106,4 +106,4 @@ jobs:
           echo "query.conclusion=${{ steps.query.outputs.conclusion }}" >> status.properties
           echo "statestore.status=${{ steps.statestore.outputs.status }}" >> status.properties
           echo "statestore.conclusion=${{ steps.statestore.outputs.conclusion }}" >> status.properties
-          mvn exec:java -Dexec.mainClass=sleeper.build.status.CheckGitHubStatus -Dexec.args=status.properties
+          mvn compile exec:java -Dexec.mainClass=sleeper.build.status.CheckGitHubStatus -Dexec.args=status.properties
