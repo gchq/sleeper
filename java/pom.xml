@@ -45,6 +45,7 @@
         <module>cdk-custom-resources</module>
         <module>metrics</module>
         <module>distribution</module>
+        <module>build</module>
     </modules>
 
     <properties>
