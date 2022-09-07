@@ -16,16 +16,10 @@
 package sleeper.clients;
 
 import com.amazonaws.services.s3.AmazonS3;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
-import java.util.UUID;
 import org.apache.commons.codec.binary.Base64;
-import sleeper.query.model.Query;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import sleeper.core.key.Key;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
@@ -37,8 +31,16 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
+import sleeper.query.model.Query;
 import sleeper.statestore.StateStoreException;
 import sleeper.table.job.TableLister;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+import java.util.UUID;
+
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
  * Allows a user to enter a query from the command line.
@@ -57,14 +59,14 @@ public abstract class QueryCommandLineClient {
     public void run() throws StateStoreException {
         TableProperties tableProperties = getTableProperties();
         init(tableProperties);
-        
+
         runQueries(tableProperties);
     }
 
     protected abstract void init(TableProperties tableProperties) throws StateStoreException;
-    
+
     protected abstract void submitQuery(TableProperties tableProperties, Query query);
-    
+
     protected TableProperties getTableProperties() {
         String tableName = getTableName(s3Client, instanceProperties);
         if (tableName == null) {
@@ -117,7 +119,7 @@ public abstract class QueryCommandLineClient {
             }
         }
         boolean maxInclusive = entry.equalsIgnoreCase("y");
-        
+
         List<Range> ranges = new ArrayList<>();
         int i = 0;
         for (Field field : schema.getRowKeyFields()) {
@@ -152,7 +154,7 @@ public abstract class QueryCommandLineClient {
                     System.out.print("Enter a minimum key for row key field " + field.getName() + " of type = " + field.getType() + " - hit return for no minimum: ");
                     String minRowKey = scanner.nextLine();
                     if ("".equals(minRowKey)) {
-                       min = null;
+                        min = null;
                     } else {
                         min = parse(minRowKey, (PrimitiveType) field.getType());
                     }
@@ -174,9 +176,9 @@ public abstract class QueryCommandLineClient {
             }
             i++;
         }
-        
+
         Region region = new Region(ranges);
-        
+
         return new Query.Builder(tableName, UUID.randomUUID().toString(), region).build();
     }
 
@@ -234,7 +236,7 @@ public abstract class QueryCommandLineClient {
                 }
             }
         }
-        
+
         System.out.println("Thie table has schema " + tablePropertiesProvider.getTableProperties(tableName).getSchema());
 
         return tableName;
@@ -255,7 +257,7 @@ public abstract class QueryCommandLineClient {
             parsedKeys.add(parse(rowKey, schema.getRowKeyTypes().get(i)));
             i++;
         }
-        
+
         return Key.create(parsedKeys);
     }
 
@@ -278,7 +280,7 @@ public abstract class QueryCommandLineClient {
         }
         throw new IllegalArgumentException("Unknown type " + type);
     }
-    
+
     private Object getMinimum(PrimitiveType type) {
         if (type instanceof IntType) {
             return Integer.MIN_VALUE;

@@ -17,18 +17,22 @@ package sleeper;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import java.io.IOException;
 import sleeper.configuration.properties.InstanceProperties;
+
+import java.io.IOException;
 
 /**
  *
  */
 public class ClientUtils {
 
+    private ClientUtils() {
+    }
+
     public static InstanceProperties getInstanceProperties(String instanceId) throws IOException {
         return getInstanceProperties(AmazonS3ClientBuilder.defaultClient(), instanceId);
     }
-    
+
     public static InstanceProperties getInstanceProperties(AmazonS3 amazonS3, String instanceId) throws IOException {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(amazonS3, instanceId);
