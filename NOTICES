@@ -128,3 +128,15 @@ boto3:
 s3fs:
 
 - The 3-Clause BSD License
+
+
+
+The build pipeline uses the following GitHub Actions from the marketplace.
+
+LASER-Yi/workflow-status (https://github.com/marketplace/actions/workflow-status)
+
+- MIT License
+
+ScaCap/action-surefire-report (https://github.com/marketplace/actions/surefire-report)
+
+- Apache License, Version 2.0
