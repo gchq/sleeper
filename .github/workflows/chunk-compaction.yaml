@@ -1,8 +1,8 @@
-name: Build Compaction Job Execution Module
+name: Build Compaction Modules
 on:
   push:
     paths:
-      - '.github/workflows/chunk-compaction-job-execution.yaml'
+      - '.github/workflows/chunk-compaction.yaml'
       - '.github/workflows/chunk.yaml'
       - 'java/pom.xml'
       - 'java/compaction-job-execution/**'
@@ -21,4 +21,4 @@ jobs:
     uses: ./.github/workflows/chunk.yaml
     with:
       chunkName: Compaction Job Execution
-      moduleList: compaction-job-execution
+      moduleList: compaction-job-execution,compaction-job-creation
