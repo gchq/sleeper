@@ -23,6 +23,9 @@ import java.util.Properties;
 
 public class CheckGitHubStatus {
 
+    private CheckGitHubStatus() {
+    }
+
     public static void main(String[] args) throws IOException {
         if (args.length != 1) {
             throw new IllegalArgumentException("Usage: <properties file path>");
