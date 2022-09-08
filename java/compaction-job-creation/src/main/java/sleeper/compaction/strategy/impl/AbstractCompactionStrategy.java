@@ -38,6 +38,11 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
     protected Schema schema;
     protected int compactionFilesBatchSize;
     protected CompactionFactory factory;
+    protected final LeafPartitionCompactionStrategy leafStrategy;
+
+    protected AbstractCompactionStrategy(LeafPartitionCompactionStrategy leafStrategy) {
+        this.leafStrategy = leafStrategy;
+    }
 
     @Override
     public void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
@@ -45,8 +50,6 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
         schema = tableProperties.getSchema();
         compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
     }
-
-    protected abstract List<CompactionJob> createJobsForLeafPartition(Partition partition, List<FileInfo> fileInfos);
 
     protected List<CompactionJob> createJobsForNonLeafPartition(Partition partition,
                                                                 List<FileInfo> fileInfos,

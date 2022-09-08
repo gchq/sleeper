@@ -39,7 +39,7 @@ public class BasicCompactionStrategy extends AbstractCompactionStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(BasicCompactionStrategy.class);
 
     public BasicCompactionStrategy() {
-        super();
+        super(null);
     }
 
     @Override
@@ -75,7 +75,6 @@ public class BasicCompactionStrategy extends AbstractCompactionStrategy {
         return compactionJobs;
     }
 
-    @Override
     protected List<CompactionJob> createJobsForLeafPartition(Partition partition, List<FileInfo> fileInfos) {
         List<CompactionJob> compactionJobs = new ArrayList<>();
         List<FileInfo> filesInAscendingOrder = getFilesInAscendingOrder(partition, fileInfos);
