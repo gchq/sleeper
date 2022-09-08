@@ -468,8 +468,8 @@ public class S3FileInfoStore implements FileInfoStore {
         fileInfo.setFilename((String) record.get("fileName"));
         fileInfo.setFileStatus(FileInfo.FileStatus.valueOf((String) record.get("fileStatus")));
         fileInfo.setPartitionId((String) record.get("partitionId"));
-        fileInfo.setLastStateStoreUpdateTime((long) record.get("lastStateStoreUpdateTime"));
-        fileInfo.setNumberOfRecords((long) record.get("numberOfRecords"));
+        fileInfo.setLastStateStoreUpdateTime((Long) record.get("lastStateStoreUpdateTime"));
+        fileInfo.setNumberOfRecords((Long) record.get("numberOfRecords"));
         String jobId = (String) record.get("jobId");
         if ("null".equals(jobId)) {
             fileInfo.setJobId(null);

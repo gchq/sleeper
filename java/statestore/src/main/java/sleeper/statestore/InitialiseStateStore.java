@@ -39,9 +39,11 @@ import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.s3.S3StateStore;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -130,7 +132,8 @@ public class InitialiseStateStore {
             boolean stringsBase64Encoded = 4 == args.length && Boolean.parseBoolean(args[2]);
 
             PrimitiveType rowKey1Type = tableProperties.getSchema().getRowKeyTypes().get(0);
-            BufferedReader reader = new BufferedReader(new FileReader(splitPointsFile));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(
+                    Files.newInputStream(Paths.get(splitPointsFile)), StandardCharsets.UTF_8));
             List<String> lines = new ArrayList<>();
             String lineFromFile = reader.readLine();
             while (null != lineFromFile) {

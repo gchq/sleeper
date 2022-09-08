@@ -105,11 +105,17 @@ public class FileInfoSerDe {
                 keyType = new ByteArrayType();
                 int minBASize = dis.readInt();
                 byte[] min = new byte[minBASize];
-                dis.read(min);
+                int minResult = dis.read(min);
+                if (minResult != minBASize) {
+                    throw new IOException("Unable to read all bytes from stream");
+                }
                 minRowKey.add(min);
                 int maxBASize = dis.readInt();
                 byte[] max = new byte[maxBASize];
-                dis.read(max);
+                int maxResult = dis.read(max);
+                if (maxResult != maxBASize) {
+                    throw new IOException("Unable to read all bytes from stream");
+                }
                 maxRowKey.add(max);
             } else {
                 throw new IOException("Unknown type of " + simpleClassName);
