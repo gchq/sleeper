@@ -39,9 +39,10 @@ import sleeper.statestore.StateStoreException;
 import sleeper.table.util.StateStoreProvider;
 
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedSet;
@@ -127,7 +128,7 @@ public class ExportSplitPoints {
         ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, tableProperties.getSchema());
         List<Object> splitPoints = exportSplitPoints.getSplitPoints();
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(new File(args[2])))) {
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(args[2]), StandardCharsets.UTF_8))) {
             for (Object splitPoint : splitPoints) {
                 if (splitPoint instanceof ByteArray) {
                     writer.write(Base64.encodeBase64String(((ByteArray) splitPoint).getArray()));

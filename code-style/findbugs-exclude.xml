@@ -16,9 +16,12 @@
   -->
 <FindBugsFilter>
     <Match>
-        <Bug pattern="SE_COMPARATOR_SHOULD_BE_SERIALIZABLE" />
+        <Bug pattern="SE_COMPARATOR_SHOULD_BE_SERIALIZABLE"/>
     </Match>
     <Match>
-        <Bug pattern="BC_UNCONFIRMED_CAST" />
+        <Bug pattern="BC_UNCONFIRMED_CAST"/>
+    </Match>
+    <Match>
+        <Bug pattern="DM_EXIT"/>
     </Match>
 </FindBugsFilter>

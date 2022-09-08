@@ -35,6 +35,7 @@ import sleeper.table.util.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -100,7 +101,7 @@ public class FilesStatusReport {
         }
 
         if (args.length >= 5) {
-            reporterType = args[4].toUpperCase();
+            reporterType = args[4].toUpperCase(Locale.ROOT);
         }
 
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();

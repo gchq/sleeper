@@ -114,8 +114,8 @@ public class FileStatusCollector {
         Integer max = null;
         int total = 0;
         int count = 0;
-        for (String partitionId : partitionIdToFiles.keySet()) {
-            int size = partitionIdToFiles.get(partitionId).size();
+        for (Map.Entry<String, Set<String>> entry : partitionIdToFiles.entrySet()) {
+            int size = entry.getValue().size();
             if (null == min) {
                 min = size;
             } else if (size < min) {

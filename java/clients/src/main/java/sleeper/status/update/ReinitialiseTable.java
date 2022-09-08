@@ -46,8 +46,11 @@ import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.s3.S3StateStore;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -276,34 +279,37 @@ public class ReinitialiseTable {
             splitPoints = new ArrayList<>();
 
             PrimitiveType rowKey1Type = tableProperties.getSchema().getRowKeyTypes().get(0);
-            BufferedReader reader = new BufferedReader(new FileReader(splitPointsFileLocation));
-            List<String> lines = new ArrayList<>();
-            String lineFromFile = reader.readLine();
-            while (null != lineFromFile) {
-                lines.add(lineFromFile);
-                lineFromFile = reader.readLine();
-            }
-            reader.close();
-
-            for (String line : lines) {
-                if (rowKey1Type instanceof IntType) {
-                    splitPoints.add(Integer.parseInt(line));
-                } else if (rowKey1Type instanceof LongType) {
-                    splitPoints.add(Long.parseLong(line));
-                } else if (rowKey1Type instanceof StringType) {
-                    if (splitPointStringsBase64Encoded) {
-                        byte[] encodedString = Base64.decodeBase64(line);
-                        splitPoints.add(new String(encodedString, StandardCharsets.UTF_8));
-                    } else {
-                        splitPoints.add(line);
-                    }
-                } else if (rowKey1Type instanceof ByteArrayType) {
-                    splitPoints.add(Base64.decodeBase64(line));
-                } else {
-                    throw new RuntimeException("Unknown key type " + rowKey1Type);
+            try (InputStream inputStream = new FileInputStream(splitPointsFileLocation);
+                 Reader tempReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+                 BufferedReader reader = new BufferedReader(tempReader)) {
+                List<String> lines = new ArrayList<>();
+                String lineFromFile = reader.readLine();
+                while (null != lineFromFile) {
+                    lines.add(lineFromFile);
+                    lineFromFile = reader.readLine();
                 }
+                reader.close();
+
+                for (String line : lines) {
+                    if (rowKey1Type instanceof IntType) {
+                        splitPoints.add(Integer.parseInt(line));
+                    } else if (rowKey1Type instanceof LongType) {
+                        splitPoints.add(Long.parseLong(line));
+                    } else if (rowKey1Type instanceof StringType) {
+                        if (splitPointStringsBase64Encoded) {
+                            byte[] encodedString = Base64.decodeBase64(line);
+                            splitPoints.add(new String(encodedString, StandardCharsets.UTF_8));
+                        } else {
+                            splitPoints.add(line);
+                        }
+                    } else if (rowKey1Type instanceof ByteArrayType) {
+                        splitPoints.add(Base64.decodeBase64(line));
+                    } else {
+                        throw new RuntimeException("Unknown key type " + rowKey1Type);
+                    }
+                }
+                System.out.println("Read " + splitPoints.size() + " split points from file");
             }
-            System.out.println("Read " + splitPoints.size() + " split points from file");
         }
         return splitPoints;
     }
@@ -374,6 +380,8 @@ public class ReinitialiseTable {
                 }
             }
             System.out.println("Table reinitialised successfully");
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
             System.out.println("\nAn Error occurred while trying to reinitialise the table. " +
                     "The error message is as follows:\n\n" + e.getMessage()

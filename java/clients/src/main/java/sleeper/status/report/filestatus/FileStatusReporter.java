@@ -17,6 +17,8 @@ package sleeper.status.report.filestatus;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.function.Function;
 
 /**
@@ -30,8 +32,12 @@ public interface FileStatusReporter {
     static String asString(
             Function<PrintStream, FileStatusReporter> getReporter, FileStatus fileStatusReport, boolean verbose) {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        getReporter.apply(new PrintStream(os))
-                .report(fileStatusReport, verbose);
-        return os.toString();
+        try {
+            getReporter.apply(new PrintStream(os, false, StandardCharsets.UTF_8.displayName()))
+                    .report(fileStatusReport, verbose);
+            return os.toString(StandardCharsets.UTF_8.displayName());
+        } catch (UnsupportedEncodingException ignored) {
+            return null;
+        }
     }
 }
