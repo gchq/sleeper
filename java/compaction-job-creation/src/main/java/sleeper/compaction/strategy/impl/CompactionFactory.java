@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.schema.Schema;
 import sleeper.statestore.FileInfo;
 
 import java.util.Arrays;
@@ -38,7 +37,6 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 public class CompactionFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactionFactory.class);
 
-    private final Schema schema;
     private final String tableName;
     private final String tableBucket;
     private final String fs;
@@ -46,7 +44,6 @@ public class CompactionFactory {
     private final String iteratorConfig;
 
     public CompactionFactory(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        schema = tableProperties.getSchema();
         tableName = tableProperties.get(TABLE_NAME);
         tableBucket = tableProperties.get(DATA_BUCKET);
         fs = instanceProperties.get(FILE_SYSTEM);

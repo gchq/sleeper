@@ -31,8 +31,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.table.TableProperty.SIZE_RATIO_COMPACTION_STRATEGY_RATIO;
-
 /**
  * A {@link sleeper.compaction.strategy.CompactionStrategy} that is similar to the strategy used in Accumulo.
  * Given files sorted into increasing size order, it tests whether the sum of the
@@ -54,7 +52,6 @@ import static sleeper.configuration.properties.table.TableProperty.SIZE_RATIO_CO
 public class SizeRatioCompactionStrategy extends AbstractCompactionStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(SizeRatioCompactionStrategy.class);
 
-    private int ratio;
     private int maxConcurrentCompactionJobsPerPartition;
 
     public SizeRatioCompactionStrategy() {
@@ -64,7 +61,6 @@ public class SizeRatioCompactionStrategy extends AbstractCompactionStrategy {
     @Override
     public void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
         super.init(instanceProperties, tableProperties);
-        ratio = tableProperties.getInt(SIZE_RATIO_COMPACTION_STRATEGY_RATIO);
         maxConcurrentCompactionJobsPerPartition = tableProperties.getInt(TableProperty.SIZE_RATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION);
     }
 
