@@ -15,6 +15,8 @@
  */
 package sleeper.compaction.strategy.impl;
 
+import sleeper.compaction.strategy.DelegatingCompactionStrategy;
+
 /**
  * A {@link sleeper.compaction.strategy.CompactionStrategy} that is similar to the strategy used in Accumulo.
  * Given files sorted into increasing size order, it tests whether the sum of the
@@ -33,7 +35,7 @@ package sleeper.compaction.strategy.impl;
  * The table property sleeper.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition
  * controls how many jobs can be running concurrently for each partition.
  */
-public class SizeRatioCompactionStrategy extends AbstractCompactionStrategy {
+public class SizeRatioCompactionStrategy extends DelegatingCompactionStrategy {
 
     public SizeRatioCompactionStrategy() {
         super(new SizeRatioLeafStrategy(), new ShouldCreateJobsWithMaxPerPartition());

@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.strategy.impl;
+package sleeper.compaction.strategy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.strategy.CompactionStrategy;
+import sleeper.compaction.strategy.impl.CompactionFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
@@ -35,8 +35,8 @@ import java.util.stream.Collectors;
 import static sleeper.compaction.strategy.impl.CompactionUtils.getFilesInAscendingOrder;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 
-public abstract class AbstractCompactionStrategy implements CompactionStrategy {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractCompactionStrategy.class);
+public class DelegatingCompactionStrategy implements CompactionStrategy {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DelegatingCompactionStrategy.class);
 
     protected final LeafPartitionCompactionStrategy leafStrategy;
     protected final ShouldCreateJobsStrategy shouldCreateJobsStrategy;
@@ -44,12 +44,12 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
     protected Schema schema;
     protected int compactionFilesBatchSize;
 
-    protected AbstractCompactionStrategy(LeafPartitionCompactionStrategy leafStrategy) {
+    public DelegatingCompactionStrategy(LeafPartitionCompactionStrategy leafStrategy) {
         this.leafStrategy = leafStrategy;
         this.shouldCreateJobsStrategy = ShouldCreateJobsStrategy.yes();
     }
 
-    protected AbstractCompactionStrategy(
+    public DelegatingCompactionStrategy(
             LeafPartitionCompactionStrategy leafStrategy, ShouldCreateJobsStrategy shouldCreateJobsStrategy) {
         this.leafStrategy = leafStrategy;
         this.shouldCreateJobsStrategy = shouldCreateJobsStrategy;

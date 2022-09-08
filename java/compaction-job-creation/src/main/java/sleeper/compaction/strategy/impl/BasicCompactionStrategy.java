@@ -15,12 +15,14 @@
  */
 package sleeper.compaction.strategy.impl;
 
+import sleeper.compaction.strategy.DelegatingCompactionStrategy;
+
 /**
  * A simple {@link sleeper.compaction.strategy.CompactionStrategy} that lists the active files for a partition in increasing order of the number
  * of records they contain, and iterates through this list creating compaction jobs with at most
  * maximumNumberOfFilesToCompact files in each.
  */
-public class BasicCompactionStrategy extends AbstractCompactionStrategy {
+public class BasicCompactionStrategy extends DelegatingCompactionStrategy {
 
     public BasicCompactionStrategy() {
         super(new BasicLeafStrategy());
