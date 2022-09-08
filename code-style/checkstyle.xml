@@ -182,6 +182,9 @@
         <module name="UpperEll">
             <property name="id" value="upperEll"/>
         </module>
+        <module name="IllegalImport">
+            <property name="illegalPkgs" value="org.junit.Assert"/>
+        </module>
     </module>
     <module name="UniqueProperties">
         <property name="id" value="uniqueProperties"/>
