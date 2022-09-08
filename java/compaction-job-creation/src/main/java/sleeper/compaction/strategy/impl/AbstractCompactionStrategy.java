@@ -26,8 +26,11 @@ import sleeper.core.schema.Schema;
 import sleeper.statestore.FileInfo;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static sleeper.compaction.strategy.impl.CompactionUtils.getFilesInAscendingOrder;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
@@ -61,9 +64,51 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
         compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
     }
 
-    protected List<CompactionJob> createJobsForNonLeafPartition(Partition partition,
-                                                                List<FileInfo> fileInfos,
-                                                                Map<String, Partition> partitionIdToPartition) {
+    @Override
+    public List<CompactionJob> createCompactionJobs(List<FileInfo> activeFilesWithJobId, List<FileInfo> activeFilesWithNoJobId, List<Partition> allPartitions) {
+        // Get list of partition ids from the above files
+        Set<String> partitionIds = activeFilesWithNoJobId.stream()
+                .map(FileInfo::getPartitionId)
+                .collect(Collectors.toSet());
+
+        // Get map from partition id to partition
+        Map<String, Partition> partitionIdToPartition = new HashMap<>();
+        for (Partition partition : allPartitions) {
+            partitionIdToPartition.put(partition.getId(), partition);
+        }
+
+        // Loop through partitions for the active files with no job id
+        List<CompactionJob> compactionJobs = new ArrayList<>();
+        for (String partitionId : partitionIds) {
+            Partition partition = partitionIdToPartition.get(partitionId);
+            if (null == partition) {
+                throw new RuntimeException("Cannot find partition for partition id " + partitionId);
+            }
+
+            if (partition.isLeafPartition()) {
+                long maxNumberOfJobsToCreate = shouldCreateJobsStrategy.maxCompactionJobsToCreate(
+                        partition, activeFilesWithJobId, activeFilesWithNoJobId);
+                if (maxNumberOfJobsToCreate < 1) {
+                    continue;
+                }
+                LOGGER.info("Max jobs to create = {}", maxNumberOfJobsToCreate);
+                List<CompactionJob> jobs = leafStrategy.createJobsForLeafPartition(partition, activeFilesWithNoJobId);
+                LOGGER.info("Defined {} compaction job{} for partition {}", jobs.size(), 1 == jobs.size() ? "s" : "", partitionId);
+                while (jobs.size() > maxNumberOfJobsToCreate) {
+                    jobs.remove(jobs.size() - 1);
+                }
+                LOGGER.info("Created {} compaction job{} for partition {}", jobs.size(), 1 == jobs.size() ? "s" : "", partitionId);
+                compactionJobs.addAll(jobs);
+            } else {
+                compactionJobs.addAll(createJobsForNonLeafPartition(partition, activeFilesWithNoJobId, partitionIdToPartition));
+            }
+        }
+
+        return compactionJobs;
+    }
+
+    private List<CompactionJob> createJobsForNonLeafPartition(
+            Partition partition, List<FileInfo> fileInfos, Map<String, Partition> partitionIdToPartition) {
         List<CompactionJob> compactionJobs = new ArrayList<>();
         List<FileInfo> filesInAscendingOrder = getFilesInAscendingOrder(partition, fileInfos);
 
