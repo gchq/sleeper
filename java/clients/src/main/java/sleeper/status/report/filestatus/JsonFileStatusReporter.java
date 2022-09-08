@@ -18,20 +18,29 @@ package sleeper.status.report.filestatus;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import java.io.PrintStream;
+
 /**
  * An implementation that returns {@link FileStatus} information in JSON format
  * to a user via the console.
  */
 public class JsonFileStatusReporter implements FileStatusReporter {
 
-    private final Gson gson;
+    private final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues()
+            .setExclusionStrategies(new JsonFileStatusExcludes())
+            .create();
+    private final PrintStream out;
 
     public JsonFileStatusReporter() {
-        this.gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
+        this(System.out);
+    }
+
+    public JsonFileStatusReporter(PrintStream out) {
+        this.out = out;
     }
 
     @Override
     public void report(FileStatus fileStatusReport, boolean verbose) {
-        System.out.println(gson.toJson(fileStatusReport));
+        out.println(gson.toJson(fileStatusReport));
     }
 }

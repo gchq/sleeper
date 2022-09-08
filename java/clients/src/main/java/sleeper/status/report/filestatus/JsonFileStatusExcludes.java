@@ -13,11 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestore;
+package sleeper.status.report.filestatus;
 
-/**
- * Stores information about the data files and their status (i.e. {@link FileInfo}s,
- * and the {@link sleeper.core.partition.Partition}s).
- */
-public interface StateStore extends FileInfoStore, PartitionStore {
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
+import sleeper.statestore.FileInfo;
+
+public class JsonFileStatusExcludes implements ExclusionStrategy {
+    @Override
+    public boolean shouldSkipField(FieldAttributes f) {
+        if (FileInfo.class == f.getDeclaringClass() && "rowKeyTypes".equals(f.getName())) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean shouldSkipClass(Class<?> clazz) {
+        return false;
+    }
 }

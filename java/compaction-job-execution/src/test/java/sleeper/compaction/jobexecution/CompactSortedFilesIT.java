@@ -73,6 +73,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assertions.tuple;
 
 public class CompactSortedFilesIT {
@@ -1623,15 +1624,19 @@ public class CompactSortedFilesIT {
     }
 
     private static void assertReadyForGC(DynamoDBStateStore dynamoStateStore, FileInfo... files) {
-        assertThat(dynamoStateStore.getReadyForGCFiles()).toIterable()
-                .extracting(
-                        FileInfo::getFilename,
-                        FileInfo::getRowKeyTypes,
-                        FileInfo::getPartitionId,
-                        FileInfo::getFileStatus)
-                .containsExactlyInAnyOrder(Arrays.stream(files)
-                        .map(file -> tuple(file.getFilename(), file.getRowKeyTypes(), file.getPartitionId(),
-                                FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION))
-                        .toArray(Tuple[]::new));
+        try {
+            assertThat(dynamoStateStore.getReadyForGCFiles()).toIterable()
+                    .extracting(
+                            FileInfo::getFilename,
+                            FileInfo::getRowKeyTypes,
+                            FileInfo::getPartitionId,
+                            FileInfo::getFileStatus)
+                    .containsExactlyInAnyOrder(Arrays.stream(files)
+                            .map(file -> tuple(file.getFilename(), file.getRowKeyTypes(), file.getPartitionId(),
+                                    FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION))
+                            .toArray(Tuple[]::new));
+        } catch (StateStoreException e) {
+            fail("StateStoreException generated: " + e.getMessage());
+        }
     }
 }
