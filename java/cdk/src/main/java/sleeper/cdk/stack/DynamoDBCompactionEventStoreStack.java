@@ -16,6 +16,7 @@
 package sleeper.cdk.stack;
 
 import sleeper.compaction.dynamodb.DynamoDBCompactionJobEventFormat;
+import sleeper.compaction.dynamodb.DynamoDBCompactionJobEventStore;
 import sleeper.configuration.properties.InstanceProperties;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.dynamodb.Attribute;
@@ -40,7 +41,7 @@ public class DynamoDBCompactionEventStoreStack implements CompactionEventStoreSt
 
         this.jobsTable = Table.Builder
                 .create(scope, "DynamoDBCompactionJobEventsTable")
-                .tableName(String.join("-", "sleeper", instanceId, "compaction-job-events"))
+                .tableName(DynamoDBCompactionJobEventStore.jobEventsTableName(instanceId))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
