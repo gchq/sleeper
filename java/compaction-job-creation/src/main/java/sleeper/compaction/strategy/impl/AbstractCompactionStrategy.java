@@ -47,9 +47,7 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
     @Override
     public void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
         factory = new CompactionFactory(instanceProperties, tableProperties);
-        if (leafStrategy != null) {
-            leafStrategy.init(instanceProperties, tableProperties, factory);
-        }
+        leafStrategy.init(instanceProperties, tableProperties, factory);
         schema = tableProperties.getSchema();
         compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
     }

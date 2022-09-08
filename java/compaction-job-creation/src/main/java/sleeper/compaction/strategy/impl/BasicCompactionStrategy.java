@@ -15,8 +15,6 @@
  */
 package sleeper.compaction.strategy.impl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfo;
@@ -28,18 +26,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static sleeper.compaction.strategy.impl.CompactionUtils.getFilesInAscendingOrder;
-
 /**
  * A simple {@link sleeper.compaction.strategy.CompactionStrategy} that lists the active files for a partition in increasing order of the number
  * of records they contain, and iterates through this list creating compaction jobs with at most
  * maximumNumberOfFilesToCompact files in each.
  */
 public class BasicCompactionStrategy extends AbstractCompactionStrategy {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BasicCompactionStrategy.class);
 
     public BasicCompactionStrategy() {
-        super(null);
+        super(new BasicLeafStrategy());
     }
 
     @Override
@@ -66,7 +61,7 @@ public class BasicCompactionStrategy extends AbstractCompactionStrategy {
                 throw new RuntimeException("Cannot find partition for partition id " + partitionId);
             }
             if (partition.isLeafPartition()) {
-                compactionJobs.addAll(createJobsForLeafPartition(partition, activeFilesWithNoJobId));
+                compactionJobs.addAll(leafStrategy.createJobsForLeafPartition(partition, activeFilesWithNoJobId));
             } else {
                 compactionJobs.addAll(createJobsForNonLeafPartition(partition, activeFilesWithNoJobId, partitionIdToPartition));
             }
@@ -75,22 +70,4 @@ public class BasicCompactionStrategy extends AbstractCompactionStrategy {
         return compactionJobs;
     }
 
-    protected List<CompactionJob> createJobsForLeafPartition(Partition partition, List<FileInfo> fileInfos) {
-        List<CompactionJob> compactionJobs = new ArrayList<>();
-        List<FileInfo> filesInAscendingOrder = getFilesInAscendingOrder(partition, fileInfos);
-
-        // Iterate through files, creating jobs for batches of maximumNumberOfFilesToCompact files
-        List<FileInfo> filesForJob = new ArrayList<>();
-        for (FileInfo fileInfo : filesInAscendingOrder) {
-            filesForJob.add(fileInfo);
-            if (filesForJob.size() >= compactionFilesBatchSize) {
-                // Create job for these files
-                LOGGER.info("Creating a job to compact {} files in partition {}",
-                        filesForJob.size(), partition);
-                compactionJobs.add(factory.createCompactionJob(filesForJob, partition.getId()));
-                filesForJob.clear();
-            }
-        }
-        return compactionJobs;
-    }
 }
