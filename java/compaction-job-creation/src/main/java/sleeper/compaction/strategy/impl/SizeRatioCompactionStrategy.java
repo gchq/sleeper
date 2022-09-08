@@ -38,6 +38,6 @@ import sleeper.compaction.strategy.DelegatingCompactionStrategy;
 public class SizeRatioCompactionStrategy extends DelegatingCompactionStrategy {
 
     public SizeRatioCompactionStrategy() {
-        super(new SizeRatioLeafStrategy(), new ShouldCreateJobsWithMaxPerPartition());
+        super(new SizeRatioLeafStrategy(), new SizeRatioShouldCreateJobsStrategy());
     }
 }

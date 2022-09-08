@@ -27,8 +27,8 @@ import sleeper.statestore.FileInfo;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ShouldCreateJobsWithMaxPerPartition implements ShouldCreateJobsStrategy {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ShouldCreateJobsWithMaxPerPartition.class);
+public class SizeRatioShouldCreateJobsStrategy implements ShouldCreateJobsStrategy {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SizeRatioShouldCreateJobsStrategy.class);
 
     private long maxConcurrentCompactionJobsPerPartition;
 
