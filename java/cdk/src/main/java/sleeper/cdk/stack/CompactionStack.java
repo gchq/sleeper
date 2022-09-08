@@ -118,6 +118,7 @@ public class CompactionStack extends NestedStack {
     private Queue splittingJobQ;
     private Queue splittingDLQ;
     private final InstanceProperties instanceProperties;
+    private final CompactionEventStore eventStore;
 
     public CompactionStack(
             Construct scope,
@@ -128,6 +129,7 @@ public class CompactionStack extends NestedStack {
             InstanceProperties instanceProperties) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
+        eventStore = CompactionEventStore.from(this, instanceProperties);
 
         // The compaction stack consists of the following components:
         //  - An SQS queue for the compaction jobs.
@@ -308,6 +310,7 @@ public class CompactionStack extends NestedStack {
         jarsBucket.grantRead(handler);
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(handler));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadPartitionMetadata(handler));
+        eventStore.grantWriteJobEvent(handler);
 
         // Grant this function permission to put messages on the compaction
         // queue and the compaction splitting queue
@@ -376,6 +379,7 @@ public class CompactionStack extends NestedStack {
         dataBuckets.forEach(bucket -> bucket.grantReadWrite(taskDefinition.getTaskRole()));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDefinition.getTaskRole()));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(taskDefinition.getTaskRole()));
+        eventStore.grantWriteJobEvent(taskDefinition.getTaskRole());
 
         compactionMergeJobsQueue.grantConsumeMessages(taskDefinition.getTaskRole());
 
@@ -436,6 +440,7 @@ public class CompactionStack extends NestedStack {
         dataBuckets.forEach(bucket -> bucket.grantReadWrite(taskDefinition.getTaskRole()));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDefinition.getTaskRole()));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(taskDefinition.getTaskRole()));
+        eventStore.grantWriteJobEvent(taskDefinition.getTaskRole());
 
         compactionSplittingMergeJobsQueue.grantConsumeMessages(taskDefinition.getTaskRole());
 
