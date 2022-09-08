@@ -35,6 +35,10 @@ import java.util.stream.Collectors;
 import static sleeper.compaction.strategy.impl.CompactionUtils.getFilesInAscendingOrder;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 
+/**
+ * A {@link CompactionStrategy} that handles splitting compactions for non-leaf partitions,
+ * and delegates to {@link LeafPartitionCompactionStrategy} and {@link ShouldCreateJobsStrategy}.
+ */
 public class DelegatingCompactionStrategy implements CompactionStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(DelegatingCompactionStrategy.class);
 
