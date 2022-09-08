@@ -437,7 +437,6 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public void initialise() throws StateStoreException {
-
     }
 
     public static final class Builder {
