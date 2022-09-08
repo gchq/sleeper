@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.strategy.impl;
 
-import org.apache.commons.lang3.tuple.MutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
@@ -27,12 +26,10 @@ import sleeper.core.schema.Schema;
 import sleeper.statestore.FileInfo;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
@@ -52,9 +49,11 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
     protected int compactionFilesBatchSize;
     protected String iteratorClassName;
     protected String iteratorConfig;
+    protected CompactionFactory factory;
 
     @Override
     public void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        factory = new CompactionFactory(instanceProperties, tableProperties);
         schema = tableProperties.getSchema();
         tableName = tableProperties.get(TABLE_NAME);
         tableBucket = tableProperties.get(DATA_BUCKET);
@@ -90,7 +89,7 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
                         .getMax();
                 LOGGER.info("Split point is {}", splitPoint);
 
-                compactionJobs.add(createSplittingCompactionJob(filesForJob,
+                compactionJobs.add(factory.createSplittingCompactionJob(filesForJob,
                         partition.getId(),
                         leftPartition.getId(),
                         rightPartition.getId(),
@@ -114,7 +113,7 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
                     .getMax();
             LOGGER.info("Split point is {}", splitPoint);
 
-            compactionJobs.add(createSplittingCompactionJob(filesForJob,
+            compactionJobs.add(factory.createSplittingCompactionJob(filesForJob,
                     partition.getId(),
                     leftPartition.getId(),
                     rightPartition.getId(),
@@ -153,63 +152,4 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
         return fileInfosList;
     }
 
-    protected CompactionJob createSplittingCompactionJob(List<FileInfo> files,
-                                                         String partition,
-                                                         String leftPartitionId,
-                                                         String rightPartitionId,
-                                                         Object splitPoint,
-                                                         int dimension,
-                                                         String s3Bucket) {
-        String jobId = UUID.randomUUID().toString();
-        List<String> jobFiles = files.stream()
-                .map(FileInfo::getFilename)
-                .collect(Collectors.toList());
-        CompactionJob compactionJob = new CompactionJob(tableName, jobId);
-        compactionJob.setIsSplittingJob(true);
-        compactionJob.setInputFiles(jobFiles);
-        String leftOutputFile = fs + s3Bucket + "/partition_" + leftPartitionId + "/" + jobId + ".parquet";
-        String rightOutputFile = fs + s3Bucket + "/partition_" + rightPartitionId + "/" + jobId + ".parquet";
-        compactionJob.setOutputFiles(new MutablePair<>(leftOutputFile, rightOutputFile));
-        compactionJob.setSplitPoint(splitPoint);
-        compactionJob.setDimension(dimension);
-        compactionJob.setPartitionId(partition);
-        compactionJob.setChildPartitions(Arrays.asList(leftPartitionId, rightPartitionId));
-        compactionJob.setIteratorClassName(iteratorClassName);
-        compactionJob.setIteratorConfig(iteratorConfig);
-
-        LOGGER.info("Created compaction job of id {} to compact and split {} files in partition {}, into partitions {} and {}, to output files {}, {}",
-                jobId, files.size(), partition, leftPartitionId, rightPartitionId, leftOutputFile, rightOutputFile);
-
-        return compactionJob;
-    }
-
-    protected CompactionJob createCompactionJob(List<FileInfo> files,
-                                                String partition,
-                                                String s3Bucket) {
-        for (FileInfo fileInfo : files) {
-            if (!partition.equals(fileInfo.getPartitionId())) {
-                throw new IllegalArgumentException("Found file with partition which is different to the provided partition (partition = "
-                        + partition + ", FileInfo = " + fileInfo);
-            }
-        }
-
-        String jobId = UUID.randomUUID().toString();
-        String outputFile = fs + s3Bucket + "/partition_" + partition + "/" + jobId + ".parquet";
-        List<String> jobFiles = files.stream()
-                .map(FileInfo::getFilename)
-                .collect(Collectors.toList());
-        CompactionJob compactionJob = new CompactionJob(tableName, jobId);
-        compactionJob.setIsSplittingJob(false);
-        compactionJob.setDimension(-1);
-        compactionJob.setInputFiles(jobFiles);
-        compactionJob.setOutputFile(outputFile);
-        compactionJob.setPartitionId(partition);
-        compactionJob.setIteratorClassName(iteratorClassName);
-        compactionJob.setIteratorConfig(iteratorConfig);
-
-        LOGGER.info("Created compaction job of id {} to compact and split {} files in partition {} to output file {}",
-                jobId, files.size(), partition, outputFile);
-
-        return compactionJob;
-    }
 }

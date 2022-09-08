@@ -136,7 +136,7 @@ public class SizeRatioCompactionStrategy extends AbstractCompactionStrategy {
         // and creating a job for each group as long as it meets the criteria.
         List<CompactionJob> compactionJobs = new ArrayList<>();
         if (filesThatMeetCriteria.size() <= compactionFilesBatchSize) {
-            compactionJobs.add(createCompactionJob(filesThatMeetCriteria, partition.getId(), tableBucket));
+            compactionJobs.add(factory.createCompactionJob(filesThatMeetCriteria, partition.getId(), tableBucket));
         } else {
             int position = 0;
             List<FileInfo> files = new ArrayList<>(filesThatMeetCriteria);
@@ -151,7 +151,7 @@ public class SizeRatioCompactionStrategy extends AbstractCompactionStrategy {
                 if (meetsCriteria(fileSizes)) {
                     LOGGER.info("Creating a job to compact {} files in partition {}",
                             filesForJob.size(), partition.getId());
-                    compactionJobs.add(createCompactionJob(filesForJob, partition.getId(), tableBucket));
+                    compactionJobs.add(factory.createCompactionJob(filesForJob, partition.getId(), tableBucket));
                     filesForJob.clear();
                     position += j;
                 } else {
