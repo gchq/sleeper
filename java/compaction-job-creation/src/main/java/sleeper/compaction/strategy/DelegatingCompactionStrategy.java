@@ -124,20 +124,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
                 // Create job for these files
                 LOGGER.info("Creating a job to compact {} files and split into 2 partitions (parent partition is {})",
                         filesForJob.size(), partition);
-                List<String> childPartitions = partitionIdToPartition.get(partition.getId()).getChildPartitionIds();
-                Partition leftPartition = partitionIdToPartition.get(childPartitions.get(0));
-                Partition rightPartition = partitionIdToPartition.get(childPartitions.get(1));
-                Object splitPoint = leftPartition.getRegion()
-                        .getRange(schema.getRowKeyFieldNames().get(partition.getDimension()))
-                        .getMax();
-                LOGGER.info("Split point is {}", splitPoint);
-
-                compactionJobs.add(factory.createSplittingCompactionJob(filesForJob,
-                        partition.getId(),
-                        leftPartition.getId(),
-                        rightPartition.getId(),
-                        splitPoint,
-                        partition.getDimension()));
+                compactionJobs.add(createSplittingCompactionJob(partition, partitionIdToPartition, filesForJob));
                 filesForJob.clear();
             }
         }
@@ -147,23 +134,26 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
             // Create job for these files
             LOGGER.info("Creating a job to compact {} files in partition {}",
                     filesForJob.size(), partition);
-            List<String> childPartitions = partitionIdToPartition.get(partition.getId()).getChildPartitionIds();
-            Partition leftPartition = partitionIdToPartition.get(childPartitions.get(0));
-            Partition rightPartition = partitionIdToPartition.get(childPartitions.get(1));
-            Object splitPoint = leftPartition.getRegion()
-                    .getRange(schema.getRowKeyFieldNames().get(partition.getDimension()))
-                    .getMax();
-            LOGGER.info("Split point is {}", splitPoint);
-
-            compactionJobs.add(factory.createSplittingCompactionJob(filesForJob,
-                    partition.getId(),
-                    leftPartition.getId(),
-                    rightPartition.getId(),
-                    splitPoint,
-                    partition.getDimension()));
-            filesForJob.clear();
+            compactionJobs.add(createSplittingCompactionJob(partition, partitionIdToPartition, filesForJob));
         }
         return compactionJobs;
+    }
+
+    private CompactionJob createSplittingCompactionJob(Partition partition, Map<String, Partition> partitionIdToPartition, List<FileInfo> filesForJob) {
+        List<String> childPartitions = partitionIdToPartition.get(partition.getId()).getChildPartitionIds();
+        Partition leftPartition = partitionIdToPartition.get(childPartitions.get(0));
+        Partition rightPartition = partitionIdToPartition.get(childPartitions.get(1));
+        Object splitPoint = leftPartition.getRegion()
+                .getRange(schema.getRowKeyFieldNames().get(partition.getDimension()))
+                .getMax();
+        LOGGER.info("Split point is {}", splitPoint);
+
+        return factory.createSplittingCompactionJob(filesForJob,
+                partition.getId(),
+                leftPartition.getId(),
+                rightPartition.getId(),
+                splitPoint,
+                partition.getDimension());
     }
 
 }

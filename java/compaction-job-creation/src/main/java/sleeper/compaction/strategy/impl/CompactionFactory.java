@@ -53,12 +53,10 @@ public class CompactionFactory {
                 tableName, tableBucket, fs);
     }
 
-    public CompactionJob createSplittingCompactionJob(List<FileInfo> files,
-                                                      String partition,
-                                                      String leftPartitionId,
-                                                      String rightPartitionId,
-                                                      Object splitPoint,
-                                                      int dimension) {
+    public CompactionJob createSplittingCompactionJob(
+            List<FileInfo> files, String partition,
+            String leftPartitionId, String rightPartitionId,
+            Object splitPoint, int dimension) {
         String jobId = UUID.randomUUID().toString();
         List<String> jobFiles = files.stream()
                 .map(FileInfo::getFilename)
@@ -82,8 +80,8 @@ public class CompactionFactory {
         return compactionJob;
     }
 
-    public CompactionJob createCompactionJob(List<FileInfo> files,
-                                             String partition) {
+    public CompactionJob createCompactionJob(
+            List<FileInfo> files, String partition) {
         for (FileInfo fileInfo : files) {
             if (!partition.equals(fileInfo.getPartitionId())) {
                 throw new IllegalArgumentException("Found file with partition which is different to the provided partition (partition = "
