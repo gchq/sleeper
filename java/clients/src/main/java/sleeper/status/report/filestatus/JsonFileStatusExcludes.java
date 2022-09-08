@@ -15,23 +15,21 @@
  */
 package sleeper.status.report.filestatus;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.util.function.Function;
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
+import sleeper.statestore.FileInfo;
 
-/**
- * An interface the represents a method of presenting the status of files in
- * Sleeper to a user.
- */
-public interface FileStatusReporter {
+public class JsonFileStatusExcludes implements ExclusionStrategy {
+    @Override
+    public boolean shouldSkipField(FieldAttributes f) {
+        if (FileInfo.class == f.getDeclaringClass() && "rowKeyTypes".equals(f.getName())) {
+            return true;
+        }
+        return false;
+    }
 
-    void report(FileStatus fileStatusReport, boolean verbose);
-
-    static String asString(
-            Function<PrintStream, FileStatusReporter> getReporter, FileStatus fileStatusReport, boolean verbose) {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        getReporter.apply(new PrintStream(os))
-                .report(fileStatusReport, verbose);
-        return os.toString();
+    @Override
+    public boolean shouldSkipClass(Class<?> clazz) {
+        return false;
     }
 }
