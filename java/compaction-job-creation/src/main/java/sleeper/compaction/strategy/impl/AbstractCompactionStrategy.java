@@ -28,10 +28,8 @@ import sleeper.statestore.FileInfo;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
 
+import static sleeper.compaction.strategy.impl.CompactionUtils.getFilesInAscendingOrder;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
@@ -123,33 +121,6 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
             filesForJob.clear();
         }
         return compactionJobs;
-    }
-
-    protected List<FileInfo> getFilesInAscendingOrder(Partition partition, List<FileInfo> fileInfos) {
-        // Get files in this partition
-        List<FileInfo> files = fileInfos
-                .stream()
-                .filter(f -> f.getPartitionId().equals(partition.getId()))
-                .collect(Collectors.toList());
-        LOGGER.info("Creating jobs for leaf partition " + partition);
-        LOGGER.info("There are " + files.size() + " files for this partition");
-
-        // Create map of number of records in file to files, sorted by number of records in file
-        SortedMap<Long, List<FileInfo>> linesToFiles = new TreeMap<>();
-        for (FileInfo fileInfo : files) {
-            if (!linesToFiles.containsKey(fileInfo.getNumberOfRecords())) {
-                linesToFiles.put(fileInfo.getNumberOfRecords(), new ArrayList<>());
-            }
-            linesToFiles.get(fileInfo.getNumberOfRecords()).add(fileInfo);
-        }
-
-        // Convert to list of FileInfos in ascending order of number of lines
-        List<FileInfo> fileInfosList = new ArrayList<>();
-        for (Map.Entry<Long, List<FileInfo>> entry : linesToFiles.entrySet()) {
-            fileInfosList.addAll(entry.getValue());
-        }
-
-        return fileInfosList;
     }
 
 }

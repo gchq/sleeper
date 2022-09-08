@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static sleeper.compaction.strategy.impl.CompactionUtils.getFilesInAscendingOrder;
+
 /**
  * A simple {@link sleeper.compaction.strategy.CompactionStrategy} that lists the active files for a partition in increasing order of the number
  * of records they contain, and iterates through this list creating compaction jobs with at most
