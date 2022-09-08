@@ -29,7 +29,7 @@ public class ChunkStatus {
 
     private ChunkStatus(Builder builder) {
         chunk = Objects.requireNonNull(ignoreEmpty(builder.chunk), "chunk must not be null");
-        status = Objects.requireNonNull(ignoreEmpty(builder.status), "status must not be null");
+        status = ignoreEmpty(builder.status);
         conclusion = ignoreEmpty(builder.conclusion);
     }
 
@@ -69,6 +69,10 @@ public class ChunkStatus {
         return chunk(chunk).status(COMPLETED).conclusion("cancelled").build();
     }
 
+    public static ChunkStatus noBuild(String chunk) {
+        return chunk(chunk).build();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -78,7 +82,7 @@ public class ChunkStatus {
             return false;
         }
         ChunkStatus that = (ChunkStatus) o;
-        return chunk.equals(that.chunk) && status.equals(that.status) && Objects.equals(conclusion, that.conclusion);
+        return chunk.equals(that.chunk) && Objects.equals(status, that.status) && Objects.equals(conclusion, that.conclusion);
     }
 
     @Override
