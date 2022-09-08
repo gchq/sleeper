@@ -25,12 +25,12 @@
     {
       "minRowKey": {
         "key": [
-          "aardvark"
+          "abc"
         ]
       },
       "maxRowKey": {
         "key": [
-          "arthur"
+          "def"
         ]
       },
       "filename": "A.parquet",
@@ -42,12 +42,12 @@
     {
       "minRowKey": {
         "key": [
-          "arthur dent"
+          "cde"
         ]
       },
       "maxRowKey": {
         "key": [
-          "beeblebrox, zaphod"
+          "lmn"
         ]
       },
       "filename": "D.parquet",

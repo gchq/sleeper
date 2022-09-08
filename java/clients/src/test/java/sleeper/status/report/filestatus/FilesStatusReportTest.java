@@ -86,14 +86,14 @@ public class FilesStatusReportTest {
         List<Partition> partitions = new PartitionsBuilder(schema)
                 .leavesWithSplits(
                         Arrays.asList("A", "B", "C"),
-                        Arrays.asList("beeblebrox", "wowbagger"))
+                        Arrays.asList("ggg", "mmm"))
                 .parentJoining("D", "A", "B")
                 .parentJoining("E", "D", "C")
                 .buildList();
         FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
         List<FileInfo> activeFiles = Arrays.asList(
-                fileInfoFactory.leafFile(50000001, "aardvark", "arthur"),
-                fileInfoFactory.middleFile(50000002, "arthur dent", "beeblebrox, zaphod"));
+                fileInfoFactory.leafFile(50000001, "abc", "def"),
+                fileInfoFactory.middleFile(50000002, "cde", "lmn"));
 
         // When
         FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
