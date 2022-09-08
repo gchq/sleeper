@@ -74,7 +74,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
@@ -152,16 +152,18 @@ public class ReinitialiseTableIT {
         String tableName = UUID.randomUUID().toString();
 
         // When
-        assertThrows(IllegalArgumentException.class, () -> new ReinitialiseTable(s3Client,
+        assertThatThrownBy(() -> new ReinitialiseTable(s3Client,
                 dynamoDBClient, "", tableName, false,
-                null, false));
+                null, false))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void shouldThrowExceptionIfTableIsEmpty() {
-        assertThrows(IllegalArgumentException.class, () -> new ReinitialiseTable(s3Client,
+        assertThatThrownBy(() -> new ReinitialiseTable(s3Client,
                 dynamoDBClient, CONFIG_BUCKET_NAME, "", false,
-                null, false));
+                null, false))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
