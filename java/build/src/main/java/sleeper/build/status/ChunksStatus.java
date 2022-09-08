@@ -17,6 +17,8 @@ package sleeper.build.status;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -44,9 +46,13 @@ public class ChunksStatus {
     }
 
     public String reportString() {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        report(new PrintStream(os));
-        return os.toString();
+        try {
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            report(new PrintStream(os, false, StandardCharsets.UTF_8.displayName()));
+            return os.toString(StandardCharsets.UTF_8.displayName());
+        } catch (UnsupportedEncodingException e) {
+            return "";
+        }
     }
 
     public static ChunksStatus chunks(ChunkStatus... chunks) {
