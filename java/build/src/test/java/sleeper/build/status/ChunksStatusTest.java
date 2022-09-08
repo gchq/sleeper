@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ChunksStatusTest {
 
     @Test
-    public void canFindTwoChunksSuccessful() throws Exception {
+    public void shouldReportAndPassWhenTwoChunksSuccessful() throws Exception {
         Properties properties = exampleProperties("two-chunks-successful.properties");
         ChunksStatus status = ChunksStatus.from(properties);
 
@@ -43,7 +43,7 @@ public class ChunksStatusTest {
     }
 
     @Test
-    public void canFindOneChunkSuccessfulOneInProgress() throws Exception {
+    public void shouldReportAndPassWhenOneChunkSuccessfulOneInProgress() throws Exception {
         Properties properties = exampleProperties("one-chunk-successful-one-in-progress.properties");
         ChunksStatus status = ChunksStatus.from(properties);
 
@@ -58,7 +58,7 @@ public class ChunksStatusTest {
     }
 
     @Test
-    public void canFindOneChunkSuccessfulOneFailed() throws Exception {
+    public void shouldReportAndFailWhenOneChunkSuccessfulOneFailed() throws Exception {
         Properties properties = exampleProperties("one-chunk-successful-one-failed.properties");
         ChunksStatus status = ChunksStatus.from(properties);
 
@@ -73,7 +73,7 @@ public class ChunksStatusTest {
     }
 
     @Test
-    public void canFindOneChunkSuccessfulOneCancelled() throws Exception {
+    public void shouldReportAndFailWhenOneChunkSuccessfulOneCancelled() throws Exception {
         Properties properties = exampleProperties("one-chunk-successful-one-cancelled.properties");
         ChunksStatus status = ChunksStatus.from(properties);
 
@@ -85,6 +85,21 @@ public class ChunksStatusTest {
         assertThat(status.reportString()).isEqualTo("" +
                 "common: completed, success\n" +
                 "data: completed, cancelled\n");
+    }
+
+    @Test
+    public void shouldReportAndPassWhenNoChunksHaveBuilds() throws Exception {
+        Properties properties = exampleProperties("two-chunks-missing.properties");
+        ChunksStatus status = ChunksStatus.from(properties);
+
+        assertThat(status).isEqualTo(
+                ChunksStatus.chunks(
+                        ChunkStatus.noBuild("common"),
+                        ChunkStatus.noBuild("data")));
+        assertThat(status.isFailCheck()).isFalse();
+        assertThat(status.reportString()).isEqualTo("" +
+                "common: null\n" +
+                "data: null\n");
     }
 
     private static Properties exampleProperties(String path) throws IOException {
