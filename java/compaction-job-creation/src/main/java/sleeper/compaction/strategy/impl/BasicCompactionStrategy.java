@@ -88,7 +88,7 @@ public class BasicCompactionStrategy extends AbstractCompactionStrategy {
                 // Create job for these files
                 LOGGER.info("Creating a job to compact {} files in partition {}",
                         filesForJob.size(), partition);
-                compactionJobs.add(factory.createCompactionJob(filesForJob, partition.getId(), tableBucket));
+                compactionJobs.add(factory.createCompactionJob(filesForJob, partition.getId()));
                 filesForJob.clear();
             }
         }

@@ -61,8 +61,7 @@ public class CompactionFactory {
                                                       String leftPartitionId,
                                                       String rightPartitionId,
                                                       Object splitPoint,
-                                                      int dimension,
-                                                      String s3Bucket) {
+                                                      int dimension) {
         String jobId = UUID.randomUUID().toString();
         List<String> jobFiles = files.stream()
                 .map(FileInfo::getFilename)
@@ -70,8 +69,8 @@ public class CompactionFactory {
         CompactionJob compactionJob = new CompactionJob(tableName, jobId);
         compactionJob.setIsSplittingJob(true);
         compactionJob.setInputFiles(jobFiles);
-        String leftOutputFile = fs + s3Bucket + "/partition_" + leftPartitionId + "/" + jobId + ".parquet";
-        String rightOutputFile = fs + s3Bucket + "/partition_" + rightPartitionId + "/" + jobId + ".parquet";
+        String leftOutputFile = fs + tableBucket + "/partition_" + leftPartitionId + "/" + jobId + ".parquet";
+        String rightOutputFile = fs + tableBucket + "/partition_" + rightPartitionId + "/" + jobId + ".parquet";
         compactionJob.setOutputFiles(new MutablePair<>(leftOutputFile, rightOutputFile));
         compactionJob.setSplitPoint(splitPoint);
         compactionJob.setDimension(dimension);
@@ -87,8 +86,7 @@ public class CompactionFactory {
     }
 
     public CompactionJob createCompactionJob(List<FileInfo> files,
-                                             String partition,
-                                             String s3Bucket) {
+                                             String partition) {
         for (FileInfo fileInfo : files) {
             if (!partition.equals(fileInfo.getPartitionId())) {
                 throw new IllegalArgumentException("Found file with partition which is different to the provided partition (partition = "
@@ -97,7 +95,7 @@ public class CompactionFactory {
         }
 
         String jobId = UUID.randomUUID().toString();
-        String outputFile = fs + s3Bucket + "/partition_" + partition + "/" + jobId + ".parquet";
+        String outputFile = fs + tableBucket + "/partition_" + partition + "/" + jobId + ".parquet";
         List<String> jobFiles = files.stream()
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());

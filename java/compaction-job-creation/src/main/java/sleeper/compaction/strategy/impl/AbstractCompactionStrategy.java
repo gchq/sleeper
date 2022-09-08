@@ -30,37 +30,20 @@ import java.util.List;
 import java.util.Map;
 
 import static sleeper.compaction.strategy.impl.CompactionUtils.getFilesInAscendingOrder;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public abstract class AbstractCompactionStrategy implements CompactionStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractCompactionStrategy.class);
 
     protected Schema schema;
-    protected String tableName;
-    protected String tableBucket;
-    protected String fs;
     protected int compactionFilesBatchSize;
-    protected String iteratorClassName;
-    protected String iteratorConfig;
     protected CompactionFactory factory;
 
     @Override
     public void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
         factory = new CompactionFactory(instanceProperties, tableProperties);
         schema = tableProperties.getSchema();
-        tableName = tableProperties.get(TABLE_NAME);
-        tableBucket = tableProperties.get(DATA_BUCKET);
-        fs = instanceProperties.get(FILE_SYSTEM);
         compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
-        iteratorClassName = tableProperties.get(ITERATOR_CLASS_NAME);
-        iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
-        LOGGER.info("Initialised AbstractCompactionStrategy with table name {}, bucket for table data {}, fs {}",
-                tableName, tableBucket, fs);
     }
 
     protected abstract List<CompactionJob> createJobsForLeafPartition(Partition partition, List<FileInfo> fileInfos);
@@ -92,8 +75,7 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
                         leftPartition.getId(),
                         rightPartition.getId(),
                         splitPoint,
-                        partition.getDimension(),
-                        tableBucket));
+                        partition.getDimension()));
                 filesForJob.clear();
             }
         }
@@ -116,8 +98,7 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
                     leftPartition.getId(),
                     rightPartition.getId(),
                     splitPoint,
-                    partition.getDimension(),
-                    tableBucket));
+                    partition.getDimension()));
             filesForJob.clear();
         }
         return compactionJobs;
