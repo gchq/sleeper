@@ -27,6 +27,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -39,7 +40,7 @@ import java.util.List;
  */
 public class KeySerDe {
     private static final String NULL_STRING_MARKER = "SLEEPER-NULL-STRING";
-    private static final byte[] NULL_BYTE_ARRAY_MARKER = "SLEEPER-NULL-BYTE-ARRAY".getBytes();
+    private static final byte[] NULL_BYTE_ARRAY_MARKER = "SLEEPER-NULL-BYTE-ARRAY".getBytes(Charset.forName("UTF-8"));
 
     private final List<PrimitiveType> rowKeyTypes;
     private final int numRowKeysInSchema;
@@ -136,11 +137,13 @@ public class KeySerDe {
             } else if (type instanceof ByteArrayType) {
                 int length = dis.readInt();
                 byte[] byteArray = new byte[length];
-                dis.read(byteArray);
-                if (Arrays.equals(NULL_BYTE_ARRAY_MARKER, byteArray)) {
-                    key.add(null);
-                } else {
-                    key.add(byteArray);
+                int result = dis.read(byteArray);
+                if (result == length) {
+                    if (Arrays.equals(NULL_BYTE_ARRAY_MARKER, byteArray)) {
+                        key.add(null);
+                    } else {
+                        key.add(byteArray);
+                    }
                 }
             } else {
                 throw new IllegalArgumentException("Unknown type " + type);

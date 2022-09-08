@@ -90,7 +90,7 @@ public class RangeCanonicaliser {
 
     private static byte[] nextByteArrayValue(byte[] value) {
         if (null == value) {
-            return null;
+            return new byte[]{};
         }
         byte[] next = new byte[value.length + 1];
         System.arraycopy(value, 0, next, 0, value.length);

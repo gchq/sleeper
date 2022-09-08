@@ -254,6 +254,9 @@
                         ${project.build.directory}/findbugs
                     </findbugsXmlOutputDirectory>
                     <onlyAnalyze>sleeper.-</onlyAnalyze>
+                    <excludeFilterFile>
+                        ../code-style/findbugs-exclude.xml
+                    </excludeFilterFile>
                 </configuration>
                 <executions>
                     <execution>
