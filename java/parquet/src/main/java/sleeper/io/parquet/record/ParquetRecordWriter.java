@@ -36,7 +36,7 @@ public class ParquetRecordWriter extends ParquetWriter<Record> {
                                CompressionCodecName compressionCodecName,
                                int blockSize,
                                int pageSize) throws IOException {
-        super(file, new RecordWriteSupport(file, messageType, schema), compressionCodecName, blockSize, pageSize);
+        super(file, new RecordWriteSupport(messageType, schema), compressionCodecName, blockSize, pageSize);
     }
 
     public ParquetRecordWriter(org.apache.hadoop.fs.Path file, MessageType messageType, Schema schema) throws IOException {
@@ -44,25 +44,23 @@ public class ParquetRecordWriter extends ParquetWriter<Record> {
     }
 
     public static class Builder extends ParquetWriter.Builder<Record, Builder> {
-        private final Path path;
         private final MessageType messageType;
         private final Schema schema;
 
         public Builder(Path path, MessageType messageType, Schema schema) {
             super(path);
-            this.path = path;
             this.messageType = messageType;
             this.schema = schema;
         }
 
         @Override
         protected WriteSupport<Record> getWriteSupport(Configuration conf) {
-            return (WriteSupport<Record>) new RecordWriteSupport(path, messageType, schema);
+            return new RecordWriteSupport(messageType, schema);
         }
 
         @Override
         protected Builder self() {
-            return (Builder) this;
+            return this;
         }
     }
 }
