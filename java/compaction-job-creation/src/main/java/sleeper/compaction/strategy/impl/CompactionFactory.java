@@ -44,13 +44,13 @@ public class CompactionFactory {
     private final String iteratorConfig;
 
     public CompactionFactory(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        tableName = tableProperties.get(TABLE_NAME);
-        tableBucket = tableProperties.get(DATA_BUCKET);
-        fs = instanceProperties.get(FILE_SYSTEM);
-        iteratorClassName = tableProperties.get(ITERATOR_CLASS_NAME);
-        iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
+        this.tableName = tableProperties.get(TABLE_NAME);
+        this.tableBucket = tableProperties.get(DATA_BUCKET);
+        this.fs = instanceProperties.get(FILE_SYSTEM);
+        this.iteratorClassName = tableProperties.get(ITERATOR_CLASS_NAME);
+        this.iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
         LOGGER.info("Initialised CompactionFactory with table name {}, bucket for table data {}, fs {}",
-                tableName, tableBucket, fs);
+                this.tableName, this.tableBucket, this.fs);
     }
 
     public CompactionJob createSplittingCompactionJob(
