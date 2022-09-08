@@ -20,5 +20,4 @@ package sleeper.statestore;
  * and the {@link sleeper.core.partition.Partition}s).
  */
 public interface StateStore extends FileInfoStore, PartitionStore {
-
 }
