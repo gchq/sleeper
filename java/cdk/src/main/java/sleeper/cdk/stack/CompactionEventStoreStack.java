@@ -21,21 +21,21 @@ import software.constructs.Construct;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EVENT_STORE_ENABLED;
 
-public interface CompactionEventStore {
+public interface CompactionEventStoreStack {
 
     default void grantWriteJobEvent(IGrantable grantee) {
     }
 
-    static CompactionEventStore from(Construct scope, InstanceProperties properties) {
+    static CompactionEventStoreStack from(Construct scope, InstanceProperties properties) {
         if (properties.getBoolean(COMPACTION_EVENT_STORE_ENABLED)) {
-            return new DynamoDBCompactionEventStore(scope, properties);
+            return new DynamoDBCompactionEventStoreStack(scope, properties);
         } else {
             return none();
         }
     }
 
-    static CompactionEventStore none() {
-        return new CompactionEventStore() {
+    static CompactionEventStoreStack none() {
+        return new CompactionEventStoreStack() {
         };
     }
 }

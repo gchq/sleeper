@@ -28,11 +28,11 @@ import software.constructs.Construct;
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
-public class DynamoDBCompactionEventStore implements CompactionEventStore {
+public class DynamoDBCompactionEventStoreStack implements CompactionEventStoreStack {
 
     private final Table jobsTable;
 
-    public DynamoDBCompactionEventStore(
+    public DynamoDBCompactionEventStoreStack(
             Construct scope, InstanceProperties instanceProperties) {
         String instanceId = instanceProperties.get(ID);
 

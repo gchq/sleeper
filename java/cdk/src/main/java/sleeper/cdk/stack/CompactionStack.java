@@ -118,7 +118,7 @@ public class CompactionStack extends NestedStack {
     private Queue splittingJobQ;
     private Queue splittingDLQ;
     private final InstanceProperties instanceProperties;
-    private final CompactionEventStore eventStore;
+    private final CompactionEventStoreStack eventStore;
 
     public CompactionStack(
             Construct scope,
@@ -129,7 +129,7 @@ public class CompactionStack extends NestedStack {
             InstanceProperties instanceProperties) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
-        eventStore = CompactionEventStore.from(this, instanceProperties);
+        eventStore = CompactionEventStoreStack.from(this, instanceProperties);
 
         // The compaction stack consists of the following components:
         //  - An SQS queue for the compaction jobs.
