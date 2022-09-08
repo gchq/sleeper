@@ -38,11 +38,11 @@ import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FI
 public abstract class AbstractCompactionStrategy implements CompactionStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractCompactionStrategy.class);
 
-    protected Schema schema;
-    protected int compactionFilesBatchSize;
-    protected CompactionFactory factory;
     protected final LeafPartitionCompactionStrategy leafStrategy;
     protected final ShouldCreateJobsStrategy shouldCreateJobsStrategy;
+    protected CompactionFactory factory;
+    protected Schema schema;
+    protected int compactionFilesBatchSize;
 
     protected AbstractCompactionStrategy(LeafPartitionCompactionStrategy leafStrategy) {
         this.leafStrategy = leafStrategy;
