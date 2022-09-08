@@ -65,6 +65,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -74,7 +75,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 
 /**
@@ -155,12 +155,7 @@ public class QueryStack extends NestedStack {
                 .build();
         instanceProperties.set(SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL, queryResultsQueue.getQueueUrl());
 
-        RemovalPolicy removalPolicy;
-        if (instanceProperties.getBoolean(RETAIN_INFRA_AFTER_DESTROY)) {
-            removalPolicy = RemovalPolicy.RETAIN;
-        } else {
-            removalPolicy = RemovalPolicy.DESTROY;
-        }
+        RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
         // Bucket for results
         Bucket queryResultsBucket = Bucket.Builder
