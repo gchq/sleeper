@@ -18,9 +18,6 @@ package sleeper.compaction.strategy.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfo;
 
@@ -52,16 +49,8 @@ import java.util.stream.Collectors;
 public class SizeRatioCompactionStrategy extends AbstractCompactionStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(SizeRatioCompactionStrategy.class);
 
-    private int maxConcurrentCompactionJobsPerPartition;
-
     public SizeRatioCompactionStrategy() {
-        super(new SizeRatioLeafStrategy());
-    }
-
-    @Override
-    public void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        super.init(instanceProperties, tableProperties);
-        maxConcurrentCompactionJobsPerPartition = tableProperties.getInt(TableProperty.SIZE_RATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION);
+        super(new SizeRatioLeafStrategy(), new ShouldCreateJobsWithMaxPerPartition());
     }
 
     @Override
@@ -86,12 +75,11 @@ public class SizeRatioCompactionStrategy extends AbstractCompactionStrategy {
             }
 
             if (partition.isLeafPartition()) {
-                long numConcurrentCompactionJobs = getNumberOfCurrentCompactionJobs(partitionId, activeFilesWithJobId);
-                if (numConcurrentCompactionJobs >= maxConcurrentCompactionJobsPerPartition) {
-                    LOGGER.info("Not creating compaction jobs for partition {} as there are already {} running compaction jobs", partitionId, numConcurrentCompactionJobs);
+                long maxNumberOfJobsToCreate = shouldCreateJobsStrategy.maxCompactionJobsToCreate(
+                        partition, activeFilesWithJobId, activeFilesWithNoJobId);
+                if (maxNumberOfJobsToCreate < 1) {
                     continue;
                 }
-                long maxNumberOfJobsToCreate = maxConcurrentCompactionJobsPerPartition - numConcurrentCompactionJobs;
                 LOGGER.info("Max jobs to create = {}", maxNumberOfJobsToCreate);
                 List<CompactionJob> jobs = leafStrategy.createJobsForLeafPartition(partition, activeFilesWithNoJobId);
                 LOGGER.info("Defined {} compaction job{} for partition {}", jobs.size(), 1 == jobs.size() ? "s" : "", partitionId);
@@ -106,14 +94,6 @@ public class SizeRatioCompactionStrategy extends AbstractCompactionStrategy {
         }
 
         return compactionJobs;
-    }
-
-    private long getNumberOfCurrentCompactionJobs(String partitionId, List<FileInfo> activeFilesWithJobId) {
-        return activeFilesWithJobId.stream()
-                .filter(f -> f.getPartitionId().equals(partitionId))
-                .map(FileInfo::getJobId)
-                .collect(Collectors.toSet())
-                .size();
     }
 
 }

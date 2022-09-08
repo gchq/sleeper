@@ -39,15 +39,24 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
     protected int compactionFilesBatchSize;
     protected CompactionFactory factory;
     protected final LeafPartitionCompactionStrategy leafStrategy;
+    protected final ShouldCreateJobsStrategy shouldCreateJobsStrategy;
 
     protected AbstractCompactionStrategy(LeafPartitionCompactionStrategy leafStrategy) {
         this.leafStrategy = leafStrategy;
+        this.shouldCreateJobsStrategy = ShouldCreateJobsStrategy.yes();
+    }
+
+    protected AbstractCompactionStrategy(
+            LeafPartitionCompactionStrategy leafStrategy, ShouldCreateJobsStrategy shouldCreateJobsStrategy) {
+        this.leafStrategy = leafStrategy;
+        this.shouldCreateJobsStrategy = shouldCreateJobsStrategy;
     }
 
     @Override
     public void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
         factory = new CompactionFactory(instanceProperties, tableProperties);
         leafStrategy.init(instanceProperties, tableProperties, factory);
+        shouldCreateJobsStrategy.init(instanceProperties, tableProperties);
         schema = tableProperties.getSchema();
         compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
     }
