@@ -15,6 +15,7 @@
  */
 package sleeper.configuration.properties;
 
+import java.util.Locale;
 import java.util.function.Predicate;
 
 /**
@@ -30,6 +31,6 @@ public interface SleeperProperty {
     }
 
     default String toEnvironmentVariable() {
-        return getPropertyName().toUpperCase().replace('.', '_');
+        return getPropertyName().toUpperCase(Locale.ROOT).replace('.', '_');
     }
 }

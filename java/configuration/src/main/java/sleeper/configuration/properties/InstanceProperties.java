@@ -20,6 +20,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
@@ -53,8 +54,8 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
             String tagsFile = get(TAGS_FILE);
             Properties tagsProperties = new Properties();
             if (null != tagsFile) {
-                try {
-                    tagsProperties.load(new FileInputStream(tagsFile));
+                try (FileInputStream inputStream = new FileInputStream(tagsFile)) {
+                    tagsProperties.load(inputStream);
                 } catch (IOException e) {
                     throw new RuntimeException("Exception loading tags from file: " + tagsFile, e);
                 }
@@ -89,7 +90,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     }
 
     public static String getConfigBucketFromInstanceId(String instanceId) {
-        return String.join("-", "sleeper", instanceId, "config").toLowerCase();
+        return String.join("-", "sleeper", instanceId, "config").toLowerCase(Locale.ROOT);
     }
 
     public void loadFromS3GivenInstanceId(AmazonS3 s3Client, String instanceId) throws IOException {
