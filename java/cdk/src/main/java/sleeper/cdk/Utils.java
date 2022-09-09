@@ -27,6 +27,7 @@ import software.amazon.awscdk.services.logs.RetentionDays;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -157,9 +158,9 @@ public class Utils {
                                     }
                                 });
                     }
-                    try {
-                        return Stream.of(new FileInputStream(f));
-                    } catch (FileNotFoundException e) {
+                    try (FileInputStream inputStream = new FileInputStream(f)) {
+                        return Stream.of(inputStream);
+                    } catch (IOException e) {
                         // this should never happen
                         throw new RuntimeException("Failed to open stream to file: " + f.getAbsolutePath());
                     }

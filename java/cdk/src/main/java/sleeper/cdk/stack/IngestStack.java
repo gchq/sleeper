@@ -57,6 +57,7 @@ import software.constructs.Construct;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
@@ -191,7 +192,7 @@ public class IngestStack extends NestedStack {
                 .build();
         IVpc vpc = Vpc.fromLookup(this, "VPC1", vpcLookupOptions);
         String clusterName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "ingest-cluster"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "ingest-cluster"));
         Cluster cluster = Cluster.Builder
                 .create(this, "IngestCluster")
                 .clusterName(clusterName)
@@ -269,7 +270,7 @@ public class IngestStack extends NestedStack {
 
         // Run tasks function
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "ingest-tasks-creator"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "ingest-tasks-creator"));
 
         Function handler = Function.Builder
                 .create(this, "IngestTasksCreator")

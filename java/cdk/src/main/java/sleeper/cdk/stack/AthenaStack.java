@@ -38,6 +38,7 @@ import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.constructs.Construct;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -70,7 +71,7 @@ public class AthenaStack extends NestedStack {
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
         String bucketName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "spill-bucket"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "spill-bucket"));
 
         Bucket spillBucket = Bucket.Builder.create(this, "SpillBucket")
                 .bucketName(bucketName)
@@ -160,7 +161,7 @@ public class AthenaStack extends NestedStack {
         }
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceId.toLowerCase(), simpleClassName, "athena-composite-handler"));
+                instanceId.toLowerCase(Locale.ROOT), simpleClassName, "athena-composite-handler"));
 
         Function athenaCompositeHandler = Function.Builder.create(this, simpleClassName + "AthenaCompositeHandler")
                 .functionName(functionName)

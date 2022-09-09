@@ -63,6 +63,7 @@ import software.constructs.Construct;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.cdk.Utils.removalPolicy;
@@ -106,7 +107,7 @@ public class QueryStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
 
         String tableName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "query-tracking-table"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-tracking-table"));
 
         // Query Tracking Table
         Table queryTrackingTable = Table.Builder.create(this, "QueryTrackingTable")
@@ -160,7 +161,7 @@ public class QueryStack extends NestedStack {
         // Bucket for results
         Bucket queryResultsBucket = Bucket.Builder
                 .create(this, "QueryResultsBucket")
-                .bucketName(String.join("-", "sleeper", instanceProperties.get(ID), "query-results").toLowerCase())
+                .bucketName(String.join("-", "sleeper", instanceProperties.get(ID), "query-results").toLowerCase(Locale.ROOT))
                 .versioned(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .encryption(BucketEncryption.S3_MANAGED)
@@ -204,7 +205,7 @@ public class QueryStack extends NestedStack {
         Code code = Code.fromBucket(jarsBucket, "query-" + instanceProperties.get(VERSION) + ".jar");
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "query-executor"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-executor"));
 
         // Lambda to process queries and post results to results queue
         Function queryExecutorLambda = Function.Builder

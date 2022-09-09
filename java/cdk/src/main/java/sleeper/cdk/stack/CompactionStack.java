@@ -56,6 +56,7 @@ import software.constructs.Construct;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
@@ -289,7 +290,7 @@ public class CompactionStack extends NestedStack {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "job-creator"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "job-creator"));
 
         Function handler = Function.Builder
                 .create(this, "JobCreationLambda")
@@ -340,7 +341,7 @@ public class CompactionStack extends NestedStack {
                 .build();
         IVpc vpc = Vpc.fromLookup(this, "VPC1", vpcLookupOptions);
         String clusterName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "merge-compaction-cluster"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "merge-compaction-cluster"));
         Cluster cluster = Cluster.Builder
                 .create(this, "MergeCompactionCluster")
                 .clusterName(clusterName)
@@ -401,7 +402,7 @@ public class CompactionStack extends NestedStack {
                 .build();
         IVpc vpc = Vpc.fromLookup(this, "VPC2", vpcLookupOptions);
         String clusterName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "splitting-merge-compaction-cluster"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "splitting-merge-compaction-cluster"));
         Cluster cluster = Cluster.Builder
                 .create(this, "SplittingMergeCompactionCluster")
                 .clusterName(clusterName)
@@ -463,7 +464,7 @@ public class CompactionStack extends NestedStack {
         environmentVariables.put("type", "compaction");
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "compaction-tasks-creator"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-tasks-creator"));
 
         Function handler = Function.Builder
                 .create(this, "CompactionTasksCreator")
@@ -519,7 +520,7 @@ public class CompactionStack extends NestedStack {
         environmentVariables.put("type", "splittingcompaction");
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "splitting-compaction-tasks-creator"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "splitting-compaction-tasks-creator"));
 
         Function handler = Function.Builder
                 .create(this, "SplittingCompactionTasksCreator")
