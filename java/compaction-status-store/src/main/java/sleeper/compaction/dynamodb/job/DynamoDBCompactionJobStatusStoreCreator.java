@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
-import static sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusFormat.LAST_UPDATE_TIME;
+import static sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
 import static sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
 
 public class DynamoDBCompactionJobStatusStoreCreator {
@@ -50,10 +50,10 @@ public class DynamoDBCompactionJobStatusStoreCreator {
         initialiseTable(jobStatusTableName(instanceId),
                 Arrays.asList(
                         new AttributeDefinition(JOB_ID, ScalarAttributeType.S),
-                        new AttributeDefinition(LAST_UPDATE_TIME, ScalarAttributeType.N)),
+                        new AttributeDefinition(UPDATE_TIME, ScalarAttributeType.N)),
                 Arrays.asList(
                         new KeySchemaElement(JOB_ID, KeyType.HASH),
-                        new KeySchemaElement(LAST_UPDATE_TIME, KeyType.RANGE)));
+                        new KeySchemaElement(UPDATE_TIME, KeyType.RANGE)));
     }
 
     private void initialiseTable(
