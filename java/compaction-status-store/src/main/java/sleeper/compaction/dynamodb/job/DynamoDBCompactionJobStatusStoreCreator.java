@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.dynamodb;
+package sleeper.compaction.dynamodb.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
@@ -31,29 +31,29 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.compaction.dynamodb.DynamoDBCompactionJobEventFormat.EVENT_TIME;
-import static sleeper.compaction.dynamodb.DynamoDBCompactionJobEventFormat.JOB_ID;
-import static sleeper.compaction.dynamodb.DynamoDBCompactionJobEventStore.jobEventsTableName;
+import static sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
+import static sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusFormat.LAST_UPDATE_TIME;
+import static sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
 
-public class DynamoDBCompactionJobEventStoreCreator {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobEventStoreCreator.class);
+public class DynamoDBCompactionJobStatusStoreCreator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobStatusStoreCreator.class);
 
     private final String instanceId;
     private final AmazonDynamoDB dynamoDB;
 
-    public DynamoDBCompactionJobEventStoreCreator(String instanceId, AmazonDynamoDB dynamoDB) {
+    public DynamoDBCompactionJobStatusStoreCreator(String instanceId, AmazonDynamoDB dynamoDB) {
         this.instanceId = Objects.requireNonNull(instanceId, "instanceId must not be null");
         this.dynamoDB = Objects.requireNonNull(dynamoDB, "dynamoDB must not be null");
     }
 
     public void create() {
-        initialiseTable(jobEventsTableName(instanceId),
+        initialiseTable(jobStatusTableName(instanceId),
                 Arrays.asList(
                         new AttributeDefinition(JOB_ID, ScalarAttributeType.S),
-                        new AttributeDefinition(EVENT_TIME, ScalarAttributeType.N)),
+                        new AttributeDefinition(LAST_UPDATE_TIME, ScalarAttributeType.N)),
                 Arrays.asList(
                         new KeySchemaElement(JOB_ID, KeyType.HASH),
-                        new KeySchemaElement(EVENT_TIME, KeyType.RANGE)));
+                        new KeySchemaElement(LAST_UPDATE_TIME, KeyType.RANGE)));
     }
 
     private void initialiseTable(

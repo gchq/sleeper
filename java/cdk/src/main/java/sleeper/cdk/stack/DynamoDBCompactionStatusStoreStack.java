@@ -15,8 +15,8 @@
  */
 package sleeper.cdk.stack;
 
-import sleeper.compaction.dynamodb.DynamoDBCompactionJobEventFormat;
-import sleeper.compaction.dynamodb.DynamoDBCompactionJobEventStore;
+import sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusFormat;
+import sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.dynamodb.Attribute;
@@ -29,27 +29,27 @@ import software.constructs.Construct;
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
-public class DynamoDBCompactionEventStoreStack implements CompactionEventStoreStack {
+public class DynamoDBCompactionStatusStoreStack implements CompactionStatusStoreStack {
 
     private final Table jobsTable;
 
-    public DynamoDBCompactionEventStoreStack(
+    public DynamoDBCompactionStatusStoreStack(
             Construct scope, InstanceProperties instanceProperties) {
         String instanceId = instanceProperties.get(ID);
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
         this.jobsTable = Table.Builder
-                .create(scope, "DynamoDBCompactionJobEventsTable")
-                .tableName(DynamoDBCompactionJobEventStore.jobEventsTableName(instanceId))
+                .create(scope, "DynamoDBCompactionJobStatusTable")
+                .tableName(DynamoDBCompactionJobStatusStore.jobStatusTableName(instanceId))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
-                        .name(DynamoDBCompactionJobEventFormat.JOB_ID)
+                        .name(DynamoDBCompactionJobStatusFormat.JOB_ID)
                         .type(AttributeType.STRING)
                         .build())
                 .sortKey(Attribute.builder()
-                        .name(DynamoDBCompactionJobEventFormat.EVENT_TIME)
+                        .name(DynamoDBCompactionJobStatusFormat.LAST_UPDATE_TIME)
                         .type(AttributeType.NUMBER)
                         .build())
                 .pointInTimeRecovery(false)

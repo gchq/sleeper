@@ -50,7 +50,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>compaction-event-store</artifactId>
+            <artifactId>compaction-status-store</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <!-- AWS Cloud Development Kit -->

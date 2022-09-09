@@ -179,7 +179,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES("sleeper.compaction.task.creation.period.minutes", "1"), // >0
     COMPACTION_TASK_CPU("sleeper.compaction.task.cpu", "2048"),
     COMPACTION_TASK_MEMORY("sleeper.compaction.task.memory", "4096"),
-    COMPACTION_EVENT_STORE_ENABLED("sleeper.compaction.event.store.enabled", "true"),
+    COMPACTION_STATUS_STORE_ENABLED("sleeper.compaction.status.store.enabled", "true"),
     DEFAULT_COMPACTION_STRATEGY_CLASS("sleeper.default.compaction.strategy.class", "sleeper.compaction.strategy.impl.SizeRatioCompactionStrategy"),
     DEFAULT_COMPACTION_FILES_BATCH_SIZE("sleeper.default.compaction.files.batch.size", "11"),
     DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO("sleeper.default.table.compaction.strategy.sizeratio.ratio", "3"),

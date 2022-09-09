@@ -17,20 +17,21 @@ package sleeper.compaction.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
 import org.junit.Test;
+import sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusStoreCreator;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.dynamodb.DynamoDBCompactionJobEventStore.jobEventsTableName;
+import static sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
 
-public class DynamoDBCompactionJobEventStoreCreatorIT extends DynamoDBTestBase {
+public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase {
 
     @Test
     public void shouldCreateStore() {
         String instanceId = "test-instance";
-        DynamoDBCompactionJobEventStoreCreator creator = new DynamoDBCompactionJobEventStoreCreator(instanceId, dynamoDBClient);
+        DynamoDBCompactionJobStatusStoreCreator creator = new DynamoDBCompactionJobStatusStoreCreator(instanceId, dynamoDBClient);
 
         creator.create();
 
-        assertThat(dynamoDBClient.describeTable(jobEventsTableName(instanceId)))
+        assertThat(dynamoDBClient.describeTable(jobStatusTableName(instanceId)))
                 .extracting(DescribeTableResult::getTable).isNotNull();
     }
 }

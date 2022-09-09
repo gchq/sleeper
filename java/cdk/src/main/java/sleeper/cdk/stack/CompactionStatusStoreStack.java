@@ -19,23 +19,23 @@ import sleeper.configuration.properties.InstanceProperties;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EVENT_STORE_ENABLED;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 
-public interface CompactionEventStoreStack {
+public interface CompactionStatusStoreStack {
 
     default void grantWriteJobEvent(IGrantable grantee) {
     }
 
-    static CompactionEventStoreStack from(Construct scope, InstanceProperties properties) {
-        if (properties.getBoolean(COMPACTION_EVENT_STORE_ENABLED)) {
-            return new DynamoDBCompactionEventStoreStack(scope, properties);
+    static CompactionStatusStoreStack from(Construct scope, InstanceProperties properties) {
+        if (properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
+            return new DynamoDBCompactionStatusStoreStack(scope, properties);
         } else {
             return none();
         }
     }
 
-    static CompactionEventStoreStack none() {
-        return new CompactionEventStoreStack() {
+    static CompactionStatusStoreStack none() {
+        return new CompactionStatusStoreStack() {
         };
     }
 }

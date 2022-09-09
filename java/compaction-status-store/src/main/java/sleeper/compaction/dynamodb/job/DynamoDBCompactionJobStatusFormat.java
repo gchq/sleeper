@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.dynamodb;
+package sleeper.compaction.dynamodb.job;
 
-public class DynamoDBCompactionJobEventFormat {
+public class DynamoDBCompactionJobStatusFormat {
 
-    private DynamoDBCompactionJobEventFormat() {
+    private DynamoDBCompactionJobStatusFormat() {
     }
 
     public static final String JOB_ID = "JobId";
-    public static final String EVENT_TIME = "EventTime";
+    public static final String LAST_UPDATE_TIME = "LastUpdateTime";
 
 }

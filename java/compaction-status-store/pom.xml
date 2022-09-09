@@ -23,7 +23,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>compaction-event-store</artifactId>
+    <artifactId>compaction-status-store</artifactId>
 
     <dependencies>
         <dependency>

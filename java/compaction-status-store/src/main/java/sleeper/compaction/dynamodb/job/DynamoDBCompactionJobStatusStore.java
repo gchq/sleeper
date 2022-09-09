@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.dynamodb;
+package sleeper.compaction.dynamodb.job;
 
-public class DynamoDBCompactionJobEventStore {
-    private DynamoDBCompactionJobEventStore() {
+public class DynamoDBCompactionJobStatusStore {
+    private DynamoDBCompactionJobStatusStore() {
     }
 
-    public static String jobEventsTableName(String instanceId) {
-        return instanceTableName(instanceId, "compaction-job-events");
+    public static String jobStatusTableName(String instanceId) {
+        return instanceTableName(instanceId, "compaction-job-status");
     }
 
     private static String instanceTableName(String instanceId, String tableName) {
