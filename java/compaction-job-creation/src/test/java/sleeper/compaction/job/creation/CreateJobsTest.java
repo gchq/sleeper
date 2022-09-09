@@ -98,12 +98,16 @@ public class CreateJobsTest {
     }
 
     private List<CompactionJob> createJobs() throws Exception {
+
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTableProperties(schema, instanceProperties);
-        TableLister tableLister = mock(TableLister.class);
-        when(tableLister.listTables()).thenReturn(Collections.singletonList(tableProperties.get(TABLE_NAME)));
+
         TablePropertiesProvider tablePropertiesProvider = TablePropertiesProvider.fixed(tableProperties);
         StateStoreProvider stateStoreProvider = StateStoreProvider.fixed(tableProperties, stateStore);
+
+        TableLister tableLister = mock(TableLister.class);
+        when(tableLister.listTables()).thenReturn(Collections.singletonList(tableProperties.get(TABLE_NAME)));
+
         List<CompactionJob> compactionJobs = new ArrayList<>();
         CreateJobs createJobs = new CreateJobs(ObjectFactory.noUserJars(),
                 instanceProperties, tablePropertiesProvider, stateStoreProvider, compactionJobs::add, tableLister);
