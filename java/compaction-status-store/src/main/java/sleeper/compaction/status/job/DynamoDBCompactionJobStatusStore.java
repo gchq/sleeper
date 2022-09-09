@@ -21,18 +21,21 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStore {
 
     private final AmazonDynamoDB dynamoDB;
+    private final String statusTableName;
 
-    private DynamoDBCompactionJobStatusStore(AmazonDynamoDB dynamoDB) {
+    private DynamoDBCompactionJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         this.dynamoDB = dynamoDB;
+        this.statusTableName = jobStatusTableName(properties.get(ID));
     }
 
     public static CompactionJobStatusStore from(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         if (Boolean.TRUE.equals(properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED))) {
-            return new DynamoDBCompactionJobStatusStore(dynamoDB);
+            return new DynamoDBCompactionJobStatusStore(dynamoDB, properties);
         } else {
             return CompactionJobStatusStore.none();
         }
