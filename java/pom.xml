@@ -30,6 +30,7 @@
         <module>clients</module>
         <module>statestore</module>
         <module>configuration</module>
+        <module>compaction-core</module>
         <module>compaction-job-creation</module>
         <module>compaction-job-execution</module>
         <module>compaction-status-store</module>
