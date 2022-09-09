@@ -50,8 +50,7 @@ public class SketchesSerDeToS3Test {
         Field field2 = new Field("key2", new LongType());
         Field field3 = new Field("key3", new StringType());
         Field field4 = new Field("key4", new ByteArrayType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field1, field2, field3, field4);
+        Schema schema = Schema.builder().rowKeyFields(field1, field2, field3, field4).build();
         ItemsSketch<Integer> sketch1 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         for (int i = 0; i < 100; i++) {
             sketch1.update(i);

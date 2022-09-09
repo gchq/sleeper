@@ -36,7 +36,9 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.schema.type.Type;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
@@ -47,7 +49,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.fail;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_BASE64_ENCODED;
@@ -58,13 +60,6 @@ public class TableInitialiserIT {
     @ClassRule
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
-
-    private static final Schema KEY_VALUE_SCHEMA = new Schema();
-
-    static {
-        KEY_VALUE_SCHEMA.setRowKeyFields(new Field("key", new StringType()));
-        KEY_VALUE_SCHEMA.setValueFields(new Field("value", new StringType()));
-    }
 
     private AmazonS3 getS3Client() {
         return AmazonS3ClientBuilder.standard()
@@ -77,6 +72,13 @@ public class TableInitialiserIT {
         return AmazonDynamoDBClientBuilder.standard()
                 .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
                 .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+                .build();
+    }
+
+    private Schema schemaWithKeyValueTypes(PrimitiveType rowKeyType, Type valueType) {
+        return Schema.builder()
+                .rowKeyFields(new Field("key", rowKeyType))
+                .valueFields(new Field("value", valueType))
                 .build();
     }
 
@@ -96,7 +98,7 @@ public class TableInitialiserIT {
 
         TableCreator tableCreator = new TableCreator(s3Client, dynamoClient, instanceProperties);
         TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(KEY_VALUE_SCHEMA);
+        tableProperties.setSchema(schemaWithKeyValueTypes(new StringType(), new StringType()));
         tableProperties.set(TABLE_NAME, "MyTable");
 
         tableCreator.createTable(tableProperties);
@@ -128,7 +130,7 @@ public class TableInitialiserIT {
 
         TableCreator tableCreator = new TableCreator(s3Client, dynamoClient, instanceProperties);
         TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(KEY_VALUE_SCHEMA);
+        tableProperties.setSchema(schemaWithKeyValueTypes(new StringType(), new StringType()));
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.set(SPLIT_POINTS_KEY, "splits/" + tableName);
 
@@ -165,7 +167,7 @@ public class TableInitialiserIT {
 
         TableCreator tableCreator = new TableCreator(s3Client, dynamoClient, instanceProperties);
         TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(KEY_VALUE_SCHEMA);
+        tableProperties.setSchema(schemaWithKeyValueTypes(new StringType(), new StringType()));
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.set(SPLIT_POINTS_BASE64_ENCODED, "true");
         tableProperties.set(SPLIT_POINTS_KEY, "splits/" + tableName);
@@ -200,9 +202,7 @@ public class TableInitialiserIT {
 
         TableCreator tableCreator = new TableCreator(s3Client, dynamoClient, instanceProperties);
         TableProperties tableProperties = new TableProperties(instanceProperties);
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value", new StringType()));
+        Schema schema = schemaWithKeyValueTypes(new LongType(), new StringType());
         tableProperties.setSchema(schema);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.set(SPLIT_POINTS_KEY, "splits/" + tableName);
@@ -237,9 +237,7 @@ public class TableInitialiserIT {
 
         TableCreator tableCreator = new TableCreator(s3Client, dynamoClient, instanceProperties);
         TableProperties tableProperties = new TableProperties(instanceProperties);
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setValueFields(new Field("value", new StringType()));
+        Schema schema = schemaWithKeyValueTypes(new IntType(), new StringType());
         tableProperties.setSchema(schema);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.set(SPLIT_POINTS_KEY, "splits/" + tableName);
@@ -278,9 +276,7 @@ public class TableInitialiserIT {
 
         TableCreator tableCreator = new TableCreator(s3Client, dynamoClient, instanceProperties);
         TableProperties tableProperties = new TableProperties(instanceProperties);
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
-        schema.setValueFields(new Field("value", new StringType()));
+        Schema schema = schemaWithKeyValueTypes(new ByteArrayType(), new StringType());
         tableProperties.setSchema(schema);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.set(SPLIT_POINTS_BASE64_ENCODED, "true");

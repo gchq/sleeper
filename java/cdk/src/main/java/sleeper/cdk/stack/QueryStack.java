@@ -15,26 +15,8 @@
  */
 package sleeper.cdk.stack;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 import com.amazonaws.auth.policy.actions.S3Actions;
 import com.amazonaws.auth.policy.actions.SQSActions;
-
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
@@ -77,6 +59,23 @@ import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 
 /**
  * A {@link Stack} to handle queries. This consists of a {@link Queue} that
@@ -268,6 +267,8 @@ public class QueryStack extends NestedStack {
         instanceProperties.set(SystemDefinedInstanceProperty.QUERY_LAMBDA_ROLE, queryExecutorLambda.getRole().getRoleName());
 
         this.setupWebSocketApi(code, instanceProperties, queriesQueue, queryExecutorLambda, configBucket);
+
+        Utils.addStackTagIfSet(this, instanceProperties);
     }
 
     protected void setupWebSocketApi(Code queryCode, InstanceProperties instanceProperties, Queue queriesQueue, Function queryExecutorLambda, IBucket configBucket) {
@@ -358,7 +359,7 @@ public class QueryStack extends NestedStack {
                         .resource(this.webSocketApi.getRef())
                         .build())
                         + "/live/*"
-                        ))
+                ))
                 .build());
     }
 }

@@ -49,13 +49,11 @@ public class FileWritingIteratorTest {
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
     private Schema createSchema() {
-        Schema schema = new Schema();
-
-        schema.setRowKeyFields(new Field("key", new StringType()));
-        schema.setSortKeyFields(new Field("int", new IntType()));
-        schema.setValueFields(new Field("value", new IntType()));
-
-        return schema;
+        return Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .sortKeyFields(new Field("int", new IntType()))
+                .valueFields(new Field("value", new IntType()))
+                .build();
     }
 
     private TableProperties createTableProperties() {

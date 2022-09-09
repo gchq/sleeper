@@ -15,14 +15,15 @@
  */
 package sleeper.core.range;
 
+import sleeper.core.key.Key;
+import sleeper.core.schema.Schema;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import sleeper.core.key.Key;
-import sleeper.core.schema.Schema;
 
 /**
  * A Region is a rectangular area in the space of row keys. This is created by
@@ -32,7 +33,7 @@ import sleeper.core.schema.Schema;
  */
 public class Region {
     private final Map<String, Range> rowKeyFieldNameToRange;
-    
+
     public Region(List<Range> ranges) {
         this.rowKeyFieldNameToRange = new HashMap<>();
         for (Range range : ranges) {
@@ -42,30 +43,30 @@ public class Region {
             this.rowKeyFieldNameToRange.put(range.getFieldName(), range);
         }
     }
-    
+
     public Region(Range range) {
         this(Collections.singletonList(range));
     }
-    
+
     public Range getRange(String fieldName) {
         return rowKeyFieldNameToRange.get(fieldName);
     }
-    
+
     /**
      * Returns the ranges in this region. Note that these are returned in no
      * particular order.
-     * 
+     *
      * @return a List of Ranges in no particular order.
      */
     public List<Range> getRanges() {
         return new ArrayList<>(rowKeyFieldNameToRange.values());
     }
-    
+
     public boolean isKeyInRegion(Schema schema, Key key) {
         if (null == key || key.isEmpty()) {
             throw new IllegalArgumentException("Key must be non-null and not empty");
         }
-        
+
         // Key is not in region if any dimension is not in the corresponding range.
         int i = 0;
         for (Object object : key.getKeys()) {
@@ -78,10 +79,10 @@ public class Region {
             }
             i++;
         }
-        
+
         return true;
     }
-    
+
     public boolean doesRegionOverlap(Region otherRegion) {
         // Two regions overlap if they overlap in all dimensions
         for (Map.Entry<String, Range> entry : rowKeyFieldNameToRange.entrySet()) {
@@ -94,7 +95,7 @@ public class Region {
         }
         return true;
     }
-    
+
     @Override
     public int hashCode() {
         int hash = 7;

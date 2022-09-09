@@ -23,18 +23,17 @@ import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.QueueAttributeName;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-
-import sleeper.query.model.QuerySerDe;
+import sleeper.ClientUtils;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.job.common.CommonJobUtils;
+import sleeper.query.model.QuerySerDe;
 import sleeper.splitter.SplitPartitionJobDefinitionSerDe;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.function.Function;
-import sleeper.ClientUtils;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
@@ -60,7 +59,7 @@ public class DeadLettersStatusReport {
     }
 
     public void run() {
-        System.out.println( "\nDead Letters Status Report:\n--------------------------");
+        System.out.println("\nDead Letters Status Report:\n--------------------------");
         printStats(instanceProperties.get(COMPACTION_JOB_DLQ_URL), "compaction jobs dead-letter", s -> {
             try {
                 return new CompactionJobSerDe(tablePropertiesProvider).deserialiseFromString(s).toString();
@@ -81,7 +80,7 @@ public class DeadLettersStatusReport {
         });
 
         printStats(instanceProperties.get(QUERY_DLQ_URL), "queries dead-letter", s ->
-            new QuerySerDe(tablePropertiesProvider).fromJson(s).toString());
+                new QuerySerDe(tablePropertiesProvider).fromJson(s).toString());
     }
 
     private void printStats(String queueUrl, String description, Function<String, String> decoder) {

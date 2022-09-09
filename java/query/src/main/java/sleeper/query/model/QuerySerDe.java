@@ -15,13 +15,28 @@
  */
 package sleeper.query.model;
 
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Region;
 import sleeper.core.range.RegionSerDe.RegionJsonSerDe;
 import sleeper.core.schema.Schema;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -251,7 +266,7 @@ public class QuerySerDe {
             Schema schema = tableNameToSchemaFunction.apply(tableName);
 
             switch (type) {
-                case LEAF_PARTITION_QUERY: {
+                case LEAF_PARTITION_QUERY:
                     if (!jsonObject.has(PARTITION_REGION) || JsonNull.INSTANCE.equals(jsonObject.get(PARTITION_REGION))) {
                         throw new JsonParseException(PARTITION_REGION + " field must be provided");
                     }
@@ -272,8 +287,7 @@ public class QuerySerDe {
                             .setStatusReportDestinations(statusReportDestinations)
                             .setRequestedValueFields(requestedValueFields)
                             .build();
-                }
-                case QUERY: {
+                case QUERY:
                     List<Region> ranges = new ArrayList<>();
                     if (jsonObject.has(REGIONS)) {
                         ranges.addAll(convertJsonArrayToRegions(schema, jsonObject.getAsJsonArray(REGIONS), typeOfSrc, context));
@@ -285,7 +299,6 @@ public class QuerySerDe {
                             .setStatusReportDestinations(statusReportDestinations)
                             .setRequestedValueFields(requestedValueFields)
                             .build();
-                }
                 default:
                     throw new IllegalArgumentException("Unknown query type: " + type);
             }

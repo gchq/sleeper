@@ -15,23 +15,27 @@
  */
 package sleeper.query.tracker;
 
-import java.util.List;
-import java.util.Map;
-
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.model.output.ResultsOutputInfo;
 
+import java.util.List;
+import java.util.Map;
+
 public interface QueryStatusReportListener {
-    public static final String DESTINATION = "destination";
+    String DESTINATION = "destination";
 
-    public void queryQueued(Query query);
-    public void queryInProgress(Query query);
-    public void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries);
-    public void queryCompleted(Query query, ResultsOutputInfo outputInfo);
-    public void queryFailed(Query query, Exception e);
+    void queryQueued(Query query);
 
-    public static QueryStatusReportListener fromConfig(Map<String, String> destinationConfig) {
+    void queryInProgress(Query query);
+
+    void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries);
+
+    void queryCompleted(Query query, ResultsOutputInfo outputInfo);
+
+    void queryFailed(Query query, Exception e);
+
+    static QueryStatusReportListener fromConfig(Map<String, String> destinationConfig) {
         if (!destinationConfig.containsKey(QueryStatusReportListener.DESTINATION)) {
             throw new IllegalArgumentException(QueryStatusReportListener.class.getSimpleName() + " config: " + destinationConfig + " is missing attribute: " + QueryStatusReportListener.DESTINATION);
         }

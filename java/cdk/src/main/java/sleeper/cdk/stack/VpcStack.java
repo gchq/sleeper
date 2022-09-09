@@ -15,19 +15,9 @@
  */
 package sleeper.cdk.stack;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
-
-import java.util.HashMap;
-import java.util.Map;
-
 import com.google.common.collect.Lists;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
@@ -46,6 +36,14 @@ import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 
 public class VpcStack extends NestedStack {
     private static final Logger LOGGER = LoggerFactory.getLogger(VpcStack.class);
@@ -98,5 +96,7 @@ public class VpcStack extends NestedStack {
                 .properties(vpcCheckProperties)
                 .serviceToken(provider.getServiceToken())
                 .build());
+
+        Utils.addStackTagIfSet(this, instanceProperties);
     }
 }

@@ -15,29 +15,26 @@
  */
 package sleeper.bulkimport.job.runner;
 
-import java.io.IOException;
-import java.util.Iterator;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.MapPartitionsFunction;
 import org.apache.spark.sql.Row;
 import org.apache.spark.util.SerializableConfiguration;
-
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.record.Record;
+
+import java.io.IOException;
+import java.util.Iterator;
 
 /**
  * A {@link WriteParquetFiles} writes sorted Rows to a Parquet file. When it
- * comes across a {@link Record} belonging to a different leaf partition
+ * comes across a {@link sleeper.core.record.Record} belonging to a different leaf partition
  * (denoted by the "partitionId" column), the Parquet file is flushed to the
  * file system along with its accompanying sketches file.
- *
  */
 public class WriteParquetFiles implements MapPartitionsFunction<Row, Row>, FlatMapFunction<Iterator<Row>, Row> {
     private static final long serialVersionUID = 1873341639622053831L;
-    
+
     private final String instancePropertiesStr;
     private final String tablePropertiesStr;
     private final SerializableConfiguration serializableConf;

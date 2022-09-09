@@ -27,7 +27,7 @@ public class ResultsOutputInfo {
         this.locations = locations;
         this.error = error;
     }
-    
+
     public ResultsOutputInfo(long recordCount, List<ResultsOutputLocation> locations) {
         this(recordCount, locations, null);
     }
@@ -47,9 +47,9 @@ public class ResultsOutputInfo {
     @Override
     public String toString() {
         return "ResultsOutputInfo{"
-            + "recordCount=" + recordCount
-            + ", locations=" + locations
-            + ", error=" + error
-            + '}';
+                + "recordCount=" + recordCount
+                + ", locations=" + locations
+                + ", error=" + error
+                + '}';
     }
 }

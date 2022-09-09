@@ -15,12 +15,12 @@
  */
 package sleeper.bulkimport.job.runner.rdd;
 
-import java.io.Serializable;
-import java.util.Comparator;
-
 import sleeper.core.key.Key;
 import sleeper.core.record.KeyComparator;
 import sleeper.core.schema.SchemaSerDe;
+
+import java.io.Serializable;
+import java.util.Comparator;
 
 /**
  * The {@link WrappedKeyComparator} is a {@link Comparator} of Sleeper {@link Key}s
@@ -29,7 +29,7 @@ import sleeper.core.schema.SchemaSerDe;
 public class WrappedKeyComparator implements Comparator<Key>, Serializable {
     private final String schemaAsString;
     private transient KeyComparator keyComparator;
-    
+
     public WrappedKeyComparator(String schemaAsString) {
         this.schemaAsString = schemaAsString;
     }

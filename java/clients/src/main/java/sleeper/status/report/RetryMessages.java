@@ -25,12 +25,12 @@ import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import sleeper.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-import sleeper.ClientUtils;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;

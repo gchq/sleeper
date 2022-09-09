@@ -73,6 +73,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assertions.tuple;
 
 public class CompactSortedFilesIT {
@@ -108,9 +109,10 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeCorrectlyAndDynamoUpdatedLongKey() throws IOException, StateStoreException, IteratorException, ObjectFactoryException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
         //  - Create two files of sorted data
         String folderName = folder.newFolder().getAbsolutePath();
         String file1 = folderName + "/file1.parquet";
@@ -223,9 +225,10 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeCorrectlyAndDynamoUpdatedStringKey() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new StringType()));
-        schema.setValueFields(new Field("value1", new StringType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value1", new StringType()), new Field("value2", new LongType()))
+                .build();
         //  - Create two files of sorted data
         String folderName = folder.newFolder().getAbsolutePath();
         String file1 = folderName + "/file1.parquet";
@@ -342,9 +345,10 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeCorrectlyAndDynamoUpdatedByteArrayKey() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
-        schema.setValueFields(new Field("value1", new ByteArrayType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new ByteArrayType()))
+                .valueFields(new Field("value1", new ByteArrayType()), new Field("value2", new LongType()))
+                .build();
         //  - Create two files of sorted data
         String folderName = folder.newFolder().getAbsolutePath();
         String file1 = folderName + "/file1.parquet";
@@ -483,9 +487,10 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeCorrectlyWhenSomeAreEmpty() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
         //  - Create two files of sorted data
         String folderName = folder.newFolder().getAbsolutePath();
         String file1 = folderName + "/file1.parquet";
@@ -586,9 +591,10 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeCorrectlyWhenAllAreEmpty() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
         //  - Create two empty files
         String folderName = folder.newFolder().getAbsolutePath();
         String file1 = folderName + "/file1.parquet";
@@ -667,10 +673,11 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeAndSplitCorrectlyAndDynamoUpdated() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(field)
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
         //  - Create DynamoDBStateStore
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator("fsmascadu", schema, dynamoDBClient);
         DynamoDBStateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
@@ -727,22 +734,23 @@ public class CompactSortedFilesIT {
         }
         writer2.close();
         //  - Split root partition
+        Range leftRange = new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 100L);
+        Partition leftPartition = Partition.builder()
+                .leafPartition(true)
+                .region(new Region(leftRange))
+                .id(Long.MIN_VALUE + "---100")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
+        Range rightRange = new RangeFactory(schema).createRange(field, 100L, null);
+        Partition rightPartition = Partition.builder()
+                .leafPartition(true)
+                .region(new Region(rightRange))
+                .id("100---")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         rootPartition.setLeafPartition(false);
-        Partition leftPartition = new Partition();
-        leftPartition.setLeafPartition(true);
-
-        Range leftRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, 100L);
-        leftPartition.setRegion(new Region(leftRange));
-        leftPartition.setId(Long.MIN_VALUE + "---100");
-        leftPartition.setParentPartitionId(rootPartition.getId());
-        leftPartition.setChildPartitionIds(new ArrayList<>());
-        Partition rightPartition = new Partition();
-        rightPartition.setLeafPartition(true);
-        Range rightRange = new Range.RangeFactory(schema).createRange(field, 100L, null);
-        rightPartition.setRegion(new Region(rightRange));
-        rightPartition.setId("100---");
-        rightPartition.setParentPartitionId(rootPartition.getId());
-        rightPartition.setChildPartitionIds(new ArrayList<>());
         rootPartition.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
         dynamoStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
         //  - Update Dynamo state store with details of files
@@ -833,11 +841,12 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeAndSplitCorrectlyWith2DimKeySplitOnFirstKey() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
-        schema.setRowKeyFields(field1, field2);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(field1, field2)
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
         //  - Create DynamoDBStateStore
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator("fsmascw2dksofk", schema, dynamoDBClient);
         DynamoDBStateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
@@ -905,25 +914,31 @@ public class CompactSortedFilesIT {
                 .collect(Collectors.toList());
         writer2.close();
         //  - Split root partition
+        Range leftRange = new RangeFactory(schema).createRange(
+                field1,
+                leftPartitionRecords.get(0).get("key1"),
+                leftPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
+        Partition leftPartition = Partition.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .leafPartition(true)
+                .region(new Region(leftRange))
+                .id("left")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
+        Range rightRange = new RangeFactory(schema).createRange(
+                field1,
+                rightPartitionRecords.get(0).get("key1"),
+                rightPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
+        Partition rightPartition = Partition.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .leafPartition(true)
+                .region(new Region(rightRange))
+                .id("right")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         rootPartition.setLeafPartition(false);
-        Partition leftPartition = new Partition();
-        leftPartition.setRowKeyTypes(new LongType(), new StringType());
-        leftPartition.setLeafPartition(true);
-        Range leftRange = new RangeFactory(schema)
-                .createRange(field1, leftPartitionRecords.get(0).get("key1"), leftPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
-        leftPartition.setRegion(new Region(leftRange));
-        leftPartition.setId("left");
-        leftPartition.setParentPartitionId(rootPartition.getId());
-        leftPartition.setChildPartitionIds(new ArrayList<>());
-        Partition rightPartition = new Partition();
-        rightPartition.setRowKeyTypes(new LongType(), new StringType());
-        rightPartition.setLeafPartition(true);
-        Range rightRange = new RangeFactory(schema)
-                .createRange(field1, rightPartitionRecords.get(0).get("key1"), rightPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
-        rightPartition.setRegion(new Region(rightRange));
-        rightPartition.setId("right");
-        rightPartition.setParentPartitionId(rootPartition.getId());
-        rightPartition.setChildPartitionIds(new ArrayList<>());
         rootPartition.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
         dynamoStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
         //  - Update Dynamo state store with details of files
@@ -994,11 +1009,12 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeAndSplitCorrectlyWith2DimKeySplitOnSecondKey() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
-        schema.setRowKeyFields(field1, field2);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(field1, field2)
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
         //  - Create DynamoDBStateStore
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator("fsmascw2dksosk", schema, dynamoDBClient);
         DynamoDBStateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
@@ -1067,24 +1083,30 @@ public class CompactSortedFilesIT {
         writer2.close();
         //  - Split root partition
         rootPartition.setLeafPartition(false);
-        Partition leftPartition = new Partition();
-        leftPartition.setRowKeyTypes(new LongType(), new StringType());
-        leftPartition.setLeafPartition(true);
-        Range leftRange = new RangeFactory(schema)
-                .createRange(field1, leftPartitionRecords.get(0).get("key1"), leftPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
-        leftPartition.setRegion(new Region(leftRange));
-        leftPartition.setId("left");
-        leftPartition.setParentPartitionId(rootPartition.getId());
-        leftPartition.setChildPartitionIds(new ArrayList<>());
-        Partition rightPartition = new Partition();
-        rightPartition.setRowKeyTypes(new LongType(), new StringType());
-        rightPartition.setLeafPartition(true);
-        Range rightRange = new RangeFactory(schema)
-                .createRange(field1, rightPartitionRecords.get(0).get("key1"), rightPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
-        rightPartition.setRegion(new Region(rightRange));
-        rightPartition.setId("right");
-        rightPartition.setParentPartitionId(rootPartition.getId());
-        rightPartition.setChildPartitionIds(new ArrayList<>());
+        Range leftRange = new RangeFactory(schema).createRange(
+                field1,
+                leftPartitionRecords.get(0).get("key1"),
+                leftPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
+        Partition leftPartition = Partition.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .leafPartition(true)
+                .region(new Region(leftRange))
+                .id("left")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
+        Range rightRange = new RangeFactory(schema).createRange(
+                field1,
+                rightPartitionRecords.get(0).get("key1"),
+                rightPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
+        Partition rightPartition = Partition.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .leafPartition(true)
+                .region(new Region(rightRange))
+                .id("right")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         rootPartition.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
         dynamoStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
         //  - Update Dynamo state store with details of files
@@ -1155,10 +1177,11 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeAndSplitCorrectlyWhenOneChildFileIsEmpty() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(field)
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
         //  - Create DynamoDBStateStore
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator("fsmascwocfie", schema, dynamoDBClient);
         DynamoDBStateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
@@ -1216,21 +1239,23 @@ public class CompactSortedFilesIT {
         }
         writer2.close();
         //  - Split root partition
-        rootPartition.setLeafPartition(false);
-        Partition leftPartition = new Partition();
-        leftPartition.setLeafPartition(true);
         Range leftRange = new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 100L);
-        leftPartition.setRegion(new Region(leftRange));
-        leftPartition.setId(Long.MIN_VALUE + "---100");
-        leftPartition.setParentPartitionId(rootPartition.getId());
-        leftPartition.setChildPartitionIds(new ArrayList<>());
-        Partition rightPartition = new Partition();
-        rightPartition.setLeafPartition(true);
+        Partition leftPartition = Partition.builder()
+                .leafPartition(true)
+                .region(new Region(leftRange))
+                .id(Long.MIN_VALUE + "---100")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         Range rightRange = new RangeFactory(schema).createRange(field, 100L, null);
-        rightPartition.setRegion(new Region(rightRange));
-        rightPartition.setId("100---");
-        rightPartition.setParentPartitionId(rootPartition.getId());
-        rightPartition.setChildPartitionIds(new ArrayList<>());
+        Partition rightPartition = Partition.builder()
+                .leafPartition(true)
+                .region(new Region(rightRange))
+                .id("100---")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
+        rootPartition.setLeafPartition(false);
         rootPartition.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
         dynamoStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
         //  - Update Dynamo state store with details of files
@@ -1310,9 +1335,10 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeAndApplyIteratorCorrectlyLongKey() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("timestamp", new LongType()), new Field("value", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .valueFields(new Field("timestamp", new LongType()), new Field("value", new LongType()))
+                .build();
         //  - Create two files of sorted data
         String folderName = folder.newFolder().getAbsolutePath();
         String file1 = folderName + "/file1.parquet";
@@ -1429,10 +1455,11 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeAndSplitAndApplyIteratorCorrectlyLongKey() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
         // Given
         //  - Schema
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("timestamp", new LongType()), new Field("value", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(field)
+                .valueFields(new Field("timestamp", new LongType()), new Field("value", new LongType()))
+                .build();
         //  - Create DynamoDBStateStore
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator("fsmasaaicadu", schema, dynamoDBClient);
         DynamoDBStateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
@@ -1489,21 +1516,23 @@ public class CompactSortedFilesIT {
         }
         writer2.close();
         //  - Split root partition
-        rootPartition.setLeafPartition(false);
-        Partition leftPartition = new Partition();
-        leftPartition.setLeafPartition(true);
         Range leftRange = new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 100L);
-        leftPartition.setRegion(new Region(leftRange));
-        leftPartition.setId(Long.MIN_VALUE + "---100");
-        leftPartition.setParentPartitionId(rootPartition.getId());
-        leftPartition.setChildPartitionIds(new ArrayList<>());
-        Partition rightPartition = new Partition();
-        rightPartition.setLeafPartition(true);
+        Partition leftPartition = Partition.builder()
+                .leafPartition(true)
+                .region(new Region(leftRange))
+                .id(Long.MIN_VALUE + "---100")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         Range rightRange = new RangeFactory(schema).createRange(field, 100L, null);
-        rightPartition.setRegion(new Region(rightRange));
-        rightPartition.setId("100---");
-        rightPartition.setParentPartitionId(rootPartition.getId());
-        rightPartition.setChildPartitionIds(new ArrayList<>());
+        Partition rightPartition = Partition.builder()
+                .leafPartition(true)
+                .region(new Region(rightRange))
+                .id("100---")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
+        rootPartition.setLeafPartition(false);
         rootPartition.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
         dynamoStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
         //  - Update Dynamo state store with details of files
@@ -1595,15 +1624,19 @@ public class CompactSortedFilesIT {
     }
 
     private static void assertReadyForGC(DynamoDBStateStore dynamoStateStore, FileInfo... files) {
-        assertThat(dynamoStateStore.getReadyForGCFiles()).toIterable()
-                .extracting(
-                        FileInfo::getFilename,
-                        FileInfo::getRowKeyTypes,
-                        FileInfo::getPartitionId,
-                        FileInfo::getFileStatus)
-                .containsExactlyInAnyOrder(Arrays.stream(files)
-                        .map(file -> tuple(file.getFilename(), file.getRowKeyTypes(), file.getPartitionId(),
-                                FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION))
-                        .toArray(Tuple[]::new));
+        try {
+            assertThat(dynamoStateStore.getReadyForGCFiles()).toIterable()
+                    .extracting(
+                            FileInfo::getFilename,
+                            FileInfo::getRowKeyTypes,
+                            FileInfo::getPartitionId,
+                            FileInfo::getFileStatus)
+                    .containsExactlyInAnyOrder(Arrays.stream(files)
+                            .map(file -> tuple(file.getFilename(), file.getRowKeyTypes(), file.getPartitionId(),
+                                    FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION))
+                            .toArray(Tuple[]::new));
+        } catch (StateStoreException e) {
+            fail("StateStoreException generated: " + e.getMessage());
+        }
     }
 }

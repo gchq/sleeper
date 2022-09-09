@@ -62,6 +62,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ResultVerifier {
     private static final double QUANTILE_SKETCH_TOLERANCE = 0.01;
 
+    private ResultVerifier() {
+    }
+
     public static void verify(
             StateStore stateStore,
             Schema sleeperSchema,

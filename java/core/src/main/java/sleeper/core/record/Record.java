@@ -35,7 +35,7 @@ import java.util.Set;
  */
 public class Record {
     private final Map<String, Object> values;
-    
+
     public Record() {
         values = new HashMap<>();
     }
@@ -49,7 +49,7 @@ public class Record {
         this();
         this.values.putAll(record.values);
     }
-    
+
     public Object get(String fieldName) {
         return values.get(fieldName);
     }
@@ -61,7 +61,7 @@ public class Record {
     public void put(String fieldName, Object value) {
         values.put(fieldName, value);
     }
-    
+
     public Set<String> getKeys() {
         return Collections.unmodifiableSet(values.keySet());
     }
@@ -73,7 +73,7 @@ public class Record {
         }
         return valuesList;
     }
-    
+
     @Override
     public int hashCode() {
         Map<String, Object> cloneWithWrappedByteArray = new HashMap<>();
@@ -101,7 +101,7 @@ public class Record {
             return false;
         }
         final Record other = (Record) obj;
-        
+
         Map<String, Object> cloneWithWrappedByteArray = new HashMap<>();
         for (Map.Entry<String, Object> entry : values.entrySet()) {
             if (entry.getValue() instanceof byte[]) {
@@ -152,7 +152,7 @@ public class Record {
             if (field.getType() instanceof ByteArrayType) {
                 term += ByteArray.wrap((byte[]) values.get(field.getName()));
             } else {
-                 term += values.get(field.getName());
+                term += values.get(field.getName());
             }
             terms.add(term);
         }

@@ -15,17 +15,16 @@
  */
 package sleeper.query.tracker;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sleeper.query.model.LeafPartitionQuery;
+import sleeper.query.model.Query;
+import sleeper.query.model.output.ResultsOutputInfo;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
-import sleeper.query.model.output.ResultsOutputInfo;
 
 public class QueryStatusReportListeners implements QueryStatusReportListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(QueryStatusReportListeners.class);
@@ -38,8 +37,8 @@ public class QueryStatusReportListeners implements QueryStatusReportListener {
         }
 
         List<QueryStatusReportListener> listeners = destinationsConfig.stream()
-            .map(destinationConfig -> QueryStatusReportListener.fromConfig(destinationConfig))
-            .collect(Collectors.toList());
+                .map(destinationConfig -> QueryStatusReportListener.fromConfig(destinationConfig))
+                .collect(Collectors.toList());
         return new QueryStatusReportListeners(listeners);
     }
 

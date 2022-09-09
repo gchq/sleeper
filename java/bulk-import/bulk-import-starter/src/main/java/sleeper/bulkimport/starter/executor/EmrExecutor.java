@@ -16,11 +16,23 @@
 package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.model.*;
+import com.amazonaws.services.elasticmapreduce.model.Application;
+import com.amazonaws.services.elasticmapreduce.model.ComputeLimits;
+import com.amazonaws.services.elasticmapreduce.model.ComputeLimitsUnitType;
+import com.amazonaws.services.elasticmapreduce.model.Configuration;
+import com.amazonaws.services.elasticmapreduce.model.HadoopJarStepConfig;
+import com.amazonaws.services.elasticmapreduce.model.InstanceGroupConfig;
+import com.amazonaws.services.elasticmapreduce.model.InstanceRoleType;
+import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
+import com.amazonaws.services.elasticmapreduce.model.ManagedScalingPolicy;
+import com.amazonaws.services.elasticmapreduce.model.MarketType;
+import com.amazonaws.services.elasticmapreduce.model.RunJobFlowRequest;
+import com.amazonaws.services.elasticmapreduce.model.RunJobFlowResult;
+import com.amazonaws.services.elasticmapreduce.model.ScaleDownBehavior;
+import com.amazonaws.services.elasticmapreduce.model.StepConfig;
+import com.amazonaws.services.elasticmapreduce.model.Tag;
 import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.Lists;
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
@@ -28,11 +40,15 @@ import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
+
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 /**
  * An {@link Executor} which runs a bulk import job on an EMR cluster.
@@ -77,7 +93,7 @@ public class EmrExecutor extends AbstractEmrExecutor {
         if (clusterName.length() > 64) {
             clusterName = clusterName.substring(0, 64);
         }
-        
+
         RunJobFlowResult response = emrClient.runJobFlow(new RunJobFlowRequest()
                 .withName(clusterName)
                 .withInstances(createConfig(bulkImportJob, tableProperties))
@@ -117,7 +133,7 @@ public class EmrExecutor extends AbstractEmrExecutor {
         String executorInstanceType = getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE, platformSpec, tableProperties);
         Integer initialNumberOfExecutors = Integer.parseInt(getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, platformSpec, tableProperties));
 
-        String marketTypeOfExecutors =  getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, platformSpec, tableProperties);
+        String marketTypeOfExecutors = getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, platformSpec, tableProperties);
         if (marketTypeOfExecutors == null) {
             marketTypeOfExecutors = "SPOT";
         }

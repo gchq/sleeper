@@ -46,6 +46,7 @@
         <module>cdk-environment</module>
         <module>metrics</module>
         <module>distribution</module>
+        <module>build</module>
     </modules>
 
     <properties>
@@ -85,6 +86,7 @@
         <assertj.version>3.23.1</assertj.version>
         <jsonunit.version>2.22.1</jsonunit.version>
         <!-- Maven plugins -->
+        <checkstyle.plugin.version>2.17</checkstyle.plugin.version>
         <release.plugin.version>3.0.0-M4</release.plugin.version>
         <surefire.plugin.version>3.0.0-M5</surefire.plugin.version>
         <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
@@ -228,6 +230,43 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${checkstyle.plugin.version}</version>
+                <configuration>
+                    <configLocation>../code-style/checkstyle.xml</configLocation>
+                    <suppressionsLocation>
+                        ../code-style/checkstyle-suppressions.xml
+                    </suppressionsLocation>
+                    <suppressionsFileExpression>checkstyle.suppressions.file</suppressionsFileExpression>
+                    <encoding>UTF-8</encoding>
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>true</failsOnError>
+                    <headerLocation>../code-style/licenseHeader.txt</headerLocation>
+                    <excludes>**/generated/**/*</excludes>
+                    <sourceDirectories>
+                        <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+                        <sourceDirectory>${project.build.testSourceDirectory}</sourceDirectory>
+                    </sourceDirectories>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>validate</id>
+                        <phase>test</phase>
+                        <configuration>
+                            <configLocation>../code-style/checkstyle.xml</configLocation>
+                            <encoding>UTF-8</encoding>
+                            <consoleOutput>true</consoleOutput>
+                            <failsOnError>true</failsOnError>
+                            <headerLocation>../code-style/licenseHeader.txt</headerLocation>
+                        </configuration>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
                 <version>${release.plugin.version}</version>
                 <configuration>
@@ -334,6 +373,49 @@
                 <skipTests>true</skipTests>
                 <skipITs>true</skipITs>
             </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-checkstyle-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>validate</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>style</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <skipITs>true</skipITs>
+            </properties>
+        </profile>
+        <profile>
+            <id>skipShade</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-shade-plugin</artifactId>
+                            <version>${shade.plugin.version}</version>
+                            <executions>
+                                <execution>
+                                    <phase>none</phase>
+                                    <goals>
+                                        <goal>shade</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
         </profile>
     </profiles>
 </project>

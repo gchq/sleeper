@@ -15,29 +15,6 @@
  */
 package sleeper.cdk.stack;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLUSTER;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_TASK_CPU;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_TASK_CREATION_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_TASK_MEMORY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
@@ -77,6 +54,29 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLUSTER;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_TASK_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_TASK_CREATION_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_TASK_MEMORY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+
 public class IngestStack extends NestedStack {
     public static final String INGEST_STACK_QUEUE_NAME = "IngestStackQueueNameKey";
     public static final String INGEST_STACK_QUEUE_URL = "IngestStackQueueUrlKey";
@@ -88,7 +88,8 @@ public class IngestStack extends NestedStack {
     private Queue ingestDLQ;
     private final InstanceProperties instanceProperties;
 
-    public IngestStack(Construct scope,
+    public IngestStack(
+            Construct scope,
             String id,
             List<StateStoreStack> stateStoreStacks,
             List<IBucket> dataBuckets,
@@ -103,7 +104,7 @@ public class IngestStack extends NestedStack {
         //  - A lambda that periodically checks the number of running ingest tasks
         //      and if there are not enough (i.e. there is a backlog on the queue
         //      then it creates more tasks).
-        
+
         // Config bucket
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
@@ -118,6 +119,8 @@ public class IngestStack extends NestedStack {
 
         // Lambda to create ingest tasks
         lambdaToCreateIngestTasks(configBucket, ingestJobQueue);
+
+        Utils.addStackTagIfSet(this, instanceProperties);
     }
 
     private Queue sqsQueueForIngestJobs(Topic topic) {
@@ -177,7 +180,8 @@ public class IngestStack extends NestedStack {
         return ingestJobQueue;
     }
 
-    private Cluster ecsClusterForIngestTasks(IBucket configBucket,
+    private Cluster ecsClusterForIngestTasks(
+            IBucket configBucket,
             IBucket jarsBucket,
             List<IBucket> dataBuckets,
             List<StateStoreStack> stateStoreStacks,

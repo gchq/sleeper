@@ -32,7 +32,7 @@ import java.lang.reflect.Field;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -121,10 +121,10 @@ public class ExecutorFactoryIT {
         setEnvironmentVariable("BULK_IMPORT_PLATFORM", "ZZZ");
 
         // When then
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThatThrownBy(() -> {
             ExecutorFactory executorFactory = new ExecutorFactory(s3Client, mock(AmazonElasticMapReduceClient.class), mock(AWSStepFunctionsClient.class));
             executorFactory.createExecutor();
-        });
+        }).isInstanceOf(IllegalArgumentException.class);
 
         s3Client.shutdown();
     }

@@ -41,17 +41,17 @@ public class SplitPartitionJobDefinitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithIntKey() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new IntType());
-        partition.setId("123");
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(new ArrayList<>());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Range range = new RangeFactory(schema).createRange(field, 1, 10);
-        partition.setRegion(new Region(range));
+        Partition partition = Partition.builder()
+                .rowKeyTypes(new IntType())
+                .id("123")
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .region(new Region(range))
+                .build();
         FileInfo fileInfo1 = new FileInfo();
         fileInfo1.setRowKeyTypes(new IntType());
         fileInfo1.setFilename("f1");
@@ -85,17 +85,17 @@ public class SplitPartitionJobDefinitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithLongKey() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new LongType());
-        partition.setId("123");
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(new ArrayList<>());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Range range = new RangeFactory(schema).createRange(field, 1L, 10L);
-        partition.setRegion(new Region(range));
+        Partition partition = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .id("123")
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .region(new Region(range))
+                .build();
         FileInfo fileInfo1 = new FileInfo();
         fileInfo1.setRowKeyTypes(new LongType());
         fileInfo1.setFilename("f1");
@@ -129,17 +129,17 @@ public class SplitPartitionJobDefinitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithStringKey() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new StringType());
-        partition.setId("123");
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(new ArrayList<>());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Range range = new RangeFactory(schema).createRange(field, "A", "Z");
-        partition.setRegion(new Region(range));
+        Partition partition = Partition.builder()
+                .rowKeyTypes(new StringType())
+                .id("123")
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .region(new Region(range))
+                .build();
         FileInfo fileInfo1 = new FileInfo();
         fileInfo1.setRowKeyTypes(new StringType());
         fileInfo1.setFilename("f1");
@@ -173,17 +173,17 @@ public class SplitPartitionJobDefinitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithStringKeyWithNullMax() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new StringType());
-        partition.setId("123");
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(new ArrayList<>());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Range range = new RangeFactory(schema).createRange(field, "", null);
-        partition.setRegion(new Region(range));
+        Partition partition = Partition.builder()
+                .rowKeyTypes(new StringType())
+                .id("123")
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .region(new Region(range))
+                .build();
         FileInfo fileInfo1 = new FileInfo();
         fileInfo1.setRowKeyTypes(new StringType());
         fileInfo1.setFilename("f1");
@@ -217,17 +217,17 @@ public class SplitPartitionJobDefinitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithByteArrayKey() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new ByteArrayType());
-        partition.setId("123");
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(new ArrayList<>());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Range range = new RangeFactory(schema).createRange(field, new byte[]{}, new byte[]{64, 64});
-        partition.setRegion(new Region(range));
+        Partition partition = Partition.builder()
+                .rowKeyTypes(new ByteArrayType())
+                .id("123")
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .region(new Region(range))
+                .build();
         FileInfo fileInfo1 = new FileInfo();
         fileInfo1.setRowKeyTypes(new ByteArrayType());
         fileInfo1.setFilename("f1");
@@ -261,17 +261,17 @@ public class SplitPartitionJobDefinitionSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseWithByteArrayKeyWithNullMax() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new ByteArrayType());
-        partition.setId("123");
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(new ArrayList<>());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Range range = new RangeFactory(schema).createRange(field, new byte[]{}, null);
-        partition.setRegion(new Region(range));
+        Partition partition = Partition.builder()
+                .rowKeyTypes(new ByteArrayType())
+                .id("123")
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .region(new Region(range))
+                .build();
         FileInfo fileInfo1 = new FileInfo();
         fileInfo1.setRowKeyTypes(new ByteArrayType());
         fileInfo1.setFilename("f1");

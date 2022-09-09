@@ -21,10 +21,10 @@ import com.amazonaws.services.ecs.model.ListTasksRequest;
 import com.amazonaws.services.ecs.model.ListTasksResult;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import sleeper.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.io.IOException;
-import sleeper.ClientUtils;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
@@ -43,7 +43,7 @@ public class ECSTasksStatusReport {
     }
 
     public void run() {
-        System.out.println( "\nECS Tasks Status Report:\n--------------------------");
+        System.out.println("\nECS Tasks Status Report:\n--------------------------");
         ListTasksRequest listTasksRequest = new ListTasksRequest()
                 .withCluster(instanceProperties.get(COMPACTION_CLUSTER));
         ListTasksResult listTasksResult = ecsClient.listTasks(listTasksRequest);

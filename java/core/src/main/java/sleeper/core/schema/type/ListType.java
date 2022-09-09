@@ -33,8 +33,12 @@ public class ListType implements Type {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         ListType listType = (ListType) o;
         return elementType.equals(listType.elementType);
     }

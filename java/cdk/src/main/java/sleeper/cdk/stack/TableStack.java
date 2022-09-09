@@ -15,34 +15,9 @@
  */
 package sleeper.cdk.stack;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.TABLE_METRICS_RULES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
-import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
-import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_KEY;
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.google.common.collect.Lists;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -70,13 +45,37 @@ import software.amazon.awscdk.services.s3.deployment.BucketDeployment;
 import software.amazon.awscdk.services.s3.deployment.Source;
 import software.constructs.Construct;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.TABLE_METRICS_RULES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
+import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
+import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_KEY;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+
 public class TableStack extends NestedStack {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableStack.class);
-    
+
     private final List<StateStoreStack> stateStoreStacks = new ArrayList<>();
     private final List<IBucket> dataBuckets = new ArrayList<>();
 
-    public TableStack(Construct scope,
+    public TableStack(
+            Construct scope,
             String id,
             InstanceProperties instanceProperties) {
         super(scope, id);
@@ -107,6 +106,8 @@ public class TableStack extends NestedStack {
                 .build();
 
         createTables(instanceProperties, sleeperTableProvider, sleeperTableLambda, configBucket, jarsBucket);
+
+        Utils.addStackTagIfSet(this, instanceProperties);
     }
 
     private void createTables(InstanceProperties instanceProperties,
@@ -115,7 +116,7 @@ public class TableStack extends NestedStack {
                               IBucket configBucket,
                               IBucket jarsBucket) {
         Utils.getAllTableProperties(instanceProperties).forEach(tableProperties ->
-            createTable(instanceProperties, tableProperties, tablesProvider, sleeperTableLambda, configBucket, jarsBucket));
+                createTable(instanceProperties, tableProperties, tablesProvider, sleeperTableLambda, configBucket, jarsBucket));
     }
 
     private void createTable(InstanceProperties instanceProperties,
@@ -208,27 +209,27 @@ public class TableStack extends NestedStack {
 
         // Metrics generation and publishing
         Function tableMetricsPublisher = Function.Builder.create(this, tableName + "MetricsPublisher")
-            .description("Generates metrics for a Sleeper table based on info in its state store, and publishes them to CloudWatch")
-            .code(Code.fromBucket(jarsBucket, "metrics-" + instanceProperties.get(VERSION) + ".jar"))
-            .runtime(Runtime.JAVA_8)
-            .handler("sleeper.metrics.TableMetricsLambda::handleRequest")
-            .memorySize(256)
-            .timeout(Duration.seconds(60))
-            .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-            .build();
+                .description("Generates metrics for a Sleeper table based on info in its state store, and publishes them to CloudWatch")
+                .code(Code.fromBucket(jarsBucket, "metrics-" + instanceProperties.get(VERSION) + ".jar"))
+                .runtime(Runtime.JAVA_8)
+                .handler("sleeper.metrics.TableMetricsLambda::handleRequest")
+                .memorySize(256)
+                .timeout(Duration.seconds(60))
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .build();
 
         configBucket.grantRead(tableMetricsPublisher);
         stateStoreStack.grantReadActiveFileMetadata(tableMetricsPublisher);
         stateStoreStack.grantReadPartitionMetadata(tableMetricsPublisher);
 
         Rule rule = Rule.Builder.create(this, tableName + "MetricsPublishSchedule")
-            .schedule(Schedule.rate(Duration.minutes(1)))
-            .targets(Collections.singletonList(
-                LambdaFunction.Builder.create(tableMetricsPublisher)
-                    .event(RuleTargetInput.fromText(configBucket.getBucketName() + "|" + tableName))
-                    .build()
-            ))
-            .build();
+                .schedule(Schedule.rate(Duration.minutes(1)))
+                .targets(Collections.singletonList(
+                        LambdaFunction.Builder.create(tableMetricsPublisher)
+                                .event(RuleTargetInput.fromText(configBucket.getBucketName() + "|" + tableName))
+                                .build()
+                ))
+                .build();
         if (null == instanceProperties.get(TABLE_METRICS_RULES) || instanceProperties.get(TABLE_METRICS_RULES).isEmpty()) {
             instanceProperties.set(TABLE_METRICS_RULES, rule.getRuleName());
         } else {
@@ -248,7 +249,7 @@ public class TableStack extends NestedStack {
                                                TableProperties tableProperties,
                                                Bucket dataBucket,
                                                Provider sleeperTablesProvider) {
-        StateStoreStack stateStoreStack = new S3StateStoreStack(this,dataBucket, instanceProperties, tableProperties, sleeperTablesProvider);
+        StateStoreStack stateStoreStack = new S3StateStoreStack(this, dataBucket, instanceProperties, tableProperties, sleeperTablesProvider);
         return stateStoreStack;
     }
 

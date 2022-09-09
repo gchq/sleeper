@@ -15,41 +15,42 @@
  */
 package sleeper.configuration;
 
-import java.util.Set;
-
-import org.apache.commons.lang3.EnumUtils;
-
 import com.google.common.collect.Sets;
-
+import org.apache.commons.lang3.EnumUtils;
 import sleeper.configuration.properties.table.CompressionCodec;
+
+import java.util.Set;
 
 /**
  * Utility methods for interacting with SQS queues.
  */
 public class Utils {
 
+    private Utils() {
+    }
+
     private static final Set<String> VALID_LOG_RETENTION_VALUES = Sets.newHashSet("-1", "1", "3", "5", "7", "14",
             "30", "60", "90", "120", "150", "180", "365", "400", "545", "731", "1827", "3653");
 
     private static final Set<String> VALID_FADVISE_VALUES = Sets.newHashSet("normal", "sequential", "random");
-    
+
     public static boolean isPositiveInteger(String integer) {
         return Integer.parseInt(integer) > 0;
     }
-    
+
     public static boolean isNonNullNonEmptyString(String string) {
         return null != string && !string.isEmpty();
     }
-    
+
     public static boolean isTrueOrFalse(String string) {
         return string.equalsIgnoreCase("true") || string.equalsIgnoreCase("false");
     }
-    
+
     public static boolean isValidLambdaTimeout(String timeout) {
         int i = Integer.parseInt(timeout);
         return i <= 900 && i > 0;
     }
-    
+
     public static boolean isValidFadvise(String fadvise) {
         return VALID_FADVISE_VALUES.contains(fadvise);
     }

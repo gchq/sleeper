@@ -15,6 +15,10 @@
  */
 package sleeper.status.report.filestatus;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.function.Function;
+
 /**
  * An interface the represents a method of presenting the status of files in
  * Sleeper to a user.
@@ -22,4 +26,12 @@ package sleeper.status.report.filestatus;
 public interface FileStatusReporter {
 
     void report(FileStatus fileStatusReport, boolean verbose);
+
+    static String asString(
+            Function<PrintStream, FileStatusReporter> getReporter, FileStatus fileStatusReport, boolean verbose) {
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        getReporter.apply(new PrintStream(os))
+                .report(fileStatusReport, verbose);
+        return os.toString();
+    }
 }

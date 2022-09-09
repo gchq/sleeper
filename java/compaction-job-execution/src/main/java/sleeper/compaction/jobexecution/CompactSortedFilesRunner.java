@@ -15,9 +15,6 @@
  */
 package sleeper.compaction.jobexecution;
 
-import sleeper.job.common.action.DeleteMessageAction;
-import sleeper.job.common.action.ActionException;
-import sleeper.job.common.action.ChangeMessageVisibilityTimeoutAction;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
@@ -27,31 +24,36 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import java.io.IOException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
-import sleeper.job.common.action.thread.PeriodicActionRunnable;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.iterator.IteratorException;
+import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.job.common.action.ActionException;
+import sleeper.job.common.action.ChangeMessageVisibilityTimeoutAction;
+import sleeper.job.common.action.DeleteMessageAction;
+import sleeper.job.common.action.thread.PeriodicActionRunnable;
+import sleeper.statestore.StateStore;
+import sleeper.table.util.StateStoreProvider;
+import sleeper.utils.HadoopConfigurationProvider;
+
+import java.io.IOException;
+
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
-import sleeper.core.iterator.IteratorException;
-import sleeper.io.parquet.record.SchemaConverter;
-import sleeper.statestore.StateStore;
-import sleeper.table.util.StateStoreProvider;
-import sleeper.utils.HadoopConfigurationProvider;
 
 /**
  * Retrieves compaction {@link CompactionJob}s from an SQS queue, and executes them. It
@@ -62,7 +64,7 @@ import sleeper.utils.HadoopConfigurationProvider;
  */
 public class CompactSortedFilesRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFilesRunner.class);
-    
+
     private final InstanceProperties instanceProperties;
     private final ObjectFactory objectFactory;
     private final TablePropertiesProvider tablePropertiesProvider;
@@ -75,14 +77,15 @@ public class CompactSortedFilesRunner {
     private final int maxMessageRetrieveAttempts;
     private final int waitTimeSeconds;
 
-    public CompactSortedFilesRunner(InstanceProperties instanceProperties,
-                                    ObjectFactory objectFactory,
-                                    TablePropertiesProvider tablePropertiesProvider,
-                                    StateStoreProvider stateStoreProvider,
-                                    String sqsJobQueueUrl,
-                                    AmazonSQS sqsClient,
-                                    int maxMessageRetrieveAttempts,
-                                    int waitTimeSeconds) {
+    public CompactSortedFilesRunner(
+            InstanceProperties instanceProperties,
+            ObjectFactory objectFactory,
+            TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider,
+            String sqsJobQueueUrl,
+            AmazonSQS sqsClient,
+            int maxMessageRetrieveAttempts,
+            int waitTimeSeconds) {
         this.instanceProperties = instanceProperties;
         this.objectFactory = objectFactory;
         this.tablePropertiesProvider = tablePropertiesProvider;
@@ -95,13 +98,14 @@ public class CompactSortedFilesRunner {
         this.maxMessageRetrieveAttempts = maxMessageRetrieveAttempts;
         this.waitTimeSeconds = waitTimeSeconds;
     }
-    
-    public CompactSortedFilesRunner(InstanceProperties instanceProperties,
-                                    ObjectFactory objectFactory,
-                                    TablePropertiesProvider tablePropertiesProvider,
-                                    StateStoreProvider stateStoreProvider,
-                                    String sqsJobQueueUrl,
-                                    AmazonSQS sqsClient) {
+
+    public CompactSortedFilesRunner(
+            InstanceProperties instanceProperties,
+            ObjectFactory objectFactory,
+            TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider,
+            String sqsJobQueueUrl,
+            AmazonSQS sqsClient) {
         this(instanceProperties, objectFactory, tablePropertiesProvider, stateStoreProvider, sqsJobQueueUrl, sqsClient, 3, 20);
     }
 
@@ -154,16 +158,16 @@ public class CompactSortedFilesRunner {
                 stateStore, tableProperties.getInt(ROW_GROUP_SIZE), tableProperties.getInt(PAGE_SIZE),
                 tableProperties.get(COMPRESSION_CODEC), maxConnectionsToS3, keepAliveFrequency);
         compactSortedFiles.compact();
-        
+
         // Delete message from queue
         DeleteMessageAction deleteAction = new DeleteMessageAction(sqsClient, sqsJobQueueUrl, compactionJob.getId(), message.getReceiptHandle());
         deleteAction.call();
-        
+
         LOGGER.info("Compaction job {}: Stopping background thread to keep SQS messages alive",
                 compactionJob.getId());
         keepAliveRunnable.stop();
     }
-    
+
     public static void main(String[] args) throws InterruptedException, IOException, ObjectFactoryException, ActionException {
         if (2 != args.length) {
             System.err.println("Error: must have 2 arguments (config bucket and compaction type (compaction or splittingcompaction)), got "

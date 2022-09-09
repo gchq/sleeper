@@ -59,6 +59,9 @@ public class CreateJobsLambda {
 
     /**
      * No-args constructor used by Lambda service. Dynamo file table name will be obtained from an environment variable.
+     *
+     * @throws IOException            if instance properties cannot be loaded from S3
+     * @throws ObjectFactoryException if user jars cannot be loaded
      */
     public CreateJobsLambda() throws IOException, ObjectFactoryException {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
@@ -80,8 +83,9 @@ public class CreateJobsLambda {
     /**
      * Constructor used in tests.
      *
-     * @param instanceProperties The SleeperProperties
+     * @param instanceProperties    The SleeperProperties
      * @param endpointConfiguration The configuration of the endpoint for the DynamoDB client
+     * @throws ObjectFactoryException if user jars cannot be loaded
      */
     public CreateJobsLambda(InstanceProperties instanceProperties,
                             AwsClientBuilder.EndpointConfiguration endpointConfiguration) throws ObjectFactoryException {
@@ -105,7 +109,9 @@ public class CreateJobsLambda {
         CreateJobs createJobs = new CreateJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, dynamoDBClient, sqsClient, tableLister);
         try {
             createJobs.createJobs();
-        } catch (StateStoreException | IOException | ClassNotFoundException | IllegalAccessException | InstantiationException | ObjectFactoryException e) {
+        } catch (StateStoreException | IOException | ClassNotFoundException |
+                 IllegalAccessException | InstantiationException |
+                 ObjectFactoryException e) {
             LOGGER.error("Exception thrown whilst creating jobs", e);
         }
 

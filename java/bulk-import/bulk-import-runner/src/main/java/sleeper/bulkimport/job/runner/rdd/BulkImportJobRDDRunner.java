@@ -15,9 +15,6 @@
  */
 package sleeper.bulkimport.job.runner.rdd;
 
-import java.io.IOException;
-import java.util.List;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.broadcast.Broadcast;
@@ -25,7 +22,6 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
-
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.runner.BulkImportJobRunner;
 import sleeper.bulkimport.job.runner.WriteParquetFiles;
@@ -33,6 +29,9 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
+
+import java.io.IOException;
+import java.util.List;
 
 /**
  * The {@link BulkImportJobRDDRunner} is a {@link BulkImportJobRunner} which
@@ -42,7 +41,8 @@ import sleeper.core.schema.SchemaSerDe;
 public class BulkImportJobRDDRunner extends BulkImportJobRunner {
 
     @Override
-    public Dataset<Row> createFileInfos(Dataset<Row> rows, BulkImportJob job, TableProperties tableProperties,
+    public Dataset<Row> createFileInfos(
+            Dataset<Row> rows, BulkImportJob job, TableProperties tableProperties,
             Broadcast<List<Partition>> broadcastedPartitions, Configuration conf) throws IOException {
 
         Schema schema = tableProperties.getSchema();

@@ -54,26 +54,23 @@ public abstract class AbstractRecordHandlerIT {
     @ClassRule
     public static TemporaryFolder tempDir = new TemporaryFolder();
 
-    private static final Schema SCHEMA = new Schema();
+    protected static final Schema SCHEMA = Schema.builder()
+            .rowKeyFields(
+                    new Field("year", new IntType()),
+                    new Field("month", new IntType()),
+                    new Field("day", new IntType()))
+            .sortKeyFields(
+                    new Field("timestamp", new LongType()))
+            .valueFields(
+                    new Field("count", new LongType()),
+                    new Field("map", new MapType(new StringType(), new StringType())),
+                    new Field("str", new StringType()),
+                    new Field("list", new ListType(new StringType())))
+            .build();
     protected static final String SPILL_BUCKET_NAME = "spillbucket";
     protected static final String MIN_VALUE = Integer.toString(Integer.MIN_VALUE);
 
     private InstanceProperties instanceProperties;
-
-    static {
-        SCHEMA.setRowKeyFields(
-                new Field("year", new IntType()),
-                new Field("month", new IntType()),
-                new Field("day", new IntType())
-        );
-
-        SCHEMA.setSortKeyFields(new Field("timestamp", new LongType()));
-
-        SCHEMA.setValueFields(new Field("count", new LongType()),
-                new Field("map", new MapType(new StringType(), new StringType())),
-                new Field("str", new StringType()),
-                new Field("list", new ListType(new StringType())));
-    }
 
     @BeforeClass
     public static void createSpillBucket() {

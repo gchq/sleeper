@@ -28,13 +28,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.amazonaws.util.Base64;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.slf4j.Logger;
@@ -43,6 +36,14 @@ import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.type.PrimitiveType;
+
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * An {@link IteratorApplyingMetadataHandler} is an implementation of the
@@ -57,13 +58,14 @@ public class IteratorApplyingMetadataHandler extends SleeperMetadataHandler {
 
     public static final String MIN_ROW_KEY_PREFIX = "_MinRowKey";
     public static final String MAX_ROW_KEY_PREFIX = "_MaxRowKey";
-    public static Predicate<String> ROW_KEY_PREFIX_TEST = Pattern.compile("_M[a-z]{2}RowKey").asPredicate();
+    public static final Predicate<String> ROW_KEY_PREFIX_TEST = Pattern.compile("_M[a-z]{2}RowKey").asPredicate();
 
     public IteratorApplyingMetadataHandler() throws IOException {
         super();
     }
 
-    public IteratorApplyingMetadataHandler(AmazonS3 s3Client,
+    public IteratorApplyingMetadataHandler(
+            AmazonS3 s3Client,
             AmazonDynamoDB dynamoDBClient,
             String configBucket,
             EncryptionKeyFactory encryptionKeyFactory,
@@ -97,10 +99,10 @@ public class IteratorApplyingMetadataHandler extends SleeperMetadataHandler {
      * Used to create splits from partitions. The partitionId is added to the
      * split.
      *
-     * @param blockAllocator Tool for creating and managing Apache Arrow Blocks.
+     * @param blockAllocator   Tool for creating and managing Apache Arrow Blocks.
      * @param getSplitsRequest Provides details of the catalog, database, table,
-     * and partition(s) being queried as well as any filter predicate.
-     * @return A GetSplitsResponse which primarily contains: 1. A Set<Split>
+     *                         and partition(s) being queried as well as any filter predicate.
+     * @return A GetSplitsResponse which primarily contains: 1. A Set of Splits
      * which represent read operations Amazon Athena must perform by calling
      * your read function. 2. (Optional) A continuation token which allows you
      * to paginate the generation of splits for large queries.

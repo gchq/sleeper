@@ -15,15 +15,15 @@
  */
 package sleeper.compaction.job.creation;
 
-import sleeper.compaction.job.CompactionJobSerDe;
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.strategy.CompactionStrategy;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobSerDe;
+import sleeper.compaction.strategy.CompactionStrategy;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
@@ -47,7 +47,7 @@ import static sleeper.configuration.properties.table.TableProperty.COMPACTION_ST
 
 /**
  * Creates compaction job definitions and posts them to an SQS queue.
- *
+ * <p>
  * This is done as follows:
  * - Queries the {@link StateStore} for active files which do not have a job id.
  * - Groups these by partition.

@@ -1,4 +1,4 @@
-name: Full Maven Build
+name: Full Maven Compile
 on:
   push:
     paths:
@@ -18,8 +18,5 @@ jobs:
           distribution: 'adopt'
           cache: 'maven'
       - name: Build with Maven
-        run: mvn --batch-mode verify
+        run: mvn --batch-mode verify -Pquick
         working-directory: ./java
-      - name: Publish Test Report
-        if: ${{ always() }}
-        uses: scacap/action-surefire-report@v1

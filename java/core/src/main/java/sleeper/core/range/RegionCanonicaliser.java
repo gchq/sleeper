@@ -23,18 +23,21 @@ import java.util.List;
  * into canonical form.
  */
 public class RegionCanonicaliser {
-    
+
+    private RegionCanonicaliser() {
+    }
+
     public static Region canonicaliseRegion(Region region) {
         if (isRegionInCanonicalForm(region)) {
             return region;
         }
-        
+
         List<Range> ranges = region.getRanges();
         List<Range> canonicalisedRanges = new ArrayList<>();
         for (Range range : ranges) {
             canonicalisedRanges.add(RangeCanonicaliser.canonicaliseRange(range));
         }
-        
+
         return new Region(canonicalisedRanges);
     }
 

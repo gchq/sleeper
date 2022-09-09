@@ -32,6 +32,9 @@ import java.io.IOException;
  */
 public class ShowPageIndexes {
 
+    private ShowPageIndexes() {
+    }
+
     public static void run(String file) throws IOException {
         int rowGroup = 0;
         try (ParquetFileReader reader = ParquetFileReader.open(HadoopInputFile.fromPath(new Path(file), new Configuration()))) {

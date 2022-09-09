@@ -61,7 +61,7 @@ public class FileInfo {
             this.rowKeyTypes.add(type);
         }
     }
-    
+
     public Key getMinRowKey() {
         return minRowKey;
     }
@@ -69,7 +69,7 @@ public class FileInfo {
     public void setMinRowKey(Key minRowKey) {
         this.minRowKey = minRowKey;
     }
-    
+
     public Key getMaxRowKey() {
         return maxRowKey;
     }
@@ -77,7 +77,7 @@ public class FileInfo {
     public void setMaxRowKey(Key maxRowKey) {
         this.maxRowKey = maxRowKey;
     }
-    
+
     public void setFilename(String filename) {
         this.filename = filename;
     }
@@ -128,10 +128,14 @@ public class FileInfo {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         FileInfo fileInfo = (FileInfo) o;
-        
+
         return Objects.equals(rowKeyTypes, fileInfo.rowKeyTypes) &&
                 Objects.equals(filename, fileInfo.filename) &&
                 Objects.equals(partitionId, fileInfo.partitionId) &&
@@ -153,7 +157,7 @@ public class FileInfo {
     @Override
     public String toString() {
         return "FileInfo{" +
-                "rowKeyTypes=" + rowKeyTypes + 
+                "rowKeyTypes=" + rowKeyTypes +
                 ", filename='" + filename + '\'' +
                 ", partition='" + partitionId + '\'' +
                 ", numberOfRecords=" + numberOfRecords +

@@ -15,22 +15,10 @@
  */
 package sleeper.query.recordretrieval;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.filter2.predicate.FilterPredicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sleeper.query.QueryException;
-import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
-import sleeper.query.utils.RangeQueryUtils;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.table.TableProperties;
@@ -41,19 +29,33 @@ import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.query.QueryException;
+import sleeper.query.model.LeafPartitionQuery;
+import sleeper.query.model.Query;
+import sleeper.query.utils.RangeQueryUtils;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 
 /**
  * Executes a {@link LeafPartitionQuery}.
  */
 public class LeafPartitionQueryExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(LeafPartitionQueryExecutor.class);
-    
+
     private final ExecutorService executorService;
     private final ObjectFactory objectFactory;
     private final Configuration conf;
     private final TableProperties tableProperties;
-    
-    public LeafPartitionQueryExecutor(ExecutorService executorService,
+
+    public LeafPartitionQueryExecutor(
+            ExecutorService executorService,
             ObjectFactory objectFactory,
             Configuration conf,
             TableProperties tableProperties) {
@@ -80,12 +82,12 @@ public class LeafPartitionQueryExecutor {
         }
 
         Schema dataReadSchema = createSchemaForDataRead(leafPartitionQuery, tableSchema, compactionIterator, queryIterator);
-        
-        FilterPredicate filterPredicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey
-            (tableSchema.getRowKeyFields(), leafPartitionQuery.getRegions(), leafPartitionQuery.getPartitionRegion());
-        
+
+        FilterPredicate filterPredicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(
+                tableSchema.getRowKeyFields(), leafPartitionQuery.getRegions(), leafPartitionQuery.getPartitionRegion());
+
         LeafPartitionRecordRetriever retriever = new LeafPartitionRecordRetriever(executorService, conf);
-        
+
         try {
             CloseableIterator<Record> iterator = retriever.getRecords(files, dataReadSchema, filterPredicate);
             // Apply compaction time iterator
@@ -96,21 +98,18 @@ public class LeafPartitionQueryExecutor {
             if (null != queryIterator) {
                 iterator = queryIterator.apply(iterator);
             }
-            
+
             return iterator;
         } catch (RecordRetrievalException e) {
             throw new QueryException("QueryException retrieving records for LeafPartitionQuery", e);
         }
     }
-    
+
     private Schema createSchemaForDataRead(Query query, Schema schema, SortedRecordIterator compactionIterator, SortedRecordIterator queryIterator) {
         List<String> requestedValueFields = query.getRequestedValueFields();
         if (requestedValueFields == null) {
             return schema;
         }
-        Schema dataSchema = new Schema();
-        dataSchema.setRowKeyFields(schema.getRowKeyFields());
-        dataSchema.setSortKeyFields(schema.getSortKeyFields());
 
         Map<String, Field> fields = new HashMap<>();
         schema.getValueFields().forEach(field -> fields.put(field.getName(), field));
@@ -124,15 +123,18 @@ public class LeafPartitionQueryExecutor {
             requiredFields.addAll(queryIterator.getRequiredValueFields());
         }
 
-        dataSchema.setValueFields(requiredFields.stream()
-                .map(fields::get)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList()));
-
-        return dataSchema;
+        return Schema.builder()
+                .rowKeyFields(schema.getRowKeyFields())
+                .sortKeyFields(schema.getSortKeyFields())
+                .valueFields(requiredFields.stream()
+                        .map(fields::get)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList()))
+                .build();
     }
-    
-    private SortedRecordIterator createIterator(Schema schema,
+
+    private SortedRecordIterator createIterator(
+            Schema schema,
             ObjectFactory objectFactory,
             String iteratorClassName,
             String iteratorConfig) throws IteratorException {

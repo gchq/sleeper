@@ -246,9 +246,8 @@ public class DynamoDBQueryTrackerIT {
     }
 
     private Query createQueryWithId(String id) {
-        Schema schema = new Schema();
         Field field = new Field("field1", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createExactRange(field, 1);
         Region region = new Region(range);
@@ -256,9 +255,8 @@ public class DynamoDBQueryTrackerIT {
     }
 
     private LeafPartitionQuery createSubQueryWithId(String parentId, String subId) {
-        Schema schema = new Schema();
         Field field = new Field("field1", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Range range = rangeFactory.createExactRange(field, 1);
         Region region = new Region(range);

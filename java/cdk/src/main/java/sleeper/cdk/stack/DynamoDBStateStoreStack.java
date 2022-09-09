@@ -18,7 +18,6 @@ package sleeper.cdk.stack;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import software.constructs.Construct;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.dynamodb.Attribute;
@@ -26,6 +25,7 @@ import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
+import software.constructs.Construct;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
