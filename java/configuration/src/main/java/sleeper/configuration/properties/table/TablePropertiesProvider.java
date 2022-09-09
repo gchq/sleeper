@@ -21,26 +21,30 @@ import sleeper.configuration.properties.InstanceProperties;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 public class TablePropertiesProvider {
-    private final AmazonS3 s3Client;
-    private final InstanceProperties instanceProperties;
     private final Map<String, TableProperties> tableNameToPropertiesCache;
+    private final Function<String, TableProperties> getTableProperties;
 
     public TablePropertiesProvider(AmazonS3 s3Client, InstanceProperties instanceProperties) {
-        this.s3Client = s3Client;
-        this.instanceProperties = instanceProperties;
+        this(tableName -> getTablePropertiesFromS3(s3Client, instanceProperties, tableName));
+    }
+
+    private TablePropertiesProvider(Function<String, TableProperties> getTableProperties) {
+        this.getTableProperties = getTableProperties;
         this.tableNameToPropertiesCache = new HashMap<>();
     }
 
     public TableProperties getTableProperties(String tableName) {
         if (!tableNameToPropertiesCache.containsKey(tableName)) {
-            tableNameToPropertiesCache.put(tableName, getTablePropertiesFromS3(tableName));
+            tableNameToPropertiesCache.put(tableName, getTableProperties.apply(tableName));
         }
         return tableNameToPropertiesCache.get(tableName);
     }
 
-    private TableProperties getTablePropertiesFromS3(String tableName) {
+    private static TableProperties getTablePropertiesFromS3(
+            AmazonS3 s3Client, InstanceProperties instanceProperties, String tableName) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         try {
             tableProperties.loadFromS3(s3Client, tableName);
