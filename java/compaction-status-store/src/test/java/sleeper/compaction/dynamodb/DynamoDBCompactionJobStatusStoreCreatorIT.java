@@ -26,11 +26,14 @@ public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase 
 
     @Test
     public void shouldCreateStore() {
+        // Given
         String instanceId = "test-instance";
         DynamoDBCompactionJobStatusStoreCreator creator = new DynamoDBCompactionJobStatusStoreCreator(instanceId, dynamoDBClient);
 
+        // When
         creator.create();
 
+        // Then
         assertThat(dynamoDBClient.describeTable(jobStatusTableName(instanceId)))
                 .extracting(DescribeTableResult::getTable).isNotNull();
     }
