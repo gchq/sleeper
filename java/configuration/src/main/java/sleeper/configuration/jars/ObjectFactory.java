@@ -31,6 +31,14 @@ public class ObjectFactory {
         this.classLoader = new S3UserJarsLoader(instanceProperties, s3Client, localDir).getClassLoader();
     }
 
+    private ObjectFactory() {
+        classLoader = ObjectFactory.class.getClassLoader();
+    }
+
+    public static ObjectFactory noUserJars() {
+        return new ObjectFactory();
+    }
+
     public <T> T getObject(String className, Class<T> parentClass) throws ObjectFactoryException {
         T object;
         try {

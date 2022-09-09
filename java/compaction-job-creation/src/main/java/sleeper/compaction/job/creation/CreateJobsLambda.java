@@ -106,7 +106,7 @@ public class CreateJobsLambda {
         LocalDateTime start = LocalDateTime.now();
         LOGGER.info("CreateJobsLambda lambda triggered at {}", event.getTime());
 
-        CreateJobs createJobs = new CreateJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, dynamoDBClient, sqsClient, tableLister);
+        CreateJobs createJobs = new CreateJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, sqsClient, tableLister);
         try {
             createJobs.createJobs();
         } catch (StateStoreException | IOException | ClassNotFoundException |

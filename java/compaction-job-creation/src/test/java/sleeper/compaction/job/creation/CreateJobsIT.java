@@ -32,19 +32,15 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.LongType;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfoFactory;
 import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
 import sleeper.table.job.TableCreator;
 import sleeper.table.job.TableLister;
 import sleeper.table.util.StateStoreProvider;
@@ -56,11 +52,12 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.creation.CreateJobsTestUtils.assertAllFilesHaveJobId;
+import static sleeper.compaction.job.creation.CreateJobsTestUtils.createInstanceProperties;
+import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTableProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class CreateJobsIT {
@@ -73,7 +70,7 @@ public class CreateJobsIT {
     private final AmazonS3 s3 = createS3Client();
     private final AmazonSQS sqs = createSQSClient();
     private final InstanceProperties instanceProperties = createProperties(s3, sqs);
-    private final Schema schema = createSchema();
+    private final Schema schema = CreateJobsTestUtils.createSchema();
     private StateStore stateStore;
     private CreateJobs createJobs;
     private CompactionJobSerDe compactionJobSerDe;
@@ -88,12 +85,12 @@ public class CreateJobsIT {
         stateStore.initialise();
         compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         createJobs = new CreateJobs(new ObjectFactory(instanceProperties, s3, null),
-                instanceProperties, tablePropertiesProvider, stateStoreProvider, dynamoDB, sqs,
+                instanceProperties, tablePropertiesProvider, stateStoreProvider, sqs,
                 new TableLister(s3, instanceProperties));
     }
 
     @Test
-    public void shouldCreateJobs() throws StateStoreException, IOException, IllegalAccessException, InstantiationException, ClassNotFoundException, ObjectFactoryException {
+    public void shouldCompactAllFilesInSinglePartition() throws Exception {
         // Given
         List<Partition> partitions = stateStore.getAllPartitions();
         FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, Instant.now());
@@ -154,15 +151,6 @@ public class CreateJobsIT {
                 .build();
     }
 
-    private static Schema createSchema() {
-        return Schema.builder()
-                .rowKeyFields(new Field("key", new LongType()))
-                .valueFields(
-                        new Field("value1", new LongType()),
-                        new Field("value2", new LongType()))
-                .build();
-    }
-
     private static InstanceProperties createProperties(AmazonS3 s3, AmazonSQS sqs) {
         String queue = UUID.randomUUID().toString();
 
@@ -170,9 +158,7 @@ public class CreateJobsIT {
 
         sqs.shutdown();
 
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, UUID.randomUUID().toString());
-        instanceProperties.set(CONFIG_BUCKET, UUID.randomUUID().toString());
+        InstanceProperties instanceProperties = createInstanceProperties();
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, queueUrl);
         instanceProperties.set(FILE_SYSTEM, "");
 
@@ -182,25 +168,12 @@ public class CreateJobsIT {
     }
 
     private static TableProperties createTable(AmazonS3 s3, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, Schema schema) throws IOException {
-        String tableName = "test-table";
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.setSchema(schema);
-        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
+        TableProperties tableProperties = createTableProperties(schema, instanceProperties);
         TableCreator tableCreator = new TableCreator(s3, dynamoDB, instanceProperties);
         tableCreator.createTable(tableProperties);
 
-        tableProperties.loadFromS3(s3, tableName);
+        tableProperties.loadFromS3(s3, tableProperties.get(TABLE_NAME));
         return tableProperties;
-    }
-
-    private static String assertAllFilesHaveJobId(List<FileInfo> files) {
-        assertThat(files).isNotEmpty();
-        String jobId = files.get(0).getJobId();
-        assertThat(jobId).isNotNull();
-        assertThat(files).extracting(FileInfo::getJobId)
-                .allMatch(jobId::equals);
-        return jobId;
     }
 
 }
