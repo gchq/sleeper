@@ -42,6 +42,7 @@ import sleeper.query.tracker.WebSocketQueryStatusReportDestination;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -78,7 +79,7 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
         String data = "{\"message\":\"error\",\"error\":\"" + errorMessage + "\"}";
         PostToConnectionRequest request = new PostToConnectionRequest()
                 .withConnectionId(connectionId)
-                .withData(ByteBuffer.wrap(data.getBytes()));
+                .withData(ByteBuffer.wrap(data.getBytes(StandardCharsets.UTF_8)));
 
         client.postToConnection(request);
     }
