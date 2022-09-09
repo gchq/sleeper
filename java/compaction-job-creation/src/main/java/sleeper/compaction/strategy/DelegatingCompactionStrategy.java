@@ -17,8 +17,8 @@ package sleeper.compaction.strategy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sleeper.compaction.job.CompactionFactory;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.strategy.impl.CompactionFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
