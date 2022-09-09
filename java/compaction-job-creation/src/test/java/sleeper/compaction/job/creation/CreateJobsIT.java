@@ -72,7 +72,7 @@ public class CreateJobsIT {
 
     private final AmazonS3 s3 = createS3Client();
     private final AmazonSQS sqs = createSQSClient();
-    private final InstanceProperties instanceProperties = createProperties(s3);
+    private final InstanceProperties instanceProperties = createProperties(s3, sqs);
     private final Schema schema = createSchema();
     private StateStore stateStore;
     private CreateJobs createJobs;
@@ -118,28 +118,43 @@ public class CreateJobsIT {
                 });
     }
 
-    private AmazonS3 createS3Client() {
+    private ReceiveMessageResult receiveJobQueueMessage() {
+        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
+                .withMaxNumberOfMessages(10);
+        return sqs.receiveMessage(receiveMessageRequest);
+    }
+
+    private CompactionJob readJobMessage(Message message) {
+        try {
+            return compactionJobSerDe.deserialiseFromString(message.getBody());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static AmazonS3 createS3Client() {
         return AmazonS3ClientBuilder.standard()
                 .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
                 .withCredentials(localStackContainer.getDefaultCredentialsProvider())
                 .build();
     }
 
-    private AmazonSQS createSQSClient() {
+    private static AmazonSQS createSQSClient() {
         return AmazonSQSClientBuilder.standard()
                 .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.SQS))
                 .withCredentials(localStackContainer.getDefaultCredentialsProvider())
                 .build();
     }
 
-    private AmazonDynamoDB createDynamoClient() {
+    private static AmazonDynamoDB createDynamoClient() {
         return AmazonDynamoDBClientBuilder.standard()
                 .withCredentials(localStackContainer.getDefaultCredentialsProvider())
                 .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
                 .build();
     }
 
-    private Schema createSchema() {
+    private static Schema createSchema() {
         return Schema.builder()
                 .rowKeyFields(new Field("key", new LongType()))
                 .valueFields(
@@ -148,8 +163,7 @@ public class CreateJobsIT {
                 .build();
     }
 
-    private InstanceProperties createProperties(AmazonS3 s3) {
-        AmazonSQS sqs = createSQSClient();
+    private static InstanceProperties createProperties(AmazonS3 s3, AmazonSQS sqs) {
         String queue = UUID.randomUUID().toString();
 
         String queueUrl = sqs.createQueue(queue).getQueueUrl();
@@ -167,7 +181,7 @@ public class CreateJobsIT {
         return instanceProperties;
     }
 
-    private TableProperties createTable(AmazonS3 s3, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, Schema schema) throws IOException {
+    private static TableProperties createTable(AmazonS3 s3, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, Schema schema) throws IOException {
         String tableName = "test-table";
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
@@ -187,21 +201,6 @@ public class CreateJobsIT {
         assertThat(files).extracting(FileInfo::getJobId)
                 .allMatch(jobId::equals);
         return jobId;
-    }
-
-    private ReceiveMessageResult receiveJobQueueMessage() {
-        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
-                .withMaxNumberOfMessages(10);
-        return sqs.receiveMessage(receiveMessageRequest);
-    }
-
-    private CompactionJob readJobMessage(Message message) {
-        try {
-            return compactionJobSerDe.deserialiseFromString(message.getBody());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
 }
