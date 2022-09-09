@@ -69,7 +69,7 @@ public class CreateJobsIT {
 
     private final AmazonS3 s3 = createS3Client();
     private final AmazonSQS sqs = createSQSClient();
-    private final InstanceProperties instanceProperties = createProperties(s3, sqs);
+    private final InstanceProperties instanceProperties = createProperties(s3);
     private final Schema schema = CreateJobsTestUtils.createSchema();
     private StateStore stateStore;
     private CreateJobs createJobs;
@@ -151,11 +151,11 @@ public class CreateJobsIT {
                 .build();
     }
 
-    private static InstanceProperties createProperties(AmazonS3 s3, AmazonSQS sqs) {
+    private static InstanceProperties createProperties(AmazonS3 s3) {
         String queue = UUID.randomUUID().toString();
 
+        AmazonSQS sqs = createSQSClient();
         String queueUrl = sqs.createQueue(queue).getQueueUrl();
-
         sqs.shutdown();
 
         InstanceProperties instanceProperties = createInstanceProperties();
