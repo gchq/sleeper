@@ -24,4 +24,8 @@
     <Match>
         <Bug pattern="DM_EXIT"/>
     </Match>
+    <Match>
+        <Class name="sleeper.cdk.custom.SleeperTableLambda"/>
+        <Bug pattern="SF_SWITCH_FALLTHROUGH"/>
+    </Match>
 </FindBugsFilter>
