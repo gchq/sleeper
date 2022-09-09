@@ -29,6 +29,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
+import sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.configuration.jars.ObjectFactory;
@@ -86,7 +87,8 @@ public class CreateJobsIT {
         compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         createJobs = new CreateJobs(new ObjectFactory(instanceProperties, s3, null),
                 instanceProperties, tablePropertiesProvider, stateStoreProvider, sqs,
-                new TableLister(s3, instanceProperties));
+                new TableLister(s3, instanceProperties),
+                DynamoDBCompactionJobStatusStore.from(dynamoDB, instanceProperties));
     }
 
     @Test

@@ -15,8 +15,32 @@
  */
 package sleeper.compaction.dynamodb.job;
 
-public class DynamoDBCompactionJobStatusStore {
-    private DynamoDBCompactionJobStatusStore() {
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.configuration.properties.InstanceProperties;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
+
+public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStore {
+
+    private final AmazonDynamoDB dynamoDB;
+
+    private DynamoDBCompactionJobStatusStore(AmazonDynamoDB dynamoDB) {
+        this.dynamoDB = dynamoDB;
+    }
+
+    public static CompactionJobStatusStore from(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+        if (Boolean.TRUE.equals(properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED))) {
+            return new DynamoDBCompactionJobStatusStore(dynamoDB);
+        } else {
+            return CompactionJobStatusStore.none();
+        }
+    }
+
+    @Override
+    public void jobCreated(CompactionJob job) {
+
     }
 
     public static String jobStatusTableName(String instanceId) {

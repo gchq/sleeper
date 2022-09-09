@@ -19,6 +19,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.strategy.CompactionStrategy;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
@@ -58,16 +59,18 @@ public class CreateJobs {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final TableLister tableLister;
+    private final CompactionJobStatusStore jobStatusStore;
 
     public CreateJobs(ObjectFactory objectFactory,
                       InstanceProperties instanceProperties,
                       TablePropertiesProvider tablePropertiesProvider,
                       StateStoreProvider stateStoreProvider,
                       AmazonSQS sqsClient,
-                      TableLister tableLister) {
+                      TableLister tableLister,
+                      CompactionJobStatusStore jobStatusStore) {
         this(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
                 new SendCompactionJobToSqs(instanceProperties, tablePropertiesProvider, sqsClient)::send,
-                tableLister);
+                tableLister, jobStatusStore);
     }
 
     public CreateJobs(ObjectFactory objectFactory,
@@ -75,13 +78,15 @@ public class CreateJobs {
                       TablePropertiesProvider tablePropertiesProvider,
                       StateStoreProvider stateStoreProvider,
                       JobSender jobSender,
-                      TableLister tableLister) {
+                      TableLister tableLister,
+                      CompactionJobStatusStore jobStatusStore) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.jobSender = jobSender;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.tableLister = tableLister;
+        this.jobStatusStore = jobStatusStore;
     }
 
     public void createJobs() throws StateStoreException, IOException, ClassNotFoundException, IllegalAccessException, InstantiationException, ObjectFactoryException {
@@ -135,6 +140,7 @@ public class CreateJobs {
                 }
             }
             stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileInfos1);
+            jobStatusStore.jobCreated(compactionJob);
         }
     }
 

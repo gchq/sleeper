@@ -49,7 +49,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>compaction-core</artifactId>
+            <artifactId>compaction-status-store</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>

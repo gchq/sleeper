@@ -17,6 +17,7 @@ package sleeper.compaction.job.creation;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -53,6 +54,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 public class CreateJobsTest {
 
     private final StateStore stateStore = mock(StateStore.class);
+    private final CompactionJobStatusStore jobStatusStore = mock(CompactionJobStatusStore.class);
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
 
     @Test
@@ -76,8 +78,10 @@ public class CreateJobsTest {
             assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
             assertThat(job.getPartitionId()).isEqualTo(partition.getId());
             assertThat(job.isSplittingJob()).isFalse();
+            verifyJobCreationReported(job);
         });
         verifyOtherStateStoreCalls();
+        verifyNoMoreJobCreationReports();
     }
 
     @Test
@@ -106,13 +110,16 @@ public class CreateJobsTest {
             assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2");
             assertThat(job.getPartitionId()).isEqualTo("A");
             assertThat(job.isSplittingJob()).isFalse();
+            verifyJobCreationReported(job);
         }, job -> {
             verifySetJobForFilesInStateStore(job.getId(), Arrays.asList(fileInfo3, fileInfo4));
             assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file3", "file4");
             assertThat(job.getPartitionId()).isEqualTo("B");
             assertThat(job.isSplittingJob()).isFalse();
+            verifyJobCreationReported(job);
         });
         verifyOtherStateStoreCalls();
+        verifyNoMoreJobCreationReports();
     }
 
     private Partition setSinglePartition() throws Exception {
@@ -143,6 +150,14 @@ public class CreateJobsTest {
         verifyNoMoreInteractions(stateStore);
     }
 
+    private void verifyJobCreationReported(CompactionJob job) {
+        verify(jobStatusStore).jobCreated(job);
+    }
+
+    private void verifyNoMoreJobCreationReports() {
+        verifyNoMoreInteractions(jobStatusStore);
+    }
+
     private List<CompactionJob> createJobs() throws Exception {
 
         InstanceProperties instanceProperties = createInstanceProperties();
@@ -156,7 +171,8 @@ public class CreateJobsTest {
 
         List<CompactionJob> compactionJobs = new ArrayList<>();
         CreateJobs createJobs = new CreateJobs(ObjectFactory.noUserJars(),
-                instanceProperties, tablePropertiesProvider, stateStoreProvider, compactionJobs::add, tableLister);
+                instanceProperties, tablePropertiesProvider, stateStoreProvider, compactionJobs::add,
+                tableLister, jobStatusStore);
         createJobs.createJobs();
         return compactionJobs;
     }
