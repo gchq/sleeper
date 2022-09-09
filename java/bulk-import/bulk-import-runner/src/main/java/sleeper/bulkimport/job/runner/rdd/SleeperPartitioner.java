@@ -23,6 +23,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
+import java.io.ObjectStreamException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -91,5 +92,12 @@ public class SleeperPartitioner extends Partitioner {
         String partitionId = partitionTree.getLeafPartition(rowKey).getId();
         int partitionAsInt = partitionIdToInt.get(partitionId);
         return partitionAsInt;
+    }
+
+    private Object readResolve() throws ObjectStreamException {
+        numLeafPartitions = 0;
+        numRowKeyFields = 0;
+        partitionIdToInt = new HashMap<>();
+        return this;
     }
 }
