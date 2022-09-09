@@ -43,7 +43,7 @@ public class FileInfoFactory {
     }
 
     public FileInfo leafFile(String filename, long records, Object min, Object max) {
-        return fileForPartition(filename, leafPartition(min, max), records, min, max);
+        return fileForPartition(leafPartition(min, max), filename, records, min, max);
     }
 
     private Partition leafPartition(Object min, Object max) {
@@ -66,10 +66,10 @@ public class FileInfoFactory {
     }
 
     private FileInfo fileForPartition(Partition partition, long records, Object min, Object max) {
-        return fileForPartition(partition.getId() + ".parquet", partition, records, min, max);
+        return fileForPartition(partition, partition.getId() + ".parquet", records, min, max);
     }
 
-    private FileInfo fileForPartition(String filename, Partition partition, long records, Object min, Object max) {
+    private FileInfo fileForPartition(Partition partition, String filename, long records, Object min, Object max) {
         FileInfo file = new FileInfo();
         file.setRowKeyTypes(partition.getRowKeyTypes());
         file.setMinRowKey(Key.create(min));

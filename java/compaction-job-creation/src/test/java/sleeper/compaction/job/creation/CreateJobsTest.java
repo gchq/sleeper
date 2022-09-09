@@ -22,6 +22,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -39,6 +40,8 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -69,11 +72,47 @@ public class CreateJobsTest {
 
         // Then
         assertThat(jobs).singleElement().satisfies(job -> {
-            verifyStateStoreUpdated(job.getId(), files);
+            verifySetJobForFilesInStateStore(job.getId(), files);
             assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
             assertThat(job.getPartitionId()).isEqualTo(partition.getId());
             assertThat(job.isSplittingJob()).isFalse();
         });
+        verifyOtherStateStoreCalls();
+    }
+
+    @Test
+    public void shouldCompactFilesInDifferentPartitions() throws Exception {
+        // Given
+        List<Partition> partitions = new PartitionsBuilder(schema)
+                .leavesWithSplits(
+                        Arrays.asList("A", "B"),
+                        Collections.singletonList("ddd"))
+                .parentJoining("C", "A", "B")
+                .buildList();
+        setPartitions(partitions);
+        FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, Instant.now());
+        FileInfo fileInfo1 = fileInfoFactory.leafFile("file1", 200L, "a", "b");
+        FileInfo fileInfo2 = fileInfoFactory.leafFile("file2", 200L, "c", "d");
+        FileInfo fileInfo3 = fileInfoFactory.leafFile("file3", 200L, "e", "f");
+        FileInfo fileInfo4 = fileInfoFactory.leafFile("file4", 200L, "g", "h");
+        setActiveFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
+
+        // When
+        List<CompactionJob> jobs = createJobs();
+
+        // Then
+        assertThat(jobs).satisfiesExactlyInAnyOrder(job -> {
+            verifySetJobForFilesInStateStore(job.getId(), Arrays.asList(fileInfo1, fileInfo2));
+            assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2");
+            assertThat(job.getPartitionId()).isEqualTo("A");
+            assertThat(job.isSplittingJob()).isFalse();
+        }, job -> {
+            verifySetJobForFilesInStateStore(job.getId(), Arrays.asList(fileInfo3, fileInfo4));
+            assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file3", "file4");
+            assertThat(job.getPartitionId()).isEqualTo("B");
+            assertThat(job.isSplittingJob()).isFalse();
+        });
+        verifyOtherStateStoreCalls();
     }
 
     private Partition setSinglePartition() throws Exception {
@@ -90,10 +129,17 @@ public class CreateJobsTest {
         when(stateStore.getActiveFiles()).thenReturn(files);
     }
 
-    private void verifyStateStoreUpdated(String jobId, List<FileInfo> files) throws Exception {
+    private void verifySetJobForFilesInStateStore(String jobId, List<FileInfo> files) throws Exception {
+        verify(stateStore).atomicallyUpdateJobStatusOfFiles(
+                eq(jobId), argThat(actualFiles -> {
+                    assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(files);
+                    return true;
+                }));
+    }
+
+    private void verifyOtherStateStoreCalls() throws Exception {
         verify(stateStore).getAllPartitions();
         verify(stateStore).getActiveFiles();
-        verify(stateStore).atomicallyUpdateJobStatusOfFiles(jobId, files);
         verifyNoMoreInteractions(stateStore);
     }
 

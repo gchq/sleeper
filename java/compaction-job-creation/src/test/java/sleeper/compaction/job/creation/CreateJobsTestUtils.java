@@ -30,6 +30,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CON
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.SIZE_RATIO_COMPACTION_STRATEGY_RATIO;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class CreateJobsTestUtils {
@@ -61,6 +62,7 @@ public class CreateJobsTestUtils {
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(schema);
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
+        tableProperties.set(SIZE_RATIO_COMPACTION_STRATEGY_RATIO, "1");
         return tableProperties;
     }
 
