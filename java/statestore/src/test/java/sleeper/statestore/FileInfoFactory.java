@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.status.report.filestatus;
+package sleeper.statestore;
 
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
-import sleeper.statestore.FileInfo;
 
 import java.time.Instant;
 import java.util.List;
