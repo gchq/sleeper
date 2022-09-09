@@ -81,7 +81,7 @@ public class CreateJobsLambda {
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
         this.tableLister = new TableLister(s3Client, instanceProperties);
-        this.jobStatusStore = CompactionJobStatusStore.none();
+        this.jobStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
     }
 
     /**
