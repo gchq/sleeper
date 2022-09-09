@@ -21,6 +21,6 @@ public class DynamoDBCompactionJobStatusFormat {
     }
 
     public static final String JOB_ID = "JobId";
-    public static final String LAST_UPDATE_TIME = "LastUpdateTime";
+    public static final String UPDATE_TIME = "UpdateTime";
 
 }

@@ -49,7 +49,7 @@ public class DynamoDBCompactionStatusStoreStack implements CompactionStatusStore
                         .type(AttributeType.STRING)
                         .build())
                 .sortKey(Attribute.builder()
-                        .name(DynamoDBCompactionJobStatusFormat.LAST_UPDATE_TIME)
+                        .name(DynamoDBCompactionJobStatusFormat.UPDATE_TIME)
                         .type(AttributeType.NUMBER)
                         .build())
                 .pointInTimeRecovery(false)
