@@ -8,7 +8,7 @@ on:
       - 'java/pom.xml'
       - 'java/compaction-job-execution/**'
       - 'java/compaction-job-creation/**'
-      - 'java/compaction-event-store/**'
+      - 'java/compaction-status-store/**'
       - 'java/splitter/**'
       - 'java/ingest/**'
       - 'java/common-job/**'
@@ -24,4 +24,4 @@ jobs:
     uses: ./.github/workflows/chunk.yaml
     with:
       chunkName: Compaction
-      moduleList: compaction-job-execution,compaction-job-creation,compaction-event-store,splitter
+      moduleList: compaction-job-execution,compaction-job-creation,compaction-status-store,splitter
