@@ -31,7 +31,7 @@ public class CheckGitHubStatus {
             throw new IllegalArgumentException("Usage: <properties file path>");
         }
         String propertiesFile = args[0];
-        ChunksStatus status = ChunksStatus.from(loadProperties(propertiesFile));
+        ChunksStatus status = ProjectConfiguration.from(loadProperties(propertiesFile)).checkStatus();
         status.report(System.out);
         if (status.isFailCheck()) {
             System.exit(1);

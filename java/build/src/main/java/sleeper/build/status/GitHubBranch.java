@@ -42,8 +42,7 @@ public class GitHubBranch {
 
     public static GitHubBranch from(Properties properties) {
         return builder()
-                .owner(properties.getProperty("owner"))
-                .repository(properties.getProperty("repository"))
+                .ownerAndRepository(properties.getProperty("repository"))
                 .branch(properties.getProperty("branch"))
                 .build();
     }
@@ -94,6 +93,14 @@ public class GitHubBranch {
         public Builder repository(String repository) {
             this.repository = repository;
             return this;
+        }
+
+        public Builder ownerAndRepository(String ownerAndRepository) {
+            String[] parts = ownerAndRepository.split("/");
+            if (parts.length != 2) {
+                throw new IllegalArgumentException("Owner and repository must be separated by a slash, found: " + ownerAndRepository);
+            }
+            return owner(parts[0]).repository(parts[1]);
         }
 
         public Builder branch(String branch) {
