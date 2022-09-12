@@ -16,6 +16,7 @@
 package sleeper.build.status;
 
 import org.junit.Test;
+import sleeper.build.status.github.GitHubProvider;
 
 import java.util.Arrays;
 import java.util.Collections;

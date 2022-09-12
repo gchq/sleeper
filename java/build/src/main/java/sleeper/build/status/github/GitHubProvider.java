@@ -13,13 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.status;
+package sleeper.build.status.github;
 
 import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GHWorkflowRun;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
+import org.kohsuke.github.PagedIterable;
+import sleeper.build.status.ChunkStatus;
+import sleeper.build.status.GitHubBranch;
+import sleeper.build.status.ProjectChunk;
 
 import java.io.IOException;
+import java.util.Objects;
+import java.util.stream.StreamSupport;
 
 public class GitHubProvider {
 
@@ -30,14 +37,27 @@ public class GitHubProvider {
     }
 
     public ChunkStatus workflowStatus(GitHubBranch branch, ProjectChunk chunk) {
-        // TODO
         try {
-            repository(branch).getWorkflow(chunk.getWorkflow()).listRuns();
-            repository(branch).queryWorkflowRuns().branch(branch.getBranch());
+            PagedIterable<GHWorkflowRun> iterable = repository(branch).getWorkflow(chunk.getWorkflow()).listRuns();
+            return StreamSupport.stream(iterable.spliterator(), false)
+                    .filter(run -> branch.getBranch().equals(run.getHeadBranch()))
+                    .findFirst().map(run -> statusFrom(chunk, run))
+                    .orElseGet(() -> ChunkStatus.chunk(chunk).noBuild());
         } catch (IOException e) {
             throw new GitHubException(e);
         }
-        return null;
+    }
+
+    private static ChunkStatus statusFrom(ProjectChunk chunk, GHWorkflowRun run) {
+        try {
+            return ChunkStatus.chunk(chunk)
+                    .runUrl(Objects.toString(run.getHtmlUrl(), null))
+                    .status(Objects.toString(run.getStatus(), null))
+                    .conclusion(Objects.toString(run.getConclusion(), null))
+                    .build();
+        } catch (IOException e) {
+            throw new GitHubException(e);
+        }
     }
 
     private GHRepository repository(GitHubBranch branch) throws IOException {

@@ -15,6 +15,8 @@
  */
 package sleeper.build.status;
 
+import sleeper.build.status.github.GitHubProvider;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;

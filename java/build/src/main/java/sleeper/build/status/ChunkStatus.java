@@ -28,11 +28,13 @@ public class ChunkStatus {
     private final ProjectChunk chunk;
     private final String status;
     private final String conclusion;
+    private final String runUrl;
 
     private ChunkStatus(Builder builder) {
         chunk = Objects.requireNonNull(builder.chunk, "chunk must not be null");
         status = ignoreEmpty(builder.status);
         conclusion = ignoreEmpty(builder.conclusion);
+        runUrl = ignoreEmpty(builder.runUrl);
     }
 
     public static Builder builder() {
@@ -44,6 +46,9 @@ public class ChunkStatus {
             out.println(chunk.getName() + ": " + status + ", " + conclusion);
         } else {
             out.println(chunk.getName() + ": " + status);
+        }
+        if (runUrl != null) {
+            out.println("Run link: " + runUrl);
         }
     }
 
@@ -76,7 +81,7 @@ public class ChunkStatus {
     }
 
     public static ChunkStatus noBuild(String chunk) {
-        return chunk(chunk).build();
+        return chunk(chunk).noBuild();
     }
 
     @Override
@@ -109,6 +114,7 @@ public class ChunkStatus {
         private ProjectChunk chunk;
         private String status;
         private String conclusion;
+        private String runUrl;
 
         private Builder() {
         }
@@ -127,7 +133,7 @@ public class ChunkStatus {
         }
 
         public ChunkStatus inProgress() {
-            return status("in_progress").build();
+            return status("in_progress").conclusion(null).build();
         }
 
         public ChunkStatus failure() {
@@ -138,6 +144,10 @@ public class ChunkStatus {
             return status(COMPLETED).conclusion("cancelled").build();
         }
 
+        public ChunkStatus noBuild() {
+            return status(null).conclusion(null).build();
+        }
+
         public Builder status(String status) {
             this.status = status;
             return this;
@@ -145,6 +155,11 @@ public class ChunkStatus {
 
         public Builder conclusion(String conclusion) {
             this.conclusion = conclusion;
+            return this;
+        }
+
+        public Builder runUrl(String runUrl) {
+            this.runUrl = runUrl;
             return this;
         }
 
