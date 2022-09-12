@@ -109,6 +109,10 @@
             <property name="option" value="bottom"/>
             <property name="sortStaticImportsAlphabetically" value="true"/>
         </module>
+        <module name="MethodLength">
+            <property name="id" value="methodLengthMax"/>
+            <property name="max" value="200"/>
+        </module>
         <module name="EmptyForIteratorPad">
             <property name="id" value="emptyForIterator"/>
         </module>
