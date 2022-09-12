@@ -32,7 +32,7 @@ public class ChunksStatus {
     }
 
     public static ChunksStatus from(Properties properties) {
-        return builder().chunks(chunksFrom(properties)).build();
+        return chunks(chunksFrom(properties));
     }
 
     public boolean isFailCheck() {
@@ -50,6 +50,10 @@ public class ChunksStatus {
     }
 
     public static ChunksStatus chunks(ChunkStatus... chunks) {
+        return builder().chunks(chunks).build();
+    }
+
+    public static ChunksStatus chunks(List<ChunkStatus> chunks) {
         return builder().chunks(chunks).build();
     }
 

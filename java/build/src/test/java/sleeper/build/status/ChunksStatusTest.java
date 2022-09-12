@@ -17,10 +17,6 @@ package sleeper.build.status;
 
 import org.junit.Test;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Objects;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,7 +25,7 @@ public class ChunksStatusTest {
 
     @Test
     public void shouldReportAndPassWhenTwoChunksSuccessful() throws Exception {
-        Properties properties = exampleProperties("two-chunks-successful.properties");
+        Properties properties = TestProperties.example("two-chunks-successful.properties");
         ChunksStatus status = ChunksStatus.from(properties);
 
         assertThat(status).isEqualTo(
@@ -44,7 +40,7 @@ public class ChunksStatusTest {
 
     @Test
     public void shouldReportAndPassWhenOneChunkSuccessfulOneInProgress() throws Exception {
-        Properties properties = exampleProperties("one-chunk-successful-one-in-progress.properties");
+        Properties properties = TestProperties.example("one-chunk-successful-one-in-progress.properties");
         ChunksStatus status = ChunksStatus.from(properties);
 
         assertThat(status).isEqualTo(
@@ -59,7 +55,7 @@ public class ChunksStatusTest {
 
     @Test
     public void shouldReportAndFailWhenOneChunkSuccessfulOneFailed() throws Exception {
-        Properties properties = exampleProperties("one-chunk-successful-one-failed.properties");
+        Properties properties = TestProperties.example("one-chunk-successful-one-failed.properties");
         ChunksStatus status = ChunksStatus.from(properties);
 
         assertThat(status).isEqualTo(
@@ -74,7 +70,7 @@ public class ChunksStatusTest {
 
     @Test
     public void shouldReportAndFailWhenOneChunkSuccessfulOneCancelled() throws Exception {
-        Properties properties = exampleProperties("one-chunk-successful-one-cancelled.properties");
+        Properties properties = TestProperties.example("one-chunk-successful-one-cancelled.properties");
         ChunksStatus status = ChunksStatus.from(properties);
 
         assertThat(status).isEqualTo(
@@ -89,7 +85,7 @@ public class ChunksStatusTest {
 
     @Test
     public void shouldReportAndPassWhenNoChunksHaveBuilds() throws Exception {
-        Properties properties = exampleProperties("two-chunks-missing.properties");
+        Properties properties = TestProperties.example("two-chunks-missing.properties");
         ChunksStatus status = ChunksStatus.from(properties);
 
         assertThat(status).isEqualTo(
@@ -100,14 +96,5 @@ public class ChunksStatusTest {
         assertThat(status.reportString()).isEqualTo("" +
                 "common: null\n" +
                 "data: null\n");
-    }
-
-    private static Properties exampleProperties(String path) throws IOException {
-        URL resource = Objects.requireNonNull(ChunksStatusTest.class.getClassLoader().getResource(path));
-        try (InputStream is = resource.openStream()) {
-            Properties properties = new Properties();
-            properties.load(is);
-            return properties;
-        }
     }
 }
