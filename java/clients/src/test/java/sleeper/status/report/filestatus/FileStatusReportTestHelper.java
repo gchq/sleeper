@@ -24,12 +24,12 @@ import sleeper.statestore.FileInfo;
 import java.time.Instant;
 import java.util.List;
 
-public class FileInfoFactory {
+public class FileStatusReportTestHelper {
     private final Schema schema;
     private final PartitionTree partitionTree;
     private final Instant lastStateStoreUpdate;
 
-    public FileInfoFactory(Schema schema, List<Partition> partitions, Instant lastStateStoreUpdate) {
+    public FileStatusReportTestHelper(Schema schema, List<Partition> partitions, Instant lastStateStoreUpdate) {
         this.schema = schema;
         this.lastStateStoreUpdate = lastStateStoreUpdate;
         this.partitionTree = new PartitionTree(schema, partitions);
@@ -55,16 +55,16 @@ public class FileInfoFactory {
     }
 
     private FileInfo fileForPartition(Partition partition, long records, Object min, Object max) {
-        FileInfo file = new FileInfo();
-        file.setRowKeyTypes(partition.getRowKeyTypes());
-        file.setMinRowKey(Key.create(min));
-        file.setMaxRowKey(Key.create(max));
-        file.setFilename(partition.getId() + ".parquet");
-        file.setPartitionId(partition.getId());
-        file.setNumberOfRecords(records);
-        file.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        file.setLastStateStoreUpdateTime(lastStateStoreUpdate.toEpochMilli());
-        return file;
+        return FileInfo.builder()
+                .rowKeyTypes(partition.getRowKeyTypes())
+                .minRowKey(Key.create(min))
+                .maxRowKey(Key.create(max))
+                .filename(partition.getId() + ".parquet")
+                .partitionId(partition.getId())
+                .numberOfRecords(records)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .lastStateStoreUpdateTime(lastStateStoreUpdate.toEpochMilli())
+                .build();
     }
 
 }

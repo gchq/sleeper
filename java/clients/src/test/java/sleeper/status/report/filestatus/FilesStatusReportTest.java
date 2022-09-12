@@ -54,16 +54,16 @@ public class FilesStatusReportTest {
                 .parentJoining("N", "M", "G")
                 .parentJoining("O", "N", "H")
                 .buildList();
-        FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
+        FileStatusReportTestHelper fileStatusReportTestHelper = new FileStatusReportTestHelper(schema, partitions, lastStateStoreUpdate);
         List<FileInfo> activeFiles = Arrays.asList(
-                fileInfoFactory.leafFile(50000001, "123", "456"),
-                fileInfoFactory.leafFile(50000002, "abc", "az"),
-                fileInfoFactory.leafFile(50000003, "bcd", "bz"),
-                fileInfoFactory.leafFile(50000004, "cde", "cz"),
-                fileInfoFactory.leafFile(50000005, "def", "dz"),
-                fileInfoFactory.leafFile(50000006, "efg", "ez"),
-                fileInfoFactory.leafFile(50000007, "fgh", "fz"),
-                fileInfoFactory.leafFile(50000008, "ghi", "gz"));
+                fileStatusReportTestHelper.leafFile(50000001, "123", "456"),
+                fileStatusReportTestHelper.leafFile(50000002, "abc", "az"),
+                fileStatusReportTestHelper.leafFile(50000003, "bcd", "bz"),
+                fileStatusReportTestHelper.leafFile(50000004, "cde", "cz"),
+                fileStatusReportTestHelper.leafFile(50000005, "def", "dz"),
+                fileStatusReportTestHelper.leafFile(50000006, "efg", "ez"),
+                fileStatusReportTestHelper.leafFile(50000007, "fgh", "fz"),
+                fileStatusReportTestHelper.leafFile(50000008, "ghi", "gz"));
 
         // When
         FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()
@@ -90,10 +90,10 @@ public class FilesStatusReportTest {
                 .parentJoining("D", "A", "B")
                 .parentJoining("E", "D", "C")
                 .buildList();
-        FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
+        FileStatusReportTestHelper fileStatusReportTestHelper = new FileStatusReportTestHelper(schema, partitions, lastStateStoreUpdate);
         List<FileInfo> activeFiles = Arrays.asList(
-                fileInfoFactory.leafFile(50000001, "abc", "def"),
-                fileInfoFactory.middleFile(50000002, "cde", "lmn"));
+                fileStatusReportTestHelper.leafFile(50000001, "abc", "def"),
+                fileStatusReportTestHelper.middleFile(50000002, "cde", "lmn"));
 
         // When
         FileStatus status = FileStatusCollector.run(StateStoreSnapshot.builder()

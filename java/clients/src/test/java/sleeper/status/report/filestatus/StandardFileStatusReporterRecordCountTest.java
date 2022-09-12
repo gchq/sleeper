@@ -136,9 +136,9 @@ public class StandardFileStatusReporterRecordCountTest {
         Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
         Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
         List<Partition> partitions = new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct();
-        FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, lastStateStoreUpdate);
+        FileStatusReportTestHelper fileStatusReportTestHelper = new FileStatusReportTestHelper(schema, partitions, lastStateStoreUpdate);
         List<FileInfo> activeFiles = Collections.singletonList(
-                fileInfoFactory.leafFile(recordCount, "arthur", "ford"));
+                fileStatusReportTestHelper.leafFile(recordCount, "arthur", "ford"));
 
         return FileStatusCollector.run(StateStoreSnapshot.builder()
                 .partitions(partitions).active(activeFiles)
