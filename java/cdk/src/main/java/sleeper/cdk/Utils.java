@@ -19,6 +19,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
+import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.Tags;
 import software.amazon.awscdk.services.logs.RetentionDays;
@@ -37,6 +38,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.APACH
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.AWS_LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.PARQUET_LOGGING_LEVEL;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ROOT_LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.STACK_TAG_NAME;
 
@@ -172,5 +174,13 @@ public class Utils {
     public static void addStackTagIfSet(Stack stack, InstanceProperties properties) {
         Optional.ofNullable(properties.get(STACK_TAG_NAME))
                 .ifPresent(tagName -> Tags.of(stack).add(tagName, stack.getNode().getId()));
+    }
+
+    public static RemovalPolicy removalPolicy(InstanceProperties properties) {
+        if (Boolean.TRUE.equals(properties.getBoolean(RETAIN_INFRA_AFTER_DESTROY))) {
+            return RemovalPolicy.RETAIN;
+        } else {
+            return RemovalPolicy.DESTROY;
+        }
     }
 }

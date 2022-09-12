@@ -53,12 +53,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.TABLE_METRICS_RULES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
@@ -131,12 +131,7 @@ public class TableStack extends NestedStack {
         BucketEncryption encryption = tableProperties.getBoolean(ENCRYPTED) ? BucketEncryption.S3_MANAGED :
                 BucketEncryption.UNENCRYPTED;
 
-        RemovalPolicy removalPolicy;
-        if (instanceProperties.getBoolean(RETAIN_INFRA_AFTER_DESTROY)) {
-            removalPolicy = RemovalPolicy.RETAIN;
-        } else {
-            removalPolicy = RemovalPolicy.DESTROY;
-        }
+        RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
         Bucket databucket = Bucket.Builder
                 .create(this, tableName + "DataBucket")
