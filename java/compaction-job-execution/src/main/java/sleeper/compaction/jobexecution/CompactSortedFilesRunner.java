@@ -78,14 +78,15 @@ public class CompactSortedFilesRunner {
     private final int maxMessageRetrieveAttempts;
     private final int waitTimeSeconds;
 
-    public CompactSortedFilesRunner(InstanceProperties instanceProperties,
-                                    ObjectFactory objectFactory,
-                                    TablePropertiesProvider tablePropertiesProvider,
-                                    StateStoreProvider stateStoreProvider,
-                                    String sqsJobQueueUrl,
-                                    AmazonSQS sqsClient,
-                                    int maxMessageRetrieveAttempts,
-                                    int waitTimeSeconds) {
+    public CompactSortedFilesRunner(
+            InstanceProperties instanceProperties,
+            ObjectFactory objectFactory,
+            TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider,
+            String sqsJobQueueUrl,
+            AmazonSQS sqsClient,
+            int maxMessageRetrieveAttempts,
+            int waitTimeSeconds) {
         this.instanceProperties = instanceProperties;
         this.objectFactory = objectFactory;
         this.tablePropertiesProvider = tablePropertiesProvider;
@@ -99,12 +100,13 @@ public class CompactSortedFilesRunner {
         this.waitTimeSeconds = waitTimeSeconds;
     }
 
-    public CompactSortedFilesRunner(InstanceProperties instanceProperties,
-                                    ObjectFactory objectFactory,
-                                    TablePropertiesProvider tablePropertiesProvider,
-                                    StateStoreProvider stateStoreProvider,
-                                    String sqsJobQueueUrl,
-                                    AmazonSQS sqsClient) {
+    public CompactSortedFilesRunner(
+            InstanceProperties instanceProperties,
+            ObjectFactory objectFactory,
+            TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider,
+            String sqsJobQueueUrl,
+            AmazonSQS sqsClient) {
         this(instanceProperties, objectFactory, tablePropertiesProvider, stateStoreProvider, sqsJobQueueUrl, sqsClient, 3, 20);
     }
 
