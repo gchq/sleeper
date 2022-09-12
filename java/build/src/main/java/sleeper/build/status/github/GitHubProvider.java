@@ -25,6 +25,7 @@ import sleeper.build.status.GitHubBranch;
 import sleeper.build.status.ProjectChunk;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Objects;
 import java.util.stream.StreamSupport;
 
@@ -50,8 +51,11 @@ public class GitHubProvider {
 
     private static ChunkStatus statusFrom(ProjectChunk chunk, GHWorkflowRun run) {
         try {
+            Date time = run.getRunStartedAt();
             return ChunkStatus.chunk(chunk)
                     .runUrl(Objects.toString(run.getHtmlUrl(), null))
+                    .commitSha(run.getHeadSha())
+                    .commitMessage(run.getHeadCommit().getMessage())
                     .status(Objects.toString(run.getStatus(), null))
                     .conclusion(Objects.toString(run.getConclusion(), null))
                     .build();

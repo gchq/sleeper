@@ -16,6 +16,7 @@
 package sleeper.build.status;
 
 import java.io.PrintStream;
+import java.util.Date;
 import java.util.Objects;
 
 import static sleeper.build.status.ValidationUtils.ignoreEmpty;
@@ -29,12 +30,18 @@ public class ChunkStatus {
     private final String status;
     private final String conclusion;
     private final String runUrl;
+    private final Date runStarted;
+    private final String commitSha;
+    private final String commitMessage;
 
     private ChunkStatus(Builder builder) {
         chunk = Objects.requireNonNull(builder.chunk, "chunk must not be null");
         status = ignoreEmpty(builder.status);
         conclusion = ignoreEmpty(builder.conclusion);
         runUrl = ignoreEmpty(builder.runUrl);
+        runStarted = builder.runStarted;
+        commitSha = ignoreEmpty(builder.commitSha);
+        commitMessage = ignoreEmpty(builder.commitMessage);
     }
 
     public static Builder builder() {
@@ -48,7 +55,16 @@ public class ChunkStatus {
             out.println(chunk.getName() + ": " + status);
         }
         if (runUrl != null) {
-            out.println("Run link: " + runUrl);
+            out.println("Run: " + runUrl);
+        }
+        if (runStarted != null) {
+            out.println("Started at: " + runStarted);
+        }
+        if (commitMessage != null) {
+            out.println("Message: " + commitMessage);
+        }
+        if (commitSha != null) {
+            out.println("Commit: " + commitSha);
         }
     }
 
@@ -115,6 +131,9 @@ public class ChunkStatus {
         private String status;
         private String conclusion;
         private String runUrl;
+        private Date runStarted;
+        private String commitSha;
+        private String commitMessage;
 
         private Builder() {
         }
@@ -160,6 +179,21 @@ public class ChunkStatus {
 
         public Builder runUrl(String runUrl) {
             this.runUrl = runUrl;
+            return this;
+        }
+
+        public Builder runStarted(Date runStarted) {
+            this.runStarted = runStarted;
+            return this;
+        }
+
+        public Builder commitSha(String commitSha) {
+            this.commitSha = commitSha;
+            return this;
+        }
+
+        public Builder commitMessage(String commitMessage) {
+            this.commitMessage = commitMessage;
             return this;
         }
 
