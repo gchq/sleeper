@@ -37,7 +37,6 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
 import sleeper.io.parquet.record.SchemaConverter;
 import sleeper.job.common.action.ActionException;
-import sleeper.job.common.action.ChangeMessageVisibilityTimeoutAction;
 import sleeper.job.common.action.DeleteMessageAction;
 import sleeper.job.common.action.MessageReference;
 import sleeper.job.common.action.thread.PeriodicActionRunnable;
@@ -59,7 +58,7 @@ import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZ
 /**
  * Retrieves compaction {@link CompactionJob}s from an SQS queue, and executes them. It
  * delegates the actual execution of the job to an instance of {@link CompactSortedFiles}.
- * It passes a {@link ChangeMessageVisibilityTimeoutAction} to that class so that the message on the
+ * It passes a {@link sleeper.job.common.action.ChangeMessageVisibilityTimeoutAction} to that class so that the message on the
  * SQS queue can be kept alive whilst the job is executing. It also handles
  * deletion of the message when the job is completed.
  */
