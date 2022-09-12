@@ -52,12 +52,13 @@ public class SizeRatioCompactionStrategyTest {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "11");
         SizeRatioCompactionStrategy sizeRatioCompactionStrategy = new SizeRatioCompactionStrategy();
         sizeRatioCompactionStrategy.init(instanceProperties, tableProperties);
-        Partition partition = new Partition();
-        partition.setId("root");
-        partition.setRowKeyTypes(new IntType());
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(null);
+        Partition partition = Partition.builder()
+                .id("root")
+                .rowKeyTypes(new IntType())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .build();
         List<Partition> partitions = Collections.singletonList(partition);
         List<FileInfo> fileInfos = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
@@ -96,12 +97,13 @@ public class SizeRatioCompactionStrategyTest {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "11");
         SizeRatioCompactionStrategy sizeRatioCompactionStrategy = new SizeRatioCompactionStrategy();
         sizeRatioCompactionStrategy.init(instanceProperties, tableProperties);
-        Partition partition = new Partition();
-        partition.setId("root");
-        partition.setRowKeyTypes(new IntType());
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(null);
+        Partition partition = Partition.builder()
+                .id("root")
+                .rowKeyTypes(new IntType())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .build();
         List<Partition> partitions = Collections.singletonList(partition);
         List<FileInfo> fileInfos = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
@@ -134,12 +136,13 @@ public class SizeRatioCompactionStrategyTest {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
         SizeRatioCompactionStrategy sizeRatioCompactionStrategy = new SizeRatioCompactionStrategy();
         sizeRatioCompactionStrategy.init(instanceProperties, tableProperties);
-        Partition partition = new Partition();
-        partition.setId("root");
-        partition.setRowKeyTypes(new IntType());
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(null);
+        Partition partition = Partition.builder()
+                .id("root")
+                .rowKeyTypes(new IntType())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .build();
         List<Partition> partitions = Collections.singletonList(partition);
         //  - First batch that meet criteria
         //  - 9, 9, 9, 9, 10
@@ -193,12 +196,13 @@ public class SizeRatioCompactionStrategyTest {
         tableProperties.set(SIZE_RATIO_COMPACTION_STRATEGY_RATIO, "2");
         SizeRatioCompactionStrategy sizeRatioCompactionStrategy = new SizeRatioCompactionStrategy();
         sizeRatioCompactionStrategy.init(instanceProperties, tableProperties);
-        Partition partition = new Partition();
-        partition.setId("root");
-        partition.setRowKeyTypes(new IntType());
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(null);
+        Partition partition = Partition.builder()
+                .id("root")
+                .rowKeyTypes(new IntType())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .build();
         List<Partition> partitions = Collections.singletonList(partition);
         //  - First batch that meet criteria
         //  - 9, 9, 9, 9, 10

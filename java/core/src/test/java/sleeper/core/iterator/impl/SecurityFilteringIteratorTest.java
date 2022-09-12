@@ -18,7 +18,10 @@ package sleeper.core.iterator.impl;
 import org.junit.Test;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -34,7 +37,7 @@ public class SecurityFilteringIteratorTest {
         List<Record> records = getData();
         Iterator<Record> iterator = records.iterator();
         SecurityFilteringIterator securityFilteringIterator = new SecurityFilteringIterator();
-        securityFilteringIterator.init("securityLabel,public", new Schema());
+        securityFilteringIterator.init("securityLabel,public", getSchema());
 
         // When
         Iterator<Record> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
@@ -50,7 +53,7 @@ public class SecurityFilteringIteratorTest {
         List<Record> records = getData();
         Iterator<Record> iterator = records.iterator();
         SecurityFilteringIterator securityFilteringIterator = new SecurityFilteringIterator();
-        securityFilteringIterator.init("securityLabel", new Schema());
+        securityFilteringIterator.init("securityLabel", getSchema());
 
         // When
         Iterator<Record> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
@@ -58,6 +61,15 @@ public class SecurityFilteringIteratorTest {
         // Then
         assertThat(filtered).toIterable()
                 .containsExactly(records.get(2));
+    }
+
+    private static Schema getSchema() {
+        return Schema.builder()
+                .rowKeyFields(new Field("field1", new StringType()))
+                .valueFields(
+                        new Field("field2", new LongType()),
+                        new Field("securityLabel", new StringType()))
+                .build();
     }
 
     private static List<Record> getData() {

@@ -57,22 +57,22 @@ public class SimpleRecordHandler extends SleeperRecordHandler {
     /**
      * Trims down the schema to one derived from the original schema but only containing the fields that require
      * projection (either for filtering, transform or being returned).
+     *
      * @param originalSchema the original table schema
      * @param recordsRequest the data request
      * @return an adapted schema only containing fields requested or filtered upon
      */
     @Override
     protected Schema createSchemaForDataRead(Schema originalSchema, ReadRecordsRequest recordsRequest) {
-        Schema dataSchema = new Schema();
         Set<String> requestedFieldNames = recordsRequest.getSchema().getFields().stream()
                 .map(Field::getName)
                 .collect(Collectors.toSet());
 
-        dataSchema.setRowKeyFields(getRelevantFields(originalSchema.getRowKeyFields(), requestedFieldNames));
-        dataSchema.setSortKeyFields(getRelevantFields(originalSchema.getSortKeyFields(), requestedFieldNames));
-        dataSchema.setValueFields(getRelevantFields(originalSchema.getValueFields(), requestedFieldNames));
-
-        return dataSchema;
+        return Schema.builder()
+                .rowKeyFields(getRelevantFields(originalSchema.getRowKeyFields(), requestedFieldNames))
+                .sortKeyFields(getRelevantFields(originalSchema.getSortKeyFields(), requestedFieldNames))
+                .valueFields(getRelevantFields(originalSchema.getValueFields(), requestedFieldNames))
+                .build();
     }
 
     private List<sleeper.core.schema.Field> getRelevantFields(List<sleeper.core.schema.Field> originalFields, Set<String> requestedFieldNames) {
@@ -84,8 +84,9 @@ public class SimpleRecordHandler extends SleeperRecordHandler {
 
     /**
      * Creates a single parquet iterator from the schema and split, using the constraints to add parquet filters for efficiency.
-     * @param recordsRequest the request
-     * @param schema the schema for reading the data
+     *
+     * @param recordsRequest  the request
+     * @param schema          the schema for reading the data
      * @param tableProperties the table properties for this table
      * @return a Parquet iterator for this split
      * @throws Exception if something goes wrong with the read

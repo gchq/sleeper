@@ -24,16 +24,9 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.clients.QueryLambdaClient;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.key.Key;
 import sleeper.core.range.Range;
@@ -47,6 +40,15 @@ import sleeper.query.model.Query;
 import sleeper.systemtest.SystemTestProperties;
 import sleeper.systemtest.ingest.RandomRecordSupplier;
 import sleeper.systemtest.ingest.RandomRecordSupplierConfig;
+
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.function.Supplier;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
 
 /**
  * Submits random queries to the query queue.

@@ -593,11 +593,12 @@ public class QueryExecutorIT {
             throws StateStoreException, InterruptedException,
             IOException, IteratorException, ObjectFactoryException, QueryException {
         // Given
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
-        schema.setRowKeyFields(field1, field2);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(field1, field2)
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
         InstanceProperties instanceProperties = new InstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
@@ -721,11 +722,12 @@ public class QueryExecutorIT {
             throws StateStoreException, InterruptedException, QueryException,
             IOException, IteratorException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new StringType());
         Field field2 = new Field("key2", new StringType());
-        schema.setRowKeyFields(field1, field2);
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(field1, field2)
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
         List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
         InstanceProperties instanceProperties = new InstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
@@ -756,15 +758,27 @@ public class QueryExecutorIT {
         // Split the root partition into 2: 1 and 3, and 2 and 4
         Range leftRange1 = new RangeFactory(schema).createRange(field1, "", "I");
         Range leftRange2 = new RangeFactory(schema).createRange(field2, "", null);
-        Partition leftPartition = new Partition(rowKeyTypes,
-                new Region(Arrays.asList(leftRange1, leftRange2)),
-                "left", true, "root", new ArrayList<>(), -1);
+        Partition leftPartition = Partition.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .region(new Region(Arrays.asList(leftRange1, leftRange2)))
+                .id("left")
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
 
         Range rightRange1 = new RangeFactory(schema).createRange(field1, "I", null);
         Range rightRange2 = new RangeFactory(schema).createRange(field2, "", null);
-        Partition rightPartition = new Partition(rowKeyTypes,
-                new Region(Arrays.asList(rightRange1, rightRange2)),
-                "right", true, "root", new ArrayList<>(), -1);
+        Partition rightPartition = Partition.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .region(new Region(Arrays.asList(rightRange1, rightRange2)))
+                .id("right")
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
 
         rootPartition.setLeafPartition(false);
         rootPartition.setChildPartitionIds(Arrays.asList("left", "right"));
@@ -775,27 +789,51 @@ public class QueryExecutorIT {
         // 4 leaf partitions
         Range range11 = new RangeFactory(schema).createRange(field1, "", "I");
         Range range12 = new RangeFactory(schema).createRange(field2, "", "T");
-        Partition partition1 = new Partition(rowKeyTypes,
-                new Region(Arrays.asList(range11, range12)),
-                "P1", true, "left", new ArrayList<>(), -1);
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .region(new Region(Arrays.asList(range11, range12)))
+                .id("P1")
+                .leafPartition(true)
+                .parentPartitionId("left")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
 
         Range range21 = new RangeFactory(schema).createRange(field1, "I", null);
         Range range22 = new RangeFactory(schema).createRange(field2, "", "T");
-        Partition partition2 = new Partition(rowKeyTypes,
-                new Region(Arrays.asList(range21, range22)),
-                "P2", true, "right", new ArrayList<>(), -1);
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .region(new Region(Arrays.asList(range21, range22)))
+                .id("P2")
+                .leafPartition(true)
+                .parentPartitionId("right")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
 
         Range range31 = new RangeFactory(schema).createRange(field1, "", "I");
         Range range32 = new RangeFactory(schema).createRange(field2, "T", null);
-        Partition partition3 = new Partition(rowKeyTypes,
-                new Region(Arrays.asList(range31, range32)),
-                "P3", true, "left", new ArrayList<>(), -1);
+        Partition partition3 = Partition.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .region(new Region(Arrays.asList(range31, range32)))
+                .id("P3")
+                .leafPartition(true)
+                .parentPartitionId("left")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
 
         Range range41 = new RangeFactory(schema).createRange(field1, "I", null);
         Range range42 = new RangeFactory(schema).createRange(field2, "T", null);
-        Partition partition4 = new Partition(rowKeyTypes,
-                new Region(Arrays.asList(range41, range42)),
-                "P4", true, "right", new ArrayList<>(), -1);
+        Partition partition4 = Partition.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .region(new Region(Arrays.asList(range41, range42)))
+                .id("P4")
+                .leafPartition(true)
+                .parentPartitionId("right")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
 
         // Split the left partition into 1 and 3
         leftPartition.setLeafPartition(false);
@@ -1061,11 +1099,12 @@ public class QueryExecutorIT {
             throws StateStoreException, InterruptedException,
             IOException, IteratorException, ObjectFactoryException, QueryException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("value1", new LongType()));
-        schema.setValueFields(new Field("value2", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(field)
+                .sortKeyFields(new Field("value1", new LongType()))
+                .valueFields(new Field("value2", new LongType()))
+                .build();
         InstanceProperties instanceProperties = new InstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
@@ -1119,10 +1158,11 @@ public class QueryExecutorIT {
             throws StateStoreException, InterruptedException,
             IOException, IteratorException, ObjectFactoryException, QueryException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("id", new StringType());
-        schema.setRowKeyFields(field);
-        schema.setValueFields(new Field("timestamp", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(field)
+                .valueFields(new Field("timestamp", new LongType()))
+                .build();
         InstanceProperties instanceProperties = new InstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
@@ -1280,17 +1320,17 @@ public class QueryExecutorIT {
     }
 
     protected Schema getLongKeySchema() {
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
-        return schema;
+        return Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
     }
 
     protected Schema getSecurityLabelSchema() {
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value", new LongType()), new Field("securityLabel", new StringType()));
-        return schema;
+        return Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .valueFields(new Field("value", new LongType()), new Field("securityLabel", new StringType()))
+                .build();
     }
 
     protected void ingestData(InstanceProperties instanceProperties, StateStore stateStore, Schema schema, Iterator<Record> recordIterator)

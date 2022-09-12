@@ -24,11 +24,11 @@ import sleeper.core.schema.Schema;
  */
 public class CloneRecord {
     private final Schema schema;
-    
+
     public CloneRecord(Schema schema) {
         this.schema = schema;
     }
-    
+
     public Record clone(Record record) {
         Record clonedRecord = new Record();
         for (Field field : schema.getAllFields()) {

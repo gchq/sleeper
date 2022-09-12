@@ -57,12 +57,13 @@ public class BasicCompactionStrategyTest {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
-        Partition partition = new Partition();
-        partition.setId("root");
-        partition.setRowKeyTypes(new IntType());
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(Collections.emptyList());
+        Partition partition = Partition.builder()
+                .id("root")
+                .rowKeyTypes(new IntType())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .build();
         List<Partition> partitions = Collections.singletonList(partition);
         List<FileInfo> fileInfos = new ArrayList<>();
         FileInfo fileInfo1 = new FileInfo();
@@ -85,7 +86,7 @@ public class BasicCompactionStrategyTest {
         fileInfos.add(fileInfo2);
 
         // When
-        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, fileInfos, partitions);
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
 
         // Then
         assertThat(compactionJobs).hasSize(1);
@@ -113,12 +114,13 @@ public class BasicCompactionStrategyTest {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "10");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
-        Partition partition = new Partition();
-        partition.setId("root");
-        partition.setRowKeyTypes(new IntType());
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(null);
+        Partition partition = Partition.builder()
+                .id("root")
+                .rowKeyTypes(new IntType())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .build();
         List<Partition> partitions = Collections.singletonList(partition);
         List<FileInfo> fileInfos = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
@@ -134,7 +136,7 @@ public class BasicCompactionStrategyTest {
         }
 
         // When
-        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, fileInfos, partitions);
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
 
         // Then
         assertThat(compactionJobs).hasSize(10).isEqualTo(IntStream.range(0, 10).mapToObj(i -> {
@@ -167,12 +169,13 @@ public class BasicCompactionStrategyTest {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
-        Partition partition = new Partition();
-        partition.setId("root");
-        partition.setRowKeyTypes(new IntType());
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(null);
+        Partition partition = Partition.builder()
+                .id("root")
+                .rowKeyTypes(new IntType())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .build();
         List<Partition> partitions = Collections.singletonList(partition);
         List<FileInfo> fileInfos = new ArrayList<>();
         FileInfo fileInfo1 = new FileInfo();
@@ -195,7 +198,7 @@ public class BasicCompactionStrategyTest {
         fileInfos.add(fileInfo2);
 
         // When
-        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, fileInfos, partitions);
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -213,24 +216,27 @@ public class BasicCompactionStrategyTest {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
-        Partition rootPartition = new Partition();
-        rootPartition.setId("root");
-        rootPartition.setRowKeyTypes(new IntType());
-        rootPartition.setLeafPartition(false);
-        rootPartition.setParentPartitionId(null);
-        rootPartition.setChildPartitionIds(Arrays.asList("left", "right"));
-        Partition leftChild = new Partition();
-        leftChild.setId("left");
-        leftChild.setRowKeyTypes(new IntType());
-        leftChild.setLeafPartition(true);
-        leftChild.setParentPartitionId("root");
-        leftChild.setChildPartitionIds(null);
-        Partition rightChild = new Partition();
-        rightChild.setId("right");
-        rightChild.setRowKeyTypes(new IntType());
-        rightChild.setLeafPartition(true);
-        rightChild.setParentPartitionId("root");
-        rightChild.setChildPartitionIds(null);
+        Partition rootPartition = Partition.builder()
+                .id("root")
+                .rowKeyTypes(new IntType())
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Arrays.asList("left", "right"))
+                .build();
+        Partition leftChild = Partition.builder()
+                .id("left")
+                .rowKeyTypes(new IntType())
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(Collections.emptyList())
+                .build();
+        Partition rightChild = Partition.builder()
+                .id("right")
+                .rowKeyTypes(new IntType())
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(Collections.emptyList())
+                .build();
         List<Partition> partitions = Arrays.asList(rootPartition, leftChild, rightChild);
         List<FileInfo> fileInfos = new ArrayList<>();
         FileInfo fileInfo1 = new FileInfo();
@@ -289,7 +295,7 @@ public class BasicCompactionStrategyTest {
         fileInfos.add(fileInfo6);
 
         // When
-        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, fileInfos, partitions);
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
 
         // Then
         assertThat(compactionJobs).hasSize(3);
@@ -330,9 +336,8 @@ public class BasicCompactionStrategyTest {
     @Test
     public void shouldCreateSplittingJobs() {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, "bucket");
         TableProperties tableProperties = new TableProperties(instanceProperties);
@@ -342,31 +347,34 @@ public class BasicCompactionStrategyTest {
         tableProperties.setSchema(schema);
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
-        Partition rootPartition = new Partition();
-        rootPartition.setId("root");
-        rootPartition.setRowKeyTypes(new IntType());
-        rootPartition.setLeafPartition(false);
-        rootPartition.setParentPartitionId(null);
-        rootPartition.setChildPartitionIds(Arrays.asList("left", "right"));
         Range rootRange = new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, null);
-        rootPartition.setRegion(new Region(rootRange));
-        rootPartition.setDimension(0);
-        Partition leftChild = new Partition();
-        leftChild.setId("left");
-        leftChild.setRowKeyTypes(new IntType());
-        leftChild.setLeafPartition(true);
-        leftChild.setParentPartitionId("root");
-        leftChild.setChildPartitionIds(null);
+        Partition rootPartition = Partition.builder()
+                .id("root")
+                .rowKeyTypes(new IntType())
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Arrays.asList("left", "right"))
+                .region(new Region(rootRange))
+                .dimension(0)
+                .build();
         Range leftRange = new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, 10);
-        leftChild.setRegion(new Region(leftRange));
-        Partition rightChild = new Partition();
-        rightChild.setId("right");
-        rightChild.setRowKeyTypes(new IntType());
-        rightChild.setLeafPartition(true);
-        rightChild.setParentPartitionId("root");
-        rightChild.setChildPartitionIds(null);
+        Partition leftChild = Partition.builder()
+                .id("left")
+                .rowKeyTypes(new IntType())
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(Collections.emptyList())
+                .region(new Region(leftRange))
+                .build();
         Range rightRange = new RangeFactory(schema).createRange(field, 10, null);
-        rightChild.setRegion(new Region(rightRange));
+        Partition rightChild = Partition.builder()
+                .id("right")
+                .rowKeyTypes(new IntType())
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(Collections.emptyList())
+                .region(new Region(rightRange))
+                .build();
         List<Partition> partitions = Arrays.asList(rootPartition, leftChild, rightChild);
         List<FileInfo> fileInfos = new ArrayList<>();
         FileInfo fileInfo1 = new FileInfo();
@@ -389,7 +397,7 @@ public class BasicCompactionStrategyTest {
         fileInfos.add(fileInfo2);
 
         // When
-        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, fileInfos, partitions);
+        List<CompactionJob> compactionJobs = basicCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
 
         // Then
         assertThat(compactionJobs).hasSize(1);

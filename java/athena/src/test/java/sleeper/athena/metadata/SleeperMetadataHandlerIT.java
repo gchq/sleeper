@@ -569,7 +569,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         private int schemaEnhancementsCalled = 0;
         private int writeExtraPartitionDataCalled = 0;
 
-        public SleeperMetadataHandlerImpl(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, String configBucket) throws IOException {
+        private SleeperMetadataHandlerImpl(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, String configBucket) throws IOException {
             super(s3Client, dynamoDBClient, configBucket, mock(EncryptionKeyFactory.class),
                     mock(AWSSecretsManager.class), mock(AmazonAthena.class), "abc", "def");
         }

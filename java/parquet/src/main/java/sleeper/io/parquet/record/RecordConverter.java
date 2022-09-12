@@ -41,7 +41,7 @@ import java.util.Map;
 public class RecordConverter extends GroupConverter {
     private final Record currentRecord;
     private final Converter[] converters;
-    
+
     public RecordConverter(Schema schema) {
         currentRecord = new Record();
         List<Field> fields = schema.getAllFields();
@@ -64,7 +64,7 @@ public class RecordConverter extends GroupConverter {
             } else if (field.getType() instanceof ListType) {
                 ListType listType = (ListType) field.getType();
                 PrimitiveType elementType = listType.getElementType();
-                this.converters[count] = new ListConverter<>(field.getName(), elementType,currentRecord);
+                this.converters[count] = new ListConverter<>(field.getName(), elementType, currentRecord);
             } else {
                 throw new IllegalArgumentException("Schema has a field with an unknown type (" + field + ")");
             }
@@ -118,31 +118,31 @@ public class RecordConverter extends GroupConverter {
             record.put(name, value);
         }
     }
-    
+
     public static class StringConverter extends PrimitiveConverter {
         private final String name;
         private final Record record;
-        
+
         public StringConverter(String name, Record record) {
             this.name = name;
             this.record = record;
         }
-        
+
         @Override
         public void addBinary(Binary value) {
             record.put(name, value.toStringUsingUTF8());
         }
     }
-    
+
     public static class ByteArrayConverter extends PrimitiveConverter {
         private final String name;
         private final Record record;
-        
+
         public ByteArrayConverter(String name, Record record) {
             this.name = name;
             this.record = record;
         }
-        
+
         @Override
         public void addBinary(Binary value) {
             record.put(name, value.getBytes());
@@ -224,7 +224,7 @@ public class RecordConverter extends GroupConverter {
     private static class IntInMapConverter extends PrimitiveConverter {
         private final List<Integer> list;
 
-        public IntInMapConverter(List<Integer> list) {
+        private IntInMapConverter(List<Integer> list) {
             this.list = list;
         }
 
@@ -237,7 +237,7 @@ public class RecordConverter extends GroupConverter {
     private static class LongInMapConverter extends PrimitiveConverter {
         private final List<Long> list;
 
-        public LongInMapConverter(List<Long> list) {
+        private LongInMapConverter(List<Long> list) {
             this.list = list;
         }
 
@@ -250,7 +250,7 @@ public class RecordConverter extends GroupConverter {
     private static class StringInMapConverter extends PrimitiveConverter {
         private final List<String> list;
 
-        public StringInMapConverter(List<String> list) {
+        private StringInMapConverter(List<String> list) {
             this.list = list;
         }
 
@@ -263,7 +263,7 @@ public class RecordConverter extends GroupConverter {
     private static class ByteArrayInMapConverter extends PrimitiveConverter {
         private final List<byte[]> list;
 
-        public ByteArrayInMapConverter(List<byte[]> list) {
+        private ByteArrayInMapConverter(List<byte[]> list) {
             this.list = list;
         }
 
@@ -273,12 +273,12 @@ public class RecordConverter extends GroupConverter {
         }
     }
 
-    public static class KeyValueConverter<K, V> extends GroupConverter {
+    private static class KeyValueConverter<K, V> extends GroupConverter {
         private final PrimitiveConverter keyConverter;
         private final PrimitiveConverter valueConverter;
 
-        public KeyValueConverter(List<K> keys, List<V> values,
-                                 PrimitiveType keyType, PrimitiveType valueType) {
+        private KeyValueConverter(List<K> keys, List<V> values,
+                                  PrimitiveType keyType, PrimitiveType valueType) {
             this.keyConverter = getInListConverter(keyType, keys);
             this.valueConverter = getInListConverter(valueType, values);
         }
@@ -303,10 +303,10 @@ public class RecordConverter extends GroupConverter {
         }
     }
 
-    public static class ElementConverter<E> extends GroupConverter {
+    private static class ElementConverter<E> extends GroupConverter {
         private final PrimitiveConverter elementConverter;
 
-        public ElementConverter(List<E> elements, PrimitiveType elementType) {
+        private ElementConverter(List<E> elements, PrimitiveType elementType) {
             this.elementConverter = getInListConverter(elementType, elements);
         }
 

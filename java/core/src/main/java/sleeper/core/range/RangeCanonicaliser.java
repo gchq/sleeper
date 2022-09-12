@@ -27,21 +27,24 @@ import sleeper.core.schema.type.Type;
  * can convert it into canonical form.
  */
 public class RangeCanonicaliser {
- 
+
+    private RangeCanonicaliser() {
+    }
+
     public static boolean isRangeInCanonicalForm(Range range) {
         return range.isMinInclusive() && !range.isMaxInclusive();
     }
-    
+
     public static Range canonicaliseRange(Range range) {
         if (isRangeInCanonicalForm(range)) {
             return range;
         }
-        
+
         Object rangeMin = range.isMinInclusive() ? range.getMin() : nextValue(range.getFieldType(), range.getMin());
         Object rangeMax = range.isMaxInclusive() ? nextValue(range.getFieldType(), range.getMax()) : range.getMax();
         return new Range(range.getField(), rangeMin, true, rangeMax, false);
     }
-    
+
     private static Object nextValue(Type type, Object object) {
         if (type instanceof IntType) {
             return nextIntValue((Integer) object);
@@ -57,7 +60,7 @@ public class RangeCanonicaliser {
         }
         throw new IllegalArgumentException("Unknown type of " + type);
     }
- 
+
     private static Integer nextIntValue(Integer value) {
         if (null == value) {
             return null;
@@ -67,7 +70,7 @@ public class RangeCanonicaliser {
         }
         return value + 1;
     }
-    
+
     private static Long nextLongValue(Long value) {
         if (null == value) {
             return null;
@@ -77,15 +80,15 @@ public class RangeCanonicaliser {
         }
         return value + 1L;
     }
-    
+
     private static String nextStringValue(String value) {
         if (null == value) {
             return null;
         }
         return value + '\u0000';
     }
-    
-    private static byte[] nextByteArrayValue(byte [] value) {
+
+    private static byte[] nextByteArrayValue(byte[] value) {
         if (null == value) {
             return null;
         }

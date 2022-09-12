@@ -19,12 +19,12 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import sleeper.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.job.common.CommonJobUtils;
 
 import java.io.IOException;
 import java.util.Map;
-import sleeper.ClientUtils;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
@@ -44,7 +44,7 @@ public class JobsStatusReport {
     }
 
     public void run() {
-        System.out.println( "\nJobs Status Report:\n--------------------------");
+        System.out.println("\nJobs Status Report:\n--------------------------");
         Map<String, Integer> stats = CommonJobUtils.getNumberOfMessagesInQueue(instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqsClient);
         System.out.println(stats);
         stats = CommonJobUtils.getNumberOfMessagesInQueue(instanceProperties.get(SPLITTING_COMPACTION_JOB_QUEUE_URL), sqsClient);

@@ -35,6 +35,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     USER_JARS("sleeper.userjars"),
     TAGS_FILE("sleeper.tags.file"),
     TAGS("sleeper.tags"),
+    STACK_TAG_NAME("sleeper.stack.tag.name", "DeploymentStack"),
     RETAIN_INFRA_AFTER_DESTROY("sleeper.retain.infra.after.destroy", "true", Utils::isTrueOrFalse),
     OPTIONAL_STACKS("sleeper.optional.stacks",
             "CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrBulkImportStack,DashboardStack"),
@@ -72,7 +73,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     MAX_IN_MEMORY_BATCH_SIZE("sleeper.ingest.memory.max.batch.size", "1000000"),
 
     // Arrow ingest
-    ARROW_INGEST_WORKING_BUFFER_BYTES("sleeper.ingest.arrow.working.buffer.bytes", "134217728"),                    // 128M
+    ARROW_INGEST_WORKING_BUFFER_BYTES("sleeper.ingest.arrow.working.buffer.bytes", "268435456"),                    // 256M
     ARROW_INGEST_BATCH_BUFFER_BYTES("sleeper.ingest.arrow.batch.buffer.bytes", "1073741824"),                       // 1G
     ARROW_INGEST_MAX_LOCAL_STORE_BYTES("sleeper.ingest.arrow.max.local.store.bytes", "17179869184"),                // 16G
     ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS("sleeper.ingest.arrow.max.single.write.to.file.records", "1024"), // 1K

@@ -19,7 +19,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
-import software.constructs.Construct;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
@@ -36,6 +35,7 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.s3.LifecycleRule;
+import software.constructs.Construct;
 
 import java.util.List;
 import java.util.Map;
@@ -50,8 +50,9 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPILL_BUCKET_AGE_OFF_IN_DAYS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.USER_JARS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.USER_JARS;;
+
 
 public class AthenaStack extends NestedStack {
     public AthenaStack(Construct scope, String id, InstanceProperties instanceProperties,
@@ -65,7 +66,7 @@ public class AthenaStack extends NestedStack {
         List<String> userJars = instanceProperties.getList(USER_JARS);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jarsBucketName);
         S3Code s3Code = Code.fromBucket(jarsBucket, "athena-" + version + ".jar");
-        
+
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
         String bucketName = Utils.truncateTo64Characters(String.join("-", "sleeper",
@@ -148,6 +149,8 @@ public class AthenaStack extends NestedStack {
             // and region
             handler.getRole().attachInlinePolicy(getAthenaQueryStatusPolicy);
         }
+
+        Utils.addStackTagIfSet(this, instanceProperties);
     }
 
     private Function createConnector(String className, String instanceId, int logRetentionDays, S3Code s3Code, Map<String, String> env, Integer memory, Integer timeout) {

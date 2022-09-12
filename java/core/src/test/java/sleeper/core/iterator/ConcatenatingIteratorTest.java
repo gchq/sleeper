@@ -226,7 +226,7 @@ public class ConcatenatingIteratorTest {
             });
         }
 
-        public TestIterator(Runnable onClose) {
+        private TestIterator(Runnable onClose) {
             this.onClose = onClose;
         }
 

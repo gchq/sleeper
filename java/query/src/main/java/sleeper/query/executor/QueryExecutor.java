@@ -18,6 +18,29 @@ package sleeper.query.executor;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
+import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.ConcatenatingIterator;
+import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.range.Region;
+import sleeper.core.record.Record;
+import sleeper.core.schema.Schema;
+import sleeper.query.QueryException;
+import sleeper.query.model.LeafPartitionQuery;
+import sleeper.query.model.Query;
+import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
+import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
+import sleeper.table.util.StateStoreProvider;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,30 +49,9 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.apache.hadoop.conf.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import sleeper.query.QueryException;
-import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
-import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.ConcatenatingIterator;
-import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionTree;
-import sleeper.core.range.Region;
-import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
-import sleeper.table.util.StateStoreProvider;
 
 /**
  *
@@ -68,13 +70,13 @@ public class QueryExecutor {
     private Map<String, List<String>> partitionToFiles;
 
     public QueryExecutor(ObjectFactory objectFactory,
-                                    StateStore stateStore,
-                                    Schema schema,
-                                    String compactionIteratorClassName,
-                                    String compactionIteratorConfig,
-                                    TableProperties tableProperties,
-                                    Configuration configuration,
-                                    ExecutorService executorService) {
+                         StateStore stateStore,
+                         Schema schema,
+                         String compactionIteratorClassName,
+                         String compactionIteratorConfig,
+                         TableProperties tableProperties,
+                         Configuration configuration,
+                         ExecutorService executorService) {
         this.objectFactory = objectFactory;
         this.stateStore = stateStore;
         this.schema = schema;
@@ -84,27 +86,27 @@ public class QueryExecutor {
     }
 
     public QueryExecutor(ObjectFactory objectFactory,
-                                    TableProperties tableProperties,
-                                    StateStore stateStore,
-                                    Configuration configuration,
-                                    ExecutorService executorService) {
+                         TableProperties tableProperties,
+                         StateStore stateStore,
+                         Configuration configuration,
+                         ExecutorService executorService) {
         this(objectFactory, stateStore, tableProperties.getSchema(), tableProperties.get(ITERATOR_CLASS_NAME),
                 tableProperties.get(ITERATOR_CONFIG), tableProperties, configuration, executorService);
     }
-    
+
     public QueryExecutor(AmazonS3 s3Client,
-            AmazonDynamoDB dynamoDBClient,
-            InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider,
-            String tableName,
-            ExecutorService executorService) throws ObjectFactoryException {
+                         AmazonDynamoDB dynamoDBClient,
+                         InstanceProperties instanceProperties,
+                         TablePropertiesProvider tablePropertiesProvider,
+                         String tableName,
+                         ExecutorService executorService) throws ObjectFactoryException {
         this(new ObjectFactory(instanceProperties, s3Client, "/tmp"),
                 tablePropertiesProvider.getTableProperties(tableName),
                 new StateStoreProvider(AmazonDynamoDBClientBuilder.defaultClient(), instanceProperties).getStateStore(tablePropertiesProvider.getTableProperties(tableName)),
                 new Configuration(),
                 executorService);
     }
-    
+
     /**
      * Initialises the partitions and the mapping from partitions to active files.
      * This method should be called periodically so that this class is aware of
@@ -112,7 +114,7 @@ public class QueryExecutor {
      * a balance between having an up-to-date view of the data and the cost of
      * frequently extracting all the information about the files and the partitions
      * from the state store.
-     * 
+     *
      * @throws StateStoreException if the statestore can't be accessed.
      */
     public void init() throws StateStoreException {
@@ -130,10 +132,10 @@ public class QueryExecutor {
         this.partitionTree = new PartitionTree(this.schema, partitions);
         this.partitionToFiles = partitionToFileMapping;
     }
-    
+
     /**
      * Executes a query. This method first splits up the query into one or more
-     * LeafPartitionQuerys. For each of these a Supplier of CloseableIterator<Record>
+     * LeafPartitionQuerys. For each of these a Supplier of CloseableIterator
      * is created. This is done using suppliers to avoid the initialisation of
      * record retrievers until they are needed. In the case of Parquet files,
      * initialisation of the readers requires reading the footers of the file
@@ -141,7 +143,7 @@ public class QueryExecutor {
      * each leaf partition had many active files, then the initialisation time
      * could be high. Using suppliers ensures that only files for a single
      * leaf partition are opened at a time.
-     * 
+     *
      * @param query the query
      * @return An iterator containing the relevant records
      * @throws QueryException if it errors.
@@ -151,13 +153,13 @@ public class QueryExecutor {
         List<Supplier<CloseableIterator<Record>>> iteratorSuppliers = createRecordIteratorSuppliers(leafPartitionQueries, tableProperties);
         return new ConcatenatingIterator(iteratorSuppliers);
     }
-    
+
     /**
      * Splits up a {@link Query} into multiple {@link LeafPartitionQuery}s using the
      * {@code getRelevantLeafPartitions()} method. For each leaf partition, it
      * finds the parent partitions in the tree and adds any files still belonging
      * to the parent to the sub query.
-     * 
+     *
      * @param query the query to be split up
      * @return A list of {@link LeafPartitionQuery}s
      */
@@ -171,7 +173,7 @@ public class QueryExecutor {
         List<LeafPartitionQuery> leafPartitionQueriesList = new ArrayList<>();
         for (Map.Entry<Partition, List<Region>> entry : relevantLeafPartitions.entrySet()) {
             List<String> files = getFiles(entry.getKey());
-            
+
             if (files.isEmpty()) {
                 LOGGER.info("No files for partition {}", entry.getKey());
                 continue;
@@ -185,13 +187,13 @@ public class QueryExecutor {
             // partition).
             LeafPartitionQuery leafPartitionQuery
                     = ((LeafPartitionQuery.Builder) new LeafPartitionQuery.Builder(
-                        query.getTableName(),
-                        query.getQueryId(),
-                        UUID.randomUUID().toString(),
-                        entry.getValue(),
-                        entry.getKey().getId(),
-                        entry.getKey().getRegion(),
-                        files)
+                    query.getTableName(),
+                    query.getQueryId(),
+                    UUID.randomUUID().toString(),
+                    entry.getValue(),
+                    entry.getKey().getId(),
+                    entry.getKey().getRegion(),
+                    files)
                     .setQueryTimeIteratorClassName(query.getQueryTimeIteratorClassName())
                     .setQueryTimeIteratorConfig(query.getQueryTimeIteratorConfig())
                     .setResultsPublisherConfig(query.getResultsPublisherConfig())
@@ -204,7 +206,7 @@ public class QueryExecutor {
 
         return leafPartitionQueriesList;
     }
-    
+
     private List<Supplier<CloseableIterator<Record>>> createRecordIteratorSuppliers(List<LeafPartitionQuery> leafPartitionQueries, TableProperties tableProperties) throws QueryException {
         List<Supplier<CloseableIterator<Record>>> iterators = new ArrayList<>();
 
@@ -221,12 +223,12 @@ public class QueryExecutor {
         }
         return iterators;
     }
-    
+
     /**
      * Gets the leaf partitions which are relevant to a query. This method is
      * called by the default implementation of {@code getPartitionFiles()} If
      * you overwrite getPartitionFiles() then you may make this method a no-op.
-     * 
+     *
      * @param query the query
      * @return the relevant leaf partitions
      */
@@ -246,7 +248,7 @@ public class QueryExecutor {
                 });
         return leafPartitionToOverlappingRegions;
     }
-    
+
     protected List<String> getFiles(Partition partition) {
         // Get all partitions up to the root of the tree
         List<String> relevantPartitions = new ArrayList<>();

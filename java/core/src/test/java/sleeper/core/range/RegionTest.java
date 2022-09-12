@@ -22,6 +22,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 
 import java.util.Arrays;
@@ -30,11 +31,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class RegionTest {
 
+    private static Schema schemaWithSingleKeyOfType(PrimitiveType type) {
+        return Schema.builder().rowKeyFields(new Field("key", type)).build();
+    }
+
+    private static Schema schemaWithTwoKeysOfTypes(PrimitiveType type1, PrimitiveType type2) {
+        return Schema.builder().rowKeyFields(
+                new Field("key1", type1),
+                new Field("key2", type2)
+        ).build();
+    }
+
     @Test
     public void equalsAndHashcodeShouldWorkCorrectlyIntKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
+        Schema schema = schemaWithSingleKeyOfType(new IntType());
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Region region1 = new Region(rangeFactory.createRange("key", 1, true, 2, true));
         Region region2 = new Region(rangeFactory.createRange("key", 1, true, 2, true));
@@ -62,8 +73,7 @@ public class RegionTest {
     @Test
     public void equalsAndHashcodeShouldWorkCorrectlyLongKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleKeyOfType(new LongType());
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Region region1 = new Region(rangeFactory.createRange("key", 1L, true, 2L, true));
         Region region2 = new Region(rangeFactory.createRange("key", 1L, true, 2L, true));
@@ -91,8 +101,7 @@ public class RegionTest {
     @Test
     public void equalsAndHashcodeShouldWorkCorrectlyStringKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new StringType()));
+        Schema schema = schemaWithSingleKeyOfType(new StringType());
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Region region1 = new Region(rangeFactory.createRange("key", "1", true, "2", true));
         Region region2 = new Region(rangeFactory.createRange("key", "1", true, "2", true));
@@ -120,8 +129,7 @@ public class RegionTest {
     @Test
     public void equalsAndHashcodeShouldWorkCorrectlyByteArrayKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
+        Schema schema = schemaWithSingleKeyOfType(new ByteArrayType());
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Region region1 = new Region(rangeFactory.createRange("key", new byte[]{1}, true, new byte[]{2}, true));
         Region region2 = new Region(rangeFactory.createRange("key", new byte[]{1}, true, new byte[]{2}, true));
@@ -149,8 +157,7 @@ public class RegionTest {
     @Test
     public void equalsAndHashcodeShouldWorkCorrectlyIntKeyNullMax() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
+        Schema schema = schemaWithSingleKeyOfType(new IntType());
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Region region1 = new Region(rangeFactory.createRange("key", 1, true, null, true));
         Region region2 = new Region(rangeFactory.createRange("key", 1, true, null, true));
@@ -173,8 +180,7 @@ public class RegionTest {
     @Test
     public void equalsAndHashcodeShouldWorkCorrectlyLongKeyNullMax() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleKeyOfType(new LongType());
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Region region1 = new Region(rangeFactory.createRange("key", 1L, true, null, true));
         Region region2 = new Region(rangeFactory.createRange("key", 1L, true, null, true));
@@ -197,8 +203,7 @@ public class RegionTest {
     @Test
     public void equalsAndHashcodeShouldWorkCorrectlyStringKeyNullMax() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new StringType()));
+        Schema schema = schemaWithSingleKeyOfType(new StringType());
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Region region1 = new Region(rangeFactory.createRange("key", "1", true, null, true));
         Region region2 = new Region(rangeFactory.createRange("key", "1", true, null, true));
@@ -221,8 +226,7 @@ public class RegionTest {
     @Test
     public void equalsAndHashcodeShouldWorkCorrectlyByteArrayKeyNullMax() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
+        Schema schema = schemaWithSingleKeyOfType(new ByteArrayType());
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Region region1 = new Region(rangeFactory.createRange("key", new byte[]{1}, true, null, true));
         Region region2 = new Region(rangeFactory.createRange("key", new byte[]{1}, true, null, true));
@@ -245,8 +249,7 @@ public class RegionTest {
     @Test
     public void isKeyInRegionShouldWorkCorrectlyIntKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
+        Schema schema = schemaWithSingleKeyOfType(new IntType());
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Region region1 = new Region(rangeFactory.createRange("key", 1, true, 10, true));
         Region region2 = new Region(rangeFactory.createRange("key", 1, true, 10, false));
@@ -284,8 +287,7 @@ public class RegionTest {
     @Test
     public void isKeyInRegionShouldWorkCorrectlyLongKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleKeyOfType(new LongType());
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Region region1 = new Region(rangeFactory.createRange("key", 1L, true, 10L, true));
         Region region2 = new Region(rangeFactory.createRange("key", 1L, true, 10L, false));
@@ -323,8 +325,7 @@ public class RegionTest {
     @Test
     public void isKeyInRegionShouldWorkCorrectlyStringKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new StringType()));
+        Schema schema = schemaWithSingleKeyOfType(new StringType());
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Region region1 = new Region(rangeFactory.createRange("key", "1", true, "8", true));
         Region region2 = new Region(rangeFactory.createRange("key", "1", true, "8", false));
@@ -362,8 +363,7 @@ public class RegionTest {
     @Test
     public void isKeyInRegionShouldWorkCorrectlyByteArrayKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
+        Schema schema = schemaWithSingleKeyOfType(new ByteArrayType());
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Region region1 = new Region(rangeFactory.createRange("key", new byte[]{1}, true, new byte[]{10}, true));
         Region region2 = new Region(rangeFactory.createRange("key", new byte[]{1}, true, new byte[]{10}, false));
@@ -401,10 +401,9 @@ public class RegionTest {
     @Test
     public void isKeyInRegionShouldWorkCorrectlyMultidimensionalKey() {
         // Given
-        Schema schema = new Schema();
         Field field1 = new Field("key1", new ByteArrayType());
         Field field2 = new Field("key2", new IntType());
-        schema.setRowKeyFields(field1, field2);
+        Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Range range1 = rangeFactory.createRange(field1, new byte[]{1}, true, new byte[]{10}, true);
         Range range2 = rangeFactory.createRange(field2, 10, true, 12, true);
@@ -436,8 +435,7 @@ public class RegionTest {
     @Test
     public void shouldGiveCorrectAnswerForDoRegionsOverlapOneDimIntKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
+        Schema schema = schemaWithSingleKeyOfType(new IntType());
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Range range0 = rangeFactory.createRange("key", 1, true, 10, false);
         Region region0 = new Region(range0);
@@ -466,8 +464,7 @@ public class RegionTest {
     @Test
     public void shouldGiveCorrectAnswerForDoRegionsOverlapOneDimLongKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleKeyOfType(new LongType());
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Range range0 = rangeFactory.createRange("key", 1L, true, 10L, false);
         Region region0 = new Region(range0);
@@ -496,8 +493,7 @@ public class RegionTest {
     @Test
     public void shouldGiveCorrectAnswerForDoRegionsOverlapOneDimStringKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new StringType()));
+        Schema schema = schemaWithSingleKeyOfType(new StringType());
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Range range0 = rangeFactory.createRange("key", "E", true, "P", false);
         Region region0 = new Region(range0);
@@ -526,8 +522,7 @@ public class RegionTest {
     @Test
     public void shouldGiveCorrectAnswerForDoRegionsOverlapOneDimByteArrayKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
+        Schema schema = schemaWithSingleKeyOfType(new ByteArrayType());
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Range range0 = rangeFactory.createRange("key", new byte[]{1}, true, new byte[]{10}, false);
         Region region0 = new Region(range0);
@@ -556,8 +551,7 @@ public class RegionTest {
     @Test
     public void shouldGiveCorrectAnswerForDoRegionsOverlapWithMultidimensionalIntKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()));
+        Schema schema = schemaWithTwoKeysOfTypes(new IntType(), new IntType());
 
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Range range1 = rangeFactory.createRange("key1", 1, true, 10, false);
@@ -783,8 +777,7 @@ public class RegionTest {
     @Test
     public void shouldGiveCorrectAnswerForDoRegionsOverlapWithMultidimensionalStringKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new StringType()), new Field("key2", new StringType()));
+        Schema schema = schemaWithTwoKeysOfTypes(new StringType(), new StringType());
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Range range1 = rangeFactory.createRange("key1", "A", true, "E", false);
         Range range2 = rangeFactory.createRange("key2", "P", true, "V", false);
@@ -1009,8 +1002,7 @@ public class RegionTest {
     @Test
     public void shouldGiveCorrectAnswerForDoRegionsOverlapWithMultidimensionalStringKeyAndNullBoundaries() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new StringType()), new Field("key2", new StringType()));
+        Schema schema = schemaWithTwoKeysOfTypes(new StringType(), new StringType());
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Range range1 = rangeFactory.createRange("key1", "A", true, null, false);
         Range range2 = rangeFactory.createRange("key2", "P", true, null, false);
@@ -1107,8 +1099,7 @@ public class RegionTest {
     @Test
     public void shouldGiveCorrectAnswerForDoesRangeOverlapPartitionWithMultidimensionalByteArrayKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()));
+        Schema schema = schemaWithTwoKeysOfTypes(new ByteArrayType(), new ByteArrayType());
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Range range1 = rangeFactory.createRange("key1", new byte[]{5}, true, new byte[]{10}, false);
         Range range2 = rangeFactory.createRange("key2", new byte[]{20}, true, new byte[]{30}, false);
@@ -1282,8 +1273,7 @@ public class RegionTest {
     @Test
     public void shouldGiveCorrectAnswerForDoesRangeOverlapPartitionWithMultidimensionalIntAndStringKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new IntType()), new Field("key2", new StringType()));
+        Schema schema = schemaWithTwoKeysOfTypes(new IntType(), new StringType());
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Range range1 = rangeFactory.createRange("key1", 4, true, 10, false);
         Range range2 = rangeFactory.createRange("key2", "P", true, "V", false);

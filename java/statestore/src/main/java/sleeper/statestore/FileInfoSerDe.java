@@ -15,6 +15,7 @@
  */
 package sleeper.statestore;
 
+import sleeper.core.key.Key;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
@@ -28,7 +29,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import sleeper.core.key.Key;
 
 /**
  * Serialises a {@link FileInfo} to and from a <code>byte[]</code>.
@@ -77,7 +77,7 @@ public class FileInfoSerDe {
         dos.close();
         return baos.toByteArray();
     }
-    
+
     public FileInfo deserialiseFileInfo(byte[] bytes) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         DataInputStream dis = new DataInputStream(bais);

@@ -11,7 +11,7 @@ for more information on getting set up correctly) and you will need your CLI to 
 
 * [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html)
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html): v2
-* [Bash](https://www.gnu.org/software/bash/): At least version 4: use `bash --version`.  The default version on a Mac is 3.2, which is too old.
+* [Bash](https://www.gnu.org/software/bash/): Tested with 3.2. Use `bash --version`.
 * [Docker](https://docs.docker.com/get-docker/)
 * [Java 8](https://openjdk.java.net/install/)
 * [Maven](https://maven.apache.org/): Tested with 3.8.6.

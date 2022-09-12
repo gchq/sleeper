@@ -91,10 +91,12 @@ public class CreateJobsTest {
     }
 
     private Schema createSchema() {
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
-        return schema;
+        return Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .valueFields(
+                        new Field("value1", new LongType()),
+                        new Field("value2", new LongType()))
+                .build();
     }
 
     private InstanceProperties createProperties(AmazonS3 s3) {

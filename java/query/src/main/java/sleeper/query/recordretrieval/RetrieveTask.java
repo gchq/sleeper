@@ -15,16 +15,15 @@
  */
 package sleeper.query.recordretrieval;
 
-import java.io.IOException;
-import java.util.concurrent.Callable;
-
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.parquet.hadoop.ParquetReader;
-
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
 import sleeper.io.parquet.record.ParquetReaderIterator;
+
+import java.io.IOException;
+import java.util.concurrent.Callable;
 
 /**
  * A {@link RetrieveTask} creates an iterator and pulls back the first element from that iterator.

@@ -27,7 +27,9 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
 
 import java.util.Map;
 import java.util.UUID;
@@ -49,6 +51,8 @@ public class ExecutorTest {
                 .build();
     }
 
+    private static final Schema SCHEMA = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+
     @Test
     public void shouldCallRunOnPlatformIfJobIsValid() {
         // Given
@@ -63,7 +67,7 @@ public class ExecutorTest {
                 .id("my-job")
                 .files(Lists.newArrayList(bucketName + "/file1.parquet", bucketName + "/file2.parquet", bucketName + "/directory/file3.parquet"))
                 .build();
-        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(new Schema());
+        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA);
         ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, s3);
 
         // When
@@ -85,7 +89,7 @@ public class ExecutorTest {
                 .id("my-job")
                 .files(Lists.newArrayList())
                 .build();
-        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(new Schema());
+        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA);
         ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, s3);
 
         // When
@@ -107,7 +111,7 @@ public class ExecutorTest {
                 .id("my-job")
                 .files(Lists.newArrayList(bucketName + "/directory", bucketName + "/directory/"))
                 .build();
-        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(new Schema());
+        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA);
         ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, s3);
 
         // When
@@ -127,7 +131,7 @@ public class ExecutorTest {
                 .id("my-job")
                 .files(Lists.newArrayList("file1.parquet"))
                 .build();
-        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(new Schema());
+        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA);
         ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, s3);
 
         // When / Then
@@ -146,7 +150,7 @@ public class ExecutorTest {
                 .files(Lists.newArrayList("file1.parquet"))
                 .id(invalidId)
                 .build();
-        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(new Schema());
+        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA);
         ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, null);
 
         // When / Then
@@ -162,7 +166,7 @@ public class ExecutorTest {
                 .id("my-job")
                 .files(Lists.newArrayList("file1.parquet"))
                 .build();
-        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(new Schema());
+        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA);
         ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, null);
 
         // When / Then
@@ -179,7 +183,7 @@ public class ExecutorTest {
                 .id("importJob")
                 .files(Lists.newArrayList("file1.parquet"))
                 .build();
-        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(new Schema());
+        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA);
         ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, null);
 
         // When / Then
@@ -212,9 +216,9 @@ public class ExecutorTest {
             return runJobOnPlatformCalled;
         }
 
-        public ExecutorMock(InstanceProperties instanceProperties,
-                            TablePropertiesProvider tablePropertiesProvider,
-                            AmazonS3 s3) {
+        ExecutorMock(InstanceProperties instanceProperties,
+                     TablePropertiesProvider tablePropertiesProvider,
+                     AmazonS3 s3) {
             super(instanceProperties, tablePropertiesProvider, s3);
         }
 

@@ -46,9 +46,10 @@ public class ParquetRecordWriterTest {
     @Test
     public void shouldWriteRecordsCorrectlyForStringStringSchema() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("column1", new StringType()));
-        schema.setValueFields(new Field("column2", new StringType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new StringType()))
+                .valueFields(new Field("column2", new StringType()))
+                .build();
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
@@ -81,10 +82,11 @@ public class ParquetRecordWriterTest {
     @Test
     public void shouldWriteRecordsCorrectlyForLongLongLongSchema() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("column1", new LongType()));
-        schema.setSortKeyFields(new Field("column2", new LongType()));
-        schema.setValueFields(new Field("column3", new LongType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new LongType()))
+                .sortKeyFields(new Field("column2", new LongType()))
+                .valueFields(new Field("column3", new LongType()))
+                .build();
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
@@ -125,9 +127,10 @@ public class ParquetRecordWriterTest {
         byte[] byteArray2 = new byte[]{6, 7, 8, 9, 10};
         byte[] byteArray3 = new byte[]{11, 12, 13, 14, 15};
         byte[] byteArray4 = new byte[]{16, 17, 18, 19, 20, 20, 20, 20, 20};
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("column1", new ByteArrayType()));
-        schema.setValueFields(new Field("column2", new ByteArrayType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new ByteArrayType()))
+                .valueFields(new Field("column2", new ByteArrayType()))
+                .build();
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();

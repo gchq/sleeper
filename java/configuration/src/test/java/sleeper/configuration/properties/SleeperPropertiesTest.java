@@ -159,11 +159,11 @@ public class SleeperPropertiesTest {
 
     private static class TestSleeperProperties extends SleeperProperties<SleeperProperty> {
 
-        public TestSleeperProperties() {
+        private TestSleeperProperties() {
             this(new Properties());
         }
 
-        public TestSleeperProperties(Properties properties) {
+        private TestSleeperProperties(Properties properties) {
             super(properties);
         }
 

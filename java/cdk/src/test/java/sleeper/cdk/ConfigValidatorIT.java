@@ -52,7 +52,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE
 public class ConfigValidatorIT {
 
     @ClassRule
-    public static final LocalStackContainer localStackContainer
+    public static final LocalStackContainer LOCALSTACK_CONTAINER
             = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 
@@ -183,15 +183,15 @@ public class ConfigValidatorIT {
 
     private static AmazonS3 getS3Client() {
         return AmazonS3ClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+                .withEndpointConfiguration(LOCALSTACK_CONTAINER.getEndpointConfiguration(LocalStackContainer.Service.S3))
+                .withCredentials(LOCALSTACK_CONTAINER.getDefaultCredentialsProvider())
                 .build();
     }
 
     protected static AmazonDynamoDB createDynamoClient() {
         return AmazonDynamoDBClient.builder()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+                .withEndpointConfiguration(LOCALSTACK_CONTAINER.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
+                .withCredentials(LOCALSTACK_CONTAINER.getDefaultCredentialsProvider())
                 .build();
     }
 
