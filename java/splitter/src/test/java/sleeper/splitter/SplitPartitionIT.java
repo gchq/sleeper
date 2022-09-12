@@ -77,6 +77,9 @@ public class SplitPartitionIT {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
 
+    private final Field field = new Field("key", new IntType());
+    private final Schema schema = Schema.builder().rowKeyFields(field).build();
+
     @BeforeClass
     public static void initDynamoClient() {
         AwsClientBuilder.EndpointConfiguration endpointConfiguration =
@@ -109,8 +112,6 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForIntKeyCorrectly()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
         StateStore stateStore = getStateStore(schema);
         String path = folder.newFolder().getAbsolutePath();
         String path2 = folder.newFolder().getAbsolutePath();
@@ -175,55 +176,61 @@ public class SplitPartitionIT {
     public void shouldNotSplitPartitionForIntKeyIfItCannotBeSplitBecausePartitionIsOnePoint()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
         // Non-leaf partitions
         Range rootRange = new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, null);
-        Partition rootPartition = new Partition(
-                schema.getRowKeyTypes(),
-                new Region(rootRange),
-                "root",
-                false,
-                null,
-                null,
-                0);
+        Partition rootPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(rootRange))
+                .region(new Region(rootRange))
+                .id("root")
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .dimension(0)
+                .build();
         Range range12 = new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, 1);
-        Partition partition12 = new Partition(
-                schema.getRowKeyTypes(),
-                new Region(range12),
-                "id12",
-                false,
-                rootPartition.getId(),
-                null,
-                0);
+        Partition partition12 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range12))
+                .id("id12")
+                .leafPartition(false)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(0)
+                .build();
         // Leaf partitions
         Range range1 = new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, 0);
-        Partition partition1 = new Partition(schema.getRowKeyTypes(),
-                new Region(range1),
-                "id1",
-                true,
-                partition12.getId(),
-                null,
-                -1);
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range1))
+                .id("id1")
+                .leafPartition(true)
+                .parentPartitionId(partition12.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         //  - Partition 2 only includes the key 0 (partitions do not include
         //      the maximum key), and so cannot be split.
         Range range2 = new RangeFactory(schema).createRange(field, 0, 1);
-        Partition partition2 = new Partition(schema.getRowKeyTypes(),
-                new Region(range2),
-                "id2",
-                true,
-                partition12.getId(),
-                null,
-                -1);
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range2))
+                .id("id2")
+                .leafPartition(true)
+                .parentPartitionId(partition12.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         Range range3 = new RangeFactory(schema).createRange(field, 1, null);
-        Partition partition3 = new Partition(schema.getRowKeyTypes(),
-                new Region(range3),
-                "id3",
-                true,
-                rootPartition.getId(),
-                null,
-                -1);
+        Partition partition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range3))
+                .id("id3")
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         // Wire up partitions
         rootPartition.setChildPartitionIds(Arrays.asList(partition12.getId(), partition3.getId()));
         partition12.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
@@ -281,55 +288,60 @@ public class SplitPartitionIT {
     public void shouldNotSplitPartitionForIntKeyIfItCannotBeSplitBecauseDataIsConstant()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
         // Non-leaf partitions
         Range rootRange = new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, null);
-        Partition rootPartition = new Partition(
-                schema.getRowKeyTypes(),
-                new Region(rootRange),
-                "root",
-                false,
-                null,
-                null,
-                0);
+        Partition rootPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(rootRange))
+                .id("root")
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .dimension(0)
+                .build();
         Range range12 = new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, 10);
-        Partition partition12 = new Partition(
-                schema.getRowKeyTypes(),
-                new Region(range12),
-                "id12",
-                false,
-                rootPartition.getId(),
-                null,
-                0);
+        Partition partition12 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range12))
+                .id("id12")
+                .leafPartition(false)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(0)
+                .build();
         // Leaf partitions
         Range range1 = new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, 0);
-        Partition partition1 = new Partition(schema.getRowKeyTypes(),
-                new Region(range1),
-                "id1",
-                true,
-                partition12.getId(),
-                null,
-                -1);
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range1))
+                .id("id1")
+                .leafPartition(true)
+                .parentPartitionId(partition12.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         //  - Partition 2 only includes the key 0 (partitions do not include
         //      the maximum key), and so cannot be split.
         Range range2 = new RangeFactory(schema).createRange(field, 0, 10);
-        Partition partition2 = new Partition(schema.getRowKeyTypes(),
-                new Region(range2),
-                "id2",
-                true,
-                partition12.getId(),
-                null,
-                -1);
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range2))
+                .id("id2")
+                .leafPartition(true)
+                .parentPartitionId(partition12.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         Range range3 = new RangeFactory(schema).createRange(field, 10, null);
-        Partition partition3 = new Partition(schema.getRowKeyTypes(),
-                new Region(range3),
-                "id3",
-                true,
-                rootPartition.getId(),
-                null,
-                -1);
+        Partition partition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range3))
+                .id("id3")
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         // Wire up partitions
         rootPartition.setChildPartitionIds(Arrays.asList(partition12.getId(), partition3.getId()));
         partition12.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
@@ -396,8 +408,9 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForIntMultidimensionalKeyOnFirstDimensionCorrectly()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
+                .build();
         StateStore stateStore = getStateStore(schema);
         String path = folder.newFolder().getAbsolutePath();
         String path2 = folder.newFolder().getAbsolutePath();
@@ -476,8 +489,9 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForIntMultidimensionalKeyOnSecondDimensionCorrectlyWhenMinIsMax()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
+                .build();
         StateStore stateStore = getStateStore(schema);
         String path = folder.newFolder().getAbsolutePath();
         String path2 = folder.newFolder().getAbsolutePath();
@@ -556,8 +570,9 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForIntMultidimensionalKeyOnSecondDimensionCorrectlyWhenMinIsMedian()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
+                .build();
         StateStore stateStore = getStateStore(schema);
         String path = folder.newFolder().getAbsolutePath();
         String path2 = folder.newFolder().getAbsolutePath();
@@ -641,8 +656,7 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForLongKeyCorrectly()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new LongType())).build();
         StateStore stateStore = getStateStore(schema);
         String path = folder.newFolder().getAbsolutePath();
         String path2 = folder.newFolder().getAbsolutePath();
@@ -711,8 +725,7 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForStringKeyCorrectly()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new StringType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
         StateStore stateStore = getStateStore(schema);
         String path = folder.newFolder().getAbsolutePath();
         String path2 = folder.newFolder().getAbsolutePath();
@@ -791,8 +804,7 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForByteArrayKeyCorrectly()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
         StateStore stateStore = getStateStore(schema);
         String path = folder.newFolder().getAbsolutePath();
         String path2 = folder.newFolder().getAbsolutePath();
@@ -863,55 +875,62 @@ public class SplitPartitionIT {
     public void shouldNotSplitPartitionForByteArrayKeyIfItCannotBeSplitBecausePartitionIsOnePoint()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         // Non-leaf partitions
         Range rootRange = new RangeFactory(schema).createRange(field, new byte[]{0}, null);
-        Partition rootPartition = new Partition(
-                schema.getRowKeyTypes(),
-                new Region(rootRange),
-                "root",
-                false,
-                null,
-                null,
-                0);
+        Partition rootPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(rootRange))
+                .id("root")
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .dimension(0)
+                .build();
         Range range12 = new RangeFactory(schema).createRange(field, new byte[]{0}, new byte[]{51});
-        Partition partition12 = new Partition(
-                schema.getRowKeyTypes(),
-                new Region(range12),
-                "id12",
-                false,
-                rootPartition.getId(),
-                null,
-                0);
+        Partition partition12 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range12))
+                .id("id12")
+                .leafPartition(false)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(0)
+                .build();
         // Leaf partitions
         Range range1 = new RangeFactory(schema).createRange(field, new byte[]{0}, new byte[]{50});
-        Partition partition1 = new Partition(schema.getRowKeyTypes(),
-                new Region(range1),
-                "id1",
-                true,
-                partition12.getId(),
-                null,
-                -1);
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range1))
+                .id("id1")
+                .leafPartition(true)
+                .parentPartitionId(partition12.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         //  - Partition 2 only includes the key 0 (partitions do not include
         //      the maximum key), and so cannot be split.
         Range range2 = new RangeFactory(schema).createRange(field, new byte[]{50}, new byte[]{51});
-        Partition partition2 = new Partition(schema.getRowKeyTypes(),
-                new Region(range2),
-                "id2",
-                true,
-                partition12.getId(),
-                null,
-                -1);
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range2))
+                .id("id2")
+                .leafPartition(true)
+                .parentPartitionId(partition12.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         Range range3 = new RangeFactory(schema).createRange(field, new byte[]{51}, null);
-        Partition partition3 = new Partition(schema.getRowKeyTypes(),
-                new Region(range3),
-                "id3",
-                true,
-                rootPartition.getId(),
-                null,
-                -1);
+        Partition partition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range3))
+                .id("id3")
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         // Wire up partitions
         rootPartition.setChildPartitionIds(Arrays.asList(partition12.getId(), partition3.getId()));
         partition12.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
@@ -988,55 +1007,62 @@ public class SplitPartitionIT {
     public void shouldNotSplitPartitionForByteArrayKeyIfItCannotBeSplitBecauseDataIsConstant()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         // Non-leaf partitions
         Range rootRange = new RangeFactory(schema).createRange(field, new byte[]{0}, null);
-        Partition rootPartition = new Partition(
-                schema.getRowKeyTypes(),
-                new Region(rootRange),
-                "root",
-                false,
-                null,
-                null,
-                0);
+        Partition rootPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(rootRange))
+                .id("root")
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .dimension(0)
+                .build();
         Range range12 = new RangeFactory(schema).createRange(field, new byte[]{0}, new byte[]{100});
-        Partition partition12 = new Partition(
-                schema.getRowKeyTypes(),
-                new Region(range12),
-                "id12",
-                false,
-                rootPartition.getId(),
-                null,
-                0);
+        Partition partition12 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range12))
+                .id("id12")
+                .leafPartition(false)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(0)
+                .build();
         // Leaf partitions
         Range range1 = new RangeFactory(schema).createRange(field, new byte[]{0}, new byte[]{50});
-        Partition partition1 = new Partition(schema.getRowKeyTypes(),
-                new Region(range1),
-                "id1",
-                true,
-                partition12.getId(),
-                null,
-                -1);
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range1))
+                .id("id1")
+                .leafPartition(true)
+                .parentPartitionId(partition12.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         //  - Partition 2 only includes the key 0 (partitions do not include
         //      the maximum key), and so cannot be split.
         Range range2 = new RangeFactory(schema).createRange(field, new byte[]{50}, new byte[]{100});
-        Partition partition2 = new Partition(schema.getRowKeyTypes(),
-                new Region(range2),
-                "id2",
-                true,
-                partition12.getId(),
-                null,
-                -1);
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range2))
+                .id("id2")
+                .leafPartition(true)
+                .parentPartitionId(partition12.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         Range range3 = new RangeFactory(schema).createRange(field, new byte[]{100}, null);
-        Partition partition3 = new Partition(schema.getRowKeyTypes(),
-                new Region(range3),
-                "id3",
-                true,
-                rootPartition.getId(),
-                null,
-                -1);
+        Partition partition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range3))
+                .id("id3")
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         // Wire up partitions
         rootPartition.setChildPartitionIds(Arrays.asList(partition12.getId(), partition3.getId()));
         partition12.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
@@ -1109,8 +1135,9 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForByteArrayMultidimensionalKeyOnFirstDimensionCorrectly()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()))
+                .build();
         StateStore stateStore = getStateStore(schema);
         String path = folder.newFolder().getAbsolutePath();
         String path2 = folder.newFolder().getAbsolutePath();
@@ -1191,8 +1218,9 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForByteArrayMultidimensionalKeyOnSecondDimensionCorrectly()
             throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()))
+                .build();
         StateStore stateStore = getStateStore(schema);
         String path = folder.newFolder().getAbsolutePath();
         String path2 = folder.newFolder().getAbsolutePath();

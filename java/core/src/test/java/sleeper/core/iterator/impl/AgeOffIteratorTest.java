@@ -18,7 +18,10 @@ package sleeper.core.iterator.impl;
 import org.junit.Test;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -34,7 +37,7 @@ public class AgeOffIteratorTest {
         List<Record> records = getData();
         Iterator<Record> iterator = records.iterator();
         AgeOffIterator ageOffIterator = new AgeOffIterator();
-        ageOffIterator.init("timestamp,1000000", new Schema());
+        ageOffIterator.init("timestamp,1000000", getSchema());
 
         // When
         Iterator<Record> filtered = ageOffIterator.apply(new WrappedIterator<>(iterator));
@@ -42,6 +45,13 @@ public class AgeOffIteratorTest {
         // Then
         assertThat(filtered).toIterable()
                 .containsExactly(records.get(1), records.get(4));
+    }
+
+    private static Schema getSchema() {
+        return Schema.builder()
+                .rowKeyFields(new Field("id", new StringType()))
+                .valueFields(new Field("timestamp", new LongType()))
+                .build();
     }
 
     private static List<Record> getData() {

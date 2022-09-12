@@ -57,7 +57,7 @@ public class PeriodicActionRunnableTest {
     private static class KeepAlive implements Action {
         private int i;
 
-        public KeepAlive() {
+        private KeepAlive() {
             this.i = 0;
         }
 

@@ -23,7 +23,7 @@ import java.util.Iterator;
  */
 public class WrappedIterator<T> implements CloseableIterator<T> {
     private final Iterator<T> iterator;
-    
+
     public WrappedIterator(Iterator<T> iterator) {
         this.iterator = iterator;
     }

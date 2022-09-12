@@ -25,22 +25,12 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.google.gson.JsonParseException;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_QUEUE_URL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
@@ -64,6 +54,18 @@ import sleeper.statestore.StateStoreException;
 import sleeper.table.util.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
 
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_QUEUE_URL;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS;
+
 /**
  * A lambda that is triggered when a serialised query arrives on an SQS queue. It executes the request using a
  * {@link QueryExecutor} and publishes the results to either SQS or S3 based on the configuration of the query.
@@ -73,7 +75,7 @@ import sleeper.utils.HadoopConfigurationProvider;
 @SuppressWarnings("unused")
 public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsQueryProcessorLambda.class);
-    
+
     private final ExecutorService executorService;
     private long lastUpdateTime;
     private InstanceProperties instanceProperties;
@@ -157,7 +159,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
         queryExecutorCache.clear();
         lastUpdateTime = System.currentTimeMillis();
     }
-    
+
     private void processQuery(Query query) {
         QueryStatusReportListeners queryTrackers = QueryStatusReportListeners.fromConfig(query.getStatusReportDestinations());
         if (queryTracker != null) {

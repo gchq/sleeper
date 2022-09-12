@@ -15,34 +15,44 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.model.*;
 import com.amazonaws.services.s3.AmazonS3;
-import com.google.common.collect.Lists;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.*;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_DEFAULT_PARALLELISM;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_EXTRA_JAVA_OPTIONS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_DYNAMIC_ALLOCATION_ENABLED;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_HEARTBEAT_INTERVAL;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_MEMORY_FRACTION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_MEMORY_STORAGE_FRACTION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_NETWORK_TIMEOUT;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_RDD_COMPRESS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_SHUFFLE_COMPRESS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_SHUFFLE_SPILL_COMPRESS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_STORAGE_LEVEL;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_YARN_DRIVER_MEMORY_OVERHEAD;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES;
+
 public abstract class AbstractEmrExecutor extends Executor {
 
-    public AbstractEmrExecutor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-          AmazonS3 amazonS3Client) {
+    public AbstractEmrExecutor(
+            InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider,
+            AmazonS3 amazonS3Client) {
         super(instanceProperties, tablePropertiesProvider, amazonS3Client);
     }
-    
+
     @Override
     protected Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties, InstanceProperties instanceProperties) {
         Map<String, String> defaultConfig = new HashMap<>();

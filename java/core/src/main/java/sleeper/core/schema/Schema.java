@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -37,103 +38,74 @@ public class Schema {
     private final List<Field> sortKeyFields;
     private final List<Field> valueFields;
 
-    public Schema() {
-        this.rowKeyFields = new ArrayList<>();
-        this.sortKeyFields = new ArrayList<>();
-        this.valueFields = new ArrayList<>();
-    }
-
     private Schema(Builder builder) {
-        rowKeyFields = new ArrayList<>(builder.validRowKeyFields());
-        sortKeyFields = new ArrayList<>(builder.validSortKeyFields());
-        valueFields = new ArrayList<>(builder.validValueFields());
-        validateNoDuplicates(Stream.concat(rowKeyFields.stream(),
-                Stream.concat(sortKeyFields.stream(), valueFields.stream())));
+        rowKeyFields = Collections.unmodifiableList(new ArrayList<>(builder.validRowKeyFields()));
+        sortKeyFields = Collections.unmodifiableList(new ArrayList<>(builder.validSortKeyFields()));
+        valueFields = Collections.unmodifiableList(new ArrayList<>(builder.validValueFields()));
+        validateNoDuplicates(streamAllFields());
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public void setRowKeyFields(List<Field> rowKeyFields) {
-        validateRowKeys(rowKeyFields);
-        this.rowKeyFields.clear();
-        this.rowKeyFields.addAll(rowKeyFields);
-    }
-
-    public void setRowKeyFields(Field... rowKeyFields) {
-        setRowKeyFields(Arrays.asList(rowKeyFields));
-    }
-
     public List<Field> getRowKeyFields() {
         return rowKeyFields;
-    }
-
-    public List<PrimitiveType> getRowKeyTypes() {
-        return rowKeyFields.stream().map(Field::getType).map(t -> (PrimitiveType) t).collect(Collectors.toList());
-    }
-
-    public void setSortKeyFields(List<Field> sortKeyFields) {
-        validateSortKeys(sortKeyFields);
-        this.sortKeyFields.clear();
-        this.sortKeyFields.addAll(sortKeyFields);
-    }
-
-    public void setSortKeyFields(Field... sortKeyFields) {
-        setSortKeyFields(Arrays.asList(sortKeyFields));
     }
 
     public List<Field> getSortKeyFields() {
         return sortKeyFields;
     }
 
-    public List<PrimitiveType> getSortKeyTypes() {
-        return sortKeyFields.stream().map(Field::getType).map(t -> (PrimitiveType) t).collect(Collectors.toList());
-    }
-
-    public void setValueFields(List<Field> valueFields) {
-        this.valueFields.clear();
-        this.valueFields.addAll(valueFields);
-    }
-
-    public void setValueFields(Field... valueFields) {
-        setValueFields(Arrays.asList(valueFields));
-    }
-
     public List<Field> getValueFields() {
         return valueFields;
     }
 
+    public List<PrimitiveType> getRowKeyTypes() {
+        return getMappedFields(rowKeyFields, f -> (PrimitiveType) f.getType());
+    }
+
+    public List<PrimitiveType> getSortKeyTypes() {
+        return getMappedFields(sortKeyFields, f -> (PrimitiveType) f.getType());
+    }
+
     public List<String> getRowKeyFieldNames() {
-        return rowKeyFields.stream().map(Field::getName).collect(Collectors.toList());
+        return getMappedFields(rowKeyFields, Field::getName);
     }
 
     public List<String> getSortKeyFieldNames() {
-        return sortKeyFields.stream().map(Field::getName).collect(Collectors.toList());
+        return getMappedFields(sortKeyFields, Field::getName);
     }
 
     public List<String> getValueFieldNames() {
-        return valueFields.stream().map(Field::getName).collect(Collectors.toList());
+        return getMappedFields(valueFields, Field::getName);
     }
 
     public List<String> getAllFieldNames() {
-        List<String> allFieldNames = new ArrayList<>();
-        allFieldNames.addAll(getRowKeyFieldNames());
-        allFieldNames.addAll(getSortKeyFieldNames());
-        allFieldNames.addAll(getValueFieldNames());
-        return allFieldNames;
+        return getMappedFields(streamAllFields(), Field::getName);
+    }
+
+    private <T> List<T> getMappedFields(List<Field> fields, Function<Field, T> mapping) {
+        return getMappedFields(fields.stream(), mapping);
+    }
+
+    private <T> List<T> getMappedFields(Stream<Field> fields, Function<Field, T> mapping) {
+        return Collections.unmodifiableList(fields
+                .map(mapping)
+                .collect(Collectors.toList()));
     }
 
     public List<Field> getAllFields() {
-        List<Field> allFields = new ArrayList<>();
-        allFields.addAll(rowKeyFields);
-        allFields.addAll(sortKeyFields);
-        allFields.addAll(valueFields);
-        return allFields;
+        return Collections.unmodifiableList(streamAllFields().collect(Collectors.toList()));
+    }
+
+    public Stream<Field> streamAllFields() {
+        return Stream.concat(rowKeyFields.stream(),
+                Stream.concat(sortKeyFields.stream(), valueFields.stream()));
     }
 
     public Optional<Field> getField(String fieldName) {
-        return getAllFields().stream()
+        return streamAllFields()
                 .filter(f -> f.getName().equals(fieldName))
                 .findFirst();
     }
@@ -145,8 +117,12 @@ public class Schema {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         Schema schema = (Schema) o;
 
         return Objects.equals(rowKeyFields, schema.rowKeyFields) &&

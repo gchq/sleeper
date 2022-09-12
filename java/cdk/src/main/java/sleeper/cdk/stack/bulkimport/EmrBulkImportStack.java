@@ -15,15 +15,8 @@
  */
 package sleeper.cdk.stack.bulkimport;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-
 import sleeper.cdk.Utils;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.configuration.properties.InstanceProperties;
@@ -42,6 +35,12 @@ import software.amazon.awscdk.services.sns.ITopic;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
+
 /**
  * An {@link EmrBulkImportStack} creates an SQS queue that bulk import jobs can
  * be sent to. A message arriving on this queue triggers a lambda. That lambda
@@ -50,7 +49,8 @@ import software.constructs.Construct;
 public class EmrBulkImportStack extends AbstractEmrBulkImportStack {
     protected Function bulkImportJobStarter;
 
-    public EmrBulkImportStack(Construct scope,
+    public EmrBulkImportStack(
+            Construct scope,
             String id,
             List<IBucket> dataBuckets,
             List<StateStoreStack> stateStoreStacks,
@@ -58,11 +58,11 @@ public class EmrBulkImportStack extends AbstractEmrBulkImportStack {
             ITopic errorsTopic) {
         super(scope, id, "NonPersistentEMR", "NonPersistentEMR",
                 BULK_IMPORT_EMR_JOB_QUEUE_URL, dataBuckets, stateStoreStacks, instanceProperties, errorsTopic);
-        
+
         // Create function to pull messages off queue and start jobs
         createBulkImportJobStarterFunction(shortId, bulkImportPlatform, bulkImportJobQueue);
     }
-    
+
     private void createBulkImportJobStarterFunction(String shortId, String bulkImportPlatform, Queue jobQueue) {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
@@ -94,7 +94,7 @@ public class EmrBulkImportStack extends AbstractEmrBulkImportStack {
         if (ingestBucket != null) {
             ingestBucket.grantRead(bulkImportJobStarter);
         }
-        
+
         Map<String, Map<String, String>> conditions = new HashMap<>();
         Map<String, String> tagKeyCondition = new HashMap<>();
 
@@ -130,5 +130,7 @@ public class EmrBulkImportStack extends AbstractEmrBulkImportStack {
                         Lists.newArrayList("elasticmapreduce.amazonaws.com",
                                 "elasticmapreduce.amazonaws.com.cn"))))
                 .build());
+
+        Utils.addStackTagIfSet(this, instanceProperties);
     }
 }

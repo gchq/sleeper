@@ -22,6 +22,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 
 import java.util.ArrayList;
@@ -32,11 +33,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class EstimateSplitPointsTest {
 
+    private Schema schemaWithSingleKeyOfType(PrimitiveType type) {
+        return Schema.builder().rowKeyFields(new Field("key", type)).build();
+    }
+
     @Test
     public void shouldEstimateCorrectlyWithIntKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
+        Schema schema = schemaWithSingleKeyOfType(new IntType());
         List<Record> records = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
@@ -55,8 +59,7 @@ public class EstimateSplitPointsTest {
     @Test
     public void shouldEstimateCorrectlyWithLongKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleKeyOfType(new LongType());
         List<Record> records = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
@@ -75,8 +78,7 @@ public class EstimateSplitPointsTest {
     @Test
     public void shouldEstimateCorrectlyWithStringKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new StringType()));
+        Schema schema = schemaWithSingleKeyOfType(new StringType());
         List<Record> records = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
@@ -95,8 +97,7 @@ public class EstimateSplitPointsTest {
     @Test
     public void shouldEstimateCorrectlyWithByteArrayKey() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
+        Schema schema = schemaWithSingleKeyOfType(new ByteArrayType());
         List<Record> records = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
@@ -117,8 +118,7 @@ public class EstimateSplitPointsTest {
     @Test
     public void shouldRefuseToSplitIntoOnePartition() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
+        Schema schema = schemaWithSingleKeyOfType(new ByteArrayType());
         List<Record> records = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             Record record = new Record();

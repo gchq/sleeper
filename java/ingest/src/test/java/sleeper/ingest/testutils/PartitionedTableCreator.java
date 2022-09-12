@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package sleeper.ingest.testutils;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -6,6 +21,7 @@ import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -23,6 +39,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class PartitionedTableCreator {
+
+    private PartitionedTableCreator() {
+    }
+
     public static StateStore createStateStore(
             AmazonDynamoDB dynamoDbClient,
             Schema sleeperSchema,
@@ -74,21 +94,23 @@ public class PartitionedTableCreator {
         Object splitPoint = keyContainingSplitPoint.get(dimensionToSplitOn);
         Stream<Range> parentRangesWithoutSplitDimensionStream = parentPartition.getRegion().getRanges().stream()
                 .filter(range -> !(range.getFieldName().equals(fieldToSplitOn.getName())));
+        RangeFactory rangeFactory = new RangeFactory(sleeperSchema);
         Range parentRangeForSplitDimension = parentPartition.getRegion().getRange(fieldToSplitOn.getName());
-        Range childRangeForSplitDimension = new Range(
+        Range childRangeForSplitDimension = rangeFactory.createRange(
                 fieldToSplitOn,
                 isLeftSplit ? parentRangeForSplitDimension.getMin() : splitPoint,
                 isLeftSplit ? splitPoint : parentRangeForSplitDimension.getMax());
         List<Range> childRanges = Stream.of(parentRangesWithoutSplitDimensionStream, Stream.of(childRangeForSplitDimension))
                 .flatMap(Function.identity())
                 .collect(Collectors.toList());
-        return new Partition(
-                sleeperSchema.getRowKeyTypes(),
-                new Region(childRanges),
-                UUID.randomUUID().toString(),
-                true,
-                parentPartition.getId(),
-                new ArrayList<>(),
-                -1);
+        return Partition.builder()
+                .rowKeyTypes(sleeperSchema.getRowKeyTypes())
+                .region(new Region(childRanges))
+                .id(UUID.randomUUID().toString())
+                .leafPartition(true)
+                .parentPartitionId(parentPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
     }
 }

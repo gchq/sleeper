@@ -15,14 +15,6 @@
  */
 package sleeper.query.utils;
 
-import java.util.ArrayList;
-import java.util.List;
-import static org.apache.parquet.filter2.predicate.FilterApi.and;
-import static org.apache.parquet.filter2.predicate.FilterApi.binaryColumn;
-import static org.apache.parquet.filter2.predicate.FilterApi.gtEq;
-import static org.apache.parquet.filter2.predicate.FilterApi.intColumn;
-import static org.apache.parquet.filter2.predicate.FilterApi.longColumn;
-import static org.apache.parquet.filter2.predicate.FilterApi.lt;
 import org.apache.parquet.filter2.predicate.FilterPredicate;
 import org.apache.parquet.filter2.predicate.Operators.BinaryColumn;
 import org.apache.parquet.filter2.predicate.Operators.IntColumn;
@@ -38,7 +30,20 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.apache.parquet.filter2.predicate.FilterApi.and;
+import static org.apache.parquet.filter2.predicate.FilterApi.binaryColumn;
+import static org.apache.parquet.filter2.predicate.FilterApi.gtEq;
+import static org.apache.parquet.filter2.predicate.FilterApi.intColumn;
+import static org.apache.parquet.filter2.predicate.FilterApi.longColumn;
+import static org.apache.parquet.filter2.predicate.FilterApi.lt;
+
 public class RangeQueryUtils {
+
+    private RangeQueryUtils() {
+    }
 
     public static FilterPredicate getFilterPredicateMultidimensionalKey(
             List<Field> rowKeyFields,
@@ -104,9 +109,8 @@ public class RangeQueryUtils {
     }
 
     // TODO Code duplication in the following methods.
-    private static FilterPredicate getFilterPredicateForIntKey(String keyName,
-            Integer minKey,
-            Integer maxKey) {
+    private static FilterPredicate getFilterPredicateForIntKey(
+            String keyName, Integer minKey, Integer maxKey) {
         if (null == minKey) {
             throw new IllegalArgumentException("The minimum range key cannot be null");
         }
@@ -120,9 +124,8 @@ public class RangeQueryUtils {
         return null == lessThanRangeMax ? greaterThanOrEqRangeMin : and(greaterThanOrEqRangeMin, lessThanRangeMax);
     }
 
-    private static FilterPredicate getFilterPredicateForLongKey(String keyName,
-            Long minKey,
-            Long maxKey) {
+    private static FilterPredicate getFilterPredicateForLongKey(
+            String keyName, Long minKey, Long maxKey) {
         if (null == minKey) {
             throw new IllegalArgumentException("The minimum range key cannot be null");
         }
@@ -136,9 +139,8 @@ public class RangeQueryUtils {
         return null == lessThanRangeMax ? greaterThanOrEqRangeMin : and(greaterThanOrEqRangeMin, lessThanRangeMax);
     }
 
-    private static FilterPredicate getFilterPredicateForStringKey(String keyName,
-            String minKey,
-            String maxKey) {
+    private static FilterPredicate getFilterPredicateForStringKey(
+            String keyName, String minKey, String maxKey) {
         if (null == minKey) {
             throw new IllegalArgumentException("The minimum range key cannot be null");
         }
@@ -153,9 +155,8 @@ public class RangeQueryUtils {
         return null == lessThanRangeMax ? greaterThanOrEqRangeMin : and(greaterThanOrEqRangeMin, lessThanRangeMax);
     }
 
-    private static FilterPredicate getFilterPredicateForByteArrayKey(String keyName,
-            byte[] minKey,
-            byte[] maxKey) {
+    private static FilterPredicate getFilterPredicateForByteArrayKey(
+            String keyName, byte[] minKey, byte[] maxKey) {
         if (null == minKey) {
             throw new IllegalArgumentException("The minimum range key cannot be null");
         }

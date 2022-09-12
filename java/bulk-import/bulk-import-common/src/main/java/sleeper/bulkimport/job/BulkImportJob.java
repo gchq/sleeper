@@ -15,13 +15,13 @@
  */
 package sleeper.bulkimport.job;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * POJO containing information needed to run a bulk import job.
@@ -46,7 +46,7 @@ public class BulkImportJob {
     public String getTableName() {
         return tableName;
     }
-    
+
     public void setTableName(String tableName) {
         this.tableName = tableName;
     }
@@ -54,35 +54,35 @@ public class BulkImportJob {
     public String getClassName() {
         return className;
     }
-    
+
     public void setClassName(String className) {
         this.className = className;
     }
-    
+
     public List<String> getFiles() {
         return files;
     }
 
     public void setFiles(List<String> files) {
-    	this.files = files;
+        this.files = files;
     }
-    
+
     public String getId() {
         return id;
     }
 
     public void setId(String id) {
-    	this.id = id;
+        this.id = id;
     }
-    
+
     public Map<String, String> getSparkConf() {
         return sparkConf;
     }
 
     public void setSparkConf(Map<String, String> sparkConf) {
-    	this.sparkConf = sparkConf;
+        this.sparkConf = sparkConf;
     }
-    
+
     public Map<String, String> getPlatformSpec() {
         return platformSpec;
     }
@@ -93,9 +93,12 @@ public class BulkImportJob {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         BulkImportJob that = (BulkImportJob) o;
 
@@ -141,7 +144,8 @@ public class BulkImportJob {
         private String tableName;
         private Map<String, String> platformSpec;
 
-        public Builder() {}
+        public Builder() {
+        }
 
         public Builder sparkConf(Map<String, String> sparkConf) {
             this.sparkConf = sparkConf;
@@ -156,7 +160,7 @@ public class BulkImportJob {
 
             return this;
         }
-        
+
         public Builder tableName(String tableName) {
             this.tableName = tableName;
             return this;
@@ -176,19 +180,19 @@ public class BulkImportJob {
             this.files = files;
             return this;
         }
-        
+
         public Builder platformSpec(Map<String, String> platformSpec) {
-        	this.platformSpec = platformSpec;
+            this.platformSpec = platformSpec;
             return this;
         }
-        
-        public Builder platformSpec(String key, String value) {
-             if (this.platformSpec == null) {
-                 this.platformSpec = new HashMap<>();
-             }
-             this.platformSpec.put(key, value);
 
-             return this;
+        public Builder platformSpec(String key, String value) {
+            if (this.platformSpec == null) {
+                this.platformSpec = new HashMap<>();
+            }
+            this.platformSpec.put(key, value);
+
+            return this;
         }
 
         public BulkImportJob build() {

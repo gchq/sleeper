@@ -17,6 +17,7 @@ package sleeper.core.partition;
 
 import org.junit.Test;
 import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -38,8 +39,8 @@ public class PartitionsFromSplitPointsTest {
     @Test
     public void shouldCreateTreeWithOneRootNodeIfNoSplitPoints() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("id", new LongType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, Collections.emptyList());
 
         // When
@@ -47,25 +48,26 @@ public class PartitionsFromSplitPointsTest {
 
         // Then
         assertThat(partitions).hasSize(1);
-        Partition expectedPartition = new Partition();
-        expectedPartition.setId(partitions.get(0).getId());
-        expectedPartition.setParentPartitionId(null);
-        expectedPartition.setChildPartitionIds(Collections.emptyList());
-        expectedPartition.setRowKeyTypes(schema.getRowKeyTypes());
-        expectedPartition.setDimension(-1);
-        expectedPartition.setLeafPartition(true);
-        Range expectedRange = new Range(schema.getRowKeyFields().get(0),
+        Range expectedRange = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                 Long.MIN_VALUE, true, null, false);
         Region expectedRegion = new Region(expectedRange);
-        expectedPartition.setRegion(expectedRegion);
+        Partition expectedPartition = Partition.builder()
+                .id(partitions.get(0).getId())
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .dimension(-1)
+                .leafPartition(true)
+                .region(expectedRegion)
+                .build();
         assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
     public void shouldCreateTreeWithOneRootAndTwoChildrenIfOneSplitPoint() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("id", new LongType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         List<Object> splitPoints = Collections.singletonList(0L);
         PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, splitPoints);
 
@@ -85,45 +87,45 @@ public class PartitionsFromSplitPointsTest {
                 .collect(Collectors.toList());
         assertThat(childPartitions).hasSize(2);
 
-        Partition expectedRootPartition = new Partition();
-        expectedRootPartition.setId(rootPartition.getId());
-        expectedRootPartition.setParentPartitionId(null);
-        List<String> childPartitionIds = new ArrayList<>();
-        childPartitionIds.add(childPartitions.get(0).getId());
-        childPartitionIds.add(childPartitions.get(1).getId());
-        expectedRootPartition.setChildPartitionIds(childPartitionIds);
-        expectedRootPartition.setRowKeyTypes(schema.getRowKeyTypes());
-        expectedRootPartition.setDimension(0);
-        expectedRootPartition.setLeafPartition(false);
-        Range expectedRootRange = new Range(schema.getRowKeyFields().get(0),
+        Range expectedRootRange = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                 Long.MIN_VALUE, true, null, false);
         Region expectedRootRegion = new Region(expectedRootRange);
-        expectedRootPartition.setRegion(expectedRootRegion);
+        Partition expectedRootPartition = Partition.builder()
+                .id(rootPartition.getId())
+                .parentPartitionId(null)
+                .childPartitionIds(childPartitions.get(0).getId(), childPartitions.get(1).getId())
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .dimension(0)
+                .leafPartition(false)
+                .region(expectedRootRegion)
+                .build();
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
 
-        Partition expectedLeftPartition = new Partition();
-        expectedLeftPartition.setId(childPartitions.get(0).getId());
-        expectedLeftPartition.setParentPartitionId(rootPartition.getId());
-        expectedLeftPartition.setChildPartitionIds(Collections.emptyList());
-        expectedLeftPartition.setRowKeyTypes(schema.getRowKeyTypes());
-        expectedLeftPartition.setDimension(-1);
-        expectedLeftPartition.setLeafPartition(true);
-        Range expectedLeftRange = new Range(schema.getRowKeyFields().get(0),
+        Range expectedLeftRange = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                 Long.MIN_VALUE, true, 0L, false);
         Region expectedLeftRegion = new Region(expectedLeftRange);
-        expectedLeftPartition.setRegion(expectedLeftRegion);
+        Partition expectedLeftPartition = Partition.builder()
+                .id(childPartitions.get(0).getId())
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .dimension(-1)
+                .leafPartition(true)
+                .region(expectedLeftRegion)
+                .build();
 
-        Partition expectedRightPartition = new Partition();
-        expectedRightPartition.setId(childPartitions.get(1).getId());
-        expectedRightPartition.setParentPartitionId(rootPartition.getId());
-        expectedRightPartition.setChildPartitionIds(Collections.emptyList());
-        expectedRightPartition.setRowKeyTypes(schema.getRowKeyTypes());
-        expectedRightPartition.setDimension(-1);
-        expectedRightPartition.setLeafPartition(true);
-        Range expectedRightRange = new Range(schema.getRowKeyFields().get(0),
+        Range expectedRightRange = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                 0L, true, null, false);
         Region expectedRightRegion = new Region(expectedRightRange);
-        expectedRightPartition.setRegion(expectedRightRegion);
+        Partition expectedRightPartition = Partition.builder()
+                .id(childPartitions.get(1).getId())
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .dimension(-1)
+                .leafPartition(true)
+                .region(expectedRightRegion)
+                .build();
 
         assertThat(childPartitions).containsExactly(expectedLeftPartition, expectedRightPartition);
     }
@@ -131,8 +133,8 @@ public class PartitionsFromSplitPointsTest {
     @Test
     public void shouldCreateTreeWithThreeLayersIfTwoSplitPoints() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("id", new LongType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         List<Object> splitPoints = Arrays.asList(0L, 100L);
         PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, splitPoints);
 
@@ -160,67 +162,72 @@ public class PartitionsFromSplitPointsTest {
         assertThat(internalPartitions).hasSize(1);
         Partition internalPartition = internalPartitions.get(0);
 
-        Partition expectedRootPartition = new Partition();
-        expectedRootPartition.setId(rootPartition.getId());
-        expectedRootPartition.setParentPartitionId(null);
-        expectedRootPartition.setChildPartitionIds(Arrays.asList(internalPartition.getId(), leafPartitions.get(2).getId()));
-        expectedRootPartition.setRowKeyTypes(schema.getRowKeyTypes());
-        expectedRootPartition.setDimension(0);
-        expectedRootPartition.setLeafPartition(false);
-        Range expectedRootRange = new Range(schema.getRowKeyFields().get(0),
+        Range expectedRootRange = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                 Long.MIN_VALUE, true, null, false);
         Region expectedRootRegion = new Region(expectedRootRange);
-        expectedRootPartition.setRegion(expectedRootRegion);
+        Partition expectedRootPartition = Partition.builder()
+                .id(rootPartition.getId())
+                .parentPartitionId(null)
+                .childPartitionIds(internalPartition.getId(), leafPartitions.get(2).getId())
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .dimension(0)
+                .leafPartition(false)
+                .region(expectedRootRegion)
+                .build();
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
 
-        Partition expectedInternalPartition = new Partition();
-        expectedInternalPartition.setId(internalPartition.getId());
-        expectedInternalPartition.setParentPartitionId(rootPartition.getId());
-        expectedInternalPartition.setChildPartitionIds(Arrays.asList(leafPartitions.get(0).getId(), leafPartitions.get(1).getId()));
-        expectedInternalPartition.setRowKeyTypes(schema.getRowKeyTypes());
-        expectedInternalPartition.setDimension(0);
-        expectedInternalPartition.setLeafPartition(false);
-        Range expectedInternalRange = new Range(schema.getRowKeyFields().get(0),
+        Range expectedInternalRange = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                 Long.MIN_VALUE, true, 100L, false);
         Region expectedInternalRegion = new Region(expectedInternalRange);
-        expectedInternalPartition.setRegion(expectedInternalRegion);
+        Partition expectedInternalPartition = Partition.builder()
+                .id(internalPartition.getId())
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(leafPartitions.get(0).getId(), leafPartitions.get(1).getId())
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .dimension(0)
+                .leafPartition(false)
+                .region(expectedInternalRegion)
+                .build();
         assertThat(internalPartition).isEqualTo(expectedInternalPartition);
 
-        Partition expectedLeafPartition0 = new Partition();
-        expectedLeafPartition0.setId(leafPartitions.get(0).getId());
-        expectedLeafPartition0.setParentPartitionId(internalPartitions.get(0).getId());
-        expectedLeafPartition0.setChildPartitionIds(Collections.emptyList());
-        expectedLeafPartition0.setRowKeyTypes(schema.getRowKeyTypes());
-        expectedLeafPartition0.setDimension(-1);
-        expectedLeafPartition0.setLeafPartition(true);
-        Range expectedLeafPartition0Range = new Range(schema.getRowKeyFields().get(0),
+        Range expectedLeafPartition0Range = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                 Long.MIN_VALUE, true, 0L, false);
         Region expectedLeafPartition0Region = new Region(expectedLeafPartition0Range);
-        expectedLeafPartition0.setRegion(expectedLeafPartition0Region);
+        Partition expectedLeafPartition0 = Partition.builder()
+                .id(leafPartitions.get(0).getId())
+                .parentPartitionId(internalPartitions.get(0).getId())
+                .childPartitionIds(Collections.emptyList())
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .dimension(-1)
+                .leafPartition(true)
+                .region(expectedLeafPartition0Region)
+                .build();
 
-        Partition expectedLeafPartition1 = new Partition();
-        expectedLeafPartition1.setId(leafPartitions.get(1).getId());
-        expectedLeafPartition1.setParentPartitionId(internalPartitions.get(0).getId());
-        expectedLeafPartition1.setChildPartitionIds(Collections.emptyList());
-        expectedLeafPartition1.setRowKeyTypes(schema.getRowKeyTypes());
-        expectedLeafPartition1.setDimension(-1);
-        expectedLeafPartition1.setLeafPartition(true);
-        Range expectedLeafPartition1Range = new Range(schema.getRowKeyFields().get(0),
+        Range expectedLeafPartition1Range = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                 0L, true, 100L, false);
         Region expectedLeafPartition1Region = new Region(expectedLeafPartition1Range);
-        expectedLeafPartition1.setRegion(expectedLeafPartition1Region);
+        Partition expectedLeafPartition1 = Partition.builder()
+                .id(leafPartitions.get(1).getId())
+                .parentPartitionId(internalPartitions.get(0).getId())
+                .childPartitionIds(Collections.emptyList())
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .dimension(-1)
+                .leafPartition(true)
+                .region(expectedLeafPartition1Region)
+                .build();
 
-        Partition expectedLeafPartition2 = new Partition();
-        expectedLeafPartition2.setId(leafPartitions.get(2).getId());
-        expectedLeafPartition2.setParentPartitionId(rootPartition.getId());
-        expectedLeafPartition2.setChildPartitionIds(Collections.emptyList());
-        expectedLeafPartition2.setRowKeyTypes(schema.getRowKeyTypes());
-        expectedLeafPartition2.setDimension(-1);
-        expectedLeafPartition2.setLeafPartition(true);
-        Range expectedLeafPartition2Range = new Range(schema.getRowKeyFields().get(0),
+        Range expectedLeafPartition2Range = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                 100L, true, null, false);
         Region expectedLeafPartition2Region = new Region(expectedLeafPartition2Range);
-        expectedLeafPartition2.setRegion(expectedLeafPartition2Region);
+        Partition expectedLeafPartition2 = Partition.builder()
+                .id(leafPartitions.get(2).getId())
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .dimension(-1)
+                .leafPartition(true)
+                .region(expectedLeafPartition2Region)
+                .build();
 
         assertThat(leafPartitions).containsExactly(
                 expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2);
@@ -229,8 +236,8 @@ public class PartitionsFromSplitPointsTest {
     @Test
     public void shouldCreateTreeWithXLayersIf63SplitPoints() {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("id", new LongType()));
+        Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         List<Object> splitPoints = new ArrayList<>();
         for (int i = 0; i < 63; i++) {
             splitPoints.add((long) i);
@@ -283,17 +290,18 @@ public class PartitionsFromSplitPointsTest {
         assertThat(levelToPartitions.get(4)).hasSize(4);
         assertThat(levelToPartitions.get(5)).hasSize(2);
 
-        Partition expectedRootPartition = new Partition();
-        expectedRootPartition.setId(rootPartition.getId());
-        expectedRootPartition.setParentPartitionId(null);
-        expectedRootPartition.setChildPartitionIds(Arrays.asList(levelToPartitions.get(5).get(0).getId(), levelToPartitions.get(5).get(1).getId()));
-        expectedRootPartition.setRowKeyTypes(schema.getRowKeyTypes());
-        expectedRootPartition.setDimension(0);
-        expectedRootPartition.setLeafPartition(false);
-        Range expectedRootRange = new Range(schema.getRowKeyFields().get(0),
+        Range expectedRootRange = rangeFactory.createRange(schema.getRowKeyFields().get(0),
                 Long.MIN_VALUE, true, null, false);
         Region expectedRootRegion = new Region(expectedRootRange);
-        expectedRootPartition.setRegion(expectedRootRegion);
+        Partition expectedRootPartition = Partition.builder()
+                .id(rootPartition.getId())
+                .parentPartitionId(null)
+                .childPartitionIds(levelToPartitions.get(5).get(0).getId(), levelToPartitions.get(5).get(1).getId())
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .dimension(0)
+                .leafPartition(false)
+                .region(expectedRootRegion)
+                .build();
         assertThat(rootPartition).isEqualTo(expectedRootPartition);
 
         for (int level = 1; level <= 5; level++) {

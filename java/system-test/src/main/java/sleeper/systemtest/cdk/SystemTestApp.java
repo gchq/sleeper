@@ -17,20 +17,22 @@ package sleeper.systemtest.cdk;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import java.io.File;
-import java.io.FileNotFoundException;
 import sleeper.cdk.ConfigValidator;
 import sleeper.cdk.SleeperCdkApp;
 import sleeper.cdk.stack.IngestStack;
 import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import sleeper.systemtest.SystemTestProperties;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.Tags;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 
 /**
  * An {@link App} to deploy the {@link SleeperCdkApp} and the additional stacks
@@ -93,11 +95,11 @@ public class SystemTestApp extends SleeperCdkApp {
                 .account(systemTestProperties.get(ACCOUNT))
                 .region(systemTestProperties.get(REGION))
                 .build();
-        
+
         new SystemTestApp(app, id, systemTestProperties, StackProps.builder()
-            .stackName(id)
-            .env(environment)
-            .build()).create();
+                .stackName(id)
+                .env(environment)
+                .build()).create();
         app.synth();
     }
 }

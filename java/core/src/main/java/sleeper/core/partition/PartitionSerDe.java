@@ -25,12 +25,13 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import sleeper.core.range.Region;
 import sleeper.core.range.RegionSerDe.RegionJsonSerDe;
 import sleeper.core.schema.Schema;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Serialises a {@link Partition} to and from a JSON string.
@@ -42,11 +43,11 @@ public class PartitionSerDe {
     public static final String CHILD_PARTITION_IDS = "childPartitionIds";
     public static final String REGION = "region";
     public static final String DIMENSION = "dimension";
-    
+
     private final Schema schema;
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
-    
+
     public PartitionSerDe(Schema schema) {
         try {
             this.schema = schema;
@@ -59,7 +60,7 @@ public class PartitionSerDe {
             throw new RuntimeException("Exception creating Gson", e);
         }
     }
-    
+
     public String toJson(Partition partition) {
         return gson.toJson(partition);
     }
@@ -78,7 +79,7 @@ public class PartitionSerDe {
     public static class PartitionJsonSerDe implements JsonSerializer<Partition>, JsonDeserializer<Partition> {
         private final Schema schema;
         private final RegionJsonSerDe regionJsonSerDe;
-        
+
         public PartitionJsonSerDe(Schema schema) {
             this.schema = schema;
             this.regionJsonSerDe = new RegionJsonSerDe(schema);
@@ -114,7 +115,7 @@ public class PartitionSerDe {
             if (json.has(PARENT_PARTITION_ID)) {
                 if (!json.get(PARENT_PARTITION_ID).isJsonNull()) {
                     parentPartitionId = json.get(PARENT_PARTITION_ID).getAsString();
-                
+
                 }
             }
             JsonArray childPartitionIdsArray = json.get(CHILD_PARTITION_IDS).getAsJsonArray();
@@ -126,7 +127,15 @@ public class PartitionSerDe {
             }
             Region region = regionJsonSerDe.deserialize(json.get(REGION), null, context);
             int dimension = json.get(DIMENSION).getAsInt();
-            return new Partition(schema.getRowKeyTypes(), region, partitionId, isLeafPartition, parentPartitionId, childPartitionIds, dimension);
+            return Partition.builder()
+                    .rowKeyTypes(schema.getRowKeyTypes())
+                    .region(region)
+                    .id(partitionId)
+                    .leafPartition(isLeafPartition)
+                    .parentPartitionId(parentPartitionId)
+                    .childPartitionIds(childPartitionIds)
+                    .dimension(dimension)
+                    .build();
         }
     }
 }

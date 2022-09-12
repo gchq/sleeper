@@ -17,7 +17,7 @@ package sleeper.clients;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.*;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
@@ -26,21 +26,27 @@ import sleeper.configuration.properties.table.TableProperty;
 import sleeper.table.job.TableLister;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class AdminClient {
-    private final static String CLEAR_CONSOLE = "\033[H\033[2J";
-    private final static String INPUT_EMPTY = "\nYou did not enter anything please try again\n";
-    private final static String PROPERTY_LOAD_ERROR =
+    private static final String CLEAR_CONSOLE = "\033[H\033[2J";
+    private static final String INPUT_EMPTY = "\nYou did not enter anything please try again\n";
+    private static final String PROPERTY_LOAD_ERROR =
             "There has been a problem loading or changing properties from/in the S3 bucket. \nThe error message was: ";
-    private final static String TABLE_NULL_ERROR = "When a table property is being updated e.g. sleeper.table.* " +
+    private static final String TABLE_NULL_ERROR = "When a table property is being updated e.g. sleeper.table.* " +
             "then a Table Name must be provided in the parameters";
-    private final static String PROPERTY_ERROR = "A property update error has occurred either the property name " +
+    private static final String PROPERTY_ERROR = "A property update error has occurred either the property name " +
             "or value is invalid. \nThe error message was: ";
-    private final static String EXIT_PROGRAM_OPTION = "[0] Exit program";
-    private final static String MAIN_MENU_OPTION = "[1] Return to Main Menu\n";
+    private static final String EXIT_PROGRAM_OPTION = "[0] Exit program";
+    private static final String MAIN_MENU_OPTION = "[1] Return to Main Menu\n";
 
     private static AmazonS3 defaultS3Client;
+
+    private AdminClient() {
+    }
 
     static void printInstancePropertiesReport(AmazonS3 s3Client, String instanceId) throws IOException, AmazonS3Exception {
         InstanceProperties instanceProperties = new InstanceProperties();
@@ -226,7 +232,7 @@ public class AdminClient {
         }
     }
 
-    private static void updatePropertyScreen(String message, String instanceId) throws IOException{
+    private static void updatePropertyScreen(String message, String instanceId) throws IOException {
         clearScreen(message);
         System.out.println("What is the PROPERTY NAME of the property that you would like to update?\n");
         System.out.println("Please enter the PROPERTY NAME now or use the following options:");
@@ -250,7 +256,7 @@ public class AdminClient {
         }
     }
 
-    private static void updatePropertySecondScreen(String message, String instanceId, String propertyName) throws IOException{
+    private static void updatePropertySecondScreen(String message, String instanceId, String propertyName) throws IOException {
         clearScreen(message);
         System.out.println("What is the new PROPERTY VALUE?\n");
         System.out.println("Please enter the PROPERTY VALUE now or use the following options:");
@@ -342,7 +348,7 @@ public class AdminClient {
         defaultS3Client.shutdown();
         System.exit(0);
     }
-    
+
     public static void main(String[] args) throws IOException {
         defaultS3Client = AmazonS3ClientBuilder.defaultClient();
         if (1 != args.length) {

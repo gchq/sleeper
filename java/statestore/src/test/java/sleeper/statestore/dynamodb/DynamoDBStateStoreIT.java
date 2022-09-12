@@ -37,7 +37,9 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.schema.type.Type;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -109,11 +111,25 @@ public class DynamoDBStateStoreIT {
         return getStateStoreFromSplitPoints(schema, Collections.EMPTY_LIST);
     }
 
+    private Schema schemaWithSingleRowKeyType(PrimitiveType type) {
+        return Schema.builder().rowKeyFields(new Field("key", type)).build();
+    }
+
+    private Schema schemaWithTwoRowKeyTypes(PrimitiveType type1, PrimitiveType type2) {
+        return Schema.builder().rowKeyFields(new Field("key1", type1), new Field("key2", type2)).build();
+    }
+
+    private Schema schemaWithKeyAndValueWithTypes(PrimitiveType keyType, Type valueType) {
+        return Schema.builder()
+                .rowKeyFields(new Field("key", keyType))
+                .valueFields(new Field("value", valueType))
+                .build();
+    }
+
     @Test
     public void shouldReturnCorrectFileInfoForLongRowKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new LongType());
@@ -142,8 +158,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldReturnCorrectFileInfoForByteArrayKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
+        Schema schema = schemaWithSingleRowKeyType(new ByteArrayType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new ByteArrayType());
@@ -174,8 +189,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldReturnCorrectFileInfoFor2DimensionalByteArrayKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()));
+        Schema schema = schemaWithTwoRowKeyTypes(new ByteArrayType(), new ByteArrayType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new ByteArrayType(), new ByteArrayType());
@@ -208,8 +222,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldReturnCorrectFileInfoForMultidimensionalRowKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new LongType()), new Field("key2", new StringType()));
+        Schema schema = schemaWithTwoRowKeyTypes(new LongType(), new StringType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new LongType(), new StringType());
@@ -238,8 +251,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldReturnAllFileInfos() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         Set<FileInfo> expected = new HashSet<>();
         for (int i = 0; i < 10000; i++) { // 10,000 figure chosen to ensure results returned from Dynamo are paged
@@ -265,8 +277,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void testExceptionThrownWhenAddingFileInfoWithMissingFilename() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new LongType());
@@ -284,8 +295,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void testExceptionThrownWhenAddingFileInfoWithMissingStatus() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new LongType());
@@ -303,8 +313,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void testExceptionThrownWhenAddingFileInfoWithMissingPartition() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         FileInfo fileInfo = new FileInfo();
         fileInfo.setRowKeyTypes(new LongType());
@@ -322,9 +331,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void testGetFilesThatAreReadyForGC() throws InterruptedException, StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setValueFields(new Field("value", new StringType()));
+        Schema schema = schemaWithKeyAndValueWithTypes(new IntType(), new StringType());
         StateStore stateStore = getStateStore(schema, 5);
         Partition partition = stateStore.getAllPartitions().get(0);
         //  - A file which should be garbage collected immediately
@@ -373,9 +380,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldReturnOnlyActiveFilesWithNoJobId() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value", new StringType()));
+        Schema schema = schemaWithKeyAndValueWithTypes(new LongType(), new StringType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         FileInfo fileInfo1 = new FileInfo();
         fileInfo1.setRowKeyTypes(new LongType());
@@ -416,8 +421,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldReturnOnlyActiveFilesWithNoJobIdWhenPaging() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         Set<FileInfo> expected = new HashSet<>();
         for (int i = 0; i < 10000; i++) { // 10,000 figure chosen to ensure results returned from Dyanmo are paged
@@ -443,8 +447,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldDeleteReadyForGCFile() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         FileInfo fileInfo1 = new FileInfo();
         fileInfo1.setRowKeyTypes(new LongType());
@@ -476,8 +479,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldAtomicallyUpdateStatusToReadyForGCAndCreateNewActiveFile() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
@@ -510,8 +512,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldAtomicallyUpdateStatusToReadyForGCAndCreateNewActiveFilesForSplittingJob() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
@@ -550,8 +551,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void atomicallyUpdateStatusToReadyForGCAndCreateNewActiveFileShouldFailIfFilesNotActive() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
@@ -582,8 +582,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldAtomicallyUpdateJobStatusOfFiles() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<FileInfo> files = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
@@ -614,8 +613,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldNotAtomicallyCreateJobAndUpdateJobStatusOfFilesWhenJobIdAlreadySet() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<FileInfo> files = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
@@ -642,8 +640,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldCorrectlyInitialisePartitionsWithLongKeyType() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         List<Partition> partitions = new PartitionsFromSplitPoints(schema, Collections.singletonList(100L))
                 .construct();
         StateStore stateStore = getStateStore(schema, partitions);
@@ -655,8 +652,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldCorrectlyInitialisePartitionsWithStringKeyType() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new StringType()));
+        Schema schema = schemaWithSingleRowKeyType(new StringType());
         List<Partition> partitions = new PartitionsFromSplitPoints(schema, Collections.singletonList("B"))
                 .construct();
         StateStore stateStore = getStateStore(schema, partitions);
@@ -668,8 +664,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldCorrectlyInitialisePartitionsWithByteArrayKeyType() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new ByteArrayType()));
+        Schema schema = schemaWithSingleRowKeyType(new ByteArrayType());
         byte[] splitPoint1 = new byte[]{1, 2, 3, 4};
         byte[] splitPoint2 = new byte[]{5, 6, 7, 8, 9};
         List<Partition> partitions = new PartitionsFromSplitPoints(schema, Arrays.asList(splitPoint1, splitPoint2))
@@ -683,8 +678,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldCorrectlyInitialisePartitionsWithMultidimensionalKeyType() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()));
+        Schema schema = schemaWithTwoRowKeyTypes(new ByteArrayType(), new ByteArrayType());
         byte[] splitPoint1 = new byte[]{1, 2, 3, 4};
         byte[] splitPoint2 = new byte[]{5, 6, 7, 8, 9};
         List<Partition> partitions = new PartitionsFromSplitPoints(schema, Arrays.asList(splitPoint1, splitPoint2))
@@ -698,14 +692,19 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldCorrectlyStoreNonLeafPartitionWithByteArrayKeyType() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = schemaWithSingleRowKeyType(new ByteArrayType());
         byte[] min = new byte[]{1, 2, 3, 4};
         byte[] max = new byte[]{5, 6, 7, 8, 9};
-        Range range = new RangeFactory(schema).createRange(field.getName(), min, max);
-        Partition partition = new Partition(schema.getRowKeyTypes(),
-                new Region(range), "id", false, "P", new ArrayList<>(), 0);
+        Range range = new RangeFactory(schema).createRange("key", min, max);
+        Partition partition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(new Region(range))
+                .id("id")
+                .leafPartition(false)
+                .parentPartitionId("P")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(0)
+                .build();
         StateStore dynamoDBStateStore = getStateStore(schema, Collections.singletonList(partition));
 
         // When
@@ -725,9 +724,7 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldReturnCorrectPartitionToFileMapping() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<FileInfo> files = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
@@ -759,17 +756,49 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldReturnAllPartitions() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        Region region0 = new Region(new Range(field, Long.MIN_VALUE, 1L));
-        Partition partition0 = new Partition(schema.getRowKeyTypes(), region0, "id0", true, "root", new ArrayList<>(), -1);
-        Region region1 = new Region(new Range(field, 1L, 100L));
-        Partition partition1 = new Partition(schema.getRowKeyTypes(), region1, "id1", true, "root", new ArrayList<>(), -1);
-        Region region2 = new Region(new Range(field, 100L, 200L));
-        Partition partition2 = new Partition(schema.getRowKeyTypes(), region2, "id2", true, "root", new ArrayList<>(), -1);
-        Region region3 = new Region(new Range(field, 200L, null));
-        Partition partition3 = new Partition(schema.getRowKeyTypes(), region3, "id3", true, "root", new ArrayList<>(), -1);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        Region region0 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, 1L));
+        Partition partition0 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region0)
+                .id("id0")
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
+        Region region1 = new Region(rangeFactory.createRange(field, 1L, 100L));
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region1)
+                .id("id1")
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
+        Region region2 = new Region(rangeFactory.createRange(field, 100L, 200L));
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region2)
+                .id("id2")
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
+        Region region3 = new Region(rangeFactory.createRange(field, 200L, null));
+        Partition partition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region3)
+                .id("id3")
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         StateStore dynamoDBStateStore = getStateStore(schema, Arrays.asList(partition0, partition1, partition2, partition3));
 
         // When
@@ -792,22 +821,54 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldReturnLeafPartitions() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition rootPartition = dynamoDBStateStore.getAllPartitions().get(0);
-        Region region1 = new Region(new Range(field, Long.MIN_VALUE, 1L));
-        Partition partition1 = new Partition(schema.getRowKeyTypes(), region1, "id1", true, rootPartition.getId(), new ArrayList<>(), -1);
-        Region region2 = new Region(new Range(field, 1L, null));
-        Partition partition2 = new Partition(schema.getRowKeyTypes(), region2, "id2", true, rootPartition.getId(), new ArrayList<>(), -1);
+        Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, 1L));
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region1)
+                .id("id1")
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
+        Region region2 = new Region(rangeFactory.createRange(field, 1L, null));
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region2)
+                .id("id2")
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         rootPartition.setLeafPartition(false);
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, partition1, partition2);
-        Region region3 = new Region(new Range(field, 1L, 9L));
-        Partition partition3 = new Partition(schema.getRowKeyTypes(), region3, "id3", true, partition2.getId(), new ArrayList<>(), -1);
-        Region region4 = new Region(new Range(field, 9L, null));
-        Partition partition4 = new Partition(schema.getRowKeyTypes(), region4, "id4", true, partition2.getId(), new ArrayList<>(), -1);
+        Region region3 = new Region(rangeFactory.createRange(field, 1L, 9L));
+        Partition partition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region3)
+                .id("id3")
+                .leafPartition(true)
+                .parentPartitionId(partition2.getId())
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
+        Region region4 = new Region(rangeFactory.createRange(field, 9L, null));
+        Partition partition4 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region4)
+                .id("id4")
+                .leafPartition(true)
+                .parentPartitionId(partition2.getId())
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         partition2.setLeafPartition(false);
         partition2.setChildPartitionIds(Arrays.asList(partition3.getId(), partition4.getId()));
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(partition2, partition3, partition4);
@@ -832,9 +893,9 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldUpdatePartitions() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
 
@@ -842,24 +903,26 @@ public class DynamoDBStateStoreIT {
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
         parentPartition.setDimension(1);
-        Partition childPartition1 = new Partition();
-        childPartition1.setRowKeyTypes(new LongType());
-        childPartition1.setLeafPartition(true);
-        childPartition1.setId("child1");
-        Region region1 = new Region(new Range(field, Long.MIN_VALUE, 0L));
-        childPartition1.setRegion(region1);
-        childPartition1.setChildPartitionIds(new ArrayList<>());
-        childPartition1.setParentPartitionId(parentPartition.getId());
-        childPartition1.setDimension(-1);
-        Partition childPartition2 = new Partition();
-        childPartition2.setRowKeyTypes(new LongType());
-        childPartition2.setLeafPartition(true);
-        childPartition2.setId("child2");
-        Region region2 = new Region(new Range(field, 0L, null));
-        childPartition2.setRegion(region2);
-        childPartition2.setChildPartitionIds(new ArrayList<>());
-        childPartition2.setParentPartitionId(parentPartition.getId());
-        childPartition2.setDimension(-1);
+        Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, 0L));
+        Partition childPartition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child1")
+                .region(region1)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId(parentPartition.getId())
+                .dimension(-1)
+                .build();
+        Region region2 = new Region(rangeFactory.createRange(field, 0L, null));
+        Partition childPartition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child2")
+                .region(region2)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId(parentPartition.getId())
+                .dimension(-1)
+                .build();
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
 
         // Then
@@ -870,30 +933,31 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldNotUpdatePartitionsIfLeafStatusChanges() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
-        Partition childPartition1 = new Partition();
-        childPartition1.setRowKeyTypes(new LongType());
-        childPartition1.setLeafPartition(true);
-        childPartition1.setId("child1");
-        Region region1 = new Region(new Range(field, Long.MIN_VALUE, 0L));
-        childPartition1.setRegion(region1);
-        childPartition1.setChildPartitionIds(new ArrayList<>());
-        childPartition1.setParentPartitionId(parentPartition.getId());
-        Partition childPartition2 = new Partition();
-        childPartition2.setRowKeyTypes(new LongType());
-        childPartition2.setLeafPartition(true);
-        childPartition2.setId("child2");
-        Region region2 = new Region(new Range(field, 0L, null));
-        childPartition2.setRegion(region2);
-
-        childPartition2.setChildPartitionIds(new ArrayList<>());
-        childPartition2.setParentPartitionId(parentPartition.getId());
+        Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, 0L));
+        Partition childPartition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child1")
+                .region(region1)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId(parentPartition.getId())
+                .build();
+        Region region2 = new Region(rangeFactory.createRange(field, 0L, null));
+        Partition childPartition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child2")
+                .region(region2)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId(parentPartition.getId())
+                .build();
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
 
         // When / Then
@@ -906,28 +970,30 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldThrowExceptionWithPartitionSplitRequestWhereParentIsLeaf() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
-        Partition childPartition1 = new Partition();
-        childPartition1.setRowKeyTypes(new LongType());
-        childPartition1.setLeafPartition(true);
-        childPartition1.setId("child1");
-        Region region1 = new Region(new Range(field, Long.MIN_VALUE, null));
-        childPartition1.setRegion(region1);
-        childPartition1.setChildPartitionIds(new ArrayList<>());
-        childPartition1.setParentPartitionId("parent");
-        Partition childPartition2 = new Partition();
-        childPartition2.setRowKeyTypes(new LongType());
-        childPartition2.setLeafPartition(true);
-        childPartition2.setId("child2");
-        Region region2 = new Region(new Range(field, Long.MIN_VALUE, null));
-        childPartition2.setRegion(region2);
-        childPartition2.setChildPartitionIds(new ArrayList<>());
-        childPartition2.setParentPartitionId("parent");
+        Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
+        Partition childPartition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child1")
+                .region(region1)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
+        Region region2 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
+        Partition childPartition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child2")
+                .region(region2)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
 
         // When / Then
         assertThatThrownBy(() ->
@@ -938,29 +1004,31 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldThrowExceptionWithPartitionSplitRequestWhereChildrenWrong() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child3", "child2")); // Wrong children
-        Partition childPartition1 = new Partition();
-        childPartition1.setRowKeyTypes(new LongType());
-        childPartition1.setLeafPartition(true);
-        childPartition1.setId("child1");
-        Region region1 = new Region(new Range(field, Long.MIN_VALUE, null));
-        childPartition1.setRegion(region1);
-        childPartition1.setChildPartitionIds(new ArrayList<>());
-        childPartition1.setParentPartitionId("parent");
-        Partition childPartition2 = new Partition();
-        childPartition2.setRowKeyTypes(new LongType());
-        childPartition2.setLeafPartition(true);
-        childPartition2.setId("child2");
-        Region region2 = new Region(new Range(field, Long.MIN_VALUE, null));
-        childPartition2.setRegion(region2);
-        childPartition2.setChildPartitionIds(new ArrayList<>());
-        childPartition2.setParentPartitionId("parent");
+        Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
+        Partition childPartition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child1")
+                .region(region1)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
+        Region region2 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
+        Partition childPartition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child2")
+                .region(region2)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
 
         // When / Then
         assertThatThrownBy(() ->
@@ -971,29 +1039,31 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldThrowExceptionWithPartitionSplitRequestWhereParentWrong() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
-        Partition childPartition1 = new Partition();
-        childPartition1.setRowKeyTypes(new LongType());
-        childPartition1.setLeafPartition(true);
-        childPartition1.setId("child1");
-        Region region1 = new Region(new Range(field, Long.MIN_VALUE, null));
-        childPartition1.setRegion(region1);
-        childPartition1.setChildPartitionIds(new ArrayList<>());
-        childPartition1.setParentPartitionId("notparent"); // Wrong parent
-        Partition childPartition2 = new Partition();
-        childPartition2.setRowKeyTypes(new LongType());
-        childPartition2.setLeafPartition(true);
-        childPartition2.setId("child2");
-        Region region2 = new Region(new Range(field, Long.MIN_VALUE, null));
-        childPartition2.setRegion(region2);
-        childPartition2.setChildPartitionIds(new ArrayList<>());
-        childPartition2.setParentPartitionId("parent");
+        Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
+        Partition childPartition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child1")
+                .region(region1)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("notparent") // Wrong parent
+                .build();
+        Region region2 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
+        Partition childPartition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child2")
+                .region(region2)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
 
         // When / Then
         assertThatThrownBy(() ->
@@ -1004,29 +1074,31 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldThrowExceptionWithPartitionSplitRequestWhereNewPartitionIsNotLeaf() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
-        Partition childPartition1 = new Partition();
-        childPartition1.setRowKeyTypes(new LongType());
-        childPartition1.setLeafPartition(true);
-        childPartition1.setId("child1");
-        Region region1 = new Region(new Range(field, Long.MIN_VALUE, 0L));
-        childPartition1.setRegion(region1);
-        childPartition1.setChildPartitionIds(new ArrayList<>());
-        childPartition1.setParentPartitionId("parent");
-        Partition childPartition2 = new Partition();
-        childPartition2.setRowKeyTypes(new LongType());
-        childPartition2.setLeafPartition(false); // Not leaf
-        childPartition2.setId("child2");
-        Region region2 = new Region(new Range(field, 0L, Long.MAX_VALUE));
-        childPartition2.setRegion(region2);
-        childPartition2.setChildPartitionIds(new ArrayList<>());
-        childPartition2.setParentPartitionId("parent");
+        Region region1 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, 0L));
+        Partition childPartition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child1")
+                .region(region1)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
+        Region region2 = new Region(rangeFactory.createRange(field, 0L, Long.MAX_VALUE));
+        Partition childPartition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(false) // Not leaf
+                .id("child2")
+                .region(region2)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
 
         // When / Then
         assertThatThrownBy(() ->
@@ -1037,9 +1109,9 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldInitialiseRootPartitionCorrectlyForIntKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
 
         // When
@@ -1047,18 +1119,25 @@ public class DynamoDBStateStoreIT {
 
         // Then
         assertThat(partitions).hasSize(1);
-        Region expectedRegion = new Region(new Range(field, Integer.MIN_VALUE, null));
-        Partition expectedPartition = new Partition(schema.getRowKeyTypes(),
-                expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
+        Region expectedRegion = new Region(rangeFactory.createRange(field, Integer.MIN_VALUE, null));
+        Partition expectedPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedRegion)
+                .id(partitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
     public void shouldInitialiseRootPartitionCorrectlyForLongKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
 
         // When
@@ -1066,18 +1145,25 @@ public class DynamoDBStateStoreIT {
 
         // Then
         assertThat(partitions).hasSize(1);
-        Region expectedRegion = new Region(new Range(field, Long.MIN_VALUE, null));
-        Partition expectedPartition = new Partition(Collections.singletonList(new LongType()),
-                expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
+        Region expectedRegion = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, null));
+        Partition expectedPartition = Partition.builder()
+                .rowKeyTypes(Collections.singletonList(new LongType()))
+                .region(expectedRegion)
+                .id(partitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
     public void shouldInitialiseRootPartitionCorrectlyForStringKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
 
         // When
@@ -1085,18 +1171,25 @@ public class DynamoDBStateStoreIT {
 
         // Then
         assertThat(partitions).hasSize(1);
-        Region expectedRegion = new Region(new Range(field, "", null));
-        Partition expectedPartition = new Partition(Collections.singletonList(new StringType()),
-                expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
+        Region expectedRegion = new Region(rangeFactory.createRange(field, "", null));
+        Partition expectedPartition = Partition.builder()
+                .rowKeyTypes(Collections.singletonList(new StringType()))
+                .region(expectedRegion)
+                .id(partitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
     public void shouldInitialiseRootPartitionCorrectlyForByteArrayKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
         StateStore dynamoDBStateStore = getStateStore(schema);
 
         // When
@@ -1104,9 +1197,16 @@ public class DynamoDBStateStoreIT {
 
         // Then
         assertThat(partitions).hasSize(1);
-        Region expectedRegion = new Region(new Range(field, new byte[]{}, null));
-        Partition expectedPartition = new Partition(Collections.singletonList(new ByteArrayType()),
-                expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
+        Region expectedRegion = new Region(rangeFactory.createRange(field, new byte[]{}, null));
+        Partition expectedPartition = Partition.builder()
+                .rowKeyTypes(Collections.singletonList(new ByteArrayType()))
+                .region(expectedRegion)
+                .id(partitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         assertThat(partitions).containsExactly(expectedPartition);
     }
 }

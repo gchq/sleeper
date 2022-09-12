@@ -20,16 +20,16 @@ import sleeper.configuration.properties.SleeperProperty;
 
 import java.util.Objects;
 import java.util.function.Predicate;
+
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_SPARK_SPECULATION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_SPARK_SPECULATION_QUANTILE;
-
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPRESSION_CODEC;
@@ -39,9 +39,9 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_ROW_GROUP_SIZE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_S3A_READAHEAD_RANGE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO;
 
 /**
  * These contain the table properties which are stored separately to the instance properties.
@@ -78,7 +78,7 @@ public enum TableProperty implements ITableProperty {
     // Size ratio compaction strategy
     SIZE_RATIO_COMPACTION_STRATEGY_RATIO("sleeper.table.compaction.strategy.sizeratio.ratio", DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO),
     SIZE_RATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION("sleeper.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition", DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION),
-    
+
     // System defined
     SPLIT_POINTS_KEY("sleeper.table.splits.key"),
     DATA_BUCKET("sleeper.table.data.bucket"),
@@ -88,7 +88,7 @@ public enum TableProperty implements ITableProperty {
     PARTITION_TABLENAME("sleeper.table.metadata.dynamo.partition.table"),
     DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY("sleeper.table.metadata.dynamo.pointintimerecovery", DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED),
     DYNAMODB_STRONGLY_CONSISTENT_READS("sleeper.table.metadata.dynamo.consistent.reads", null, DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS,
-        s -> s.equalsIgnoreCase("true") || s.equalsIgnoreCase("false")),
+            s -> s.equalsIgnoreCase("true") || s.equalsIgnoreCase("false")),
     // S3StateStore properties
     REVISION_TABLENAME("sleeper.table.metadata.s3.dynamo.revision.table"),
     S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY("sleeper.table.metadata.s3.dynamo.pointintimerecovery", DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED);

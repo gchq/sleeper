@@ -65,16 +65,17 @@ public class S3ResultsOutputTest {
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
 
-    InstanceProperties instanceProperties;
-    Schema schema = new Schema();
-    List<Record> recordList;
+    InstanceProperties instanceProperties = new InstanceProperties();
+    Schema schema = setupSchema();
+    List<Record> recordList = setupData();
     String outputDir;
 
     @Before
     public void setup() throws IOException {
-        setupInstanceProperties();
-        setupSchema();
-        setupData();
+        outputDir = tempDir.newFolder().getAbsolutePath();
+        String queryResultsBucket = UUID.randomUUID().toString();
+        instanceProperties.set(QUERY_RESULTS_BUCKET, queryResultsBucket);
+        instanceProperties.set(FILE_SYSTEM, outputDir + "/");
     }
 
     @Test
@@ -169,33 +170,28 @@ public class S3ResultsOutputTest {
         return records;
     }
 
-    private void setupInstanceProperties() throws IOException {
-        outputDir = tempDir.newFolder().getAbsolutePath();
-        instanceProperties = new InstanceProperties();
-        String queryResultsBucket = UUID.randomUUID().toString();
-        instanceProperties.set(QUERY_RESULTS_BUCKET, queryResultsBucket);
-        instanceProperties.set(FILE_SYSTEM, outputDir + "/");
+    private static Schema setupSchema() {
+        return Schema.builder()
+                .rowKeyFields(
+                        new Field("year", new IntType()),
+                        new Field("month", new IntType()),
+                        new Field("day", new IntType()))
+                .sortKeyFields(
+                        new Field("timestamp", new LongType()))
+                .valueFields(
+                        new Field("count", new LongType()),
+                        new Field("map", new MapType(new StringType(), new StringType())),
+                        new Field("str", new StringType()),
+                        new Field("list", new ListType(new StringType())))
+                .build();
     }
 
-    private void setupSchema() {
-        schema.setRowKeyFields(
-                new Field("year", new IntType()),
-                new Field("month", new IntType()),
-                new Field("day", new IntType())
-        );
-        schema.setSortKeyFields(new Field("timestamp", new LongType()));
-        schema.setValueFields(new Field("count", new LongType()),
-                new Field("map", new MapType(new StringType(), new StringType())),
-                new Field("str", new StringType()),
-                new Field("list", new ListType(new StringType())));
-    }
-
-    private void setupData() {
+    private static List<Record> setupData() {
         int minYear = 2010;
         int maxYear = 2020;
         LocalDate startDate = LocalDate.of(minYear, 1, 1);
         LocalDate endDate = LocalDate.of(maxYear, 12, 31);
-        recordList = new ArrayList<>();
+        List<Record> recordList = new ArrayList<>();
         for (LocalDate date = startDate; date.isBefore(endDate); date = date.plusDays(1)) {
             Record record = new Record();
             record.put("year", date.getYear());
@@ -210,6 +206,6 @@ public class S3ResultsOutputTest {
             record.put("str", date.toString());
             recordList.add(record);
         }
-
+        return recordList;
     }
 }

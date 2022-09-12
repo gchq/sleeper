@@ -20,6 +20,25 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.apache.hadoop.conf.Configuration;
+import sleeper.ClientUtils;
+import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.IteratorException;
+import sleeper.core.partition.Partition;
+import sleeper.core.record.Record;
+import sleeper.core.schema.Schema;
+import sleeper.query.QueryException;
+import sleeper.query.executor.QueryExecutor;
+import sleeper.query.model.Query;
+import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
+import sleeper.table.util.StateStoreProvider;
+import sleeper.utils.HadoopConfigurationProvider;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -27,25 +46,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import org.apache.hadoop.conf.Configuration;
-import sleeper.ClientUtils;
-import sleeper.query.QueryException;
-import sleeper.query.executor.QueryExecutor;
-import sleeper.query.model.Query;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
+
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.IteratorException;
-import sleeper.core.partition.Partition;
-import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
-import sleeper.table.util.StateStoreProvider;
-import sleeper.utils.HadoopConfigurationProvider;
 
 /**
  * Allows a user to run a query from the command line.
@@ -68,12 +70,12 @@ public class QueryClient extends QueryCommandLineClient {
         String tableName = tableProperties.get(TABLE_NAME);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForQueryLambdas(getInstanceProperties());
         conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
-        
+
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         List<Partition> partitions = stateStore.getAllPartitions();
         Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
         System.out.println("Retrieved " + partitions.size() + " partitions from StateStore");
-        
+
         if (!cachedQueryExecutors.containsKey(tableName)) {
             QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStoreProvider.getStateStore(tableProperties),
                     conf, executorService);
@@ -81,11 +83,11 @@ public class QueryClient extends QueryCommandLineClient {
             cachedQueryExecutors.put(tableName, queryExecutor);
         }
     }
-    
+
     @Override
     protected void submitQuery(TableProperties tableProperties, Query query) {
         Schema schema = tableProperties.getSchema();
-        
+
         CloseableIterator<Record> records;
         long startTime = System.currentTimeMillis();
         try {

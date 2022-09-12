@@ -18,6 +18,7 @@ package sleeper.splitter;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
@@ -27,7 +28,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 
 /**
@@ -65,7 +66,7 @@ public class FindPartitionsToSplit {
 
     public void run() throws StateStoreException, IOException {
         LOGGER.info("Running FindPartitionsToSplit for table {}, split threshold is {}", tableName, splitThreshold);
-        
+
         List<FileInfo> activeFileInfos = stateStore.getActiveFiles();
         LOGGER.info("There are {} active files in table {}", activeFileInfos.size(), tableName);
 

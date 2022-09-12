@@ -61,7 +61,7 @@ import static sleeper.configuration.properties.table.TableProperty.S3A_READAHEAD
  */
 public abstract class SleeperRecordHandler extends RecordHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperRecordHandler.class);
-    
+
     private final Configuration defaultConfig;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final InstanceProperties instanceProperties;
@@ -90,8 +90,9 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      * Reads and sends data to Athena for further processing. It allows the implementation to create the iterator which
      * will depend on the {@link com.amazonaws.athena.connector.lambda.handlers.MetadataHandler} supplying the splits.
      * The way that the iterator is created from the request will depend on implementation.
-     * @param spiller a mechanism to write data
-     * @param recordsRequest The request from the user
+     *
+     * @param spiller            a mechanism to write data
+     * @param recordsRequest     The request from the user
      * @param queryStatusChecker a means of checking the status of the query
      * @throws Exception If something goes wrong
      */
@@ -113,7 +114,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
 
         GeneratedRowWriter writer = rowWriterBuilder.build();
 
-        while(recordIterator.hasNext()) {
+        while (recordIterator.hasNext()) {
             Record next = recordIterator.next();
             spiller.writeRows((block, rowNum) -> writer.writeRow(block, rowNum, next) ? 1 : 0);
         }
@@ -124,7 +125,8 @@ public abstract class SleeperRecordHandler extends RecordHandler {
     /**
      * Implementation dependent code to create the schema used to read the data. Some implementations may be able to
      * slim down the schema to reduce the amount of data read per query, thereby making queries cheaper.
-     * @param schema the original schema associated with the table being queried
+     *
+     * @param schema         the original schema associated with the table being queried
      * @param recordsRequest the records request made by the user
      * @return a schema to use for reading the files.
      */
@@ -133,19 +135,21 @@ public abstract class SleeperRecordHandler extends RecordHandler {
     /**
      * Implementation dependent iterator creation code. The entire request which contains the user, split and schema is
      * passed to this method along with the table properties.
-     * @param recordsRequest the request
-     * @param schema the table schema to use for reading
+     *
+     * @param recordsRequest  the request
+     * @param schema          the table schema to use for reading
      * @param tableProperties The table properties to use for reading the table
-     * @implNote Do not use the schema in the table properties as it could differ from the schema provided.
      * @return an iterator of records
      * @throws Exception when an iterator is not created
+     * @implNote Do not use the schema in the table properties as it could differ from the schema provided.
      */
     protected abstract CloseableIterator<Record> createRecordIterator(ReadRecordsRequest recordsRequest, Schema schema, TableProperties tableProperties) throws Exception;
 
     /**
      * Configures the writer so that it can write records from Sleeper to Athena.
+     *
      * @param rowWriterBuilder The WriterBuilder
-     * @param schema The Sleeper Schema for this table
+     * @param schema           The Sleeper Schema for this table
      */
     private void configureBuilder(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, Schema schema) {
         // Add Extractors according to the schema
@@ -173,8 +177,9 @@ public abstract class SleeperRecordHandler extends RecordHandler {
 
     /**
      * Adds an extractor for byte arrays
+     *
      * @param rowWriterBuilder the WriterBuilder
-     * @param name the name of the field
+     * @param name             the name of the field
      */
     private void addByteArrayExtractor(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name) {
         rowWriterBuilder.withExtractor(name, (VarBinaryExtractor) (context, dst) -> {
@@ -186,8 +191,9 @@ public abstract class SleeperRecordHandler extends RecordHandler {
 
     /**
      * Adds an extractor factory for Lists.
+     *
      * @param rowWriterBuilder the WriterBuilder
-     * @param name the name of the field
+     * @param name             the name of the field
      */
     private void addListExtractorFactory(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name, ListType type) {
         rowWriterBuilder.withFieldWriterFactory(name, (vector, extractor, constraint) ->
@@ -203,8 +209,9 @@ public abstract class SleeperRecordHandler extends RecordHandler {
 
     /**
      * Adds an extractor for Strings
+     *
      * @param rowWriterBuilder the WriterBuilder
-     * @param name the name of the field
+     * @param name             the name of the field
      */
     private void addStringExtractor(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name) {
         rowWriterBuilder.withExtractor(name, (VarCharExtractor) (context, dst) -> {
@@ -216,8 +223,9 @@ public abstract class SleeperRecordHandler extends RecordHandler {
 
     /**
      * Adds an extractor for Longs
+     *
      * @param rowWriterBuilder the WriterBuilder
-     * @param name the name of the field
+     * @param name             the name of the field
      */
     private void addLongExtractor(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name) {
         rowWriterBuilder.withExtractor(name, (BigIntExtractor) (context, dst) -> {
@@ -229,8 +237,9 @@ public abstract class SleeperRecordHandler extends RecordHandler {
 
     /**
      * Adds an extractor for Integers
+     *
      * @param rowWriterBuilder the WriterBuilder
-     * @param name the name of the field
+     * @param name             the name of the field
      */
     private void addIntExtractor(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name) {
         rowWriterBuilder.withExtractor(name, (IntExtractor) (context, dst) -> {
@@ -242,7 +251,8 @@ public abstract class SleeperRecordHandler extends RecordHandler {
 
     /**
      * Gets the Hadoop configuration set in the table and instance
-     * @param tablePropeties the table properties
+     *
+     * @param tableProperties the table properties
      * @return the Hadoop configuration
      */
     protected Configuration getConfigurationForTable(TableProperties tableProperties) {

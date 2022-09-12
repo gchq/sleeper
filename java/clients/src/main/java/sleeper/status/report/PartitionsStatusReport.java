@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
+import sleeper.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
@@ -30,7 +31,6 @@ import sleeper.table.util.StateStoreProvider;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
-import sleeper.ClientUtils;
 
 /**
  * A utility class to report information about the partitions in the system and
@@ -44,7 +44,7 @@ public class PartitionsStatusReport {
     }
 
     public void run() throws StateStoreException {
-        System.out.println( "\nPartitions Status Report:\n--------------------------");
+        System.out.println("\nPartitions Status Report:\n--------------------------");
         List<Partition> partitions = stateStore.getAllPartitions();
         List<Partition> leafPartitions = partitions.stream().filter(Partition::isLeafPartition).collect(Collectors.toList());
         System.out.println("There are " + partitions.size() + " partitions (" + leafPartitions.size() + " leaf partitions)");
@@ -55,10 +55,10 @@ public class PartitionsStatusReport {
         if (2 != args.length) {
             throw new IllegalArgumentException("Usage: <instance id> <table name>");
         }
-        
+
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
-        
+
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(amazonS3, instanceProperties);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());

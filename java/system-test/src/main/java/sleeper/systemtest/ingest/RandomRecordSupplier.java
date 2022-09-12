@@ -15,12 +15,6 @@
  */
 package sleeper.systemtest.ingest;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.function.Supplier;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.text.RandomStringGenerator;
 import sleeper.core.key.Key;
@@ -35,6 +29,13 @@ import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.function.Supplier;
 
 /**
  * A {@link Supplier} of {@link Record}s generated randomly that conform to the
@@ -51,7 +52,7 @@ public class RandomRecordSupplier implements Supplier<Record> {
             fieldNameToSupplier.put(field.getName(), getSupplier(field.getType(), config));
         }
     }
-    
+
     public RandomRecordSupplier(Schema schema) {
         this(schema, DEFAULT_RANDOM_RECORD_SUPPLIER_CONFIG);
     }

@@ -16,12 +16,10 @@
 package sleeper.ingest;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
@@ -31,7 +29,7 @@ import java.util.Iterator;
 /**
  * Writes an {@link Iterator} of {@link Record} objects to the storage system, partitioned and sorted.
  * <p>
- * This class is an adaptor to {@link IngestCoordinator}.
+ * This class is an adaptor to {@link sleeper.ingest.impl.IngestCoordinator}.
  */
 public class IngestRecordsFromIterator {
     private final ObjectFactory objectFactory;
@@ -53,26 +51,27 @@ public class IngestRecordsFromIterator {
 
     /**
      * This version of the constructor allows a bespoke Hadoop configuration to be specified. The underlying {@link
-     * FileSystem} object maintains a cache of file systems and the first time that it creates a {@link
+     * org.apache.hadoop.fs.FileSystem} object maintains a cache of file systems and the first time that it creates a {@link
      * org.apache.hadoop.fs.s3a.S3AFileSystem} object, the provided Hadoop configuration will be used. Thereafter, the
-     * Hadoop configuration will be ignored until {@link FileSystem#closeAll()} is called. This is not ideal behaviour.
+     * Hadoop configuration will be ignored until {@link org.apache.hadoop.fs.FileSystem#closeAll()} is called. This is not ideal behaviour.
      */
-    public IngestRecordsFromIterator(ObjectFactory objectFactory,
-                                     Iterator<Record> recordsIterator,
-                                     String localDir,
-                                     long maxRecordsToWriteLocally,
-                                     long maxInMemoryBatchSize,
-                                     int rowGroupSize,
-                                     int pageSize,
-                                     String compressionCodec,
-                                     StateStore stateStore,
-                                     Schema schema,
-                                     String fs,
-                                     String bucketName,
-                                     String iteratorClassName,
-                                     String iteratorConfig,
-                                     int ingestPartitionRefreshFrequencyInSeconds,
-                                     Configuration hadoopConfiguraration) {
+    public IngestRecordsFromIterator(
+            ObjectFactory objectFactory,
+            Iterator<Record> recordsIterator,
+            String localDir,
+            long maxRecordsToWriteLocally,
+            long maxInMemoryBatchSize,
+            int rowGroupSize,
+            int pageSize,
+            String compressionCodec,
+            StateStore stateStore,
+            Schema schema,
+            String fs,
+            String bucketName,
+            String iteratorClassName,
+            String iteratorConfig,
+            int ingestPartitionRefreshFrequencyInSeconds,
+            Configuration hadoopConfiguraration) {
         this.objectFactory = objectFactory;
         this.recordsIterator = recordsIterator;
         this.localDir = localDir;
@@ -91,21 +90,22 @@ public class IngestRecordsFromIterator {
         this.hadoopConfiguraration = hadoopConfiguraration;
     }
 
-    public IngestRecordsFromIterator(ObjectFactory objectFactory,
-                                     Iterator<Record> recordsIterator,
-                                     String localDir,
-                                     long maxRecordsToWriteLocally,
-                                     long maxInMemoryBatchSize,
-                                     int rowGroupSize,
-                                     int pageSize,
-                                     String compressionCodec,
-                                     StateStore stateStore,
-                                     Schema schema,
-                                     String fs,
-                                     String bucketName,
-                                     String iteratorClassName,
-                                     String iteratorConfig,
-                                     int ingestPartitionRefreshFrequencyInSeconds) {
+    public IngestRecordsFromIterator(
+            ObjectFactory objectFactory,
+            Iterator<Record> recordsIterator,
+            String localDir,
+            long maxRecordsToWriteLocally,
+            long maxInMemoryBatchSize,
+            int rowGroupSize,
+            int pageSize,
+            String compressionCodec,
+            StateStore stateStore,
+            Schema schema,
+            String fs,
+            String bucketName,
+            String iteratorClassName,
+            String iteratorConfig,
+            int ingestPartitionRefreshFrequencyInSeconds) {
         this(objectFactory, recordsIterator, localDir, maxRecordsToWriteLocally, maxInMemoryBatchSize, rowGroupSize,
                 pageSize, compressionCodec, stateStore, schema, fs, bucketName, iteratorClassName, iteratorConfig,
                 ingestPartitionRefreshFrequencyInSeconds, null);

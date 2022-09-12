@@ -15,29 +15,28 @@
  */
 package sleeper.bulkimport.job.runner.dataframe;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
-
+import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
-
-import com.google.common.collect.Lists;
-import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.runner.BulkImportJobRunner;
 import sleeper.bulkimport.job.runner.WriteParquetFiles;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE;
 
 /**
  * The {@link BulkImportJobDataframeRunner} is a {@link BulkImportJobRunner} which
@@ -48,7 +47,8 @@ public class BulkImportJobDataframeRunner extends BulkImportJobRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobDataframeRunner.class);
 
     @Override
-    public Dataset<Row> createFileInfos(Dataset<Row> rows,
+    public Dataset<Row> createFileInfos(
+            Dataset<Row> rows,
             BulkImportJob job,
             TableProperties tableProperties,
             Broadcast<List<Partition>> broadcastedPartitions, Configuration conf) throws IOException {
@@ -56,7 +56,7 @@ public class BulkImportJobDataframeRunner extends BulkImportJobRunner {
 
         LOGGER.info("Running bulk import job with id {}", job.getId());
         Column[] sortColumns = Lists.newArrayList(
-                Lists.newArrayList(PARTITION_FIELD_NAME), schema.getRowKeyFieldNames(), schema.getSortKeyFieldNames())
+                        Lists.newArrayList(PARTITION_FIELD_NAME), schema.getRowKeyFieldNames(), schema.getSortKeyFieldNames())
                 .stream()
                 .flatMap(list -> ((List<String>) list).stream())
                 .map(Column::new)
@@ -66,21 +66,21 @@ public class BulkImportJobDataframeRunner extends BulkImportJobRunner {
 
         int numLeafPartitions = (int) broadcastedPartitions.value().stream().filter(Partition::isLeafPartition).count();
         LOGGER.info("There are {} leaf partitions", numLeafPartitions);
-        
+
         int minPartitionsToUseCoalesce = getInstanceProperties().getInt(BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE);
         LOGGER.info("The minimum number of leaf partitions to use coalesce in the bulk import is {}", minPartitionsToUseCoalesce);
-        
+
         if (numLeafPartitions < minPartitionsToUseCoalesce) {
             LOGGER.info("Not using coalesce");
             return rows
-                .sort(sortColumns)
-                .mapPartitions(new WriteParquetFiles(getInstanceProperties().saveAsString(), tableProperties.saveAsString(), conf), RowEncoder.apply(createFileInfoSchema()));
+                    .sort(sortColumns)
+                    .mapPartitions(new WriteParquetFiles(getInstanceProperties().saveAsString(), tableProperties.saveAsString(), conf), RowEncoder.apply(createFileInfoSchema()));
         } else {
             LOGGER.info("Coalescing data to {} partitions", numLeafPartitions);
             return rows
-                .sort(sortColumns)
-                .coalesce(numLeafPartitions)
-                .mapPartitions(new WriteParquetFiles(getInstanceProperties().saveAsString(), tableProperties.saveAsString(), conf), RowEncoder.apply(createFileInfoSchema()));
+                    .sort(sortColumns)
+                    .coalesce(numLeafPartitions)
+                    .mapPartitions(new WriteParquetFiles(getInstanceProperties().saveAsString(), tableProperties.saveAsString(), conf), RowEncoder.apply(createFileInfoSchema()));
         }
     }
 

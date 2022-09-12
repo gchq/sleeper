@@ -42,7 +42,7 @@ import java.util.Map;
  */
 public class RecordSerialiser {
     private final Schema schema;
-    
+
     public RecordSerialiser(Schema schema) {
         this.schema = schema;
     }
@@ -80,7 +80,7 @@ public class RecordSerialiser {
         dos.close();
         return baos.toByteArray();
     }
-    
+
     public Record deserialise(byte[] serialised) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(serialised);
         DataInputStream dis = new DataInputStream(bais);

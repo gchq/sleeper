@@ -28,8 +28,13 @@ import sleeper.core.ContainerConstants;
 
 import java.io.IOException;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.*;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.*;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLUSTER;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 
 /**
  * A lambda function to execute {@link RunTasks}.
