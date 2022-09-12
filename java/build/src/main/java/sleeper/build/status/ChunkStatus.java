@@ -18,17 +18,19 @@ package sleeper.build.status;
 import java.io.PrintStream;
 import java.util.Objects;
 
+import static sleeper.build.status.ValidationUtils.ignoreEmpty;
+
 public class ChunkStatus {
 
     private static final String COMPLETED = "completed";
     private static final String SUCCESS = "success";
 
-    private final String chunk;
+    private final ProjectChunk chunk;
     private final String status;
     private final String conclusion;
 
     private ChunkStatus(Builder builder) {
-        chunk = Objects.requireNonNull(ignoreEmpty(builder.chunk), "chunk must not be null");
+        chunk = Objects.requireNonNull(builder.chunk, "chunk must not be null");
         status = ignoreEmpty(builder.status);
         conclusion = ignoreEmpty(builder.conclusion);
     }
@@ -39,9 +41,9 @@ public class ChunkStatus {
 
     public void report(PrintStream out) {
         if (conclusion != null) {
-            out.println(chunk + ": " + status + ", " + conclusion);
+            out.println(chunk.getName() + ": " + status + ", " + conclusion);
         } else {
-            out.println(chunk + ": " + status);
+            out.println(chunk.getName() + ": " + status);
         }
     }
 
@@ -53,20 +55,24 @@ public class ChunkStatus {
         return builder().chunk(chunk);
     }
 
+    public static Builder chunk(ProjectChunk chunk) {
+        return builder().chunk(chunk);
+    }
+
     public static ChunkStatus success(String chunk) {
-        return chunk(chunk).status(COMPLETED).conclusion(SUCCESS).build();
+        return chunk(chunk).success();
     }
 
     public static ChunkStatus inProgress(String chunk) {
-        return chunk(chunk).status("in_progress").build();
+        return chunk(chunk).inProgress();
     }
 
     public static ChunkStatus failure(String chunk) {
-        return chunk(chunk).status(COMPLETED).conclusion("failure").build();
+        return chunk(chunk).failure();
     }
 
     public static ChunkStatus cancelled(String chunk) {
-        return chunk(chunk).status(COMPLETED).conclusion("cancelled").build();
+        return chunk(chunk).cancelled();
     }
 
     public static ChunkStatus noBuild(String chunk) {
@@ -100,16 +106,36 @@ public class ChunkStatus {
     }
 
     public static final class Builder {
-        private String chunk;
+        private ProjectChunk chunk;
         private String status;
         private String conclusion;
 
         private Builder() {
         }
 
-        public Builder chunk(String chunk) {
+        public Builder chunk(ProjectChunk chunk) {
             this.chunk = chunk;
             return this;
+        }
+
+        public Builder chunk(String chunk) {
+            return chunk(ProjectChunk.chunk(chunk).name(chunk).workflow(chunk).build());
+        }
+
+        public ChunkStatus success() {
+            return status(COMPLETED).conclusion(SUCCESS).build();
+        }
+
+        public ChunkStatus inProgress() {
+            return status("in_progress").build();
+        }
+
+        public ChunkStatus failure() {
+            return status(COMPLETED).conclusion("failure").build();
+        }
+
+        public ChunkStatus cancelled() {
+            return status(COMPLETED).conclusion("cancelled").build();
         }
 
         public Builder status(String status) {
@@ -127,11 +153,4 @@ public class ChunkStatus {
         }
     }
 
-    private static String ignoreEmpty(String string) {
-        if (string == null || string.isEmpty()) {
-            return null;
-        } else {
-            return string;
-        }
-    }
 }

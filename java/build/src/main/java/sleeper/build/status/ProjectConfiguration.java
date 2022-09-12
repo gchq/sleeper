@@ -21,6 +21,8 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import static sleeper.build.status.ValidationUtils.ignoreEmpty;
+
 public class ProjectConfiguration {
 
     private final String token;
@@ -28,7 +30,7 @@ public class ProjectConfiguration {
     private final List<ProjectChunk> chunks;
 
     private ProjectConfiguration(Builder builder) {
-        token = Objects.requireNonNull(builder.token, "token must not be null");
+        token = Objects.requireNonNull(ignoreEmpty(builder.token), "token must not be null");
         branch = Objects.requireNonNull(builder.branch, "branch must not be null");
         chunks = Objects.requireNonNull(builder.chunks, "chunks must not be null");
     }

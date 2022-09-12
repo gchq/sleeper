@@ -18,6 +18,8 @@ package sleeper.build.status;
 import java.util.Objects;
 import java.util.Properties;
 
+import static sleeper.build.status.ValidationUtils.ignoreEmpty;
+
 public class GitHubBranch {
 
     private final String owner;
@@ -25,9 +27,9 @@ public class GitHubBranch {
     private final String branch;
 
     private GitHubBranch(Builder builder) {
-        this.owner = Objects.requireNonNull(builder.owner, "owner must not be null");
-        this.repository = Objects.requireNonNull(builder.repository, "repository must not be null");
-        this.branch = Objects.requireNonNull(builder.branch, "branch must not be null");
+        this.owner = Objects.requireNonNull(ignoreEmpty(builder.owner), "owner must not be null");
+        this.repository = Objects.requireNonNull(ignoreEmpty(builder.repository), "repository must not be null");
+        this.branch = Objects.requireNonNull(ignoreEmpty(builder.branch), "branch must not be null");
     }
 
     public String getOwnerAndRepository() {

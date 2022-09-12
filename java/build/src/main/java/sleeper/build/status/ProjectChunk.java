@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
+import static sleeper.build.status.ValidationUtils.ignoreEmpty;
+
 public class ProjectChunk {
 
     private final String id;
@@ -27,9 +29,13 @@ public class ProjectChunk {
     private final String workflow;
 
     private ProjectChunk(Builder builder) {
-        id = Objects.requireNonNull(builder.id, "id must not be null");
-        name = Objects.requireNonNull(builder.name, "name must not be null");
-        workflow = Objects.requireNonNull(builder.workflow, "workflow must not be null");
+        id = Objects.requireNonNull(ignoreEmpty(builder.id), "id must not be null");
+        name = Objects.requireNonNull(ignoreEmpty(builder.name), "name must not be null");
+        workflow = Objects.requireNonNull(ignoreEmpty(builder.workflow), "workflow must not be null");
+    }
+
+    public String getName() {
+        return name;
     }
 
     public static Builder chunk(String id) {

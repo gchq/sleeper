@@ -55,11 +55,11 @@ public class ProjectConfigurationTest {
                 .chunks(Collections.singletonList(chunk))
                 .build();
         GitHubProvider gitHub = mock(GitHubProvider.class);
-        when(gitHub.workflowStatus(branch, chunk)).thenReturn(ChunkStatus.success("common"));
+        when(gitHub.workflowStatus(branch, chunk)).thenReturn(ChunkStatus.chunk(chunk).success());
 
         ChunksStatus status = configuration.checkStatus(gitHub);
         assertThat(status.isFailCheck()).isFalse();
         assertThat(status.reportString()).isEqualTo("" +
-                "common: completed, success\n");
+                "Common: completed, success\n");
     }
 }
