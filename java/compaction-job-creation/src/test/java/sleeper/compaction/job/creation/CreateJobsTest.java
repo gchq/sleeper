@@ -30,6 +30,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfoFactory;
+import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableLister;
@@ -164,7 +165,7 @@ public class CreateJobsTest {
         TableProperties tableProperties = createTableProperties(schema, instanceProperties);
 
         TablePropertiesProvider tablePropertiesProvider = TablePropertiesProvider.fixed(tableProperties);
-        StateStoreProvider stateStoreProvider = StateStoreProvider.fixed(tableProperties, stateStore);
+        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties, stateStore);
 
         TableLister tableLister = mock(TableLister.class);
         when(tableLister.listTables()).thenReturn(Collections.singletonList(tableProperties.get(TABLE_NAME)));

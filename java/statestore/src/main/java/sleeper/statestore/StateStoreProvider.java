@@ -42,18 +42,9 @@ public class StateStoreProvider {
         this(dynamoDBClient, instanceProperties, null);
     }
 
-    private StateStoreProvider(Function<TableProperties, StateStore> stateStoreFactory) {
+    protected StateStoreProvider(Function<TableProperties, StateStore> stateStoreFactory) {
         this.stateStoreFactory = stateStoreFactory;
         this.tableNameToStateStoreCache = new HashMap<>();
-    }
-
-    public static StateStoreProvider fixed(TableProperties singleTableProperties, StateStore stateStore) {
-        return new StateStoreProvider(tableProperties -> {
-            if (tableProperties != singleTableProperties) {
-                throw new IllegalArgumentException("Table not found: " + tableProperties.get(TABLE_NAME));
-            }
-            return stateStore;
-        });
     }
 
     public StateStore getStateStore(String tableName, TablePropertiesProvider tablePropertiesProvider) {
