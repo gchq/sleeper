@@ -36,7 +36,7 @@ import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.Query;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.table.util.StateStoreProvider;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;

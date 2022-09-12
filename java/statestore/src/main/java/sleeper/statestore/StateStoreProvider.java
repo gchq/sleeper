@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.table.util;
+package sleeper.statestore;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreFactory;
 
 import java.util.HashMap;
 import java.util.Map;

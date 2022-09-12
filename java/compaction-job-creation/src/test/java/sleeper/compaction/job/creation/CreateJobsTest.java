@@ -31,8 +31,8 @@ import sleeper.core.schema.type.StringType;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfoFactory;
 import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableLister;
-import sleeper.table.util.StateStoreProvider;
 
 import java.time.Instant;
 import java.util.ArrayList;

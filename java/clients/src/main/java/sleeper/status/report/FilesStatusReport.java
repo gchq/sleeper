@@ -25,13 +25,13 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.status.report.filestatus.CVSFileStatusReporter;
 import sleeper.status.report.filestatus.FileStatus;
 import sleeper.status.report.filestatus.FileStatusCollector;
 import sleeper.status.report.filestatus.FileStatusReporter;
 import sleeper.status.report.filestatus.JsonFileStatusReporter;
 import sleeper.status.report.filestatus.StandardFileStatusReporter;
-import sleeper.table.util.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.HashMap;

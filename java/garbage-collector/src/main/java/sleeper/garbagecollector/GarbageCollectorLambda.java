@@ -27,8 +27,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableLister;
-import sleeper.table.util.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;

@@ -42,9 +42,9 @@ import sleeper.core.schema.Schema;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfoFactory;
 import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableCreator;
 import sleeper.table.job.TableLister;
-import sleeper.table.util.StateStoreProvider;
 
 import java.io.IOException;
 import java.time.Instant;
