@@ -8,6 +8,7 @@ on:
       - 'java/pom.xml'
       - 'java/cdk/**'
       - 'java/cdk-custom-resources/**'
+      - 'java/cdk-environment/**'
       - 'java/system-test/**'
       - 'java/bulk-import/bulk-import-common/**'
       - 'java/clients/**'
@@ -27,4 +28,4 @@ jobs:
     uses: ./.github/workflows/chunk.yaml
     with:
       chunkName: CDK
-      moduleList: cdk,cdk-custom-resources,system-test
+      moduleList: cdk,cdk-custom-resources,cdk-environment,system-test
