@@ -23,6 +23,9 @@ import java.util.Properties;
 
 public class TestProperties {
 
+    private TestProperties() {
+    }
+
     public static Properties example(String path) throws IOException {
         URL resource = Objects.requireNonNull(ChunksStatusTest.class.getClassLoader().getResource(path));
         try (InputStream is = resource.openStream()) {
