@@ -17,7 +17,13 @@ package sleeper.environment.cdk.networking;
 
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
-import software.amazon.awscdk.services.ec2.*;
+import software.amazon.awscdk.services.ec2.GatewayVpcEndpoint;
+import software.amazon.awscdk.services.ec2.GatewayVpcEndpointAwsService;
+import software.amazon.awscdk.services.ec2.IVpc;
+import software.amazon.awscdk.services.ec2.SubnetConfiguration;
+import software.amazon.awscdk.services.ec2.SubnetSelection;
+import software.amazon.awscdk.services.ec2.SubnetType;
+import software.amazon.awscdk.services.ec2.Vpc;
 import software.constructs.Construct;
 
 import java.util.Arrays;

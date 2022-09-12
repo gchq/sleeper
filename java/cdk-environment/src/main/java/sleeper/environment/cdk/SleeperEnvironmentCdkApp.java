@@ -29,6 +29,9 @@ import static sleeper.environment.cdk.config.AppParameters.INSTANCE_ID;
  */
 public class SleeperEnvironmentCdkApp {
 
+    private SleeperEnvironmentCdkApp() {
+    }
+
     public static void main(String[] args) {
         App app = new App();
         Environment environment = Environment.builder()

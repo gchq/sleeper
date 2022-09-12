@@ -19,7 +19,9 @@ import org.junit.Test;
 import sleeper.environment.cdk.config.AppContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.*;
+import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.BRANCH;
+import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.FORK;
+import static sleeper.environment.cdk.buildec2.BuildEC2Parameters.REPOSITORY;
 
 public class LoadUserDataUtilTest {
 

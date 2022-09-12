@@ -17,16 +17,19 @@ package sleeper.environment.cdk.config;
 
 public class AppParameters {
 
-    public static StringParameter INSTANCE_ID = StringParameter.keyAndDefault("instanceId", "SleeperEnvironment");
-    public static OptionalStringParameter VPC_ID = OptionalStringParameter.key("vpcId");
+    private AppParameters() {
+    }
 
-    public static StringParameter BUILD_REPOSITORY = StringParameter.keyAndDefault("repository", "sleeper");
-    public static StringParameter BUILD_FORK = StringParameter.keyAndDefault("fork", "gchq");
-    public static StringParameter BUILD_BRANCH = StringParameter.keyAndDefault("branch", "main");
+    public static final StringParameter INSTANCE_ID = StringParameter.keyAndDefault("instanceId", "SleeperEnvironment");
+    public static final OptionalStringParameter VPC_ID = OptionalStringParameter.key("vpcId");
 
-    public static StringParameter BUILD_IMAGE_NAME = StringParameter.keyAndDefault("buildImageName", "ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*");
-    public static StringParameter BUILD_IMAGE_OWNER = StringParameter.keyAndDefault("buildImageOwner", "099720109477");
-    public static StringParameter BUILD_IMAGE_LOGIN_USER = StringParameter.keyAndDefault("buildImageLoginUser", "ubuntu");
-    public static StringParameter BUILD_IMAGE_ROOT_DEVICE_NAME = StringParameter.keyAndDefault("buildImageRootDeviceName", "/dev/sda1");
-    public static IntParameter BUILD_ROOT_VOLUME_SIZE_GIB = IntParameter.keyAndDefault("buildRootVolumeSizeGiB", 200);
+    public static final StringParameter BUILD_REPOSITORY = StringParameter.keyAndDefault("repository", "sleeper");
+    public static final StringParameter BUILD_FORK = StringParameter.keyAndDefault("fork", "gchq");
+    public static final StringParameter BUILD_BRANCH = StringParameter.keyAndDefault("branch", "main");
+
+    public static final StringParameter BUILD_IMAGE_NAME = StringParameter.keyAndDefault("buildImageName", "ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*");
+    public static final StringParameter BUILD_IMAGE_OWNER = StringParameter.keyAndDefault("buildImageOwner", "099720109477");
+    public static final StringParameter BUILD_IMAGE_LOGIN_USER = StringParameter.keyAndDefault("buildImageLoginUser", "ubuntu");
+    public static final StringParameter BUILD_IMAGE_ROOT_DEVICE_NAME = StringParameter.keyAndDefault("buildImageRootDeviceName", "/dev/sda1");
+    public static final IntParameter BUILD_ROOT_VOLUME_SIZE_GIB = IntParameter.keyAndDefault("buildRootVolumeSizeGiB", 200);
 }
