@@ -145,30 +145,34 @@ public class CreateJobsTest {
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
         Partition partition = stateStore.getAllPartitions().get(0);
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setPartitionId(partition.getId());
-        fileInfo1.setFilename("file1");
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setNumberOfRecords(200L);
-        fileInfo1.setRowKeyTypes(new LongType());
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setPartitionId(partition.getId());
-        fileInfo2.setFilename("file2");
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setNumberOfRecords(200L);
-        fileInfo2.setRowKeyTypes(new LongType());
-        FileInfo fileInfo3 = new FileInfo();
-        fileInfo3.setPartitionId(partition.getId());
-        fileInfo3.setFilename("file3");
-        fileInfo3.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo3.setNumberOfRecords(200L);
-        fileInfo3.setRowKeyTypes(new LongType());
-        FileInfo fileInfo4 = new FileInfo();
-        fileInfo4.setPartitionId(partition.getId());
-        fileInfo4.setFilename("file4");
-        fileInfo4.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo4.setNumberOfRecords(200L);
-        fileInfo4.setRowKeyTypes(new LongType());
+        FileInfo fileInfo1 = FileInfo.builder()
+                .partitionId(partition.getId())
+                .filename("file1")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(200L)
+                .rowKeyTypes(new LongType())
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .partitionId(partition.getId())
+                .filename("file2")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(200L)
+                .rowKeyTypes(new LongType())
+                .build();
+        FileInfo fileInfo3 = FileInfo.builder()
+                .partitionId(partition.getId())
+                .filename("file3")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(200L)
+                .rowKeyTypes(new LongType())
+                .build();
+        FileInfo fileInfo4 = FileInfo.builder()
+                .partitionId(partition.getId())
+                .filename("file4")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(200L)
+                .rowKeyTypes(new LongType())
+                .build();
         stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
         CreateJobs createJobs = new CreateJobs(new ObjectFactory(instanceProperties, s3, null), instanceProperties, tablePropertiesProvider, stateStoreProvider, dynamoDB, sqsClient, tableLister);
 
