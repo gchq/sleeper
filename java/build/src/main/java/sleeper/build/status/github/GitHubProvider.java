@@ -38,10 +38,12 @@ public class GitHubProvider {
 
     public ChunkStatus workflowStatus(GitHubHead head, ProjectChunk chunk) {
         try {
-            PagedIterable<GHWorkflowRun> iterable = repository(head).getWorkflow(chunk.getWorkflow()).listRuns();
+            GHRepository repository = repository(head);
+            PagedIterable<GHWorkflowRun> iterable = repository.getWorkflow(chunk.getWorkflow()).listRuns();
             return StreamSupport.stream(iterable.spliterator(), false)
-                    .filter(run -> head.getBranch().equals(run.getHeadBranch()))
-                    .findFirst().map(run -> statusFrom(chunk, run))
+                    .map(run -> new GitHubRunToHead(repository, run, head))
+                    .filter(GitHubRunToHead::isRunForHeadOrBehind)
+                    .findFirst().map(run -> statusFrom(chunk, run.getRun()))
                     .orElseGet(() -> ChunkStatus.chunk(chunk).noBuild());
         } catch (IOException e) {
             throw new GitHubException(e);
