@@ -38,6 +38,8 @@ public class GitHubRunToHead {
     }
 
     public boolean isRunForHeadOrBehind() {
+        // Ignore builds for commits that are not in the history of the head commit.
+        // If a rebase or other forced push leaves a build that is disconnected from the new head, it should be ignored.
         return head.getBranch().equals(run.getHeadBranch())
                 && (head.getSha().equals(run.getHeadSha()) || numCommitsHeadBehindRun() < 1);
     }

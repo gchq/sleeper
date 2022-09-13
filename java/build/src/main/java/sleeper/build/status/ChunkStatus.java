@@ -82,6 +82,8 @@ public class ChunkStatus {
     }
 
     public boolean isWaitForOldBuildWithHead(GitHubHead head) {
+        // If the run is not for the head commit, that should mean it is for a previous commit.
+        // The GitHubProvider should ignore any builds for commits that are not in the history of the head commit.
         return IN_PROGRESS.equals(status) && !isRunForHead(head);
     }
 
