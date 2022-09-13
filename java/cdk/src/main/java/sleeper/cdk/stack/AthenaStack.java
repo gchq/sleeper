@@ -23,6 +23,7 @@ import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.athena.CfnDataCatalog;
+import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.Policy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.kms.Key;
@@ -40,6 +41,7 @@ import software.constructs.Construct;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -123,7 +125,7 @@ public class AthenaStack extends NestedStack {
                 .build();
 
         for (String className : handlerClasses) {
-            Function handler = createConnector(className, instanceId, logRetentionDays, s3Code, env, memory, timeout);
+            Function handler = Objects.requireNonNull(createConnector(className, instanceId, logRetentionDays, s3Code, env, memory, timeout));
 
             if (userJars != null) {
                 for (String jar : userJars) {
@@ -140,15 +142,16 @@ public class AthenaStack extends NestedStack {
             spillBucket.grantReadWrite(handler);
             spillMasterKey.grant(handler, "kms:GenerateDataKey", "kms:DescribeKey");
 
+            IRole role = Objects.requireNonNull(Objects.requireNonNull(handler).getRole());
             // Required for when spill bucket changes
-            handler.getRole().attachInlinePolicy(listAllBucketsPolicy);
+            role.attachInlinePolicy(listAllBucketsPolicy);
 
             // Required for when creating a encryption data key
-            handler.getRole().attachInlinePolicy(keyGenerationPolicy);
+            role.attachInlinePolicy(keyGenerationPolicy);
 
             // Allow our function to get the status of the query. Allowed to query all workgroups within this account
             // and region
-            handler.getRole().attachInlinePolicy(getAthenaQueryStatusPolicy);
+            role.attachInlinePolicy(getAthenaQueryStatusPolicy);
         }
 
         Utils.addStackTagIfSet(this, instanceProperties);

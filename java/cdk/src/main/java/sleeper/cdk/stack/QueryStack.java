@@ -65,6 +65,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -251,16 +252,16 @@ public class QueryStack extends NestedStack {
         PolicyStatement policyStatement = new PolicyStatement(policyStatementProps);
         Policy policy = new Policy(this, "PutToAnyS3BucketAndSendToAnySQSPolicy");
         policy.addStatements(policyStatement);
-        queryExecutorLambda.getRole().attachInlinePolicy(policy);
+        Objects.requireNonNull(queryExecutorLambda.getRole()).attachInlinePolicy(policy);
 
         // Output the role of the lambda as a property so that clients that want the results of queries written
         // to their own SQS queue can give the role permission to write to their queue
         CfnOutputProps queryLambdaRoleOutputProps = new CfnOutputProps.Builder()
-                .value(queryExecutorLambda.getRole().getRoleArn())
+                .value(Objects.requireNonNull(queryExecutorLambda.getRole()).getRoleArn())
                 .exportName(instanceProperties.get(ID) + "-" + QUERY_LAMBDA_ROLE_ARN)
                 .build();
         new CfnOutput(this, QUERY_LAMBDA_ROLE_ARN, queryLambdaRoleOutputProps);
-        instanceProperties.set(SystemDefinedInstanceProperty.QUERY_LAMBDA_ROLE, queryExecutorLambda.getRole().getRoleName());
+        instanceProperties.set(SystemDefinedInstanceProperty.QUERY_LAMBDA_ROLE, Objects.requireNonNull(queryExecutorLambda.getRole()).getRoleName());
 
         this.setupWebSocketApi(code, instanceProperties, queriesQueue, queryExecutorLambda, configBucket);
 

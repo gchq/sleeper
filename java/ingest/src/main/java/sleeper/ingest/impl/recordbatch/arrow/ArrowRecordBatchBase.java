@@ -48,6 +48,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -200,8 +201,9 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
         // Open an output channel to write to the destination file
         // Create a writer to write the small batches into the output stream
         long bytesWritten;
-        Path arrowFilePath = Paths.get(localArrowFileName);
-        Files.createDirectories(arrowFilePath.getParent());
+        Path arrowFilePath = Objects.requireNonNull(Paths.get(localArrowFileName));
+        Path arrowFileParent = Objects.requireNonNull(arrowFilePath.getParent());
+        Files.createDirectories(arrowFileParent);
         LOGGER.debug("Determining sort order and opening local arrow file");
         try (IntVector wholeFileSortOrderVector = ArrowIngestSupport.createSortOrderVector(temporaryBufferAllocator, sleeperSchema, sourceVectorSchemaRoot);
              VectorSchemaRoot smallBatchVectorSchemaRoot = VectorSchemaRoot.create(sourceVectorSchemaRoot.getSchema(), temporaryBufferAllocator);

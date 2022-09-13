@@ -58,6 +58,7 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
@@ -235,6 +236,6 @@ public abstract class BulkImportJobRunner {
         }
 
         runner.init(instanceProperties, amazonS3, AmazonDynamoDBClientBuilder.defaultClient());
-        runner.run(bulkImportJob);
+        runner.run(Objects.requireNonNull(bulkImportJob));
     }
 }

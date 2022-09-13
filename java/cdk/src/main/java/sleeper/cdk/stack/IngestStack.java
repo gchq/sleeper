@@ -58,6 +58,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
@@ -299,8 +300,8 @@ public class IngestStack extends NestedStack {
                 .resources(Collections.singletonList("*"))
                 .actions(Arrays.asList("ecs:ListTasks", "ecs:RunTask", "iam:PassRole"))
                 .build();
-        handler.getRole().addToPrincipalPolicy(policyStatement);
-        handler.getRole().addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
+        Objects.requireNonNull(handler.getRole()).addToPrincipalPolicy(policyStatement);
+        Objects.requireNonNull(handler.getRole()).addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
         // Cloudwatch rule to trigger this lambda
         String ruleName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-IngestTasksCreationRule");

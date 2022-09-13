@@ -16,6 +16,9 @@
   -->
 <FindBugsFilter>
     <Match>
+        <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
+    </Match>
+    <Match>
         <Bug pattern="SE_COMPARATOR_SHOULD_BE_SERIALIZABLE"/>
     </Match>
     <Match>
@@ -25,7 +28,34 @@
         <Bug pattern="DM_EXIT"/>
     </Match>
     <Match>
-        <Class name="sleeper.cdk.custom.SleeperTableLambda"/>
-        <Bug pattern="SF_SWITCH_FALLTHROUGH"/>
+        <Class name="sleeper.core.record.KeyComparator"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_MIGHT_BE_INFEASIBLE"/>
+    </Match>
+    <Match>
+        <Class name="sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchBase"/>
+        <Method name="sortArrowAndWriteToLocalFile"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+    <Match>
+        <Class name="sleeper.cdk.stack.AthenaStack"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+    <Match>
+        <Class name="sleeper.cdk.stack.CompactionStack"/>
+        <Method name="lambdaToCreateCompactionTasks"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+    <Match>
+        <Class name="sleeper.cdk.stack.CompactionStack"/>
+        <Method name="lambdaToCreateSplittingCompactionTasks"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+    <Match>
+        <Class name="sleeper.cdk.stack.IngestStack"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+    <Match>
+        <Class name="sleeper.cdk.stack.QueryStack"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
     </Match>
 </FindBugsFilter>
