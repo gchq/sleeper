@@ -28,9 +28,10 @@ public class ChunksStatusTest {
                 ChunkStatus.success("data"));
 
         assertThat(status.isFailCheck()).isFalse();
-        assertThat(status.reportString()).isEqualTo("" +
-                "common: completed, success\n" +
-                "data: completed, success\n");
+        assertThat(status.reportLines()).containsExactly("",
+                "common: completed, success",
+                "",
+                "data: completed, success");
     }
 
     @Test
@@ -41,10 +42,11 @@ public class ChunksStatusTest {
                 ChunkStatus.chunk("data").commitSha(head.getSha()).inProgress());
 
         assertThat(status.isFailCheck()).isFalse();
-        assertThat(status.reportString()).isEqualTo("" +
-                "common: completed, success\n" +
-                "data: in_progress\n" +
-                "Build is for current commit\n");
+        assertThat(status.reportLines()).containsExactly("",
+                "common: completed, success",
+                "",
+                "data: in_progress",
+                "Build is for current commit");
     }
 
     @Test
@@ -55,10 +57,11 @@ public class ChunksStatusTest {
                 ChunkStatus.chunk("data").commitSha("old-sha").inProgress());
 
         assertThat(status.isFailCheck()).isTrue();
-        assertThat(status.reportString()).isEqualTo("" +
-                "common: completed, success\n" +
-                "data: in_progress\n" +
-                "Commit: old-sha\n");
+        assertThat(status.reportLines()).containsExactly("",
+                "common: completed, success",
+                "",
+                "data: in_progress",
+                "Commit: old-sha");
     }
 
     @Test
@@ -68,9 +71,10 @@ public class ChunksStatusTest {
                 ChunkStatus.failure("data"));
 
         assertThat(status.isFailCheck()).isTrue();
-        assertThat(status.reportString()).isEqualTo("" +
-                "common: completed, success\n" +
-                "data: completed, failure\n");
+        assertThat(status.reportLines()).containsExactly("",
+                "common: completed, success",
+                "",
+                "data: completed, failure");
     }
 
     @Test
@@ -80,9 +84,10 @@ public class ChunksStatusTest {
                 ChunkStatus.cancelled("data"));
 
         assertThat(status.isFailCheck()).isTrue();
-        assertThat(status.reportString()).isEqualTo("" +
-                "common: completed, success\n" +
-                "data: completed, cancelled\n");
+        assertThat(status.reportLines()).containsExactly("",
+                "common: completed, success",
+                "",
+                "data: completed, cancelled");
     }
 
     @Test
@@ -92,8 +97,9 @@ public class ChunksStatusTest {
                 ChunkStatus.noBuild("data"));
 
         assertThat(status.isFailCheck()).isFalse();
-        assertThat(status.reportString()).isEqualTo("" +
-                "common: null\n" +
-                "data: null\n");
+        assertThat(status.reportLines()).containsExactly("",
+                "common: null",
+                "",
+                "data: null");
     }
 }

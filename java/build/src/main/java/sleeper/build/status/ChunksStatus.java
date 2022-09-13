@@ -41,10 +41,10 @@ public class ChunksStatus {
         chunks.forEach(c -> c.report(head, out));
     }
 
-    public String reportString() {
+    public List<String> reportLines() {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         report(new PrintStream(os));
-        return os.toString();
+        return Arrays.asList(os.toString().split(System.lineSeparator()));
     }
 
     public static ChunksStatus chunksForHead(GitHubHead head, ChunkStatus... chunks) {

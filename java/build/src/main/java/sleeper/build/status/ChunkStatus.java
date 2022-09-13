@@ -52,6 +52,7 @@ public class ChunkStatus {
     }
 
     public void report(GitHubHead head, PrintStream out) {
+        out.println();
         if (conclusion != null) {
             out.println(chunk.getName() + ": " + status + ", " + conclusion);
         } else {

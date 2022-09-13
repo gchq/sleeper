@@ -62,9 +62,9 @@ public class ProjectConfigurationTest {
 
         ChunksStatus status = configuration.checkStatus(gitHub);
         assertThat(status.isFailCheck()).isFalse();
-        assertThat(status.reportString()).isEqualTo("" +
-                "Common: completed, success\n" +
-                "Build is for current commit\n");
+        assertThat(status.reportLines()).containsExactly("",
+                "Common: completed, success",
+                "Build is for current commit");
     }
 
     @Test
@@ -86,9 +86,9 @@ public class ProjectConfigurationTest {
 
         ChunksStatus status = configuration.checkStatus(gitHub);
         assertThat(status.isFailCheck()).isFalse();
-        assertThat(status.reportString()).isEqualTo("" +
-                "Common: completed, success\n" +
-                "Commit: old-sha\n");
+        assertThat(status.reportLines()).containsExactly("",
+                "Common: completed, success",
+                "Commit: old-sha");
     }
 
     @Test
@@ -109,9 +109,9 @@ public class ProjectConfigurationTest {
 
         ChunksStatus status = configuration.checkStatus(gitHub);
         assertThat(status.isFailCheck()).isTrue();
-        assertThat(status.reportString()).isEqualTo("" +
-                "Common: in_progress\n" +
-                "Commit: old-sha\n");
+        assertThat(status.reportLines()).containsExactly("",
+                "Common: in_progress",
+                "Commit: old-sha");
 
         verify(gitHub, times(1)).recheckRun(branch, status1);
     }
