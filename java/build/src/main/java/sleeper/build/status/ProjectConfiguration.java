@@ -18,7 +18,10 @@ package sleeper.build.status;
 import sleeper.build.status.github.GitHubProvider;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -28,19 +31,23 @@ import static sleeper.build.status.ValidationUtils.ignoreEmpty;
 public class ProjectConfiguration {
 
     private final String token;
-    private final GitHubBranch branch;
+    private final GitHubHead head;
     private final List<ProjectChunk> chunks;
+    private final long retrySeconds;
+    private final long maxRetrySeconds;
 
     private ProjectConfiguration(Builder builder) {
         token = Objects.requireNonNull(ignoreEmpty(builder.token), "token must not be null");
-        branch = Objects.requireNonNull(builder.branch, "branch must not be null");
+        head = Objects.requireNonNull(builder.head, "head must not be null");
         chunks = Objects.requireNonNull(builder.chunks, "chunks must not be null");
+        retrySeconds = builder.retrySeconds;
+        maxRetrySeconds = builder.maxRetrySeconds;
     }
 
     public static ProjectConfiguration from(Properties properties) {
         return builder()
                 .token(properties.getProperty("token"))
-                .branch(GitHubBranch.from(properties))
+                .head(GitHubHead.from(properties))
                 .chunks(ProjectChunk.listFrom(properties))
                 .build();
     }
@@ -50,9 +57,31 @@ public class ProjectConfiguration {
     }
 
     public ChunksStatus checkStatus(GitHubProvider gitHub) {
+        Map<String, ChunkStatus> statusByChunkId = retrieveStatusByChunkId(gitHub);
         return ChunksStatus.chunks(chunks.stream()
-                .map(chunk -> gitHub.workflowStatus(branch, chunk))
+                .map(chunk -> statusByChunkId.get(chunk.getId()))
                 .collect(Collectors.toList()));
+    }
+
+    private Map<String, ChunkStatus> retrieveStatusByChunkId(GitHubProvider gitHub) {
+        return chunks.stream().parallel()
+                .map(chunk -> retrieveStatusWaitingForOldBuilds(gitHub, chunk))
+                .collect(Collectors.toMap(ChunkStatus::getChunkId, c -> c));
+    }
+
+    private ChunkStatus retrieveStatusWaitingForOldBuilds(GitHubProvider gitHub, ProjectChunk chunk) {
+        Instant start = Instant.now();
+        ChunkStatus status = gitHub.workflowStatus(head, chunk);
+        try {
+            while (status.isWaitForOldBuildWithHead(head) &&
+                    Duration.between(start, Instant.now()).getSeconds() < maxRetrySeconds) {
+                Thread.sleep(retrySeconds * 1000);
+                status = gitHub.recheckRun(head, status);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        return status;
     }
 
     public static Builder builder() {
@@ -86,8 +115,10 @@ public class ProjectConfiguration {
 
     public static final class Builder {
         private String token;
-        private GitHubBranch branch;
+        private GitHubHead head;
         private List<ProjectChunk> chunks;
+        private long retrySeconds = 10;
+        private long maxRetrySeconds = 60L * 15L;
 
         private Builder() {
         }
@@ -97,13 +128,23 @@ public class ProjectConfiguration {
             return this;
         }
 
-        public Builder branch(GitHubBranch branch) {
-            this.branch = branch;
+        public Builder head(GitHubHead head) {
+            this.head = head;
             return this;
         }
 
         public Builder chunks(List<ProjectChunk> chunks) {
             this.chunks = chunks;
+            return this;
+        }
+
+        public Builder retrySeconds(long retrySeconds) {
+            this.retrySeconds = retrySeconds;
+            return this;
+        }
+
+        public Builder maxRetrySeconds(long maxRetrySeconds) {
+            this.maxRetrySeconds = maxRetrySeconds;
             return this;
         }
 

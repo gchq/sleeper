@@ -20,16 +20,18 @@ import java.util.Properties;
 
 import static sleeper.build.status.ValidationUtils.ignoreEmpty;
 
-public class GitHubBranch {
+public class GitHubHead {
 
     private final String owner;
     private final String repository;
     private final String branch;
+    private final String sha;
 
-    private GitHubBranch(Builder builder) {
+    private GitHubHead(Builder builder) {
         this.owner = Objects.requireNonNull(ignoreEmpty(builder.owner), "owner must not be null");
         this.repository = Objects.requireNonNull(ignoreEmpty(builder.repository), "repository must not be null");
         this.branch = Objects.requireNonNull(ignoreEmpty(builder.branch), "branch must not be null");
+        this.sha = Objects.requireNonNull(ignoreEmpty(builder.sha), "sha must not be null");
     }
 
     public String getOwnerAndRepository() {
@@ -40,10 +42,15 @@ public class GitHubBranch {
         return branch;
     }
 
-    public static GitHubBranch from(Properties properties) {
+    public String getSha() {
+        return sha;
+    }
+
+    public static GitHubHead from(Properties properties) {
         return builder()
                 .ownerAndRepository(properties.getProperty("repository"))
-                .branch(properties.getProperty("branch"))
+                .branch(properties.getProperty("head.branch"))
+                .sha(properties.getProperty("head.sha"))
                 .build();
     }
 
@@ -59,7 +66,7 @@ public class GitHubBranch {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        GitHubBranch that = (GitHubBranch) o;
+        GitHubHead that = (GitHubHead) o;
         return owner.equals(that.owner) && repository.equals(that.repository) && branch.equals(that.branch);
     }
 
@@ -81,6 +88,7 @@ public class GitHubBranch {
         private String owner;
         private String repository;
         private String branch;
+        private String sha;
 
         private Builder() {
         }
@@ -108,8 +116,13 @@ public class GitHubBranch {
             return this;
         }
 
-        public GitHubBranch build() {
-            return new GitHubBranch(this);
+        public Builder sha(String sha) {
+            this.sha = sha;
+            return this;
+        }
+
+        public GitHubHead build() {
+            return new GitHubHead(this);
         }
     }
 }

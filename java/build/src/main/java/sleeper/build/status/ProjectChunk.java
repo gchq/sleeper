@@ -34,6 +34,10 @@ public class ProjectChunk {
         workflow = Objects.requireNonNull(ignoreEmpty(builder.workflow), "workflow must not be null");
     }
 
+    public String getId() {
+        return id;
+    }
+
     public String getName() {
         return name;
     }

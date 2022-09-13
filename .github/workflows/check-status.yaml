@@ -17,7 +17,8 @@ jobs:
         run: |
           echo "token=${{ secrets.GITHUB_TOKEN }}" >> status.properties
           echo "repository=${{ github.repository }}" >> status.properties
-          echo "branch=${{ github.ref_name }}" >> status.properties
+          echo "head.branch=${{ github.ref_name }}" >> status.properties
+          echo "head.sha=${{ github.sha }}" >> status.properties
           echo "chunks=athena,bulk-import,cdk,clients,common,compaction,data,ingest,query,statestore" >> status.properties
           echo "chunk.athena.name=Athena" >> status.properties
           echo "chunk.athena.workflow=chunk-athena.yaml" >> status.properties

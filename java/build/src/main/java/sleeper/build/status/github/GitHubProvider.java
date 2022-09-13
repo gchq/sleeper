@@ -21,11 +21,10 @@ import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
 import org.kohsuke.github.PagedIterable;
 import sleeper.build.status.ChunkStatus;
-import sleeper.build.status.GitHubBranch;
+import sleeper.build.status.GitHubHead;
 import sleeper.build.status.ProjectChunk;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.Objects;
 import java.util.stream.StreamSupport;
 
@@ -37,11 +36,11 @@ public class GitHubProvider {
         this.gitHub = new GitHubBuilder().withJwtToken(token).build();
     }
 
-    public ChunkStatus workflowStatus(GitHubBranch branch, ProjectChunk chunk) {
+    public ChunkStatus workflowStatus(GitHubHead head, ProjectChunk chunk) {
         try {
-            PagedIterable<GHWorkflowRun> iterable = repository(branch).getWorkflow(chunk.getWorkflow()).listRuns();
+            PagedIterable<GHWorkflowRun> iterable = repository(head).getWorkflow(chunk.getWorkflow()).listRuns();
             return StreamSupport.stream(iterable.spliterator(), false)
-                    .filter(run -> branch.getBranch().equals(run.getHeadBranch()))
+                    .filter(run -> head.getBranch().equals(run.getHeadBranch()))
                     .findFirst().map(run -> statusFrom(chunk, run))
                     .orElseGet(() -> ChunkStatus.chunk(chunk).noBuild());
         } catch (IOException e) {
@@ -49,10 +48,18 @@ public class GitHubProvider {
         }
     }
 
+    public ChunkStatus recheckRun(GitHubHead head, ChunkStatus status) {
+        try {
+            return statusFrom(status.getChunk(), repository(head).getWorkflowRun(status.getRunId()));
+        } catch (IOException e) {
+            throw new GitHubException(e);
+        }
+    }
+
     private static ChunkStatus statusFrom(ProjectChunk chunk, GHWorkflowRun run) {
         try {
-            Date time = run.getRunStartedAt();
             return ChunkStatus.chunk(chunk)
+                    .runId(run.getId())
                     .runUrl(Objects.toString(run.getHtmlUrl(), null))
                     .commitSha(run.getHeadSha())
                     .commitMessage(run.getHeadCommit().getMessage())
@@ -64,8 +71,8 @@ public class GitHubProvider {
         }
     }
 
-    private GHRepository repository(GitHubBranch branch) throws IOException {
-        return gitHub.getRepository(branch.getOwnerAndRepository());
+    private GHRepository repository(GitHubHead head) throws IOException {
+        return gitHub.getRepository(head.getOwnerAndRepository());
     }
 
 }

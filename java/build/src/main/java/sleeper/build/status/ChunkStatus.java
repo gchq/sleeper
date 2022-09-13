@@ -25,10 +25,12 @@ public class ChunkStatus {
 
     private static final String COMPLETED = "completed";
     private static final String SUCCESS = "success";
+    private static final String IN_PROGRESS = "in_progress";
 
     private final ProjectChunk chunk;
     private final String status;
     private final String conclusion;
+    private final Long runId;
     private final String runUrl;
     private final Date runStarted;
     private final String commitSha;
@@ -38,6 +40,7 @@ public class ChunkStatus {
         chunk = Objects.requireNonNull(builder.chunk, "chunk must not be null");
         status = ignoreEmpty(builder.status);
         conclusion = ignoreEmpty(builder.conclusion);
+        runId = builder.runId;
         runUrl = ignoreEmpty(builder.runUrl);
         runStarted = builder.runStarted;
         commitSha = ignoreEmpty(builder.commitSha);
@@ -70,6 +73,22 @@ public class ChunkStatus {
 
     public boolean isFailCheck() {
         return COMPLETED.equals(status) && !SUCCESS.equals(conclusion);
+    }
+
+    public String getChunkId() {
+        return chunk.getId();
+    }
+
+    public ProjectChunk getChunk() {
+        return chunk;
+    }
+
+    public Long getRunId() {
+        return runId;
+    }
+
+    public boolean isWaitForOldBuildWithHead(GitHubHead head) {
+        return IN_PROGRESS.equals(status) && !head.getSha().equals(commitSha);
     }
 
     public static Builder chunk(String chunk) {
@@ -130,6 +149,7 @@ public class ChunkStatus {
         private ProjectChunk chunk;
         private String status;
         private String conclusion;
+        private Long runId;
         private String runUrl;
         private Date runStarted;
         private String commitSha;
@@ -152,7 +172,7 @@ public class ChunkStatus {
         }
 
         public ChunkStatus inProgress() {
-            return status("in_progress").conclusion(null).build();
+            return status(IN_PROGRESS).conclusion(null).build();
         }
 
         public ChunkStatus failure() {
@@ -174,6 +194,11 @@ public class ChunkStatus {
 
         public Builder conclusion(String conclusion) {
             this.conclusion = conclusion;
+            return this;
+        }
+
+        public Builder runId(Long runId) {
+            this.runId = runId;
             return this;
         }
 
