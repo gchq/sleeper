@@ -15,6 +15,8 @@
  */
 package sleeper.build.status;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sleeper.build.status.github.GitHubProvider;
 
 import java.io.IOException;
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 import static sleeper.build.status.ValidationUtils.ignoreEmpty;
 
 public class ProjectConfiguration {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProjectConfiguration.class);
 
     private final String token;
     private final GitHubHead head;
@@ -74,6 +77,10 @@ public class ProjectConfiguration {
                  status.isWaitForOldBuildWithHead(head)
                          && retries < maxRetries;
                  retries++) {
+
+                LOGGER.info("Waiting for old build to finish, {} retries, chunk: {}", retries, chunk.getName());
+                LOGGER.info("Link to old build: {}", status.getRunUrl());
+
                 Thread.sleep(retrySeconds * 1000);
                 status = gitHub.recheckRun(head, status);
             }

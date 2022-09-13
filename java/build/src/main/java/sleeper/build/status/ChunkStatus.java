@@ -92,6 +92,10 @@ public class ChunkStatus {
         return runId;
     }
 
+    public String getRunUrl() {
+        return runUrl;
+    }
+
     public static Builder chunk(String chunk) {
         return builder().chunk(chunk);
     }
