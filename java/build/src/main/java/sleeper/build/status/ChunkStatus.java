@@ -122,20 +122,28 @@ public class ChunkStatus {
             return false;
         }
         ChunkStatus that = (ChunkStatus) o;
-        return chunk.equals(that.chunk) && Objects.equals(status, that.status) && Objects.equals(conclusion, that.conclusion);
+        return chunk.equals(that.chunk) && Objects.equals(status, that.status)
+                && Objects.equals(conclusion, that.conclusion) && Objects.equals(runId, that.runId)
+                && Objects.equals(runUrl, that.runUrl) && Objects.equals(runStarted, that.runStarted)
+                && Objects.equals(commitSha, that.commitSha) && Objects.equals(commitMessage, that.commitMessage);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(chunk, status, conclusion);
+        return Objects.hash(chunk, status, conclusion, runId, runUrl, runStarted, commitSha, commitMessage);
     }
 
     @Override
     public String toString() {
         return "ChunkStatus{" +
-                "chunk='" + chunk + '\'' +
+                "chunk=" + chunk +
                 ", status='" + status + '\'' +
                 ", conclusion='" + conclusion + '\'' +
+                ", runId=" + runId +
+                ", runUrl='" + runUrl + '\'' +
+                ", runStarted=" + runStarted +
+                ", commitSha='" + commitSha + '\'' +
+                ", commitMessage='" + commitMessage + '\'' +
                 '}';
     }
 

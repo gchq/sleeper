@@ -66,18 +66,19 @@ public class ChunksStatus {
             return false;
         }
         ChunksStatus that = (ChunksStatus) o;
-        return chunks.equals(that.chunks);
+        return head.equals(that.head) && chunks.equals(that.chunks);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(chunks);
+        return Objects.hash(head, chunks);
     }
 
     @Override
     public String toString() {
         return "ChunksStatus{" +
-                "chunks=" + chunks +
+                "head=" + head +
+                ", chunks=" + chunks +
                 '}';
     }
 

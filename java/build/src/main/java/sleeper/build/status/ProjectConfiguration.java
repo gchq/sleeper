@@ -85,19 +85,22 @@ public class ProjectConfiguration {
             return false;
         }
         ProjectConfiguration that = (ProjectConfiguration) o;
-        return token.equals(that.token) && chunks.equals(that.chunks);
+        return retrySeconds == that.retrySeconds && maxRetries == that.maxRetries && token.equals(that.token) && head.equals(that.head) && chunks.equals(that.chunks);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(token, chunks);
+        return Objects.hash(token, head, chunks, retrySeconds, maxRetries);
     }
 
     @Override
     public String toString() {
-        return "GitHubProperties{" +
+        return "ProjectConfiguration{" +
                 "token='" + token + '\'' +
+                ", head=" + head +
                 ", chunks=" + chunks +
+                ", retrySeconds=" + retrySeconds +
+                ", maxRetries=" + maxRetries +
                 '}';
     }
 
