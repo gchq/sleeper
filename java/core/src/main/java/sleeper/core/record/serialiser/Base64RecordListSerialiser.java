@@ -72,6 +72,8 @@ public class Base64RecordListSerialiser implements ResultsBatchSerialiser {
             int result = dis.read(serialisedRecord);
             if (result == length) {
                 records.add(recordSerialiser.deserialise(serialisedRecord));
+            } else {
+                throw new IOException("Unable to read all bytes from stream");
             }
         }
         dis.close();

@@ -138,7 +138,9 @@ public class KeySerDe {
                 int length = dis.readInt();
                 byte[] byteArray = new byte[length];
                 int result = dis.read(byteArray);
-                if (result == length) {
+                if (result != length) {
+                    throw new IOException("Unable to read all bytes from stream");
+                } else {
                     if (Arrays.equals(NULL_BYTE_ARRAY_MARKER, byteArray)) {
                         key.add(null);
                     } else {

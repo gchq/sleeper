@@ -102,9 +102,7 @@ public class S3ResultsOutput implements ResultsOutput {
             LOGGER.info("Wrote {} records to {} in {} seconds (rate of {})",
                     count, outputFile, durationInSeconds, rate);
             return new ResultsOutputInfo(count, Collections.singletonList(outputLocation));
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
+        } catch (RuntimeException | IOException e) {
             LOGGER.error("Exception writing results to S3", e);
             return new ResultsOutputInfo(count, Collections.singletonList(outputLocation), e);
         } finally {

@@ -58,6 +58,7 @@ public class SleeperTableLambda {
             case "Create":
                 LOGGER.info("Initialising Table");
                 initialiseTable(instanceProperties, tableProperties, configBucket);
+                break;
             case "Update":
                 LOGGER.info("Updating properties");
                 updateTableProperties(tableProperties);
@@ -82,5 +83,6 @@ public class SleeperTableLambda {
     private void initialiseTable(InstanceProperties instanceProperties, TableProperties tableProperties, String bucket) throws IOException {
         // Initialise Table
         new TableInitialiser(s3Client, dynamoDBClient).initialise(instanceProperties, tableProperties, bucket, new Configuration());
+        updateTableProperties(tableProperties);
     }
 }

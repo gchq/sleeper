@@ -75,12 +75,12 @@ public class SystemTestApp extends SleeperCdkApp {
     }
 
     @Override
-    protected SystemTestProperties getInstanceProperties() {
+    protected SystemTestProperties getInstanceProperties() throws RuntimeException {
         InstanceProperties properties = super.getInstanceProperties();
         if (properties instanceof SystemTestProperties) {
             return (SystemTestProperties) properties;
         }
-        return null;
+        throw new RuntimeException("Error when retrieving instance properties");
     }
 
     public static void main(String[] args) throws FileNotFoundException {

@@ -30,14 +30,11 @@ public interface FileStatusReporter {
     void report(FileStatus fileStatusReport, boolean verbose);
 
     static String asString(
-            Function<PrintStream, FileStatusReporter> getReporter, FileStatus fileStatusReport, boolean verbose) {
+            Function<PrintStream, FileStatusReporter> getReporter, FileStatus fileStatusReport, boolean verbose)
+            throws UnsupportedEncodingException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        try {
-            getReporter.apply(new PrintStream(os, false, StandardCharsets.UTF_8.displayName()))
-                    .report(fileStatusReport, verbose);
-            return os.toString(StandardCharsets.UTF_8.displayName());
-        } catch (UnsupportedEncodingException ignored) {
-            return null;
-        }
+        getReporter.apply(new PrintStream(os, false, StandardCharsets.UTF_8.displayName()))
+                .report(fileStatusReport, verbose);
+        return os.toString(StandardCharsets.UTF_8.displayName());
     }
 }

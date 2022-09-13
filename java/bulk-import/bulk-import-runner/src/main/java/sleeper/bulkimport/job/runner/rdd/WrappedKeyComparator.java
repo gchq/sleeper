@@ -19,7 +19,6 @@ import sleeper.core.key.Key;
 import sleeper.core.record.KeyComparator;
 import sleeper.core.schema.SchemaSerDe;
 
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Comparator;
 
@@ -42,10 +41,5 @@ public class WrappedKeyComparator implements Comparator<Key>, Serializable {
             keyComparator = new KeyComparator(new SchemaSerDe().fromJson(schemaAsString).getRowKeyTypes());
         }
         return keyComparator.compare(key1, key2);
-    }
-
-    private Object readResolve() throws ObjectStreamException {
-        keyComparator = null;
-        return this;
     }
 }

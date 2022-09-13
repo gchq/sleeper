@@ -152,7 +152,7 @@ public class RecordSerialiser {
             if (result == length) {
                 return byteArray;
             } else {
-                return new byte[]{};
+                throw new IOException("Unable to read all bytes from stream");
             }
         }
         throw new IOException("Unknown type " + primitiveType);

@@ -45,14 +45,10 @@ public class ChunksStatus {
         chunks.forEach(c -> c.report(out));
     }
 
-    public String reportString() {
-        try {
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            report(new PrintStream(os, false, StandardCharsets.UTF_8.displayName()));
-            return os.toString(StandardCharsets.UTF_8.displayName());
-        } catch (UnsupportedEncodingException e) {
-            return "";
-        }
+    public String reportString() throws UnsupportedEncodingException {
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        report(new PrintStream(os, false, StandardCharsets.UTF_8.displayName()));
+        return os.toString(StandardCharsets.UTF_8.displayName());
     }
 
     public static ChunksStatus chunks(ChunkStatus... chunks) {

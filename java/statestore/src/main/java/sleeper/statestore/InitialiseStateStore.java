@@ -132,16 +132,15 @@ public class InitialiseStateStore {
             boolean stringsBase64Encoded = 4 == args.length && Boolean.parseBoolean(args[2]);
 
             PrimitiveType rowKey1Type = tableProperties.getSchema().getRowKeyTypes().get(0);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(
-                    Files.newInputStream(Paths.get(splitPointsFile)), StandardCharsets.UTF_8));
             List<String> lines = new ArrayList<>();
-            String lineFromFile = reader.readLine();
-            while (null != lineFromFile) {
-                lines.add(lineFromFile);
-                lineFromFile = reader.readLine();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                    Files.newInputStream(Paths.get(splitPointsFile)), StandardCharsets.UTF_8))) {
+                String lineFromFile = reader.readLine();
+                while (null != lineFromFile) {
+                    lines.add(lineFromFile);
+                    lineFromFile = reader.readLine();
+                }
             }
-            reader.close();
-
             for (String line : lines) {
                 if (rowKey1Type instanceof IntType) {
                     splitPoints.add(Integer.parseInt(line));

@@ -26,11 +26,11 @@ import software.amazon.awscdk.services.logs.RetentionDays;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -139,6 +139,16 @@ public class Utils {
         }
     }
 
+    private static TableProperties processFile(File file, InstanceProperties instanceProperties) {
+        try (FileInputStream fis = new FileInputStream(file)) {
+            TableProperties tableProperties = new TableProperties(instanceProperties);
+            tableProperties.load(fis);
+            return tableProperties;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to open stream to file: " + file.getAbsolutePath());
+        }
+    }
+
     public static Stream<TableProperties> getAllTableProperties(InstanceProperties instanceProperties) {
         return instanceProperties.getList(UserDefinedInstanceProperty.TABLE_PROPERTIES).stream()
                 .map(File::new)
@@ -148,28 +158,11 @@ public class Utils {
                                 f.getAbsolutePath() + " doesn't exist");
                     }
                     if (f.isDirectory()) {
-                        return Arrays.stream(f.listFiles())
-                                .map(file -> {
-                                    try {
-                                        return new FileInputStream(file);
-                                    } catch (FileNotFoundException e) {
-                                        // This should never happen
-                                        throw new RuntimeException("Failed to open stream to file: " + file.getAbsolutePath());
-                                    }
-                                });
+                        return Arrays.stream(Objects.requireNonNull(f.listFiles()));
                     }
-                    try (FileInputStream inputStream = new FileInputStream(f)) {
-                        return Stream.of(inputStream);
-                    } catch (IOException e) {
-                        // this should never happen
-                        throw new RuntimeException("Failed to open stream to file: " + f.getAbsolutePath());
-                    }
+                    return Stream.of(f);
                 })
-                .map(fis -> {
-                    TableProperties tableProperties = new TableProperties(instanceProperties);
-                    tableProperties.load(fis);
-                    return tableProperties;
-                });
+                .map(f -> Utils.processFile(f, instanceProperties));
     }
 
     public static void addStackTagIfSet(Stack stack, InstanceProperties properties) {

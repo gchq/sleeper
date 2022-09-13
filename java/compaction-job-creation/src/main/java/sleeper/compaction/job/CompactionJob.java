@@ -111,7 +111,7 @@ public class CompactionJob {
     }
 
     public Object getSplitPoint() {
-        if (null != splitPoint && splitPoint instanceof ByteArray) {
+        if (splitPoint instanceof ByteArray) {
             return ((ByteArray) splitPoint).getArray();
         }
         return splitPoint;

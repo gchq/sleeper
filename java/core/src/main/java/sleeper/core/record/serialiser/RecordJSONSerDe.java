@@ -111,8 +111,10 @@ public class RecordJSONSerDe {
     }
 
     private static void addFieldToJsonObject(Field field, Object fieldValue, JsonObject json) {
-        if (field.getType() instanceof IntType || field.getType() instanceof LongType) {
-            json.addProperty(field.getName(), (Number) fieldValue);
+        if (field.getType() instanceof IntType) {
+            json.addProperty(field.getName(), (Integer) fieldValue);
+        } else if (field.getType() instanceof LongType) {
+            json.addProperty(field.getName(), (Long) fieldValue);
         } else if (field.getType() instanceof StringType) {
             json.addProperty(field.getName(), (String) fieldValue);
         } else if (field.getType() instanceof ByteArrayType) {
@@ -135,9 +137,13 @@ public class RecordJSONSerDe {
     private static void addListToJsonObject(Field field, List<Object> fieldValue, JsonObject json) {
         PrimitiveType elementType = ((ListType) field.getType()).getElementType();
         JsonArray array = new JsonArray();
-        if (elementType instanceof IntType || elementType instanceof LongType) {
+        if (elementType instanceof IntType) {
             for (Object o : fieldValue) {
-                array.add((Number) o);
+                array.add((Integer) o);
+            }
+        } else if (elementType instanceof LongType) {
+            for (Object o : fieldValue) {
+                array.add((Long) o);
             }
         } else if (elementType instanceof StringType) {
             for (Object o : fieldValue) {
