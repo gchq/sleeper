@@ -44,7 +44,7 @@ public class ChunksStatusTest {
         assertThat(status.reportString()).isEqualTo("" +
                 "common: completed, success\n" +
                 "data: in_progress\n" +
-                "Commit: test-sha\n");
+                "Build is for current commit\n");
     }
 
     @Test

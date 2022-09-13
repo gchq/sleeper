@@ -38,7 +38,7 @@ public class ChunksStatus {
     }
 
     public void report(PrintStream out) {
-        chunks.forEach(c -> c.report(out));
+        chunks.forEach(c -> c.report(head, out));
     }
 
     public String reportString() {

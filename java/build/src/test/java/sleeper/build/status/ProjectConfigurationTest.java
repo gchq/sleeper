@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 public class ProjectConfigurationTest {
 
     @Test
-    public void shouldLoadPropertiesForSeveralChunks() throws Exception {
+    public void shouldLoadPropertiesForSeveralChunks() {
         Properties properties = TestProperties.example("github-example.properties");
         ProjectConfiguration gitHub = ProjectConfiguration.from(properties);
 
@@ -64,7 +64,7 @@ public class ProjectConfigurationTest {
         assertThat(status.isFailCheck()).isFalse();
         assertThat(status.reportString()).isEqualTo("" +
                 "Common: completed, success\n" +
-                "Commit: test-sha\n");
+                "Build is for current commit\n");
     }
 
     @Test

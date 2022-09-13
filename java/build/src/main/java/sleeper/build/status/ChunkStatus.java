@@ -51,7 +51,7 @@ public class ChunkStatus {
         return new Builder();
     }
 
-    public void report(PrintStream out) {
+    public void report(GitHubHead head, PrintStream out) {
         if (conclusion != null) {
             out.println(chunk.getName() + ": " + status + ", " + conclusion);
         } else {
@@ -60,14 +60,18 @@ public class ChunkStatus {
         if (runUrl != null) {
             out.println("Run: " + runUrl);
         }
-        if (runStarted != null) {
-            out.println("Started at: " + runStarted);
-        }
-        if (commitMessage != null) {
-            out.println("Message: " + commitMessage);
-        }
-        if (commitSha != null) {
-            out.println("Commit: " + commitSha);
+        if (isRunForHead(head)) {
+            out.println("Build is for current commit");
+        } else {
+            if (runStarted != null) {
+                out.println("Started at: " + runStarted);
+            }
+            if (commitMessage != null) {
+                out.println("Message: " + commitMessage);
+            }
+            if (commitSha != null) {
+                out.println("Commit: " + commitSha);
+            }
         }
     }
 
@@ -77,7 +81,11 @@ public class ChunkStatus {
     }
 
     public boolean isWaitForOldBuildWithHead(GitHubHead head) {
-        return IN_PROGRESS.equals(status) && !head.getSha().equals(commitSha);
+        return IN_PROGRESS.equals(status) && !isRunForHead(head);
+    }
+
+    private boolean isRunForHead(GitHubHead head) {
+        return head.getSha().equals(commitSha);
     }
 
     public String getChunkId() {
