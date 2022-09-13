@@ -93,53 +93,7 @@ public class DynamoDBCompactionJobStatusStoreIT extends DynamoDBTestBase {
 
         // Then
         assertThatItemsInTable().containsExactly(
-                createCompactionItem(job, 1));
-    }
-
-    @Test
-    public void shouldReportSeveralCompactionJobsCreated() {
-        // Given
-        List<Partition> partitions = new PartitionsBuilder(schema)
-                .leavesWithSplits(
-                        Arrays.asList("A", "B"),
-                        Collections.singletonList("ggg"))
-                .parentJoining("C", "A", "B")
-                .buildList();
-        FileInfoFactory fileFactory = new FileInfoFactory(schema, partitions, Instant.now());
-        CompactionFactory jobFactory = new CompactionFactory(instanceProperties, tableProperties);
-        CompactionJob job1 = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile(100L, "a", "c")), "A");
-        CompactionJob job2 = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile(100L, "w", "z")), "B");
-
-        // When
-        store.jobCreated(job1);
-        store.jobCreated(job2);
-
-        // Then
-        assertThatItemsInTable().containsExactlyInAnyOrder(
-                createCompactionItem(job1, 1),
-                createCompactionItem(job2, 1));
-    }
-
-    @Test
-    public void shouldReportCompactionJobCreatedWithSeveralFiles() {
-        // Given
-        Partition partition = singlePartition();
-        FileInfoFactory fileFactory = new FileInfoFactory(schema, Collections.singletonList(partition), Instant.now());
-        CompactionFactory jobFactory = new CompactionFactory(instanceProperties, tableProperties);
-        CompactionJob job = jobFactory.createCompactionJob(
-                Arrays.asList(
-                        fileFactory.leafFile("file1", 100L, "a", "c"),
-                        fileFactory.leafFile("file2", 100L, "w", "z")),
-                partition.getId());
-
-        // When
-        store.jobCreated(job);
-
-        // Then
-        assertThatItemsInTable().containsExactly(
-                createCompactionItem(job, 2));
+                createCompactionItem(job.getId(), 1, partition.getId()));
     }
 
     @Test
@@ -164,7 +118,80 @@ public class DynamoDBCompactionJobStatusStoreIT extends DynamoDBTestBase {
 
         // Then
         assertThatItemsInTable().containsExactly(
-                createSplittingCompactionItem(job, 2, "A, B"));
+                createSplittingCompactionItem(job.getId(), 2, "C", "A, B"));
+    }
+
+    @Test
+    public void shouldReportCompactionJobCreatedWithSeveralFiles() {
+        // Given
+        Partition partition = singlePartition();
+        FileInfoFactory fileFactory = new FileInfoFactory(schema, Collections.singletonList(partition), Instant.now());
+        CompactionFactory jobFactory = new CompactionFactory(instanceProperties, tableProperties);
+        CompactionJob job = jobFactory.createCompactionJob(
+                Arrays.asList(
+                        fileFactory.leafFile("file1", 100L, "a", "c"),
+                        fileFactory.leafFile("file2", 100L, "w", "z")),
+                partition.getId());
+
+        // When
+        store.jobCreated(job);
+
+        // Then
+        assertThatItemsInTable().containsExactly(
+                createCompactionItem(job.getId(), 2, partition.getId()));
+    }
+
+    @Test
+    public void shouldReportSeveralCompactionJobsCreated() {
+        // Given
+        List<Partition> partitions = new PartitionsBuilder(schema)
+                .leavesWithSplits(
+                        Arrays.asList("A", "B"),
+                        Collections.singletonList("ggg"))
+                .parentJoining("C", "A", "B")
+                .buildList();
+        FileInfoFactory fileFactory = new FileInfoFactory(schema, partitions, Instant.now());
+        CompactionFactory jobFactory = new CompactionFactory(instanceProperties, tableProperties);
+        CompactionJob job1 = jobFactory.createCompactionJob(
+                Collections.singletonList(fileFactory.leafFile(100L, "a", "c")), "A");
+        CompactionJob job2 = jobFactory.createCompactionJob(
+                Collections.singletonList(fileFactory.leafFile(100L, "w", "z")), "B");
+
+        // When
+        store.jobCreated(job1);
+        store.jobCreated(job2);
+
+        // Then
+        assertThatItemsInTable().containsExactlyInAnyOrder(
+                createCompactionItem(job1.getId(), 1, "A"),
+                createCompactionItem(job2.getId(), 1, "B"));
+    }
+
+    @Test
+    public void shouldReportCompactionAndSplittingJobCreated() {
+        // Given
+        List<Partition> partitions = new PartitionsBuilder(schema)
+                .leavesWithSplits(
+                        Arrays.asList("A", "B"),
+                        Collections.singletonList("ggg"))
+                .parentJoining("C", "A", "B")
+                .buildList();
+        FileInfoFactory fileFactory = new FileInfoFactory(schema, partitions, Instant.now());
+        CompactionFactory jobFactory = new CompactionFactory(instanceProperties, tableProperties);
+        CompactionJob job1 = jobFactory.createCompactionJob(
+                Collections.singletonList(fileFactory.leafFile(100L, "a", "c")), "A");
+        CompactionJob job2 = jobFactory.createSplittingCompactionJob(
+                Collections.singletonList(fileFactory.rootFile(100L, "b", "w")),
+                "C", "A", "B", "ggg", 0);
+
+        // When
+        store.jobCreated(job1);
+        store.jobCreated(job2);
+
+        // Then
+        assertThatItemsInTable().containsExactlyInAnyOrder(
+                createCompactionItem(job1.getId(), 1, "A"),
+                createSplittingCompactionItem(job2.getId(), 1, "C", "A, B"));
     }
 
     private Partition singlePartition() {
@@ -182,15 +209,15 @@ public class DynamoDBCompactionJobStatusStoreIT extends DynamoDBTestBase {
                         map -> getStringAttribute(map, SPLIT_TO_PARTITION_IDS));
     }
 
-    private Tuple createCompactionItem(CompactionJob job, int inputFilesCount) {
+    private Tuple createCompactionItem(String jobId, int inputFilesCount, String partitionId) {
         return tuple(
                 Stream.of(JOB_ID, UPDATE_TIME, UPDATE_TYPE, PARTITION_ID, INPUT_FILES_COUNT).collect(Collectors.toSet()),
-                job.getId(), UPDATE_TYPE_CREATED, job.getPartitionId(), "" + inputFilesCount, null);
+                jobId, UPDATE_TYPE_CREATED, partitionId, "" + inputFilesCount, null);
     }
 
-    private Tuple createSplittingCompactionItem(CompactionJob job, int inputFilesCount, String splitToPartitionIds) {
+    private Tuple createSplittingCompactionItem(String jobId, int inputFilesCount, String partitionId, String splitToPartitionIds) {
         return tuple(
                 Stream.of(JOB_ID, UPDATE_TIME, UPDATE_TYPE, PARTITION_ID, INPUT_FILES_COUNT, SPLIT_TO_PARTITION_IDS).collect(Collectors.toSet()),
-                job.getId(), UPDATE_TYPE_CREATED, job.getPartitionId(), "" + inputFilesCount, splitToPartitionIds);
+                jobId, UPDATE_TYPE_CREATED, partitionId, "" + inputFilesCount, splitToPartitionIds);
     }
 }
