@@ -15,11 +15,11 @@
  */
 package sleeper.compaction.status.job;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import org.assertj.core.api.AbstractListAssert;
 import org.assertj.core.api.ObjectAssert;
 import org.assertj.core.groups.Tuple;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import sleeper.compaction.job.CompactionFactory;
@@ -28,11 +28,13 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
 import sleeper.statestore.FileInfoFactory;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +72,11 @@ public class DynamoDBCompactionJobStatusStoreIT extends DynamoDBTestBase {
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
     }
 
+    @After
+    public void tearDown() {
+        dynamoDBClient.deleteTable(tableName);
+    }
+
     @Test
     public void shouldReportCompactionJobCreated() {
         // Given
@@ -84,20 +91,62 @@ public class DynamoDBCompactionJobStatusStoreIT extends DynamoDBTestBase {
         store.jobCreated(job);
 
         // Then
-        assertThatItemsInTable()
-                .containsExactly(createJobItem(job, 1));
+        assertThatItemsInTable().containsExactly(
+                createJobItem(job, 1));
+    }
+
+    @Test
+    public void shouldReportSeveralCompactionJobsCreated() {
+        // Given
+        List<Partition> partitions = new PartitionsBuilder(schema)
+                .leavesWithSplits(
+                        Arrays.asList("A", "B"),
+                        Collections.singletonList("ggg"))
+                .parentJoining("C", "A", "B")
+                .buildList();
+        FileInfoFactory fileFactory = new FileInfoFactory(schema, partitions, Instant.now());
+        CompactionFactory jobFactory = new CompactionFactory(instanceProperties, tableProperties);
+        CompactionJob job1 = jobFactory.createCompactionJob(
+                Collections.singletonList(fileFactory.leafFile(100L, "a", "c")), "A");
+        CompactionJob job2 = jobFactory.createCompactionJob(
+                Collections.singletonList(fileFactory.leafFile(100L, "w", "z")), "B");
+
+        // When
+        store.jobCreated(job1);
+        store.jobCreated(job2);
+
+        // Then
+        assertThatItemsInTable().containsExactlyInAnyOrder(
+                createJobItem(job1, 1),
+                createJobItem(job2, 1));
+    }
+
+    @Test
+    public void shouldReportCompactionJobCreatedWithSeveralFiles() {
+        // Given
+        Partition partition = singlePartition();
+        FileInfoFactory fileFactory = new FileInfoFactory(schema, Collections.singletonList(partition), Instant.now());
+        CompactionFactory jobFactory = new CompactionFactory(instanceProperties, tableProperties);
+        CompactionJob job = jobFactory.createCompactionJob(
+                Arrays.asList(
+                        fileFactory.leafFile("file1", 100L, "a", "c"),
+                        fileFactory.leafFile("file2", 100L, "w", "z")),
+                partition.getId());
+
+        // When
+        store.jobCreated(job);
+
+        // Then
+        assertThatItemsInTable().containsExactly(
+                createJobItem(job, 2));
     }
 
     private Partition singlePartition() {
         return new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct().get(0);
     }
 
-    private List<Map<String, AttributeValue>> itemsInTable() {
-        return dynamoDBClient.scan(new ScanRequest().withTableName(tableName)).getItems();
-    }
-
     private AbstractListAssert<?, List<? extends Tuple>, Tuple, ObjectAssert<Tuple>> assertThatItemsInTable() {
-        return assertThat(itemsInTable())
+        return assertThat(dynamoDBClient.scan(new ScanRequest().withTableName(tableName)).getItems())
                 .extracting(
                         Map::keySet,
                         map -> getStringAttribute(map, JOB_ID),

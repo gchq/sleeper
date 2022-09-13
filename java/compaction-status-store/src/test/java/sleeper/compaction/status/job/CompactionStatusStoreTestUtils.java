@@ -21,8 +21,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
-import java.util.UUID;
-
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -37,16 +35,15 @@ public class CompactionStatusStoreTestUtils {
     public static InstanceProperties createInstanceProperties() {
 
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, UUID.randomUUID().toString());
-        instanceProperties.set(CONFIG_BUCKET, UUID.randomUUID().toString());
-        instanceProperties.set(FILE_SYSTEM, "");
+        instanceProperties.set(ID, "test-instance");
+        instanceProperties.set(CONFIG_BUCKET, "test-bucket");
+        instanceProperties.set(FILE_SYSTEM, "test-fs");
         return instanceProperties;
     }
 
     public static TableProperties createTableProperties(Schema schema, InstanceProperties instanceProperties) {
-        String tableName = "test-table";
         TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, tableName);
+        tableProperties.set(TABLE_NAME, "test-table");
         tableProperties.setSchema(schema);
         return tableProperties;
     }

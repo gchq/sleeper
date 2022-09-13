@@ -16,6 +16,7 @@
 package sleeper.compaction.status.job;
 
 import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
+import org.junit.After;
 import org.junit.Test;
 import sleeper.configuration.properties.InstanceProperties;
 
@@ -27,6 +28,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase {
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
+    private final String tableName = jobStatusTableName(instanceProperties.get(ID));
 
     @Test
     public void shouldCreateStore() {
@@ -34,7 +36,12 @@ public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase 
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
 
         // Then
-        assertThat(dynamoDBClient.describeTable(jobStatusTableName(instanceProperties.get(ID))))
+        assertThat(dynamoDBClient.describeTable(tableName))
                 .extracting(DescribeTableResult::getTable).isNotNull();
+    }
+
+    @After
+    public void tearDown() {
+        dynamoDBClient.deleteTable(tableName);
     }
 }
