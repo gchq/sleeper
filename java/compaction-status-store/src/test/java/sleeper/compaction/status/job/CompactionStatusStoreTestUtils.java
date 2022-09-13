@@ -28,6 +28,9 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class CompactionStatusStoreTestUtils {
 
+    private CompactionStatusStoreTestUtils() {
+    }
+
     public static Schema createSchema() {
         return Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
     }
