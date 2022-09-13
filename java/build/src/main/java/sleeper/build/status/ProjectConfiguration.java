@@ -108,7 +108,7 @@ public class ProjectConfiguration {
         private String token;
         private GitHubHead head;
         private List<ProjectChunk> chunks;
-        private long retrySeconds = 10;
+        private long retrySeconds = 20;
         private long maxRetries = 60L * 15L / retrySeconds; // Retry after 15 minutes of waiting
 
         private Builder() {
