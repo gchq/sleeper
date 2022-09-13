@@ -63,6 +63,9 @@ public class ChunkStatus {
         }
         if (isRunForHead(head)) {
             out.println("Build is for current commit");
+            if (runStarted != null) {
+                out.println("Started at: " + runStarted);
+            }
         } else {
             if (runStarted != null) {
                 out.println("Started at: " + runStarted);
