@@ -15,6 +15,11 @@
  */
 package sleeper.compaction.status.job;
 
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import org.assertj.core.api.AbstractListAssert;
+import org.assertj.core.api.ObjectAssert;
+import org.assertj.core.groups.Tuple;
 import org.junit.Before;
 import org.junit.Test;
 import sleeper.compaction.job.CompactionFactory;
@@ -29,10 +34,26 @@ import sleeper.statestore.FileInfoFactory;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
+import static sleeper.compaction.status.DynamoDBAttributes.getNumberAttribute;
+import static sleeper.compaction.status.DynamoDBAttributes.getStringAttribute;
 import static sleeper.compaction.status.job.CompactionStatusStoreTestUtils.createInstanceProperties;
 import static sleeper.compaction.status.job.CompactionStatusStoreTestUtils.createSchema;
 import static sleeper.compaction.status.job.CompactionStatusStoreTestUtils.createTableProperties;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.INPUT_FILES_COUNT;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.PARTITION_ID;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UPDATE_TYPE;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UPDATE_TYPE_CREATED;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 public class DynamoDBCompactionJobStatusStoreIT extends DynamoDBTestBase {
 
@@ -41,6 +62,8 @@ public class DynamoDBCompactionJobStatusStoreIT extends DynamoDBTestBase {
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
     private final CompactionJobStatusStore store = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
+
+    private final String tableName = jobStatusTableName(instanceProperties.get(ID));
 
     @Before
     public void setUp() {
@@ -60,10 +83,32 @@ public class DynamoDBCompactionJobStatusStoreIT extends DynamoDBTestBase {
         // When
         store.jobCreated(job);
 
-        // Then TODO
+        // Then
+        assertThatItemsInTable()
+                .containsExactly(createJobItem(job, 1));
     }
 
     private Partition singlePartition() {
         return new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct().get(0);
+    }
+
+    private List<Map<String, AttributeValue>> itemsInTable() {
+        return dynamoDBClient.scan(new ScanRequest().withTableName(tableName)).getItems();
+    }
+
+    private AbstractListAssert<?, List<? extends Tuple>, Tuple, ObjectAssert<Tuple>> assertThatItemsInTable() {
+        return assertThat(itemsInTable())
+                .extracting(
+                        Map::keySet,
+                        map -> getStringAttribute(map, JOB_ID),
+                        map -> getStringAttribute(map, UPDATE_TYPE),
+                        map -> getStringAttribute(map, PARTITION_ID),
+                        map -> getNumberAttribute(map, INPUT_FILES_COUNT));
+    }
+
+    private Tuple createJobItem(CompactionJob job, int inputFilesCount) {
+        return tuple(
+                Stream.of(JOB_ID, UPDATE_TIME, UPDATE_TYPE, PARTITION_ID, INPUT_FILES_COUNT).collect(Collectors.toSet()),
+                job.getId(), UPDATE_TYPE_CREATED, job.getPartitionId(), "" + inputFilesCount);
     }
 }

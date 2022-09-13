@@ -24,10 +24,10 @@ import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.Arrays;
 
+import static sleeper.compaction.status.DynamoDBUtils.initialiseTable;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
-import static sleeper.compaction.status.job.DynamoDBUtils.initialiseTable;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 public class DynamoDBCompactionJobStatusStoreCreator {
