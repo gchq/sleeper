@@ -24,6 +24,8 @@ import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class ProjectConfigurationTest {
@@ -87,5 +89,30 @@ public class ProjectConfigurationTest {
         assertThat(status.reportString()).isEqualTo("" +
                 "Common: completed, success\n" +
                 "Commit: old-sha\n");
+    }
+
+    @Test
+    public void shouldStopRetryingAfterSpecifiedTimes() {
+        GitHubHead branch = GitHubHead.builder()
+                .owner("test-owner").repository("test-repo").branch("test-branch").sha("test-sha")
+                .build();
+        ProjectChunk chunk = ProjectChunk.chunk("common").name("Common").workflow("chunk-common.yaml").build();
+        ProjectConfiguration configuration = ProjectConfiguration.builder()
+                .token("test-token").head(branch)
+                .chunks(Collections.singletonList(chunk))
+                .retrySeconds(0).maxRetries(1)
+                .build();
+        ChunkStatus status1 = ChunkStatus.chunk(chunk).commitSha("old-sha").inProgress();
+        GitHubProvider gitHub = mock(GitHubProvider.class);
+        when(gitHub.workflowStatus(branch, chunk)).thenReturn(status1);
+        when(gitHub.recheckRun(branch, status1)).thenReturn(status1);
+
+        ChunksStatus status = configuration.checkStatus(gitHub);
+        assertThat(status.isFailCheck()).isTrue();
+        assertThat(status.reportString()).isEqualTo("" +
+                "Common: in_progress\n" +
+                "Commit: old-sha\n");
+
+        verify(gitHub, times(1)).recheckRun(branch, status1);
     }
 }

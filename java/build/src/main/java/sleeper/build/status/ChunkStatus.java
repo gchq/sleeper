@@ -71,8 +71,13 @@ public class ChunkStatus {
         }
     }
 
-    public boolean isFailCheck() {
-        return COMPLETED.equals(status) && !SUCCESS.equals(conclusion);
+    public boolean isFailCheckWithHead(GitHubHead head) {
+        return (COMPLETED.equals(status) && !SUCCESS.equals(conclusion))
+                || isWaitForOldBuildWithHead(head);
+    }
+
+    public boolean isWaitForOldBuildWithHead(GitHubHead head) {
+        return IN_PROGRESS.equals(status) && !head.getSha().equals(commitSha);
     }
 
     public String getChunkId() {
@@ -85,10 +90,6 @@ public class ChunkStatus {
 
     public Long getRunId() {
         return runId;
-    }
-
-    public boolean isWaitForOldBuildWithHead(GitHubHead head) {
-        return IN_PROGRESS.equals(status) && !head.getSha().equals(commitSha);
     }
 
     public static Builder chunk(String chunk) {

@@ -25,18 +25,16 @@ import java.util.Properties;
 
 public class ChunksStatus {
 
+    private final GitHubHead head;
     private final List<ChunkStatus> chunks;
 
     private ChunksStatus(Builder builder) {
+        head = Objects.requireNonNull(builder.head, "head must not be null");
         chunks = Objects.requireNonNull(builder.chunks, "chunks must not be null");
     }
 
-    public static ChunksStatus from(Properties properties) {
-        return chunks(chunksFrom(properties));
-    }
-
     public boolean isFailCheck() {
-        return chunks.stream().anyMatch(ChunkStatus::isFailCheck);
+        return chunks.stream().anyMatch(chunk -> chunk.isFailCheckWithHead(head));
     }
 
     public void report(PrintStream out) {
@@ -49,12 +47,12 @@ public class ChunksStatus {
         return os.toString();
     }
 
-    public static ChunksStatus chunks(ChunkStatus... chunks) {
-        return builder().chunks(chunks).build();
+    public static ChunksStatus chunksForHead(GitHubHead head, ChunkStatus... chunks) {
+        return builder().head(head).chunks(chunks).build();
     }
 
-    public static ChunksStatus chunks(List<ChunkStatus> chunks) {
-        return builder().chunks(chunks).build();
+    public static ChunksStatus chunksForHead(GitHubHead head, List<ChunkStatus> chunks) {
+        return builder().head(head).chunks(chunks).build();
     }
 
     public static Builder builder() {
@@ -87,6 +85,7 @@ public class ChunksStatus {
 
     public static final class Builder {
         private List<ChunkStatus> chunks;
+        private GitHubHead head;
 
         private Builder() {
         }
@@ -102,6 +101,11 @@ public class ChunksStatus {
 
         public ChunksStatus build() {
             return new ChunksStatus(this);
+        }
+
+        public Builder head(GitHubHead head) {
+            this.head = head;
+            return this;
         }
     }
 

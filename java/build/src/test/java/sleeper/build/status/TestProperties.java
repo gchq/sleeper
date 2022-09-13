@@ -26,12 +26,18 @@ public class TestProperties {
     private TestProperties() {
     }
 
-    public static Properties example(String path) throws IOException {
+    public static GitHubHead exampleHead() {
+        return GitHubHead.from(example("github-example.properties"));
+    }
+
+    public static Properties example(String path) {
         URL resource = Objects.requireNonNull(ChunksStatusTest.class.getClassLoader().getResource(path));
         try (InputStream is = resource.openStream()) {
             Properties properties = new Properties();
             properties.load(is);
             return properties;
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to load test example: " + path, e);
         }
     }
 }

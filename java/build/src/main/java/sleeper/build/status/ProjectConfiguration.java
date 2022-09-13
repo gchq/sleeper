@@ -18,8 +18,6 @@ package sleeper.build.status;
 import sleeper.build.status.github.GitHubProvider;
 
 import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,14 +32,14 @@ public class ProjectConfiguration {
     private final GitHubHead head;
     private final List<ProjectChunk> chunks;
     private final long retrySeconds;
-    private final long maxRetrySeconds;
+    private final long maxRetries;
 
     private ProjectConfiguration(Builder builder) {
         token = Objects.requireNonNull(ignoreEmpty(builder.token), "token must not be null");
         head = Objects.requireNonNull(builder.head, "head must not be null");
         chunks = Objects.requireNonNull(builder.chunks, "chunks must not be null");
         retrySeconds = builder.retrySeconds;
-        maxRetrySeconds = builder.maxRetrySeconds;
+        maxRetries = builder.maxRetries;
     }
 
     public static ProjectConfiguration from(Properties properties) {
@@ -58,7 +56,7 @@ public class ProjectConfiguration {
 
     public ChunksStatus checkStatus(GitHubProvider gitHub) {
         Map<String, ChunkStatus> statusByChunkId = retrieveStatusByChunkId(gitHub);
-        return ChunksStatus.chunks(chunks.stream()
+        return ChunksStatus.chunksForHead(head, chunks.stream()
                 .map(chunk -> statusByChunkId.get(chunk.getId()))
                 .collect(Collectors.toList()));
     }
@@ -70,11 +68,12 @@ public class ProjectConfiguration {
     }
 
     private ChunkStatus retrieveStatusWaitingForOldBuilds(GitHubProvider gitHub, ProjectChunk chunk) {
-        Instant start = Instant.now();
         ChunkStatus status = gitHub.workflowStatus(head, chunk);
         try {
-            while (status.isWaitForOldBuildWithHead(head) &&
-                    Duration.between(start, Instant.now()).getSeconds() < maxRetrySeconds) {
+            for (int retries = 0;
+                 status.isWaitForOldBuildWithHead(head)
+                         && retries < maxRetries;
+                 retries++) {
                 Thread.sleep(retrySeconds * 1000);
                 status = gitHub.recheckRun(head, status);
             }
@@ -118,7 +117,7 @@ public class ProjectConfiguration {
         private GitHubHead head;
         private List<ProjectChunk> chunks;
         private long retrySeconds = 10;
-        private long maxRetrySeconds = 60L * 15L;
+        private long maxRetries = 60L * 15L / retrySeconds; // Retry after 15 minutes of waiting
 
         private Builder() {
         }
@@ -143,8 +142,8 @@ public class ProjectConfiguration {
             return this;
         }
 
-        public Builder maxRetrySeconds(long maxRetrySeconds) {
-            this.maxRetrySeconds = maxRetrySeconds;
+        public Builder maxRetries(long maxRetries) {
+            this.maxRetries = maxRetries;
             return this;
         }
 

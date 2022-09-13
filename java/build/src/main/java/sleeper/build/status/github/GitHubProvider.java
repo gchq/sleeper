@@ -61,6 +61,7 @@ public class GitHubProvider {
             return ChunkStatus.chunk(chunk)
                     .runId(run.getId())
                     .runUrl(Objects.toString(run.getHtmlUrl(), null))
+                    .runStarted(run.getRunStartedAt())
                     .commitSha(run.getHeadSha())
                     .commitMessage(run.getHeadCommit().getMessage())
                     .status(Objects.toString(run.getStatus(), null))
