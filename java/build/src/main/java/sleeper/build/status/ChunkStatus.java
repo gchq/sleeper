@@ -106,31 +106,11 @@ public class ChunkStatus {
     }
 
     public static Builder chunk(String chunk) {
-        return builder().chunk(chunk);
+        return builder().chunk(ProjectChunk.chunk(chunk).name(chunk).workflow(chunk).build());
     }
 
     public static Builder chunk(ProjectChunk chunk) {
         return builder().chunk(chunk);
-    }
-
-    public static ChunkStatus success(String chunk) {
-        return chunk(chunk).success();
-    }
-
-    public static ChunkStatus inProgress(String chunk) {
-        return chunk(chunk).inProgress();
-    }
-
-    public static ChunkStatus failure(String chunk) {
-        return chunk(chunk).failure();
-    }
-
-    public static ChunkStatus cancelled(String chunk) {
-        return chunk(chunk).cancelled();
-    }
-
-    public static ChunkStatus noBuild(String chunk) {
-        return chunk(chunk).noBuild();
     }
 
     @Override
@@ -175,10 +155,6 @@ public class ChunkStatus {
         public Builder chunk(ProjectChunk chunk) {
             this.chunk = chunk;
             return this;
-        }
-
-        public Builder chunk(String chunk) {
-            return chunk(ProjectChunk.chunk(chunk).name(chunk).workflow(chunk).build());
         }
 
         public ChunkStatus success() {

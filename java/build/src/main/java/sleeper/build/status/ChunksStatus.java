@@ -17,11 +17,9 @@ package sleeper.build.status;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Properties;
 
 public class ChunksStatus {
 
@@ -48,7 +46,7 @@ public class ChunksStatus {
     }
 
     public static ChunksStatus chunksForHead(GitHubHead head, ChunkStatus... chunks) {
-        return builder().head(head).chunks(chunks).build();
+        return builder().head(head).chunks(Arrays.asList(chunks)).build();
     }
 
     public static ChunksStatus chunksForHead(GitHubHead head, List<ChunkStatus> chunks) {
@@ -95,29 +93,13 @@ public class ChunksStatus {
             return this;
         }
 
-        public Builder chunks(ChunkStatus... chunks) {
-            return chunks(Arrays.asList(chunks));
+        public Builder head(GitHubHead head) {
+            this.head = head;
+            return this;
         }
 
         public ChunksStatus build() {
             return new ChunksStatus(this);
         }
-
-        public Builder head(GitHubHead head) {
-            this.head = head;
-            return this;
-        }
-    }
-
-    private static List<ChunkStatus> chunksFrom(Properties properties) {
-        String[] chunkNames = properties.getProperty("chunks").split(",");
-        List<ChunkStatus> chunks = new ArrayList<>(chunkNames.length);
-        for (String chunkName : chunkNames) {
-            chunks.add(ChunkStatus.chunk(chunkName)
-                    .status(properties.getProperty(chunkName + ".status"))
-                    .conclusion(properties.getProperty(chunkName + ".conclusion"))
-                    .build());
-        }
-        return chunks;
     }
 }

@@ -24,8 +24,8 @@ public class ChunksStatusTest {
     @Test
     public void shouldReportAndPassWhenTwoChunksSuccessful() {
         ChunksStatus status = ChunksStatus.chunksForHead(TestProperties.exampleHead(),
-                ChunkStatus.success("common"),
-                ChunkStatus.success("data"));
+                ChunkStatus.chunk("common").success(),
+                ChunkStatus.chunk("data").success());
 
         assertThat(status.isFailCheck()).isFalse();
         assertThat(status.reportLines()).containsExactly("",
@@ -38,7 +38,7 @@ public class ChunksStatusTest {
     public void shouldReportAndPassWhenOneChunkSuccessfulOneInProgressOnHeadSha() {
         GitHubHead head = TestProperties.exampleHead();
         ChunksStatus status = ChunksStatus.chunksForHead(head,
-                ChunkStatus.success("common"),
+                ChunkStatus.chunk("common").success(),
                 ChunkStatus.chunk("data").commitSha(head.getSha()).inProgress());
 
         assertThat(status.isFailCheck()).isFalse();
@@ -53,7 +53,7 @@ public class ChunksStatusTest {
     public void shouldReportAndFailWhenOneChunkSuccessfulOneInProgressOnOldSha() {
         GitHubHead head = TestProperties.exampleHead();
         ChunksStatus status = ChunksStatus.chunksForHead(head,
-                ChunkStatus.success("common"),
+                ChunkStatus.chunk("common").success(),
                 ChunkStatus.chunk("data").commitSha("old-sha").inProgress());
 
         assertThat(status.isFailCheck()).isTrue();
@@ -67,8 +67,8 @@ public class ChunksStatusTest {
     @Test
     public void shouldReportAndFailWhenOneChunkSuccessfulOneFailed() {
         ChunksStatus status = ChunksStatus.chunksForHead(TestProperties.exampleHead(),
-                ChunkStatus.success("common"),
-                ChunkStatus.failure("data"));
+                ChunkStatus.chunk("common").success(),
+                ChunkStatus.chunk("data").failure());
 
         assertThat(status.isFailCheck()).isTrue();
         assertThat(status.reportLines()).containsExactly("",
@@ -80,8 +80,8 @@ public class ChunksStatusTest {
     @Test
     public void shouldReportAndFailWhenOneChunkSuccessfulOneCancelled() {
         ChunksStatus status = ChunksStatus.chunksForHead(TestProperties.exampleHead(),
-                ChunkStatus.success("common"),
-                ChunkStatus.cancelled("data"));
+                ChunkStatus.chunk("common").success(),
+                ChunkStatus.chunk("data").cancelled());
 
         assertThat(status.isFailCheck()).isTrue();
         assertThat(status.reportLines()).containsExactly("",
@@ -93,8 +93,8 @@ public class ChunksStatusTest {
     @Test
     public void shouldReportAndPassWhenNoChunksHaveBuilds() {
         ChunksStatus status = ChunksStatus.chunksForHead(TestProperties.exampleHead(),
-                ChunkStatus.noBuild("common"),
-                ChunkStatus.noBuild("data"));
+                ChunkStatus.chunk("common").noBuild(),
+                ChunkStatus.chunk("data").noBuild());
 
         assertThat(status.isFailCheck()).isFalse();
         assertThat(status.reportLines()).containsExactly("",
