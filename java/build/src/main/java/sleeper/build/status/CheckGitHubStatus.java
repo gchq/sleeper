@@ -45,6 +45,7 @@ public class CheckGitHubStatus {
     }
 
     private List<ChunkStatus> listChunkStatusInOrder() {
+        // Since checks are done in parallel, re-order them after they are complete
         Map<String, ChunkStatus> statusByChunkId = retrieveStatusByChunkId();
         return chunks.stream()
                 .map(chunk -> statusByChunkId.get(chunk.getId()))
@@ -53,11 +54,11 @@ public class CheckGitHubStatus {
 
     private Map<String, ChunkStatus> retrieveStatusByChunkId() {
         return chunks.stream().parallel()
-                .map(chunk -> retrieveStatusWaitingForOldBuilds(gitHub, chunk))
+                .map(this::retrieveStatusWaitingForOldBuilds)
                 .collect(Collectors.toMap(ChunkStatus::getChunkId, c -> c));
     }
 
-    private ChunkStatus retrieveStatusWaitingForOldBuilds(GitHubProvider gitHub, ProjectChunk chunk) {
+    private ChunkStatus retrieveStatusWaitingForOldBuilds(ProjectChunk chunk) {
         ChunkStatus status = gitHub.workflowStatus(head, chunk);
         try {
             for (int retries = 0;
