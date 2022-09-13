@@ -15,21 +15,16 @@
  */
 package sleeper.build.status;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import sleeper.build.status.github.GitHubProvider;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
 import static sleeper.build.status.ValidationUtils.ignoreEmpty;
 
 public class ProjectConfiguration {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ProjectConfiguration.class);
 
     private final String token;
     private final GitHubHead head;
@@ -58,36 +53,23 @@ public class ProjectConfiguration {
     }
 
     public ChunksStatus checkStatus(GitHubProvider gitHub) {
-        Map<String, ChunkStatus> statusByChunkId = retrieveStatusByChunkId(gitHub);
-        return ChunksStatus.chunksForHead(head, chunks.stream()
-                .map(chunk -> statusByChunkId.get(chunk.getId()))
-                .collect(Collectors.toList()));
+        return new CheckGitHubStatus(this, gitHub).checkStatus();
     }
 
-    private Map<String, ChunkStatus> retrieveStatusByChunkId(GitHubProvider gitHub) {
-        return chunks.stream().parallel()
-                .map(chunk -> retrieveStatusWaitingForOldBuilds(gitHub, chunk))
-                .collect(Collectors.toMap(ChunkStatus::getChunkId, c -> c));
+    public GitHubHead getHead() {
+        return head;
     }
 
-    private ChunkStatus retrieveStatusWaitingForOldBuilds(GitHubProvider gitHub, ProjectChunk chunk) {
-        ChunkStatus status = gitHub.workflowStatus(head, chunk);
-        try {
-            for (int retries = 0;
-                 status.isWaitForOldBuildWithHead(head)
-                         && retries < maxRetries;
-                 retries++) {
+    public List<ProjectChunk> getChunks() {
+        return chunks;
+    }
 
-                LOGGER.info("Waiting for old build to finish, {} retries, chunk: {}", retries, chunk.getName());
-                LOGGER.info("Link to old build: {}", status.getRunUrl());
+    public long getRetrySeconds() {
+        return retrySeconds;
+    }
 
-                Thread.sleep(retrySeconds * 1000);
-                status = gitHub.recheckRun(head, status);
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        return status;
+    public long getMaxRetries() {
+        return maxRetries;
     }
 
     public static Builder builder() {

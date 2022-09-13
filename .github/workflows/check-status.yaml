@@ -40,4 +40,4 @@ jobs:
           echo "chunk.query.workflow=chunk-query.yaml" >> status.properties
           echo "chunk.statestore.name=State Store" >> status.properties
           echo "chunk.statestore.workflow=chunk-statestore.yaml" >> status.properties
-          mvn compile exec:java -q -Dexec.mainClass=sleeper.build.status.CheckGitHubStatus -Dexec.args=status.properties
+          mvn compile exec:java -q -Dexec.mainClass=sleeper.build.status.CheckGitHubStatusMain -Dexec.args=status.properties
