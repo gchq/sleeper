@@ -61,15 +61,12 @@ public class ChunkStatus {
         if (runUrl != null) {
             out.println("Run: " + runUrl);
         }
+        if (runStarted != null) {
+            out.println("Started at: " + runStarted);
+        }
         if (isRunForHead(head)) {
             out.println("Build is for current commit");
-            if (runStarted != null) {
-                out.println("Started at: " + runStarted);
-            }
         } else {
-            if (runStarted != null) {
-                out.println("Started at: " + runStarted);
-            }
             if (commitMessage != null) {
                 out.println("Message: " + commitMessage);
             }
