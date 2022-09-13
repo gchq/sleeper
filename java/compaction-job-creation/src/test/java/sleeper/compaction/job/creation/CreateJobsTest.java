@@ -20,6 +20,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
@@ -164,7 +165,7 @@ public class CreateJobsTest {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTableProperties(schema, instanceProperties);
 
-        TablePropertiesProvider tablePropertiesProvider = TablePropertiesProvider.fixed(tableProperties);
+        TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties, stateStore);
 
         TableLister tableLister = mock(TableLister.class);

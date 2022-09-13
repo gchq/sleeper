@@ -21,10 +21,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
-
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TablePropertiesProvider {
     private final Map<String, TableProperties> tableNameToPropertiesCache;
@@ -34,19 +31,9 @@ public class TablePropertiesProvider {
         this(tableName -> getTablePropertiesFromS3(s3Client, instanceProperties, tableName));
     }
 
-    private TablePropertiesProvider(Function<String, TableProperties> getTableProperties) {
+    protected TablePropertiesProvider(Function<String, TableProperties> getTableProperties) {
         this.getTableProperties = getTableProperties;
         this.tableNameToPropertiesCache = new HashMap<>();
-    }
-
-    public static TablePropertiesProvider fixed(TableProperties tableProperties) {
-        return new TablePropertiesProvider(tableName -> {
-            if (Objects.equals(tableName, tableProperties.get(TABLE_NAME))) {
-                return tableProperties;
-            } else {
-                throw new IllegalArgumentException("Table not found: " + tableName);
-            }
-        });
     }
 
     public TableProperties getTableProperties(String tableName) {
