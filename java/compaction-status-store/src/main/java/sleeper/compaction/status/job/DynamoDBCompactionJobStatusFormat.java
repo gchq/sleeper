@@ -35,6 +35,7 @@ public class DynamoDBCompactionJobStatusFormat {
     public static final String UPDATE_TYPE = "UpdateType";
     public static final String PARTITION_ID = "PartitionId";
     public static final String INPUT_FILES_COUNT = "InputFilesCount";
+    public static final String SPLIT_TO_PARTITION_IDS = "SplitToPartitionIds";
 
     public static final String UPDATE_TYPE_CREATED = "created";
 
@@ -45,6 +46,9 @@ public class DynamoDBCompactionJobStatusFormat {
         item.put(UPDATE_TYPE, createStringAttribute(UPDATE_TYPE_CREATED));
         item.put(PARTITION_ID, createStringAttribute(job.getPartitionId()));
         item.put(INPUT_FILES_COUNT, createNumberAttribute(job.getInputFiles().size()));
+        if (job.isSplittingJob()) {
+            item.put(SPLIT_TO_PARTITION_IDS, createStringAttribute(String.join(", ", job.getChildPartitions())));
+        }
         return item;
     }
 

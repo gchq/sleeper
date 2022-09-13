@@ -46,6 +46,10 @@ public class FileInfoFactory {
         return fileForPartition(leafPartition(min, max), filename, records, min, max);
     }
 
+    public FileInfo rootFile(String filename, long records, Object min, Object max) {
+        return fileForPartition(partitionTree.getRootPartition(), filename, records, min, max);
+    }
+
     private Partition leafPartition(Object min, Object max) {
         Partition partition = partitionTree.getLeafPartition(Key.create(min));
         if (!partition.isRowKeyInPartition(schema, Key.create(max))) {

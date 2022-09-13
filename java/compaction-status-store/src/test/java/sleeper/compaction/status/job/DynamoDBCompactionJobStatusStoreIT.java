@@ -51,6 +51,7 @@ import static sleeper.compaction.status.job.CompactionStatusStoreTestUtils.creat
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.INPUT_FILES_COUNT;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.PARTITION_ID;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.SPLIT_TO_PARTITION_IDS;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UPDATE_TYPE;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UPDATE_TYPE_CREATED;
@@ -92,7 +93,7 @@ public class DynamoDBCompactionJobStatusStoreIT extends DynamoDBTestBase {
 
         // Then
         assertThatItemsInTable().containsExactly(
-                createJobItem(job, 1));
+                createCompactionItem(job, 1));
     }
 
     @Test
@@ -117,8 +118,8 @@ public class DynamoDBCompactionJobStatusStoreIT extends DynamoDBTestBase {
 
         // Then
         assertThatItemsInTable().containsExactlyInAnyOrder(
-                createJobItem(job1, 1),
-                createJobItem(job2, 1));
+                createCompactionItem(job1, 1),
+                createCompactionItem(job2, 1));
     }
 
     @Test
@@ -138,7 +139,32 @@ public class DynamoDBCompactionJobStatusStoreIT extends DynamoDBTestBase {
 
         // Then
         assertThatItemsInTable().containsExactly(
-                createJobItem(job, 2));
+                createCompactionItem(job, 2));
+    }
+
+    @Test
+    public void shouldReportSplittingCompactionJobCreated() {
+        // Given
+        List<Partition> partitions = new PartitionsBuilder(schema)
+                .leavesWithSplits(
+                        Arrays.asList("A", "B"),
+                        Collections.singletonList("ggg"))
+                .parentJoining("C", "A", "B")
+                .buildList();
+        FileInfoFactory fileFactory = new FileInfoFactory(schema, partitions, Instant.now());
+        CompactionFactory jobFactory = new CompactionFactory(instanceProperties, tableProperties);
+        CompactionJob job = jobFactory.createSplittingCompactionJob(
+                Arrays.asList(
+                        fileFactory.rootFile("file1", 100L, "a", "c"),
+                        fileFactory.rootFile("file2", 100L, "w", "z")),
+                "C", "A", "B", "ggg", 0);
+
+        // When
+        store.jobCreated(job);
+
+        // Then
+        assertThatItemsInTable().containsExactly(
+                createSplittingCompactionItem(job, 2, "A, B"));
     }
 
     private Partition singlePartition() {
@@ -152,12 +178,19 @@ public class DynamoDBCompactionJobStatusStoreIT extends DynamoDBTestBase {
                         map -> getStringAttribute(map, JOB_ID),
                         map -> getStringAttribute(map, UPDATE_TYPE),
                         map -> getStringAttribute(map, PARTITION_ID),
-                        map -> getNumberAttribute(map, INPUT_FILES_COUNT));
+                        map -> getNumberAttribute(map, INPUT_FILES_COUNT),
+                        map -> getStringAttribute(map, SPLIT_TO_PARTITION_IDS));
     }
 
-    private Tuple createJobItem(CompactionJob job, int inputFilesCount) {
+    private Tuple createCompactionItem(CompactionJob job, int inputFilesCount) {
         return tuple(
                 Stream.of(JOB_ID, UPDATE_TIME, UPDATE_TYPE, PARTITION_ID, INPUT_FILES_COUNT).collect(Collectors.toSet()),
-                job.getId(), UPDATE_TYPE_CREATED, job.getPartitionId(), "" + inputFilesCount);
+                job.getId(), UPDATE_TYPE_CREATED, job.getPartitionId(), "" + inputFilesCount, null);
+    }
+
+    private Tuple createSplittingCompactionItem(CompactionJob job, int inputFilesCount, String splitToPartitionIds) {
+        return tuple(
+                Stream.of(JOB_ID, UPDATE_TIME, UPDATE_TYPE, PARTITION_ID, INPUT_FILES_COUNT, SPLIT_TO_PARTITION_IDS).collect(Collectors.toSet()),
+                job.getId(), UPDATE_TYPE_CREATED, job.getPartitionId(), "" + inputFilesCount, splitToPartitionIds);
     }
 }
