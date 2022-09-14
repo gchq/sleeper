@@ -128,10 +128,7 @@ public class CompactionJobSerDe {
                 compactionJob.setSplitPoint(dis.readUTF());
             } else if (type instanceof ByteArrayType) {
                 byte[] splitPoint = new byte[dis.readInt()];
-                int result = dis.read(splitPoint);
-                if (result != splitPoint.length) {
-                    throw new IOException("Unable to read all bytes from stream");
-                }
+                dis.readFully(splitPoint);
                 compactionJob.setSplitPoint(splitPoint);
             } else {
                 throw new IllegalArgumentException("Unknown type " + type);
