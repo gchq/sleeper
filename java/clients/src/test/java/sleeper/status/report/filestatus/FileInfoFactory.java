@@ -24,12 +24,12 @@ import sleeper.statestore.FileInfo;
 import java.time.Instant;
 import java.util.List;
 
-public class FileStatusReportTestHelper {
+public class FileInfoFactory {
     private final Schema schema;
     private final PartitionTree partitionTree;
     private final Instant lastStateStoreUpdate;
 
-    public FileStatusReportTestHelper(Schema schema, List<Partition> partitions, Instant lastStateStoreUpdate) {
+    public FileInfoFactory(Schema schema, List<Partition> partitions, Instant lastStateStoreUpdate) {
         this.schema = schema;
         this.lastStateStoreUpdate = lastStateStoreUpdate;
         this.partitionTree = new PartitionTree(schema, partitions);
