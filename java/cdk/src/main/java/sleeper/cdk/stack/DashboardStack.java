@@ -56,14 +56,6 @@ public class DashboardStack extends NestedStack {
     private final Duration window;
     private final Dashboard dashboard;
 
-    private Map<String, String> createDimensionMap(String instanceId, String tableName) {
-        Map<String, String> hashMap = new HashMap<>();
-        hashMap.put("instanceId", instanceId);
-        hashMap.put("tableName", tableName);
-        return hashMap;
-
-    }
-
     public DashboardStack(
             Construct scope,
             String id,
@@ -193,6 +185,13 @@ public class DashboardStack extends NestedStack {
                         .width(6)
                         .build()
         );
+    }
+
+    private static Map<String, String> createDimensionMap(String instanceId, String tableName) {
+        Map<String, String> hashMap = new HashMap<>();
+        hashMap.put("instanceId", instanceId);
+        hashMap.put("tableName", tableName);
+        return hashMap;
     }
 
     private void addTableWidgets() {
