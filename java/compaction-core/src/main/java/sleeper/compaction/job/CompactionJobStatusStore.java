@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.dynamodb.job;
+package sleeper.compaction.job;
 
-public class DynamoDBCompactionJobStatusFormat {
+public interface CompactionJobStatusStore {
 
-    private DynamoDBCompactionJobStatusFormat() {
+    default void jobCreated(CompactionJob job) {
     }
 
-    public static final String JOB_ID = "JobId";
-    public static final String UPDATE_TIME = "UpdateTime";
-
+    static CompactionJobStatusStore none() {
+        return new CompactionJobStatusStore() {
+        };
+    }
 }

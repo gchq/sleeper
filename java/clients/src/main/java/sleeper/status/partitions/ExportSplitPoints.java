@@ -36,7 +36,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.table.util.StateStoreProvider;
+import sleeper.statestore.StateStoreProvider;
 
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;

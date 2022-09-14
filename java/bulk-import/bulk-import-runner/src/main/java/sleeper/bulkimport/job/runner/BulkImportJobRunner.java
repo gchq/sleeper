@@ -50,7 +50,7 @@ import sleeper.core.schema.SchemaSerDe;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.table.util.StateStoreProvider;
+import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -168,14 +168,13 @@ public abstract class BulkImportJobRunner {
     }
 
     private FileInfo createFileInfo(Row row) {
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setFilename(row.getAs(FILENAME_FIELD_NAME));
-        fileInfo.setJobId(null);
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setPartitionId(row.getAs(PARTITION_FIELD_NAME));
-        fileInfo.setNumberOfRecords(row.getAs(NUM_RECORDS_FIELD_NAME));
-
-        return fileInfo;
+        return FileInfo.builder()
+                .filename(row.getAs(FILENAME_FIELD_NAME))
+                .jobId(null)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(row.getAs(PARTITION_FIELD_NAME))
+                .numberOfRecords(row.getAs(NUM_RECORDS_FIELD_NAME))
+                .build();
     }
 
     protected StructType createFileInfoSchema() {
