@@ -16,6 +16,7 @@
 package sleeper.build.status;
 
 import java.io.PrintStream;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
 
@@ -32,7 +33,7 @@ public class ChunkStatus {
     private final String conclusion;
     private final Long runId;
     private final String runUrl;
-    private final Date runStarted;
+    private final Instant runStarted;
     private final String commitSha;
     private final String commitMessage;
 
@@ -155,7 +156,7 @@ public class ChunkStatus {
         private String conclusion;
         private Long runId;
         private String runUrl;
-        private Date runStarted;
+        private Instant runStarted;
         private String commitSha;
         private String commitMessage;
 
@@ -208,7 +209,7 @@ public class ChunkStatus {
         }
 
         public Builder runStarted(Date runStarted) {
-            this.runStarted = runStarted;
+            this.runStarted = runStarted.toInstant();
             return this;
         }
 
