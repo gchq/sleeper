@@ -26,6 +26,9 @@ import static sleeper.build.status.ValidationUtils.ignoreEmpty;
 
 public class ProjectConfiguration {
 
+    private static final long DEFAULT_RETRY_SECONDS = 60;
+    private static final long DEFAULT_MAX_RETRIES = 60L * 15L / DEFAULT_RETRY_SECONDS; // Give up after 15 minutes
+
     private final String token;
     private final GitHubHead head;
     private final List<ProjectChunk> chunks;
@@ -108,8 +111,8 @@ public class ProjectConfiguration {
         private String token;
         private GitHubHead head;
         private List<ProjectChunk> chunks;
-        private long retrySeconds = 20;
-        private long maxRetries = 60L * 15L / retrySeconds; // Retry after 15 minutes of waiting
+        private long retrySeconds = DEFAULT_RETRY_SECONDS;
+        private long maxRetries = DEFAULT_MAX_RETRIES;
 
         private Builder() {
         }
