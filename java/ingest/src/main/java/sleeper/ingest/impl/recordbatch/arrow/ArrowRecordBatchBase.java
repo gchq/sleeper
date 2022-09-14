@@ -201,7 +201,7 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
         // Open an output channel to write to the destination file
         // Create a writer to write the small batches into the output stream
         long bytesWritten;
-        Path arrowFilePath = Objects.requireNonNull(Paths.get(localArrowFileName));
+        Path arrowFilePath = Paths.get(localArrowFileName);
         Path arrowFileParent = Objects.requireNonNull(arrowFilePath.getParent());
         Files.createDirectories(arrowFileParent);
         LOGGER.debug("Determining sort order and opening local arrow file");

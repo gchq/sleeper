@@ -23,7 +23,6 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 
 import java.util.HashMap;
-import java.util.Objects;
 
 /**
  * A {@link WriteSupport} for {@link Record}s.
@@ -48,6 +47,6 @@ public class RecordWriteSupport extends WriteSupport<Record> {
     }
 
     public void write(Record record) {
-        Objects.requireNonNull(recordWriter).write(record);
+        recordWriter.write(record);
     }
 }
