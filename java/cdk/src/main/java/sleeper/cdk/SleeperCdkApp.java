@@ -178,7 +178,7 @@ public class SleeperCdkApp extends Stack {
         addTags(app);
     }
 
-    protected InstanceProperties getInstanceProperties() throws RuntimeException {
+    protected InstanceProperties getInstanceProperties() {
         return instanceProperties;
     }
 
