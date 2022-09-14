@@ -43,8 +43,8 @@ import sleeper.io.parquet.record.ParquetRecordWriter;
 import sleeper.io.parquet.record.SchemaConverter;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
-import sleeper.table.util.StateStoreProvider;
 
 import java.io.IOException;
 import java.net.URI;

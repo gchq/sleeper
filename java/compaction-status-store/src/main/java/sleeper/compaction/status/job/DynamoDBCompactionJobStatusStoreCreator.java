@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.dynamodb.job;
+package sleeper.compaction.status.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
@@ -31,9 +31,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
-import static sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
-import static sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
 
 public class DynamoDBCompactionJobStatusStoreCreator {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobStatusStoreCreator.class);

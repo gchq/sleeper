@@ -56,8 +56,8 @@ import sleeper.io.parquet.record.SchemaConverter;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
-import sleeper.table.util.StateStoreProvider;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;

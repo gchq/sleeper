@@ -22,6 +22,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.FileInfoFactory;
 import sleeper.statestore.StateStoreException;
 
 import java.time.Instant;

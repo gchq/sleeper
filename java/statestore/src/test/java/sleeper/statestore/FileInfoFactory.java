@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.status.report.filestatus;
+package sleeper.statestore;
 
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
-import sleeper.statestore.FileInfo;
 
 import java.time.Instant;
 import java.util.List;
@@ -36,14 +35,26 @@ public class FileInfoFactory {
     }
 
     public FileInfo leafFile(long records, Object min, Object max) {
+        return fileForPartition(leafPartition(min, max), records, min, max);
+    }
+
+    public FileInfo middleFile(long records, Object min, Object max) {
+        return fileForPartition(middlePartition(min, max), records, min, max);
+    }
+
+    public FileInfo leafFile(String filename, long records, Object min, Object max) {
+        return fileForPartition(leafPartition(min, max), filename, records, min, max);
+    }
+
+    private Partition leafPartition(Object min, Object max) {
         Partition partition = partitionTree.getLeafPartition(Key.create(min));
         if (!partition.isRowKeyInPartition(schema, Key.create(max))) {
             throw new IllegalArgumentException("Not in same leaf partition: " + min + ", " + max);
         }
-        return fileForPartition(partition, records, min, max);
+        return partition;
     }
 
-    public FileInfo middleFile(long records, Object min, Object max) {
+    private Partition middlePartition(Object min, Object max) {
         Partition partition = partitionTree.getNearestCommonAncestor(Key.create(min), Key.create(max));
         if (partition.isLeafPartition()) {
             throw new IllegalArgumentException("In same leaf partition: " + min + ", " + max);
@@ -51,15 +62,19 @@ public class FileInfoFactory {
         if (partition.getParentPartitionId() == null) {
             throw new IllegalArgumentException("Nearest common ancestor is root partition: " + min + ", " + max);
         }
-        return fileForPartition(partition, records, min, max);
+        return partition;
     }
 
     private FileInfo fileForPartition(Partition partition, long records, Object min, Object max) {
+        return fileForPartition(partition, partition.getId() + ".parquet", records, min, max);
+    }
+
+    private FileInfo fileForPartition(Partition partition, String filename, long records, Object min, Object max) {
         FileInfo file = new FileInfo();
         file.setRowKeyTypes(partition.getRowKeyTypes());
         file.setMinRowKey(Key.create(min));
         file.setMaxRowKey(Key.create(max));
-        file.setFilename(partition.getId() + ".parquet");
+        file.setFilename(filename);
         file.setPartitionId(partition.getId());
         file.setNumberOfRecords(records);
         file.setFileStatus(FileInfo.FileStatus.ACTIVE);

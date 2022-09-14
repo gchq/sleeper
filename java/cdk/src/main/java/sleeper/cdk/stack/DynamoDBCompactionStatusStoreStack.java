@@ -15,8 +15,8 @@
  */
 package sleeper.cdk.stack;
 
-import sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusFormat;
-import sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat;
+import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.dynamodb.Attribute;

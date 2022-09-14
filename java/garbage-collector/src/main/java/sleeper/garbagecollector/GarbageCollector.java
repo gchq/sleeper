@@ -23,8 +23,8 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableLister;
-import sleeper.table.util.StateStoreProvider;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
