@@ -56,15 +56,12 @@ public class SleeperTableLambda {
         tableProperties.loadFromString((String) event.getResourceProperties().get("tableProperties"));
         switch (event.getRequestType()) {
             case "Create":
-                LOGGER.info("Initialising Table");
                 initialiseTable(instanceProperties, tableProperties, configBucket);
                 break;
             case "Update":
-                LOGGER.info("Updating properties");
                 updateTableProperties(tableProperties);
                 break;
             case "Delete":
-                LOGGER.info("Tearing down properties");
                 deleteTableProperties(tableProperties, configBucket);
                 break;
             default:
@@ -73,14 +70,17 @@ public class SleeperTableLambda {
     }
 
     private void updateTableProperties(TableProperties tableProperties) throws IOException {
+        LOGGER.info("Updating properties");
         tableProperties.saveToS3(s3Client);
     }
 
     private void deleteTableProperties(TableProperties tableProperties, String bucket) {
+        LOGGER.info("Tearing down properties");
         s3Client.deleteObject(bucket, TableProperties.TABLES_PREFIX + "/" + tableProperties.get(TABLE_NAME));
     }
 
     private void initialiseTable(InstanceProperties instanceProperties, TableProperties tableProperties, String bucket) throws IOException {
+        LOGGER.info("Initialising Table");
         // Initialise Table
         new TableInitialiser(s3Client, dynamoDBClient).initialise(instanceProperties, tableProperties, bucket, new Configuration());
         updateTableProperties(tableProperties);
