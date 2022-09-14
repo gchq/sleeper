@@ -81,7 +81,6 @@ public class FileInfoSerDe {
     public FileInfo deserialiseFileInfo(byte[] bytes) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         DataInputStream dis = new DataInputStream(bais);
-        FileInfo fileInfo = new FileInfo();
         int numRowKeys = dis.readInt();
         List<PrimitiveType> rowKeyTypes = new ArrayList<>();
         List<Object> minRowKey = new ArrayList<>();
@@ -116,18 +115,16 @@ public class FileInfoSerDe {
             }
             rowKeyTypes.add(keyType);
         }
-        fileInfo.setRowKeyTypes(rowKeyTypes);
-        fileInfo.setMinRowKey(Key.create(minRowKey));
-        fileInfo.setMaxRowKey(Key.create(maxRowKey));
-        fileInfo.setFilename(dis.readUTF());
-        String fileStatus = dis.readUTF();
-        fileInfo.setFileStatus(FileInfo.FileStatus.valueOf(fileStatus));
-        fileInfo.setNumberOfRecords(dis.readLong());
-        fileInfo.setPartitionId(dis.readUTF());
-        boolean jobIdIsNotNull = dis.readBoolean();
-        if (jobIdIsNotNull) {
-            fileInfo.setJobId(dis.readUTF());
-        }
-        return fileInfo;
+
+        return FileInfo.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .minRowKey(Key.create(minRowKey))
+                .maxRowKey(Key.create(maxRowKey))
+                .filename(dis.readUTF())
+                .fileStatus(FileInfo.FileStatus.valueOf(dis.readUTF()))
+                .numberOfRecords(dis.readLong())
+                .partitionId(dis.readUTF())
+                .jobId(dis.readBoolean() ? dis.readUTF() : null)
+                .build();
     }
 }

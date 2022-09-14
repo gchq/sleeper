@@ -70,16 +70,16 @@ public class FileInfoFactory {
     }
 
     private FileInfo fileForPartition(Partition partition, String filename, long records, Object min, Object max) {
-        FileInfo file = new FileInfo();
-        file.setRowKeyTypes(partition.getRowKeyTypes());
-        file.setMinRowKey(Key.create(min));
-        file.setMaxRowKey(Key.create(max));
-        file.setFilename(filename);
-        file.setPartitionId(partition.getId());
-        file.setNumberOfRecords(records);
-        file.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        file.setLastStateStoreUpdateTime(lastStateStoreUpdate.toEpochMilli());
-        return file;
+        return FileInfo.builder()
+                .rowKeyTypes(partition.getRowKeyTypes())
+                .minRowKey(Key.create(min))
+                .maxRowKey(Key.create(max))
+                .filename(filename)
+                .partitionId(partition.getId())
+                .numberOfRecords(records)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .lastStateStoreUpdateTime(lastStateStoreUpdate.toEpochMilli())
+                .build();
     }
 
 }
