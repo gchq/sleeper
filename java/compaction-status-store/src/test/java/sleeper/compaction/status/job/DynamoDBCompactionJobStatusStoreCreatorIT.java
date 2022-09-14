@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.dynamodb;
+package sleeper.compaction.status.job;
 
 import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
 import org.junit.Test;
-import sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusStoreCreator;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
 
 public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase {
 

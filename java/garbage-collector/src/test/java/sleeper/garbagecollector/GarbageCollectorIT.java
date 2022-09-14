@@ -45,10 +45,10 @@ import sleeper.io.parquet.record.SchemaConverter;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.table.job.TableLister;
-import sleeper.table.util.StateStoreProvider;
 
 import java.io.File;
 import java.io.IOException;

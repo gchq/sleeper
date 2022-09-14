@@ -50,7 +50,7 @@ import sleeper.core.schema.SchemaSerDe;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.table.util.StateStoreProvider;
+import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.nio.file.Files;

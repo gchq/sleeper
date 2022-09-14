@@ -50,8 +50,8 @@ import sleeper.job.common.action.ActionException;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableCreator;
-import sleeper.table.util.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.Arrays;

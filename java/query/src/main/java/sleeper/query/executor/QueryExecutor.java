@@ -39,7 +39,7 @@ import sleeper.query.model.Query;
 import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.table.util.StateStoreProvider;
+import sleeper.statestore.StateStoreProvider;
 
 import java.util.ArrayList;
 import java.util.HashMap;

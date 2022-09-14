@@ -88,9 +88,9 @@ import sleeper.query.tracker.exception.QueryTrackerException;
 import sleeper.statestore.InitialiseStateStore;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.table.job.TableCreator;
-import sleeper.table.util.StateStoreProvider;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
