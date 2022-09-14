@@ -51,7 +51,7 @@ import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.QueryStatusReportListeners;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.table.util.StateStoreProvider;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
@@ -171,10 +171,8 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
             queryTrackers.queryInProgress(query);
             if (query instanceof LeafPartitionQuery) {
                 results = processLeafPartitionQuery((LeafPartitionQuery) query, tablePropertiesProvider.getTableProperties(query.getTableName()));
-            } else if (query instanceof Query) {
-                results = processRangeQuery(query, queryTrackers);
             } else {
-                throw new IllegalArgumentException("Found query of unknown type " + query.getClass());
+                results = processRangeQuery(query, queryTrackers);
             }
             if (null != results) {
                 publishResults(results, query, queryTrackers);

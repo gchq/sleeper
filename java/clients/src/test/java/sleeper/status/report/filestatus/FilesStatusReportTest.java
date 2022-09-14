@@ -23,6 +23,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.FileInfoFactory;
 
 import java.io.IOException;
 import java.net.URL;

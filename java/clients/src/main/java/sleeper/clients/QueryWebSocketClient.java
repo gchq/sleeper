@@ -88,7 +88,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         }
     }
 
-    private class Client extends WebSocketClient {
+    private static class Client extends WebSocketClient {
         private final Gson serde = new GsonBuilder().create();
         private final Set<String> outstandingQueries = new HashSet<>();
         private final Map<String, JsonArray> records = new HashMap<>();

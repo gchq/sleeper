@@ -24,12 +24,13 @@ public class FileInfoTest {
     @Test
     public void testSettersAndGetters() {
         // Given
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setPartitionId("0");
-        fileInfo.setFilename("abc");
-        fileInfo.setJobId("Job1");
-        fileInfo.setLastStateStoreUpdateTime(1_000_000L);
+        FileInfo fileInfo = FileInfo.builder()
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("0")
+                .filename("abc")
+                .jobId("Job1")
+                .lastStateStoreUpdateTime(1_000_000L)
+                .build();
 
         // When / Then
         assertThat(fileInfo.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
@@ -42,24 +43,27 @@ public class FileInfoTest {
     @Test
     public void testEqualsAndHashCode() {
         // Given
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId("0");
-        fileInfo1.setFilename("abc");
-        fileInfo1.setJobId("Job1");
-        fileInfo1.setLastStateStoreUpdateTime(1_000_000L);
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId("0");
-        fileInfo2.setFilename("abc");
-        fileInfo2.setJobId("Job1");
-        fileInfo2.setLastStateStoreUpdateTime(1_000_000L);
-        FileInfo fileInfo3 = new FileInfo();
-        fileInfo3.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo3.setPartitionId("0");
-        fileInfo3.setFilename("abc");
-        fileInfo3.setJobId("Job3");
-        fileInfo3.setLastStateStoreUpdateTime(2_000_000L);
+        FileInfo fileInfo1 = FileInfo.builder()
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("0")
+                .filename("abc")
+                .jobId("Job1")
+                .lastStateStoreUpdateTime(1_000_000L)
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("0")
+                .filename("abc")
+                .jobId("Job1")
+                .lastStateStoreUpdateTime(1_000_000L)
+                .build();
+        FileInfo fileInfo3 = FileInfo.builder()
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("0")
+                .filename("abc")
+                .jobId("Job3")
+                .lastStateStoreUpdateTime(2_000_000L)
+                .build();
 
         // When / Then
         assertThat(fileInfo2).isEqualTo(fileInfo1)

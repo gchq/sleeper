@@ -19,6 +19,7 @@ import sleeper.core.key.Key;
 import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -43,8 +44,20 @@ public class FileInfo {
     private String jobId;
     private Long lastStateStoreUpdateTime; // The latest time (in milliseconds since the epoch) that the status of the file was updated in the StateStore
 
-    public FileInfo() {
+    private FileInfo(Builder builder) {
+        setRowKeyTypes(builder.rowKeyTypes);
+        setMinRowKey(builder.minRowKey);
+        setMaxRowKey(builder.maxRowKey);
+        setFilename(builder.filename);
+        setPartitionId(builder.partitionId);
+        setNumberOfRecords(builder.numberOfRecords);
+        setFileStatus(builder.fileStatus);
+        setJobId(builder.jobId);
+        setLastStateStoreUpdateTime(builder.lastStateStoreUpdateTime);
+    }
 
+    public static Builder builder() {
+        return new Builder();
     }
 
     public List<PrimitiveType> getRowKeyTypes() {
@@ -167,5 +180,74 @@ public class FileInfo {
                 ", jobId='" + jobId + '\'' +
                 ", lastStateStoreUpdateTime=" + lastStateStoreUpdateTime +
                 '}';
+    }
+
+    public static final class Builder {
+        private List<PrimitiveType> rowKeyTypes;
+        private Key minRowKey;
+        private Key maxRowKey;
+        private String filename;
+        private String partitionId;
+        private Long numberOfRecords;
+        private FileStatus fileStatus;
+        private String jobId;
+        private Long lastStateStoreUpdateTime;
+
+        public Builder() {
+        }
+
+        public Builder rowKeyTypes(List<PrimitiveType> rowKeyTypes) {
+            this.rowKeyTypes = rowKeyTypes;
+            return this;
+        }
+
+        public Builder rowKeyTypes(PrimitiveType... rowKeyTypes) {
+            this.rowKeyTypes = Arrays.asList(rowKeyTypes);
+            return this;
+        }
+
+        public Builder minRowKey(Key minRowKey) {
+            this.minRowKey = minRowKey;
+            return this;
+        }
+
+        public Builder maxRowKey(Key maxRowKey) {
+            this.maxRowKey = maxRowKey;
+            return this;
+        }
+
+        public Builder filename(String filename) {
+            this.filename = filename;
+            return this;
+        }
+
+        public Builder partitionId(String partitionId) {
+            this.partitionId = partitionId;
+            return this;
+        }
+
+        public Builder numberOfRecords(Long numberOfRecords) {
+            this.numberOfRecords = numberOfRecords;
+            return this;
+        }
+
+        public Builder fileStatus(FileStatus fileStatus) {
+            this.fileStatus = fileStatus;
+            return this;
+        }
+
+        public Builder jobId(String jobId) {
+            this.jobId = jobId;
+            return this;
+        }
+
+        public Builder lastStateStoreUpdateTime(Long lastStateStoreUpdateTime) {
+            this.lastStateStoreUpdateTime = lastStateStoreUpdateTime;
+            return this;
+        }
+
+        public FileInfo build() {
+            return new FileInfo(this);
+        }
     }
 }

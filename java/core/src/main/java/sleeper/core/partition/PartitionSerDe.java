@@ -108,7 +108,7 @@ public class PartitionSerDe {
             if (!jsonElement.isJsonObject()) {
                 throw new JsonParseException("Expected JsonObject, got " + jsonElement);
             }
-            JsonObject json = (JsonObject) jsonElement;
+            JsonObject json = jsonElement.getAsJsonObject();
             String partitionId = json.get(PARTITION_ID).getAsString();
             boolean isLeafPartition = json.get(IS_LEAF_PARTITION).getAsBoolean();
             String parentPartitionId = null;

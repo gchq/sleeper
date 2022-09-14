@@ -144,3 +144,7 @@ ScaCap/action-surefire-report (https://github.com/marketplace/actions/surefire-r
 jwgmeligmeyling/checkstyle-github-action (https://github.com/marketplace/actions/push-checkstyle-report)
 
 - MIT License
+
+jwgmeligmeyling/spotbugs-github-action (https://github.com/marketplace/actions/push-spotbugs-report)
+
+- MIT License

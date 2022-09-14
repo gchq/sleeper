@@ -28,6 +28,8 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.constructs.Construct;
 
+import java.util.Locale;
+
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
@@ -56,7 +58,7 @@ public class S3StateStoreStack implements StateStoreStack {
         this.revisionTable = Table.Builder
                 .create(scope, "DynamoDBRevisionTable")
                 .tableName(String.join("-", "sleeper", instanceProperties.get(ID), "table",
-                        tableProperties.get(TABLE_NAME), "revisions").toLowerCase())
+                        tableProperties.get(TABLE_NAME), "revisions").toLowerCase(Locale.ROOT))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(partitionKeyRevisionTable)

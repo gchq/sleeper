@@ -13,35 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.table.util;
+package sleeper.statestore;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class StateStoreProvider {
-    private final StateStoreFactory stateStoreFactory;
+    private final Function<TableProperties, StateStore> stateStoreFactory;
     private final Map<String, StateStore> tableNameToStateStoreCache;
 
     public StateStoreProvider(AmazonDynamoDB dynamoDBClient,
                               InstanceProperties instanceProperties,
                               Configuration configuration) {
-        this.stateStoreFactory = new StateStoreFactory(dynamoDBClient, instanceProperties, configuration);
-        this.tableNameToStateStoreCache = new HashMap<>();
+        this(new StateStoreFactory(dynamoDBClient, instanceProperties, configuration)::getStateStore);
     }
 
     public StateStoreProvider(AmazonDynamoDB dynamoDBClient,
                               InstanceProperties instanceProperties) {
         this(dynamoDBClient, instanceProperties, null);
+    }
+
+    protected StateStoreProvider(Function<TableProperties, StateStore> stateStoreFactory) {
+        this.stateStoreFactory = stateStoreFactory;
+        this.tableNameToStateStoreCache = new HashMap<>();
     }
 
     public StateStore getStateStore(String tableName, TablePropertiesProvider tablePropertiesProvider) {
@@ -52,7 +55,7 @@ public class StateStoreProvider {
     public StateStore getStateStore(TableProperties tableProperties) {
         String tableName = tableProperties.get(TABLE_NAME);
         if (!tableNameToStateStoreCache.containsKey(tableName)) {
-            StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
+            StateStore stateStore = stateStoreFactory.apply(tableProperties);
             tableNameToStateStoreCache.put(tableName, stateStore);
         }
         return tableNameToStateStoreCache.get(tableName);
