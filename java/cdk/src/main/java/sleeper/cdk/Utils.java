@@ -139,16 +139,6 @@ public class Utils {
         }
     }
 
-    private static TableProperties processFile(File file, InstanceProperties instanceProperties) {
-        try (FileInputStream fis = new FileInputStream(file)) {
-            TableProperties tableProperties = new TableProperties(instanceProperties);
-            tableProperties.load(fis);
-            return tableProperties;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to open stream to file: " + file.getAbsolutePath());
-        }
-    }
-
     public static Stream<TableProperties> getAllTableProperties(InstanceProperties instanceProperties) {
         return instanceProperties.getList(UserDefinedInstanceProperty.TABLE_PROPERTIES).stream()
                 .map(File::new)
@@ -162,7 +152,17 @@ public class Utils {
                     }
                     return Stream.of(f);
                 })
-                .map(f -> Utils.processFile(f, instanceProperties));
+                .map(f -> processFile(f, instanceProperties));
+    }
+
+    private static TableProperties processFile(File file, InstanceProperties instanceProperties) {
+        try (FileInputStream fis = new FileInputStream(file)) {
+            TableProperties tableProperties = new TableProperties(instanceProperties);
+            tableProperties.load(fis);
+            return tableProperties;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to open stream to file: " + file.getAbsolutePath());
+        }
     }
 
     public static void addStackTagIfSet(Stack stack, InstanceProperties properties) {
