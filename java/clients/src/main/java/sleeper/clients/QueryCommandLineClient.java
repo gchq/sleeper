@@ -35,6 +35,7 @@ import sleeper.query.model.Query;
 import sleeper.statestore.StateStoreException;
 import sleeper.table.job.TableLister;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -80,7 +81,7 @@ public abstract class QueryCommandLineClient {
         Schema schema = tableProperties.getSchema();
         RangeFactory rangeFactory = new RangeFactory(schema);
 
-        Scanner scanner = new Scanner(System.in);
+        Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.displayName());
         while (true) {
             System.out.print("Exact (e) or range (r) query? ");
             String type = scanner.nextLine();
@@ -223,7 +224,7 @@ public abstract class QueryCommandLineClient {
             tableName = tables.get(0);
             System.out.println("Querying table " + tableName);
         } else {
-            Scanner scanner = new Scanner(System.in);
+            Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.displayName());
             while (true) {
                 System.out.println("The system contains the following tables:");
                 tables.forEach(System.out::println);

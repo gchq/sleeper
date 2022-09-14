@@ -33,6 +33,7 @@ import sleeper.query.model.Query;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public class WebSocketOutput {
@@ -120,7 +121,7 @@ public class WebSocketOutput {
 
         PostToConnectionRequest request = new PostToConnectionRequest()
                 .withConnectionId(connectionId)
-                .withData(ByteBuffer.wrap(message.getBytes()));
+                .withData(ByteBuffer.wrap(message.getBytes(StandardCharsets.UTF_8)));
 
         try {
             client.postToConnection(request);

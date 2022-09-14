@@ -24,10 +24,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPA
 
 public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStore {
 
-    private final AmazonDynamoDB dynamoDB;
-
     private DynamoDBCompactionJobStatusStore(AmazonDynamoDB dynamoDB) {
-        this.dynamoDB = dynamoDB;
     }
 
     public static CompactionJobStatusStore from(AmazonDynamoDB dynamoDB, InstanceProperties properties) {

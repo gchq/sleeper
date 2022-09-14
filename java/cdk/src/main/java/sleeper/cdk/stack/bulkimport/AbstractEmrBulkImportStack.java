@@ -57,7 +57,9 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
@@ -136,7 +138,7 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
             } else {
                 importBucket = Bucket.Builder.create(this, "BulkImportBucket")
                         .bucketName(String.join("-", "sleeper", instanceProperties.get(ID),
-                                "bulk-import").toLowerCase())
+                                "bulk-import").toLowerCase(Locale.ROOT))
                         .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                         .versioned(false)
                         .autoDeleteObjects(true)
@@ -252,7 +254,7 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
 
         // Use the policy which is derived from the AmazonEMRServicePolicy_v2 policy.
         PolicyDocument policyDoc = PolicyDocument.fromJson(new Gson().fromJson(new JsonReader(
-                        new InputStreamReader(EmrBulkImportStack.class.getResourceAsStream("/iam/SleeperEMRPolicy.json"))),
+                        new InputStreamReader(EmrBulkImportStack.class.getResourceAsStream("/iam/SleeperEMRPolicy.json"), StandardCharsets.UTF_8)),
                 Map.class));
 
         ManagedPolicy customEmrManagedPolicy = new ManagedPolicy(this, "CustomEMRManagedPolicy", ManagedPolicyProps.builder()

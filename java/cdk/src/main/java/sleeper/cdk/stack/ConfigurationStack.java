@@ -24,6 +24,8 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.constructs.Construct;
 
+import java.util.Locale;
+
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
@@ -37,7 +39,7 @@ public class ConfigurationStack extends NestedStack {
         super(scope, id);
 
         Bucket configBucket = Bucket.Builder.create(this, "ConfigBucket")
-                .bucketName(String.join("-", "sleeper", instanceProperties.get(ID), "config").toLowerCase())
+                .bucketName(String.join("-", "sleeper", instanceProperties.get(ID), "config").toLowerCase(Locale.ROOT))
                 .versioned(false)
                 .encryption(BucketEncryption.S3_MANAGED)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)

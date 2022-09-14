@@ -104,11 +104,11 @@ public class FileInfoSerDe {
                 keyType = new ByteArrayType();
                 int minBASize = dis.readInt();
                 byte[] min = new byte[minBASize];
-                dis.read(min);
+                dis.readFully(min);
                 minRowKey.add(min);
                 int maxBASize = dis.readInt();
                 byte[] max = new byte[maxBASize];
-                dis.read(max);
+                dis.readFully(max);
                 maxRowKey.add(max);
             } else {
                 throw new IOException("Unknown type of " + simpleClassName);

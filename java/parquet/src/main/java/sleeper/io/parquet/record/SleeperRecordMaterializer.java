@@ -19,10 +19,10 @@ import org.apache.parquet.io.api.GroupConverter;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 
-public class RecordMaterializer extends org.apache.parquet.io.api.RecordMaterializer<Record> {
+public class SleeperRecordMaterializer extends org.apache.parquet.io.api.RecordMaterializer<Record> {
     private final RecordConverter recordConverter;
 
-    public RecordMaterializer(Schema schema) {
+    public SleeperRecordMaterializer(Schema schema) {
         this.recordConverter = new RecordConverter(schema);
     }
 

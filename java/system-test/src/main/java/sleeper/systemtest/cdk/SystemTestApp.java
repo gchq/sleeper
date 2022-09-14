@@ -21,6 +21,7 @@ import sleeper.cdk.ConfigValidator;
 import sleeper.cdk.SleeperCdkApp;
 import sleeper.cdk.stack.IngestStack;
 import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.systemtest.SystemTestProperties;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Environment;
@@ -74,8 +75,12 @@ public class SystemTestApp extends SleeperCdkApp {
     }
 
     @Override
-    protected SystemTestProperties getInstanceProperties() {
-        return (SystemTestProperties) super.getInstanceProperties();
+    protected SystemTestProperties getInstanceProperties() throws RuntimeException {
+        InstanceProperties properties = super.getInstanceProperties();
+        if (properties instanceof SystemTestProperties) {
+            return (SystemTestProperties) properties;
+        }
+        throw new RuntimeException("Error when retrieving instance properties");
     }
 
     public static void main(String[] args) throws FileNotFoundException {

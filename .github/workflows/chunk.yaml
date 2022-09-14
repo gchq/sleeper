@@ -40,3 +40,9 @@ jobs:
         with:
           path: '**/checkstyle-result.xml'
           name: Checkstyle for ${{ inputs.chunkName }}
+      - name: Publish Findbugs Report
+        if: ${{ always() }}
+        uses: jwgmeligmeyling/spotbugs-github-action@v1.2
+        with:
+          path: '**/findbugsXml.xml'
+          name: Findbugs for ${{ inputs.chunkName }}

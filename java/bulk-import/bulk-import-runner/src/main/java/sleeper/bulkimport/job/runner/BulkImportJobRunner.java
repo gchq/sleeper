@@ -205,7 +205,7 @@ public abstract class BulkImportJobRunner {
             bulkImportJob = new BulkImportJobSerDe().fromJson(jsonJob);
         } catch (JsonSyntaxException e) {
             LOGGER.error("Json job was malformed: {}", args[0]);
-            bulkImportJob = null;
+            throw e;
         }
         InstanceProperties instanceProperties = new InstanceProperties();
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
