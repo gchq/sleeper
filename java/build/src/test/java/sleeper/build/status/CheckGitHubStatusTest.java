@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
 public class CheckGitHubStatusTest {
 
     @Test
-    public void shouldPassWhenSingleChunkSuccessful() {
+    public void shouldPassWhenSingleChunkSuccessful() throws Exception {
         GitHubHead branch = GitHubHead.builder()
                 .owner("test-owner").repository("test-repo").branch("test-branch").sha("test-sha")
                 .build();
@@ -49,7 +49,7 @@ public class CheckGitHubStatusTest {
     }
 
     @Test
-    public void shouldRetryWhenSingleChunkInProgressOnOldSha() {
+    public void shouldRetryWhenSingleChunkInProgressOnOldSha() throws Exception {
         GitHubHead branch = GitHubHead.builder()
                 .owner("test-owner").repository("test-repo").branch("test-branch").sha("test-sha")
                 .build();
@@ -73,7 +73,7 @@ public class CheckGitHubStatusTest {
     }
 
     @Test
-    public void shouldStopRetryingAfterSpecifiedTimes() {
+    public void shouldStopRetryingAfterSpecifiedTimes() throws Exception {
         GitHubHead branch = GitHubHead.builder()
                 .owner("test-owner").repository("test-repo").branch("test-branch").sha("test-sha")
                 .build();

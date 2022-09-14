@@ -19,7 +19,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -45,7 +44,8 @@ public class ChunksStatus {
     public List<String> reportLines() throws UnsupportedEncodingException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         report(new PrintStream(os, false, StandardCharsets.UTF_8.displayName()));
-        return Arrays.asList(os.toString(StandardCharsets.UTF_8.displayName()).split(System.lineSeparator()));
+        String report = os.toString(StandardCharsets.UTF_8.displayName());
+        return Arrays.asList(report.split(System.lineSeparator()));
     }
 
     public static ChunksStatus chunksForHead(GitHubHead head, ChunkStatus... chunks) {
