@@ -58,7 +58,6 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
@@ -206,7 +205,7 @@ public abstract class BulkImportJobRunner {
             bulkImportJob = new BulkImportJobSerDe().fromJson(jsonJob);
         } catch (JsonSyntaxException e) {
             LOGGER.error("Json job was malformed: {}", args[0]);
-            bulkImportJob = null;
+            throw e;
         }
         InstanceProperties instanceProperties = new InstanceProperties();
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
@@ -235,6 +234,6 @@ public abstract class BulkImportJobRunner {
         }
 
         runner.init(instanceProperties, amazonS3, AmazonDynamoDBClientBuilder.defaultClient());
-        runner.run(Objects.requireNonNull(bulkImportJob));
+        runner.run(bulkImportJob);
     }
 }
