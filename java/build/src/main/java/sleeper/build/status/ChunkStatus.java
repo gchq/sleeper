@@ -79,6 +79,7 @@ public class ChunkStatus {
 
     public boolean isFailCheckWithHead(GitHubHead head) {
         return (COMPLETED.equals(status) && !SUCCESS.equals(conclusion))
+                // Fail if there's an old build we want to wait for but the wait timed out
                 || isWaitForOldBuildWithHead(head);
     }
 
