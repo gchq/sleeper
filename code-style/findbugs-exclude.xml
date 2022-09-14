@@ -42,12 +42,10 @@
     </Match>
     <Match>
         <Class name="sleeper.cdk.stack.CompactionStack"/>
-        <Method name="lambdaToCreateCompactionTasks"/>
-        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
-    </Match>
-    <Match>
-        <Class name="sleeper.cdk.stack.CompactionStack"/>
-        <Method name="lambdaToCreateSplittingCompactionTasks"/>
+        <Or>
+            <Method name="lambdaToCreateSplittingCompactionTasks"/>
+            <Method name="lambdaToCreateCompactionTasks"/>
+        </Or>
         <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
     </Match>
     <Match>
@@ -61,6 +59,9 @@
     <Match>
         <Class name="sleeper.io.parquet.record.RecordWriteSupport"/>
         <Method name="write"/>
-        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+        <Or>
+            <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+            <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
+        </Or>
     </Match>
 </FindBugsFilter>
