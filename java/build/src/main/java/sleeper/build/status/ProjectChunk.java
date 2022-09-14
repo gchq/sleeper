@@ -93,11 +93,16 @@ public class ProjectChunk {
     }
 
     public static final class Builder {
+        private String id;
         private String name;
         private String workflow;
-        private String id;
 
         private Builder() {
+        }
+
+        public Builder id(String id) {
+            this.id = id;
+            return this;
         }
 
         public Builder name(String name) {
@@ -112,11 +117,6 @@ public class ProjectChunk {
 
         public ProjectChunk build() {
             return new ProjectChunk(this);
-        }
-
-        public Builder id(String id) {
-            this.id = id;
-            return this;
         }
     }
 }
