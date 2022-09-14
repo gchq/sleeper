@@ -42,6 +42,7 @@ import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.Grant;
 import software.amazon.awscdk.services.iam.GrantOnPrincipalOptions;
 import software.amazon.awscdk.services.iam.IGrantable;
+import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.Policy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.PolicyStatementProps;
@@ -261,7 +262,8 @@ public class QueryStack extends NestedStack {
                 .exportName(instanceProperties.get(ID) + "-" + QUERY_LAMBDA_ROLE_ARN)
                 .build();
         new CfnOutput(this, QUERY_LAMBDA_ROLE_ARN, queryLambdaRoleOutputProps);
-        instanceProperties.set(SystemDefinedInstanceProperty.QUERY_LAMBDA_ROLE, Objects.requireNonNull(queryExecutorLambda.getRole()).getRoleName());
+        IRole role = Objects.requireNonNull(queryExecutorLambda.getRole());
+        instanceProperties.set(SystemDefinedInstanceProperty.QUERY_LAMBDA_ROLE, role.getRoleName());
 
         this.setupWebSocketApi(code, instanceProperties, queriesQueue, queryExecutorLambda, configBucket);
 

@@ -42,6 +42,7 @@ import software.amazon.awscdk.services.ecs.LogDriver;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
+import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.Code;
@@ -494,8 +495,9 @@ public class CompactionStack extends NestedStack {
                 .resources(Collections.singletonList("*"))
                 .actions(Arrays.asList("ecs:ListTasks", "ecs:RunTask", "iam:PassRole"))
                 .build();
-        Objects.requireNonNull(handler.getRole()).addToPrincipalPolicy(policyStatement);
-        Objects.requireNonNull(handler.getRole()).addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
+        IRole role = Objects.requireNonNull(handler.getRole());
+        role.addToPrincipalPolicy(policyStatement);
+        role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
         // Cloudwatch rule to trigger this lambda
         String ruleName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionTasksCreationRule");
@@ -550,8 +552,9 @@ public class CompactionStack extends NestedStack {
                 .resources(Collections.singletonList("*"))
                 .actions(Arrays.asList("ecs:ListTasks", "ecs:RunTask", "iam:PassRole"))
                 .build();
-        Objects.requireNonNull(handler.getRole()).addToPrincipalPolicy(policyStatement);
-        Objects.requireNonNull(handler.getRole()).addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
+        IRole role = Objects.requireNonNull(handler.getRole());
+        role.addToPrincipalPolicy(policyStatement);
+        role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
         // Cloudwatch rule to trigger this lambda
         String ruleName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-SplittingCompactionTasksCreationRule");

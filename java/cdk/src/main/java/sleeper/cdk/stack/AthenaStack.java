@@ -125,7 +125,7 @@ public class AthenaStack extends NestedStack {
                 .build();
 
         for (String className : handlerClasses) {
-            Function handler = Objects.requireNonNull(createConnector(className, instanceId, logRetentionDays, s3Code, env, memory, timeout));
+            Function handler = createConnector(className, instanceId, logRetentionDays, s3Code, env, memory, timeout);
 
             if (userJars != null) {
                 for (String jar : userJars) {
@@ -142,7 +142,7 @@ public class AthenaStack extends NestedStack {
             spillBucket.grantReadWrite(handler);
             spillMasterKey.grant(handler, "kms:GenerateDataKey", "kms:DescribeKey");
 
-            IRole role = Objects.requireNonNull(Objects.requireNonNull(handler).getRole());
+            IRole role = Objects.requireNonNull(handler.getRole());
             // Required for when spill bucket changes
             role.attachInlinePolicy(listAllBucketsPolicy);
 
