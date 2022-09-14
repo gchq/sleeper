@@ -46,6 +46,9 @@ public class RangeCanonicaliser {
     }
 
     private static Object nextValue(Type type, Object object) {
+        if (null == object) {
+            return null;
+        }
         if (type instanceof IntType) {
             return nextIntValue((Integer) object);
         }
@@ -62,9 +65,6 @@ public class RangeCanonicaliser {
     }
 
     private static Integer nextIntValue(Integer value) {
-        if (null == value) {
-            return null;
-        }
         if (value == Integer.MAX_VALUE) {
             return null;
         }
@@ -72,9 +72,6 @@ public class RangeCanonicaliser {
     }
 
     private static Long nextLongValue(Long value) {
-        if (null == value) {
-            return null;
-        }
         if (value == Long.MAX_VALUE) {
             return null;
         }
@@ -82,16 +79,10 @@ public class RangeCanonicaliser {
     }
 
     private static String nextStringValue(String value) {
-        if (null == value) {
-            return null;
-        }
         return value + '\u0000';
     }
 
     private static byte[] nextByteArrayValue(byte[] value) {
-        if (null == value) {
-            return null;
-        }
         byte[] next = new byte[value.length + 1];
         System.arraycopy(value, 0, next, 0, value.length);
         next[value.length] = Byte.MIN_VALUE;

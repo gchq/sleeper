@@ -36,8 +36,8 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
@@ -81,7 +81,7 @@ public class SchemaSerDe {
     }
 
     public Schema fromJson(InputStream inputStream) {
-        return gson.fromJson(new InputStreamReader(inputStream), Schema.class);
+        return gson.fromJson(new InputStreamReader(inputStream, Charset.forName("UTF-8")), Schema.class);
     }
 
     public String toBase64EncodedJson(Schema schema) {
@@ -96,7 +96,7 @@ public class SchemaSerDe {
     }
 
     public Schema fromJsonFile(String jsonFile) throws FileNotFoundException {
-        JsonReader reader = new JsonReader(new FileReader(jsonFile));
+        JsonReader reader = new JsonReader(new InputStreamReader(new FileInputStream(jsonFile), Charset.forName("UTF-8")));
         return gson.fromJson(reader, Schema.class);
     }
 

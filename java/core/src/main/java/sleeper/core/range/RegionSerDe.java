@@ -109,7 +109,7 @@ public class RegionSerDe {
             if (!jsonElement.isJsonObject()) {
                 throw new JsonParseException("Expected JsonObject, got " + jsonElement);
             }
-            JsonObject jsonObject = (JsonObject) jsonElement;
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
 
             boolean stringsBase64Encoded = true;
             if (jsonObject.has(STRINGS_BASE64_ENCODED)) {

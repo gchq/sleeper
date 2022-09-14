@@ -35,6 +35,7 @@ import sleeper.statestore.StateStoreFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -76,13 +77,16 @@ public class TableInitialiser {
             return null;
         }
         List<Object> splitPoints = new ArrayList<>();
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(s3.getObject(configBucket, splitsFile).getObjectContent()));
-        boolean stringsBase64Encoded = Boolean.parseBoolean(tableProperties.get(SPLIT_POINTS_BASE64_ENCODED));
-        PrimitiveType keyType = tableProperties.getSchema().getRowKeyTypes().get(0);
-        bufferedReader.lines()
-                .map(l -> createSplitPoint(l, stringsBase64Encoded, keyType))
-                .forEach(splitPoints::add);
-
+        try (InputStreamReader inputStreamReader = new InputStreamReader(s3.getObject(configBucket, splitsFile).getObjectContent(), StandardCharsets.UTF_8);
+             BufferedReader bufferedReader = new BufferedReader(inputStreamReader)) {
+            boolean stringsBase64Encoded = Boolean.parseBoolean(tableProperties.get(SPLIT_POINTS_BASE64_ENCODED));
+            PrimitiveType keyType = tableProperties.getSchema().getRowKeyTypes().get(0);
+            bufferedReader.lines()
+                    .map(l -> createSplitPoint(l, stringsBase64Encoded, keyType))
+                    .forEach(splitPoints::add);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         return splitPoints;
     }
 
@@ -95,7 +99,7 @@ public class TableInitialiser {
         }
         if (keyType instanceof StringType) {
             if (stringsBase64Encoded) {
-                return new String(Base64.decodeBase64(line));
+                return new String(Base64.decodeBase64(line), StandardCharsets.UTF_8);
             }
             return line;
         }

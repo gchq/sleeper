@@ -155,16 +155,16 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
             Object minKey,
             Object maxKey,
             long updateTime) {
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(sleeperSchema.getRowKeyTypes());
-        fileInfo.setFilename(filename);
-        fileInfo.setPartitionId(partitionId);
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setNumberOfRecords(numberOfLines);
-        fileInfo.setMinRowKey(Key.create(minKey));
-        fileInfo.setMaxRowKey(Key.create(maxKey));
-        fileInfo.setLastStateStoreUpdateTime(updateTime);
-        return fileInfo;
+        return FileInfo.builder()
+                .rowKeyTypes(sleeperSchema.getRowKeyTypes())
+                .filename(filename)
+                .partitionId(partitionId)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(numberOfLines)
+                .minRowKey(Key.create(minKey))
+                .maxRowKey(Key.create(maxKey))
+                .lastStateStoreUpdateTime(updateTime)
+                .build();
     }
 
     /**

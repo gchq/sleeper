@@ -13,26 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.io.parquet.record;
+package sleeper.build.status;
 
-import org.apache.parquet.io.api.GroupConverter;
-import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
+public class ValidationUtils {
 
-public class RecordMaterializer extends org.apache.parquet.io.api.RecordMaterializer<Record> {
-    private final RecordConverter recordConverter;
-
-    public RecordMaterializer(Schema schema) {
-        this.recordConverter = new RecordConverter(schema);
+    private ValidationUtils() {
     }
 
-    @Override
-    public Record getCurrentRecord() {
-        return recordConverter.getRecord();
-    }
-
-    @Override
-    public GroupConverter getRootConverter() {
-        return recordConverter;
+    public static String ignoreEmpty(String string) {
+        if (string == null || string.isEmpty()) {
+            return null;
+        } else {
+            return string;
+        }
     }
 }

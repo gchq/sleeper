@@ -27,6 +27,7 @@ import java.util.Comparator;
  * that sorts them in the natural way as defined by the Sleeper schema.
  */
 public class WrappedKeyComparator implements Comparator<Key>, Serializable {
+    private static final long serialVersionUID = 7448396149070034670L;
     private final String schemaAsString;
     private transient KeyComparator keyComparator;
 

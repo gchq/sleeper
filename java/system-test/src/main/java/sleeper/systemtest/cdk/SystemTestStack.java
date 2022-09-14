@@ -40,6 +40,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import java.util.List;
+import java.util.Locale;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -81,7 +82,7 @@ public class SystemTestStack extends NestedStack {
                 .build();
         IVpc vpc = Vpc.fromLookup(this, "VPC2", vpcLookupOptions);
         String clusterName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                systemTestProperties.get(ID).toLowerCase(), "system-test-cluster"));
+                systemTestProperties.get(ID).toLowerCase(Locale.ROOT), "system-test-cluster"));
         Cluster cluster = Cluster.Builder
                 .create(this, "SystemTestCluster")
                 .clusterName(clusterName)

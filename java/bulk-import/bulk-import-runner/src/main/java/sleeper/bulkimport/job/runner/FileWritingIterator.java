@@ -45,6 +45,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -193,7 +194,7 @@ public class FileWritingIterator implements Iterator<Row> {
         return new ParquetRecordWriter.Builder(new Path(path),
                 SchemaConverter.getSchema(schema), schema)
                 .withCompressionCodec(CompressionCodecName
-                        .valueOf(tableProperties.get(TableProperty.COMPRESSION_CODEC).toUpperCase()))
+                        .valueOf(tableProperties.get(TableProperty.COMPRESSION_CODEC).toUpperCase(Locale.ROOT)))
                 .withRowGroupSize(tableProperties.getInt(TableProperty.ROW_GROUP_SIZE))
                 .withPageSize(tableProperties.getInt(TableProperty.PAGE_SIZE))
                 .withConf(this.conf).build();

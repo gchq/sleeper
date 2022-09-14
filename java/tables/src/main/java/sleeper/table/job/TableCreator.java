@@ -27,6 +27,7 @@ import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -63,7 +64,7 @@ public class TableCreator {
 
         if (tableProperties.get(DATA_BUCKET) == null) {
             String bucketName = String.join("-", "sleeper", instanceId,
-                    "table", tableName).toLowerCase();
+                    "table", tableName).toLowerCase(Locale.ROOT);
             if (bucketName.length() > 63) {
                 bucketName = bucketName.substring(0, 63);
             }
@@ -73,11 +74,11 @@ public class TableCreator {
             LOGGER.info("Created bucket {}", bucketName);
         }
         tableProperties.set(ACTIVE_FILEINFO_TABLENAME, String.join("-", "sleeper", instanceId,
-                "table", tableName, "active-files").toLowerCase());
+                "table", tableName, "active-files").toLowerCase(Locale.ROOT));
         tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, String.join("-", "sleeper", instanceId,
-                "table", tableName, "gc-files").toLowerCase());
+                "table", tableName, "gc-files").toLowerCase(Locale.ROOT));
         tableProperties.set(PARTITION_TABLENAME, String.join("-", "sleeper", instanceId,
-                "table", tableName, "partitions").toLowerCase());
+                "table", tableName, "partitions").toLowerCase(Locale.ROOT));
 
         // Create Dynamo tables
         try {

@@ -167,14 +167,13 @@ public abstract class BulkImportJobRunner {
     }
 
     private FileInfo createFileInfo(Row row) {
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setFilename(row.getAs(FILENAME_FIELD_NAME));
-        fileInfo.setJobId(null);
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setPartitionId(row.getAs(PARTITION_FIELD_NAME));
-        fileInfo.setNumberOfRecords(row.getAs(NUM_RECORDS_FIELD_NAME));
-
-        return fileInfo;
+        return FileInfo.builder()
+                .filename(row.getAs(FILENAME_FIELD_NAME))
+                .jobId(null)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(row.getAs(PARTITION_FIELD_NAME))
+                .numberOfRecords(row.getAs(NUM_RECORDS_FIELD_NAME))
+                .build();
     }
 
     protected StructType createFileInfoSchema() {
@@ -206,7 +205,7 @@ public abstract class BulkImportJobRunner {
             bulkImportJob = new BulkImportJobSerDe().fromJson(jsonJob);
         } catch (JsonSyntaxException e) {
             LOGGER.error("Json job was malformed: {}", args[0]);
-            bulkImportJob = null;
+            throw e;
         }
         InstanceProperties instanceProperties = new InstanceProperties();
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
