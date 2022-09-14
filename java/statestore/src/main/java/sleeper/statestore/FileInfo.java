@@ -44,10 +44,6 @@ public class FileInfo {
     private String jobId;
     private Long lastStateStoreUpdateTime; // The latest time (in milliseconds since the epoch) that the status of the file was updated in the StateStore
 
-    public FileInfo() {
-
-    }
-
     private FileInfo(Builder builder) {
         setRowKeyTypes(builder.rowKeyTypes);
         setMinRowKey(builder.minRowKey);
