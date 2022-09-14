@@ -5,6 +5,7 @@ on:
       - '.github/workflows/chunk-compaction.yaml'
       - '.github/workflows/chunk.yaml'
       - 'code-style/checkstyle*.xml'
+      - 'code-style/findbugs*.xml'
       - 'java/pom.xml'
       - 'java/compaction-job-execution/**'
       - 'java/compaction-job-creation/**'
