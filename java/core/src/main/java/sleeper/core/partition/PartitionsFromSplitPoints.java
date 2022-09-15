@@ -57,7 +57,11 @@ public class PartitionsFromSplitPoints {
         for (Field field : rowKeyFields) {
             this.rowKeyTypes.add((PrimitiveType) field.getType());
         }
-        this.splitPoints = new ArrayList<>(splitPoints);
+        if (splitPoints == null) {
+            this.splitPoints = new ArrayList<>();
+        } else {
+            this.splitPoints = new ArrayList<>(splitPoints);
+        }
         this.rangeFactory = new RangeFactory(schema);
     }
 
