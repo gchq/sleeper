@@ -140,21 +140,23 @@ public class Utils {
         }
     }
 
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public static Stream<TableProperties> getAllTableProperties(InstanceProperties instanceProperties) {
         return instanceProperties.getList(UserDefinedInstanceProperty.TABLE_PROPERTIES).stream()
                 .map(File::new)
-                .flatMap(f -> {
-                    if (!f.exists()) {
-                        throw new RuntimeException("There was a problem with the table configuration. " +
-                                f.getAbsolutePath() + " doesn't exist");
-                    }
-                    if (f.isDirectory()) {
-                        return Arrays.stream(Objects.requireNonNull(f.listFiles()));
-                    }
-                    return Stream.of(f);
-                })
+                .flatMap(Utils::processDirectory)
                 .map(f -> processFile(f, instanceProperties));
+    }
+
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
+    private static Stream<File> processDirectory(File f) {
+        if (!f.exists()) {
+            throw new RuntimeException("There was a problem with the table configuration. " +
+                    f.getAbsolutePath() + " doesn't exist");
+        }
+        if (f.isDirectory()) {
+            return Arrays.stream(Objects.requireNonNull(f.listFiles()));
+        }
+        return Stream.of(f);
     }
 
     private static TableProperties processFile(File file, InstanceProperties instanceProperties) {
