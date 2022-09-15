@@ -42,8 +42,16 @@ public class FileInfoFactory {
         return fileForPartition(middlePartition(min, max), records, min, max);
     }
 
+    public FileInfo rootFile(long records, Object min, Object max) {
+        return fileForPartition(partitionTree.getRootPartition(), records, min, max);
+    }
+
     public FileInfo leafFile(String filename, long records, Object min, Object max) {
         return fileForPartition(leafPartition(min, max), filename, records, min, max);
+    }
+
+    public FileInfo rootFile(String filename, long records, Object min, Object max) {
+        return fileForPartition(partitionTree.getRootPartition(), filename, records, min, max);
     }
 
     private Partition leafPartition(Object min, Object max) {
