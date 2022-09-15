@@ -80,7 +80,7 @@ public class DynamoDBStateStoreCreator {
         this.readyForGCFileInfoTablename = Objects.requireNonNull(readyForGCFileInfoTablename, "readyForGCFileInfoTablename must not be null");
         this.partitionTableName = Objects.requireNonNull(partitionTablename, "partitionTableName must not be null");
         this.schema = Objects.requireNonNull(schema, "schema must not be null");
-        this.rowKeyTypes = schema.getRowKeyTypes();
+        this.rowKeyTypes = Collections.unmodifiableList(new ArrayList<>(schema.getRowKeyTypes()));
         if (this.rowKeyTypes.isEmpty()) {
             throw new IllegalArgumentException("rowKeyTypes must not be empty");
         }

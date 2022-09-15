@@ -19,6 +19,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
@@ -78,7 +79,7 @@ public class S3FileInfoStore implements FileInfoStore {
         this.fs = Objects.requireNonNull(builder.fs, "fs must not be null");
         this.s3Bucket = Objects.requireNonNull(builder.s3Bucket, "s3Bucket must not be null");
         this.dynamoRevisionIdTable = Objects.requireNonNull(builder.dynamoRevisionIdTable, "dynamoRevisionIdTable must not be null");
-        this.rowKeyTypes = builder.rowKeyTypes;
+        this.rowKeyTypes = Collections.unmodifiableList(new ArrayList<>(builder.rowKeyTypes));
         this.garbageCollectorDelayBeforeDeletionInSeconds = builder.garbageCollectorDelayBeforeDeletionInSeconds;
         this.dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
         this.keySerDe = new KeySerDe(rowKeyTypes);
@@ -502,7 +503,7 @@ public class S3FileInfoStore implements FileInfoStore {
         return fileInfos;
     }
 
-
+    @SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
     public static final class Builder {
         private AmazonDynamoDB dynamoDB;
         private String dynamoRevisionIdTable;

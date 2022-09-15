@@ -40,6 +40,7 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.amazonaws.services.dynamodbv2.model.TransactionConflictException;
 import com.amazonaws.services.dynamodbv2.model.TransactionInProgressException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.core.schema.Schema;
@@ -450,6 +451,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         private Builder() {
         }
 
+        @SuppressFBWarnings("EI_EXPOSE_REP2")
         public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
             this.dynamoDB = dynamoDB;
             return this;

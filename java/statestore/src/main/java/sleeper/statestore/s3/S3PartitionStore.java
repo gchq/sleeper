@@ -21,6 +21,7 @@ import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
@@ -83,7 +84,7 @@ public class S3PartitionStore implements PartitionStore {
         conf = builder.conf;
         tableSchema = builder.tableSchema;
         regionSerDe = new RegionSerDe(tableSchema);
-        rowKeyTypes = tableSchema.getRowKeyTypes();
+        rowKeyTypes = Collections.unmodifiableList(new ArrayList<>(tableSchema.getRowKeyTypes()));
         fs = builder.fs;
         s3Bucket = builder.s3Bucket;
         s3RevisionUtils = new S3RevisionUtils(dynamoDB, dynamoRevisionIdTable);
@@ -366,6 +367,7 @@ public class S3PartitionStore implements PartitionStore {
         public Builder() {
         }
 
+        @SuppressFBWarnings("EI_EXPOSE_REP2")
         public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
             this.dynamoDB = dynamoDB;
             return this;
