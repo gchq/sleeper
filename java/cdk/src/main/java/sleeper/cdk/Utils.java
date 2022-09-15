@@ -15,6 +15,7 @@
  */
 package sleeper.cdk;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
@@ -139,6 +140,7 @@ public class Utils {
         }
     }
 
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public static Stream<TableProperties> getAllTableProperties(InstanceProperties instanceProperties) {
         return instanceProperties.getList(UserDefinedInstanceProperty.TABLE_PROPERTIES).stream()
                 .map(File::new)

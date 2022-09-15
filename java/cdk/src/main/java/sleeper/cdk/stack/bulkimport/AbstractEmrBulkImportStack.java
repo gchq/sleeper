@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
@@ -83,6 +84,7 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
     protected final Queue bulkImportJobQueue;
     protected IRole ec2Role;
 
+    @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
     public AbstractEmrBulkImportStack(
             Construct scope,
             String id,
@@ -94,7 +96,6 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
             InstanceProperties instanceProperties,
             ITopic errorsTopic) {
         super(scope, id);
-
         this.shortId = shortId;
         this.bulkImportPlatform = bulkImportPlatform;
         this.instanceProperties = instanceProperties;
