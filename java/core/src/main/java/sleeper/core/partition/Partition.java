@@ -238,6 +238,9 @@ public class Partition {
         }
 
         public List<PrimitiveType> getRowKeyTypes() {
+            if (rowKeyTypes == null) {
+                return new ArrayList<>();
+            }
             return Collections.unmodifiableList(rowKeyTypes);
         }
 
@@ -258,6 +261,9 @@ public class Partition {
         }
 
         public List<String> getChildPartitionIds() {
+            if (childPartitionIds == null) {
+                return new ArrayList<>();
+            }
             return Collections.unmodifiableList(childPartitionIds);
         }
 
