@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.ContainerConstants;
@@ -455,6 +456,7 @@ public class CompactionStack extends NestedStack {
         return cluster;
     }
 
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void lambdaToCreateCompactionTasks(IBucket configBucket,
                                                IBucket jarsBucket,
                                                Queue compactionMergeJobsQueue) {
@@ -512,6 +514,7 @@ public class CompactionStack extends NestedStack {
         instanceProperties.set(COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
     }
 
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void lambdaToCreateSplittingCompactionTasks(IBucket configBucket,
                                                         IBucket jarsBucket,
                                                         Queue compactionSplittingMergeJobsQueue) {

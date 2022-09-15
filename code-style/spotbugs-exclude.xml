@@ -16,52 +16,11 @@
   -->
 <FindBugsFilter>
     <Match>
-        <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
-    </Match>
-    <Match>
-        <Bug pattern="SE_COMPARATOR_SHOULD_BE_SERIALIZABLE"/>
-    </Match>
-    <Match>
-        <Bug pattern="BC_UNCONFIRMED_CAST"/>
-    </Match>
-    <Match>
-        <Bug pattern="DM_EXIT"/>
-    </Match>
-    <Match>
-        <Class name="sleeper.core.record.KeyComparator"/>
-        <Bug pattern="NP_NULL_ON_SOME_PATH_MIGHT_BE_INFEASIBLE"/>
-    </Match>
-    <Match>
-        <Class name="sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchBase"/>
-        <Method name="sortArrowAndWriteToLocalFile"/>
-        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
-    </Match>
-    <Match>
-        <Class name="sleeper.cdk.stack.AthenaStack"/>
-        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
-    </Match>
-    <Match>
-        <Class name="sleeper.cdk.stack.CompactionStack"/>
         <Or>
-            <Method name="lambdaToCreateSplittingCompactionTasks"/>
-            <Method name="lambdaToCreateCompactionTasks"/>
-        </Or>
-        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
-    </Match>
-    <Match>
-        <Class name="sleeper.cdk.stack.IngestStack"/>
-        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
-    </Match>
-    <Match>
-        <Class name="sleeper.cdk.stack.QueryStack"/>
-        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
-    </Match>
-    <Match>
-        <Class name="sleeper.io.parquet.record.RecordWriteSupport"/>
-        <Method name="write"/>
-        <Or>
-            <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
-            <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
+            <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
+            <Bug pattern="SE_COMPARATOR_SHOULD_BE_SERIALIZABLE"/>
+            <Bug pattern="BC_UNCONFIRMED_CAST"/>
+            <Bug pattern="DM_EXIT"/>
         </Or>
     </Match>
 </FindBugsFilter>

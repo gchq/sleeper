@@ -15,6 +15,7 @@
  */
 package sleeper.ingest.impl.recordbatch.arrow;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
@@ -189,6 +190,7 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
      * @return Number of bytes written
      * @throws IOException -
      */
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private static long sortArrowAndWriteToLocalFile(BufferAllocator temporaryBufferAllocator,
                                                      Schema sleeperSchema,
                                                      VectorSchemaRoot sourceVectorSchemaRoot,
