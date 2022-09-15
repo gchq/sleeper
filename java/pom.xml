@@ -94,7 +94,7 @@
         <compiler.plugin.version>3.8.1</compiler.plugin.version>
         <enforcer.plugin.version>3.0.0</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
-        <findbugs.plugin.version>3.0.5</findbugs.plugin.version>
+        <spotbugs.plugin.version>4.7.2.0</spotbugs.plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -244,19 +244,19 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <version>${findbugs.plugin.version}</version>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${spotbugs.plugin.version}</version>
                 <configuration>
                     <effort>Max</effort>
                     <threshold>Low</threshold>
                     <xmlOutput>true</xmlOutput>
-                    <findbugsXmlOutputDirectory>
-                        ${project.build.directory}/findbugs
-                    </findbugsXmlOutputDirectory>
+                    <spotbugsXmlOutputDirectory>
+                        ${project.build.directory}/spotbugs
+                    </spotbugsXmlOutputDirectory>
                     <onlyAnalyze>sleeper.-</onlyAnalyze>
                     <excludeFilterFile>
-                        ../code-style/findbugs-exclude.xml
+                        ../code-style/spotbugs-exclude.xml
                     </excludeFilterFile>
                 </configuration>
                 <executions>
@@ -267,9 +267,9 @@
                             <effort>Max</effort>
                             <threshold>Low</threshold>
                             <xmlOutput>true</xmlOutput>
-                            <findbugsXmlOutputDirectory>
+                            <spotbugsXmlOutputDirectory>
                                 ${project.build.directory}/findbugs
-                            </findbugsXmlOutputDirectory>
+                            </spotbugsXmlOutputDirectory>
                         </configuration>
                         <goals>
                             <goal>check</goal>
@@ -398,9 +398,9 @@
                         </executions>
                     </plugin>
                     <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>findbugs-maven-plugin</artifactId>
-                        <version>${findbugs.plugin.version}</version>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
+                        <version>${spotbugs.plugin.version}</version>
                         <executions>
                             <execution>
                                 <id>validate</id>
