@@ -125,6 +125,10 @@ public class Partition {
         }
     }
 
+    public void addChildPartitionIds(String... ids) {
+        childPartitionIds.addAll(Arrays.asList(ids));
+    }
+
     public int getDimension() {
         return dimension;
     }

@@ -64,7 +64,7 @@ public class PartitionFactory {
     public Partition child(Partition parent, String id, Object min, Object max) {
         Partition child = partition(id, min, max);
         child.setParentPartitionId(parent.getId());
-        parent.getChildPartitionIds().add(id);
+        parent.addChildPartitionIds(id);
         parent.setLeafPartition(false);
         parent.setDimension(0);
         return child;
