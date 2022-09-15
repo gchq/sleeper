@@ -19,6 +19,7 @@ import com.facebook.collections.ByteArray;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -75,7 +76,11 @@ public class CompactionJob {
     }
 
     public void setChildPartitions(List<String> childPartitions) {
-        this.childPartitions = childPartitions;
+        if (childPartitions != null) {
+            this.childPartitions = new ArrayList<>(childPartitions);
+        } else {
+            this.childPartitions = new ArrayList<>();
+        }
     }
 
     public List<String> getInputFiles() {
@@ -84,7 +89,7 @@ public class CompactionJob {
 
     public void setInputFiles(List<String> inputFiles) {
         checkDuplicates(inputFiles);
-        this.inputFiles = inputFiles;
+        this.inputFiles = new ArrayList<>(inputFiles);
     }
 
     /**
