@@ -23,6 +23,7 @@ import sleeper.core.schema.Schema;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -40,14 +41,14 @@ public class AdditionIterator implements SortedRecordIterator {
 
     @Override
     public void init(String configString, Schema schema) {
-        this.rowKeyFieldNames = schema.getRowKeyFieldNames();
-        this.sortKeyFieldNames = schema.getSortKeyFieldNames();
-        this.valueFieldNames = schema.getValueFieldNames();
+        this.rowKeyFieldNames = Collections.unmodifiableList(new ArrayList<>(schema.getRowKeyFieldNames()));
+        this.sortKeyFieldNames = Collections.unmodifiableList(schema.getSortKeyFieldNames());
+        this.valueFieldNames = Collections.unmodifiableList(schema.getValueFieldNames());
     }
 
     @Override
     public List<String> getRequiredValueFields() {
-        return valueFieldNames;
+        return Collections.unmodifiableList(valueFieldNames);
     }
 
     @Override
@@ -68,9 +69,9 @@ public class AdditionIterator implements SortedRecordIterator {
                 List<String> sortKeyFieldNames,
                 List<String> valueFieldNames) {
             this.input = input;
-            this.rowKeyFieldNames = rowKeyFieldNames;
-            this.sortKeyFieldNames = sortKeyFieldNames;
-            this.valueFieldNames = valueFieldNames;
+            this.rowKeyFieldNames = Collections.unmodifiableList(new ArrayList<>(rowKeyFieldNames));
+            this.sortKeyFieldNames = Collections.unmodifiableList(new ArrayList<>(sortKeyFieldNames));
+            this.valueFieldNames = Collections.unmodifiableList(new ArrayList<>(valueFieldNames));
             if (input.hasNext()) {
                 next = input.next();
             }

@@ -22,6 +22,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -37,7 +38,7 @@ public class KeyComparator implements Comparator<Key> {
     }
 
     public KeyComparator(List<PrimitiveType> rowKeyTypes) {
-        this.rowKeyTypes = rowKeyTypes;
+        this.rowKeyTypes = Collections.unmodifiableList(new ArrayList<>(rowKeyTypes));
     }
 
     public KeyComparator(PrimitiveType... rowKeyTypes) {

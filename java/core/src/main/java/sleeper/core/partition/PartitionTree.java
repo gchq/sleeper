@@ -103,7 +103,7 @@ public class PartitionTree {
         }
         // If root partition is a leaf partition then key must be in it
         if (rootPartition.isLeafPartition()) {
-            return rootPartition;
+            return getRootPartition();
         }
 
         return descend(rootPartition, key);
@@ -134,7 +134,7 @@ public class PartitionTree {
     }
 
     public Partition getRootPartition() {
-        return rootPartition;
+        return Partition.builder().clonePartition(rootPartition);
     }
 
     public Partition getNearestCommonAncestor(Key a, Key b) {

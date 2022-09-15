@@ -15,6 +15,7 @@
  */
 package sleeper.core.schema;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.ArrayList;
@@ -42,7 +43,7 @@ public class Schema {
         rowKeyFields = Collections.unmodifiableList(new ArrayList<>(builder.validRowKeyFields()));
         sortKeyFields = Collections.unmodifiableList(new ArrayList<>(builder.validSortKeyFields()));
         valueFields = Collections.unmodifiableList(new ArrayList<>(builder.validValueFields()));
-        validateNoDuplicates(streamAllFields());
+        validateNoDuplicates(streamAllFields(this));
     }
 
     public static Builder builder() {
@@ -50,15 +51,15 @@ public class Schema {
     }
 
     public List<Field> getRowKeyFields() {
-        return rowKeyFields;
+        return new ArrayList<>(rowKeyFields);
     }
 
     public List<Field> getSortKeyFields() {
-        return sortKeyFields;
+        return new ArrayList<>(sortKeyFields);
     }
 
     public List<Field> getValueFields() {
-        return valueFields;
+        return new ArrayList<>(valueFields);
     }
 
     public List<PrimitiveType> getRowKeyTypes() {
@@ -82,7 +83,7 @@ public class Schema {
     }
 
     public List<String> getAllFieldNames() {
-        return getMappedFields(streamAllFields(), Field::getName);
+        return getMappedFields(streamAllFields(this), Field::getName);
     }
 
     private <T> List<T> getMappedFields(List<Field> fields, Function<Field, T> mapping) {
@@ -96,16 +97,16 @@ public class Schema {
     }
 
     public List<Field> getAllFields() {
-        return Collections.unmodifiableList(streamAllFields().collect(Collectors.toList()));
+        return Collections.unmodifiableList(streamAllFields(this).collect(Collectors.toList()));
     }
 
-    public Stream<Field> streamAllFields() {
-        return Stream.concat(rowKeyFields.stream(),
-                Stream.concat(sortKeyFields.stream(), valueFields.stream()));
+    public static Stream<Field> streamAllFields(Schema schema) {
+        return Stream.concat(schema.getRowKeyFields().stream(),
+                Stream.concat(schema.getSortKeyFields().stream(), schema.getValueFields().stream()));
     }
 
     public Optional<Field> getField(String fieldName) {
-        return streamAllFields()
+        return streamAllFields(this)
                 .filter(f -> f.getName().equals(fieldName))
                 .findFirst();
     }
@@ -135,6 +136,7 @@ public class Schema {
         return Objects.hash(rowKeyFields, sortKeyFields, valueFields);
     }
 
+    @SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
     public static final class Builder {
         private List<Field> rowKeyFields;
         private List<Field> sortKeyFields;

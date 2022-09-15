@@ -29,7 +29,7 @@ public class Key {
     private List<Object> key;
 
     private Key(List<Object> key) {
-        this.key = key;
+        this.key = new ArrayList<>(key);
     }
 
     public Object get(int i) {
@@ -37,7 +37,7 @@ public class Key {
     }
 
     public List<Object> getKeys() {
-        return key;
+        return Collections.unmodifiableList(key);
     }
 
     public int size() {

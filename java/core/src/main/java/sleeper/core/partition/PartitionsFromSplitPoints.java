@@ -52,12 +52,12 @@ public class PartitionsFromSplitPoints {
     public PartitionsFromSplitPoints(
             Schema schema, List<Object> splitPoints) {
         this.schema = schema;
-        this.rowKeyFields = schema.getRowKeyFields();
+        this.rowKeyFields = Collections.unmodifiableList(new ArrayList<>(schema.getRowKeyFields()));
         this.rowKeyTypes = new ArrayList<>();
         for (Field field : rowKeyFields) {
             this.rowKeyTypes.add((PrimitiveType) field.getType());
         }
-        this.splitPoints = splitPoints;
+        this.splitPoints = new ArrayList<>(splitPoints);
         this.rangeFactory = new RangeFactory(schema);
     }
 

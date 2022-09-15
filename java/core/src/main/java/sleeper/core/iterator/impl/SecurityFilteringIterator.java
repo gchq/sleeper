@@ -74,7 +74,7 @@ public class SecurityFilteringIterator implements SortedRecordIterator {
                 Set<String> auths) {
             this.iterator = iterator;
             this.fieldName = fieldName;
-            this.auths = auths;
+            this.auths = new HashSet<>(auths);
             updateNextToAllowedValue();
         }
 
@@ -97,7 +97,7 @@ public class SecurityFilteringIterator implements SortedRecordIterator {
         public Record next() {
             Record toReturn = next;
             updateNextToAllowedValue();
-            return toReturn;
+            return new Record(toReturn);
         }
 
         @Override

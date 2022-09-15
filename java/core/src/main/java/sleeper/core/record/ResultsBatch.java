@@ -20,6 +20,8 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import sleeper.core.schema.Schema;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ResultsBatch {
@@ -30,7 +32,7 @@ public class ResultsBatch {
     public ResultsBatch(String queryId, Schema schema, List<Record> records) {
         this.queryId = queryId;
         this.schema = schema;
-        this.records = records;
+        this.records = new ArrayList<>(records);
     }
 
     public String getQueryId() {
@@ -42,7 +44,7 @@ public class ResultsBatch {
     }
 
     public List<Record> getRecords() {
-        return records;
+        return Collections.unmodifiableList(records);
     }
 
     @Override

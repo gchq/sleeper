@@ -23,6 +23,7 @@ import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -61,11 +62,11 @@ public class Partition {
     }
 
     public List<PrimitiveType> getRowKeyTypes() {
-        return rowKeyTypes;
+        return Collections.unmodifiableList(rowKeyTypes);
     }
 
     public void setRowKeyTypes(List<PrimitiveType> rowKeyTypes) {
-        this.rowKeyTypes = rowKeyTypes;
+        this.rowKeyTypes = new ArrayList<>(rowKeyTypes);
     }
 
     public void setRowKeyTypes(PrimitiveType... rowKeyTypes) {
@@ -114,7 +115,7 @@ public class Partition {
         if (null == childPartitionIds) {
             childPartitionIds = new ArrayList<>();
         }
-        return childPartitionIds;
+        return Collections.unmodifiableList(childPartitionIds);
     }
 
     public void setChildPartitionIds(List<String> childPartitionIds) {
@@ -188,7 +189,7 @@ public class Partition {
         private int dimension;
 
         public Builder rowKeyTypes(List<PrimitiveType> rowKeyTypes) {
-            this.rowKeyTypes = rowKeyTypes;
+            this.rowKeyTypes = Collections.unmodifiableList(new ArrayList<>(rowKeyTypes));
             return this;
         }
 
@@ -219,7 +220,7 @@ public class Partition {
 
 
         public Builder childPartitionIds(List<String> childPartitionIds) {
-            this.childPartitionIds = childPartitionIds;
+            this.childPartitionIds = Collections.unmodifiableList(new ArrayList<>(childPartitionIds));
             return this;
         }
 
@@ -233,7 +234,7 @@ public class Partition {
         }
 
         public List<PrimitiveType> getRowKeyTypes() {
-            return rowKeyTypes;
+            return Collections.unmodifiableList(rowKeyTypes);
         }
 
         public Region getRegion() {
@@ -253,11 +254,21 @@ public class Partition {
         }
 
         public List<String> getChildPartitionIds() {
-            return childPartitionIds;
+            return Collections.unmodifiableList(childPartitionIds);
         }
 
         public int getDimension() {
             return dimension;
+        }
+
+        public Partition clonePartition(Partition p) {
+            return this.dimension(p.getDimension())
+                    .leafPartition(p.isLeafPartition())
+                    .rowKeyTypes(p.getRowKeyTypes())
+                    .childPartitionIds(p.getChildPartitionIds())
+                    .id(p.getId())
+                    .region(p.getRegion())
+                    .build();
         }
 
         public Partition build() {
