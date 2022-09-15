@@ -15,6 +15,7 @@
  */
 package sleeper.ingest;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.iterator.IteratorException;
@@ -31,6 +32,7 @@ import java.util.Iterator;
  * <p>
  * This class is an adaptor to {@link sleeper.ingest.impl.IngestCoordinator}.
  */
+@SuppressFBWarnings("EI_EXPOSE_REP2")
 public class IngestRecordsFromIterator {
     private final ObjectFactory objectFactory;
     private final Iterator<Record> recordsIterator;

@@ -21,6 +21,9 @@
             <Bug pattern="SE_COMPARATOR_SHOULD_BE_SERIALIZABLE"/>
             <Bug pattern="BC_UNCONFIRMED_CAST"/>
             <Bug pattern="DM_EXIT"/>
+            <!-- Temporarily disabling while fixing other bugs -->
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
         </Or>
     </Match>
 </FindBugsFilter>

@@ -28,6 +28,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -192,7 +193,7 @@ public class RecordGenerator {
         public Schema sleeperSchema;
 
         public RecordListAndSchema(List<Record> recordList, Schema sleeperSchema) {
-            this.recordList = recordList;
+            this.recordList = new ArrayList<>(recordList);
             this.sleeperSchema = sleeperSchema;
         }
     }
