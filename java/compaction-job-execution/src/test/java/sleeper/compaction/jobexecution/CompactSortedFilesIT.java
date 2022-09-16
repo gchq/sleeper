@@ -30,6 +30,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.GenericContainer;
+import sleeper.compaction.job.CompactionFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.CommonTestConstants;
@@ -147,8 +148,9 @@ public class CompactSortedFilesIT {
         writer2.close();
         stateStore.addFiles(fileInfos);
 
-        CompactionJob compactionJob = compactionFactoryForFolder(folderName)
-                .createCompactionJob(Arrays.asList(fileInfo1, fileInfo2), partition.getId());
+        CompactionFactory compactionFactory = compactionFactoryForFolder(folderName);
+        CompactionJob compactionJob = compactionFactory.createCompactionJob(
+                Arrays.asList(fileInfo1, fileInfo2), partition.getId());
         stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileInfos);
 
         // When
@@ -174,26 +176,9 @@ public class CompactSortedFilesIT {
         assertReadyForGC(stateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
-        FileInfo newFile = FileInfo.builder()
-                .rowKeyTypes(new LongType())
-                .filename(outputFile)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId(partition.getId())
-                .numberOfRecords((long) expectedResults.size())
-                .build();
-        long minKey = expectedResults.stream()
-                .map(r -> (long) r.get("key"))
-                .min(Comparator.naturalOrder())
-                .get();
-        newFile.setMinRowKey(Key.create(minKey));
-        long maxKey = expectedResults.stream()
-                .map(r -> (long) r.get("key"))
-                .max(Comparator.naturalOrder())
-                .get();
-        newFile.setMaxRowKey(Key.create(maxKey));
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(newFile);
+                .containsExactly(fileInfoFactory.leafFile(outputFile, 200L, 0L, 199L));
     }
 
     @Test
