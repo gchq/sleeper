@@ -18,6 +18,7 @@ package sleeper.statestore;
 import sleeper.core.key.Key;
 import sleeper.core.schema.type.PrimitiveType;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -244,6 +245,14 @@ public class FileInfo {
         public Builder lastStateStoreUpdateTime(Long lastStateStoreUpdateTime) {
             this.lastStateStoreUpdateTime = lastStateStoreUpdateTime;
             return this;
+        }
+
+        public Builder lastStateStoreUpdateTime(Instant lastStateStoreUpdateTime) {
+            if (lastStateStoreUpdateTime == null) {
+                return lastStateStoreUpdateTime((Long) null);
+            } else {
+                return lastStateStoreUpdateTime(lastStateStoreUpdateTime.toEpochMilli());
+            }
         }
 
         public FileInfo build() {

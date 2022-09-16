@@ -58,6 +58,8 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriter;
 import sleeper.io.parquet.record.SchemaConverter;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.FileInfoFactory;
+import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
@@ -111,34 +113,18 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeCorrectlyAndDynamoUpdatedLongKey() throws IOException, StateStoreException, IteratorException, ObjectFactoryException {
         // Given
         Schema schema = schemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
+        StateStore stateStore = stateStore("fsmcadulk", schema);
+        List<Partition> partitions = stateStore.getAllPartitions();
+        Partition partition = partitions.get(0);
+        FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions);
+
         //  - Create two files of sorted data
         String folderName = folder.newFolder().getAbsolutePath();
         String file1 = folderName + "/file1.parquet";
         String file2 = folderName + "/file2.parquet";
-        List<String> files = new ArrayList<>();
-        files.add(file1);
-        files.add(file2);
-        FileInfo fileInfo1 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
-                .filename(file1)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords(100L)
-                .minRowKey(Key.create(0L))
-                .maxRowKey(Key.create(198L))
-                .build();
-        FileInfo fileInfo2 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
-                .filename(file2)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords(100L)
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(199L))
-                .build();
-        List<FileInfo> fileInfos = new ArrayList<>();
-        fileInfos.add(fileInfo1);
-        fileInfos.add(fileInfo2);
+        FileInfo fileInfo1 = fileInfoFactory.leafFile(file1, 100L, 0L, 198L);
+        FileInfo fileInfo2 = fileInfoFactory.leafFile(file2, 100L, 1L, 199L);
+        List<FileInfo> fileInfos = Arrays.asList(fileInfo1, fileInfo2);
         String outputFile = folderName + "/file3.parquet";
         SortedMap<Long, Record> data = new TreeMap<>();
         ParquetRecordWriter writer1 = new ParquetRecordWriter(new Path(file1), SchemaConverter.getSchema(schema), schema);
@@ -161,25 +147,20 @@ public class CompactSortedFilesIT {
             data.put((long) record.get("key"), record);
         }
         writer2.close();
-        //  - Create DynamoDBStateStore
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator("fsmcadulk", schema, dynamoDBClient);
-        DynamoDBStateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
-        dynamoStateStore.initialise();
-        //  - Update Dynamo state store with details of files
-        dynamoStateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2));
+        stateStore.addFiles(fileInfos);
 
         //  - Create CompactionJob and update status of files with compactionJob id
         CompactionJob compactionJob = new CompactionJob("table", "compactionJob-1");
-        compactionJob.setInputFiles(files);
+        compactionJob.setInputFiles(Arrays.asList(file1, file2));
         compactionJob.setOutputFile(outputFile);
-        compactionJob.setPartitionId("1");
+        compactionJob.setPartitionId(partition.getId());
         compactionJob.setIsSplittingJob(false);
-        dynamoStateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileInfos);
+        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileInfos);
 
         // When
         //  - Merge two files
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(new InstanceProperties(), new ObjectFactory(new InstanceProperties(), null, ""),
-                schema, SchemaConverter.getSchema(schema), compactionJob, dynamoStateStore,
+                schema, SchemaConverter.getSchema(schema), compactionJob, stateStore,
                 ParquetWriter.DEFAULT_BLOCK_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE, "zstd", 25, 1000);
         CompactSortedFiles.CompactionJobSummary summary = compactSortedFiles.compact();
 
@@ -197,14 +178,14 @@ public class CompactSortedFilesIT {
         assertThat(results).isEqualTo(expectedResults);
 
         // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
+        assertReadyForGC(stateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
         FileInfo newFile = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(outputFile)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
+                .partitionId(partition.getId())
                 .numberOfRecords((long) expectedResults.size())
                 .build();
         long minKey = expectedResults.stream()
@@ -217,7 +198,7 @@ public class CompactSortedFilesIT {
                 .max(Comparator.naturalOrder())
                 .get();
         newFile.setMaxRowKey(Key.create(maxKey));
-        assertThat(dynamoStateStore.getActiveFiles())
+        assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(newFile);
     }
@@ -1642,7 +1623,7 @@ public class CompactSortedFilesIT {
                 .build();
     }
 
-    private static void assertReadyForGC(DynamoDBStateStore dynamoStateStore, FileInfo... files) {
+    private static void assertReadyForGC(StateStore dynamoStateStore, FileInfo... files) {
         try {
             assertThat(dynamoStateStore.getReadyForGCFiles()).toIterable()
                     .extracting(
@@ -1657,5 +1638,12 @@ public class CompactSortedFilesIT {
         } catch (StateStoreException e) {
             fail("StateStoreException generated: " + e.getMessage());
         }
+    }
+
+    private StateStore stateStore(String tablenameStub, Schema schema) throws StateStoreException {
+        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(tablenameStub, schema, dynamoDBClient);
+        StateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
+        dynamoStateStore.initialise();
+        return dynamoStateStore;
     }
 }

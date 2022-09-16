@@ -28,6 +28,10 @@ public class FileInfoFactory {
     private final PartitionTree partitionTree;
     private final Instant lastStateStoreUpdate;
 
+    public FileInfoFactory(Schema schema, List<Partition> partitions) {
+        this(schema, partitions, null);
+    }
+
     public FileInfoFactory(Schema schema, List<Partition> partitions, Instant lastStateStoreUpdate) {
         this.schema = schema;
         this.lastStateStoreUpdate = lastStateStoreUpdate;
@@ -86,7 +90,7 @@ public class FileInfoFactory {
                 .partitionId(partition.getId())
                 .numberOfRecords(records)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .lastStateStoreUpdateTime(lastStateStoreUpdate.toEpochMilli())
+                .lastStateStoreUpdateTime(lastStateStoreUpdate)
                 .build();
     }
 
