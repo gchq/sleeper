@@ -78,7 +78,7 @@ public class DeleteMessageActionIT {
 
         // When
         //  - Delete the message
-        DeleteMessageAction action = new DeleteMessageAction(sqs, queueUrl, "test", receiptHandle);
+        DeleteMessageAction action = new MessageReference(sqs, queueUrl, "test", receiptHandle).deleteAction();
         action.call();
 
         // Then
