@@ -42,7 +42,7 @@ public class Schema {
         rowKeyFields = Collections.unmodifiableList(new ArrayList<>(builder.validRowKeyFields()));
         sortKeyFields = Collections.unmodifiableList(new ArrayList<>(builder.validSortKeyFields()));
         valueFields = Collections.unmodifiableList(new ArrayList<>(builder.validValueFields()));
-        validateNoDuplicates(streamAllFields());
+        validateNoDuplicates(streamAllFields(this));
     }
 
     public static Builder builder() {
@@ -82,7 +82,7 @@ public class Schema {
     }
 
     public List<String> getAllFieldNames() {
-        return getMappedFields(streamAllFields(), Field::getName);
+        return getMappedFields(streamAllFields(this), Field::getName);
     }
 
     private <T> List<T> getMappedFields(List<Field> fields, Function<Field, T> mapping) {
@@ -96,16 +96,16 @@ public class Schema {
     }
 
     public List<Field> getAllFields() {
-        return Collections.unmodifiableList(streamAllFields().collect(Collectors.toList()));
+        return Collections.unmodifiableList(streamAllFields(this).collect(Collectors.toList()));
     }
 
-    public Stream<Field> streamAllFields() {
-        return Stream.concat(rowKeyFields.stream(),
-                Stream.concat(sortKeyFields.stream(), valueFields.stream()));
+    public static Stream<Field> streamAllFields(Schema schema) {
+        return Stream.concat(schema.getRowKeyFields().stream(),
+                Stream.concat(schema.getSortKeyFields().stream(), schema.getValueFields().stream()));
     }
 
     public Optional<Field> getField(String fieldName) {
-        return streamAllFields()
+        return streamAllFields(this)
                 .filter(f -> f.getName().equals(fieldName))
                 .findFirst();
     }

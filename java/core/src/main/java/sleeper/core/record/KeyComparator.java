@@ -16,6 +16,7 @@
 package sleeper.core.record;
 
 import com.facebook.collections.ByteArray;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.core.key.Key;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.PrimitiveType;
@@ -27,6 +28,7 @@ import java.util.List;
 /**
  * Compares keys.
  */
+@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_MIGHT_BE_INFEASIBLE")
 public class KeyComparator implements Comparator<Key> {
     private final List<PrimitiveType> rowKeyTypes;
 
@@ -35,7 +37,7 @@ public class KeyComparator implements Comparator<Key> {
     }
 
     public KeyComparator(List<PrimitiveType> rowKeyTypes) {
-        this.rowKeyTypes = rowKeyTypes;
+        this.rowKeyTypes = new ArrayList<>(rowKeyTypes);
     }
 
     public KeyComparator(PrimitiveType... rowKeyTypes) {

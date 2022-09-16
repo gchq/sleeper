@@ -85,10 +85,14 @@ public class DashboardStack extends NestedStack {
         addCompactionWidgets();
 
         CfnOutput.Builder.create(this, "DashboardUrl")
-                .value("https://" + this.getRegion() + ".console.aws.amazon.com/cloudwatch/home#dashboards:name=" + instanceId + ";expand=true")
+                .value(constructUrl())
                 .build();
 
         Utils.addStackTagIfSet(this, instanceProperties);
+    }
+
+    private String constructUrl() {
+        return "https://" + this.getRegion() + ".console.aws.amazon.com/cloudwatch/home#dashboards:name=" + instanceId + ";expand=true";
     }
 
     private void addErrorMetrics() {

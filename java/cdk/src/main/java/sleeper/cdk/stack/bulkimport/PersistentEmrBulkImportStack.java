@@ -17,6 +17,7 @@ package sleeper.cdk.stack.bulkimport;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.cdk.Utils;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.configuration.properties.InstanceProperties;
@@ -98,6 +99,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_R
 public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
     protected Function bulkImportJobStarter;
 
+    @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
     public PersistentEmrBulkImportStack(
             Construct scope,
             String id,

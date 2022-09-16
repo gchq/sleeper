@@ -44,5 +44,5 @@ jobs:
         if: ${{ always() }}
         uses: jwgmeligmeyling/spotbugs-github-action@v1.2
         with:
-          path: '**/findbugsXml.xml'
-          name: Findbugs for ${{ inputs.chunkName }}
+          path: '**/spotbugsXml.xml'
+          name: Spotbugs for ${{ inputs.chunkName }}
