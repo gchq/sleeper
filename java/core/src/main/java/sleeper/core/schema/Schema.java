@@ -42,7 +42,7 @@ public class Schema {
         rowKeyFields = Collections.unmodifiableList(new ArrayList<>(builder.validRowKeyFields()));
         sortKeyFields = Collections.unmodifiableList(new ArrayList<>(builder.validSortKeyFields()));
         valueFields = Collections.unmodifiableList(new ArrayList<>(builder.validValueFields()));
-        validateNoDuplicates(streamAllFields());
+        validateNoDuplicates(streamAllFields(rowKeyFields, sortKeyFields, valueFields));
     }
 
     public static Builder builder() {
@@ -100,8 +100,7 @@ public class Schema {
     }
 
     public Stream<Field> streamAllFields() {
-        return Stream.of(getRowKeyFields(), getSortKeyFields(), getValueFields())
-                .flatMap(List::stream);
+        return streamAllFields(rowKeyFields, sortKeyFields, valueFields);
     }
 
     public Optional<Field> getField(String fieldName) {
@@ -210,6 +209,12 @@ public class Schema {
             throw new IllegalArgumentException("Sort key fields must have a primitive type");
         }
         return fields;
+    }
+
+    private static Stream<Field> streamAllFields(
+            List<Field> rowKeyFields, List<Field> sortKeyFields, List<Field> valueFields) {
+        return Stream.of(rowKeyFields, sortKeyFields, valueFields)
+                .flatMap(List::stream);
     }
 
     private static void validateNoDuplicates(Stream<Field> fields) {
