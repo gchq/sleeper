@@ -24,6 +24,7 @@ import com.facebook.collections.ByteArray;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.hadoop.fs.Path;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -53,7 +54,6 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriter;
 import sleeper.io.parquet.record.SchemaConverter;
 import sleeper.statestore.FileInfo;
-import sleeper.statestore.FileInfoFactory;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
@@ -73,11 +73,10 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.combineSortedBySingleKey;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesEvenLongs;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesOddLongs;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.writeData;
+import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
+import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
+import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.readDataFile;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.assertReadyForGC;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.compactionFactoryForFolder;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createCompactSortedFiles;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createSchemaWithKeyTimestampValue;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createSchemaWithTwoTypedValuesAndKeyFields;
@@ -112,62 +111,49 @@ public class CompactSortedFilesIT {
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
+    private String folderName;
+    private CompactionFactory compactionFactory;
+
+    @Before
+    public void setUp() throws Exception {
+        folderName = folder.newFolder().getAbsolutePath();
+        compactionFactory = CompactionFactory.withTableName("table").outputFilePrefix(folderName).build();
+    }
 
     @Test
-    public void filesShouldMergeCorrectlyAndDynamoUpdatedLongKey() throws IOException, StateStoreException, IteratorException, ObjectFactoryException {
+    public void filesShouldMergeCorrectlyAndDynamoUpdatedLongKey() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         StateStore stateStore = createStateStore("fsmcadulk", schema, dynamoDBClient);
-        List<Partition> partitions = stateStore.getAllPartitions();
-        Partition partition = partitions.get(0);
-        FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions);
+        CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
-        //  - Create two files of sorted data
-        String folderName = folder.newFolder().getAbsolutePath();
-        String file1 = folderName + "/file1.parquet";
-        String file2 = folderName + "/file2.parquet";
-        FileInfo fileInfo1 = fileInfoFactory.leafFile(file1, 100L, 0L, 198L);
-        FileInfo fileInfo2 = fileInfoFactory.leafFile(file2, 100L, 1L, 199L);
-        List<FileInfo> fileInfos = Arrays.asList(fileInfo1, fileInfo2);
+        List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
+        List<Record> data2 = keyAndTwoValuesSortedOddLongs();
+        dataHelper.writeLeafFile(folderName + "/file1.parquet", data1, 0L, 198L);
+        dataHelper.writeLeafFile(folderName + "/file2.parquet", data2, 1L, 199L);
 
-        List<Record> data1 = keyAndTwoValuesEvenLongs();
-        writeData(schema, file1, data1);
-        List<Record> data2 = keyAndTwoValuesOddLongs();
-        writeData(schema, file2, data2);
-
-        stateStore.addFiles(fileInfos);
-
-        CompactionFactory compactionFactory = compactionFactoryForFolder(folderName);
         CompactionJob compactionJob = compactionFactory.createCompactionJob(
-                Arrays.asList(fileInfo1, fileInfo2), partition.getId());
-        stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileInfos);
+                dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
+        dataHelper.addFilesToStateStoreForJob(compactionJob);
 
         // When
-        //  - Merge two files
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
         CompactSortedFiles.CompactionJobSummary summary = compactSortedFiles.compact();
 
         // Then
         //  - Read output file and check that it contains the right results
-        String outputFile = compactionJob.getOutputFile();
-        List<Record> results = new ArrayList<>();
-        ParquetReaderIterator reader = new ParquetReaderIterator(new ParquetRecordReader(new Path(outputFile), schema));
-        while (reader.hasNext()) {
-            results.add(new Record(reader.next()));
-        }
-        reader.close();
         List<Record> expectedResults = combineSortedBySingleKey(data1, data2);
         assertThat(summary.getLinesRead()).isEqualTo(expectedResults.size());
         assertThat(summary.getLinesWritten()).isEqualTo(expectedResults.size());
-        assertThat(results).isEqualTo(expectedResults);
+        assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
 
         // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(stateStore, fileInfo1, fileInfo2);
+        assertReadyForGC(stateStore, dataHelper.allFileInfos());
 
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(fileInfoFactory.leafFile(outputFile, 200L, 0L, 199L));
+                .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, 0L, 199L));
     }
 
     @Test

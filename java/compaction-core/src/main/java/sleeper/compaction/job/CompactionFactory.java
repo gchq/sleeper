@@ -24,6 +24,7 @@ import sleeper.statestore.FileInfo;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -42,24 +43,23 @@ public class CompactionFactory {
     private final String iteratorConfig;
 
     public CompactionFactory(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        this(new Builder()
-                .tableName(tableProperties.get(TABLE_NAME))
+        this(withTableName(tableProperties.get(TABLE_NAME))
                 .outputFilePrefix(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET))
                 .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
                 .iteratorConfig(tableProperties.get(ITERATOR_CONFIG)));
     }
 
     private CompactionFactory(Builder builder) {
-        tableName = builder.tableName;
-        outputFilePrefix = builder.outputFilePrefix;
+        tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
+        outputFilePrefix = Objects.requireNonNull(builder.outputFilePrefix, "outputFilePrefix must not be null");
         iteratorClassName = builder.iteratorClassName;
         iteratorConfig = builder.iteratorConfig;
         LOGGER.info("Initialised CompactionFactory with table name {}, filename prefix {}",
                 this.tableName, this.outputFilePrefix);
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static Builder withTableName(String tableName) {
+        return new Builder().tableName(tableName);
     }
 
     public CompactionJob createSplittingCompactionJob(

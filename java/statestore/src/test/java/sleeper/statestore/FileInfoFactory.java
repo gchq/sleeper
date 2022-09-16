@@ -22,6 +22,7 @@ import sleeper.core.schema.Schema;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 public class FileInfoFactory {
     private final Schema schema;
@@ -33,9 +34,17 @@ public class FileInfoFactory {
     }
 
     public FileInfoFactory(Schema schema, List<Partition> partitions, Instant lastStateStoreUpdate) {
-        this.schema = schema;
-        this.lastStateStoreUpdate = lastStateStoreUpdate;
-        this.partitionTree = new PartitionTree(schema, partitions);
+        this(new Builder().schema(schema).partitions(partitions).lastStateStoreUpdate(lastStateStoreUpdate));
+    }
+
+    private FileInfoFactory(Builder builder) {
+        schema = Objects.requireNonNull(builder.schema, "schema must not be null");
+        partitionTree = Objects.requireNonNull(builder.partitionTree, "partitionTree must not be null");
+        lastStateStoreUpdate = builder.lastStateStoreUpdate;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public FileInfo leafFile(long records, Object min, Object max) {
@@ -94,4 +103,35 @@ public class FileInfoFactory {
                 .build();
     }
 
+    public static final class Builder {
+        private Schema schema;
+        private PartitionTree partitionTree;
+        private Instant lastStateStoreUpdate;
+
+        private Builder() {
+        }
+
+        public Builder schema(Schema schema) {
+            this.schema = schema;
+            return this;
+        }
+
+        public Builder partitionTree(PartitionTree partitionTree) {
+            this.partitionTree = partitionTree;
+            return this;
+        }
+
+        public Builder partitions(List<Partition> partitions) {
+            return partitionTree(new PartitionTree(schema, partitions));
+        }
+
+        public Builder lastStateStoreUpdate(Instant lastStateStoreUpdate) {
+            this.lastStateStoreUpdate = lastStateStoreUpdate;
+            return this;
+        }
+
+        public FileInfoFactory build() {
+            return new FileInfoFactory(this);
+        }
+    }
 }

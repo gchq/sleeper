@@ -18,6 +18,8 @@ package sleeper.compaction.jobexecution;
 import org.apache.hadoop.fs.Path;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.io.parquet.record.ParquetReaderIterator;
+import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriter;
 import sleeper.io.parquet.record.SchemaConverter;
 
@@ -31,7 +33,7 @@ import java.util.stream.IntStream;
 
 public class CompactSortedFilesTestData {
 
-    public static List<Record> keyAndTwoValuesEvenLongs() {
+    public static List<Record> keyAndTwoValuesSortedEvenLongs() {
         return IntStream.range(0, 100)
                 .mapToObj(i -> {
                     Record record = new Record();
@@ -42,7 +44,7 @@ public class CompactSortedFilesTestData {
                 }).collect(Collectors.toList());
     }
 
-    public static List<Record> keyAndTwoValuesOddLongs() {
+    public static List<Record> keyAndTwoValuesSortedOddLongs() {
         return IntStream.range(0, 100)
                 .mapToObj(i -> {
                     Record record = new Record();
@@ -60,11 +62,21 @@ public class CompactSortedFilesTestData {
         return new ArrayList<>(data.values());
     }
 
-    public static void writeData(Schema schema, String filename, List<Record> records) throws IOException {
+    public static void writeDataFile(Schema schema, String filename, List<Record> records) throws IOException {
         try (ParquetRecordWriter writer = new ParquetRecordWriter(new Path(filename), SchemaConverter.getSchema(schema), schema)) {
             for (Record record : records) {
                 writer.write(record);
             }
         }
+    }
+
+    public static List<Record> readDataFile(Schema schema, String filename) throws IOException {
+        List<Record> results = new ArrayList<>();
+        try (ParquetReaderIterator reader = new ParquetReaderIterator(new ParquetRecordReader(new Path(filename), schema))) {
+            while (reader.hasNext()) {
+                results.add(new Record(reader.next()));
+            }
+        }
+        return results;
     }
 }

@@ -18,7 +18,6 @@ package sleeper.compaction.jobexecution;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.assertj.core.groups.Tuple;
-import sleeper.compaction.job.CompactionFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
@@ -34,6 +33,7 @@ import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -73,10 +73,6 @@ public class CompactSortedFilesTestUtils {
         return dynamoStateStore;
     }
 
-    public static CompactionFactory compactionFactoryForFolder(String folderName) {
-        return CompactionFactory.builder().tableName("table").outputFilePrefix(folderName).build();
-    }
-
     public static CompactSortedFiles createCompactSortedFiles(Schema schema, CompactionJob compactionJob, StateStore stateStore) {
         return new CompactSortedFiles(new InstanceProperties(), ObjectFactory.noUserJars(),
                 schema, SchemaConverter.getSchema(schema), compactionJob, stateStore,
@@ -84,6 +80,10 @@ public class CompactSortedFilesTestUtils {
     }
 
     public static void assertReadyForGC(StateStore dynamoStateStore, FileInfo... files) {
+        assertReadyForGC(dynamoStateStore, Arrays.asList(files));
+    }
+
+    public static void assertReadyForGC(StateStore dynamoStateStore, List<FileInfo> files) {
         try {
             assertThat(dynamoStateStore.getReadyForGCFiles()).toIterable()
                     .extracting(
@@ -91,7 +91,7 @@ public class CompactSortedFilesTestUtils {
                             FileInfo::getRowKeyTypes,
                             FileInfo::getPartitionId,
                             FileInfo::getFileStatus)
-                    .containsExactlyInAnyOrder(Arrays.stream(files)
+                    .containsExactlyInAnyOrder(files.stream()
                             .map(file -> tuple(file.getFilename(), file.getRowKeyTypes(), file.getPartitionId(),
                                     FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION))
                             .toArray(Tuple[]::new));
