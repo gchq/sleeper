@@ -16,13 +16,18 @@
 package sleeper.compaction.jobexecution;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import org.apache.parquet.hadoop.ParquetWriter;
 import org.assertj.core.groups.Tuple;
 import sleeper.compaction.job.CompactionFactory;
+import sleeper.compaction.job.CompactionJob;
+import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.Type;
+import sleeper.io.parquet.record.SchemaConverter;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -70,6 +75,12 @@ public class CompactSortedFilesTestUtils {
 
     public static CompactionFactory compactionFactoryForFolder(String folderName) {
         return CompactionFactory.builder().tableName("table").outputFilePrefix(folderName).build();
+    }
+
+    public static CompactSortedFiles createCompactSortedFiles(Schema schema, CompactionJob compactionJob, StateStore stateStore) {
+        return new CompactSortedFiles(new InstanceProperties(), ObjectFactory.noUserJars(),
+                schema, SchemaConverter.getSchema(schema), compactionJob, stateStore,
+                ParquetWriter.DEFAULT_BLOCK_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE, "zstd", 25, 1000);
     }
 
     public static void assertReadyForGC(StateStore dynamoStateStore, FileInfo... files) {

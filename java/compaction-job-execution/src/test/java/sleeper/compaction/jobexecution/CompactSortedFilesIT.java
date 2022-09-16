@@ -23,7 +23,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.facebook.collections.ByteArray;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.hadoop.fs.Path;
-import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -32,9 +31,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.GenericContainer;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.impl.AgeOffIterator;
@@ -76,6 +73,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.compactionFactoryForFolder;
+import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createCompactSortedFiles;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createSchemaWithKeyTimestampValue;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createSchemaWithTwoTypedValuesAndKeyFields;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
@@ -155,9 +153,7 @@ public class CompactSortedFilesIT {
 
         // When
         //  - Merge two files
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(new InstanceProperties(), ObjectFactory.noUserJars(),
-                schema, SchemaConverter.getSchema(schema), compactionJob, stateStore,
-                ParquetWriter.DEFAULT_BLOCK_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE, "zstd", 25, 1000);
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
         CompactSortedFiles.CompactionJobSummary summary = compactSortedFiles.compact();
 
         // Then
@@ -277,9 +273,7 @@ public class CompactSortedFilesIT {
 
         // When
         //  - Merge two files
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(new InstanceProperties(), new ObjectFactory(new InstanceProperties(), null, ""),
-                schema, SchemaConverter.getSchema(schema), compactionJob, dynamoStateStore,
-                ParquetWriter.DEFAULT_BLOCK_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE, "zstd", 25, 1000);
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, dynamoStateStore);
         compactSortedFiles.compact();
 
         // Then
@@ -408,9 +402,7 @@ public class CompactSortedFilesIT {
 
         // When
         //  - Merge two files
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(new InstanceProperties(), new ObjectFactory(new InstanceProperties(), null, ""),
-                schema, SchemaConverter.getSchema(schema), compactionJob, dynamoStateStore,
-                ParquetWriter.DEFAULT_BLOCK_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE, "zstd", 25, 1000);
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, dynamoStateStore);
         compactSortedFiles.compact();
 
         // Then
@@ -521,9 +513,7 @@ public class CompactSortedFilesIT {
 
         // When
         //  - Merge two files
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(new InstanceProperties(), new ObjectFactory(new InstanceProperties(), null, ""),
-                schema, SchemaConverter.getSchema(schema), compactionJob, dynamoStateStore,
-                ParquetWriter.DEFAULT_BLOCK_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE, "zstd", 25, 1000);
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, dynamoStateStore);
         compactSortedFiles.compact();
 
         // Then
@@ -611,9 +601,7 @@ public class CompactSortedFilesIT {
 
         // When
         //  - Merge two files
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(new InstanceProperties(), new ObjectFactory(new InstanceProperties(), null, ""),
-                schema, SchemaConverter.getSchema(schema), compactionJob, dynamoStateStore,
-                ParquetWriter.DEFAULT_BLOCK_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE, "zstd", 25, 1000);
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, dynamoStateStore);
         compactSortedFiles.compact();
 
         // Then
@@ -741,9 +729,7 @@ public class CompactSortedFilesIT {
 
         // When
         //  - Merge two files
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(new InstanceProperties(), new ObjectFactory(new InstanceProperties(), null, ""),
-                schema, SchemaConverter.getSchema(schema), compactionJob, dynamoStateStore,
-                ParquetWriter.DEFAULT_BLOCK_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE, "zstd", 25, 1000);
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, dynamoStateStore);
         compactSortedFiles.compact();
 
         // Then
@@ -929,9 +915,7 @@ public class CompactSortedFilesIT {
 
         // When
         //  - Merge two files
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(new InstanceProperties(), new ObjectFactory(new InstanceProperties(), null, ""),
-                schema, SchemaConverter.getSchema(schema), compactionJob, dynamoStateStore,
-                ParquetWriter.DEFAULT_BLOCK_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE, "zstd", 25, 1000);
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, dynamoStateStore);
         compactSortedFiles.compact();
 
         // Then
@@ -1097,9 +1081,7 @@ public class CompactSortedFilesIT {
 
         // When
         //  - Merge two files
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(new InstanceProperties(), new ObjectFactory(new InstanceProperties(), null, ""),
-                schema, SchemaConverter.getSchema(schema), compactionJob, dynamoStateStore,
-                ParquetWriter.DEFAULT_BLOCK_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE, "zstd", 25, 1000);
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, dynamoStateStore);
         compactSortedFiles.compact();
 
         // Then
@@ -1246,9 +1228,7 @@ public class CompactSortedFilesIT {
 
         // When
         //  - Merge two files
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(new InstanceProperties(), new ObjectFactory(new InstanceProperties(), null, ""),
-                schema, SchemaConverter.getSchema(schema), compactionJob, dynamoStateStore,
-                ParquetWriter.DEFAULT_BLOCK_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE, "zstd", 25, 1000);
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, dynamoStateStore);
         compactSortedFiles.compact();
 
         // Then
@@ -1379,9 +1359,7 @@ public class CompactSortedFilesIT {
 
         // When
         //  - Merge two files
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(new InstanceProperties(), new ObjectFactory(new InstanceProperties(), null, ""),
-                schema, SchemaConverter.getSchema(schema), compactionJob, dynamoStateStore,
-                ParquetWriter.DEFAULT_BLOCK_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE, "zstd", 25, 1000);
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, dynamoStateStore);
         compactSortedFiles.compact();
 
         // Then
@@ -1525,9 +1503,7 @@ public class CompactSortedFilesIT {
 
         // When
         //  - Merge two files
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(new InstanceProperties(), new ObjectFactory(new InstanceProperties(), null, ""),
-                schema, SchemaConverter.getSchema(schema), compactionJob, dynamoStateStore,
-                ParquetWriter.DEFAULT_BLOCK_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE, "zstd", 25, 1000);
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, dynamoStateStore);
         compactSortedFiles.compact();
 
         // Then
