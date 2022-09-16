@@ -20,7 +20,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
@@ -65,7 +64,6 @@ public class InitialiseStateStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InitialiseStateStore.class);
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public InitialiseStateStore(TableProperties tableProperties,
                                 StateStore stateStore,
                                 List<Object> splitPoints) {
@@ -74,7 +72,6 @@ public class InitialiseStateStore {
         this.splitPoints = splitPoints;
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public InitialiseStateStore(Schema schema,
                                 StateStore stateStore,
                                 List<Object> splitPoints) {

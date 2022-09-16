@@ -15,8 +15,6 @@
  */
 package sleeper.core.iterator;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -26,7 +24,6 @@ import java.util.Iterator;
 public class WrappedIterator<T> implements CloseableIterator<T> {
     private final Iterator<T> iterator;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public WrappedIterator(Iterator<T> iterator) {
         this.iterator = iterator;
     }

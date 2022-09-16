@@ -15,7 +15,6 @@
  */
 package sleeper.io.parquet.record;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.Converter;
 import org.apache.parquet.io.api.GroupConverter;
@@ -39,7 +38,6 @@ import java.util.Map;
 /**
  * Used to convert rows of Parquet data into {@link Record}s.
  */
-@SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 public class RecordConverter extends GroupConverter {
     private final Record currentRecord;
     private final Converter[] converters;
@@ -266,7 +264,7 @@ public class RecordConverter extends GroupConverter {
         private final List<byte[]> list;
 
         private ByteArrayInMapConverter(List<byte[]> list) {
-            this.list = new ArrayList<>(list);
+            this.list = list;
         }
 
         @Override

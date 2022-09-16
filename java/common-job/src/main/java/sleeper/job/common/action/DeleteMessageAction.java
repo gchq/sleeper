@@ -19,7 +19,6 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.AmazonSQSException;
 import com.amazonaws.services.sqs.model.DeleteMessageRequest;
 import com.amazonaws.services.sqs.model.DeleteMessageResult;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +37,6 @@ public class DeleteMessageAction implements Action {
     private final String jobId;
     private static final Logger LOGGER = LoggerFactory.getLogger(DeleteMessageAction.class);
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public DeleteMessageAction(AmazonSQS sqsClient, String sqsJobQueueUrl, String jobId, String messageReceiptHandle) {
         this.sqsClient = sqsClient;
         this.sqsJobQueueUrl = sqsJobQueueUrl;

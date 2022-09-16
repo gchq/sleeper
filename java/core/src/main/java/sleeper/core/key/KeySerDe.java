@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -47,7 +46,7 @@ public class KeySerDe {
     private final int numRowKeysInSchema;
 
     public KeySerDe(Schema schema) {
-        this.rowKeyTypes = Collections.unmodifiableList(new ArrayList<>(schema.getRowKeyTypes()));
+        this.rowKeyTypes = schema.getRowKeyTypes();
         this.numRowKeysInSchema = this.rowKeyTypes.size();
     }
 

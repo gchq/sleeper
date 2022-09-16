@@ -15,7 +15,6 @@
  */
 package sleeper.io.parquet.record;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -44,7 +43,6 @@ public class ParquetRecordWriter extends ParquetWriter<Record> {
         this(file, messageType, schema, CompressionCodecName.ZSTD, DEFAULT_BLOCK_SIZE, DEFAULT_PAGE_SIZE);
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public static class Builder extends ParquetWriter.Builder<Record, Builder> {
         private final MessageType messageType;
         private final Schema schema;

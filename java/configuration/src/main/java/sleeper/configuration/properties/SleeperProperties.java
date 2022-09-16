@@ -17,7 +17,6 @@ package sleeper.configuration.properties;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.Lists;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -52,7 +51,6 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         this(new Properties());
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public SleeperProperties(Properties properties) {
         this.properties = properties;
     }

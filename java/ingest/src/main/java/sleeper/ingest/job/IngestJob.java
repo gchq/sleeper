@@ -15,8 +15,6 @@
  */
 package sleeper.ingest.job;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -28,7 +26,7 @@ public class IngestJob {
     public IngestJob(String tableName, String id, List<String> files) {
         this.tableName = tableName;
         this.id = id;
-        this.files = new ArrayList<>(files);
+        this.files = files;
     }
 
     public String getTableName() {
@@ -40,7 +38,7 @@ public class IngestJob {
     }
 
     public List<String> getFiles() {
-        return Collections.unmodifiableList(files);
+        return files;
     }
 
     @Override

@@ -129,7 +129,7 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
                                 int maxNoOfRecordsToWriteToArrowFileAtOnce) {
         requireNonNull(arrowBufferAllocator);
         this.sleeperSchema = requireNonNull(sleeperSchema);
-        this.allFields = Collections.unmodifiableList(new ArrayList<>(sleeperSchema.getAllFields())); // This is an efficiency as getAllFields() is quite expensive
+        this.allFields = sleeperSchema.getAllFields(); // This is an efficiency as getAllFields() is quite expensive
         this.localWorkingDirectory = requireNonNull(localWorkingDirectory);
         this.maxNoOfBytesToWriteLocally = maxNoOfBytesToWriteLocally;
         this.maxNoOfRecordsToWriteToArrowFileAtOnce = maxNoOfRecordsToWriteToArrowFileAtOnce;

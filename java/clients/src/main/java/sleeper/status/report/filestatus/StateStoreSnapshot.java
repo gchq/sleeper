@@ -20,7 +20,6 @@ import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -81,7 +80,7 @@ public class StateStoreSnapshot {
         }
 
         public Builder active(List<FileInfo> active) {
-            this.active = new ArrayList<>(active);
+            this.active = active;
             return this;
         }
 
@@ -91,7 +90,7 @@ public class StateStoreSnapshot {
         }
 
         public Builder partitions(List<Partition> partitions) {
-            this.partitions = new ArrayList<>(partitions);
+            this.partitions = partitions;
             return this;
         }
 

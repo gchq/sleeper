@@ -23,7 +23,6 @@ import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -62,11 +61,11 @@ public class Partition {
     }
 
     public List<PrimitiveType> getRowKeyTypes() {
-        return Collections.unmodifiableList(rowKeyTypes);
+        return rowKeyTypes;
     }
 
     public void setRowKeyTypes(List<PrimitiveType> rowKeyTypes) {
-        this.rowKeyTypes = new ArrayList<>(rowKeyTypes);
+        this.rowKeyTypes = rowKeyTypes;
     }
 
     public void setRowKeyTypes(PrimitiveType... rowKeyTypes) {
@@ -115,7 +114,7 @@ public class Partition {
         if (null == childPartitionIds) {
             childPartitionIds = new ArrayList<>();
         }
-        return Collections.unmodifiableList(childPartitionIds);
+        return childPartitionIds;
     }
 
     public void setChildPartitionIds(List<String> childPartitionIds) {
@@ -123,10 +122,6 @@ public class Partition {
         if (null != childPartitionIds) {
             this.childPartitionIds.addAll(childPartitionIds);
         }
-    }
-
-    public void addChildPartitionIds(String... ids) {
-        childPartitionIds.addAll(Arrays.asList(ids));
     }
 
     public int getDimension() {
@@ -193,7 +188,7 @@ public class Partition {
         private int dimension;
 
         public Builder rowKeyTypes(List<PrimitiveType> rowKeyTypes) {
-            this.rowKeyTypes = Collections.unmodifiableList(new ArrayList<>(rowKeyTypes));
+            this.rowKeyTypes = rowKeyTypes;
             return this;
         }
 
@@ -224,7 +219,7 @@ public class Partition {
 
 
         public Builder childPartitionIds(List<String> childPartitionIds) {
-            this.childPartitionIds = Collections.unmodifiableList(new ArrayList<>(childPartitionIds));
+            this.childPartitionIds = childPartitionIds;
             return this;
         }
 
@@ -238,10 +233,7 @@ public class Partition {
         }
 
         public List<PrimitiveType> getRowKeyTypes() {
-            if (rowKeyTypes == null) {
-                return new ArrayList<>();
-            }
-            return Collections.unmodifiableList(rowKeyTypes);
+            return rowKeyTypes;
         }
 
         public Region getRegion() {
@@ -261,24 +253,11 @@ public class Partition {
         }
 
         public List<String> getChildPartitionIds() {
-            if (childPartitionIds == null) {
-                return new ArrayList<>();
-            }
-            return Collections.unmodifiableList(childPartitionIds);
+            return childPartitionIds;
         }
 
         public int getDimension() {
             return dimension;
-        }
-
-        public Partition clonePartition(Partition p) {
-            return this.dimension(p.getDimension())
-                    .leafPartition(p.isLeafPartition())
-                    .rowKeyTypes(p.getRowKeyTypes())
-                    .childPartitionIds(p.getChildPartitionIds())
-                    .id(p.getId())
-                    .region(p.getRegion())
-                    .build();
         }
 
         public Partition build() {

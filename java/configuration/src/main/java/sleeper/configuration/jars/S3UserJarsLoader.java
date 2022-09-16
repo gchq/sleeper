@@ -18,7 +18,6 @@ package sleeper.configuration.jars;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.InstanceProperties;
@@ -40,7 +39,6 @@ public class S3UserJarsLoader {
     private final AmazonS3 s3Client;
     private final String localDir;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public S3UserJarsLoader(InstanceProperties instanceProperties, AmazonS3 s3Client, String localDir) {
         this.instanceProperties = instanceProperties;
         this.s3Client = s3Client;

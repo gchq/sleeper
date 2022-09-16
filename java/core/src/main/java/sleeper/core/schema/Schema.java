@@ -15,7 +15,6 @@
  */
 package sleeper.core.schema;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.ArrayList;
@@ -51,15 +50,15 @@ public class Schema {
     }
 
     public List<Field> getRowKeyFields() {
-        return new ArrayList<>(rowKeyFields);
+        return rowKeyFields;
     }
 
     public List<Field> getSortKeyFields() {
-        return new ArrayList<>(sortKeyFields);
+        return sortKeyFields;
     }
 
     public List<Field> getValueFields() {
-        return new ArrayList<>(valueFields);
+        return valueFields;
     }
 
     public List<PrimitiveType> getRowKeyTypes() {
@@ -136,7 +135,6 @@ public class Schema {
         return Objects.hash(rowKeyFields, sortKeyFields, valueFields);
     }
 
-    @SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
     public static final class Builder {
         private List<Field> rowKeyFields;
         private List<Field> sortKeyFields;

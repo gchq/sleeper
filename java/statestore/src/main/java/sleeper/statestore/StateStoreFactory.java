@@ -16,7 +16,6 @@
 package sleeper.statestore;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -30,7 +29,6 @@ public class StateStoreFactory {
     private final InstanceProperties instanceProperties;
     private final Configuration configuration;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public StateStoreFactory(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, Configuration configuration) {
         this.dynamoDB = dynamoDB;
         this.instanceProperties = instanceProperties;

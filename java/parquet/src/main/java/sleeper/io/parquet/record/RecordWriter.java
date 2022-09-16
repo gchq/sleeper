@@ -15,7 +15,6 @@
  */
 package sleeper.io.parquet.record;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.RecordConsumer;
 import sleeper.core.record.Record;
@@ -40,7 +39,6 @@ public class RecordWriter {
     private final RecordConsumer recordConsumer;
     private final Schema schema;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public RecordWriter(RecordConsumer recordConsumer, sleeper.core.schema.Schema schema) {
         this.recordConsumer = recordConsumer;
         this.schema = schema;

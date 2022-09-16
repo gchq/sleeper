@@ -15,22 +15,19 @@
  */
 package sleeper.sketches;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.datasketches.quantiles.ItemsSketch;
 
-import java.util.Collections;
 import java.util.Map;
 
 public class Sketches {
     private final Map<String, ItemsSketch> keyFieldToQuantilesSketch;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public Sketches(Map<String, ItemsSketch> keyFieldToQuantilesSketch) {
         this.keyFieldToQuantilesSketch = keyFieldToQuantilesSketch;
     }
 
     public Map<String, ItemsSketch> getQuantilesSketches() {
-        return Collections.unmodifiableMap(keyFieldToQuantilesSketch);
+        return keyFieldToQuantilesSketch;
     }
 
     public ItemsSketch getQuantilesSketch(String keyFieldName) {

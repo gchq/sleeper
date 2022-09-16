@@ -18,8 +18,6 @@ package sleeper.core.record;
 import sleeper.core.key.Key;
 import sleeper.core.schema.Schema;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -33,8 +31,8 @@ public class RecordComparator implements Comparator<Record> {
     private final KeyComparator sortKeyComparator;
 
     public RecordComparator(Schema schema) {
-        this.rowKeyNames = Collections.unmodifiableList(new ArrayList<>(schema.getRowKeyFieldNames()));
-        this.sortKeyNames = Collections.unmodifiableList(new ArrayList<>(schema.getSortKeyFieldNames()));
+        this.rowKeyNames = schema.getRowKeyFieldNames();
+        this.sortKeyNames = schema.getSortKeyFieldNames();
         this.rowKeyComparator = new KeyComparator(schema.getRowKeyTypes());
         this.sortKeyComparator = new KeyComparator(schema.getSortKeyTypes());
     }

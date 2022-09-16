@@ -16,7 +16,6 @@
 package sleeper.configuration.properties.table;
 
 import com.amazonaws.services.s3.AmazonS3;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -44,7 +43,6 @@ public class TableProperties extends SleeperProperties<ITableProperty> {
     private Schema schema;
     private final InstanceProperties instanceProperties; // Used for default properties
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public TableProperties(InstanceProperties instanceProperties) {
         this.instanceProperties = instanceProperties;
     }

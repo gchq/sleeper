@@ -21,7 +21,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.PrimitiveType;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -42,7 +41,7 @@ public class PartitionFactory {
     public PartitionFactory(Schema schema) {
         this.schema = schema;
         rangeFactory = new Range.RangeFactory(schema);
-        rowKeyTypes = Collections.unmodifiableList(new ArrayList<>(schema.getRowKeyTypes()));
+        rowKeyTypes = schema.getRowKeyTypes();
     }
 
     public Partition partition(String id, Object min, Object max) {
@@ -64,7 +63,7 @@ public class PartitionFactory {
     public Partition child(Partition parent, String id, Object min, Object max) {
         Partition child = partition(id, min, max);
         child.setParentPartitionId(parent.getId());
-        parent.addChildPartitionIds(id);
+        parent.getChildPartitionIds().add(id);
         parent.setLeafPartition(false);
         parent.setDimension(0);
         return child;

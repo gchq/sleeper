@@ -20,7 +20,6 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +40,6 @@ public class S3RevisionUtils {
     private final String dynamoRevisionIdTable;
     private final AmazonDynamoDB dynamoDB;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public S3RevisionUtils(AmazonDynamoDB dynamoDB, String dynamoRevisionIdTable) {
         this.dynamoDB = dynamoDB;
         this.dynamoRevisionIdTable = dynamoRevisionIdTable;

@@ -31,7 +31,7 @@ public class StateStoreReadyForGC {
     private final boolean reachedMax;
 
     private StateStoreReadyForGC(List<FileInfo> files, boolean reachedMax) {
-        this.files = new ArrayList<>(files);
+        this.files = files;
         this.reachedMax = reachedMax;
     }
 

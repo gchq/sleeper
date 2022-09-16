@@ -18,7 +18,6 @@ package sleeper.job.common.action;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.AmazonSQSException;
 import com.amazonaws.services.sqs.model.ChangeMessageVisibilityRequest;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +37,6 @@ public class ChangeMessageVisibilityTimeoutAction implements Action {
     private final String messageReceiptHandle;
     private final int messageVisibilityTimeout;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public ChangeMessageVisibilityTimeoutAction(AmazonSQS sqsClient,
             String sqsJobQueueUrl,
             String description,

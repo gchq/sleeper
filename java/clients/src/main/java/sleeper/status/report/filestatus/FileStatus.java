@@ -19,7 +19,6 @@ import sleeper.statestore.FileInfo;
 
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
@@ -131,7 +130,7 @@ public class FileStatus {
     }
 
     public void setActiveFiles(List<FileInfo> activeFiles) {
-        this.activeFiles = new ArrayList<>(activeFiles);
+        this.activeFiles = activeFiles;
     }
 
     public List<FileInfo> getGcFiles() {
@@ -139,7 +138,7 @@ public class FileStatus {
     }
 
     public void setGcFiles(List<FileInfo> gcFiles) {
-        this.gcFiles = new ArrayList<>(gcFiles);
+        this.gcFiles = gcFiles;
     }
 
     public long getTotalRecords() {

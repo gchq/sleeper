@@ -18,7 +18,6 @@ package sleeper.table.job;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
@@ -31,7 +30,6 @@ public class TableLister {
     private final AmazonS3 s3Client;
     private final InstanceProperties instanceProperties;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public TableLister(AmazonS3 s3Client, InstanceProperties instanceProperties) {
         this.s3Client = s3Client;
         this.instanceProperties = instanceProperties;

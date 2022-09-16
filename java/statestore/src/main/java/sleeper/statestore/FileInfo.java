@@ -15,13 +15,11 @@
  */
 package sleeper.statestore;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.core.key.Key;
 import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -63,15 +61,11 @@ public class FileInfo {
     }
 
     public List<PrimitiveType> getRowKeyTypes() {
-        return Collections.unmodifiableList(rowKeyTypes);
+        return rowKeyTypes;
     }
 
     public void setRowKeyTypes(List<PrimitiveType> rowKeyTypes) {
-        if (rowKeyTypes != null) {
-            this.rowKeyTypes = Collections.unmodifiableList(new ArrayList<>(rowKeyTypes));
-        } else {
-            this.rowKeyTypes = new ArrayList<>();
-        }
+        this.rowKeyTypes = rowKeyTypes;
     }
 
     public void setRowKeyTypes(PrimitiveType... rowKeyTypes) {
@@ -188,7 +182,6 @@ public class FileInfo {
                 '}';
     }
 
-    @SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
     public static final class Builder {
         private List<PrimitiveType> rowKeyTypes;
         private Key minRowKey;

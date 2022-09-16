@@ -22,7 +22,6 @@ import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -45,7 +44,7 @@ public class MergingIterator implements CloseableIterator<Record> {
     private long recordsRead;
 
     public MergingIterator(Schema schema, List<CloseableIterator<Record>> inputIterators) {
-        this.inputIterators = new ArrayList<>(inputIterators);
+        this.inputIterators = inputIterators;
         this.recordsRead = 0L;
         this.queue = new PriorityQueue<>(new RecordIteratorPairComparator(schema));
         for (CloseableIterator<Record> iterator : inputIterators) {

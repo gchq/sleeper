@@ -15,7 +15,6 @@
  */
 package sleeper.statestore;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.core.partition.Partition;
 
 import java.util.Iterator;
@@ -26,7 +25,6 @@ public class DelegatingStateStore implements StateStore {
     protected final FileInfoStore fileInfoStore;
     private final PartitionStore partitionStore;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public DelegatingStateStore(FileInfoStore fileInfoStore, PartitionStore partitionStore) {
         this.fileInfoStore = fileInfoStore;
         this.partitionStore = partitionStore;

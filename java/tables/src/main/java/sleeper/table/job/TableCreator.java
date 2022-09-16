@@ -18,7 +18,6 @@ package sleeper.table.job;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.InstanceProperties;
@@ -52,7 +51,6 @@ public class TableCreator {
     private final AmazonDynamoDB dynamoDBClient;
     private final InstanceProperties instanceProperties;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public TableCreator(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties) {
         this.s3Client = s3Client;
         this.dynamoDBClient = dynamoDBClient;

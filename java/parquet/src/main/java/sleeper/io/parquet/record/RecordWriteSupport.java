@@ -34,7 +34,7 @@ public class RecordWriteSupport extends WriteSupport<Record> {
     private RecordWriter recordWriter;
 
     public RecordWriteSupport(MessageType messageType, Schema schema) {
-        this.messageType = new MessageType(messageType.getName(), messageType.getFields());
+        this.messageType = messageType;
         this.schema = schema;
     }
 
