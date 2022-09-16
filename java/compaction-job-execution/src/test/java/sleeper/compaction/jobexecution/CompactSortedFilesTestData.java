@@ -53,19 +53,6 @@ public class CompactSortedFilesTestData {
         return toStrings(streamKeyAndTwoValuesSortedOddLongs());
     }
 
-    public static List<Record> toStrings(Stream<Record> records) {
-        SortedMap<Object, Record> map = new TreeMap<>();
-        records.map(CompactSortedFilesTestData::toStrings)
-                .forEach(record -> map.put(record.get("key"), record));
-        return new ArrayList<>(map.values());
-    }
-
-    public static Record toStrings(Record record) {
-        record.put("key", "" + record.get("key"));
-        record.put("value1", "" + record.get("value1"));
-        return record;
-    }
-
     public static Stream<Record> streamKeyAndTwoValuesSortedEvenLongs() {
         return IntStream.range(0, 100)
                 .mapToObj(i -> {
@@ -86,6 +73,19 @@ public class CompactSortedFilesTestData {
                     record.put("value2", 123456789L);
                     return record;
                 });
+    }
+
+    private static List<Record> toStrings(Stream<Record> records) {
+        SortedMap<Object, Record> map = new TreeMap<>();
+        records.map(CompactSortedFilesTestData::toStrings)
+                .forEach(record -> map.put(record.get("key"), record));
+        return new ArrayList<>(map.values());
+    }
+
+    private static Record toStrings(Record record) {
+        record.put("key", "" + record.get("key"));
+        record.put("value1", "" + record.get("value1"));
+        return record;
     }
 
     public static List<Record> combineSortedBySingleKey(List<Record> data1, List<Record> data2) {
