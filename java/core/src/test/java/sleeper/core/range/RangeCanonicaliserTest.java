@@ -37,10 +37,10 @@ public class RangeCanonicaliserTest {
         Range range4 = rangeFactory.createRange(field, 1, false, 10, false);
 
         // When / Then
-        assertThat(RangeCanonicaliser.isRangeInCanonicalForm(range1)).isTrue();
-        assertThat(RangeCanonicaliser.isRangeInCanonicalForm(range2)).isFalse();
-        assertThat(RangeCanonicaliser.isRangeInCanonicalForm(range3)).isFalse();
-        assertThat(RangeCanonicaliser.isRangeInCanonicalForm(range4)).isFalse();
+        assertThat(range1.isInCanonicalForm()).isTrue();
+        assertThat(range2.isInCanonicalForm()).isFalse();
+        assertThat(range3.isInCanonicalForm()).isFalse();
+        assertThat(range4.isInCanonicalForm()).isFalse();
     }
 
     @Test

@@ -55,6 +55,7 @@ public class Range {
         this(field, min, true, max, false);
     }
 
+
     public Field getField() {
         return field;
     }
@@ -296,6 +297,10 @@ public class Range {
         }
 
         return true;
+    }
+
+    public boolean isInCanonicalForm() {
+        return isMinInclusive() && !isMaxInclusive();
     }
 
     @Override
