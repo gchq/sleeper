@@ -1,0 +1,118 @@
+/*
+ * Copyright 2022 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package sleeper.core.range.canonicaliser;
+
+import org.junit.Before;
+import org.junit.Test;
+import sleeper.core.range.Range;
+import sleeper.core.range.RangeCanonicaliser;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+public class RangeCanonicaliserStringTypeTest {
+
+    private Field field;
+    private Range.RangeFactory rangeFactory;
+
+    @Before
+    public void setup() {
+        field = new Field("key", new StringType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        rangeFactory = new Range.RangeFactory(schema);
+    }
+
+    @Test
+    public void shouldCanonicaliseRangeMinInclusiveMaxExclusive() {
+        //Given
+        Range range = rangeFactory.createRange(field, "aaa", "bbb");
+
+        //When
+        Range canonicalisedRange = RangeCanonicaliser.canonicaliseRange(range);
+
+        //Then
+        assertThat(range.isInCanonicalForm()).isTrue();
+        assertThat(canonicalisedRange).isEqualTo(range);
+    }
+
+    @Test
+    public void shouldCanonicaliseRangeMinInclusiveMaxInclusive() {
+        //Given
+        Range range = rangeFactory.createRange(field, "aaa", true, "bbb", true);
+
+        //When
+        Range canonicalisedRange = RangeCanonicaliser.canonicaliseRange(range);
+
+        //Then
+        assertThat(range.isInCanonicalForm()).isFalse();
+        assertThat(canonicalisedRange).isEqualTo(rangeFactory.createRange(field, "aaa", "bbb" + '\u0000'));
+    }
+
+    @Test
+    public void shouldCanonicaliseRangeMinExclusiveMaxInclusive() {
+        //Given
+        Range range = rangeFactory.createRange(field, "aaa", false, "bbb", true);
+
+        //When
+        Range canonicalisedRange = RangeCanonicaliser.canonicaliseRange(range);
+
+        //Then
+        assertThat(range.isInCanonicalForm()).isFalse();
+        assertThat(canonicalisedRange).isEqualTo(rangeFactory.createRange(field, "aaa" + '\u0000', "bbb" + '\u0000'));
+    }
+
+    @Test
+    public void shouldCanonicaliseRangeMinExclusiveMaxExclusive() {
+        //Given
+        Range range = rangeFactory.createRange(field, "aaa", false, "bbb", false);
+
+        //When
+        Range canonicalisedRange = RangeCanonicaliser.canonicaliseRange(range);
+
+        //Then
+        assertThat(range.isInCanonicalForm()).isFalse();
+        assertThat(canonicalisedRange).isEqualTo(rangeFactory.createRange(field, "aaa" + '\u0000', "bbb"));
+    }
+
+    @Test
+    public void shouldHandleRangeWithMaxNullExclusive() {
+        //Given
+        Range range = rangeFactory.createRange(field, "aaa", true, null, false);
+
+        //When
+        Range canonicalisedRange = RangeCanonicaliser.canonicaliseRange(range);
+
+        //Then
+        assertThat(range.isInCanonicalForm()).isTrue();
+        assertThat(canonicalisedRange).isEqualTo(range);
+    }
+
+    @Test
+    public void shouldHandleRangeWithMaxNullInclusive() {
+        //Given
+        Range range = rangeFactory.createRange(field, "aaa", true, null, true);
+
+        //When
+        Range canonicalisedRange = RangeCanonicaliser.canonicaliseRange(range);
+
+        //Then;
+        assertThat(range.isInCanonicalForm()).isTrue();
+        assertThat(canonicalisedRange).isEqualTo(range);
+    }
+}
