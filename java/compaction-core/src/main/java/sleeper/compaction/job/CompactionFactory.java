@@ -37,19 +37,29 @@ public class CompactionFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactionFactory.class);
 
     private final String tableName;
-    private final String tableBucket;
-    private final String fs;
+    private final String outputFilePrefix;
     private final String iteratorClassName;
     private final String iteratorConfig;
 
     public CompactionFactory(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        this.tableName = tableProperties.get(TABLE_NAME);
-        this.tableBucket = tableProperties.get(DATA_BUCKET);
-        this.fs = instanceProperties.get(FILE_SYSTEM);
-        this.iteratorClassName = tableProperties.get(ITERATOR_CLASS_NAME);
-        this.iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
-        LOGGER.info("Initialised CompactionFactory with table name {}, bucket for table data {}, fs {}",
-                this.tableName, this.tableBucket, this.fs);
+        this(new Builder()
+                .tableName(tableProperties.get(TABLE_NAME))
+                .outputFilePrefix(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET))
+                .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
+                .iteratorConfig(tableProperties.get(ITERATOR_CONFIG)));
+    }
+
+    private CompactionFactory(Builder builder) {
+        tableName = builder.tableName;
+        outputFilePrefix = builder.outputFilePrefix;
+        iteratorClassName = builder.iteratorClassName;
+        iteratorConfig = builder.iteratorConfig;
+        LOGGER.info("Initialised CompactionFactory with table name {}, filename prefix {}",
+                this.tableName, this.outputFilePrefix);
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public CompactionJob createSplittingCompactionJob(
@@ -63,8 +73,8 @@ public class CompactionFactory {
         CompactionJob compactionJob = new CompactionJob(tableName, jobId);
         compactionJob.setIsSplittingJob(true);
         compactionJob.setInputFiles(jobFiles);
-        String leftOutputFile = fs + tableBucket + "/partition_" + leftPartitionId + "/" + jobId + ".parquet";
-        String rightOutputFile = fs + tableBucket + "/partition_" + rightPartitionId + "/" + jobId + ".parquet";
+        String leftOutputFile = outputFileForPartitionAndJob(leftPartitionId, jobId);
+        String rightOutputFile = outputFileForPartitionAndJob(rightPartitionId, jobId);
         compactionJob.setOutputFiles(new MutablePair<>(leftOutputFile, rightOutputFile));
         compactionJob.setSplitPoint(splitPoint);
         compactionJob.setDimension(dimension);
@@ -89,7 +99,7 @@ public class CompactionFactory {
         }
 
         String jobId = UUID.randomUUID().toString();
-        String outputFile = fs + tableBucket + "/partition_" + partition + "/" + jobId + ".parquet";
+        String outputFile = outputFileForPartitionAndJob(partition, jobId);
         List<String> jobFiles = files.stream()
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
@@ -106,5 +116,43 @@ public class CompactionFactory {
                 jobId, files.size(), partition, outputFile);
 
         return compactionJob;
+    }
+
+    private String outputFileForPartitionAndJob(String partitionId, String jobId) {
+        return outputFilePrefix + "/partition_" + partitionId + "/" + jobId + ".parquet";
+    }
+
+    public static final class Builder {
+        private String tableName;
+        private String outputFilePrefix;
+        private String iteratorClassName;
+        private String iteratorConfig;
+
+        private Builder() {
+        }
+
+        public Builder tableName(String tableName) {
+            this.tableName = tableName;
+            return this;
+        }
+
+        public Builder outputFilePrefix(String outputFilePrefix) {
+            this.outputFilePrefix = outputFilePrefix;
+            return this;
+        }
+
+        public Builder iteratorClassName(String iteratorClassName) {
+            this.iteratorClassName = iteratorClassName;
+            return this;
+        }
+
+        public Builder iteratorConfig(String iteratorConfig) {
+            this.iteratorConfig = iteratorConfig;
+            return this;
+        }
+
+        public CompactionFactory build() {
+            return new CompactionFactory(this);
+        }
     }
 }

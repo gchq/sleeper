@@ -17,6 +17,7 @@ package sleeper.compaction.jobexecution;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import org.assertj.core.groups.Tuple;
+import sleeper.compaction.job.CompactionFactory;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -65,6 +66,10 @@ public class CompactSortedFilesTestUtils {
         StateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
         dynamoStateStore.initialise();
         return dynamoStateStore;
+    }
+
+    public static CompactionFactory compactionFactoryForFolder(String folderName) {
+        return CompactionFactory.builder().tableName("table").outputFilePrefix(folderName).build();
     }
 
     public static void assertReadyForGC(StateStore dynamoStateStore, FileInfo... files) {

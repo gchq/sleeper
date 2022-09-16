@@ -75,6 +75,7 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.assertReadyForGC;
+import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.compactionFactoryForFolder;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createSchemaWithKeyTimestampValue;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createSchemaWithTwoTypedValuesAndKeyFields;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
@@ -125,7 +126,6 @@ public class CompactSortedFilesIT {
         FileInfo fileInfo1 = fileInfoFactory.leafFile(file1, 100L, 0L, 198L);
         FileInfo fileInfo2 = fileInfoFactory.leafFile(file2, 100L, 1L, 199L);
         List<FileInfo> fileInfos = Arrays.asList(fileInfo1, fileInfo2);
-        String outputFile = folderName + "/file3.parquet";
         SortedMap<Long, Record> data = new TreeMap<>();
         ParquetRecordWriter writer1 = new ParquetRecordWriter(new Path(file1), SchemaConverter.getSchema(schema), schema);
         for (int i = 0; i < 100; i++) {
@@ -149,23 +149,20 @@ public class CompactSortedFilesIT {
         writer2.close();
         stateStore.addFiles(fileInfos);
 
-        //  - Create CompactionJob and update status of files with compactionJob id
-        CompactionJob compactionJob = new CompactionJob("table", "compactionJob-1");
-        compactionJob.setInputFiles(Arrays.asList(file1, file2));
-        compactionJob.setOutputFile(outputFile);
-        compactionJob.setPartitionId(partition.getId());
-        compactionJob.setIsSplittingJob(false);
+        CompactionJob compactionJob = compactionFactoryForFolder(folderName)
+                .createCompactionJob(Arrays.asList(fileInfo1, fileInfo2), partition.getId());
         stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileInfos);
 
         // When
         //  - Merge two files
-        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(new InstanceProperties(), new ObjectFactory(new InstanceProperties(), null, ""),
+        CompactSortedFiles compactSortedFiles = new CompactSortedFiles(new InstanceProperties(), ObjectFactory.noUserJars(),
                 schema, SchemaConverter.getSchema(schema), compactionJob, stateStore,
                 ParquetWriter.DEFAULT_BLOCK_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE, "zstd", 25, 1000);
         CompactSortedFiles.CompactionJobSummary summary = compactSortedFiles.compact();
 
         // Then
         //  - Read output file and check that it contains the right results
+        String outputFile = compactionJob.getOutputFile();
         List<Record> results = new ArrayList<>();
         ParquetReaderIterator reader = new ParquetReaderIterator(new ParquetRecordReader(new Path(outputFile), schema));
         while (reader.hasNext()) {
