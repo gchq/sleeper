@@ -72,6 +72,10 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.combineSortedBySingleKey;
+import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesEvenLongs;
+import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesOddLongs;
+import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.writeData;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.compactionFactoryForFolder;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createCompactSortedFiles;
@@ -125,27 +129,12 @@ public class CompactSortedFilesIT {
         FileInfo fileInfo1 = fileInfoFactory.leafFile(file1, 100L, 0L, 198L);
         FileInfo fileInfo2 = fileInfoFactory.leafFile(file2, 100L, 1L, 199L);
         List<FileInfo> fileInfos = Arrays.asList(fileInfo1, fileInfo2);
-        SortedMap<Long, Record> data = new TreeMap<>();
-        ParquetRecordWriter writer1 = new ParquetRecordWriter(new Path(file1), SchemaConverter.getSchema(schema), schema);
-        for (int i = 0; i < 100; i++) {
-            Record record = new Record();
-            record.put("key", (long) 2 * i);
-            record.put("value1", (long) 2 * i);
-            record.put("value2", 987654321L);
-            writer1.write(record);
-            data.put((long) record.get("key"), record);
-        }
-        writer1.close();
-        ParquetRecordWriter writer2 = new ParquetRecordWriter(new Path(file2), SchemaConverter.getSchema(schema), schema);
-        for (int i = 0; i < 100; i++) {
-            Record record = new Record();
-            record.put("key", (long) 2 * i + 1);
-            record.put("value1", 1001L);
-            record.put("value2", 123456789L);
-            writer2.write(record);
-            data.put((long) record.get("key"), record);
-        }
-        writer2.close();
+
+        List<Record> data1 = keyAndTwoValuesEvenLongs();
+        writeData(schema, file1, data1);
+        List<Record> data2 = keyAndTwoValuesOddLongs();
+        writeData(schema, file2, data2);
+
         stateStore.addFiles(fileInfos);
 
         CompactionFactory compactionFactory = compactionFactoryForFolder(folderName);
@@ -167,9 +156,9 @@ public class CompactSortedFilesIT {
             results.add(new Record(reader.next()));
         }
         reader.close();
-        assertThat(summary.getLinesRead()).isEqualTo(data.values().size());
-        assertThat(summary.getLinesWritten()).isEqualTo(data.values().size());
-        List<Record> expectedResults = new ArrayList<>(data.values());
+        List<Record> expectedResults = combineSortedBySingleKey(data1, data2);
+        assertThat(summary.getLinesRead()).isEqualTo(expectedResults.size());
+        assertThat(summary.getLinesWritten()).isEqualTo(expectedResults.size());
         assertThat(results).isEqualTo(expectedResults);
 
         // - Check DynamoDBStateStore has correct ready for GC files
