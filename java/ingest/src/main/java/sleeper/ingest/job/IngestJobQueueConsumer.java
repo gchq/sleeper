@@ -43,13 +43,13 @@ import sleeper.ingest.IngestRecordsUsingPropertiesSpecifiedMethod;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.job.common.action.ActionException;
-import sleeper.job.common.action.ChangeMessageVisibilityTimeoutAction;
 import sleeper.job.common.action.DeleteMessageAction;
+import sleeper.job.common.action.MessageReference;
 import sleeper.job.common.action.thread.PeriodicActionRunnable;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.table.util.StateStoreProvider;
+import sleeper.statestore.StateStoreProvider;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
@@ -207,8 +207,9 @@ public class IngestJobQueueConsumer {
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
         // Create background thread to keep messages alive
-        ChangeMessageVisibilityTimeoutAction changeMessageVisibilityAction = new ChangeMessageVisibilityTimeoutAction(sqsClient, sqsJobQueueUrl, "Ingest job " + job.getId(), receiptHandle, visibilityTimeoutInSeconds);
-        PeriodicActionRunnable changeTimeoutRunnable = new PeriodicActionRunnable(changeMessageVisibilityAction, keepAlivePeriod);
+        MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl, "Ingest job " + job.getId(), receiptHandle);
+        PeriodicActionRunnable changeTimeoutRunnable = new PeriodicActionRunnable(
+                messageReference.changeVisibilityTimeoutAction(visibilityTimeoutInSeconds), keepAlivePeriod);
         changeTimeoutRunnable.start();
         LOGGER.info("Ingest job {}: Created background thread to keep SQS messages alive (period is {} seconds)",
                 job.getId(), keepAlivePeriod);
@@ -234,7 +235,7 @@ public class IngestJobQueueConsumer {
 
         // Delete messages from SQS queue
         LOGGER.info("Ingest job {}: Deleting messages from queue", job.getId());
-        DeleteMessageAction deleteAction = new DeleteMessageAction(sqsClient, sqsJobQueueUrl, job.getId(), receiptHandle);
+        DeleteMessageAction deleteAction = messageReference.deleteAction();
         try {
             deleteAction.call();
         } catch (ActionException e) {

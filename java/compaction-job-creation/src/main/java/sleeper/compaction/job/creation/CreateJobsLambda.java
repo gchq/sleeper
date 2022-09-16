@@ -27,13 +27,15 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableLister;
-import sleeper.table.util.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
@@ -54,6 +56,7 @@ public class CreateJobsLambda {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final TableLister tableLister;
+    private final CompactionJobStatusStore jobStatusStore;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateJobsLambda.class);
 
@@ -78,6 +81,7 @@ public class CreateJobsLambda {
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
         this.tableLister = new TableLister(s3Client, instanceProperties);
+        this.jobStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
     }
 
     /**
@@ -100,13 +104,14 @@ public class CreateJobsLambda {
         this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
         this.tableLister = new TableLister(s3Client, instanceProperties);
+        this.jobStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
     }
 
     public void eventHandler(ScheduledEvent event, Context context) {
         LocalDateTime start = LocalDateTime.now();
         LOGGER.info("CreateJobsLambda lambda triggered at {}", event.getTime());
 
-        CreateJobs createJobs = new CreateJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, dynamoDBClient, sqsClient, tableLister);
+        CreateJobs createJobs = new CreateJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, sqsClient, tableLister, jobStatusStore);
         try {
             createJobs.createJobs();
         } catch (StateStoreException | IOException | ClassNotFoundException |

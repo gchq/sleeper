@@ -37,6 +37,7 @@ import software.constructs.Construct;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
@@ -72,7 +73,7 @@ public class EmrBulkImportStack extends AbstractEmrBulkImportStack {
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(SystemDefinedInstanceProperty.CONFIG_BUCKET));
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceId.toLowerCase(), shortId, "-bulk-import-job-starter"));
+                instanceId.toLowerCase(Locale.ROOT), shortId, "-bulk-import-job-starter"));
 
         bulkImportJobStarter = Function.Builder.create(this, "BulkImport" + shortId + "JobStarter")
                 .code(code)

@@ -38,6 +38,7 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -61,7 +62,7 @@ public class VpcStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "vpc-check"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "vpc-check"));
 
         Function vpcCheckLambda = new Function(this, "VpcCheckLambda", FunctionProps.builder()
                 .code(Code.fromBucket(jarsBucket, "cdk-custom-resources-" + instanceProperties.get(VERSION) + ".jar"))

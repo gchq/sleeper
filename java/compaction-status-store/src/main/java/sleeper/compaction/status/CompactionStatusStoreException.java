@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.dynamodb.job;
+package sleeper.compaction.status;
 
-public class DynamoDBCompactionJobStatusFormat {
+public class CompactionStatusStoreException extends RuntimeException {
 
-    private DynamoDBCompactionJobStatusFormat() {
+    public CompactionStatusStoreException(String message, Throwable cause) {
+        super(message, cause);
     }
-
-    public static final String JOB_ID = "JobId";
-    public static final String UPDATE_TIME = "UpdateTime";
-
 }

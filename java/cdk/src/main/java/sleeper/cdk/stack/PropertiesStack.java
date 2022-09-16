@@ -30,6 +30,7 @@ import software.constructs.Construct;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -61,7 +62,7 @@ public class PropertiesStack extends NestedStack {
         }
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "properties-writer"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "properties-writer"));
 
         Function propertiesWriterLambda = new Function(this, "PropertiesWriterLambda", FunctionProps.builder()
                 .code(Code.fromBucket(jarsBucket, "cdk-custom-resources-" + instanceProperties.get(VERSION) + ".jar"))

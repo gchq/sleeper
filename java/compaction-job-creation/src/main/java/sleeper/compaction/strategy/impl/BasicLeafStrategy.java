@@ -17,6 +17,7 @@ package sleeper.compaction.strategy.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sleeper.compaction.job.CompactionFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.strategy.LeafPartitionCompactionStrategy;
 import sleeper.configuration.properties.InstanceProperties;

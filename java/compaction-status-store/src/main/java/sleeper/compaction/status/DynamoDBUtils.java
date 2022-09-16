@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.dynamodb.job;
+package sleeper.compaction.status;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
@@ -21,42 +21,20 @@ import com.amazonaws.services.dynamodbv2.model.BillingMode;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.CreateTableResult;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ResourceInUseException;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
-import static sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
-import static sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
-import static sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
+public class DynamoDBUtils {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBUtils.class);
 
-public class DynamoDBCompactionJobStatusStoreCreator {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobStatusStoreCreator.class);
-
-    private final String instanceId;
-    private final AmazonDynamoDB dynamoDB;
-
-    public DynamoDBCompactionJobStatusStoreCreator(String instanceId, AmazonDynamoDB dynamoDB) {
-        this.instanceId = Objects.requireNonNull(instanceId, "instanceId must not be null");
-        this.dynamoDB = Objects.requireNonNull(dynamoDB, "dynamoDB must not be null");
+    private DynamoDBUtils() {
     }
 
-    public void create() {
-        initialiseTable(jobStatusTableName(instanceId),
-                Arrays.asList(
-                        new AttributeDefinition(JOB_ID, ScalarAttributeType.S),
-                        new AttributeDefinition(UPDATE_TIME, ScalarAttributeType.N)),
-                Arrays.asList(
-                        new KeySchemaElement(JOB_ID, KeyType.HASH),
-                        new KeySchemaElement(UPDATE_TIME, KeyType.RANGE)));
-    }
-
-    private void initialiseTable(
+    public static void initialiseTable(
+            AmazonDynamoDB dynamoDB,
             String tableName,
             List<AttributeDefinition> attributeDefinitions,
             List<KeySchemaElement> keySchemaElements) {

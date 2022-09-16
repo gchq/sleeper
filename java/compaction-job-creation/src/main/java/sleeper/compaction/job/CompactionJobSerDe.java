@@ -127,8 +127,8 @@ public class CompactionJobSerDe {
             } else if (type instanceof StringType) {
                 compactionJob.setSplitPoint(dis.readUTF());
             } else if (type instanceof ByteArrayType) {
-                byte[] splitPoint =  new byte[dis.readInt()];
-                dis.read(splitPoint);
+                byte[] splitPoint = new byte[dis.readInt()];
+                dis.readFully(splitPoint);
                 compactionJob.setSplitPoint(splitPoint);
             } else {
                 throw new IllegalArgumentException("Unknown type " + type);

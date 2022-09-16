@@ -27,7 +27,6 @@ import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sleeper.core.key.KeySerDe;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.RegionSerDe;
@@ -357,23 +356,14 @@ public class S3PartitionStore implements PartitionStore {
     }
 
     public static final class Builder {
-        private List<PrimitiveType> rowKeyTypes;
         private AmazonDynamoDB dynamoDB;
         private String dynamoRevisionIdTable;
-        private Schema partitionSchema;
         private Configuration conf;
-        private RegionSerDe regionSerDe;
         private Schema tableSchema;
-        private KeySerDe keySerDe;
         private String fs;
         private String s3Bucket;
 
         public Builder() {
-        }
-
-        public Builder rowKeyTypes(List<PrimitiveType> rowKeyTypes) {
-            this.rowKeyTypes = rowKeyTypes;
-            return this;
         }
 
         public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
@@ -386,18 +376,8 @@ public class S3PartitionStore implements PartitionStore {
             return this;
         }
 
-        public Builder partitionSchema(Schema partitionSchema) {
-            this.partitionSchema = partitionSchema;
-            return this;
-        }
-
         public Builder conf(Configuration conf) {
             this.conf = conf;
-            return this;
-        }
-
-        public Builder regionSerDe(RegionSerDe regionSerDe) {
-            this.regionSerDe = regionSerDe;
             return this;
         }
 
@@ -406,10 +386,6 @@ public class S3PartitionStore implements PartitionStore {
             return this;
         }
 
-        public Builder keySerDe(KeySerDe keySerDe) {
-            this.keySerDe = keySerDe;
-            return this;
-        }
 
         public Builder fs(String fs) {
             this.fs = fs;

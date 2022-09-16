@@ -722,15 +722,16 @@ public class ReinitialiseTableIT {
 
     private FileInfo createFileInfo(String filename, FileInfo.FileStatus fileStatus, String partitionId,
                                     Key minRowKey, Key maxRowKey) {
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(new StringType());
-        fileInfo.setFilename(filename);
-        fileInfo.setFileStatus(fileStatus);
-        fileInfo.setPartitionId(partitionId);
-        fileInfo.setNumberOfRecords(100L);
-        fileInfo.setMinRowKey(minRowKey);
-        fileInfo.setMaxRowKey(maxRowKey);
-        fileInfo.setLastStateStoreUpdateTime(100L);
+        FileInfo fileInfo = FileInfo.builder()
+                .rowKeyTypes(new StringType())
+                .filename(filename)
+                .fileStatus(fileStatus)
+                .partitionId(partitionId)
+                .numberOfRecords(100L)
+                .minRowKey(minRowKey)
+                .maxRowKey(maxRowKey)
+                .lastStateStoreUpdateTime(100L)
+                .build();
 
         return fileInfo;
     }

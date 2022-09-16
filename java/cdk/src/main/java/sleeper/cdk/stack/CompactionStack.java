@@ -42,6 +42,7 @@ import software.amazon.awscdk.services.ecs.LogDriver;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
+import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.Code;
@@ -56,7 +57,9 @@ import software.constructs.Construct;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
@@ -289,7 +292,7 @@ public class CompactionStack extends NestedStack {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "job-creator"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "job-creator"));
 
         Function handler = Function.Builder
                 .create(this, "JobCreationLambda")
@@ -340,7 +343,7 @@ public class CompactionStack extends NestedStack {
                 .build();
         IVpc vpc = Vpc.fromLookup(this, "VPC1", vpcLookupOptions);
         String clusterName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "merge-compaction-cluster"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "merge-compaction-cluster"));
         Cluster cluster = Cluster.Builder
                 .create(this, "MergeCompactionCluster")
                 .clusterName(clusterName)
@@ -401,7 +404,7 @@ public class CompactionStack extends NestedStack {
                 .build();
         IVpc vpc = Vpc.fromLookup(this, "VPC2", vpcLookupOptions);
         String clusterName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "splitting-merge-compaction-cluster"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "splitting-merge-compaction-cluster"));
         Cluster cluster = Cluster.Builder
                 .create(this, "SplittingMergeCompactionCluster")
                 .clusterName(clusterName)
@@ -463,7 +466,7 @@ public class CompactionStack extends NestedStack {
         environmentVariables.put("type", "compaction");
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "compaction-tasks-creator"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-tasks-creator"));
 
         Function handler = Function.Builder
                 .create(this, "CompactionTasksCreator")
@@ -492,8 +495,9 @@ public class CompactionStack extends NestedStack {
                 .resources(Collections.singletonList("*"))
                 .actions(Arrays.asList("ecs:ListTasks", "ecs:RunTask", "iam:PassRole"))
                 .build();
-        handler.getRole().addToPrincipalPolicy(policyStatement);
-        handler.getRole().addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
+        IRole role = Objects.requireNonNull(handler.getRole());
+        role.addToPrincipalPolicy(policyStatement);
+        role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
         // Cloudwatch rule to trigger this lambda
         String ruleName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionTasksCreationRule");
@@ -519,7 +523,7 @@ public class CompactionStack extends NestedStack {
         environmentVariables.put("type", "splittingcompaction");
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "splitting-compaction-tasks-creator"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "splitting-compaction-tasks-creator"));
 
         Function handler = Function.Builder
                 .create(this, "SplittingCompactionTasksCreator")
@@ -548,8 +552,9 @@ public class CompactionStack extends NestedStack {
                 .resources(Collections.singletonList("*"))
                 .actions(Arrays.asList("ecs:ListTasks", "ecs:RunTask", "iam:PassRole"))
                 .build();
-        handler.getRole().addToPrincipalPolicy(policyStatement);
-        handler.getRole().addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
+        IRole role = Objects.requireNonNull(handler.getRole());
+        role.addToPrincipalPolicy(policyStatement);
+        role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
         // Cloudwatch rule to trigger this lambda
         String ruleName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-SplittingCompactionTasksCreationRule");

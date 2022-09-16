@@ -51,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.cdk.Utils.removalPolicy;
@@ -84,7 +85,7 @@ public class TableStack extends NestedStack {
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "sleeper-table"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "sleeper-table"));
 
         Function sleeperTableLambda = new Function(this, "SleeperTableLambda", FunctionProps.builder()
                 .code(Code.fromBucket(jarsBucket, "cdk-custom-resources-" + instanceProperties.get(VERSION) + ".jar"))
@@ -135,7 +136,7 @@ public class TableStack extends NestedStack {
 
         Bucket databucket = Bucket.Builder
                 .create(this, tableName + "DataBucket")
-                .bucketName(String.join("-", "sleeper", instanceId, "table", tableName).toLowerCase())
+                .bucketName(String.join("-", "sleeper", instanceId, "table", tableName).toLowerCase(Locale.ROOT))
                 .versioned(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .encryption(encryption)

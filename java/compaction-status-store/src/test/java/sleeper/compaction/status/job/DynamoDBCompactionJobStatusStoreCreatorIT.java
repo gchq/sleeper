@@ -13,28 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.dynamodb;
+package sleeper.compaction.status.job;
 
 import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
+import org.junit.After;
 import org.junit.Test;
-import sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusStoreCreator;
+import sleeper.configuration.properties.InstanceProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
+import static sleeper.compaction.status.job.CompactionStatusStoreTestUtils.createInstanceProperties;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase {
 
+    private final InstanceProperties instanceProperties = createInstanceProperties();
+    private final String tableName = jobStatusTableName(instanceProperties.get(ID));
+
     @Test
     public void shouldCreateStore() {
-        // Given
-        String instanceId = "test-instance";
-        DynamoDBCompactionJobStatusStoreCreator creator = new DynamoDBCompactionJobStatusStoreCreator(instanceId, dynamoDBClient);
-
         // When
-        creator.create();
+        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
 
         // Then
-        assertThat(dynamoDBClient.describeTable(jobStatusTableName(instanceId)))
+        assertThat(dynamoDBClient.describeTable(tableName))
                 .extracting(DescribeTableResult::getTable).isNotNull();
+    }
+
+    @After
+    public void tearDown() {
+        dynamoDBClient.deleteTable(tableName);
     }
 }
