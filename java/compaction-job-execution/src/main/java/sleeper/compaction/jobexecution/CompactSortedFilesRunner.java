@@ -37,8 +37,8 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
 import sleeper.io.parquet.record.SchemaConverter;
 import sleeper.job.common.action.ActionException;
-import sleeper.job.common.action.ChangeMessageVisibilityTimeoutAction;
 import sleeper.job.common.action.DeleteMessageAction;
+import sleeper.job.common.action.MessageReference;
 import sleeper.job.common.action.thread.PeriodicActionRunnable;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
@@ -58,7 +58,7 @@ import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZ
 /**
  * Retrieves compaction {@link CompactionJob}s from an SQS queue, and executes them. It
  * delegates the actual execution of the job to an instance of {@link CompactSortedFiles}.
- * It passes a {@link ChangeMessageVisibilityTimeoutAction} to that class so that the message on the
+ * It passes a {@link sleeper.job.common.action.ChangeMessageVisibilityTimeoutAction} to that class so that the message on the
  * SQS queue can be kept alive whilst the job is executing. It also handles
  * deletion of the message when the job is completed.
  */
@@ -142,11 +142,13 @@ public class CompactSortedFilesRunner {
     }
 
     private void compact(CompactionJob compactionJob, Message message) throws IOException, IteratorException, ActionException {
+        MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl,
+                "Compaction job " + compactionJob.getId(), message.getReceiptHandle());
         // Create background thread to keep messages alive
-        ChangeMessageVisibilityTimeoutAction changeMessageVisibilityAction = new ChangeMessageVisibilityTimeoutAction(sqsClient,
-                sqsJobQueueUrl, "Compaction job " + compactionJob.getId(), message.getReceiptHandle(),
-                instanceProperties.getInt(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS));
-        PeriodicActionRunnable keepAliveRunnable = new PeriodicActionRunnable(changeMessageVisibilityAction, keepAliveFrequency);
+        PeriodicActionRunnable keepAliveRunnable = new PeriodicActionRunnable(
+                messageReference.changeVisibilityTimeoutAction(
+                        instanceProperties.getInt(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)),
+                keepAliveFrequency);
         keepAliveRunnable.start();
         LOGGER.info("Compaction job {}: Created background thread to keep SQS messages alive (period is {} seconds)",
                 compactionJob.getId(), keepAliveFrequency);
@@ -160,7 +162,7 @@ public class CompactSortedFilesRunner {
         compactSortedFiles.compact();
 
         // Delete message from queue
-        DeleteMessageAction deleteAction = new DeleteMessageAction(sqsClient, sqsJobQueueUrl, compactionJob.getId(), message.getReceiptHandle());
+        DeleteMessageAction deleteAction = messageReference.deleteAction();
         deleteAction.call();
 
         LOGGER.info("Compaction job {}: Stopping background thread to keep SQS messages alive",
