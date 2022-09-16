@@ -15,8 +15,8 @@
  */
 package sleeper.compaction.strategy;
 
+import sleeper.compaction.job.CompactionFactory;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.strategy.impl.CompactionFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;

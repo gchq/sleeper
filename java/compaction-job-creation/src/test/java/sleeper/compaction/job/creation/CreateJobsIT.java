@@ -32,6 +32,7 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -84,6 +85,7 @@ public class CreateJobsIT {
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties);
         stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
+        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDB);
         compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         createJobs = new CreateJobs(new ObjectFactory(instanceProperties, s3, null),
                 instanceProperties, tablePropertiesProvider, stateStoreProvider, sqs,
