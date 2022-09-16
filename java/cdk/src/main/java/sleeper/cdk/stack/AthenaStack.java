@@ -17,6 +17,7 @@ package sleeper.cdk.stack;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import software.amazon.awscdk.Duration;
@@ -56,7 +57,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPILL
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.USER_JARS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 
-
+@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AthenaStack extends NestedStack {
     public AthenaStack(Construct scope, String id, InstanceProperties instanceProperties,
                        List<StateStoreStack> stateStoreStacks, List<IBucket> dataBuckets) {
@@ -152,6 +153,7 @@ public class AthenaStack extends NestedStack {
             // Allow our function to get the status of the query. Allowed to query all workgroups within this account
             // and region
             role.attachInlinePolicy(getAthenaQueryStatusPolicy);
+
         }
 
         Utils.addStackTagIfSet(this, instanceProperties);

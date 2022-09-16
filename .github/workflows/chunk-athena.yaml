@@ -5,7 +5,7 @@ on:
       - '.github/workflows/chunk-athena.yaml'
       - '.github/workflows/chunk.yaml'
       - 'code-style/checkstyle*.xml'
-      - 'code-style/findbugs*.xml'
+      - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
       - 'java/athena/**'
       - 'java/query/**'
