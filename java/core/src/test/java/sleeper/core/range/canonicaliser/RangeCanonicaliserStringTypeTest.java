@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package sleeper.core.range.canonicaliser;
 
 import org.junit.Before;
 import org.junit.Test;
 import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.RangeCanonicaliser;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -27,15 +27,14 @@ import sleeper.core.schema.type.StringType;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class RangeCanonicaliserStringTypeTest {
-
     private Field field;
-    private Range.RangeFactory rangeFactory;
+    private RangeFactory rangeFactory;
 
     @Before
     public void setup() {
         field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
-        rangeFactory = new Range.RangeFactory(schema);
+        rangeFactory = new RangeFactory(schema);
     }
 
     @Test

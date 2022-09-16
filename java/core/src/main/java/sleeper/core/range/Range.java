@@ -55,7 +55,6 @@ public class Range {
         this(field, min, true, max, false);
     }
 
-
     public Field getField() {
         return field;
     }

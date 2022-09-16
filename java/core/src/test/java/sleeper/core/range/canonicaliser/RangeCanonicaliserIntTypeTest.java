@@ -27,7 +27,6 @@ import sleeper.core.schema.type.IntType;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class RangeCanonicaliserIntTypeTest {
-
     private Field field;
     private RangeFactory rangeFactory;
 
