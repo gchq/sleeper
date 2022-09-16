@@ -30,10 +30,43 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class CompactSortedFilesTestData {
 
+    private CompactSortedFilesTestData() {
+    }
+
     public static List<Record> keyAndTwoValuesSortedEvenLongs() {
+        return streamKeyAndTwoValuesSortedEvenLongs().collect(Collectors.toList());
+    }
+
+    public static List<Record> keyAndTwoValuesSortedOddLongs() {
+        return streamKeyAndTwoValuesSortedOddLongs().collect(Collectors.toList());
+    }
+
+    public static List<Record> keyAndTwoValuesSortedEvenStrings() {
+        return toStrings(streamKeyAndTwoValuesSortedEvenLongs());
+    }
+
+    public static List<Record> keyAndTwoValuesSortedOddStrings() {
+        return toStrings(streamKeyAndTwoValuesSortedOddLongs());
+    }
+
+    public static List<Record> toStrings(Stream<Record> records) {
+        SortedMap<Object, Record> map = new TreeMap<>();
+        records.map(CompactSortedFilesTestData::toStrings)
+                .forEach(record -> map.put(record.get("key"), record));
+        return new ArrayList<>(map.values());
+    }
+
+    public static Record toStrings(Record record) {
+        record.put("key", "" + record.get("key"));
+        record.put("value1", "" + record.get("value1"));
+        return record;
+    }
+
+    public static Stream<Record> streamKeyAndTwoValuesSortedEvenLongs() {
         return IntStream.range(0, 100)
                 .mapToObj(i -> {
                     Record record = new Record();
@@ -41,10 +74,10 @@ public class CompactSortedFilesTestData {
                     record.put("value1", (long) 2 * i);
                     record.put("value2", 987654321L);
                     return record;
-                }).collect(Collectors.toList());
+                });
     }
 
-    public static List<Record> keyAndTwoValuesSortedOddLongs() {
+    public static Stream<Record> streamKeyAndTwoValuesSortedOddLongs() {
         return IntStream.range(0, 100)
                 .mapToObj(i -> {
                     Record record = new Record();
@@ -52,7 +85,7 @@ public class CompactSortedFilesTestData {
                     record.put("value1", 1001L);
                     record.put("value2", 123456789L);
                     return record;
-                }).collect(Collectors.toList());
+                });
     }
 
     public static List<Record> combineSortedBySingleKey(List<Record> data1, List<Record> data2) {

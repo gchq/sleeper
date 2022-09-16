@@ -74,7 +74,9 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.combineSortedBySingleKey;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
+import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenStrings;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
+import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedOddStrings;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.readDataFile;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createCompactSortedFiles;
@@ -157,120 +159,39 @@ public class CompactSortedFilesIT {
     }
 
     @Test
-    public void filesShouldMergeCorrectlyAndDynamoUpdatedStringKey() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
+    public void filesShouldMergeCorrectlyAndDynamoUpdatedStringKey() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new StringType(), new StringType(), new LongType());
-        //  - Create two files of sorted data
-        String folderName = folder.newFolder().getAbsolutePath();
-        String file1 = folderName + "/file1.parquet";
-        String file2 = folderName + "/file2.parquet";
-        List<String> files = new ArrayList<>();
-        files.add(file1);
-        files.add(file2);
-        FileInfo fileInfo1 = FileInfo.builder()
-                .rowKeyTypes(new StringType())
-                .filename(file1)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords(100L)
-                .minRowKey(Key.create("0"))
-                .maxRowKey(Key.create("98"))
-                .build();
-        FileInfo fileInfo2 = FileInfo.builder()
-                .rowKeyTypes(new StringType())
-                .filename(file2)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords(100L)
-                .minRowKey(Key.create("1"))
-                .maxRowKey(Key.create("9"))
-                .build();
-        List<FileInfo> fileInfos = Arrays.asList(fileInfo1, fileInfo2);
-        String outputFile = folderName + "/file3.parquet";
-        SortedMap<String, Record> data1 = new TreeMap<>();
-        for (int i = 0; i < 100; i++) {
-            Record record = new Record();
-            record.put("key", "" + (2 * i));
-            record.put("value1", "" + (2 * i));
-            record.put("value2", 987654321L);
-            data1.put((String) record.get("key"), record);
-        }
-        ParquetRecordWriter writer1 = new ParquetRecordWriter(new Path(file1), SchemaConverter.getSchema(schema), schema);
-        for (Map.Entry<String, Record> entry : data1.entrySet()) {
-            writer1.write(entry.getValue());
-        }
-        writer1.close();
-        SortedMap<String, Record> data2 = new TreeMap<>();
-        for (int i = 0; i < 100; i++) {
-            Record record = new Record();
-            record.put("key", "" + (2 * i + 1));
-            record.put("value1", "" + 1001L);
-            record.put("value2", 123456789L);
-            data2.put((String) record.get("key"), record);
-        }
-        ParquetRecordWriter writer2 = new ParquetRecordWriter(new Path(file2), SchemaConverter.getSchema(schema), schema);
-        for (Map.Entry<String, Record> entry : data2.entrySet()) {
-            writer2.write(entry.getValue());
-        }
-        writer2.close();
-        SortedMap<String, Record> data = new TreeMap<>();
-        data.putAll(data1);
-        data.putAll(data2);
-        //  - Create DynamoDBStateStore
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator("fsmcadusk", schema, dynamoDBClient);
-        DynamoDBStateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
-        dynamoStateStore.initialise();
-        //  - Update Dynamo state store with details of files
-        dynamoStateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2));
+        StateStore stateStore = createStateStore("fsmcadusk", schema, dynamoDBClient);
+        CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
-        //  - Create CompactionJob and update status of files with compactionJob id
-        CompactionJob compactionJob = new CompactionJob("table", "compactionJob-1");
-        compactionJob.setInputFiles(files);
-        compactionJob.setOutputFile(outputFile);
-        compactionJob.setPartitionId("1");
-        compactionJob.setIsSplittingJob(false);
-        dynamoStateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileInfos);
+        List<Record> data1 = keyAndTwoValuesSortedEvenStrings();
+        List<Record> data2 = keyAndTwoValuesSortedOddStrings();
+        dataHelper.writeLeafFile(folderName + "/file1.parquet", data1, "0", "98");
+        dataHelper.writeLeafFile(folderName + "/file2.parquet", data2, "1", "99");
+
+        CompactionJob compactionJob = compactionFactory.createCompactionJob(
+                dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
+        dataHelper.addFilesToStateStoreForJob(compactionJob);
 
         // When
-        //  - Merge two files
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, dynamoStateStore);
-        compactSortedFiles.compact();
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
+        CompactSortedFiles.CompactionJobSummary summary = compactSortedFiles.compact();
 
         // Then
         //  - Read output file and check that it contains the right results
-        List<Record> results = new ArrayList<>();
-        ParquetReaderIterator reader = new ParquetReaderIterator(new ParquetRecordReader(new Path(outputFile), schema));
-        while (reader.hasNext()) {
-            results.add(new Record(reader.next()));
-        }
-        reader.close();
-        List<Record> expectedResults = new ArrayList<>(data.values());
-        assertThat(results).isEqualTo(expectedResults);
+        List<Record> expectedResults = combineSortedBySingleKey(data1, data2);
+        assertThat(summary.getLinesRead()).isEqualTo(expectedResults.size());
+        assertThat(summary.getLinesWritten()).isEqualTo(expectedResults.size());
+        assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
 
         // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
+        assertReadyForGC(stateStore, dataHelper.allFileInfos());
 
         // - Check DynamoDBStateStore has correct active files
-        FileInfo newFile = FileInfo.builder()
-                .rowKeyTypes(new StringType())
-                .filename(outputFile)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords((long) expectedResults.size())
-                .build();
-        String minKey = expectedResults.stream()
-                .map(r -> (String) r.get("key"))
-                .min(Comparator.naturalOrder())
-                .get();
-        newFile.setMinRowKey(Key.create(minKey));
-        String maxKey = expectedResults.stream()
-                .map(r -> (String) r.get("key"))
-                .max(Comparator.naturalOrder())
-                .get();
-        newFile.setMaxRowKey(Key.create(maxKey));
-        assertThat(dynamoStateStore.getActiveFiles())
+        assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(newFile);
+                .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, "0", "99"));
     }
 
     @Test
