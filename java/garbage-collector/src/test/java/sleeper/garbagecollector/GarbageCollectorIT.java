@@ -45,10 +45,10 @@ import sleeper.io.parquet.record.SchemaConverter;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.table.job.TableLister;
-import sleeper.table.util.StateStoreProvider;
 
 import java.io.File;
 import java.io.IOException;
@@ -151,15 +151,16 @@ public class GarbageCollectorIT {
         String tempFolder = folder.newFolder().getAbsolutePath();
         //  - A file which should be garbage collected immediately
         String file1 = tempFolder + "/file1.parquet";
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new IntType());
-        fileInfo1.setFilename(file1);
-        fileInfo1.setFileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
-        fileInfo1.setPartitionId(partition.getId());
-        fileInfo1.setMinRowKey(Key.create(1));
-        fileInfo1.setMaxRowKey(Key.create(100));
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setLastStateStoreUpdateTime(System.currentTimeMillis() - 100000);
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new IntType())
+                .filename(file1)
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .partitionId(partition.getId())
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(100))
+                .numberOfRecords(100L)
+                .lastStateStoreUpdateTime(System.currentTimeMillis() - 100000)
+                .build();
         ParquetRecordWriter writer1 = new ParquetRecordWriter(new Path(file1), SchemaConverter.getSchema(schema), schema);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
@@ -171,15 +172,16 @@ public class GarbageCollectorIT {
         stateStore.addFile(fileInfo1);
         //  - An active file which should not be garbage collected
         String file2 = tempFolder + "/file2.parquet";
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new IntType());
-        fileInfo2.setFilename(file2);
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId(partition.getId());
-        fileInfo2.setMinRowKey(Key.create(1));
-        fileInfo2.setMaxRowKey(Key.create(100));
-        fileInfo2.setNumberOfRecords(100L);
-        fileInfo2.setLastStateStoreUpdateTime(System.currentTimeMillis());
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new IntType())
+                .filename(file2)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(partition.getId())
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(100))
+                .numberOfRecords(100L)
+                .lastStateStoreUpdateTime(System.currentTimeMillis())
+                .build();
         ParquetRecordWriter writer2 = new ParquetRecordWriter(new Path(file2), SchemaConverter.getSchema(schema), schema);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
@@ -192,15 +194,16 @@ public class GarbageCollectorIT {
         //  - A file which is ready for garbage collection but which should not be garbage collected now as it has only
         //      just been marked as ready for GC
         String file3 = tempFolder + "/file3.parquet";
-        FileInfo fileInfo3 = new FileInfo();
-        fileInfo3.setRowKeyTypes(new IntType());
-        fileInfo3.setFilename(file3);
-        fileInfo3.setFileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
-        fileInfo3.setPartitionId(partition.getId());
-        fileInfo3.setMinRowKey(Key.create(1));
-        fileInfo3.setMaxRowKey(Key.create(100));
-        fileInfo3.setNumberOfRecords(100L);
-        fileInfo3.setLastStateStoreUpdateTime(System.currentTimeMillis());
+        FileInfo fileInfo3 = FileInfo.builder()
+                .rowKeyTypes(new IntType())
+                .filename(file3)
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .partitionId(partition.getId())
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(100))
+                .numberOfRecords(100L)
+                .lastStateStoreUpdateTime(System.currentTimeMillis())
+                .build();
         ParquetRecordWriter writer3 = new ParquetRecordWriter(new Path(file3), SchemaConverter.getSchema(schema), schema);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();

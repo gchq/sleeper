@@ -31,6 +31,7 @@ import software.constructs.Construct;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
@@ -65,7 +66,7 @@ public class GarbageCollectorStack extends NestedStack {
         Code code = Code.fromBucket(jarsBucket, "lambda-garbagecollector-" + instanceProperties.get(VERSION) + ".jar");
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "garbage-collector"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "garbage-collector"));
 
         // Garbage collector function
         Function handler = Function.Builder

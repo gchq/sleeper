@@ -32,15 +32,16 @@ public class FileInfoSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseCorrectlyForIntKey() throws IOException {
         // Given
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setFilename("abc");
-        fileInfo.setRowKeyTypes(new IntType());
-        fileInfo.setMinRowKey(Key.create(1));
-        fileInfo.setMaxRowKey(Key.create(10));
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setNumberOfRecords(100L);
-        fileInfo.setPartitionId("id");
-        fileInfo.setJobId("JOB");
+        FileInfo fileInfo = FileInfo.builder()
+                .filename("abc")
+                .rowKeyTypes(new IntType())
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(100L)
+                .partitionId("id")
+                .jobId("JOB")
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(10))
+                .build();
         FileInfoSerDe fileInfoSerDe = new FileInfoSerDe();
 
         // When
@@ -54,15 +55,16 @@ public class FileInfoSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseCorrectlyForLongKey() throws IOException {
         // Given
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setFilename("abc");
-        fileInfo.setRowKeyTypes(new LongType());
-        fileInfo.setMinRowKey(Key.create(1L));
-        fileInfo.setMaxRowKey(Key.create(10L));
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setNumberOfRecords(100L);
-        fileInfo.setPartitionId("id");
-        fileInfo.setJobId("JOB");
+        FileInfo fileInfo = FileInfo.builder()
+                .filename("abc")
+                .rowKeyTypes(new LongType())
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(100L)
+                .partitionId("id")
+                .jobId("JOB")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .build();
         FileInfoSerDe fileInfoSerDe = new FileInfoSerDe();
 
         // When
@@ -76,15 +78,16 @@ public class FileInfoSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseCorrectlyForStringKey() throws IOException {
         // Given
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setFilename("abc");
-        fileInfo.setRowKeyTypes(new StringType());
-        fileInfo.setMinRowKey(Key.create("1"));
-        fileInfo.setMaxRowKey(Key.create("10"));
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setNumberOfRecords(100L);
-        fileInfo.setPartitionId("id");
-        fileInfo.setJobId("JOB");
+        FileInfo fileInfo = FileInfo.builder()
+                .filename("abc")
+                .rowKeyTypes(new StringType())
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(100L)
+                .partitionId("id")
+                .jobId("JOB")
+                .minRowKey(Key.create("1"))
+                .maxRowKey(Key.create("10"))
+                .build();
         FileInfoSerDe fileInfoSerDe = new FileInfoSerDe();
 
         // When
@@ -98,15 +101,16 @@ public class FileInfoSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseCorrectlyForByteArrayKey() throws IOException {
         // Given
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setFilename("abc");
-        fileInfo.setRowKeyTypes(new ByteArrayType());
-        fileInfo.setMinRowKey(Key.create(new byte[]{}));
-        fileInfo.setMaxRowKey(Key.create(new byte[]{64, 64}));
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setNumberOfRecords(100L);
-        fileInfo.setPartitionId("id");
-        fileInfo.setJobId("JOB");
+        FileInfo fileInfo = FileInfo.builder()
+                .filename("abc")
+                .rowKeyTypes(new ByteArrayType())
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(100L)
+                .partitionId("id")
+                .jobId("JOB")
+                .minRowKey(Key.create(new byte[]{}))
+                .maxRowKey(Key.create(new byte[]{64, 64}))
+                .build();
         FileInfoSerDe fileInfoSerDe = new FileInfoSerDe();
 
         // When
@@ -120,15 +124,16 @@ public class FileInfoSerDeTest {
     @Test
     public void shouldSerialiseAndDeserialiseCorrectlyForByteArrayAndStringKey() throws IOException {
         // Given
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setFilename("abc");
-        fileInfo.setRowKeyTypes(new ByteArrayType(), new StringType());
-        fileInfo.setMinRowKey(Key.create(Arrays.asList(new byte[]{}, "A")));
-        fileInfo.setMaxRowKey(Key.create(Arrays.asList(new byte[]{64, 64}, "Z")));
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setNumberOfRecords(100L);
-        fileInfo.setPartitionId("id");
-        fileInfo.setJobId("JOB");
+        FileInfo fileInfo = FileInfo.builder()
+                .filename("abc")
+                .rowKeyTypes(new ByteArrayType(), new StringType())
+                .minRowKey(Key.create(Arrays.asList(new byte[]{}, "A")))
+                .maxRowKey(Key.create(Arrays.asList(new byte[]{64, 64}, "Z")))
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(100L)
+                .partitionId("id")
+                .jobId("JOB")
+                .build();
         FileInfoSerDe fileInfoSerDe = new FileInfoSerDe();
 
         // When

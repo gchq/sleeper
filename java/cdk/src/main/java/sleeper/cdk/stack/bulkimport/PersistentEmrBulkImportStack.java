@@ -45,6 +45,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -181,7 +182,7 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceId.toLowerCase(), shortId, "bulk-import-job-starter"));
+                instanceId.toLowerCase(Locale.ROOT), shortId, "bulk-import-job-starter"));
 
         bulkImportJobStarter = Function.Builder.create(this, "BulkImport" + shortId + "JobStarter")
                 .code(code)
@@ -203,15 +204,6 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
         if (ingestBucket != null) {
             ingestBucket.grantRead(bulkImportJobStarter);
         }
-
-        Map<String, Map<String, String>> conditions = new HashMap<>();
-        Map<String, String> tagKeyCondition = new HashMap<>();
-
-        instanceProperties.getTags().entrySet().stream().forEach(entry -> {
-            tagKeyCondition.put("elasticmapreduce:RequestTag/" + entry.getKey(), entry.getValue());
-        });
-
-        conditions.put("StringEquals", tagKeyCondition);
 
         bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
                 .actions(Lists.newArrayList("elasticmapreduce:*", "elasticmapreduce:ListClusters"))

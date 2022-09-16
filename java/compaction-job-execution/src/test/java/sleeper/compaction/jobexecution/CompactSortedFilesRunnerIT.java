@@ -50,8 +50,8 @@ import sleeper.job.common.action.ActionException;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableCreator;
-import sleeper.table.util.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -156,38 +156,42 @@ public class CompactSortedFilesRunnerIT {
         String file2 = folderName + "/file2.parquet";
         String file3 = folderName + "/file3.parquet";
         String file4 = folderName + "/file4.parquet";
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new LongType());
-        fileInfo1.setFilename(file1);
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId("1");
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setMinRowKey(Key.create(0L));
-        fileInfo1.setMaxRowKey(Key.create(198L));
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new LongType());
-        fileInfo2.setFilename(file2);
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId("1");
-        fileInfo2.setNumberOfRecords(100L);
-        fileInfo2.setMinRowKey(Key.create(1L));
-        fileInfo2.setMaxRowKey(Key.create(199L));
-        FileInfo fileInfo3 = new FileInfo();
-        fileInfo3.setRowKeyTypes(new LongType());
-        fileInfo3.setFilename(file3);
-        fileInfo3.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo3.setPartitionId("1");
-        fileInfo3.setNumberOfRecords(100L);
-        fileInfo3.setMinRowKey(Key.create(0L));
-        fileInfo3.setMaxRowKey(Key.create(198L));
-        FileInfo fileInfo4 = new FileInfo();
-        fileInfo4.setRowKeyTypes(new LongType());
-        fileInfo4.setFilename(file4);
-        fileInfo4.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo4.setPartitionId("1");
-        fileInfo4.setNumberOfRecords(100L);
-        fileInfo4.setMinRowKey(Key.create(1L));
-        fileInfo4.setMaxRowKey(Key.create(199L));
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file1)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(0L))
+                .maxRowKey(Key.create(198L))
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file2)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(199L))
+                .build();
+        FileInfo fileInfo3 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file3)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(0L))
+                .maxRowKey(Key.create(198L))
+                .build();
+        FileInfo fileInfo4 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file4)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(199L))
+                .build();
         ParquetRecordWriter writer1 = new ParquetRecordWriter(new Path(file1), SchemaConverter.getSchema(schema), schema);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();

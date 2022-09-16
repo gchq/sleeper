@@ -12,98 +12,32 @@ jobs:
           java-version: '8'
           distribution: 'adopt'
           cache: 'maven'
-      - name: Query Athena chunk
-        id: athena
-        uses: LASER-Yi/workflow-status@v0.0.2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: chunk-athena.yaml
-          branch: ${{ github.ref_name }}
-      - name: Query Bulk Import chunk
-        id: bulk-import
-        uses: LASER-Yi/workflow-status@v0.0.2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: chunk-bulk-import.yaml
-          branch: ${{ github.ref_name }}
-      - name: Query CDK chunk
-        id: cdk
-        uses: LASER-Yi/workflow-status@v0.0.2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: chunk-cdk.yaml
-          branch: ${{ github.ref_name }}
-      - name: Query Clients chunk
-        id: clients
-        uses: LASER-Yi/workflow-status@v0.0.2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: chunk-clients.yaml
-          branch: ${{ github.ref_name }}
-      - name: Query Common chunk
-        id: common
-        uses: LASER-Yi/workflow-status@v0.0.2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: chunk-common.yaml
-          branch: ${{ github.ref_name }}
-      - name: Query Compaction chunk
-        id: compaction
-        uses: LASER-Yi/workflow-status@v0.0.2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: chunk-compaction.yaml
-          branch: ${{ github.ref_name }}
-      - name: Query Data chunk
-        id: data
-        uses: LASER-Yi/workflow-status@v0.0.2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: chunk-data.yaml
-          branch: ${{ github.ref_name }}
-      - name: Query Ingest chunk
-        id: ingest
-        uses: LASER-Yi/workflow-status@v0.0.2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: chunk-ingest.yaml
-          branch: ${{ github.ref_name }}
-      - name: Query Query chunk
-        id: query
-        uses: LASER-Yi/workflow-status@v0.0.2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: chunk-query.yaml
-          branch: ${{ github.ref_name }}
-      - name: Query State Store chunk
-        id: statestore
-        uses: LASER-Yi/workflow-status@v0.0.2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: chunk-statestore.yaml
-          branch: ${{ github.ref_name }}
-      - name: Report results
+      - name: Query GitHub
         working-directory: ./java/build
         run: |
+          echo "token=${{ secrets.GITHUB_TOKEN }}" >> status.properties
+          echo "repository=${{ github.repository }}" >> status.properties
+          echo "head.branch=${{ github.ref_name }}" >> status.properties
+          echo "head.sha=${{ github.sha }}" >> status.properties
           echo "chunks=athena,bulk-import,cdk,clients,common,compaction,data,ingest,query,statestore" >> status.properties
-          echo "athena.status=${{ steps.athena.outputs.status }}" >> status.properties
-          echo "athena.conclusion=${{ steps.athena.outputs.conclusion }}" >> status.properties
-          echo "bulk-import.status=${{ steps.bulk-import.outputs.status }}" >> status.properties
-          echo "bulk-import.conclusion=${{ steps.bulk-import.outputs.conclusion }}" >> status.properties
-          echo "cdk.status=${{ steps.cdk.outputs.status }}" >> status.properties
-          echo "cdk.conclusion=${{ steps.cdk.outputs.conclusion }}" >> status.properties
-          echo "clients.status=${{ steps.clients.outputs.status }}" >> status.properties
-          echo "clients.conclusion=${{ steps.clients.outputs.conclusion }}" >> status.properties
-          echo "common.status=${{ steps.common.outputs.status }}" >> status.properties
-          echo "common.conclusion=${{ steps.common.outputs.conclusion }}" >> status.properties
-          echo "compaction.status=${{ steps.compaction.outputs.status }}" >> status.properties
-          echo "compaction.conclusion=${{ steps.compaction.outputs.conclusion }}" >> status.properties
-          echo "data.status=${{ steps.data.outputs.status }}" >> status.properties
-          echo "data.conclusion=${{ steps.data.outputs.conclusion }}" >> status.properties
-          echo "ingest.status=${{ steps.ingest.outputs.status }}" >> status.properties
-          echo "ingest.conclusion=${{ steps.ingest.outputs.conclusion }}" >> status.properties
-          echo "query.status=${{ steps.query.outputs.status }}" >> status.properties
-          echo "query.conclusion=${{ steps.query.outputs.conclusion }}" >> status.properties
-          echo "statestore.status=${{ steps.statestore.outputs.status }}" >> status.properties
-          echo "statestore.conclusion=${{ steps.statestore.outputs.conclusion }}" >> status.properties
-          mvn compile exec:java -q -Dexec.mainClass=sleeper.build.status.CheckGitHubStatus -Dexec.args=status.properties
+          echo "chunk.athena.name=Athena" >> status.properties
+          echo "chunk.athena.workflow=chunk-athena.yaml" >> status.properties
+          echo "chunk.bulk-import.name=Bulk Import" >> status.properties
+          echo "chunk.bulk-import.workflow=chunk-bulk-import.yaml" >> status.properties
+          echo "chunk.cdk.name=CDK" >> status.properties
+          echo "chunk.cdk.workflow=chunk-cdk.yaml" >> status.properties
+          echo "chunk.clients.name=Clients" >> status.properties
+          echo "chunk.clients.workflow=chunk-clients.yaml" >> status.properties
+          echo "chunk.common.name=Common" >> status.properties
+          echo "chunk.common.workflow=chunk-common.yaml" >> status.properties
+          echo "chunk.compaction.name=Compaction" >> status.properties
+          echo "chunk.compaction.workflow=chunk-compaction.yaml" >> status.properties
+          echo "chunk.data.name=Data" >> status.properties
+          echo "chunk.data.workflow=chunk-data.yaml" >> status.properties
+          echo "chunk.ingest.name=Ingest" >> status.properties
+          echo "chunk.ingest.workflow=chunk-ingest.yaml" >> status.properties
+          echo "chunk.query.name=Query" >> status.properties
+          echo "chunk.query.workflow=chunk-query.yaml" >> status.properties
+          echo "chunk.statestore.name=State Store" >> status.properties
+          echo "chunk.statestore.workflow=chunk-statestore.yaml" >> status.properties
+          mvn compile exec:java -q -Dexec.mainClass=sleeper.build.status.CheckGitHubStatusMain -Dexec.args=status.properties

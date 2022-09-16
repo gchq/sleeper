@@ -17,40 +17,43 @@ package sleeper.build.status;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.util.ArrayList;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Properties;
 
 public class ChunksStatus {
 
+    private final GitHubHead head;
     private final List<ChunkStatus> chunks;
 
     private ChunksStatus(Builder builder) {
+        head = Objects.requireNonNull(builder.head, "head must not be null");
         chunks = Objects.requireNonNull(builder.chunks, "chunks must not be null");
     }
 
-    public static ChunksStatus from(Properties properties) {
-        return builder().chunks(chunksFrom(properties)).build();
-    }
-
     public boolean isFailCheck() {
-        return chunks.stream().anyMatch(ChunkStatus::isFailCheck);
+        return chunks.stream().anyMatch(chunk -> chunk.isFailCheckWithHead(head));
     }
 
     public void report(PrintStream out) {
-        chunks.forEach(c -> c.report(out));
+        chunks.forEach(c -> c.report(head, out));
     }
 
-    public String reportString() {
+    public List<String> reportLines() throws UnsupportedEncodingException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        report(new PrintStream(os));
-        return os.toString();
+        report(new PrintStream(os, false, StandardCharsets.UTF_8.displayName()));
+        String report = os.toString(StandardCharsets.UTF_8.displayName());
+        return Arrays.asList(report.split(System.lineSeparator()));
     }
 
-    public static ChunksStatus chunks(ChunkStatus... chunks) {
-        return builder().chunks(chunks).build();
+    public static ChunksStatus chunksForHead(GitHubHead head, ChunkStatus... chunks) {
+        return builder().head(head).chunks(Arrays.asList(chunks)).build();
+    }
+
+    public static ChunksStatus chunksForHead(GitHubHead head, List<ChunkStatus> chunks) {
+        return builder().head(head).chunks(chunks).build();
     }
 
     public static Builder builder() {
@@ -66,23 +69,25 @@ public class ChunksStatus {
             return false;
         }
         ChunksStatus that = (ChunksStatus) o;
-        return chunks.equals(that.chunks);
+        return head.equals(that.head) && chunks.equals(that.chunks);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(chunks);
+        return Objects.hash(head, chunks);
     }
 
     @Override
     public String toString() {
         return "ChunksStatus{" +
-                "chunks=" + chunks +
+                "head=" + head +
+                ", chunks=" + chunks +
                 '}';
     }
 
     public static final class Builder {
         private List<ChunkStatus> chunks;
+        private GitHubHead head;
 
         private Builder() {
         }
@@ -92,24 +97,13 @@ public class ChunksStatus {
             return this;
         }
 
-        public Builder chunks(ChunkStatus... chunks) {
-            return chunks(Arrays.asList(chunks));
+        public Builder head(GitHubHead head) {
+            this.head = head;
+            return this;
         }
 
         public ChunksStatus build() {
             return new ChunksStatus(this);
         }
-    }
-
-    private static List<ChunkStatus> chunksFrom(Properties properties) {
-        String[] chunkNames = properties.getProperty("chunks").split(",");
-        List<ChunkStatus> chunks = new ArrayList<>(chunkNames.length);
-        for (String chunkName : chunkNames) {
-            chunks.add(ChunkStatus.chunk(chunkName)
-                    .status(properties.getProperty(chunkName + ".status"))
-                    .conclusion(properties.getProperty(chunkName + ".conclusion"))
-                    .build());
-        }
-        return chunks;
     }
 }

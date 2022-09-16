@@ -13,26 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.io.parquet.record;
+package sleeper.compaction.job;
 
-import org.apache.parquet.io.api.GroupConverter;
-import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
+public interface CompactionJobStatusStore {
 
-public class RecordMaterializer extends org.apache.parquet.io.api.RecordMaterializer<Record> {
-    private final RecordConverter recordConverter;
-
-    public RecordMaterializer(Schema schema) {
-        this.recordConverter = new RecordConverter(schema);
+    default void jobCreated(CompactionJob job) {
     }
 
-    @Override
-    public Record getCurrentRecord() {
-        return recordConverter.getRecord();
-    }
-
-    @Override
-    public GroupConverter getRootConverter() {
-        return recordConverter;
+    static CompactionJobStatusStore none() {
+        return new CompactionJobStatusStore() {
+        };
     }
 }
