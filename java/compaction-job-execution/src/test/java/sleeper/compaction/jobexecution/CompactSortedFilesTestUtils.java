@@ -80,7 +80,7 @@ public class CompactSortedFilesTestUtils {
     public static CompactSortedFiles createCompactSortedFiles(Schema schema, CompactionJob compactionJob, StateStore stateStore) {
         return new CompactSortedFiles(new InstanceProperties(), ObjectFactory.noUserJars(),
                 schema, SchemaConverter.getSchema(schema), compactionJob, stateStore,
-                ParquetWriter.DEFAULT_BLOCK_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE, "zstd", 25, 1000);
+                ParquetWriter.DEFAULT_BLOCK_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE, "zstd");
     }
 
     public static void assertReadyForGC(StateStore dynamoStateStore, FileInfo... files) {

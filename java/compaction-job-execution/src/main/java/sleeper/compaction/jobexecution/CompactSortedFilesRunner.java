@@ -158,7 +158,7 @@ public class CompactSortedFilesRunner {
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, objectFactory,
                 tableProperties.getSchema(), SchemaConverter.getSchema(tableProperties.getSchema()), compactionJob,
                 stateStore, tableProperties.getInt(ROW_GROUP_SIZE), tableProperties.getInt(PAGE_SIZE),
-                tableProperties.get(COMPRESSION_CODEC), maxConnectionsToS3, keepAliveFrequency);
+                tableProperties.get(COMPRESSION_CODEC));
         compactSortedFiles.compact();
 
         // Delete message from queue
