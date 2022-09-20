@@ -33,15 +33,15 @@ public class FileInfo {
         ACTIVE, READY_FOR_GARBAGE_COLLECTION
     }
 
-    private List<PrimitiveType> rowKeyTypes;
-    private Key minRowKey;
-    private Key maxRowKey;
-    private String filename;
-    private String partitionId;
-    private Long numberOfRecords;
-    private FileStatus fileStatus;
-    private String jobId;
-    private Long lastStateStoreUpdateTime; // The latest time (in milliseconds since the epoch) that the status of the file was updated in the StateStore
+    private final List<PrimitiveType> rowKeyTypes;
+    private final Key minRowKey;
+    private final Key maxRowKey;
+    private final String filename;
+    private final String partitionId;
+    private final Long numberOfRecords;
+    private final FileStatus fileStatus;
+    private final String jobId;
+    private final Long lastStateStoreUpdateTime; // The latest time (in milliseconds since the epoch) that the status of the file was updated in the StateStore
 
     private FileInfo(Builder builder) {
         this.rowKeyTypes = builder.rowKeyTypes;
