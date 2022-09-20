@@ -93,7 +93,8 @@ To tear all the infrastructure down, run
 Note that this will sometimes fail if there are ECS tasks running. Ensure that there are no compaction tasks running before
 doing this.
 
-It is possible to run variations on this system-test by editing the following files: scripts/test/system-test-instance.properties
+It is possible to run variations on this system-test by editing the following files:
+scripts/test/system-test-instance.properties
 and scripts/templates/instanceproperties.template.
-	
-To deploy your own instance of Sleeper with a particular schema, go to the [deployment guide](02-deployment-guide).
+
+To deploy your own instance of Sleeper with a particular schema, go to the [deployment guide](02-deployment-guide.md).
