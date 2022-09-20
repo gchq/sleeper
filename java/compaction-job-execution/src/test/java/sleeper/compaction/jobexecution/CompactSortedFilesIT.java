@@ -202,23 +202,24 @@ public class CompactSortedFilesIT {
         assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
+        long minKey = expectedResults.stream()
+                .map(r -> (long) r.get("key"))
+                .min(Comparator.naturalOrder())
+                .get();
+        long maxKey = expectedResults.stream()
+                .map(r -> (long) r.get("key"))
+                .max(Comparator.naturalOrder())
+                .get();
         FileInfo newFile = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(outputFile)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords((long) expectedResults.size())
+                .minRowKey(Key.create(minKey))
+                .maxRowKey(Key.create(maxKey))
                 .build();
-        long minKey = expectedResults.stream()
-                .map(r -> (long) r.get("key"))
-                .min(Comparator.naturalOrder())
-                .get();
-        newFile.setMinRowKey(Key.create(minKey));
-        long maxKey = expectedResults.stream()
-                .map(r -> (long) r.get("key"))
-                .max(Comparator.naturalOrder())
-                .get();
-        newFile.setMaxRowKey(Key.create(maxKey));
+
         assertThat(dynamoStateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(newFile);
@@ -325,23 +326,24 @@ public class CompactSortedFilesIT {
         assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
+        String minKey = expectedResults.stream()
+                .map(r -> (String) r.get("key"))
+                .min(Comparator.naturalOrder())
+                .get();
+        String maxKey = expectedResults.stream()
+                .map(r -> (String) r.get("key"))
+                .max(Comparator.naturalOrder())
+                .get();
         FileInfo newFile = FileInfo.builder()
                 .rowKeyTypes(new StringType())
                 .filename(outputFile)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords((long) expectedResults.size())
+                .minRowKey(Key.create(minKey))
+                .maxRowKey(Key.create(maxKey))
                 .build();
-        String minKey = expectedResults.stream()
-                .map(r -> (String) r.get("key"))
-                .min(Comparator.naturalOrder())
-                .get();
-        newFile.setMinRowKey(Key.create(minKey));
-        String maxKey = expectedResults.stream()
-                .map(r -> (String) r.get("key"))
-                .max(Comparator.naturalOrder())
-                .get();
-        newFile.setMaxRowKey(Key.create(maxKey));
+
         assertThat(dynamoStateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(newFile);
@@ -388,13 +390,17 @@ public class CompactSortedFilesIT {
             record.put("value2", 987654321L);
             data1.put(ByteArray.wrap((byte[]) record.get("key")), record);
         }
-        fileInfo1.setMinRowKey(Key.create(data1.keySet().iterator().next().getArray()));
+        Key minRowKey1 = Key.create(data1.keySet().iterator().next().getArray());
         Iterator<ByteArray> it = data1.keySet().iterator();
         ByteArray ba = it.next();
         while (it.hasNext()) {
             ba = it.next();
         }
-        fileInfo1.setMaxRowKey(Key.create(ba.getArray()));
+        Key maxRowKey1 = Key.create(ba.getArray());
+        fileInfo1 = fileInfo1.toBuilder()
+                .minRowKey(minRowKey1)
+                .maxRowKey(maxRowKey1)
+                .build();
         ParquetRecordWriter writer1 = new ParquetRecordWriter(new Path(file1), SchemaConverter.getSchema(schema), schema);
         for (Map.Entry<ByteArray, Record> entry : data1.entrySet()) {
             writer1.write(entry.getValue());
@@ -408,13 +414,17 @@ public class CompactSortedFilesIT {
             record.put("value2", 123456789L);
             data2.put(ByteArray.wrap((byte[]) record.get("key")), record);
         }
-        fileInfo2.setMinRowKey(Key.create(data2.keySet().iterator().next().getArray()));
+        Key minRowKey2 = Key.create(data2.keySet().iterator().next().getArray());
         it = data2.keySet().iterator();
         ba = it.next();
         while (it.hasNext()) {
             ba = it.next();
         }
-        fileInfo2.setMaxRowKey(Key.create(ba.getArray()));
+        Key maxRowKey2 = Key.create(ba.getArray());
+        fileInfo2 = fileInfo2.toBuilder()
+                .minRowKey(minRowKey2)
+                .maxRowKey(maxRowKey2)
+                .build();
         ParquetRecordWriter writer2 = new ParquetRecordWriter(new Path(file2), SchemaConverter.getSchema(schema), schema);
         for (Map.Entry<ByteArray, Record> entry : data2.entrySet()) {
             writer2.write(entry.getValue());
@@ -468,25 +478,26 @@ public class CompactSortedFilesIT {
         assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
+        byte[] minKey = expectedResults.stream()
+                .map(r -> ByteArray.wrap((byte[]) r.get("key")))
+                .min(Comparator.naturalOrder())
+                .map(ByteArray::getArray)
+                .get();
+        byte[] maxKey = expectedResults.stream()
+                .map(r -> ByteArray.wrap((byte[]) r.get("key")))
+                .max(Comparator.naturalOrder())
+                .map(ByteArray::getArray)
+                .get();
         FileInfo newFile = FileInfo.builder()
                 .rowKeyTypes(new ByteArrayType())
                 .filename(outputFile)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords((long) expectedResults.size())
+                .minRowKey(Key.create(minKey))
+                .maxRowKey(Key.create(maxKey))
                 .build();
-        byte[] minKey = expectedResults.stream()
-                .map(r -> ByteArray.wrap((byte[]) r.get("key")))
-                .min(Comparator.naturalOrder())
-                .map(ByteArray::getArray)
-                .get();
-        newFile.setMinRowKey(Key.create(minKey));
-        byte[] maxKey = expectedResults.stream()
-                .map(r -> ByteArray.wrap((byte[]) r.get("key")))
-                .max(Comparator.naturalOrder())
-                .map(ByteArray::getArray)
-                .get();
-        newFile.setMaxRowKey(Key.create(maxKey));
+
         assertThat(dynamoStateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(newFile);
@@ -577,23 +588,24 @@ public class CompactSortedFilesIT {
         assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
+        long minKey = expectedResults.stream()
+                .map(r -> (long) r.get("key"))
+                .min(Comparator.naturalOrder())
+                .get();
+        long maxKey = expectedResults.stream()
+                .map(r -> (long) r.get("key"))
+                .max(Comparator.naturalOrder())
+                .get();
         FileInfo newFile = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(outputFile)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords((long) expectedResults.size())
+                .minRowKey(Key.create(minKey))
+                .maxRowKey(Key.create(maxKey))
                 .build();
-        long minKey = expectedResults.stream()
-                .map(r -> (long) r.get("key"))
-                .min(Comparator.naturalOrder())
-                .get();
-        newFile.setMinRowKey(Key.create(minKey));
-        long maxKey = expectedResults.stream()
-                .map(r -> (long) r.get("key"))
-                .max(Comparator.naturalOrder())
-                .get();
-        newFile.setMaxRowKey(Key.create(maxKey));
+
         assertThat(dynamoStateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(newFile);
@@ -817,40 +829,42 @@ public class CompactSortedFilesIT {
         assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
+        long minKeyLeft = leftExpectedResults.stream()
+                .map(r -> (long) r.get("key"))
+                .min(Comparator.naturalOrder())
+                .get();
+        long maxKeyLeft = leftExpectedResults.stream()
+                .map(r -> (long) r.get("key"))
+                .max(Comparator.naturalOrder())
+                .get();
         FileInfo leftNewFile = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(leftOutputFile)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(leftPartition.getId())
                 .numberOfRecords((long) leftExpectedResults.size())
+                .minRowKey(Key.create(minKeyLeft))
+                .maxRowKey(Key.create(maxKeyLeft))
                 .build();
-        long minKeyLeft = leftExpectedResults.stream()
+
+        long minKeyRight = rightExpectedResults.stream()
                 .map(r -> (long) r.get("key"))
                 .min(Comparator.naturalOrder())
                 .get();
-        leftNewFile.setMinRowKey(Key.create(minKeyLeft));
-        long maxKeyLeft = leftExpectedResults.stream()
+        long maxKeyRight = rightExpectedResults.stream()
                 .map(r -> (long) r.get("key"))
                 .max(Comparator.naturalOrder())
                 .get();
-        leftNewFile.setMaxRowKey(Key.create(maxKeyLeft));
         FileInfo rightNewFile = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(rightOutputFile)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(rightPartition.getId())
                 .numberOfRecords((long) rightExpectedResults.size())
+                .minRowKey(Key.create(minKeyRight))
+                .maxRowKey(Key.create(maxKeyRight))
                 .build();
-        long minKeyRight = rightExpectedResults.stream()
-                .map(r -> (long) r.get("key"))
-                .min(Comparator.naturalOrder())
-                .get();
-        rightNewFile.setMinRowKey(Key.create(minKeyRight));
-        long maxKeyRight = rightExpectedResults.stream()
-                .map(r -> (long) r.get("key"))
-                .max(Comparator.naturalOrder())
-                .get();
-        rightNewFile.setMaxRowKey(Key.create(maxKeyRight));
+
         assertThat(dynamoStateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(leftNewFile, rightNewFile);
@@ -1331,23 +1345,24 @@ public class CompactSortedFilesIT {
         assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
+        long minKeyLeft = leftExpectedResults.stream()
+                .map(r -> (long) r.get("key"))
+                .min(Comparator.naturalOrder())
+                .get();
+        long maxKeyLeft = leftExpectedResults.stream()
+                .map(r -> (long) r.get("key"))
+                .max(Comparator.naturalOrder())
+                .get();
         FileInfo leftNewFile = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(leftOutputFile)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(leftPartition.getId())
                 .numberOfRecords((long) leftExpectedResults.size())
+                .minRowKey(Key.create(minKeyLeft))
+                .maxRowKey(Key.create(maxKeyLeft))
                 .build();
-        long minKeyLeft = leftExpectedResults.stream()
-                .map(r -> (long) r.get("key"))
-                .min(Comparator.naturalOrder())
-                .get();
-        leftNewFile.setMinRowKey(Key.create(minKeyLeft));
-        long maxKeyLeft = leftExpectedResults.stream()
-                .map(r -> (long) r.get("key"))
-                .max(Comparator.naturalOrder())
-                .get();
-        leftNewFile.setMaxRowKey(Key.create(maxKeyLeft));
+
         FileInfo rightNewFile = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(rightOutputFile)
@@ -1463,23 +1478,24 @@ public class CompactSortedFilesIT {
         assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
+        long minKey = expectedResults.stream()
+                .map(r -> (long) r.get("key"))
+                .min(Comparator.naturalOrder())
+                .get();
+        long maxKey = expectedResults.stream()
+                .map(r -> (long) r.get("key"))
+                .max(Comparator.naturalOrder())
+                .get();
         FileInfo newFile = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(outputFile)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords((long) expectedResults.size())
+                .minRowKey(Key.create(minKey))
+                .maxRowKey(Key.create(maxKey))
                 .build();
-        long minKey = expectedResults.stream()
-                .map(r -> (long) r.get("key"))
-                .min(Comparator.naturalOrder())
-                .get();
-        newFile.setMinRowKey(Key.create(minKey));
-        long maxKey = expectedResults.stream()
-                .map(r -> (long) r.get("key"))
-                .max(Comparator.naturalOrder())
-                .get();
-        newFile.setMaxRowKey(Key.create(maxKey));
+
         assertThat(dynamoStateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(newFile);
@@ -1622,40 +1638,42 @@ public class CompactSortedFilesIT {
         assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
+        long minKeyLeft = leftExpectedResults.stream()
+                .map(r -> (long) r.get("key"))
+                .min(Comparator.naturalOrder())
+                .get();
+        long maxKeyLeft = leftExpectedResults.stream()
+                .map(r -> (long) r.get("key"))
+                .max(Comparator.naturalOrder())
+                .get();
         FileInfo leftNewFile = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(leftOutputFile)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(leftPartition.getId())
                 .numberOfRecords((long) leftExpectedResults.size())
+                .minRowKey(Key.create(minKeyLeft))
+                .maxRowKey(Key.create(maxKeyLeft))
                 .build();
-        long minKeyLeft = leftExpectedResults.stream()
+
+        long minKeyRight = rightExpectedResults.stream()
                 .map(r -> (long) r.get("key"))
                 .min(Comparator.naturalOrder())
                 .get();
-        leftNewFile.setMinRowKey(Key.create(minKeyLeft));
-        long maxKeyLeft = leftExpectedResults.stream()
+        long maxKeyRight = rightExpectedResults.stream()
                 .map(r -> (long) r.get("key"))
                 .max(Comparator.naturalOrder())
                 .get();
-        leftNewFile.setMaxRowKey(Key.create(maxKeyLeft));
         FileInfo rightNewFile = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(rightOutputFile)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(rightPartition.getId())
                 .numberOfRecords((long) rightExpectedResults.size())
+                .minRowKey(Key.create(minKeyRight))
+                .maxRowKey(Key.create(maxKeyRight))
                 .build();
-        long minKeyRight = rightExpectedResults.stream()
-                .map(r -> (long) r.get("key"))
-                .min(Comparator.naturalOrder())
-                .get();
-        rightNewFile.setMinRowKey(Key.create(minKeyRight));
-        long maxKeyRight = rightExpectedResults.stream()
-                .map(r -> (long) r.get("key"))
-                .max(Comparator.naturalOrder())
-                .get();
-        rightNewFile.setMaxRowKey(Key.create(maxKeyRight));
+
         assertThat(dynamoStateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(leftNewFile, rightNewFile);

@@ -67,16 +67,8 @@ public class FileInfo {
         return minRowKey;
     }
 
-    public void setMinRowKey(Key minRowKey) {
-        this.minRowKey = minRowKey;
-    }
-
     public Key getMaxRowKey() {
         return maxRowKey;
-    }
-
-    public void setMaxRowKey(Key maxRowKey) {
-        this.maxRowKey = maxRowKey;
     }
 
     public String getFilename() {
