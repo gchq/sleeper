@@ -307,7 +307,7 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeCorrectlyWhenAllAreEmpty() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-        StateStore stateStore = createStateStore("fsmcwsae", schema, dynamoDBClient);
+        StateStore stateStore = createStateStore("fsmcwaae", schema, dynamoDBClient);
         CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
         dataHelper.writeLeafFile(folderName + "/file1.parquet", Collections.emptyList(), null, null);
@@ -337,7 +337,7 @@ public class CompactSortedFilesIT {
     }
 
     @Test
-    public void filesShouldMergeAndSplitCorrectlyAndDynamoUpdated() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
+    public void filesShouldMergeAndSplitCorrectlyAndDynamoUpdated() throws Exception {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = createSchemaWithTwoTypedValuesAndKeyFields(new LongType(), new LongType(), field);
