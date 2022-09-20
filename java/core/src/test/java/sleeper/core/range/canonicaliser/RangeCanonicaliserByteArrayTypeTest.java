@@ -60,7 +60,7 @@ public class RangeCanonicaliserByteArrayTypeTest {
 
         //Then
         assertThat(range.isInCanonicalForm()).isFalse();
-        assertThat(canonicalisedRange).isEqualTo(rangeFactory.createRange(field, new byte[]{1}, nextByteArrayValue(new byte[]{10})));
+        assertThat(canonicalisedRange).isEqualTo(rangeFactory.createRange(field, new byte[]{1}, new byte[]{10, -128}));
     }
 
     @Test
@@ -73,7 +73,7 @@ public class RangeCanonicaliserByteArrayTypeTest {
 
         //Then
         assertThat(range.isInCanonicalForm()).isFalse();
-        assertThat(canonicalisedRange).isEqualTo(rangeFactory.createRange(field, nextByteArrayValue(new byte[]{1}), nextByteArrayValue(new byte[]{10})));
+        assertThat(canonicalisedRange).isEqualTo(rangeFactory.createRange(field, new byte[]{1, -128}, new byte[]{10, -128}));
     }
 
     @Test
@@ -86,7 +86,7 @@ public class RangeCanonicaliserByteArrayTypeTest {
 
         //Then
         assertThat(range.isInCanonicalForm()).isFalse();
-        assertThat(canonicalisedRange).isEqualTo(rangeFactory.createRange(field, nextByteArrayValue(new byte[]{1}), new byte[]{10}));
+        assertThat(canonicalisedRange).isEqualTo(rangeFactory.createRange(field, new byte[]{1, -128}, new byte[]{10}));
     }
 
     @Test
@@ -113,12 +113,5 @@ public class RangeCanonicaliserByteArrayTypeTest {
         //Then;
         assertThat(range.isInCanonicalForm()).isTrue();
         assertThat(canonicalisedRange).isEqualTo(range);
-    }
-
-    private byte[] nextByteArrayValue(byte[] value) {
-        byte[] next = new byte[value.length + 1];
-        System.arraycopy(value, 0, next, 0, value.length);
-        next[value.length] = Byte.MIN_VALUE;
-        return next;
     }
 }
