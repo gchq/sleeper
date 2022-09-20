@@ -68,6 +68,13 @@ public class FileInfoFactory {
     }
 
     private Partition leafPartition(Object min, Object max) {
+        if (min == null && max == null) {
+            Partition partition = partitionTree.getRootPartition();
+            if (!partition.getChildPartitionIds().isEmpty()) {
+                throw new IllegalArgumentException("Cannot choose leaf partition for " + min + ", " + max);
+            }
+            return partition;
+        }
         Partition partition = partitionTree.getLeafPartition(Key.create(min));
         if (!partition.isRowKeyInPartition(schema, Key.create(max))) {
             throw new IllegalArgumentException("Not in same leaf partition: " + min + ", " + max);
