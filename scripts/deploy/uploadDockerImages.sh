@@ -28,6 +28,8 @@ STACKS=$4
 BASE_DOCKERFILE_DIR=$5
 REGION=$(echo ${DOCKER_REGISTRY} | sed -e "s/^.*\.dkr\.ecr\.\(.*\)\.amazonaws\.com/\1/")
 STACKS=$(echo ${STACKS//,/ })
+DOCKER_STACKS_ALL=("CompactionStack" "IngestStack" "SystemTestStack" "EksBulkImportStack")
+DOCKER_STACKS=$(echo ${STACKS[@]} ${DOCKER_STACKS_ALL[@]} | tr ' ' '\n' | sort | uniq -d)
 REPO_PREFIX=${DOCKER_REGISTRY}/${INSTANCE_ID}
 
 
@@ -37,7 +39,7 @@ echo "--------------------------------------------------------------------------
 
 echo "INSTANCE_ID: ${INSTANCE_ID}"
 echo "DOCKER_REGISTRY: ${DOCKER_REGISTRY}"
-echo "STACKS: ${STACKS}"
+echo "STACKS: ${DOCKER_STACKS}"
 echo "REGION: ${REGION}"
 echo "BASE_DOCKERFILE_DIR: ${BASE_DOCKERFILE_DIR}"
 echo "REPO_PREFIX: ${REPO_PREFIX}"
@@ -48,11 +50,11 @@ Stacks_IngestStack="ingest"
 Stacks_SystemTestStack="system-test"
 Stacks_EksBulkImportStack="bulk-import-runner"
 
-echo "Beginning docker build and push of images for the following stacks: ${STACKS}"
+echo "Beginning docker build and push of images for the following stacks: ${DOCKER_STACKS}"
 
 aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${DOCKER_REGISTRY}
 
-for stack in ${STACKS}; do
+for stack in ${DOCKER_STACKS}; do
 
     Key=Stacks_${stack}
     DIR=${!Key}
