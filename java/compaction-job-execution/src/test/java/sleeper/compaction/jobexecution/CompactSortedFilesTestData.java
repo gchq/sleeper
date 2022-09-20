@@ -63,15 +63,20 @@ public class CompactSortedFilesTestData {
     }
 
     public static List<Record> keyAndTwoValuesSortedEvenByteArrays() {
-        return streamKeyAndTwoValuesFromEvens(n -> new byte[]{(byte) n.intValue()})
-                .sorted(comparingByteArrayKey())
+        return streamKeyAndTwoValuesFromEvens(CompactSortedFilesTestData::nthByteArray)
                 .collect(Collectors.toList());
     }
 
     public static List<Record> keyAndTwoValuesSortedOddByteArrays() {
-        return streamKeyAndTwoValuesFromOdds(n -> new byte[]{(byte) n.intValue()})
-                .sorted(comparingByteArrayKey())
+        return streamKeyAndTwoValuesFromOdds(CompactSortedFilesTestData::nthByteArray)
                 .collect(Collectors.toList());
+    }
+
+    private static byte[] nthByteArray(int n) {
+        return new byte[]{
+                (byte) (n / 128),
+                (byte) (n % 128)
+        };
     }
 
     private static Stream<Record> streamKeyAndTwoValuesFromEvens(Function<Integer, Object> convert) {

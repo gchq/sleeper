@@ -203,8 +203,8 @@ public class CompactSortedFilesIT {
 
         List<Record> data1 = keyAndTwoValuesSortedEvenByteArrays();
         List<Record> data2 = keyAndTwoValuesSortedOddByteArrays();
-        dataHelper.writeLeafFile(folderName + "/file1.parquet", data1, new byte[]{(byte) 128}, new byte[]{127});
-        dataHelper.writeLeafFile(folderName + "/file2.parquet", data2, new byte[]{(byte) 128}, new byte[]{127});
+        dataHelper.writeLeafFile(folderName + "/file1.parquet", data1, new byte[]{0, 0}, new byte[]{1, 70});
+        dataHelper.writeLeafFile(folderName + "/file2.parquet", data2, new byte[]{0, 1}, new byte[]{1, 71});
 
         CompactionJob compactionJob = compactionFactory.createCompactionJob(
                 dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
@@ -227,7 +227,7 @@ public class CompactSortedFilesIT {
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, new byte[]{(byte) 128}, new byte[]{127}));
+                .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, new byte[]{0, 0}, new byte[]{1, 71}));
     }
 
     @Test
