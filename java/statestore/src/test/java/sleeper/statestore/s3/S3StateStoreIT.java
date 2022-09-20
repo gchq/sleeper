@@ -515,8 +515,8 @@ public class S3StateStoreIT {
                 .minRowKey(Key.create(100L))
                 .maxRowKey(Key.create(10000L))
                 .lastStateStoreUpdateTime(3_000_000L)
+                .numberOfRecords(3L)
                 .build();
-        fileInfo3.setNumberOfRecords(3L);
         stateStore.addFile(fileInfo3);
 
         // When
@@ -819,8 +819,8 @@ public class S3StateStoreIT {
                     .minRowKey(Key.create(1L))
                     .maxRowKey(Key.create(10L))
                     .lastStateStoreUpdateTime(i * 1_000_000L)
+                    .numberOfRecords(1L)
                     .build();
-            fileInfo.setNumberOfRecords(1L);
             files.add(fileInfo);
         }
         stateStore.addFiles(files);

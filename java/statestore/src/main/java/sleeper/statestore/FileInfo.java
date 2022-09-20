@@ -45,15 +45,15 @@ public class FileInfo {
     private Long lastStateStoreUpdateTime; // The latest time (in milliseconds since the epoch) that the status of the file was updated in the StateStore
 
     private FileInfo(Builder builder) {
-        setRowKeyTypes(builder.rowKeyTypes);
-        setMinRowKey(builder.minRowKey);
-        setMaxRowKey(builder.maxRowKey);
-        setFilename(builder.filename);
-        setPartitionId(builder.partitionId);
-        setNumberOfRecords(builder.numberOfRecords);
-        setFileStatus(builder.fileStatus);
-        setJobId(builder.jobId);
-        setLastStateStoreUpdateTime(builder.lastStateStoreUpdateTime);
+        this.rowKeyTypes = builder.rowKeyTypes;
+        this.minRowKey = builder.minRowKey;
+        this.maxRowKey = builder.maxRowKey;
+        this.filename = builder.filename;
+        this.partitionId = builder.partitionId;
+        this.numberOfRecords = builder.numberOfRecords;
+        this.fileStatus = builder.fileStatus;
+        this.jobId = builder.jobId;
+        this.lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
     }
 
     public static Builder builder() {
@@ -115,24 +115,12 @@ public class FileInfo {
         return jobId;
     }
 
-    public void setLastStateStoreUpdateTime(Long lastStateStoreUpdateTime) {
-        this.lastStateStoreUpdateTime = lastStateStoreUpdateTime;
-    }
-
     public Long getLastStateStoreUpdateTime() {
         return lastStateStoreUpdateTime;
     }
 
-    public void setPartitionId(String partitionId) {
-        this.partitionId = partitionId;
-    }
-
     public String getPartitionId() {
         return partitionId;
-    }
-
-    public void setNumberOfRecords(Long numberOfRecords) {
-        this.numberOfRecords = numberOfRecords;
     }
 
     public Long getNumberOfRecords() {
@@ -180,6 +168,19 @@ public class FileInfo {
                 ", jobId='" + jobId + '\'' +
                 ", lastStateStoreUpdateTime=" + lastStateStoreUpdateTime +
                 '}';
+    }
+
+    public Builder toBuilder() {
+        return FileInfo.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .minRowKey(minRowKey)
+                .maxRowKey(maxRowKey)
+                .filename(filename)
+                .partitionId(partitionId)
+                .numberOfRecords(numberOfRecords)
+                .fileStatus(fileStatus)
+                .jobId(jobId)
+                .lastStateStoreUpdateTime(lastStateStoreUpdateTime);
     }
 
     public static final class Builder {
