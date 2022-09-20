@@ -36,7 +36,6 @@ import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
@@ -47,7 +46,7 @@ import sleeper.configuration.properties.table.TableProperty;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 /**
@@ -72,14 +71,8 @@ public class EmrExecutor extends AbstractEmrExecutor {
     public void runJobOnPlatform(BulkImportJob bulkImportJob) {
         Map<String, String> platformSpec = bulkImportJob.getPlatformSpec();
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName());
-        String bulkImportBucket = instanceProperties.get(UserDefinedInstanceProperty.BULK_IMPORT_EMR_BUCKET);
+        String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         String logUri = null == bulkImportBucket ? null : "s3://" + bulkImportBucket + "/logs";
-
-        String configBucket = instanceProperties.get(CONFIG_BUCKET);
-        String key = "bulk_import/" + bulkImportJob.getId() + ".json";
-        String bulkImportJobJSON = new BulkImportJobSerDe().toJson(bulkImportJob);
-        s3Client.putObject(configBucket, key, bulkImportJobJSON);
-        LOGGER.info("Put object for job {} to key {} in bucket {}", bulkImportJob.getId(), key, configBucket);
 
         Integer maxNumberOfExecutors = Integer.max(
                 Integer.parseInt(getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, platformSpec, tableProperties)),

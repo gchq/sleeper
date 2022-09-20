@@ -55,7 +55,6 @@ sed \
   -e "s|^sleeper.systemtest.repo=.*|sleeper.systemtest.repo=${INSTANCE_ID}/system-test|" \
   -e "s|^sleeper.optional.stacks=.*|sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,PartitionSplittingStack,QueryStack,SystemTestStack,IngestStack,EmrBulkImportStack|" \
   -e "s|^sleeper.retain.infra.after.destroy=.*|sleeper.retain.infra.after.destroy=false|" \
-  -e "s|^sleeper.bulk.import.emr.bucket.create=.*|sleeper.bulk.import.emr.bucket.create=false|" \
   ${THIS_DIR}/system-test-instance.properties > ${INSTANCE_PROPERTIES}
 
 echo "THIS_DIR: ${THIS_DIR}"

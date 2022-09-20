@@ -59,6 +59,7 @@ import java.nio.file.attribute.PosixFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 
@@ -195,18 +196,6 @@ public abstract class BulkImportJobRunner {
                     " the second with the config bucket");
         }
 
-        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
-        String jsonJob = s3.getObjectAsString(args[1], "bulk_import/" + args[0] + ".json");
-        LOGGER.info("Loaded bulk import job {}", jsonJob);
-        s3.shutdown();
-
-        BulkImportJob bulkImportJob;
-        try {
-            bulkImportJob = new BulkImportJobSerDe().fromJson(jsonJob);
-        } catch (JsonSyntaxException e) {
-            LOGGER.error("Json job was malformed: {}", args[0]);
-            throw e;
-        }
         InstanceProperties instanceProperties = new InstanceProperties();
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
 
@@ -233,6 +222,18 @@ public abstract class BulkImportJobRunner {
             throw e;
         }
 
+        String bulkImportBucket = instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET);
+        String jsonJobKey = "bulk_import/" + args[0] + ".json";
+        LOGGER.info("Loading bulk import job from key {} in bulk import bucket {}", bulkImportBucket, jsonJobKey);
+        String jsonJob = amazonS3.getObjectAsString(bulkImportBucket, jsonJobKey);
+        BulkImportJob bulkImportJob;
+        try {
+            bulkImportJob = new BulkImportJobSerDe().fromJson(jsonJob);
+        } catch (JsonSyntaxException e) {
+            LOGGER.error("Json job was malformed: {}", args[0]);
+            throw e;
+        }
+        
         runner.init(instanceProperties, amazonS3, AmazonDynamoDBClientBuilder.defaultClient());
         runner.run(bulkImportJob);
     }

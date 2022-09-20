@@ -58,12 +58,6 @@ public class PersistentEmrExecutor extends AbstractEmrExecutor {
 
     @Override
     public void runJobOnPlatform(BulkImportJob bulkImportJob) {
-        String configBucket = instanceProperties.get(CONFIG_BUCKET);
-        String key = "bulk_import/" + bulkImportJob.getId() + ".json";
-        String bulkImportJobJSON = new BulkImportJobSerDe().toJson(bulkImportJob);
-        s3Client.putObject(configBucket, key, bulkImportJobJSON);
-        LOGGER.info("Put object for job {} to key {} in bucket {}", bulkImportJob.getId(), key, configBucket);
-
         StepConfig stepConfig = new StepConfig()
                 .withName("BulkLoad-" + UUID.randomUUID().toString().substring(0, 5))
                 .withActionOnFailure(ActionOnFailure.CONTINUE)

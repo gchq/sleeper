@@ -80,15 +80,18 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
  * resources needed to run Spark on Kubernetes. In addition to this, it creates
  * a statemachine which can run jobs on the cluster.
  */
-public final class EksBulkImportStack extends NestedStack {
+public final class EksBulkImportStack extends AbstractBulkImportStack {
     private final StateMachine stateMachine;
     private final ServiceAccount sparkServiceAccount;
 
     public EksBulkImportStack(
-            Construct scope, String id, List<IBucket> dataBuckets,
-            List<StateStoreStack> stateStoreStacks, InstanceProperties instanceProperties,
+            Construct scope,
+            String id,
+            List<IBucket> dataBuckets,
+            List<StateStoreStack> stateStoreStacks,
+            InstanceProperties instanceProperties,
             ITopic errorsTopic) {
-        super(scope, id);
+        super(scope, id, instanceProperties);
 
         IBucket ingestBucket = null;
         String ingestBucketName = instanceProperties.get(UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET);
@@ -154,6 +157,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .build();
 
         configBucket.grantRead(bulkImportJobStarter);
+        importBucket.grantReadWrite(bulkImportJobStarter);
         if (null != ingestBucket) {
             ingestBucket.grantRead(bulkImportJobStarter);
         }

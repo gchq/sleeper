@@ -50,6 +50,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME;
@@ -58,7 +59,6 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EC2_KEY_NAME;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_INSTANCE_TYPE;
@@ -115,7 +115,7 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
         createSecurityConfiguration();
 
         // EMR cluster
-        String bulkImportBucket = instanceProperties.get(BULK_IMPORT_EMR_BUCKET);
+        String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         String logUri = null == bulkImportBucket ? null : "s3://" + bulkImportBucket + "/logs";
 
         InstanceGroupConfigProperty masterInstanceGroupConfigProperty = InstanceGroupConfigProperty.builder()
@@ -199,10 +199,8 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
                 .events(Lists.newArrayList(new SqsEventSource(jobQueue)))
                 .build();
 
-        configBucket.grantReadWrite(bulkImportJobStarter);
-        if (importBucket != null) {
-            importBucket.grantRead(bulkImportJobStarter);
-        }
+        configBucket.grantRead(bulkImportJobStarter);
+        importBucket.grantReadWrite(bulkImportJobStarter);
         if (ingestBucket != null) {
             ingestBucket.grantRead(bulkImportJobStarter);
         }

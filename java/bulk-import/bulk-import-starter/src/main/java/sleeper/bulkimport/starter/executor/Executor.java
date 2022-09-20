@@ -31,7 +31,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import sleeper.bulkimport.job.BulkImportJobSerDe;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_CLASS_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_CORES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_MEMORY;
@@ -60,7 +62,9 @@ public abstract class Executor {
         }
         LOGGER.info("Validating job: {}", bulkImportJob);
         validateJob(bulkImportJob);
-        LOGGER.info("Submitting job");
+        LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
+        writeJobToJSONFile(bulkImportJob);
+        LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
         runJobOnPlatform(bulkImportJob);
         LOGGER.info("Successfully submitted job");
     }
@@ -155,5 +159,13 @@ public abstract class Executor {
             LOGGER.warn("Could not find properties for table");
         }
         return false;
+    }
+    
+    private void writeJobToJSONFile(BulkImportJob bulkImportJob) {
+        String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
+        String key = "bulk_import/" + bulkImportJob.getId() + ".json";
+        String bulkImportJobJSON = new BulkImportJobSerDe().toJson(bulkImportJob);
+        s3Client.putObject(bulkImportBucket, key, bulkImportJobJSON);
+        LOGGER.info("Put object for job {} to key {} in bucket {}", bulkImportJob.getId(), key, bulkImportBucket);
     }
 }
