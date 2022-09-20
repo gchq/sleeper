@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.jobexecution;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.assertj.core.groups.Tuple;
 import sleeper.compaction.job.CompactionJob;
@@ -30,7 +29,6 @@ import sleeper.io.parquet.record.SchemaConverter;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.util.Arrays;
 import java.util.List;
@@ -64,16 +62,6 @@ public class CompactSortedFilesTestUtils {
                 .rowKeyFields(key)
                 .valueFields(new Field("timestamp", new LongType()), new Field("value", new LongType()))
                 .build();
-    }
-
-    public static StateStore createInitStateStore(String tablenameStub, Schema schema, AmazonDynamoDB dynamoDBClient) throws StateStoreException {
-        StateStore dynamoStateStore = createStateStore(tablenameStub, schema, dynamoDBClient);
-        dynamoStateStore.initialise();
-        return dynamoStateStore;
-    }
-
-    public static StateStore createStateStore(String tablenameStub, Schema schema, AmazonDynamoDB dynamoDBClient) throws StateStoreException {
-        return new DynamoDBStateStoreCreator(tablenameStub, schema, dynamoDBClient).create();
     }
 
     public static CompactSortedFiles createCompactSortedFiles(Schema schema, CompactionJob compactionJob, StateStore stateStore) {

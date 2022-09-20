@@ -40,6 +40,8 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
+import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -61,10 +63,8 @@ import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.specifi
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.specifiedFromOdds;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createCompactSortedFiles;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createInitStateStore;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createSchemaWithTwoTypedValuesAndKeyFields;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createStateStore;
 
 public class CompactSortedFilesIT {
     private static final int DYNAMO_PORT = 8000;
@@ -107,6 +107,16 @@ public class CompactSortedFilesIT {
 
     private CompactionFactory.Builder compactionFactoryBuilder() {
         return CompactionFactory.withTableName("table").outputFilePrefix(folderName);
+    }
+
+    private static StateStore createInitStateStore(String tablenameStub, Schema schema, AmazonDynamoDB dynamoDBClient) throws StateStoreException {
+        StateStore dynamoStateStore = createStateStore(tablenameStub, schema, dynamoDBClient);
+        dynamoStateStore.initialise();
+        return dynamoStateStore;
+    }
+
+    private static StateStore createStateStore(String tablenameStub, Schema schema, AmazonDynamoDB dynamoDBClient) throws StateStoreException {
+        return new DynamoDBStateStoreCreator(tablenameStub, schema, dynamoDBClient).create();
     }
 
     @Test
