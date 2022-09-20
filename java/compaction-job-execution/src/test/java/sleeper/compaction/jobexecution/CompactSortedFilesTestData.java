@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -67,6 +68,30 @@ public class CompactSortedFilesTestData {
     public static List<Record> keyAndTwoValuesSortedOddByteArrays() {
         return streamKeyAndTwoValuesFromOdds(CompactSortedFilesTestData::nthByteArray)
                 .collect(Collectors.toList());
+    }
+
+    public static List<Record> specifiedAndTwoValuesFromEvens(BiConsumer<Integer, Record> setRecord) {
+        return IntStream.range(0, 100)
+                .mapToObj(i -> {
+                    int even = 2 * i;
+                    Record record = new Record();
+                    setRecord.accept(even, record);
+                    record.put("value1", 1000L);
+                    record.put("value2", 987654321L);
+                    return record;
+                }).collect(Collectors.toList());
+    }
+
+    public static List<Record> specifiedAndTwoValuesFromOdds(BiConsumer<Integer, Record> setRecord) {
+        return IntStream.range(0, 100)
+                .mapToObj(i -> {
+                    int odd = 2 * i + 1;
+                    Record record = new Record();
+                    setRecord.accept(odd, record);
+                    record.put("value1", 1001L);
+                    record.put("value2", 123456789L);
+                    return record;
+                }).collect(Collectors.toList());
     }
 
     private static Stream<Record> streamKeyAndTwoValuesFromEvens(Function<Integer, Object> convert) {
@@ -117,7 +142,7 @@ public class CompactSortedFilesTestData {
         return combineSortedBySingleKey(data1, data2, record -> ByteArray.wrap((byte[]) record.get("key")));
     }
 
-    private static List<Record> combineSortedBySingleKey(List<Record> data1, List<Record> data2, Function<Record, Object> getKey) {
+    public static List<Record> combineSortedBySingleKey(List<Record> data1, List<Record> data2, Function<Record, Object> getKey) {
         SortedMap<Object, Record> data = new TreeMap<>();
         data1.forEach(record -> data.put(getKey.apply(record), record));
         data2.forEach(record -> data.put(getKey.apply(record), record));

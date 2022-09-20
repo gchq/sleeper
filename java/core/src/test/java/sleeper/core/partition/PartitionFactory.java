@@ -70,11 +70,11 @@ public class PartitionFactory {
     }
 
     public Partition parentJoining(String parentId, Partition left, Partition right) {
-        return parent(Arrays.asList(left, right), parentId, singleRange(left).getMin(), singleRange(right).getMax());
+        return parent(Arrays.asList(left, right), parentId, parentRegion(left.getRegion(), right.getRegion()));
     }
 
-    private Partition parent(List<Partition> children, String id, Object min, Object max) {
-        Partition parent = partition(id, min, max);
+    private Partition parent(List<Partition> children, String id, Region region) {
+        Partition parent = partition(id, region);
         parent.setChildPartitionIds(children.stream()
                 .map(Partition::getId)
                 .collect(Collectors.toList()));
@@ -84,8 +84,12 @@ public class PartitionFactory {
         return parent;
     }
 
-    private Range singleRange(Partition partition) {
-        return partition.getRegion().getRange(singleRowKeyField().getName());
+    private Region parentRegion(Region left, Region right) {
+        return new Region(schema.getRowKeyFields().stream()
+                .map(field -> rangeFactory.createRange(field,
+                        left.getRange(field.getName()).getMin(),
+                        right.getRange(field.getName()).getMax()))
+                .collect(Collectors.toList()));
     }
 
     private Field singleRowKeyField() {

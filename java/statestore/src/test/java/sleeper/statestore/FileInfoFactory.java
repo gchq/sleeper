@@ -67,6 +67,10 @@ public class FileInfoFactory {
         return fileForPartition(partitionTree.getRootPartition(), filename, records, min, max);
     }
 
+    public FileInfo partitionFile(String partitionId, String filename, long records, Object min, Object max) {
+        return fileForPartition(partitionTree.getPartition(partitionId), filename, records, min, max);
+    }
+
     private Partition leafPartition(Object min, Object max) {
         if (min == null && max == null) {
             Partition partition = partitionTree.getRootPartition();
@@ -75,15 +79,15 @@ public class FileInfoFactory {
             }
             return partition;
         }
-        Partition partition = partitionTree.getLeafPartition(Key.create(min));
-        if (!partition.isRowKeyInPartition(schema, Key.create(max))) {
+        Partition partition = partitionTree.getLeafPartition(rowKey(min));
+        if (!partition.isRowKeyInPartition(schema, rowKey(max))) {
             throw new IllegalArgumentException("Not in same leaf partition: " + min + ", " + max);
         }
         return partition;
     }
 
     private Partition middlePartition(Object min, Object max) {
-        Partition partition = partitionTree.getNearestCommonAncestor(Key.create(min), Key.create(max));
+        Partition partition = partitionTree.getNearestCommonAncestor(rowKey(min), rowKey(max));
         if (partition.isLeafPartition()) {
             throw new IllegalArgumentException("In same leaf partition: " + min + ", " + max);
         }
@@ -113,6 +117,8 @@ public class FileInfoFactory {
     private static Key rowKey(Object value) {
         if (value == null) {
             return null;
+        } else if (value instanceof Key) {
+            return (Key) value;
         } else {
             return Key.create(value);
         }
