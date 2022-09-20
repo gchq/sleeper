@@ -90,7 +90,7 @@ public class RangeCanonicaliserIntTypeTest {
     }
 
     @Test
-    public void shouldHandleRangeWithMaxNullExclusive() {
+    public void shouldAlreadyBeCanonicalWhenMaxIsNullExclusive() {
         //Given
         Range range = rangeFactory.createRange(field, 1, true, null, false);
 
@@ -103,7 +103,7 @@ public class RangeCanonicaliserIntTypeTest {
     }
 
     @Test
-    public void shouldHandleRangeWithMaxNullInclusive() {
+    public void shouldSetRangeToMaxExclusiveWhenSpecifiedAsNullInclusive() {
         //Given
         Range range = rangeFactory.createRange(field, 1, true, null, true);
 
