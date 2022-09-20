@@ -56,10 +56,21 @@ import software.constructs.Construct;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
+import sleeper.cdk.Utils;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
+import software.amazon.awscdk.services.lambda.Code;
+import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.S3Code;
+import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 
 public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack {
     protected final String shortId;
@@ -71,8 +82,8 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
     protected final String region;
     protected final String vpc;
     protected final String subnet;
-
     protected final Queue bulkImportJobQueue;
+    protected Function bulkImportJobStarter;
     protected IRole ec2Role;
 
     @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
@@ -114,6 +125,11 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
 
         // Create security configuration
         createSecurityConfiguration();
+        
+        // Create bulk import job starter function
+        createBulkImportJobStarterFunction();
+        
+        Utils.addStackTagIfSet(this, instanceProperties);
     }
 
     private Queue createQueues(String shortId, SystemDefinedInstanceProperty jobQueueUrl) {
@@ -157,7 +173,6 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
         // These roles are shared across all concrete substacks, so we need to
         // avoid creating them twice if more than one concrete substack is
         // deployed.
-
         if (null != instanceProperties.get(BULK_IMPORT_EMR_EC2_ROLE_NAME)) {
             ec2Role = Role.fromRoleName(this, "Ec2Role", instanceProperties.get(BULK_IMPORT_EMR_EC2_ROLE_NAME));
             return;
@@ -176,7 +191,7 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
             sss.grantReadPartitionMetadata(ec2Role);
         });
 
-        // The role needs to be able to access user's jars
+        // The role needs to be able to access the user's jars
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(UserDefinedInstanceProperty.JARS_BUCKET));
         jarsBucket.grantRead(ec2Role);
 
@@ -294,5 +309,36 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
 
     public Queue getEmrBulkImportJobQueue() {
         return bulkImportJobQueue;
+    }
+    
+    protected void createBulkImportJobStarterFunction() {
+        Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
+        env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
+        S3Code code = Code.fromBucket(Bucket.fromBucketName(this, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET)),
+                "bulk-import-starter-" + instanceProperties.get(UserDefinedInstanceProperty.VERSION) + ".jar");
+
+        IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
+
+        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
+                instanceId.toLowerCase(Locale.ROOT), shortId, "bulk-import-job-starter"));
+
+        bulkImportJobStarter = Function.Builder.create(this, "BulkImport" + shortId + "JobStarter")
+                .code(code)
+                .functionName(functionName)
+                .description("Function to start " + shortId + " bulk import jobs")
+                .memorySize(1024)
+                .timeout(Duration.seconds(20))
+                .environment(env)
+                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_8)
+                .handler("sleeper.bulkimport.starter.BulkImportStarter")
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .events(Lists.newArrayList(new SqsEventSource(bulkImportJobQueue)))
+                .build();
+
+        configBucket.grantRead(bulkImportJobStarter);
+        importBucket.grantReadWrite(bulkImportJobStarter);
+        if (ingestBucket != null) {
+            ingestBucket.grantRead(bulkImportJobStarter);
+        }
     }
 }
