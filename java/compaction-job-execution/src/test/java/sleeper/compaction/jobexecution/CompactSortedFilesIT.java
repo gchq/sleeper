@@ -484,159 +484,46 @@ public class CompactSortedFilesIT {
     }
 
     @Test
-    public void filesShouldMergeAndSplitCorrectlyWhenOneChildFileIsEmpty() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
+    public void filesShouldMergeAndSplitCorrectlyWhenOneChildFileIsEmpty() throws Exception {
         // Given
-        Field field = new Field("key", new LongType());
-        Schema schema = createSchemaWithTwoTypedValuesAndKeyFields(new LongType(), new LongType(), field);
-        //  - Create DynamoDBStateStore
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator("fsmascwocfie", schema, dynamoDBClient);
-        DynamoDBStateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
-        dynamoStateStore.initialise();
-        //  - Get root partition
-        Partition rootPartition = dynamoStateStore.getAllPartitions().get(0);
-        //  - Create two files of sorted data
-        String folderName = folder.newFolder().getAbsolutePath();
-        String file1 = folderName + "/file1.parquet";
-        String file2 = folderName + "/file2.parquet";
-        List<String> files = new ArrayList<>();
-        files.add(file1);
-        files.add(file2);
-        FileInfo fileInfo1 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
-                .filename(file1)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId(rootPartition.getId())
-                .numberOfRecords(100L)
-                .minRowKey(Key.create(0L))
-                .maxRowKey(Key.create(198L))
-                .build();
-        FileInfo fileInfo2 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
-                .filename(file2)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId(rootPartition.getId())
-                .numberOfRecords(100L)
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(199L))
-                .build();
-        List<FileInfo> fileInfos = new ArrayList<>();
-        fileInfos.add(fileInfo1);
-        fileInfos.add(fileInfo2);
-        String leftOutputFile = folderName + "/file3-left.parquet";
-        String rightOutputFile = folderName + "/file3-right.parquet";
-        SortedMap<Long, Record> data = new TreeMap<>();
-        //  - All data in file1 and file2 has key < 100 so after the splitting compaction the right file should be empty
-        ParquetRecordWriter writer1 = new ParquetRecordWriter(new Path(file1), SchemaConverter.getSchema(schema), schema);
-        for (int i = 0; i < 50; i++) {
-            Record record = new Record();
-            record.put("key", (long) 2 * i);
-            record.put("value1", 1000L);
-            record.put("value2", 987654321L);
-            writer1.write(record);
-            data.put((long) record.get("key"), record);
-        }
-        writer1.close();
-        ParquetRecordWriter writer2 = new ParquetRecordWriter(new Path(file2), SchemaConverter.getSchema(schema), schema);
-        for (int i = 0; i < 50; i++) {
-            Record record = new Record();
-            record.put("key", (long) 2 * i + 1);
-            record.put("value1", 1001L);
-            record.put("value2", 123456789L);
-            writer2.write(record);
-            data.put((long) record.get("key"), record);
-        }
-        writer2.close();
-        //  - Split root partition
-        Range leftRange = new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 100L);
-        Partition leftPartition = Partition.builder()
-                .leafPartition(true)
-                .region(new Region(leftRange))
-                .id(Long.MIN_VALUE + "---100")
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
-        Range rightRange = new RangeFactory(schema).createRange(field, 100L, null);
-        Partition rightPartition = Partition.builder()
-                .leafPartition(true)
-                .region(new Region(rightRange))
-                .id("100---")
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
-        rootPartition.setLeafPartition(false);
-        rootPartition.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
-        dynamoStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
-        //  - Update Dynamo state store with details of files
-        dynamoStateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2));
-        //  - Create CompactionJob and update status of files with compactionJob id
-        CompactionJob compactionJob = new CompactionJob("table", "compactionJob-1");
-        compactionJob.setInputFiles(files);
-        compactionJob.setOutputFiles(new MutablePair<>(leftOutputFile, rightOutputFile));
-        compactionJob.setPartitionId(rootPartition.getId());
-        compactionJob.setChildPartitions(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
-        compactionJob.setIsSplittingJob(true);
-        compactionJob.setSplitPoint(100L);
-        compactionJob.setDimension(0);
-        dynamoStateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileInfos);
+        Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
+        StateStore stateStore = createStateStore("fsmascwocfie", schema, dynamoDBClient);
+        stateStore.initialise(new PartitionsBuilder(schema)
+                .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(200L))
+                .parentJoining("C", "A", "B")
+                .buildList());
+        CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
+
+        List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
+        List<Record> data2 = keyAndTwoValuesSortedOddLongs();
+        dataHelper.writeRootFile(folderName + "/file1.parquet", data1, 0L, 198L);
+        dataHelper.writeRootFile(folderName + "/file2.parquet", data2, 1L, 199L);
+
+        CompactionJob compactionJob = compactionFactory.createSplittingCompactionJob(
+                dataHelper.allFileInfos(), "C", "A", "B", 200L, 0);
+        dataHelper.addFilesToStateStoreForJob(compactionJob);
 
         // When
-        //  - Merge two files
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, dynamoStateStore);
-        compactSortedFiles.compact();
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
+        CompactSortedFiles.CompactionJobSummary summary = compactSortedFiles.compact();
 
         // Then
         //  - Read output files and check that they contain the right results
-        List<Record> leftResults = new ArrayList<>();
-        ParquetReaderIterator reader = new ParquetReaderIterator(new ParquetRecordReader(new Path(leftOutputFile), schema));
-        while (reader.hasNext()) {
-            leftResults.add(new Record(reader.next()));
-        }
-        reader.close();
-        List<Record> rightResults = new ArrayList<>();
-        reader = new ParquetReaderIterator(new ParquetRecordReader(new Path(rightOutputFile), schema));
-        while (reader.hasNext()) {
-            rightResults.add(new Record(reader.next()));
-        }
-        reader.close();
-        List<Record> leftExpectedResults = data.values().stream()
-                .filter(r -> ((long) r.get("key")) < 100L)
-                .collect(Collectors.toList());
-        assertThat(leftResults).isEqualTo(leftExpectedResults);
-        assertThat(rightResults).isEqualTo(Collections.emptyList());
+        List<Record> expectedResults = combineSortedBySingleKey(data1, data2);
+        assertThat(summary.getLinesRead()).isEqualTo(200L);
+        assertThat(summary.getLinesWritten()).isEqualTo(200L);
+        assertThat(readDataFile(schema, compactionJob.getOutputFiles().getLeft())).isEqualTo(expectedResults);
+        assertThat(readDataFile(schema, compactionJob.getOutputFiles().getRight())).isEmpty();
 
         // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
+        assertReadyForGC(stateStore, dataHelper.allFileInfos());
 
         // - Check DynamoDBStateStore has correct active files
-        FileInfo leftNewFile = FileInfo.builder()
-                .rowKeyTypes(new LongType())
-                .filename(leftOutputFile)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId(leftPartition.getId())
-                .numberOfRecords((long) leftExpectedResults.size())
-                .build();
-        long minKeyLeft = leftExpectedResults.stream()
-                .map(r -> (long) r.get("key"))
-                .min(Comparator.naturalOrder())
-                .get();
-        leftNewFile.setMinRowKey(Key.create(minKeyLeft));
-        long maxKeyLeft = leftExpectedResults.stream()
-                .map(r -> (long) r.get("key"))
-                .max(Comparator.naturalOrder())
-                .get();
-        leftNewFile.setMaxRowKey(Key.create(maxKeyLeft));
-        FileInfo rightNewFile = FileInfo.builder()
-                .rowKeyTypes(new LongType())
-                .filename(rightOutputFile)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId(rightPartition.getId())
-                .numberOfRecords(0L)
-                .minRowKey(null)
-                .maxRowKey(null)
-                .build();
-        assertThat(dynamoStateStore.getActiveFiles())
+        assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(leftNewFile, rightNewFile);
+                .containsExactlyInAnyOrder(
+                        dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 200L, 0L, 199L),
+                        dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 0L, null, null));
     }
 
     @Test
