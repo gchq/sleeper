@@ -67,7 +67,6 @@ import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.combineSortedBySingleByteArrayKey;
@@ -161,11 +160,18 @@ public class CompactSortedFilesIT {
 
     @Test
     public void shouldGenerate200EvenAndOddStrings() {
-        List<Record> data = combineSortedBySingleKey(
-                keyAndTwoValuesSortedEvenStrings(),
-                keyAndTwoValuesSortedOddStrings());
-        assertThat(data).hasSize(200);
-        assertThat(Stream.of(0, 1, 26, 27, 198, 199).map(n -> data.get(n).get("key")))
+        // When
+        List<Record> evens = keyAndTwoValuesSortedEvenStrings();
+        List<Record> odds = keyAndTwoValuesSortedOddStrings();
+        List<Record> combined = combineSortedBySingleKey(evens, odds);
+
+        // Then
+        assertThat(evens).hasSize(100).elements(0, 99).extracting(e -> e.get("key"))
+                .containsExactly("aa", "hq");
+        assertThat(odds).hasSize(100).elements(0, 99).extracting(e -> e.get("key"))
+                .containsExactly("ab", "hr");
+        assertThat(combined).hasSize(200)
+                .elements(0, 1, 26, 27, 198, 199).extracting(e -> e.get("key"))
                 .containsExactly("aa", "ab", "ba", "bb", "hq", "hr");
     }
 
@@ -207,10 +213,20 @@ public class CompactSortedFilesIT {
 
     @Test
     public void shouldGenerate200EvenAndOddByteArrays() {
-        List<Record> data = combineSortedBySingleByteArrayKey(
-                keyAndTwoValuesSortedEvenByteArrays(),
-                keyAndTwoValuesSortedOddByteArrays());
-        assertThat(Stream.of(0, 1, 128, 129, 198, 199).map(n -> data.get(n).get("key")))
+        // When
+        List<Record> evens = keyAndTwoValuesSortedEvenByteArrays();
+        List<Record> odds = keyAndTwoValuesSortedOddByteArrays();
+        List<Record> combined = combineSortedBySingleByteArrayKey(evens, odds);
+
+        // Then
+        assertThat(evens).hasSize(100)
+                .elements(0, 99).extracting(e -> e.get("key"))
+                .containsExactly(new byte[]{0, 0}, new byte[]{1, 70});
+        assertThat(odds).hasSize(100)
+                .elements(0, 99).extracting(e -> e.get("key"))
+                .containsExactly(new byte[]{0, 1}, new byte[]{1, 71});
+        assertThat(combined).hasSize(200)
+                .elements(0, 1, 128, 129, 198, 199).extracting(e -> e.get("key"))
                 .containsExactly(
                         new byte[]{0, 0}, new byte[]{0, 1},
                         new byte[]{1, 0}, new byte[]{1, 1},
