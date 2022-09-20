@@ -20,7 +20,6 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.facebook.collections.ByteArray;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.hadoop.fs.Path;
 import org.junit.AfterClass;
@@ -64,17 +63,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.combineSortedBySingleByteArrayKey;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.combineSortedBySingleKey;
+import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenByteArrays;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenStrings;
+import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedOddByteArrays;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedOddStrings;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.readDataFile;
@@ -195,142 +195,39 @@ public class CompactSortedFilesIT {
     }
 
     @Test
-    public void filesShouldMergeCorrectlyAndDynamoUpdatedByteArrayKey() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
+    public void filesShouldMergeCorrectlyAndDynamoUpdatedByteArrayKey() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new ByteArrayType(), new ByteArrayType(), new LongType());
-        //  - Create two files of sorted data
-        String folderName = folder.newFolder().getAbsolutePath();
-        String file1 = folderName + "/file1.parquet";
-        String file2 = folderName + "/file2.parquet";
-        List<String> files = new ArrayList<>();
-        files.add(file1);
-        files.add(file2);
-        FileInfo fileInfo1 = FileInfo.builder()
-                .rowKeyTypes(new ByteArrayType())
-                .filename(file1)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords(100L)
-                .build();
-        FileInfo fileInfo2 = FileInfo.builder()
-                .rowKeyTypes(new ByteArrayType())
-                .filename(file2)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords(100L)
-                .build();
-        List<FileInfo> fileInfos = new ArrayList<>();
-        fileInfos.add(fileInfo1);
-        fileInfos.add(fileInfo2);
-        String outputFile = folderName + "/file3.parquet";
-        SortedMap<ByteArray, Record> data1 = new TreeMap<>();
-        for (int i = 0; i < 100; i++) {
-            Record record = new Record();
-            record.put("key", new byte[]{(byte) (2 * i)});
-            record.put("value1", new byte[]{(byte) (2 * i)});
-            record.put("value2", 987654321L);
-            data1.put(ByteArray.wrap((byte[]) record.get("key")), record);
-        }
-        fileInfo1.setMinRowKey(Key.create(data1.keySet().iterator().next().getArray()));
-        Iterator<ByteArray> it = data1.keySet().iterator();
-        ByteArray ba = it.next();
-        while (it.hasNext()) {
-            ba = it.next();
-        }
-        fileInfo1.setMaxRowKey(Key.create(ba.getArray()));
-        ParquetRecordWriter writer1 = new ParquetRecordWriter(new Path(file1), SchemaConverter.getSchema(schema), schema);
-        for (Map.Entry<ByteArray, Record> entry : data1.entrySet()) {
-            writer1.write(entry.getValue());
-        }
-        writer1.close();
-        SortedMap<ByteArray, Record> data2 = new TreeMap<>();
-        for (int i = 0; i < 100; i++) {
-            Record record = new Record();
-            record.put("key", new byte[]{(byte) (2 * i + 1)});
-            record.put("value1", new byte[]{101});
-            record.put("value2", 123456789L);
-            data2.put(ByteArray.wrap((byte[]) record.get("key")), record);
-        }
-        fileInfo2.setMinRowKey(Key.create(data2.keySet().iterator().next().getArray()));
-        it = data2.keySet().iterator();
-        ba = it.next();
-        while (it.hasNext()) {
-            ba = it.next();
-        }
-        fileInfo2.setMaxRowKey(Key.create(ba.getArray()));
-        ParquetRecordWriter writer2 = new ParquetRecordWriter(new Path(file2), SchemaConverter.getSchema(schema), schema);
-        for (Map.Entry<ByteArray, Record> entry : data2.entrySet()) {
-            writer2.write(entry.getValue());
-        }
-        writer2.close();
-        SortedMap<ByteArray, Record> data = new TreeMap<>();
-        data.putAll(data1);
-        data.putAll(data2);
-        //  - Create DynamoDBStateStore
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator("fsmcadubak", schema, dynamoDBClient);
-        DynamoDBStateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
-        dynamoStateStore.initialise();
-        //  - Update Dynamo state store with details of files
-        dynamoStateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2));
+        StateStore stateStore = createStateStore("fsmcadubak", schema, dynamoDBClient);
+        CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
-        //  - Create CompactionJob and update status of files with compactionJob id
-        CompactionJob compactionJob = new CompactionJob("table", "compactionJob-1");
-        compactionJob.setInputFiles(files);
-        compactionJob.setOutputFile(outputFile);
-        compactionJob.setPartitionId("1");
-        compactionJob.setIsSplittingJob(false);
-        dynamoStateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileInfos);
+        List<Record> data1 = keyAndTwoValuesSortedEvenByteArrays();
+        List<Record> data2 = keyAndTwoValuesSortedOddByteArrays();
+        dataHelper.writeLeafFile(folderName + "/file1.parquet", data1, new byte[]{(byte) 128}, new byte[]{127});
+        dataHelper.writeLeafFile(folderName + "/file2.parquet", data2, new byte[]{(byte) 128}, new byte[]{127});
+
+        CompactionJob compactionJob = compactionFactory.createCompactionJob(
+                dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
+        dataHelper.addFilesToStateStoreForJob(compactionJob);
 
         // When
-        //  - Merge two files
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, dynamoStateStore);
-        compactSortedFiles.compact();
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
+        CompactSortedFiles.CompactionJobSummary summary = compactSortedFiles.compact();
 
         // Then
         //  - Read output file and check that it contains the right results
-        List<Record> results = new ArrayList<>();
-        ParquetReaderIterator reader = new ParquetReaderIterator(new ParquetRecordReader(new Path(outputFile), schema));
-        while (reader.hasNext()) {
-            results.add(new Record(reader.next()));
-        }
-        reader.close();
-        List<Record> expectedResults = data.values().stream()
-                .map(r -> {
-                    Record transformedRecord = new Record();
-                    transformedRecord.put("key", r.get("key"));
-                    transformedRecord.put("value1", r.get("value1"));
-                    transformedRecord.put("value2", r.get("value2"));
-                    return transformedRecord;
-                })
-                .collect(Collectors.toList());
-        assertThat(results).isEqualTo(expectedResults);
+        List<Record> expectedResults = combineSortedBySingleByteArrayKey(data1, data2);
+        assertThat(summary.getLinesRead()).isEqualTo(expectedResults.size());
+        assertThat(summary.getLinesWritten()).isEqualTo(expectedResults.size());
+        assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
 
         // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
+        assertReadyForGC(stateStore, dataHelper.allFileInfos());
 
         // - Check DynamoDBStateStore has correct active files
-        FileInfo newFile = FileInfo.builder()
-                .rowKeyTypes(new ByteArrayType())
-                .filename(outputFile)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords((long) expectedResults.size())
-                .build();
-        byte[] minKey = expectedResults.stream()
-                .map(r -> ByteArray.wrap((byte[]) r.get("key")))
-                .min(Comparator.naturalOrder())
-                .map(ByteArray::getArray)
-                .get();
-        newFile.setMinRowKey(Key.create(minKey));
-        byte[] maxKey = expectedResults.stream()
-                .map(r -> ByteArray.wrap((byte[]) r.get("key")))
-                .max(Comparator.naturalOrder())
-                .map(ByteArray::getArray)
-                .get();
-        newFile.setMaxRowKey(Key.create(maxKey));
-        assertThat(dynamoStateStore.getActiveFiles())
+        assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(newFile);
+                .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, new byte[]{(byte) 128}, new byte[]{127}));
     }
 
     @Test

@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.jobexecution;
 
+import com.facebook.collections.ByteArray;
 import org.apache.hadoop.fs.Path;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
@@ -25,9 +26,11 @@ import sleeper.io.parquet.record.SchemaConverter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -38,60 +41,86 @@ public class CompactSortedFilesTestData {
     }
 
     public static List<Record> keyAndTwoValuesSortedEvenLongs() {
-        return streamKeyAndTwoValuesSortedEvenLongs().collect(Collectors.toList());
+        return streamKeyAndTwoValuesFromEvens(n -> (long) n)
+                .collect(Collectors.toList());
     }
 
     public static List<Record> keyAndTwoValuesSortedOddLongs() {
-        return streamKeyAndTwoValuesSortedOddLongs().collect(Collectors.toList());
+        return streamKeyAndTwoValuesFromOdds(n -> (long) n)
+                .collect(Collectors.toList());
     }
 
     public static List<Record> keyAndTwoValuesSortedEvenStrings() {
-        return toStrings(streamKeyAndTwoValuesSortedEvenLongs());
+        return streamKeyAndTwoValuesFromEvens(n -> "" + n)
+                .sorted(comparingStringKey())
+                .collect(Collectors.toList());
     }
 
     public static List<Record> keyAndTwoValuesSortedOddStrings() {
-        return toStrings(streamKeyAndTwoValuesSortedOddLongs());
+        return streamKeyAndTwoValuesFromOdds(n -> "" + n)
+                .sorted(comparingStringKey())
+                .collect(Collectors.toList());
     }
 
-    public static Stream<Record> streamKeyAndTwoValuesSortedEvenLongs() {
+    public static List<Record> keyAndTwoValuesSortedEvenByteArrays() {
+        return streamKeyAndTwoValuesFromEvens(n -> new byte[]{(byte) n.intValue()})
+                .sorted(comparingByteArrayKey())
+                .collect(Collectors.toList());
+    }
+
+    public static List<Record> keyAndTwoValuesSortedOddByteArrays() {
+        return streamKeyAndTwoValuesFromOdds(n -> new byte[]{(byte) n.intValue()})
+                .sorted(comparingByteArrayKey())
+                .collect(Collectors.toList());
+    }
+
+    private static Stream<Record> streamKeyAndTwoValuesFromEvens(Function<Integer, Object> convert) {
         return IntStream.range(0, 100)
                 .mapToObj(i -> {
+                    int even = 2 * i;
+                    Object converted = convert.apply(even);
                     Record record = new Record();
-                    record.put("key", (long) 2 * i);
-                    record.put("value1", (long) 2 * i);
+                    record.put("key", converted);
+                    record.put("value1", converted);
                     record.put("value2", 987654321L);
                     return record;
                 });
     }
 
-    public static Stream<Record> streamKeyAndTwoValuesSortedOddLongs() {
+    private static Stream<Record> streamKeyAndTwoValuesFromOdds(Function<Integer, Object> convert) {
+        Object value1 = convert.apply(1001);
         return IntStream.range(0, 100)
                 .mapToObj(i -> {
+                    int odd = 2 * i + 1;
+                    Object converted = convert.apply(odd);
                     Record record = new Record();
-                    record.put("key", (long) 2 * i + 1);
-                    record.put("value1", 1001L);
+                    record.put("key", converted);
+                    record.put("value1", value1);
                     record.put("value2", 123456789L);
                     return record;
                 });
     }
 
-    private static List<Record> toStrings(Stream<Record> records) {
-        SortedMap<Object, Record> map = new TreeMap<>();
-        records.map(CompactSortedFilesTestData::toStrings)
-                .forEach(record -> map.put(record.get("key"), record));
-        return new ArrayList<>(map.values());
+    private static Comparator<Record> comparingStringKey() {
+        return Comparator.comparing(r -> (String) r.get("key"));
     }
 
-    private static Record toStrings(Record record) {
-        record.put("key", "" + record.get("key"));
-        record.put("value1", "" + record.get("value1"));
-        return record;
+    private static Comparator<Record> comparingByteArrayKey() {
+        return Comparator.comparing(r -> ByteArray.wrap((byte[]) r.get("key")));
     }
 
     public static List<Record> combineSortedBySingleKey(List<Record> data1, List<Record> data2) {
+        return combineSortedBySingleKey(data1, data2, record -> record.get("key"));
+    }
+
+    public static List<Record> combineSortedBySingleByteArrayKey(List<Record> data1, List<Record> data2) {
+        return combineSortedBySingleKey(data1, data2, record -> ByteArray.wrap((byte[]) record.get("key")));
+    }
+
+    private static List<Record> combineSortedBySingleKey(List<Record> data1, List<Record> data2, Function<Record, Object> getKey) {
         SortedMap<Object, Record> data = new TreeMap<>();
-        data1.forEach(record -> data.put(record.get("key"), record));
-        data2.forEach(record -> data.put(record.get("key"), record));
+        data1.forEach(record -> data.put(getKey.apply(record), record));
+        data2.forEach(record -> data.put(getKey.apply(record), record));
         return new ArrayList<>(data.values());
     }
 
