@@ -117,8 +117,6 @@ public class FileInfoFactory {
     private static Key rowKey(Object value) {
         if (value == null) {
             return null;
-        } else if (value instanceof Key) {
-            return (Key) value;
         } else {
             return Key.create(value);
         }

@@ -404,10 +404,8 @@ public class CompactSortedFilesIT {
             record.put(field1.getName(), (long) odd);
             record.put(field2.getName(), "A");
         });
-        dataHelper.writeRootFile(folderName + "/file1.parquet", data1,
-                Key.create(Arrays.asList(0L, "A")), Key.create(Arrays.asList(198L, "A")));
-        dataHelper.writeRootFile(folderName + "/file2.parquet", data2,
-                Key.create(Arrays.asList(1L, "A")), Key.create(Arrays.asList(199L, "A")));
+        dataHelper.writeRootFile(folderName + "/file1.parquet", data1, 0L, 198L);
+        dataHelper.writeRootFile(folderName + "/file2.parquet", data2, 1L, 199L);
 
         CompactionJob compactionJob = compactionFactory.createSplittingCompactionJob(
                 dataHelper.allFileInfos(), "C", "A", "B", 100L, 0);
@@ -432,11 +430,8 @@ public class CompactSortedFilesIT {
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        // Note that the min/max keys here are technically incorrect as they are missing the second dimension
-                        dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L,
-                                Key.create(0L), Key.create(99L)),
-                        dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L,
-                                Key.create(100L), Key.create(199L)));
+                        dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L, 0L, 99L),
+                        dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L, 100L, 199L));
     }
 
     @Test
