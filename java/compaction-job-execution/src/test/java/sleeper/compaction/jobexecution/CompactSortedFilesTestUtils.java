@@ -66,11 +66,14 @@ public class CompactSortedFilesTestUtils {
                 .build();
     }
 
-    public static StateStore createStateStore(String tablenameStub, Schema schema, AmazonDynamoDB dynamoDBClient) throws StateStoreException {
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(tablenameStub, schema, dynamoDBClient);
-        StateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
+    public static StateStore createInitStateStore(String tablenameStub, Schema schema, AmazonDynamoDB dynamoDBClient) throws StateStoreException {
+        StateStore dynamoStateStore = createStateStore(tablenameStub, schema, dynamoDBClient);
         dynamoStateStore.initialise();
         return dynamoStateStore;
+    }
+
+    public static StateStore createStateStore(String tablenameStub, Schema schema, AmazonDynamoDB dynamoDBClient) throws StateStoreException {
+        return new DynamoDBStateStoreCreator(tablenameStub, schema, dynamoDBClient).create();
     }
 
     public static CompactSortedFiles createCompactSortedFiles(Schema schema, CompactionJob compactionJob, StateStore stateStore) {

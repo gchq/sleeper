@@ -52,6 +52,13 @@ public class CompactSortedFilesTestDataHelper {
         return fileInfo;
     }
 
+    public FileInfo writeRootFile(String filename, List<Record> records, Object min, Object max) throws IOException {
+        FileInfo fileInfo = fileInfoFactory.rootFile(filename, records.size(), min, max);
+        writeDataFile(schema, filename, records);
+        fileInfos.add(fileInfo);
+        return fileInfo;
+    }
+
     public FileInfo expectedLeafFile(String filename, long records, Object min, Object max) {
         return fileInfoFactory.leafFile(filename, records, min, max);
     }
