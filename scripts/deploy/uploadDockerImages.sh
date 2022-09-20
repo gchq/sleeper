@@ -29,7 +29,7 @@ BASE_DOCKERFILE_DIR=$5
 REGION=$(echo ${DOCKER_REGISTRY} | sed -e "s/^.*\.dkr\.ecr\.\(.*\)\.amazonaws\.com/\1/")
 STACKS=$(echo ${STACKS//,/ })
 DOCKER_STACKS_ALL=("CompactionStack" "IngestStack" "SystemTestStack" "EksBulkImportStack")
-DOCKER_STACKS=$(echo ${STACKS[@]} ${DOCKER_STACKS_ALL[@]} | tr ' ' '\n' | sort | uniq -d)
+DOCKER_STACKS=$(echo ${STACKS[@]} ${DOCKER_STACKS_ALL[@]} | tr ' ' '\n' | sort | uniq -d | tr '\n' ' ')
 REPO_PREFIX=${DOCKER_REGISTRY}/${INSTANCE_ID}
 
 
