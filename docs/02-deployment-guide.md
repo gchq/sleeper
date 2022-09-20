@@ -9,11 +9,11 @@ to AWS and then interact with it.
 
 ### Install Prerequisite Software 
 You will need the following software:
-* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
-* [NodeJS / Npm](https://github.com/nvm-sh/nvm#installing-and-updating)
-* [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html)
+* [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html): Tested with v2.39.1
+* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html): Tested with v2.7.27
 * [Java 8](https://openjdk.java.net/install/)
-* [maven](https://maven.apache.org/)
+* [Maven](https://maven.apache.org/): Tested with v3.8.6
+* [NodeJS / Npm](https://github.com/nvm-sh/nvm#installing-and-updating): Tested with NodeJS v16.16.0 and npm v8.11.0
 
 ### Configure AWS
 The following configuration should allow the SDKs, the CLI and CDK to all access AWS:
