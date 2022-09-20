@@ -285,7 +285,6 @@ public class CompactSortedFilesIT {
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
         // When
-        //  - Merge two files
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
         CompactSortedFiles.CompactionJobSummary summary = compactSortedFiles.compact();
 
@@ -305,82 +304,36 @@ public class CompactSortedFilesIT {
     }
 
     @Test
-    public void filesShouldMergeCorrectlyWhenAllAreEmpty() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
+    public void filesShouldMergeCorrectlyWhenAllAreEmpty() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-        //  - Create two empty files
-        String folderName = folder.newFolder().getAbsolutePath();
-        String file1 = folderName + "/file1.parquet";
-        String file2 = folderName + "/file2.parquet";
-        List<String> files = new ArrayList<>();
-        files.add(file1);
-        files.add(file2);
-        FileInfo fileInfo1 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
-                .filename(file1)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords(0L)
-                .build();
-        FileInfo fileInfo2 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
-                .filename(file2)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords(0L)
-                .build();
-        List<FileInfo> fileInfos = new ArrayList<>();
-        fileInfos.add(fileInfo1);
-        fileInfos.add(fileInfo2);
-        String outputFile = folderName + "/file3.parquet";
-        ParquetRecordWriter writer1 = new ParquetRecordWriter(new Path(file1), SchemaConverter.getSchema(schema), schema);
-        writer1.close();
-        ParquetRecordWriter writer2 = new ParquetRecordWriter(new Path(file2), SchemaConverter.getSchema(schema), schema);
-        writer2.close();
-        //  - Create DynamoDBStateStore
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator("fsmcwaae", schema, dynamoDBClient);
-        DynamoDBStateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
-        dynamoStateStore.initialise();
-        //  - Update Dynamo state store with details of files
-        dynamoStateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2));
-        //  - Create CompactionJob and update status of files with compactionJob id
-        CompactionJob compactionJob = new CompactionJob("table", "compactionJob-1");
-        compactionJob.setInputFiles(files);
-        compactionJob.setOutputFile(outputFile);
-        compactionJob.setPartitionId("1");
-        dynamoStateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileInfos);
+        StateStore stateStore = createStateStore("fsmcwsae", schema, dynamoDBClient);
+        CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
+
+        dataHelper.writeLeafFile(folderName + "/file1.parquet", Collections.emptyList(), null, null);
+        dataHelper.writeLeafFile(folderName + "/file2.parquet", Collections.emptyList(), null, null);
+
+        CompactionJob compactionJob = compactionFactory.createCompactionJob(
+                dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
+        dataHelper.addFilesToStateStoreForJob(compactionJob);
 
         // When
-        //  - Merge two files
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, dynamoStateStore);
-        compactSortedFiles.compact();
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
+        CompactSortedFiles.CompactionJobSummary summary = compactSortedFiles.compact();
 
         // Then
         //  - Read output file and check that it contains the right results
-        List<Record> results = new ArrayList<>();
-        ParquetReaderIterator reader = new ParquetReaderIterator(new ParquetRecordReader(new Path(outputFile), schema));
-        while (reader.hasNext()) {
-            results.add(new Record(reader.next()));
-        }
-        reader.close();
-        assertThat(results).isEmpty();
+        assertThat(summary.getLinesRead()).isZero();
+        assertThat(summary.getLinesWritten()).isZero();
+        assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEmpty();
 
         // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
+        assertReadyForGC(stateStore, dataHelper.allFileInfos());
 
         // - Check DynamoDBStateStore has correct active files
-        FileInfo newFile = FileInfo.builder()
-                .rowKeyTypes(new LongType())
-                .filename(outputFile)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords(0L)
-                .minRowKey(null)
-                .maxRowKey(null)
-                .build();
-        assertThat(dynamoStateStore.getActiveFiles())
+        assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(newFile);
+                .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 0L, null, null));
     }
 
     @Test

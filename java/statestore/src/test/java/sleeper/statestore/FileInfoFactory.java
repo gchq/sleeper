@@ -100,14 +100,22 @@ public class FileInfoFactory {
     private FileInfo fileForPartition(Partition partition, String filename, long records, Object min, Object max) {
         return FileInfo.builder()
                 .rowKeyTypes(partition.getRowKeyTypes())
-                .minRowKey(Key.create(min))
-                .maxRowKey(Key.create(max))
+                .minRowKey(rowKey(min))
+                .maxRowKey(rowKey(max))
                 .filename(filename)
                 .partitionId(partition.getId())
                 .numberOfRecords(records)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .lastStateStoreUpdateTime(lastStateStoreUpdate)
                 .build();
+    }
+
+    private static Key rowKey(Object value) {
+        if (value == null) {
+            return null;
+        } else {
+            return Key.create(value);
+        }
     }
 
     public static final class Builder {
