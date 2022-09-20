@@ -220,7 +220,7 @@ public class S3FileInfoStore implements FileInfoStore {
             List<FileInfo> filteredFiles = new ArrayList<>();
             for (FileInfo fileInfo : list) {
                 if (namesOfFiles.contains(fileInfo.getFilename())) {
-                    fileInfo.setJobId(jobId);
+                    fileInfo = fileInfo.toBuilder().jobId(jobId).build();
                 }
                 filteredFiles.add(fileInfo);
             }

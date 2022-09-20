@@ -18,7 +18,6 @@ package sleeper.statestore;
 import sleeper.core.key.Key;
 import sleeper.core.schema.type.PrimitiveType;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -64,17 +63,6 @@ public class FileInfo {
         return rowKeyTypes;
     }
 
-    public void setRowKeyTypes(List<PrimitiveType> rowKeyTypes) {
-        this.rowKeyTypes = rowKeyTypes;
-    }
-
-    public void setRowKeyTypes(PrimitiveType... rowKeyTypes) {
-        this.rowKeyTypes = new ArrayList<>();
-        for (PrimitiveType type : rowKeyTypes) {
-            this.rowKeyTypes.add(type);
-        }
-    }
-
     public Key getMinRowKey() {
         return minRowKey;
     }
@@ -91,24 +79,12 @@ public class FileInfo {
         this.maxRowKey = maxRowKey;
     }
 
-    public void setFilename(String filename) {
-        this.filename = filename;
-    }
-
     public String getFilename() {
         return filename;
     }
 
-    public void setFileStatus(FileStatus fileStatus) {
-        this.fileStatus = fileStatus;
-    }
-
     public FileStatus getFileStatus() {
         return fileStatus;
-    }
-
-    public void setJobId(String jobId) {
-        this.jobId = jobId;
     }
 
     public String getJobId() {
