@@ -98,7 +98,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_R
  */
 public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
 
-    @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
     public PersistentEmrBulkImportStack(
             Construct scope,
             String id,
@@ -109,7 +108,10 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
         super(scope, id, "PersistentEMR", "PersistentEMR",
                 BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, dataBuckets, stateStoreStacks,
                 instanceProperties, errorsTopic);
+    }
 
+    @Override
+    public void create() {
         // EMR cluster
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         String logUri = null == bulkImportBucket ? null : "s3://" + bulkImportBucket + "/logs";
@@ -166,10 +168,10 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
         }
 
         CfnClusterProps emrClusterProps = propsBuilder.build();
-        CfnCluster emrCluster = new CfnCluster(this, id, emrClusterProps);
+        CfnCluster emrCluster = new CfnCluster(this, id + "-PersistentEMRCluster", emrClusterProps);
         instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS, emrCluster.getAttrMasterPublicDns());
     }
-
+    
     @Override
     protected void createBulkImportJobStarterFunction() {
         super.createBulkImportJobStarterFunction();

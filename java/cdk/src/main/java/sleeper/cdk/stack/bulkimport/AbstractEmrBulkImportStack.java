@@ -75,6 +75,9 @@ import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack {
     protected final String shortId;
     protected final String bulkImportPlatform;
+    protected final SystemDefinedInstanceProperty jobQueueUrl;
+    protected final List<IBucket> dataBuckets;
+    protected final List<StateStoreStack> stateStoreStacks;
     private final ITopic errorsTopic;
     protected final IBucket ingestBucket;
     protected final String instanceId;
@@ -82,11 +85,10 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
     protected final String region;
     protected final String vpc;
     protected final String subnet;
-    protected final Queue bulkImportJobQueue;
+    protected Queue bulkImportJobQueue;
     protected Function bulkImportJobStarter;
     protected IRole ec2Role;
 
-    @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
     public AbstractEmrBulkImportStack(
             Construct scope,
             String id,
@@ -100,6 +102,9 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
         super(scope, id, instanceProperties);
         this.shortId = shortId;
         this.bulkImportPlatform = bulkImportPlatform;
+        this.jobQueueUrl = jobQueueUrl;
+        this.dataBuckets = dataBuckets;
+        this.stateStoreStacks = stateStoreStacks;
         this.errorsTopic = errorsTopic;
         this.instanceId = this.instanceProperties.get(ID);
         this.account = instanceProperties.get(UserDefinedInstanceProperty.ACCOUNT);
@@ -114,11 +119,16 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
         } else {
             this.ingestBucket = null;
         }
+    }
 
+    @Override
+    public void create() {
+        super.create();
+        
         // Queue for messages to trigger jobs - note that each concrete substack
         // will have its own queue. The shortId is used to ensure the names of
         // the queues are different.
-        this.bulkImportJobQueue = createQueues(shortId, jobQueueUrl);
+        bulkImportJobQueue = createQueues(shortId, jobQueueUrl);
 
         // Create roles
         createRoles(dataBuckets, stateStoreStacks, region, account, vpc, subnet);
@@ -131,7 +141,7 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
         
         Utils.addStackTagIfSet(this, instanceProperties);
     }
-
+    
     private Queue createQueues(String shortId, SystemDefinedInstanceProperty jobQueueUrl) {
         Queue queueForDLs = Queue.Builder
                 .create(this, "BulkImport" + shortId + "JobDeadLetterQueue")

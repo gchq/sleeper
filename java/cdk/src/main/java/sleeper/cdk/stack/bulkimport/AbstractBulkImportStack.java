@@ -1,6 +1,5 @@
 package sleeper.cdk.stack.bulkimport;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Locale;
 import sleeper.configuration.properties.InstanceProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
@@ -17,18 +16,22 @@ import software.constructs.Construct;
  *
  */
 public class AbstractBulkImportStack extends NestedStack {
+    protected String id;
     protected final InstanceProperties instanceProperties;
     protected IBucket importBucket;
     
-    @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
     public AbstractBulkImportStack(Construct scope,
             String id,
             InstanceProperties instanceProperties) {
         super(scope, id);
+        this.id = id;
         this.instanceProperties = instanceProperties;
-        createImportBucket();
     }
 
+    public void create() {
+        createImportBucket();
+    }
+    
     protected void createImportBucket() {
         // NB This method will be called more than once if more than one bulk
         // import stack is deployed so we need to avoid creating the same bucket
