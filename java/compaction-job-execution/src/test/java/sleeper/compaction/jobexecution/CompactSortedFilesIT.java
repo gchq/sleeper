@@ -80,6 +80,8 @@ import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndT
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.readDataFile;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.specifiedAndTwoValuesFromEvens;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.specifiedAndTwoValuesFromOdds;
+import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.specifiedFromEvens;
+import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.specifiedFromOdds;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createCompactSortedFiles;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createInitStateStore;
@@ -117,12 +119,18 @@ public class CompactSortedFilesIT {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
     private String folderName;
-    private CompactionFactory compactionFactory;
 
     @Before
     public void setUp() throws Exception {
         folderName = folder.newFolder().getAbsolutePath();
-        compactionFactory = CompactionFactory.withTableName("table").outputFilePrefix(folderName).build();
+    }
+
+    private CompactionFactory compactionFactory() {
+        return compactionFactoryBuilder().build();
+    }
+
+    private CompactionFactory.Builder compactionFactoryBuilder() {
+        return CompactionFactory.withTableName("table").outputFilePrefix(folderName);
     }
 
     @Test
@@ -137,7 +145,7 @@ public class CompactSortedFilesIT {
         dataHelper.writeLeafFile(folderName + "/file1.parquet", data1, 0L, 198L);
         dataHelper.writeLeafFile(folderName + "/file2.parquet", data2, 1L, 199L);
 
-        CompactionJob compactionJob = compactionFactory.createCompactionJob(
+        CompactionJob compactionJob = compactionFactory().createCompactionJob(
                 dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
@@ -190,7 +198,7 @@ public class CompactSortedFilesIT {
         dataHelper.writeLeafFile(folderName + "/file1.parquet", data1, "aa", "hq");
         dataHelper.writeLeafFile(folderName + "/file2.parquet", data2, "ab", "hr");
 
-        CompactionJob compactionJob = compactionFactory.createCompactionJob(
+        CompactionJob compactionJob = compactionFactory().createCompactionJob(
                 dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
@@ -248,7 +256,7 @@ public class CompactSortedFilesIT {
         dataHelper.writeLeafFile(folderName + "/file1.parquet", data1, new byte[]{0, 0}, new byte[]{1, 70});
         dataHelper.writeLeafFile(folderName + "/file2.parquet", data2, new byte[]{0, 1}, new byte[]{1, 71});
 
-        CompactionJob compactionJob = compactionFactory.createCompactionJob(
+        CompactionJob compactionJob = compactionFactory().createCompactionJob(
                 dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
@@ -283,7 +291,7 @@ public class CompactSortedFilesIT {
         dataHelper.writeLeafFile(folderName + "/file1.parquet", data, 0L, 198L);
         dataHelper.writeLeafFile(folderName + "/file2.parquet", Collections.emptyList(), null, null);
 
-        CompactionJob compactionJob = compactionFactory.createCompactionJob(
+        CompactionJob compactionJob = compactionFactory().createCompactionJob(
                 dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
@@ -316,7 +324,7 @@ public class CompactSortedFilesIT {
         dataHelper.writeLeafFile(folderName + "/file1.parquet", Collections.emptyList(), null, null);
         dataHelper.writeLeafFile(folderName + "/file2.parquet", Collections.emptyList(), null, null);
 
-        CompactionJob compactionJob = compactionFactory.createCompactionJob(
+        CompactionJob compactionJob = compactionFactory().createCompactionJob(
                 dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
@@ -355,7 +363,7 @@ public class CompactSortedFilesIT {
         dataHelper.writeRootFile(folderName + "/file1.parquet", data1, 0L, 198L);
         dataHelper.writeRootFile(folderName + "/file2.parquet", data2, 1L, 199L);
 
-        CompactionJob compactionJob = compactionFactory.createSplittingCompactionJob(
+        CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
                 dataHelper.allFileInfos(), "C", "A", "B", 100L, 0);
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
@@ -406,7 +414,7 @@ public class CompactSortedFilesIT {
         dataHelper.writeRootFile(folderName + "/file1.parquet", data1, 0L, 198L);
         dataHelper.writeRootFile(folderName + "/file2.parquet", data2, 1L, 199L);
 
-        CompactionJob compactionJob = compactionFactory.createSplittingCompactionJob(
+        CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
                 dataHelper.allFileInfos(), "C", "A", "B", 100L, 0);
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
@@ -457,7 +465,7 @@ public class CompactSortedFilesIT {
         dataHelper.writeRootFile(folderName + "/file1.parquet", data1, 0L, 198L);
         dataHelper.writeRootFile(folderName + "/file2.parquet", data2, 1L, 199L);
 
-        CompactionJob compactionJob = compactionFactory.createSplittingCompactionJob(
+        CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
                 dataHelper.allFileInfos(), "C", "A", "B", "A2", 1);
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
@@ -499,7 +507,7 @@ public class CompactSortedFilesIT {
         dataHelper.writeRootFile(folderName + "/file1.parquet", data1, 0L, 198L);
         dataHelper.writeRootFile(folderName + "/file2.parquet", data2, 1L, 199L);
 
-        CompactionJob compactionJob = compactionFactory.createSplittingCompactionJob(
+        CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
                 dataHelper.allFileInfos(), "C", "A", "B", 200L, 0);
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
@@ -527,120 +535,48 @@ public class CompactSortedFilesIT {
     }
 
     @Test
-    public void filesShouldMergeAndApplyIteratorCorrectlyLongKey() throws IOException, StateStoreException, ObjectFactoryException, IteratorException {
+    public void filesShouldMergeAndApplyIteratorCorrectlyLongKey() throws Exception {
         // Given
         Schema schema = CompactSortedFilesTestUtils.createSchemaWithKeyTimestampValue();
-        //  - Create two files of sorted data
-        String folderName = folder.newFolder().getAbsolutePath();
-        String file1 = folderName + "/file1.parquet";
-        String file2 = folderName + "/file2.parquet";
-        List<String> files = new ArrayList<>();
-        files.add(file1);
-        files.add(file2);
-        FileInfo fileInfo1 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
-                .filename(file1)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords(100L)
-                .minRowKey(Key.create(0L))
-                .maxRowKey(Key.create(198L))
-                .build();
-        FileInfo fileInfo2 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
-                .filename(file2)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords(100L)
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(199L))
-                .build();
-        List<FileInfo> fileInfos = new ArrayList<>();
-        fileInfos.add(fileInfo1);
-        fileInfos.add(fileInfo2);
-        String outputFile = folderName + "/file3.parquet";
-        SortedMap<Long, Record> data = new TreeMap<>();
-        ParquetRecordWriter writer1 = new ParquetRecordWriter(new Path(file1), SchemaConverter.getSchema(schema), schema);
-        for (int i = 0; i < 100; i++) {
-            Record record = new Record();
-            record.put("key", (long) 2 * i);
-            record.put("timestamp", i % 2 == 0 ? System.currentTimeMillis() : 0L);
-            record.put("value", 987654321L);
-            writer1.write(record);
-            data.put((long) record.get("key"), record);
-        }
-        writer1.close();
-        ParquetRecordWriter writer2 = new ParquetRecordWriter(new Path(file2), SchemaConverter.getSchema(schema), schema);
-        for (int i = 0; i < 100; i++) {
-            Record record = new Record();
-            record.put("key", (long) 2 * i + 1);
-            record.put("timestamp", i % 2 == 0 ? System.currentTimeMillis() : 0L);
-            record.put("value", 123456789L);
-            writer2.write(record);
-            data.put((long) record.get("key"), record);
-        }
-        writer2.close();
-        //  - Create DynamoDBStateStore
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator("fsmaaiclk", schema, dynamoDBClient);
-        DynamoDBStateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
-        dynamoStateStore.initialise();
-        //  - Update Dynamo state store with details of files
-        dynamoStateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2));
+        StateStore stateStore = createInitStateStore("fsmaaiclk", schema, dynamoDBClient);
+        CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
-        //  - Create CompactionJob and update status of files with compactionJob id
-        CompactionJob compactionJob = new CompactionJob("table", "compactionJob-1");
-        compactionJob.setInputFiles(files);
-        compactionJob.setOutputFile(outputFile);
-        compactionJob.setPartitionId("1");
-        compactionJob.setIsSplittingJob(false);
-        compactionJob.setIteratorClassName(AgeOffIterator.class.getName());
-        compactionJob.setIteratorConfig("timestamp,1000000");
-        dynamoStateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileInfos);
+        List<Record> data1 = specifiedFromEvens((even, record) -> {
+            record.put("key", (long) even);
+            record.put("timestamp", System.currentTimeMillis());
+            record.put("value", 987654321L);
+        });
+        List<Record> data2 = specifiedFromOdds((odd, record) -> {
+            record.put("key", (long) odd);
+            record.put("timestamp", 0L);
+            record.put("value", 123456789L);
+        });
+        dataHelper.writeLeafFile(folderName + "/file1.parquet", data1, 0L, 198L);
+        dataHelper.writeLeafFile(folderName + "/file2.parquet", data2, 1L, 199L);
+
+        CompactionJob compactionJob = compactionFactoryBuilder()
+                .iteratorClassName(AgeOffIterator.class.getName())
+                .iteratorConfig("timestamp,1000000")
+                .build().createCompactionJob(dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
+        dataHelper.addFilesToStateStoreForJob(compactionJob);
 
         // When
-        //  - Merge two files
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, dynamoStateStore);
-        compactSortedFiles.compact();
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
+        CompactSortedFiles.CompactionJobSummary summary = compactSortedFiles.compact();
 
         // Then
-        //  - Read output file and check that it contains the right results
-        List<Record> results = new ArrayList<>();
-        ParquetReaderIterator reader = new ParquetReaderIterator(new ParquetRecordReader(new Path(outputFile), schema));
-        while (reader.hasNext()) {
-            results.add(new Record(reader.next()));
-        }
-        reader.close();
-        List<Record> expectedResults = data
-                .values()
-                .stream()
-                .filter(r -> System.currentTimeMillis() - ((long) r.get("timestamp")) < 1000000)
-                .collect(Collectors.toList());
-        assertThat(results).isEqualTo(expectedResults);
+        //  - Read output files and check that they contain the right results
+        assertThat(summary.getLinesRead()).isEqualTo(200L);
+        assertThat(summary.getLinesWritten()).isEqualTo(100L);
+        assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data1);
 
         // - Check DynamoDBStateStore has correct ready for GC files
-        assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
+        assertReadyForGC(stateStore, dataHelper.allFileInfos());
 
         // - Check DynamoDBStateStore has correct active files
-        FileInfo newFile = FileInfo.builder()
-                .rowKeyTypes(new LongType())
-                .filename(outputFile)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords((long) expectedResults.size())
-                .build();
-        long minKey = expectedResults.stream()
-                .map(r -> (long) r.get("key"))
-                .min(Comparator.naturalOrder())
-                .get();
-        newFile.setMinRowKey(Key.create(minKey));
-        long maxKey = expectedResults.stream()
-                .map(r -> (long) r.get("key"))
-                .max(Comparator.naturalOrder())
-                .get();
-        newFile.setMaxRowKey(Key.create(maxKey));
-        assertThat(dynamoStateStore.getActiveFiles())
+        assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(newFile);
+                .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 100L, 0L, 198L));
     }
 
     @Test

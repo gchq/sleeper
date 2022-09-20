@@ -71,52 +71,63 @@ public class CompactSortedFilesTestData {
     }
 
     public static List<Record> specifiedAndTwoValuesFromEvens(BiConsumer<Integer, Record> setRecord) {
+        return specifiedFromEvens((even, record) -> {
+            setRecord.accept(even, record);
+            record.put("value1", 1000L);
+            record.put("value2", 987654321L);
+        });
+    }
+
+    public static List<Record> specifiedAndTwoValuesFromOdds(BiConsumer<Integer, Record> setRecord) {
+        return specifiedFromOdds((odd, record) -> {
+            setRecord.accept(odd, record);
+            record.put("value1", 1001L);
+            record.put("value2", 123456789L);
+        });
+    }
+
+    private static Stream<Record> streamKeyAndTwoValuesFromEvens(Function<Integer, Object> convert) {
+        return streamFromEvens((even, record) -> {
+            Object converted = convert.apply(even);
+            record.put("key", converted);
+            record.put("value1", converted);
+            record.put("value2", 987654321L);
+        });
+    }
+
+    private static Stream<Record> streamKeyAndTwoValuesFromOdds(Function<Integer, Object> convert) {
+        Object value1 = convert.apply(1001);
+        return streamFromOdds((odd, record) -> {
+            record.put("key", convert.apply(odd));
+            record.put("value1", value1);
+            record.put("value2", 123456789L);
+        });
+    }
+
+    public static List<Record> specifiedFromEvens(BiConsumer<Integer, Record> setRecord) {
+        return streamFromEvens(setRecord).collect(Collectors.toList());
+    }
+
+    public static List<Record> specifiedFromOdds(BiConsumer<Integer, Record> setRecord) {
+        return streamFromOdds(setRecord).collect(Collectors.toList());
+    }
+
+    private static Stream<Record> streamFromEvens(BiConsumer<Integer, Record> setRecord) {
         return IntStream.range(0, 100)
                 .mapToObj(i -> {
                     int even = 2 * i;
                     Record record = new Record();
                     setRecord.accept(even, record);
-                    record.put("value1", 1000L);
-                    record.put("value2", 987654321L);
                     return record;
-                }).collect(Collectors.toList());
+                });
     }
 
-    public static List<Record> specifiedAndTwoValuesFromOdds(BiConsumer<Integer, Record> setRecord) {
+    private static Stream<Record> streamFromOdds(BiConsumer<Integer, Record> setRecord) {
         return IntStream.range(0, 100)
                 .mapToObj(i -> {
                     int odd = 2 * i + 1;
                     Record record = new Record();
                     setRecord.accept(odd, record);
-                    record.put("value1", 1001L);
-                    record.put("value2", 123456789L);
-                    return record;
-                }).collect(Collectors.toList());
-    }
-
-    private static Stream<Record> streamKeyAndTwoValuesFromEvens(Function<Integer, Object> convert) {
-        return IntStream.range(0, 100)
-                .mapToObj(i -> {
-                    int even = 2 * i;
-                    Object converted = convert.apply(even);
-                    Record record = new Record();
-                    record.put("key", converted);
-                    record.put("value1", converted);
-                    record.put("value2", 987654321L);
-                    return record;
-                });
-    }
-
-    private static Stream<Record> streamKeyAndTwoValuesFromOdds(Function<Integer, Object> convert) {
-        Object value1 = convert.apply(1001);
-        return IntStream.range(0, 100)
-                .mapToObj(i -> {
-                    int odd = 2 * i + 1;
-                    Object converted = convert.apply(odd);
-                    Record record = new Record();
-                    record.put("key", converted);
-                    record.put("value1", value1);
-                    record.put("value2", 123456789L);
                     return record;
                 });
     }
