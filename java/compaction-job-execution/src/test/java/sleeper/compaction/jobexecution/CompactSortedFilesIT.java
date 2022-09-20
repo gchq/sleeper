@@ -67,6 +67,7 @@ import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.combineSortedBySingleByteArrayKey;
@@ -159,6 +160,16 @@ public class CompactSortedFilesIT {
     }
 
     @Test
+    public void shouldGenerate200EvenAndOddStrings() {
+        List<Record> data = combineSortedBySingleKey(
+                keyAndTwoValuesSortedEvenStrings(),
+                keyAndTwoValuesSortedOddStrings());
+        assertThat(data).hasSize(200);
+        assertThat(Stream.of(0, 1, 26, 27, 198, 199).map(n -> data.get(n).get("key")))
+                .containsExactly("aa", "ab", "ba", "bb", "hq", "hr");
+    }
+
+    @Test
     public void filesShouldMergeCorrectlyAndDynamoUpdatedStringKey() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new StringType(), new StringType(), new LongType());
@@ -167,8 +178,8 @@ public class CompactSortedFilesIT {
 
         List<Record> data1 = keyAndTwoValuesSortedEvenStrings();
         List<Record> data2 = keyAndTwoValuesSortedOddStrings();
-        dataHelper.writeLeafFile(folderName + "/file1.parquet", data1, "0", "98");
-        dataHelper.writeLeafFile(folderName + "/file2.parquet", data2, "1", "99");
+        dataHelper.writeLeafFile(folderName + "/file1.parquet", data1, "aa", "hq");
+        dataHelper.writeLeafFile(folderName + "/file2.parquet", data2, "ab", "hr");
 
         CompactionJob compactionJob = compactionFactory.createCompactionJob(
                 dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
@@ -191,7 +202,19 @@ public class CompactSortedFilesIT {
         // - Check DynamoDBStateStore has correct active files
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, "0", "99"));
+                .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, "aa", "hr"));
+    }
+
+    @Test
+    public void shouldGenerate200EvenAndOddByteArrays() {
+        List<Record> data = combineSortedBySingleByteArrayKey(
+                keyAndTwoValuesSortedEvenByteArrays(),
+                keyAndTwoValuesSortedOddByteArrays());
+        assertThat(Stream.of(0, 1, 128, 129, 198, 199).map(n -> data.get(n).get("key")))
+                .containsExactly(
+                        new byte[]{0, 0}, new byte[]{0, 1},
+                        new byte[]{1, 0}, new byte[]{1, 1},
+                        new byte[]{1, 70}, new byte[]{1, 71});
     }
 
     @Test

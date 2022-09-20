@@ -26,7 +26,6 @@ import sleeper.io.parquet.record.SchemaConverter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -51,14 +50,12 @@ public class CompactSortedFilesTestData {
     }
 
     public static List<Record> keyAndTwoValuesSortedEvenStrings() {
-        return streamKeyAndTwoValuesFromEvens(n -> "" + n)
-                .sorted(comparingStringKey())
+        return streamKeyAndTwoValuesFromEvens(CompactSortedFilesTestData::nthString)
                 .collect(Collectors.toList());
     }
 
     public static List<Record> keyAndTwoValuesSortedOddStrings() {
-        return streamKeyAndTwoValuesFromOdds(n -> "" + n)
-                .sorted(comparingStringKey())
+        return streamKeyAndTwoValuesFromOdds(CompactSortedFilesTestData::nthString)
                 .collect(Collectors.toList());
     }
 
@@ -70,13 +67,6 @@ public class CompactSortedFilesTestData {
     public static List<Record> keyAndTwoValuesSortedOddByteArrays() {
         return streamKeyAndTwoValuesFromOdds(CompactSortedFilesTestData::nthByteArray)
                 .collect(Collectors.toList());
-    }
-
-    private static byte[] nthByteArray(int n) {
-        return new byte[]{
-                (byte) (n / 128),
-                (byte) (n % 128)
-        };
     }
 
     private static Stream<Record> streamKeyAndTwoValuesFromEvens(Function<Integer, Object> convert) {
@@ -106,12 +96,17 @@ public class CompactSortedFilesTestData {
                 });
     }
 
-    private static Comparator<Record> comparingStringKey() {
-        return Comparator.comparing(r -> (String) r.get("key"));
+    private static String nthString(int n) {
+        return ""
+                + (char) ('a' + (n / 26))
+                + (char) ('a' + (n % 26));
     }
 
-    private static Comparator<Record> comparingByteArrayKey() {
-        return Comparator.comparing(r -> ByteArray.wrap((byte[]) r.get("key")));
+    private static byte[] nthByteArray(int n) {
+        return new byte[]{
+                (byte) (n / 128),
+                (byte) (n % 128)
+        };
     }
 
     public static List<Record> combineSortedBySingleKey(List<Record> data1, List<Record> data2) {
