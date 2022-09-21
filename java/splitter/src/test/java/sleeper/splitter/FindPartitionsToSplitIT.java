@@ -39,6 +39,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
+import sleeper.ingest.IngestProperties;
 import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
@@ -129,22 +130,21 @@ public class FindPartitionsToSplitIT {
             try {
                 File stagingArea = tempDir.newFolder();
                 File directory = tempDir.newFolder();
-                new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, ""),
-                        list.iterator(),
-                        stagingArea.getAbsolutePath(),
-                        0,
-                        1_000_000L,
-                        ParquetWriter.DEFAULT_BLOCK_SIZE,
-                        ParquetWriter.DEFAULT_PAGE_SIZE,
-                        "zstd",
-                        stateStore,
-                        schema,
-                        "file:///",
-                        directory.getAbsolutePath(),
-                        null,
-                        null,
-                        1_000_000
-                ).write();
+                IngestProperties properties = IngestProperties.builder()
+                        .objectFactory(new ObjectFactory(new InstanceProperties(), null, ""))
+                        .localDir(stagingArea.getAbsolutePath())
+                        .maxRecordsToWriteLocally(0L)
+                        .maxInMemoryBatchSize(1_000_000L)
+                        .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
+                        .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
+                        .compressionCodec("zstd")
+                        .stateStore(stateStore)
+                        .schema(schema)
+                        .filePathPrefix("file://")
+                        .bucketName(directory.getAbsolutePath())
+                        .ingestPartitionRefreshFrequencyInSecond(1_000_000)
+                        .build();
+                new IngestRecordsFromIterator(properties, list.iterator()).write();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
