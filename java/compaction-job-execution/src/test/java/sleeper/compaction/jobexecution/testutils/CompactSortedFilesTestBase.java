@@ -18,7 +18,7 @@ package sleeper.compaction.jobexecution.testutils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
-import sleeper.compaction.job.CompactionFactory;
+import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Schema;
 import sleeper.statestore.DelegatingStateStore;
@@ -38,12 +38,12 @@ public class CompactSortedFilesTestBase {
         folderName = folder.newFolder().getAbsolutePath();
     }
 
-    protected CompactionFactory compactionFactory() {
+    protected CompactionJobFactory compactionFactory() {
         return compactionFactoryBuilder().build();
     }
 
-    protected CompactionFactory.Builder compactionFactoryBuilder() {
-        return CompactionFactory.withTableName("table").outputFilePrefix(folderName);
+    protected CompactionJobFactory.Builder compactionFactoryBuilder() {
+        return CompactionJobFactory.withTableName("table").outputFilePrefix(folderName);
     }
 
     protected StateStore createInitStateStore(Schema schema) throws StateStoreException {
