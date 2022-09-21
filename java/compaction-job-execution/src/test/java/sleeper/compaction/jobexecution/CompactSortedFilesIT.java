@@ -26,8 +26,12 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.testcontainers.containers.GenericContainer;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDataHelper;
+import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStoreCreator;
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
@@ -38,6 +42,7 @@ import sleeper.statestore.StateStore;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.combineSortedBySingleKey;
@@ -49,6 +54,7 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUt
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createInitStateStore;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createStateStore;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 public class CompactSortedFilesIT extends CompactSortedFilesTestBase {
     private static final int DYNAMO_PORT = 8000;
@@ -57,7 +63,8 @@ public class CompactSortedFilesIT extends CompactSortedFilesTestBase {
     public static GenericContainer dynamoDb = new GenericContainer(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
             .withExposedPorts(DYNAMO_PORT);
 
-    public static AmazonDynamoDB dynamoDBClient;
+    private static AmazonDynamoDB dynamoDBClient;
+    private static CompactionJobStatusStore jobStatusStore;
 
     @BeforeClass
     public static void beforeAll() {
@@ -68,6 +75,10 @@ public class CompactSortedFilesIT extends CompactSortedFilesTestBase {
                 .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials("12345", "6789")))
                 .withEndpointConfiguration(endpointConfiguration)
                 .build();
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(ID, UUID.randomUUID().toString());
+        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        jobStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
     }
 
     @AfterClass
@@ -93,7 +104,7 @@ public class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
         // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, jobStatusStore);
         CompactSortedFiles.CompactionJobSummary summary = compactSortedFiles.compact();
 
         // Then
@@ -133,7 +144,7 @@ public class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
         // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, jobStatusStore);
         CompactSortedFiles.CompactionJobSummary summary = compactSortedFiles.compact();
 
         // Then
