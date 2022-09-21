@@ -21,6 +21,7 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.ingest.IngestProperties;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriter;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriter;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriter;
@@ -28,7 +29,6 @@ import sleeper.ingest.impl.recordbatch.RecordBatch;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchAcceptingRecords;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchAcceptingRecords;
 import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
@@ -43,36 +43,12 @@ public class StandardIngestCoordinator {
         return new Builder();
     }
 
-    public static IngestCoordinator<Record> directWriteBackedByArrayList(ObjectFactory objectFactory,
-                                                                         StateStore sleeperStateStore,
-                                                                         Schema sleeperSchema,
-                                                                         String localWorkingDirectory,
-                                                                         int parquetRowGroupSize,
-                                                                         int parquetPageSize,
-                                                                         String parquetCompressionCodec,
-                                                                         Configuration hadoopConfiguration,
-                                                                         String sleeperIteratorClassName,
-                                                                         String sleeperIteratorConfig,
-                                                                         int ingestPartitionRefreshFrequencyInSeconds,
-                                                                         String filePathPrefix,
-                                                                         int maxNoOfRecordsInMemory,
-                                                                         long maxNoOfRecordsInLocalStore) {
-        return builder()
-                .objectFactory(objectFactory)
-                .stateStore(sleeperStateStore)
-                .schema(sleeperSchema)
-                .localWorkingDirectory(localWorkingDirectory)
-                .parquetRowGroupSize(parquetRowGroupSize)
-                .parquetPageSize(parquetPageSize)
-                .parquetCompressionCodec(parquetCompressionCodec)
-                .hadoopConfiguration(hadoopConfiguration)
-                .iteratorClassName(sleeperIteratorClassName)
-                .iteratorConfig(sleeperIteratorConfig)
-                .ingestPartitionRefreshFrequencyInSeconds(ingestPartitionRefreshFrequencyInSeconds)
+    public static IngestCoordinator<Record> directWriteBackedByArrayList(IngestProperties ingestProperties) {
+        return builder().fromProperties(ingestProperties)
                 .backedByArrayList()
-                .maxNoOfRecordsInMemory(maxNoOfRecordsInMemory)
-                .maxNoOfRecordsInLocalStore(maxNoOfRecordsInLocalStore)
-                .buildDirectWrite(filePathPrefix);
+                .maxNoOfRecordsInMemory((int) ingestProperties.getMaxInMemoryBatchSize())
+                .maxNoOfRecordsInLocalStore(ingestProperties.getMaxRecordsToWriteLocally())
+                .buildDirectWrite(ingestProperties.getFilePrefix());
     }
 
     private static IngestCoordinator<Record> directWriteBackedByArrayList(
@@ -111,44 +87,22 @@ public class StandardIngestCoordinator {
                 partitionFileFactoryFn);
     }
 
-    public static IngestCoordinator<Record> directWriteBackedByArrow(ObjectFactory objectFactory,
-                                                                     StateStore sleeperStateStore,
-                                                                     Schema sleeperSchema,
-                                                                     String localWorkingDirectory,
-                                                                     int parquetRowGroupSize,
-                                                                     int parquetPageSize,
-                                                                     String parquetCompressionCodec,
-                                                                     Configuration hadoopConfiguration,
-                                                                     String sleeperIteratorClassName,
-                                                                     String sleeperIteratorConfig,
-                                                                     int ingestPartitionRefreshFrequencyInSeconds,
-                                                                     String filePathPrefix,
+    public static IngestCoordinator<Record> directWriteBackedByArrow(IngestProperties ingestProperties,
                                                                      BufferAllocator arrowBufferAllocator,
                                                                      int maxNoOfRecordsToWriteToArrowFileAtOnce,
                                                                      long workingArrowBufferAllocatorBytes,
                                                                      long minBatchArrowBufferAllocatorBytes,
-                                                                     long maxBatchArrowBufferAllocatorBytes,
-                                                                     long maxNoOfBytesToWriteLocally) {
+                                                                     long maxBatchArrowBufferAllocatorBytes) {
         return builder()
-                .objectFactory(objectFactory)
-                .stateStore(sleeperStateStore)
-                .schema(sleeperSchema)
-                .localWorkingDirectory(localWorkingDirectory)
-                .parquetRowGroupSize(parquetRowGroupSize)
-                .parquetPageSize(parquetPageSize)
-                .parquetCompressionCodec(parquetCompressionCodec)
-                .hadoopConfiguration(hadoopConfiguration)
-                .iteratorClassName(sleeperIteratorClassName)
-                .iteratorConfig(sleeperIteratorConfig)
-                .ingestPartitionRefreshFrequencyInSeconds(ingestPartitionRefreshFrequencyInSeconds)
+                .fromProperties(ingestProperties)
                 .backedByArrow()
                 .arrowBufferAllocator(arrowBufferAllocator)
                 .maxNoOfRecordsToWriteToArrowFileAtOnce(maxNoOfRecordsToWriteToArrowFileAtOnce)
                 .workingArrowBufferAllocatorBytes(workingArrowBufferAllocatorBytes)
                 .minBatchArrowBufferAllocatorBytes(minBatchArrowBufferAllocatorBytes)
                 .maxBatchArrowBufferAllocatorBytes(maxBatchArrowBufferAllocatorBytes)
-                .maxNoOfBytesToWriteLocally(maxNoOfBytesToWriteLocally)
-                .buildDirectWrite(filePathPrefix);
+                .maxNoOfBytesToWriteLocally(ingestProperties.getMaxRecordsToWriteLocally())
+                .buildDirectWrite(ingestProperties.getFilePrefix());
     }
 
     private static IngestCoordinator<Record> directWriteBackedByArrow(
@@ -188,44 +142,23 @@ public class StandardIngestCoordinator {
                 partitionFileFactoryFn);
     }
 
-    public static IngestCoordinator<Record> asyncS3WriteBackedByArrow(ObjectFactory objectFactory,
-                                                                      StateStore sleeperStateStore,
-                                                                      Schema sleeperSchema,
-                                                                      String localWorkingDirectory,
-                                                                      int parquetRowGroupSize,
-                                                                      int parquetPageSize,
-                                                                      String parquetCompressionCodec,
-                                                                      Configuration hadoopConfiguration,
-                                                                      String sleeperIteratorClassName,
-                                                                      String sleeperIteratorConfig,
-                                                                      int ingestPartitionRefreshFrequencyInSeconds,
+    public static IngestCoordinator<Record> asyncS3WriteBackedByArrow(IngestProperties ingestProperties,
                                                                       String s3BucketName,
                                                                       S3AsyncClient s3AsyncClient,
                                                                       BufferAllocator arrowBufferAllocator,
                                                                       int maxNoOfRecordsToWriteToArrowFileAtOnce,
                                                                       long workingArrowBufferAllocatorBytes,
                                                                       long minBatchArrowBufferAllocatorBytes,
-                                                                      long maxBatchArrowBufferAllocatorBytes,
-                                                                      long maxNoOfBytesToWriteLocally) throws StateStoreException {
+                                                                      long maxBatchArrowBufferAllocatorBytes) {
         return builder()
-                .objectFactory(objectFactory)
-                .stateStore(sleeperStateStore)
-                .schema(sleeperSchema)
-                .localWorkingDirectory(localWorkingDirectory)
-                .parquetRowGroupSize(parquetRowGroupSize)
-                .parquetPageSize(parquetPageSize)
-                .parquetCompressionCodec(parquetCompressionCodec)
-                .hadoopConfiguration(hadoopConfiguration)
-                .iteratorClassName(sleeperIteratorClassName)
-                .iteratorConfig(sleeperIteratorConfig)
-                .ingestPartitionRefreshFrequencyInSeconds(ingestPartitionRefreshFrequencyInSeconds)
+                .fromProperties(ingestProperties)
                 .backedByArrow()
                 .arrowBufferAllocator(arrowBufferAllocator)
                 .maxNoOfRecordsToWriteToArrowFileAtOnce(maxNoOfRecordsToWriteToArrowFileAtOnce)
                 .workingArrowBufferAllocatorBytes(workingArrowBufferAllocatorBytes)
                 .minBatchArrowBufferAllocatorBytes(minBatchArrowBufferAllocatorBytes)
                 .maxBatchArrowBufferAllocatorBytes(maxBatchArrowBufferAllocatorBytes)
-                .maxNoOfBytesToWriteLocally(maxNoOfBytesToWriteLocally)
+                .maxNoOfBytesToWriteLocally(ingestProperties.getMaxRecordsToWriteLocally())
                 .buildAsyncS3Write(s3BucketName, s3AsyncClient);
     }
 
@@ -358,6 +291,19 @@ public class StandardIngestCoordinator {
         private Configuration hadoopConfiguration;
 
         private Builder() {
+        }
+
+        public Builder fromProperties(IngestProperties ingestProperties) {
+            return this.objectFactory(ingestProperties.getObjectFactory())
+                    .localWorkingDirectory(ingestProperties.getLocalDir())
+                    .parquetRowGroupSize(ingestProperties.getRowGroupSize())
+                    .parquetPageSize(ingestProperties.getPageSize())
+                    .stateStore(ingestProperties.getStateStore())
+                    .schema(ingestProperties.getSchema())
+                    .iteratorClassName(ingestProperties.getIteratorClassName())
+                    .iteratorConfig(ingestProperties.getIteratorConfig())
+                    .ingestPartitionRefreshFrequencyInSeconds(ingestProperties.getIngestPartitionRefreshFrequencyInSecond())
+                    .hadoopConfiguration(ingestProperties.getHadoopConfiguration());
         }
 
         public Builder objectFactory(ObjectFactory objectFactory) {

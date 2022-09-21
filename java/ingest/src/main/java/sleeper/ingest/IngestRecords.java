@@ -40,6 +40,10 @@ public class IngestRecords {
 
     private final IngestCoordinator<Record> ingestCoordinator;
 
+    public IngestRecords(IngestProperties properties) {
+        this.ingestCoordinator = StandardIngestCoordinator.directWriteBackedByArrayList(properties);
+    }
+
     public IngestRecords(ObjectFactory objectFactory,
                          String localDir,
                          long maxRecordsToWriteLocally,
@@ -93,21 +97,22 @@ public class IngestRecords {
                          int ingestPartitionRefreshFrequencyInSeconds,
                          Configuration hadoopConfiguration) {
         try {
-            this.ingestCoordinator = StandardIngestCoordinator.directWriteBackedByArrayList(
-                    objectFactory,
-                    stateStore,
-                    schema,
-                    localDir,
-                    rowGroupSize,
-                    pageSize,
-                    compressionCodec,
-                    hadoopConfiguration,
-                    iteratorClassName,
-                    iteratorConfig,
-                    ingestPartitionRefreshFrequencyInSeconds,
-                    fs + bucketName,
-                    (int) maxInMemoryBatchSize,
-                    maxRecordsToWriteLocally);
+            this.ingestCoordinator = StandardIngestCoordinator.builder()
+                    .objectFactory(objectFactory)
+                    .stateStore(stateStore)
+                    .schema(schema)
+                    .localWorkingDirectory(localDir)
+                    .parquetRowGroupSize(rowGroupSize)
+                    .parquetPageSize(pageSize)
+                    .parquetCompressionCodec(compressionCodec)
+                    .hadoopConfiguration(hadoopConfiguration)
+                    .iteratorClassName(iteratorClassName)
+                    .iteratorConfig(iteratorConfig)
+                    .ingestPartitionRefreshFrequencyInSeconds(ingestPartitionRefreshFrequencyInSeconds)
+                    .backedByArrayList()
+                    .maxNoOfRecordsInMemory((int) maxInMemoryBatchSize)
+                    .maxNoOfRecordsInLocalStore(maxRecordsToWriteLocally)
+                    .buildDirectWrite(fs + bucketName);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
