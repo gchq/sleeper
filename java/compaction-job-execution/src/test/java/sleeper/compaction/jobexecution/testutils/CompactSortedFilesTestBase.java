@@ -28,7 +28,7 @@ public class CompactSortedFilesTestBase {
     protected String folderName;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUpBase() throws Exception {
         folderName = folder.newFolder().getAbsolutePath();
     }
 
