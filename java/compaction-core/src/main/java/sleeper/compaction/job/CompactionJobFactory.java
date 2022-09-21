@@ -34,22 +34,22 @@ import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLAS
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public class CompactionFactory {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CompactionFactory.class);
+public class CompactionJobFactory {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobFactory.class);
 
     private final String tableName;
     private final String outputFilePrefix;
     private final String iteratorClassName;
     private final String iteratorConfig;
 
-    public CompactionFactory(InstanceProperties instanceProperties, TableProperties tableProperties) {
+    public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties) {
         this(withTableName(tableProperties.get(TABLE_NAME))
                 .outputFilePrefix(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET))
                 .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
                 .iteratorConfig(tableProperties.get(ITERATOR_CONFIG)));
     }
 
-    private CompactionFactory(Builder builder) {
+    private CompactionJobFactory(Builder builder) {
         tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
         outputFilePrefix = Objects.requireNonNull(builder.outputFilePrefix, "outputFilePrefix must not be null");
         iteratorClassName = builder.iteratorClassName;
@@ -151,8 +151,8 @@ public class CompactionFactory {
             return this;
         }
 
-        public CompactionFactory build() {
-            return new CompactionFactory(this);
+        public CompactionJobFactory build() {
+            return new CompactionJobFactory(this);
         }
     }
 }

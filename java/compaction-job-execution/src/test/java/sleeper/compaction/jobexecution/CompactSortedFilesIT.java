@@ -28,8 +28,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.GenericContainer;
-import sleeper.compaction.job.CompactionFactory;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.impl.AgeOffIterator;
 import sleeper.core.partition.PartitionsBuilder;
@@ -101,12 +101,12 @@ public class CompactSortedFilesIT {
         folderName = folder.newFolder().getAbsolutePath();
     }
 
-    private CompactionFactory compactionFactory() {
+    private CompactionJobFactory compactionFactory() {
         return compactionFactoryBuilder().build();
     }
 
-    private CompactionFactory.Builder compactionFactoryBuilder() {
-        return CompactionFactory.withTableName("table").outputFilePrefix(folderName);
+    private CompactionJobFactory.Builder compactionFactoryBuilder() {
+        return CompactionJobFactory.withTableName("table").outputFilePrefix(folderName);
     }
 
     private static StateStore createInitStateStore(String tablenameStub, Schema schema, AmazonDynamoDB dynamoDBClient) throws StateStoreException {

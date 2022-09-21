@@ -22,8 +22,8 @@ import org.assertj.core.groups.Tuple;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import sleeper.compaction.job.CompactionFactory;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -83,7 +83,7 @@ public class DynamoDBCompactionJobStatusStoreIT extends DynamoDBTestBase {
         // Given
         Partition partition = singlePartition();
         FileInfoFactory fileFactory = new FileInfoFactory(schema, Collections.singletonList(partition), Instant.now());
-        CompactionFactory jobFactory = new CompactionFactory(instanceProperties, tableProperties);
+        CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
         CompactionJob job = jobFactory.createCompactionJob(
                 Collections.singletonList(fileFactory.leafFile(100L, "a", "z")),
                 partition.getId());
@@ -106,7 +106,7 @@ public class DynamoDBCompactionJobStatusStoreIT extends DynamoDBTestBase {
                 .parentJoining("C", "A", "B")
                 .buildList();
         FileInfoFactory fileFactory = new FileInfoFactory(schema, partitions, Instant.now());
-        CompactionFactory jobFactory = new CompactionFactory(instanceProperties, tableProperties);
+        CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
         CompactionJob job = jobFactory.createSplittingCompactionJob(
                 Arrays.asList(
                         fileFactory.rootFile("file1", 100L, "a", "c"),
@@ -126,7 +126,7 @@ public class DynamoDBCompactionJobStatusStoreIT extends DynamoDBTestBase {
         // Given
         Partition partition = singlePartition();
         FileInfoFactory fileFactory = new FileInfoFactory(schema, Collections.singletonList(partition), Instant.now());
-        CompactionFactory jobFactory = new CompactionFactory(instanceProperties, tableProperties);
+        CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
         CompactionJob job = jobFactory.createCompactionJob(
                 Arrays.asList(
                         fileFactory.leafFile("file1", 100L, "a", "c"),
@@ -151,7 +151,7 @@ public class DynamoDBCompactionJobStatusStoreIT extends DynamoDBTestBase {
                 .parentJoining("C", "A", "B")
                 .buildList();
         FileInfoFactory fileFactory = new FileInfoFactory(schema, partitions, Instant.now());
-        CompactionFactory jobFactory = new CompactionFactory(instanceProperties, tableProperties);
+        CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
         CompactionJob job1 = jobFactory.createCompactionJob(
                 Collections.singletonList(fileFactory.leafFile(100L, "a", "c")), "A");
         CompactionJob job2 = jobFactory.createCompactionJob(
@@ -177,7 +177,7 @@ public class DynamoDBCompactionJobStatusStoreIT extends DynamoDBTestBase {
                 .parentJoining("C", "A", "B")
                 .buildList();
         FileInfoFactory fileFactory = new FileInfoFactory(schema, partitions, Instant.now());
-        CompactionFactory jobFactory = new CompactionFactory(instanceProperties, tableProperties);
+        CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
         CompactionJob job1 = jobFactory.createCompactionJob(
                 Collections.singletonList(fileFactory.leafFile(100L, "a", "c")), "A");
         CompactionJob job2 = jobFactory.createSplittingCompactionJob(
