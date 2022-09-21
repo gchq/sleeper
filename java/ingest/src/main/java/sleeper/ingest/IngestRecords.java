@@ -18,14 +18,11 @@ package sleeper.ingest;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.StandardIngestCoordinator;
 import sleeper.statestore.FileInfo;
-import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
@@ -41,81 +38,10 @@ public class IngestRecords {
     private final IngestCoordinator<Record> ingestCoordinator;
 
     public IngestRecords(IngestProperties properties) {
-        this.ingestCoordinator = StandardIngestCoordinator.directWriteBackedByArrayList(properties);
-    }
-
-    public IngestRecords(ObjectFactory objectFactory,
-                         String localDir,
-                         long maxRecordsToWriteLocally,
-                         long maxInMemoryBatchSize,
-                         int rowGroupSize,
-                         int pageSize,
-                         String compressionCodec,
-                         StateStore stateStore,
-                         Schema schema,
-                         String fs,
-                         String bucketName,
-                         String iteratorClassName,
-                         String iteratorConfig,
-                         int ingestPartitionRefreshFrequencyInSeconds) {
-        this(objectFactory,
-                localDir,
-                maxRecordsToWriteLocally,
-                maxInMemoryBatchSize,
-                rowGroupSize,
-                pageSize,
-                compressionCodec,
-                stateStore,
-                schema,
-                fs,
-                bucketName,
-                iteratorClassName,
-                iteratorConfig,
-                ingestPartitionRefreshFrequencyInSeconds,
-                defaultHadoopConfiguration());
-    }
-
-    /**
-     * This version of the constructor allows a bespoke Hadoop configuration to be specified. The underlying {@link
-     * org.apache.hadoop.fs.FileSystem} object maintains a cache of file systems and the first time that it creates a {@link
-     * org.apache.hadoop.fs.s3a.S3AFileSystem} object, the provided Hadoop configuration will be used. Thereafter, the
-     * Hadoop configuration will be ignored until {@link org.apache.hadoop.fs.FileSystem#closeAll()} is called. This is not ideal behaviour.
-     */
-    public IngestRecords(ObjectFactory objectFactory,
-                         String localDir,
-                         long maxRecordsToWriteLocally,
-                         long maxInMemoryBatchSize,
-                         int rowGroupSize,
-                         int pageSize,
-                         String compressionCodec,
-                         StateStore stateStore,
-                         Schema schema,
-                         String fs,
-                         String bucketName,
-                         String iteratorClassName,
-                         String iteratorConfig,
-                         int ingestPartitionRefreshFrequencyInSeconds,
-                         Configuration hadoopConfiguration) {
-        try {
-            this.ingestCoordinator = StandardIngestCoordinator.builder()
-                    .objectFactory(objectFactory)
-                    .stateStore(stateStore)
-                    .schema(schema)
-                    .localWorkingDirectory(localDir)
-                    .parquetRowGroupSize(rowGroupSize)
-                    .parquetPageSize(pageSize)
-                    .parquetCompressionCodec(compressionCodec)
-                    .hadoopConfiguration(hadoopConfiguration)
-                    .iteratorClassName(iteratorClassName)
-                    .iteratorConfig(iteratorConfig)
-                    .ingestPartitionRefreshFrequencyInSeconds(ingestPartitionRefreshFrequencyInSeconds)
-                    .backedByArrayList()
-                    .maxNoOfRecordsInMemory((int) maxInMemoryBatchSize)
-                    .maxNoOfRecordsInLocalStore(maxRecordsToWriteLocally)
-                    .buildDirectWrite(fs + bucketName);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        if (null == properties.getHadoopConfiguration()) {
+            properties = properties.toBuilder().hadoopConfiguration(defaultHadoopConfiguration()).build();
         }
+        this.ingestCoordinator = StandardIngestCoordinator.directWriteBackedByArrayList(properties);
     }
 
     private static Configuration defaultHadoopConfiguration() {

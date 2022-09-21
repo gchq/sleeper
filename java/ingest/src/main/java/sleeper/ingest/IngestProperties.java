@@ -120,6 +120,25 @@ public class IngestProperties {
         return new Builder();
     }
 
+    public Builder toBuilder() {
+        return IngestProperties.builder()
+                .objectFactory(objectFactory)
+                .localDir(localDir)
+                .maxRecordsToWriteLocally(maxRecordsToWriteLocally)
+                .maxInMemoryBatchSize(maxInMemoryBatchSize)
+                .rowGroupSize(rowGroupSize)
+                .pageSize(pageSize)
+                .compressionCodec(compressionCodec)
+                .stateStore(stateStore)
+                .schema(schema)
+                .filePathPrefix(fs)
+                .bucketName(bucketName)
+                .iteratorClassName(iteratorClassName)
+                .iteratorConfig(iteratorConfig)
+                .ingestPartitionRefreshFrequencyInSecond(ingestPartitionRefreshFrequencyInSecond)
+                .hadoopConfiguration(hadoopConfiguration);
+    }
+
     public static final class Builder {
         private ObjectFactory objectFactory;
         private String localDir;

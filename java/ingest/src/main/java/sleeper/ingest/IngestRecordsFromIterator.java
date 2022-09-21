@@ -35,15 +35,13 @@ public class IngestRecordsFromIterator {
         this.properties = properties;
         this.recordsIterator = recordsIterator;
     }
-
     /**
-     * This version of the constructor allows a bespoke Hadoop configuration to be specified. The underlying {@link
-     * org.apache.hadoop.fs.FileSystem} object maintains a cache of file systems and the first time that it creates a {@link
-     * org.apache.hadoop.fs.s3a.S3AFileSystem} object, the provided Hadoop configuration will be used. Thereafter, the
-     * Hadoop configuration will be ignored until {@link org.apache.hadoop.fs.FileSystem#closeAll()} is called. This is not ideal behaviour.
+     * @return numbers of records written
+     * @throws StateStoreException  -
+     * @throws IOException          -
+     * @throws InterruptedException -
+     * @throws IteratorException    -
      */
-
-
     public long write() throws StateStoreException, IOException, InterruptedException, IteratorException {
         IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
