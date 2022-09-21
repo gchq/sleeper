@@ -16,7 +16,6 @@
 package sleeper.compaction.jobexecution;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -26,12 +25,15 @@ import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.statestore.DelegatingStateStore;
 import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
+import sleeper.statestore.inmemory.FixedPartitionStore;
+import sleeper.statestore.inmemory.InMemoryFileInfoStore;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.combineSortedBySingleKey;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
@@ -41,8 +43,6 @@ import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.create
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 
 public class CompactSortedFilesTest {
-
-    private final StateStore stateStore = mock(StateStore.class);
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
@@ -61,11 +61,21 @@ public class CompactSortedFilesTest {
         return CompactionFactory.withTableName("table").outputFilePrefix(folderName);
     }
 
+    private StateStore createInitStateStore(Schema schema) throws StateStoreException {
+        StateStore stateStore = createStateStore(schema);
+        stateStore.initialise();
+        return stateStore;
+    }
+
+    private StateStore createStateStore(Schema schema) {
+        return new DelegatingStateStore(new InMemoryFileInfoStore(), new FixedPartitionStore(schema));
+    }
+
     @Test
-    @Ignore("Need to use alternative state store or set up mock")
     public void filesShouldMergeCorrectlyAndDynamoUpdatedLongKey() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
+        StateStore stateStore = createInitStateStore(schema);
         CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
         List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
