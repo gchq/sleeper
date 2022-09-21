@@ -588,7 +588,10 @@ public class DynamoDBStateStoreIT {
             filesToMoveToReadyForGC.add(fileInfo);
         }
         //  - One of the files is not active
-        filesToMoveToReadyForGC.get(3).setFileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
+        FileInfo updatedFileInfo = filesToMoveToReadyForGC.remove(3).toBuilder()
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .build();
+        filesToMoveToReadyForGC.add(3, updatedFileInfo);
         dynamoDBStateStore.addFiles(filesToMoveToReadyForGC);
         FileInfo newFileInfo = FileInfo.builder()
                 .rowKeyTypes(new LongType())
