@@ -31,12 +31,8 @@ public class RangeCanonicaliser {
     private RangeCanonicaliser() {
     }
 
-    public static boolean isRangeInCanonicalForm(Range range) {
-        return range.isMinInclusive() && !range.isMaxInclusive();
-    }
-
     public static Range canonicaliseRange(Range range) {
-        if (isRangeInCanonicalForm(range)) {
+        if (range.isInCanonicalForm()) {
             return range;
         }
 

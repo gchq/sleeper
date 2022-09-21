@@ -298,6 +298,10 @@ public class Range {
         return true;
     }
 
+    public boolean isInCanonicalForm() {
+        return isMinInclusive() && !isMaxInclusive();
+    }
+
     @Override
     public int hashCode() {
         int hash = 5;
