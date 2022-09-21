@@ -19,7 +19,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
@@ -60,10 +59,8 @@ import java.util.Locale;
 import java.util.Map;
 
 import sleeper.cdk.Utils;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;

@@ -25,7 +25,6 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import software.amazon.awscdk.Duration;
-import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
 import software.amazon.awscdk.services.cloudwatch.CreateAlarmOptions;
 import software.amazon.awscdk.services.cloudwatch.MetricOptions;

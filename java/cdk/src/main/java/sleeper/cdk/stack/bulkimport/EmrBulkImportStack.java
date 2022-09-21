@@ -17,27 +17,18 @@ package sleeper.cdk.stack.bulkimport;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import sleeper.cdk.Utils;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
-import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
-import software.amazon.awscdk.services.lambda.Code;
-import software.amazon.awscdk.services.lambda.Function;
-import software.amazon.awscdk.services.lambda.S3Code;
-import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
-import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.ITopic;
-import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;

@@ -17,13 +17,9 @@ package sleeper.cdk.stack.bulkimport;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import sleeper.cdk.Utils;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import software.amazon.awscdk.CfnTag;
-import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.services.emr.CfnCluster;
 import software.amazon.awscdk.services.emr.CfnCluster.InstanceGroupConfigProperty;
 import software.amazon.awscdk.services.emr.CfnCluster.JobFlowInstancesConfigProperty;
@@ -31,14 +27,8 @@ import software.amazon.awscdk.services.emr.CfnCluster.ManagedScalingPolicyProper
 import software.amazon.awscdk.services.emr.CfnClusterProps;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
-import software.amazon.awscdk.services.lambda.Code;
-import software.amazon.awscdk.services.lambda.Function;
-import software.amazon.awscdk.services.lambda.S3Code;
-import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
-import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.ITopic;
-import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import java.util.ArrayList;
@@ -46,7 +36,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -56,7 +45,6 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EC2_KEY_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
@@ -87,8 +75,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_STEP_CONCURRENCY_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 
 /**
  * A {@link PersistentEmrBulkImportStack} creates an SQS queue, a lambda and
@@ -112,6 +98,8 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
 
     @Override
     public void create() {
+        super.create();
+        
         // EMR cluster
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         String logUri = null == bulkImportBucket ? null : "s3://" + bulkImportBucket + "/logs";
