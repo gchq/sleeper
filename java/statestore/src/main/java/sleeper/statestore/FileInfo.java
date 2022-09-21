@@ -163,7 +163,7 @@ public class FileInfo {
         private String jobId;
         private Long lastStateStoreUpdateTime;
 
-        public Builder() {
+        private Builder() {
         }
 
         public Builder rowKeyTypes(List<PrimitiveType> rowKeyTypes) {
