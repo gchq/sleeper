@@ -18,27 +18,30 @@ package sleeper.table.job;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
-import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.statestore.StateStoreException;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
+import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+
+import java.io.IOException;
+import java.util.Locale;
+
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import sleeper.configuration.properties.table.TableProperties;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import sleeper.statestore.StateStoreException;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 /**
  * The TableCreator creates tables using the SDK. This is normally done using
  * CDK. This class is only intended to be used in tests. It creates a bucket,
  * StateStore and writes the properties to S3.
- *
+ * <p>
  * After creation, the StateStore will need to be initialised before it can be used.
  */
 public class TableCreator {
@@ -61,7 +64,7 @@ public class TableCreator {
 
         if (tableProperties.get(DATA_BUCKET) == null) {
             String bucketName = String.join("-", "sleeper", instanceId,
-                    "table", tableName).toLowerCase();
+                    "table", tableName).toLowerCase(Locale.ROOT);
             if (bucketName.length() > 63) {
                 bucketName = bucketName.substring(0, 63);
             }
@@ -71,11 +74,11 @@ public class TableCreator {
             LOGGER.info("Created bucket {}", bucketName);
         }
         tableProperties.set(ACTIVE_FILEINFO_TABLENAME, String.join("-", "sleeper", instanceId,
-                "table", tableName, "active-files").toLowerCase());
+                "table", tableName, "active-files").toLowerCase(Locale.ROOT));
         tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, String.join("-", "sleeper", instanceId,
-                "table", tableName, "gc-files").toLowerCase());
+                "table", tableName, "gc-files").toLowerCase(Locale.ROOT));
         tableProperties.set(PARTITION_TABLENAME, String.join("-", "sleeper", instanceId,
-                "table", tableName, "partitions").toLowerCase());
+                "table", tableName, "partitions").toLowerCase(Locale.ROOT));
 
         // Create Dynamo tables
         try {
@@ -83,7 +86,7 @@ public class TableCreator {
         } catch (StateStoreException e) {
             throw new RuntimeException("Failed to create the table", e);
         }
-        
+
         try {
             tableProperties.saveToS3(s3Client);
         } catch (IOException e) {

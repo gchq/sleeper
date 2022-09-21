@@ -1,0 +1,43 @@
+name: Chunk Build Status
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'adopt'
+          cache: 'maven'
+      - name: Query GitHub
+        working-directory: ./java/build
+        run: |
+          echo "token=${{ secrets.GITHUB_TOKEN }}" >> status.properties
+          echo "repository=${{ github.repository }}" >> status.properties
+          echo "head.branch=${{ github.ref_name }}" >> status.properties
+          echo "head.sha=${{ github.sha }}" >> status.properties
+          echo "chunks=athena,bulk-import,cdk,clients,common,compaction,data,ingest,query,statestore" >> status.properties
+          echo "chunk.athena.name=Athena" >> status.properties
+          echo "chunk.athena.workflow=chunk-athena.yaml" >> status.properties
+          echo "chunk.bulk-import.name=Bulk Import" >> status.properties
+          echo "chunk.bulk-import.workflow=chunk-bulk-import.yaml" >> status.properties
+          echo "chunk.cdk.name=CDK" >> status.properties
+          echo "chunk.cdk.workflow=chunk-cdk.yaml" >> status.properties
+          echo "chunk.clients.name=Clients" >> status.properties
+          echo "chunk.clients.workflow=chunk-clients.yaml" >> status.properties
+          echo "chunk.common.name=Common" >> status.properties
+          echo "chunk.common.workflow=chunk-common.yaml" >> status.properties
+          echo "chunk.compaction.name=Compaction" >> status.properties
+          echo "chunk.compaction.workflow=chunk-compaction.yaml" >> status.properties
+          echo "chunk.data.name=Data" >> status.properties
+          echo "chunk.data.workflow=chunk-data.yaml" >> status.properties
+          echo "chunk.ingest.name=Ingest" >> status.properties
+          echo "chunk.ingest.workflow=chunk-ingest.yaml" >> status.properties
+          echo "chunk.query.name=Query" >> status.properties
+          echo "chunk.query.workflow=chunk-query.yaml" >> status.properties
+          echo "chunk.statestore.name=State Store" >> status.properties
+          echo "chunk.statestore.workflow=chunk-statestore.yaml" >> status.properties
+          mvn compile exec:java -q -Dexec.mainClass=sleeper.build.status.CheckGitHubStatusMain -Dexec.args=status.properties

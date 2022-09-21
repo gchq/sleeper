@@ -435,6 +435,10 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         return partitionToFiles;
     }
 
+    @Override
+    public void initialise() throws StateStoreException {
+    }
+
     public static final class Builder {
         private AmazonDynamoDB dynamoDB;
         private Schema schema;

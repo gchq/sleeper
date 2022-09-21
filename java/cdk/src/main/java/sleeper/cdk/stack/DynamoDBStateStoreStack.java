@@ -18,7 +18,6 @@ package sleeper.cdk.stack;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import software.constructs.Construct;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.dynamodb.Attribute;
@@ -26,9 +25,10 @@ import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
+import software.constructs.Construct;
 
+import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
@@ -47,12 +47,7 @@ public class DynamoDBStateStoreStack implements StateStoreStack {
         String instanceId = instanceProperties.get(ID);
         String tableName = tableProperties.get(TABLE_NAME);
 
-        RemovalPolicy removalPolicy;
-        if (instanceProperties.getBoolean(RETAIN_INFRA_AFTER_DESTROY)) {
-            removalPolicy = RemovalPolicy.RETAIN;
-        } else {
-            removalPolicy = RemovalPolicy.DESTROY;
-        }
+        RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
         // DynamoDB table for active file information
         Attribute partitionKeyActiveFileInfoTable = Attribute.builder()

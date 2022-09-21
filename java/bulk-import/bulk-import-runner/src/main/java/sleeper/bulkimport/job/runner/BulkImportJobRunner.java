@@ -15,13 +15,15 @@
  */
 package sleeper.bulkimport.job.runner;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.attribute.PosixFileAttributes;
-import java.util.List;
-import java.util.stream.Collectors;
-
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
+import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
+import com.amazonaws.services.securitytoken.model.GetCallerIdentityResult;
+import com.google.gson.JsonSyntaxException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
@@ -37,36 +39,32 @@ import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
-import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
-import com.amazonaws.services.securitytoken.model.GetCallerIdentityResult;
-import com.google.gson.JsonSyntaxException;
-import java.util.ArrayList;
-
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
-import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.table.util.StateStoreProvider;
+import sleeper.statestore.StateStoreProvider;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 
 /**
  * This abstract class executes a Spark job that reads in input Parquet files and writes
- * out files of {@link Record}s. Concrete subclasses of this class must implement
+ * out files of {@link sleeper.core.record.Record}s. Concrete subclasses of this class must implement
  * a method which takes in a {@link Dataset} of {@link Row}s where a field has
  * been added that contains the Sleeper partition that the row is in and writes
  * the data to files in S3 and returns a list of the {@link FileInfo}s that
@@ -77,7 +75,7 @@ public abstract class BulkImportJobRunner {
     public static final String PARTITION_FIELD_NAME = "__partition";
     public static final String FILENAME_FIELD_NAME = "__fileName";
     public static final String NUM_RECORDS_FIELD_NAME = "__numRecords";
-    
+
     private InstanceProperties instanceProperties;
     private AmazonS3 s3Client;
     private AmazonDynamoDB dynamoClient;
@@ -87,37 +85,38 @@ public abstract class BulkImportJobRunner {
         this.s3Client = s3Client;
         this.dynamoClient = dynamoClient;
     }
-    
+
     protected InstanceProperties getInstanceProperties() {
-    	return instanceProperties;
+        return instanceProperties;
     }
-    
-    public abstract Dataset<Row> createFileInfos(Dataset<Row> row, BulkImportJob job, 
-    		TableProperties tableProperties, Broadcast<List<Partition>> broadcastedPartitions,
-    		Configuration conf) throws IOException;
+
+    public abstract Dataset<Row> createFileInfos(
+            Dataset<Row> row, BulkImportJob job,
+            TableProperties tableProperties, Broadcast<List<Partition>> broadcastedPartitions,
+            Configuration conf) throws IOException;
 
     public void run(BulkImportJob job) throws IOException {
         LOGGER.info("Received job: " + job);
-        
+
         // Initialise Spark
         LOGGER.info("Initialising Spark");
         SparkConf sparkConf = new SparkConf();
         sparkConf.set("spark.serializer", KryoSerializer.class.getName());
-        sparkConf.registerKryoClasses(new Class[] { Partition.class });
+        sparkConf.registerKryoClasses(new Class[]{Partition.class});
         SparkSession session = new SparkSession.Builder().config(sparkConf).getOrCreate();
         SparkContext sparkContext = session.sparkContext();
         JavaSparkContext javaSparkContext = JavaSparkContext.fromSparkContext(sparkContext);
         LOGGER.info("Spark initialised");
-        
+
         // Load table information
         LOGGER.info("Loading table properties and schema for table {}", job.getTableName());
         TableProperties tableProperties = new TablePropertiesProvider(s3Client, instanceProperties).getTableProperties(job.getTableName());
         Schema schema = tableProperties.getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
-        
+
         StructType convertedSchema = new StructTypeFactory().getStructType(schema);
         StructType schemaWithPartitionField = createEnhancedSchema(convertedSchema);
-        
+
         // Load statestore and partitions
         LOGGER.info("Loading statestore and partitions");
         StateStore stateStore = new StateStoreProvider(dynamoClient, instanceProperties).getStateStore(tableProperties);
@@ -127,11 +126,11 @@ public abstract class BulkImportJobRunner {
         } catch (StateStoreException e) {
             throw new RuntimeException("Failed to load statestore. Are permissions correct for this service account?");
         }
-        
+
         Configuration conf = sparkContext.hadoopConfiguration();
         Broadcast<List<Partition>> broadcastedPartitions = javaSparkContext.broadcast(allPartitions);
         LOGGER.info("Starting data processing");
-        
+
         // Create paths to be read
         List<String> pathsWithFs = new ArrayList<>();
         String fs = instanceProperties.get(FILE_SYSTEM);
@@ -140,7 +139,7 @@ public abstract class BulkImportJobRunner {
             pathsWithFs.add(fs + file);
         });
         LOGGER.info("Paths to be read are {}", pathsWithFs);
-        
+
         // Run bulk import
         Dataset<Row> dataWithPartition = session.read()
                 .schema(convertedSchema)
@@ -148,12 +147,12 @@ public abstract class BulkImportJobRunner {
                 .option("recursiveFileLookup", "true")
                 .parquet(pathsWithFs.toArray(new String[0]))
                 .mapPartitions(new AddPartitionFunction(schemaAsString, broadcastedPartitions), RowEncoder.apply(schemaWithPartitionField));
-                        
+
         List<FileInfo> fileInfos = createFileInfos(dataWithPartition, job, tableProperties, broadcastedPartitions, conf).collectAsList()
                 .stream()
                 .map(this::createFileInfo)
                 .collect(Collectors.toList());
-        
+
         try {
             stateStore.addFiles(fileInfos);
         } catch (StateStoreException e) {
@@ -162,35 +161,34 @@ public abstract class BulkImportJobRunner {
         }
         LOGGER.info("Added {} files to statestore", fileInfos.size());
         LOGGER.info("Finished Bulk import job {}", job.getId());
-        
+
         sparkContext.stop(); // Calling this manually stops it potentially timing out after 10 seconds.
-        
+
     }
-    
+
     private FileInfo createFileInfo(Row row) {
-    	FileInfo fileInfo = new FileInfo();
-        fileInfo.setFilename(row.getAs(FILENAME_FIELD_NAME));
-        fileInfo.setJobId(null);
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setPartitionId(row.getAs(PARTITION_FIELD_NAME));
-        fileInfo.setNumberOfRecords(row.getAs(NUM_RECORDS_FIELD_NAME));
-        
-        return fileInfo;
+        return FileInfo.builder()
+                .filename(row.getAs(FILENAME_FIELD_NAME))
+                .jobId(null)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(row.getAs(PARTITION_FIELD_NAME))
+                .numberOfRecords(row.getAs(NUM_RECORDS_FIELD_NAME))
+                .build();
     }
-    
+
     protected StructType createFileInfoSchema() {
-    	return new StructType()
+        return new StructType()
                 .add(PARTITION_FIELD_NAME, DataTypes.StringType)
                 .add(FILENAME_FIELD_NAME, DataTypes.StringType)
                 .add(NUM_RECORDS_FIELD_NAME, DataTypes.LongType);
     }
-   
+
     private StructType createEnhancedSchema(StructType convertedSchema) {
         StructType structTypeWithPartition = new StructType(convertedSchema.fields());
         return structTypeWithPartition
-        		.add(new StructField(PARTITION_FIELD_NAME, DataTypes.StringType, false, null));   
+                .add(new StructField(PARTITION_FIELD_NAME, DataTypes.StringType, false, null));
     }
-    
+
     public static void start(String[] args, BulkImportJobRunner runner) throws Exception {
         if (args.length != 2) {
             throw new IllegalArgumentException("Expected two arguments, the first with the id of the bulk import job," +
@@ -207,13 +205,13 @@ public abstract class BulkImportJobRunner {
             bulkImportJob = new BulkImportJobSerDe().fromJson(jsonJob);
         } catch (JsonSyntaxException e) {
             LOGGER.error("Json job was malformed: {}", args[0]);
-            bulkImportJob = null;
+            throw e;
         }
         InstanceProperties instanceProperties = new InstanceProperties();
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-        
+
         try {
-            instanceProperties.loadFromS3(amazonS3, args[1]);            
+            instanceProperties.loadFromS3(amazonS3, args[1]);
         } catch (Exception e) {
             // This is a good indicator if something is wrong with the permissions
             LOGGER.error("Failed to load instance properties", e);
@@ -231,10 +229,10 @@ public abstract class BulkImportJobRunner {
             AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
             GetCallerIdentityResult callerIdentity = sts.getCallerIdentity(new GetCallerIdentityRequest());
             LOGGER.info("Logged in as: {}", callerIdentity.getArn());
-            
+
             throw e;
         }
-        
+
         runner.init(instanceProperties, amazonS3, AmazonDynamoDBClientBuilder.defaultClient());
         runner.run(bulkImportJob);
     }

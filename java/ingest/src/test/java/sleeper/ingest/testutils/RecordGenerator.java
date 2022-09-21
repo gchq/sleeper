@@ -37,6 +37,9 @@ import java.util.stream.IntStream;
 
 public class RecordGenerator {
 
+    private RecordGenerator() {
+    }
+
     public static <T> RecordListAndSchema genericKey1D(Type sleeperKeyTypeDimension0,
                                                        List<T> keyObjectsDimension0) {
         int noOfRecords = keyObjectsDimension0.size();

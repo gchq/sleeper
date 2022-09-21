@@ -57,31 +57,34 @@ public class BasicCompactionStrategyTest {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
-        Partition partition = new Partition();
-        partition.setId("root");
-        partition.setRowKeyTypes(new IntType());
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(Collections.emptyList());
+        Partition partition = Partition.builder()
+                .id("root")
+                .rowKeyTypes(new IntType())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .build();
         List<Partition> partitions = Collections.singletonList(partition);
         List<FileInfo> fileInfos = new ArrayList<>();
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setFilename("file1");
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId(partition.getId());
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setRowKeyTypes(new IntType());
-        fileInfo1.setMinRowKey(Key.create(1));
-        fileInfo1.setMaxRowKey(Key.create(100));
+        FileInfo fileInfo1 = FileInfo.builder()
+                .filename("file1")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(partition.getId())
+                .numberOfRecords(100L)
+                .rowKeyTypes(new IntType())
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(100))
+                .build();
         fileInfos.add(fileInfo1);
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setFilename("file2");
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId(partition.getId());
-        fileInfo2.setNumberOfRecords(100L);
-        fileInfo2.setRowKeyTypes(new IntType());
-        fileInfo2.setMinRowKey(Key.create(2));
-        fileInfo2.setMaxRowKey(Key.create(200));
+        FileInfo fileInfo2 = FileInfo.builder()
+                .filename("file2")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(partition.getId())
+                .numberOfRecords(100L)
+                .rowKeyTypes(new IntType())
+                .minRowKey(Key.create(2))
+                .maxRowKey(Key.create(200))
+                .build();
         fileInfos.add(fileInfo2);
 
         // When
@@ -113,23 +116,25 @@ public class BasicCompactionStrategyTest {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "10");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
-        Partition partition = new Partition();
-        partition.setId("root");
-        partition.setRowKeyTypes(new IntType());
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(null);
+        Partition partition = Partition.builder()
+                .id("root")
+                .rowKeyTypes(new IntType())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .build();
         List<Partition> partitions = Collections.singletonList(partition);
         List<FileInfo> fileInfos = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setFilename("file-" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId(partition.getId());
-            fileInfo.setNumberOfRecords(1_000_000L - i * 100L); // Files provided in decreasing order of size - the jobs should consider them in increasing order so that files of similar sizes are processed together
-            fileInfo.setRowKeyTypes(new IntType());
-            fileInfo.setMinRowKey(Key.create(1));
-            fileInfo.setMaxRowKey(Key.create(100));
+            FileInfo fileInfo = FileInfo.builder()
+                    .filename("file-" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId(partition.getId())
+                    .numberOfRecords(1_000_000L - i * 100L)
+                    .rowKeyTypes(new IntType())
+                    .minRowKey(Key.create(1))
+                    .maxRowKey(Key.create(100))
+                    .build();
             fileInfos.add(fileInfo);
         }
 
@@ -167,31 +172,34 @@ public class BasicCompactionStrategyTest {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
-        Partition partition = new Partition();
-        partition.setId("root");
-        partition.setRowKeyTypes(new IntType());
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(null);
+        Partition partition = Partition.builder()
+                .id("root")
+                .rowKeyTypes(new IntType())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .build();
         List<Partition> partitions = Collections.singletonList(partition);
         List<FileInfo> fileInfos = new ArrayList<>();
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setFilename("file1");
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId(partition.getId());
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setRowKeyTypes(new IntType());
-        fileInfo1.setMinRowKey(Key.create(1));
-        fileInfo1.setMaxRowKey(Key.create(100));
+        FileInfo fileInfo1 = FileInfo.builder()
+                .filename("file1")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(partition.getId())
+                .numberOfRecords(100L)
+                .rowKeyTypes(new IntType())
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(100))
+                .build();
         fileInfos.add(fileInfo1);
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setFilename("file2");
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId(partition.getId());
-        fileInfo2.setNumberOfRecords(100L);
-        fileInfo2.setRowKeyTypes(new IntType());
-        fileInfo2.setMinRowKey(Key.create(2));
-        fileInfo2.setMaxRowKey(Key.create(200));
+        FileInfo fileInfo2 = FileInfo.builder()
+                .filename("file2")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(partition.getId())
+                .numberOfRecords(100L)
+                .rowKeyTypes(new IntType())
+                .minRowKey(Key.create(2))
+                .maxRowKey(Key.create(200))
+                .build();
         fileInfos.add(fileInfo2);
 
         // When
@@ -213,79 +221,88 @@ public class BasicCompactionStrategyTest {
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
-        Partition rootPartition = new Partition();
-        rootPartition.setId("root");
-        rootPartition.setRowKeyTypes(new IntType());
-        rootPartition.setLeafPartition(false);
-        rootPartition.setParentPartitionId(null);
-        rootPartition.setChildPartitionIds(Arrays.asList("left", "right"));
-        Partition leftChild = new Partition();
-        leftChild.setId("left");
-        leftChild.setRowKeyTypes(new IntType());
-        leftChild.setLeafPartition(true);
-        leftChild.setParentPartitionId("root");
-        leftChild.setChildPartitionIds(null);
-        Partition rightChild = new Partition();
-        rightChild.setId("right");
-        rightChild.setRowKeyTypes(new IntType());
-        rightChild.setLeafPartition(true);
-        rightChild.setParentPartitionId("root");
-        rightChild.setChildPartitionIds(null);
+        Partition rootPartition = Partition.builder()
+                .id("root")
+                .rowKeyTypes(new IntType())
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Arrays.asList("left", "right"))
+                .build();
+        Partition leftChild = Partition.builder()
+                .id("left")
+                .rowKeyTypes(new IntType())
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(Collections.emptyList())
+                .build();
+        Partition rightChild = Partition.builder()
+                .id("right")
+                .rowKeyTypes(new IntType())
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(Collections.emptyList())
+                .build();
         List<Partition> partitions = Arrays.asList(rootPartition, leftChild, rightChild);
         List<FileInfo> fileInfos = new ArrayList<>();
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setFilename("file1");
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId("left");
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setRowKeyTypes(new IntType());
-        fileInfo1.setMinRowKey(Key.create(1));
-        fileInfo1.setMaxRowKey(Key.create(100));
+        FileInfo fileInfo1 = FileInfo.builder()
+                .filename("file1")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("left")
+                .numberOfRecords(100L)
+                .rowKeyTypes(new IntType())
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(100))
+                .build();
         fileInfos.add(fileInfo1);
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setFilename("file2");
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId("left");
-        fileInfo2.setNumberOfRecords(200L);
-        fileInfo2.setRowKeyTypes(new IntType());
-        fileInfo2.setMinRowKey(Key.create(2));
-        fileInfo2.setMaxRowKey(Key.create(200));
+        FileInfo fileInfo2 = FileInfo.builder()
+                .filename("file2")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("left")
+                .numberOfRecords(200L)
+                .rowKeyTypes(new IntType())
+                .minRowKey(Key.create(2))
+                .maxRowKey(Key.create(200))
+                .build();
         fileInfos.add(fileInfo2);
-        FileInfo fileInfo3 = new FileInfo();
-        fileInfo3.setFilename("file3");
-        fileInfo3.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo3.setPartitionId("left");
-        fileInfo3.setNumberOfRecords(300L);
-        fileInfo3.setRowKeyTypes(new IntType());
-        fileInfo3.setMinRowKey(Key.create(1));
-        fileInfo3.setMaxRowKey(Key.create(100));
+        FileInfo fileInfo3 = FileInfo.builder()
+                .filename("file3")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("left")
+                .numberOfRecords(300L)
+                .rowKeyTypes(new IntType())
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(100))
+                .build();
         fileInfos.add(fileInfo3);
-        FileInfo fileInfo4 = new FileInfo();
-        fileInfo4.setFilename("file4");
-        fileInfo4.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo4.setPartitionId("left");
-        fileInfo4.setNumberOfRecords(400L);
-        fileInfo4.setRowKeyTypes(new IntType());
-        fileInfo4.setMinRowKey(Key.create(2));
-        fileInfo4.setMaxRowKey(Key.create(200));
+        FileInfo fileInfo4 = FileInfo.builder()
+                .filename("file4")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("left")
+                .numberOfRecords(400L)
+                .rowKeyTypes(new IntType())
+                .minRowKey(Key.create(2))
+                .maxRowKey(Key.create(200))
+                .build();
         fileInfos.add(fileInfo4);
-        FileInfo fileInfo5 = new FileInfo();
-        fileInfo5.setFilename("file5");
-        fileInfo5.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo5.setPartitionId("right");
-        fileInfo5.setNumberOfRecords(500L);
-        fileInfo5.setRowKeyTypes(new IntType());
-        fileInfo5.setMinRowKey(Key.create(2));
-        fileInfo5.setMaxRowKey(Key.create(200));
+        FileInfo fileInfo5 = FileInfo.builder()
+                .filename("file5")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("right")
+                .numberOfRecords(500L)
+                .rowKeyTypes(new IntType())
+                .minRowKey(Key.create(2))
+                .maxRowKey(Key.create(200))
+                .build();
         fileInfos.add(fileInfo5);
-        FileInfo fileInfo6 = new FileInfo();
-        fileInfo6.setFilename("file6");
-        fileInfo6.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo6.setPartitionId("right");
-        fileInfo6.setNumberOfRecords(600L);
-        fileInfo6.setRowKeyTypes(new IntType());
-        fileInfo6.setMinRowKey(Key.create(2));
-        fileInfo6.setMaxRowKey(Key.create(200));
+        FileInfo fileInfo6 = FileInfo.builder()
+                .filename("file6")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("right")
+                .numberOfRecords(600L)
+                .rowKeyTypes(new IntType())
+                .minRowKey(Key.create(2))
+                .maxRowKey(Key.create(200))
+                .build();
         fileInfos.add(fileInfo6);
 
         // When
@@ -341,50 +358,55 @@ public class BasicCompactionStrategyTest {
         tableProperties.setSchema(schema);
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
-        Partition rootPartition = new Partition();
-        rootPartition.setId("root");
-        rootPartition.setRowKeyTypes(new IntType());
-        rootPartition.setLeafPartition(false);
-        rootPartition.setParentPartitionId(null);
-        rootPartition.setChildPartitionIds(Arrays.asList("left", "right"));
         Range rootRange = new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, null);
-        rootPartition.setRegion(new Region(rootRange));
-        rootPartition.setDimension(0);
-        Partition leftChild = new Partition();
-        leftChild.setId("left");
-        leftChild.setRowKeyTypes(new IntType());
-        leftChild.setLeafPartition(true);
-        leftChild.setParentPartitionId("root");
-        leftChild.setChildPartitionIds(null);
+        Partition rootPartition = Partition.builder()
+                .id("root")
+                .rowKeyTypes(new IntType())
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Arrays.asList("left", "right"))
+                .region(new Region(rootRange))
+                .dimension(0)
+                .build();
         Range leftRange = new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, 10);
-        leftChild.setRegion(new Region(leftRange));
-        Partition rightChild = new Partition();
-        rightChild.setId("right");
-        rightChild.setRowKeyTypes(new IntType());
-        rightChild.setLeafPartition(true);
-        rightChild.setParentPartitionId("root");
-        rightChild.setChildPartitionIds(null);
+        Partition leftChild = Partition.builder()
+                .id("left")
+                .rowKeyTypes(new IntType())
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(Collections.emptyList())
+                .region(new Region(leftRange))
+                .build();
         Range rightRange = new RangeFactory(schema).createRange(field, 10, null);
-        rightChild.setRegion(new Region(rightRange));
+        Partition rightChild = Partition.builder()
+                .id("right")
+                .rowKeyTypes(new IntType())
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(Collections.emptyList())
+                .region(new Region(rightRange))
+                .build();
         List<Partition> partitions = Arrays.asList(rootPartition, leftChild, rightChild);
         List<FileInfo> fileInfos = new ArrayList<>();
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setFilename("file1");
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId("root");
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setRowKeyTypes(new IntType());
-        fileInfo1.setMinRowKey(Key.create(1));
-        fileInfo1.setMaxRowKey(Key.create(100));
+        FileInfo fileInfo1 = FileInfo.builder()
+                .filename("file1")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("root")
+                .numberOfRecords(100L)
+                .rowKeyTypes(new IntType())
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(100))
+                .build();
         fileInfos.add(fileInfo1);
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setFilename("file2");
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId("root");
-        fileInfo2.setNumberOfRecords(200L);
-        fileInfo2.setRowKeyTypes(new IntType());
-        fileInfo2.setMinRowKey(Key.create(2));
-        fileInfo2.setMaxRowKey(Key.create(200));
+        FileInfo fileInfo2 = FileInfo.builder()
+                .filename("file2")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("root")
+                .numberOfRecords(200L)
+                .rowKeyTypes(new IntType())
+                .minRowKey(Key.create(2))
+                .maxRowKey(Key.create(200))
+                .build();
         fileInfos.add(fileInfo2);
 
         // When

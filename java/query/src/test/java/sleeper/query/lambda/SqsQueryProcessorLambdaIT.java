@@ -88,9 +88,9 @@ import sleeper.query.tracker.exception.QueryTrackerException;
 import sleeper.statestore.InitialiseStateStore;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.table.job.TableCreator;
-import sleeper.table.util.StateStoreProvider;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -657,7 +657,9 @@ public class SqsQueryProcessorLambdaIT {
             LocatedFileStatus outputFile = outputFiles.next();
             try (ParquetReader<Record> reader = new ParquetRecordReader.Builder(outputFile.getPath(), SCHEMA).build()) {
                 ParquetReaderIterator it = new ParquetReaderIterator(reader);
-                while (it.hasNext()) it.next();
+                while (it.hasNext()) {
+                    it.next();
+                }
                 numberOfRecordsInOutput = it.getNumberOfRecordsRead();
             }
         }

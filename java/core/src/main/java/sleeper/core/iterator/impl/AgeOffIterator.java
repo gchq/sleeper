@@ -62,7 +62,8 @@ public class AgeOffIterator implements SortedRecordIterator {
         private final long age;
         private Record next;
 
-        public AgeOffIteratorInternal(CloseableIterator<Record> input,
+        public AgeOffIteratorInternal(
+                CloseableIterator<Record> input,
                 String fieldName,
                 long age) {
             this.input = input;
@@ -91,7 +92,7 @@ public class AgeOffIterator implements SortedRecordIterator {
         public void close() throws IOException {
             input.close();
         }
-        
+
         private void advance() {
             while (input.hasNext()) {
                 next = input.next();

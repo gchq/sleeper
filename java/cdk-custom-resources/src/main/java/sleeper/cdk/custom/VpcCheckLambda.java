@@ -15,9 +15,6 @@
  */
 package sleeper.cdk.custom;
 
-import java.util.List;
-import java.util.Map;
-
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.DescribeVpcEndpointsRequest;
@@ -27,6 +24,9 @@ import com.amazonaws.services.ec2.model.VpcEndpoint;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
 import com.google.common.collect.Lists;
+
+import java.util.List;
+import java.util.Map;
 
 public class VpcCheckLambda {
     private final AmazonEC2 vpcClient;

@@ -30,9 +30,9 @@ public class BulkImportJobSerDe {
     public String toJson(BulkImportJob job) {
         return gson.toJson(job);
     }
-    
+
     public String toPrettyJson(BulkImportJob job) {
-    	return prettyGson.toJson(job);
+        return prettyGson.toJson(job);
     }
 
     public BulkImportJob fromJson(String jsonStr) {

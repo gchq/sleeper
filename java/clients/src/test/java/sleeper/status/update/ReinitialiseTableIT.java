@@ -74,7 +74,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
@@ -152,16 +152,18 @@ public class ReinitialiseTableIT {
         String tableName = UUID.randomUUID().toString();
 
         // When
-        assertThrows(IllegalArgumentException.class, () -> new ReinitialiseTable(s3Client,
+        assertThatThrownBy(() -> new ReinitialiseTable(s3Client,
                 dynamoDBClient, "", tableName, false,
-                null, false));
+                null, false))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void shouldThrowExceptionIfTableIsEmpty() {
-        assertThrows(IllegalArgumentException.class, () -> new ReinitialiseTable(s3Client,
+        assertThatThrownBy(() -> new ReinitialiseTable(s3Client,
                 dynamoDBClient, CONFIG_BUCKET_NAME, "", false,
-                null, false));
+                null, false))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -693,22 +695,24 @@ public class ReinitialiseTableIT {
 
         //  - Split root partition
         rootPartition.setLeafPartition(false);
-        Partition leftPartition = new Partition();
-        leftPartition.setLeafPartition(true);
         Range leftRange = new RangeFactory(KEY_VALUE_SCHEMA).createRange(KEY_VALUE_SCHEMA.getRowKeyFields().get(0), "0", "eee");
         Region leftRegion = new Region(leftRange);
-        leftPartition.setRegion(leftRegion);
-        leftPartition.setId("0" + "---eee");
-        leftPartition.setParentPartitionId(rootPartition.getId());
-        leftPartition.setChildPartitionIds(new ArrayList<>());
-        Partition rightPartition = new Partition();
-        rightPartition.setLeafPartition(true);
+        Partition leftPartition = Partition.builder()
+                .leafPartition(true)
+                .region(leftRegion)
+                .id("0" + "---eee")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         Range rightRange = new RangeFactory(KEY_VALUE_SCHEMA).createRange(KEY_VALUE_SCHEMA.getRowKeyFields().get(0), "eee", "zzz");
         Region rightRegion = new Region(rightRange);
-        rightPartition.setRegion(rightRegion);
-        rightPartition.setId("eee---zzz");
-        rightPartition.setParentPartitionId(rootPartition.getId());
-        rightPartition.setChildPartitionIds(new ArrayList<>());
+        Partition rightPartition = Partition.builder()
+                .leafPartition(true)
+                .region(rightRegion)
+                .id("eee---zzz")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         rootPartition.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
 
@@ -718,15 +722,16 @@ public class ReinitialiseTableIT {
 
     private FileInfo createFileInfo(String filename, FileInfo.FileStatus fileStatus, String partitionId,
                                     Key minRowKey, Key maxRowKey) {
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(new StringType());
-        fileInfo.setFilename(filename);
-        fileInfo.setFileStatus(fileStatus);
-        fileInfo.setPartitionId(partitionId);
-        fileInfo.setNumberOfRecords(100L);
-        fileInfo.setMinRowKey(minRowKey);
-        fileInfo.setMaxRowKey(maxRowKey);
-        fileInfo.setLastStateStoreUpdateTime(100L);
+        FileInfo fileInfo = FileInfo.builder()
+                .rowKeyTypes(new StringType())
+                .filename(filename)
+                .fileStatus(fileStatus)
+                .partitionId(partitionId)
+                .numberOfRecords(100L)
+                .minRowKey(minRowKey)
+                .maxRowKey(maxRowKey)
+                .lastStateStoreUpdateTime(100L)
+                .build();
 
         return fileInfo;
     }

@@ -17,6 +17,7 @@ package sleeper.cdk.stack;
 
 import com.amazonaws.auth.policy.actions.S3Actions;
 import com.amazonaws.auth.policy.actions.SQSActions;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
@@ -42,6 +43,7 @@ import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.Grant;
 import software.amazon.awscdk.services.iam.GrantOnPrincipalOptions;
 import software.amazon.awscdk.services.iam.IGrantable;
+import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.Policy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.PolicyStatementProps;
@@ -63,8 +65,11 @@ import software.constructs.Construct;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
+import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -74,7 +79,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 
 /**
@@ -82,6 +86,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSI
  * queries are put on, a lambda {@link Function} to process them and another
  * {@link Queue} for the results to be posted to.
  */
+@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class QueryStack extends NestedStack {
     public static final String QUERY_QUEUE_NAME = "QueryQueueName";
     public static final String QUERY_QUEUE_URL = "QueryQueueUrl";
@@ -106,7 +111,7 @@ public class QueryStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
 
         String tableName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "query-tracking-table"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-tracking-table"));
 
         // Query Tracking Table
         Table queryTrackingTable = Table.Builder.create(this, "QueryTrackingTable")
@@ -155,17 +160,12 @@ public class QueryStack extends NestedStack {
                 .build();
         instanceProperties.set(SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL, queryResultsQueue.getQueueUrl());
 
-        RemovalPolicy removalPolicy;
-        if (instanceProperties.getBoolean(RETAIN_INFRA_AFTER_DESTROY)) {
-            removalPolicy = RemovalPolicy.RETAIN;
-        } else {
-            removalPolicy = RemovalPolicy.DESTROY;
-        }
+        RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
         // Bucket for results
         Bucket queryResultsBucket = Bucket.Builder
                 .create(this, "QueryResultsBucket")
-                .bucketName(String.join("-", "sleeper", instanceProperties.get(ID), "query-results").toLowerCase())
+                .bucketName(String.join("-", "sleeper", instanceProperties.get(ID), "query-results").toLowerCase(Locale.ROOT))
                 .versioned(false)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .encryption(BucketEncryption.S3_MANAGED)
@@ -209,7 +209,7 @@ public class QueryStack extends NestedStack {
         Code code = Code.fromBucket(jarsBucket, "query-" + instanceProperties.get(VERSION) + ".jar");
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "query-executor"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "query-executor"));
 
         // Lambda to process queries and post results to results queue
         Function queryExecutorLambda = Function.Builder
@@ -255,16 +255,17 @@ public class QueryStack extends NestedStack {
         PolicyStatement policyStatement = new PolicyStatement(policyStatementProps);
         Policy policy = new Policy(this, "PutToAnyS3BucketAndSendToAnySQSPolicy");
         policy.addStatements(policyStatement);
-        queryExecutorLambda.getRole().attachInlinePolicy(policy);
+        Objects.requireNonNull(queryExecutorLambda.getRole()).attachInlinePolicy(policy);
 
         // Output the role of the lambda as a property so that clients that want the results of queries written
         // to their own SQS queue can give the role permission to write to their queue
         CfnOutputProps queryLambdaRoleOutputProps = new CfnOutputProps.Builder()
-                .value(queryExecutorLambda.getRole().getRoleArn())
+                .value(Objects.requireNonNull(queryExecutorLambda.getRole()).getRoleArn())
                 .exportName(instanceProperties.get(ID) + "-" + QUERY_LAMBDA_ROLE_ARN)
                 .build();
         new CfnOutput(this, QUERY_LAMBDA_ROLE_ARN, queryLambdaRoleOutputProps);
-        instanceProperties.set(SystemDefinedInstanceProperty.QUERY_LAMBDA_ROLE, queryExecutorLambda.getRole().getRoleName());
+        IRole role = Objects.requireNonNull(queryExecutorLambda.getRole());
+        instanceProperties.set(SystemDefinedInstanceProperty.QUERY_LAMBDA_ROLE, role.getRoleName());
 
         this.setupWebSocketApi(code, instanceProperties, queriesQueue, queryExecutorLambda, configBucket);
 

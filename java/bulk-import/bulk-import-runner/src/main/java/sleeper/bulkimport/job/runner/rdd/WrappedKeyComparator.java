@@ -15,21 +15,22 @@
  */
 package sleeper.bulkimport.job.runner.rdd;
 
-import java.io.Serializable;
-import java.util.Comparator;
-
 import sleeper.core.key.Key;
 import sleeper.core.record.KeyComparator;
 import sleeper.core.schema.SchemaSerDe;
+
+import java.io.Serializable;
+import java.util.Comparator;
 
 /**
  * The {@link WrappedKeyComparator} is a {@link Comparator} of Sleeper {@link Key}s
  * that sorts them in the natural way as defined by the Sleeper schema.
  */
 public class WrappedKeyComparator implements Comparator<Key>, Serializable {
+    private static final long serialVersionUID = 7448396149070034670L;
     private final String schemaAsString;
     private transient KeyComparator keyComparator;
-    
+
     public WrappedKeyComparator(String schemaAsString) {
         this.schemaAsString = schemaAsString;
     }

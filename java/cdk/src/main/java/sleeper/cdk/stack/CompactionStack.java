@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.ContainerConstants;
@@ -42,6 +43,7 @@ import software.amazon.awscdk.services.ecs.LogDriver;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
+import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.Code;
@@ -56,7 +58,9 @@ import software.constructs.Construct;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
@@ -118,6 +122,7 @@ public class CompactionStack extends NestedStack {
     private Queue splittingJobQ;
     private Queue splittingDLQ;
     private final InstanceProperties instanceProperties;
+    private final CompactionStatusStoreStack eventStore;
 
     public CompactionStack(
             Construct scope,
@@ -128,6 +133,7 @@ public class CompactionStack extends NestedStack {
             InstanceProperties instanceProperties) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
+        eventStore = CompactionStatusStoreStack.from(this, instanceProperties);
 
         // The compaction stack consists of the following components:
         //  - An SQS queue for the compaction jobs.
@@ -287,7 +293,7 @@ public class CompactionStack extends NestedStack {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "job-creator"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "job-creator"));
 
         Function handler = Function.Builder
                 .create(this, "JobCreationLambda")
@@ -308,6 +314,7 @@ public class CompactionStack extends NestedStack {
         jarsBucket.grantRead(handler);
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(handler));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadPartitionMetadata(handler));
+        eventStore.grantWriteJobEvent(handler);
 
         // Grant this function permission to put messages on the compaction
         // queue and the compaction splitting queue
@@ -337,7 +344,7 @@ public class CompactionStack extends NestedStack {
                 .build();
         IVpc vpc = Vpc.fromLookup(this, "VPC1", vpcLookupOptions);
         String clusterName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "merge-compaction-cluster"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "merge-compaction-cluster"));
         Cluster cluster = Cluster.Builder
                 .create(this, "MergeCompactionCluster")
                 .clusterName(clusterName)
@@ -376,6 +383,7 @@ public class CompactionStack extends NestedStack {
         dataBuckets.forEach(bucket -> bucket.grantReadWrite(taskDefinition.getTaskRole()));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDefinition.getTaskRole()));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(taskDefinition.getTaskRole()));
+        eventStore.grantWriteJobEvent(taskDefinition.getTaskRole());
 
         compactionMergeJobsQueue.grantConsumeMessages(taskDefinition.getTaskRole());
 
@@ -397,7 +405,7 @@ public class CompactionStack extends NestedStack {
                 .build();
         IVpc vpc = Vpc.fromLookup(this, "VPC2", vpcLookupOptions);
         String clusterName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "splitting-merge-compaction-cluster"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "splitting-merge-compaction-cluster"));
         Cluster cluster = Cluster.Builder
                 .create(this, "SplittingMergeCompactionCluster")
                 .clusterName(clusterName)
@@ -436,6 +444,7 @@ public class CompactionStack extends NestedStack {
         dataBuckets.forEach(bucket -> bucket.grantReadWrite(taskDefinition.getTaskRole()));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDefinition.getTaskRole()));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(taskDefinition.getTaskRole()));
+        eventStore.grantWriteJobEvent(taskDefinition.getTaskRole());
 
         compactionSplittingMergeJobsQueue.grantConsumeMessages(taskDefinition.getTaskRole());
 
@@ -447,6 +456,7 @@ public class CompactionStack extends NestedStack {
         return cluster;
     }
 
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void lambdaToCreateCompactionTasks(IBucket configBucket,
                                                IBucket jarsBucket,
                                                Queue compactionMergeJobsQueue) {
@@ -458,7 +468,7 @@ public class CompactionStack extends NestedStack {
         environmentVariables.put("type", "compaction");
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "compaction-tasks-creator"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "compaction-tasks-creator"));
 
         Function handler = Function.Builder
                 .create(this, "CompactionTasksCreator")
@@ -487,8 +497,9 @@ public class CompactionStack extends NestedStack {
                 .resources(Collections.singletonList("*"))
                 .actions(Arrays.asList("ecs:ListTasks", "ecs:RunTask", "iam:PassRole"))
                 .build();
-        handler.getRole().addToPrincipalPolicy(policyStatement);
-        handler.getRole().addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
+        IRole role = Objects.requireNonNull(handler.getRole());
+        role.addToPrincipalPolicy(policyStatement);
+        role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
         // Cloudwatch rule to trigger this lambda
         String ruleName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-CompactionTasksCreationRule");
@@ -503,6 +514,7 @@ public class CompactionStack extends NestedStack {
         instanceProperties.set(COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
     }
 
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void lambdaToCreateSplittingCompactionTasks(IBucket configBucket,
                                                         IBucket jarsBucket,
                                                         Queue compactionSplittingMergeJobsQueue) {
@@ -514,7 +526,7 @@ public class CompactionStack extends NestedStack {
         environmentVariables.put("type", "splittingcompaction");
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "splitting-compaction-tasks-creator"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "splitting-compaction-tasks-creator"));
 
         Function handler = Function.Builder
                 .create(this, "SplittingCompactionTasksCreator")
@@ -543,8 +555,9 @@ public class CompactionStack extends NestedStack {
                 .resources(Collections.singletonList("*"))
                 .actions(Arrays.asList("ecs:ListTasks", "ecs:RunTask", "iam:PassRole"))
                 .build();
-        handler.getRole().addToPrincipalPolicy(policyStatement);
-        handler.getRole().addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
+        IRole role = Objects.requireNonNull(handler.getRole());
+        role.addToPrincipalPolicy(policyStatement);
+        role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
         // Cloudwatch rule to trigger this lambda
         String ruleName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-SplittingCompactionTasksCreationRule");

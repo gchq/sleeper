@@ -20,11 +20,11 @@ import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClientBuild
 import com.amazonaws.services.cloudwatchevents.model.EnableRuleRequest;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import sleeper.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 
 import java.io.IOException;
-import sleeper.ClientUtils;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
@@ -35,6 +35,9 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.TABLE_METRICS_RULES;
 
 public class RestartSystem {
+
+    private RestartSystem() {
+    }
 
     public static void main(String[] args) throws IOException {
         if (1 != args.length) {
@@ -62,7 +65,7 @@ public class RestartSystem {
 
         // Rule that triggers creation of ingest tasks
         enableRule(cwClient, instanceProperties, INGEST_CLOUDWATCH_RULE);
-        
+
         // Rules that trigger generation of metrics for tables
         String csvRules = instanceProperties.get(TABLE_METRICS_RULES);
         if (null != csvRules && !csvRules.isEmpty()) {
@@ -71,7 +74,7 @@ public class RestartSystem {
                 enableRule(cwClient, rule);
             }
         }
-        
+
         cwClient.shutdown();
     }
 
@@ -85,7 +88,7 @@ public class RestartSystem {
             enableRule(cwClient, ruleName);
         }
     }
-    
+
     private static void enableRule(AmazonCloudWatchEvents cwClient, String ruleName) {
         EnableRuleRequest enableRuleRequest = new EnableRuleRequest()
                 .withName(ruleName);

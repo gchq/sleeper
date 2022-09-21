@@ -19,6 +19,7 @@ import com.facebook.collections.ByteArray;
 import org.apache.datasketches.ArrayOfItemsSerDe;
 import org.apache.datasketches.ArrayOfNumbersSerDe;
 import org.apache.datasketches.ArrayOfStringsSerDe;
+import org.apache.datasketches.Util;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.WritableMemory;
 import org.apache.datasketches.quantiles.ItemsSketch;
@@ -35,7 +36,6 @@ import java.io.IOException;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.datasketches.Util;
 
 public class SketchSerialiser {
     private final Schema schema;

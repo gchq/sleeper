@@ -16,14 +16,6 @@
 package sleeper.compaction.jobexecution;
 
 import com.facebook.collections.ByteArray;
-import java.io.IOException;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -45,7 +37,6 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.MergingIterator;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.key.Key;
-import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 import sleeper.core.record.Record;
 import sleeper.core.record.SingleKeyComparator;
 import sleeper.core.schema.Field;
@@ -61,6 +52,17 @@ import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.utils.HadoopConfigurationProvider;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 
 /**
  * Executes a compaction {@link CompactionJob}, i.e. compacts N input files into a single
@@ -174,7 +176,7 @@ public class CompactSortedFiles {
         }
         writer.close();
         LOGGER.debug("Compaction job {}: Closed writer", compactionJob.getId());
-        
+
         // Remove the extension (if present), then add one
         String sketchesFilename = compactionJob.getOutputFile();
         sketchesFilename = FilenameUtils.removeExtension(sketchesFilename);
@@ -182,7 +184,7 @@ public class CompactSortedFiles {
         Path sketchesPath = new Path(sketchesFilename);
         new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, new Sketches(keyFieldToSketch), conf);
         LOGGER.info("Compaction job {}: Wrote sketches file to {}", compactionJob.getId(), sketchesPath);
-        
+
         for (CloseableIterator<Record> iterator : inputIterators) {
             iterator.close();
         }
@@ -222,10 +224,10 @@ public class CompactSortedFiles {
 
         // Create writers
         ParquetRecordWriter leftWriter = new ParquetRecordWriter(new Path(compactionJob.getOutputFiles().getLeft()), messageType, schema,
-                CompressionCodecName.fromConf(compressionCodec), rowGroupSize, pageSize);//4 * 1024 * 1024, DEFAULT_PAGE_SIZE);
+                CompressionCodecName.fromConf(compressionCodec), rowGroupSize, pageSize); //4 * 1024 * 1024, DEFAULT_PAGE_SIZE);
         LOGGER.debug("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFiles().getLeft());
         ParquetRecordWriter rightWriter = new ParquetRecordWriter(new Path(compactionJob.getOutputFiles().getRight()), messageType, schema,
-                CompressionCodecName.fromConf(compressionCodec), rowGroupSize, pageSize);//4 * 1024 * 1024, DEFAULT_PAGE_SIZE);
+                CompressionCodecName.fromConf(compressionCodec), rowGroupSize, pageSize); //4 * 1024 * 1024, DEFAULT_PAGE_SIZE);
         LOGGER.debug("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFiles().getRight());
 
         Map<String, ItemsSketch> leftKeyFieldToSketch = getSketches();
@@ -270,7 +272,7 @@ public class CompactSortedFiles {
                 updateQuantilesSketch(record, rightKeyFieldToSketch);
             }
 
-            if ( (linesWrittenToLeftFile > 0 && 0 == linesWrittenToLeftFile % 1_000_000)
+            if ((linesWrittenToLeftFile > 0 && 0 == linesWrittenToLeftFile % 1_000_000)
                     || (linesWrittenToRightFile > 0 && 0 == linesWrittenToRightFile % 1_000_000)) {
                 LOGGER.info("Compaction job {}: Written {} lines to left file and {} lines to right file",
                         compactionJob.getId(), linesWrittenToLeftFile, linesWrittenToRightFile);
@@ -293,7 +295,7 @@ public class CompactSortedFiles {
         rightSketchesFilename = rightSketchesFilename + ".sketches";
         Path rightSketchesPath = new Path(rightSketchesFilename);
         new SketchesSerDeToS3(schema).saveToHadoopFS(rightSketchesPath, new Sketches(rightKeyFieldToSketch), conf);
-        
+
         LOGGER.info("Wrote sketches to {} and {}", leftSketchesPath, rightSketchesPath);
 
         for (CloseableIterator<Record> iterator : inputIterators) {
@@ -370,28 +372,25 @@ public class CompactSortedFiles {
                                                    List<PrimitiveType> rowKeyTypes) {
         List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
         for (String file : inputFiles) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(rowKeyTypes);
-            fileInfo.setFilename(file);
-            fileInfo.setPartitionId(partitionId);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setLastStateStoreUpdateTime(finishTime);
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(rowKeyTypes)
+                    .filename(file)
+                    .partitionId(partitionId)
+                    .lastStateStoreUpdateTime(finishTime)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .build();
             filesToBeMarkedReadyForGC.add(fileInfo);
         }
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(rowKeyTypes);
-        fileInfo.setFilename(outputFile);
-        fileInfo.setPartitionId(partitionId);
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setNumberOfRecords(linesWritten);
-        if (linesWritten > 0) {
-            fileInfo.setMinRowKey(Key.create(minRowKey0));
-            fileInfo.setMaxRowKey(Key.create(maxRowKey0));
-        } else {
-            fileInfo.setMinRowKey(null);
-            fileInfo.setMaxRowKey(null);
-        }
-        fileInfo.setLastStateStoreUpdateTime(finishTime);
+        FileInfo fileInfo = FileInfo.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .filename(outputFile)
+                .partitionId(partitionId)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(linesWritten)
+                .minRowKey(linesWritten > 0 ? Key.create(minRowKey0) : null)
+                .maxRowKey(linesWritten > 0 ? Key.create(maxRowKey0) : null)
+                .lastStateStoreUpdateTime(finishTime)
+                .build();
         try {
             stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToBeMarkedReadyForGC, fileInfo);
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
@@ -414,42 +413,35 @@ public class CompactSortedFiles {
                                                    List<PrimitiveType> rowKeyTypes) {
         List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
         for (String file : inputFiles) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(rowKeyTypes);
-            fileInfo.setFilename(file);
-            fileInfo.setPartitionId(partition);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setLastStateStoreUpdateTime(finishTime);
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(rowKeyTypes)
+                    .filename(file)
+                    .partitionId(partition)
+                    .lastStateStoreUpdateTime(finishTime)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .build();
             filesToBeMarkedReadyForGC.add(fileInfo);
         }
-        FileInfo leftFileInfo = new FileInfo();
-        leftFileInfo.setRowKeyTypes(rowKeyTypes);
-        leftFileInfo.setFilename(outputFiles.getLeft());
-        leftFileInfo.setPartitionId(childPartitions.get(0));
-        leftFileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        leftFileInfo.setNumberOfRecords(linesWritten.getLeft());
-        if (linesWritten.getLeft() > 0) {
-            leftFileInfo.setMinRowKey(Key.create(minKeys.getLeft()));
-            leftFileInfo.setMaxRowKey(Key.create(maxKeys.getLeft()));
-        } else {
-            leftFileInfo.setMinRowKey(null);
-            leftFileInfo.setMaxRowKey(null);
-        }
-        leftFileInfo.setLastStateStoreUpdateTime(finishTime);
-        FileInfo rightFileInfo = new FileInfo();
-        rightFileInfo.setRowKeyTypes(rowKeyTypes);
-        rightFileInfo.setFilename(outputFiles.getRight());
-        rightFileInfo.setPartitionId(childPartitions.get(1));
-        rightFileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        rightFileInfo.setNumberOfRecords(linesWritten.getRight());
-        if (linesWritten.getRight() > 0) {
-            rightFileInfo.setMinRowKey(Key.create(minKeys.getRight()));
-            rightFileInfo.setMaxRowKey(Key.create(maxKeys.getRight()));
-        } else {
-            rightFileInfo.setMinRowKey(null);
-            rightFileInfo.setMaxRowKey(null);
-        }
-        rightFileInfo.setLastStateStoreUpdateTime(finishTime);
+        FileInfo leftFileInfo = FileInfo.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .filename(outputFiles.getLeft())
+                .partitionId(childPartitions.get(0))
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(linesWritten.getLeft())
+                .minRowKey(linesWritten.getLeft() > 0 ? Key.create(minKeys.getLeft()) : null)
+                .maxRowKey(linesWritten.getLeft() > 0 ? Key.create(maxKeys.getLeft()) : null)
+                .lastStateStoreUpdateTime(finishTime)
+                .build();
+        FileInfo rightFileInfo = FileInfo.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .filename(outputFiles.getRight())
+                .partitionId(childPartitions.get(1))
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(linesWritten.getRight())
+                .minRowKey(linesWritten.getRight() > 0 ? Key.create(minKeys.getRight()) : null)
+                .maxRowKey(linesWritten.getRight() > 0 ? Key.create(maxKeys.getRight()) : null)
+                .lastStateStoreUpdateTime(finishTime)
+                .build();
         try {
             stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, leftFileInfo, rightFileInfo);
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");

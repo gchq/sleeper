@@ -28,12 +28,12 @@ import com.amazonaws.services.apigatewaymanagementapi.model.PayloadTooLargeExcep
 import com.amazonaws.services.apigatewaymanagementapi.model.PostToConnectionRequest;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public class WebSocketOutput {
@@ -43,7 +43,7 @@ public class WebSocketOutput {
     public static final String CONNECTION_ID = "webSocketConnectionId";
     public static final String ACCESS_KEY = "awsAccessKey";
     public static final String SECRET_KEY = "awsSecretKey";
-    public static final int MAX_PAYLOAD_SIZE = 128*1024;
+    public static final int MAX_PAYLOAD_SIZE = 128 * 1024;
 
     private final String endpoint;
     private final AmazonApiGatewayManagementApi client;
@@ -59,7 +59,7 @@ public class WebSocketOutput {
         this.endpoint = endpoint;
         this.connectionId = connectionId;
         AmazonApiGatewayManagementApiClientBuilder clientBuilder = AmazonApiGatewayManagementApiClientBuilder.standard()
-            .withEndpointConfiguration(new EndpointConfiguration(this.endpoint, awsRegion));
+                .withEndpointConfiguration(new EndpointConfiguration(this.endpoint, awsRegion));
         if (awsCredentials != null) {
             clientBuilder.withCredentials(new AWSStaticCredentialsProvider(awsCredentials));
         }
@@ -86,7 +86,7 @@ public class WebSocketOutput {
         }
 
         AmazonApiGatewayManagementApiClientBuilder clientBuilder = AmazonApiGatewayManagementApiClientBuilder.standard()
-            .withEndpointConfiguration(new EndpointConfiguration(this.endpoint, region));
+                .withEndpointConfiguration(new EndpointConfiguration(this.endpoint, region));
 
         String accessKey = config.get(ACCESS_KEY);
         String secretKey = config.get(SECRET_KEY);
@@ -120,8 +120,8 @@ public class WebSocketOutput {
         }
 
         PostToConnectionRequest request = new PostToConnectionRequest()
-            .withConnectionId(connectionId)
-            .withData(ByteBuffer.wrap(message.getBytes()));
+                .withConnectionId(connectionId)
+                .withData(ByteBuffer.wrap(message.getBytes(StandardCharsets.UTF_8)));
 
         try {
             client.postToConnection(request);

@@ -179,6 +179,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES("sleeper.compaction.task.creation.period.minutes", "1"), // >0
     COMPACTION_TASK_CPU("sleeper.compaction.task.cpu", "2048"),
     COMPACTION_TASK_MEMORY("sleeper.compaction.task.memory", "4096"),
+    COMPACTION_STATUS_STORE_ENABLED("sleeper.compaction.status.store.enabled", "true"),
     DEFAULT_COMPACTION_STRATEGY_CLASS("sleeper.default.compaction.strategy.class", "sleeper.compaction.strategy.impl.SizeRatioCompactionStrategy"),
     DEFAULT_COMPACTION_FILES_BATCH_SIZE("sleeper.default.compaction.files.batch.size", "11"),
     DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO("sleeper.default.table.compaction.strategy.sizeratio.ratio", "3"),
@@ -190,6 +191,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS("sleeper.query.processor.timeout.seconds", "900"),
     QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS("sleeper.query.processor.state.refresh.period.seconds", "60"),
     QUERY_PROCESSING_LAMBDA_RESULTS_BATCH_SIZE("sleeper.query.processor.results.batch.size", "2000"),
+    QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS("sleeper.query.processor.record.retrieval.threads", "10", Utils::isPositiveInteger),
     QUERY_TRACKER_ITEM_TTL_IN_DAYS("sleeper.query.tracker.ttl.days", "1", Utils::isPositiveInteger),
     QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS("sleeper.query.results.bucket.expiry.days", "7", Utils::isPositiveInteger),
     DEFAULT_RESULTS_ROW_GROUP_SIZE("sleeper.default.query.results.rowgroup.size", "" + (8 * 1024 * 1024)), // 8 MiB

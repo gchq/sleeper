@@ -15,8 +15,8 @@
  */
 package sleeper.io.parquet.record;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.api.WriteSupport;
 import org.apache.parquet.io.api.RecordConsumer;
 import org.apache.parquet.schema.MessageType;
@@ -29,13 +29,11 @@ import java.util.HashMap;
  * A {@link WriteSupport} for {@link Record}s.
  */
 public class RecordWriteSupport extends WriteSupport<Record> {
-    private final Path path;
     private final MessageType messageType;
     private final Schema schema;
     private RecordWriter recordWriter;
 
-    public RecordWriteSupport(Path path, MessageType messageType, Schema schema) {
-        this.path = path;
+    public RecordWriteSupport(MessageType messageType, Schema schema) {
         this.messageType = messageType;
         this.schema = schema;
     }
@@ -49,6 +47,7 @@ public class RecordWriteSupport extends WriteSupport<Record> {
         recordWriter = new RecordWriter(recordConsumer, schema);
     }
 
+    @SuppressFBWarnings({"NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"})
     public void write(Record record) {
         recordWriter.write(record);
     }

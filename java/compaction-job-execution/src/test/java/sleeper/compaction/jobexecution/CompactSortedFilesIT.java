@@ -73,6 +73,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assertions.tuple;
 
 public class CompactSortedFilesIT {
@@ -119,22 +120,24 @@ public class CompactSortedFilesIT {
         List<String> files = new ArrayList<>();
         files.add(file1);
         files.add(file2);
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new LongType());
-        fileInfo1.setFilename(file1);
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId("1");
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setMinRowKey(Key.create(0L));
-        fileInfo1.setMaxRowKey(Key.create(198L));
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new LongType());
-        fileInfo2.setFilename(file2);
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId("1");
-        fileInfo2.setNumberOfRecords(100L);
-        fileInfo2.setMinRowKey(Key.create(1L));
-        fileInfo2.setMaxRowKey(Key.create(199L));
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file1)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(0L))
+                .maxRowKey(Key.create(198L))
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file2)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(199L))
+                .build();
         List<FileInfo> fileInfos = new ArrayList<>();
         fileInfos.add(fileInfo1);
         fileInfos.add(fileInfo2);
@@ -199,12 +202,13 @@ public class CompactSortedFilesIT {
         assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
-        FileInfo newFile = new FileInfo();
-        newFile.setRowKeyTypes(new LongType());
-        newFile.setFilename(outputFile);
-        newFile.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        newFile.setPartitionId("1");
-        newFile.setNumberOfRecords((long) expectedResults.size());
+        FileInfo newFile = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(outputFile)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords((long) expectedResults.size())
+                .build();
         long minKey = expectedResults.stream()
                 .map(r -> (long) r.get("key"))
                 .min(Comparator.naturalOrder())
@@ -235,22 +239,24 @@ public class CompactSortedFilesIT {
         List<String> files = new ArrayList<>();
         files.add(file1);
         files.add(file2);
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new StringType());
-        fileInfo1.setFilename(file1);
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId("1");
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setMinRowKey(Key.create("0"));
-        fileInfo1.setMaxRowKey(Key.create("98"));
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new StringType());
-        fileInfo2.setFilename(file2);
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId("1");
-        fileInfo2.setNumberOfRecords(100L);
-        fileInfo2.setMinRowKey(Key.create("1"));
-        fileInfo2.setMaxRowKey(Key.create("9"));
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new StringType())
+                .filename(file1)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create("0"))
+                .maxRowKey(Key.create("98"))
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new StringType())
+                .filename(file2)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create("1"))
+                .maxRowKey(Key.create("9"))
+                .build();
         List<FileInfo> fileInfos = Arrays.asList(fileInfo1, fileInfo2);
         String outputFile = folderName + "/file3.parquet";
         SortedMap<String, Record> data1 = new TreeMap<>();
@@ -319,12 +325,13 @@ public class CompactSortedFilesIT {
         assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
-        FileInfo newFile = new FileInfo();
-        newFile.setRowKeyTypes(new StringType());
-        newFile.setFilename(outputFile);
-        newFile.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        newFile.setPartitionId("1");
-        newFile.setNumberOfRecords((long) expectedResults.size());
+        FileInfo newFile = FileInfo.builder()
+                .rowKeyTypes(new StringType())
+                .filename(outputFile)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords((long) expectedResults.size())
+                .build();
         String minKey = expectedResults.stream()
                 .map(r -> (String) r.get("key"))
                 .min(Comparator.naturalOrder())
@@ -355,18 +362,20 @@ public class CompactSortedFilesIT {
         List<String> files = new ArrayList<>();
         files.add(file1);
         files.add(file2);
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new ByteArrayType());
-        fileInfo1.setFilename(file1);
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId("1");
-        fileInfo1.setNumberOfRecords(100L);
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new ByteArrayType());
-        fileInfo2.setFilename(file2);
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId("1");
-        fileInfo2.setNumberOfRecords(100L);
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new ByteArrayType())
+                .filename(file1)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(100L)
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new ByteArrayType())
+                .filename(file2)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(100L)
+                .build();
         List<FileInfo> fileInfos = new ArrayList<>();
         fileInfos.add(fileInfo1);
         fileInfos.add(fileInfo2);
@@ -459,12 +468,13 @@ public class CompactSortedFilesIT {
         assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
-        FileInfo newFile = new FileInfo();
-        newFile.setRowKeyTypes(new ByteArrayType());
-        newFile.setFilename(outputFile);
-        newFile.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        newFile.setPartitionId("1");
-        newFile.setNumberOfRecords((long) expectedResults.size());
+        FileInfo newFile = FileInfo.builder()
+                .rowKeyTypes(new ByteArrayType())
+                .filename(outputFile)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords((long) expectedResults.size())
+                .build();
         byte[] minKey = expectedResults.stream()
                 .map(r -> ByteArray.wrap((byte[]) r.get("key")))
                 .min(Comparator.naturalOrder())
@@ -497,20 +507,22 @@ public class CompactSortedFilesIT {
         List<String> files = new ArrayList<>();
         files.add(file1);
         files.add(file2);
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new LongType());
-        fileInfo1.setFilename(file1);
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId("1");
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setMinRowKey(Key.create(0L));
-        fileInfo1.setMaxRowKey(Key.create(198L));
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new LongType());
-        fileInfo2.setFilename(file2);
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId("1");
-        fileInfo2.setNumberOfRecords(0L);
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file1)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(0L))
+                .maxRowKey(Key.create(198L))
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file2)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(0L)
+                .build();
         // Don't set min/max row keys for files with no lines
         List<FileInfo> fileInfos = new ArrayList<>();
         fileInfos.add(fileInfo1);
@@ -565,12 +577,13 @@ public class CompactSortedFilesIT {
         assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
-        FileInfo newFile = new FileInfo();
-        newFile.setRowKeyTypes(new LongType());
-        newFile.setFilename(outputFile);
-        newFile.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        newFile.setPartitionId("1");
-        newFile.setNumberOfRecords((long) expectedResults.size());
+        FileInfo newFile = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(outputFile)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords((long) expectedResults.size())
+                .build();
         long minKey = expectedResults.stream()
                 .map(r -> (long) r.get("key"))
                 .min(Comparator.naturalOrder())
@@ -601,18 +614,20 @@ public class CompactSortedFilesIT {
         List<String> files = new ArrayList<>();
         files.add(file1);
         files.add(file2);
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new LongType());
-        fileInfo1.setFilename(file1);
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId("1");
-        fileInfo1.setNumberOfRecords(0L);
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new LongType());
-        fileInfo2.setFilename(file2);
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId("1");
-        fileInfo2.setNumberOfRecords(0L);
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file1)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(0L)
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file2)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(0L)
+                .build();
         List<FileInfo> fileInfos = new ArrayList<>();
         fileInfos.add(fileInfo1);
         fileInfos.add(fileInfo2);
@@ -655,14 +670,15 @@ public class CompactSortedFilesIT {
         assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
-        FileInfo newFile = new FileInfo();
-        newFile.setRowKeyTypes(new LongType());
-        newFile.setFilename(outputFile);
-        newFile.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        newFile.setPartitionId("1");
-        newFile.setNumberOfRecords(0L);
-        newFile.setMinRowKey(null);
-        newFile.setMaxRowKey(null);
+        FileInfo newFile = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(outputFile)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(0L)
+                .minRowKey(null)
+                .maxRowKey(null)
+                .build();
         assertThat(dynamoStateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(newFile);
@@ -690,22 +706,24 @@ public class CompactSortedFilesIT {
         List<String> files = new ArrayList<>();
         files.add(file1);
         files.add(file2);
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new LongType());
-        fileInfo1.setFilename(file1);
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId(rootPartition.getId());
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setMinRowKey(Key.create(0L));
-        fileInfo1.setMaxRowKey(Key.create(198L));
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new LongType());
-        fileInfo2.setFilename(file2);
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId(rootPartition.getId());
-        fileInfo2.setNumberOfRecords(100L);
-        fileInfo2.setMinRowKey(Key.create(1L));
-        fileInfo2.setMaxRowKey(Key.create(199L));
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file1)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(rootPartition.getId())
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(0L))
+                .maxRowKey(Key.create(198L))
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file2)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(rootPartition.getId())
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(199L))
+                .build();
         List<FileInfo> fileInfos = new ArrayList<>();
         fileInfos.add(fileInfo1);
         fileInfos.add(fileInfo2);
@@ -733,22 +751,23 @@ public class CompactSortedFilesIT {
         }
         writer2.close();
         //  - Split root partition
+        Range leftRange = new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 100L);
+        Partition leftPartition = Partition.builder()
+                .leafPartition(true)
+                .region(new Region(leftRange))
+                .id(Long.MIN_VALUE + "---100")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
+        Range rightRange = new RangeFactory(schema).createRange(field, 100L, null);
+        Partition rightPartition = Partition.builder()
+                .leafPartition(true)
+                .region(new Region(rightRange))
+                .id("100---")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         rootPartition.setLeafPartition(false);
-        Partition leftPartition = new Partition();
-        leftPartition.setLeafPartition(true);
-
-        Range leftRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, 100L);
-        leftPartition.setRegion(new Region(leftRange));
-        leftPartition.setId(Long.MIN_VALUE + "---100");
-        leftPartition.setParentPartitionId(rootPartition.getId());
-        leftPartition.setChildPartitionIds(new ArrayList<>());
-        Partition rightPartition = new Partition();
-        rightPartition.setLeafPartition(true);
-        Range rightRange = new Range.RangeFactory(schema).createRange(field, 100L, null);
-        rightPartition.setRegion(new Region(rightRange));
-        rightPartition.setId("100---");
-        rightPartition.setParentPartitionId(rootPartition.getId());
-        rightPartition.setChildPartitionIds(new ArrayList<>());
         rootPartition.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
         dynamoStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
         //  - Update Dynamo state store with details of files
@@ -798,12 +817,13 @@ public class CompactSortedFilesIT {
         assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
-        FileInfo leftNewFile = new FileInfo();
-        leftNewFile.setRowKeyTypes(new LongType());
-        leftNewFile.setFilename(leftOutputFile);
-        leftNewFile.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        leftNewFile.setPartitionId(leftPartition.getId());
-        leftNewFile.setNumberOfRecords((long) leftExpectedResults.size());
+        FileInfo leftNewFile = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(leftOutputFile)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(leftPartition.getId())
+                .numberOfRecords((long) leftExpectedResults.size())
+                .build();
         long minKeyLeft = leftExpectedResults.stream()
                 .map(r -> (long) r.get("key"))
                 .min(Comparator.naturalOrder())
@@ -814,12 +834,13 @@ public class CompactSortedFilesIT {
                 .max(Comparator.naturalOrder())
                 .get();
         leftNewFile.setMaxRowKey(Key.create(maxKeyLeft));
-        FileInfo rightNewFile = new FileInfo();
-        rightNewFile.setRowKeyTypes(new LongType());
-        rightNewFile.setFilename(rightOutputFile);
-        rightNewFile.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        rightNewFile.setPartitionId(rightPartition.getId());
-        rightNewFile.setNumberOfRecords((long) rightExpectedResults.size());
+        FileInfo rightNewFile = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(rightOutputFile)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(rightPartition.getId())
+                .numberOfRecords((long) rightExpectedResults.size())
+                .build();
         long minKeyRight = rightExpectedResults.stream()
                 .map(r -> (long) r.get("key"))
                 .min(Comparator.naturalOrder())
@@ -858,22 +879,24 @@ public class CompactSortedFilesIT {
         List<String> files = new ArrayList<>();
         files.add(file1);
         files.add(file2);
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new LongType(), new StringType());
-        fileInfo1.setFilename(file1);
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId(rootPartition.getId());
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setMinRowKey(Key.create(Arrays.asList(0L, "A")));
-        fileInfo1.setMaxRowKey(Key.create(Arrays.asList(198L, "A")));
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new LongType(), new StringType());
-        fileInfo2.setFilename(file2);
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId(rootPartition.getId());
-        fileInfo2.setNumberOfRecords(100L);
-        fileInfo2.setMinRowKey(Key.create(Arrays.asList(1L, "A")));
-        fileInfo2.setMaxRowKey(Key.create(Arrays.asList(199L, "A")));
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .filename(file1)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(rootPartition.getId())
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(Arrays.asList(0L, "A")))
+                .maxRowKey(Key.create(Arrays.asList(198L, "A")))
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .filename(file2)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(rootPartition.getId())
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(Arrays.asList(1L, "A")))
+                .maxRowKey(Key.create(Arrays.asList(199L, "A")))
+                .build();
         List<FileInfo> fileInfos = new ArrayList<>();
         fileInfos.add(fileInfo1);
         fileInfos.add(fileInfo2);
@@ -912,25 +935,31 @@ public class CompactSortedFilesIT {
                 .collect(Collectors.toList());
         writer2.close();
         //  - Split root partition
+        Range leftRange = new RangeFactory(schema).createRange(
+                field1,
+                leftPartitionRecords.get(0).get("key1"),
+                leftPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
+        Partition leftPartition = Partition.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .leafPartition(true)
+                .region(new Region(leftRange))
+                .id("left")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
+        Range rightRange = new RangeFactory(schema).createRange(
+                field1,
+                rightPartitionRecords.get(0).get("key1"),
+                rightPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
+        Partition rightPartition = Partition.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .leafPartition(true)
+                .region(new Region(rightRange))
+                .id("right")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         rootPartition.setLeafPartition(false);
-        Partition leftPartition = new Partition();
-        leftPartition.setRowKeyTypes(new LongType(), new StringType());
-        leftPartition.setLeafPartition(true);
-        Range leftRange = new RangeFactory(schema)
-                .createRange(field1, leftPartitionRecords.get(0).get("key1"), leftPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
-        leftPartition.setRegion(new Region(leftRange));
-        leftPartition.setId("left");
-        leftPartition.setParentPartitionId(rootPartition.getId());
-        leftPartition.setChildPartitionIds(new ArrayList<>());
-        Partition rightPartition = new Partition();
-        rightPartition.setRowKeyTypes(new LongType(), new StringType());
-        rightPartition.setLeafPartition(true);
-        Range rightRange = new RangeFactory(schema)
-                .createRange(field1, rightPartitionRecords.get(0).get("key1"), rightPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
-        rightPartition.setRegion(new Region(rightRange));
-        rightPartition.setId("right");
-        rightPartition.setParentPartitionId(rootPartition.getId());
-        rightPartition.setChildPartitionIds(new ArrayList<>());
         rootPartition.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
         dynamoStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
         //  - Update Dynamo state store with details of files
@@ -976,22 +1005,24 @@ public class CompactSortedFilesIT {
         assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
-        FileInfo leftNewFile = new FileInfo();
-        leftNewFile.setRowKeyTypes(new LongType(), new StringType());
-        leftNewFile.setFilename(leftOutputFile);
-        leftNewFile.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        leftNewFile.setPartitionId(leftPartition.getId());
-        leftNewFile.setNumberOfRecords((long) leftExpectedResults.size());
-        leftNewFile.setMinRowKey(Key.create(leftExpectedResults.get(0).get(schema.getRowKeyFieldNames().get(0))));
-        leftNewFile.setMaxRowKey(Key.create(leftExpectedResults.get(leftExpectedResults.size() - 1).get(schema.getRowKeyFieldNames().get(0))));
-        FileInfo rightNewFile = new FileInfo();
-        rightNewFile.setRowKeyTypes(new LongType(), new StringType());
-        rightNewFile.setFilename(rightOutputFile);
-        rightNewFile.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        rightNewFile.setPartitionId(rightPartition.getId());
-        rightNewFile.setNumberOfRecords((long) rightExpectedResults.size());
-        rightNewFile.setMinRowKey(Key.create(rightExpectedResults.get(0).get(schema.getRowKeyFieldNames().get(0))));
-        rightNewFile.setMaxRowKey(Key.create(rightExpectedResults.get(rightExpectedResults.size() - 1).get(schema.getRowKeyFieldNames().get(0))));
+        FileInfo leftNewFile = FileInfo.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .filename(leftOutputFile)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(leftPartition.getId())
+                .numberOfRecords((long) leftExpectedResults.size())
+                .minRowKey(Key.create(leftExpectedResults.get(0).get(schema.getRowKeyFieldNames().get(0))))
+                .maxRowKey(Key.create(leftExpectedResults.get(leftExpectedResults.size() - 1).get(schema.getRowKeyFieldNames().get(0))))
+                .build();
+        FileInfo rightNewFile = FileInfo.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .filename(rightOutputFile)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(rightPartition.getId())
+                .numberOfRecords((long) rightExpectedResults.size())
+                .minRowKey(Key.create(rightExpectedResults.get(0).get(schema.getRowKeyFieldNames().get(0))))
+                .maxRowKey(Key.create(rightExpectedResults.get(rightExpectedResults.size() - 1).get(schema.getRowKeyFieldNames().get(0))))
+                .build();
         assertThat(dynamoStateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(leftNewFile, rightNewFile);
@@ -1020,22 +1051,24 @@ public class CompactSortedFilesIT {
         List<String> files = new ArrayList<>();
         files.add(file1);
         files.add(file2);
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new LongType(), new StringType());
-        fileInfo1.setFilename(file1);
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId(rootPartition.getId());
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setMinRowKey(Key.create(Arrays.asList(0L, "A")));
-        fileInfo1.setMaxRowKey(Key.create(Arrays.asList(198L, "B")));
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new LongType(), new StringType());
-        fileInfo2.setFilename(file2);
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId(rootPartition.getId());
-        fileInfo2.setNumberOfRecords(100L);
-        fileInfo2.setMinRowKey(Key.create(Arrays.asList(1L, "A")));
-        fileInfo2.setMaxRowKey(Key.create(Arrays.asList(199L, "B")));
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .filename(file1)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(rootPartition.getId())
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(Arrays.asList(0L, "A")))
+                .maxRowKey(Key.create(Arrays.asList(198L, "B")))
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .filename(file2)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(rootPartition.getId())
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(Arrays.asList(1L, "A")))
+                .maxRowKey(Key.create(Arrays.asList(199L, "B")))
+                .build();
         List<FileInfo> fileInfos = new ArrayList<>();
         fileInfos.add(fileInfo1);
         fileInfos.add(fileInfo2);
@@ -1075,24 +1108,30 @@ public class CompactSortedFilesIT {
         writer2.close();
         //  - Split root partition
         rootPartition.setLeafPartition(false);
-        Partition leftPartition = new Partition();
-        leftPartition.setRowKeyTypes(new LongType(), new StringType());
-        leftPartition.setLeafPartition(true);
-        Range leftRange = new RangeFactory(schema)
-                .createRange(field1, leftPartitionRecords.get(0).get("key1"), leftPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
-        leftPartition.setRegion(new Region(leftRange));
-        leftPartition.setId("left");
-        leftPartition.setParentPartitionId(rootPartition.getId());
-        leftPartition.setChildPartitionIds(new ArrayList<>());
-        Partition rightPartition = new Partition();
-        rightPartition.setRowKeyTypes(new LongType(), new StringType());
-        rightPartition.setLeafPartition(true);
-        Range rightRange = new RangeFactory(schema)
-                .createRange(field1, rightPartitionRecords.get(0).get("key1"), rightPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
-        rightPartition.setRegion(new Region(rightRange));
-        rightPartition.setId("right");
-        rightPartition.setParentPartitionId(rootPartition.getId());
-        rightPartition.setChildPartitionIds(new ArrayList<>());
+        Range leftRange = new RangeFactory(schema).createRange(
+                field1,
+                leftPartitionRecords.get(0).get("key1"),
+                leftPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
+        Partition leftPartition = Partition.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .leafPartition(true)
+                .region(new Region(leftRange))
+                .id("left")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
+        Range rightRange = new RangeFactory(schema).createRange(
+                field1,
+                rightPartitionRecords.get(0).get("key1"),
+                rightPartitionRecords.get(leftPartitionRecords.size() - 1).get("key1"));
+        Partition rightPartition = Partition.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .leafPartition(true)
+                .region(new Region(rightRange))
+                .id("right")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         rootPartition.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
         dynamoStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
         //  - Update Dynamo state store with details of files
@@ -1138,22 +1177,24 @@ public class CompactSortedFilesIT {
         assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
-        FileInfo leftNewFile = new FileInfo();
-        leftNewFile.setRowKeyTypes(new LongType(), new StringType());
-        leftNewFile.setFilename(leftOutputFile);
-        leftNewFile.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        leftNewFile.setPartitionId(leftPartition.getId());
-        leftNewFile.setNumberOfRecords((long) leftExpectedResults.size());
-        leftNewFile.setMinRowKey(Key.create(leftExpectedResults.get(0).get(schema.getRowKeyFieldNames().get(0))));
-        leftNewFile.setMaxRowKey(Key.create(leftExpectedResults.get(leftExpectedResults.size() - 1).get(schema.getRowKeyFieldNames().get(0))));
-        FileInfo rightNewFile = new FileInfo();
-        rightNewFile.setRowKeyTypes(new LongType(), new StringType());
-        rightNewFile.setFilename(rightOutputFile);
-        rightNewFile.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        rightNewFile.setPartitionId(rightPartition.getId());
-        rightNewFile.setNumberOfRecords((long) rightExpectedResults.size());
-        rightNewFile.setMinRowKey(Key.create(rightExpectedResults.get(0).get(schema.getRowKeyFieldNames().get(0))));
-        rightNewFile.setMaxRowKey(Key.create(rightExpectedResults.get(rightExpectedResults.size() - 1).get(schema.getRowKeyFieldNames().get(0))));
+        FileInfo leftNewFile = FileInfo.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .filename(leftOutputFile)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(leftPartition.getId())
+                .numberOfRecords((long) leftExpectedResults.size())
+                .minRowKey(Key.create(leftExpectedResults.get(0).get(schema.getRowKeyFieldNames().get(0))))
+                .maxRowKey(Key.create(leftExpectedResults.get(leftExpectedResults.size() - 1).get(schema.getRowKeyFieldNames().get(0))))
+                .build();
+        FileInfo rightNewFile = FileInfo.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .filename(rightOutputFile)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(rightPartition.getId())
+                .numberOfRecords((long) rightExpectedResults.size())
+                .minRowKey(Key.create(rightExpectedResults.get(0).get(schema.getRowKeyFieldNames().get(0))))
+                .maxRowKey(Key.create(rightExpectedResults.get(rightExpectedResults.size() - 1).get(schema.getRowKeyFieldNames().get(0))))
+                .build();
         assertThat(dynamoStateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(leftNewFile, rightNewFile);
@@ -1181,22 +1222,24 @@ public class CompactSortedFilesIT {
         List<String> files = new ArrayList<>();
         files.add(file1);
         files.add(file2);
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new LongType());
-        fileInfo1.setFilename(file1);
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId(rootPartition.getId());
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setMinRowKey(Key.create(0L));
-        fileInfo1.setMaxRowKey(Key.create(198L));
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new LongType());
-        fileInfo2.setFilename(file2);
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId(rootPartition.getId());
-        fileInfo2.setNumberOfRecords(100L);
-        fileInfo2.setMinRowKey(Key.create(1L));
-        fileInfo2.setMaxRowKey(Key.create(199L));
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file1)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(rootPartition.getId())
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(0L))
+                .maxRowKey(Key.create(198L))
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file2)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(rootPartition.getId())
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(199L))
+                .build();
         List<FileInfo> fileInfos = new ArrayList<>();
         fileInfos.add(fileInfo1);
         fileInfos.add(fileInfo2);
@@ -1225,21 +1268,23 @@ public class CompactSortedFilesIT {
         }
         writer2.close();
         //  - Split root partition
-        rootPartition.setLeafPartition(false);
-        Partition leftPartition = new Partition();
-        leftPartition.setLeafPartition(true);
         Range leftRange = new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 100L);
-        leftPartition.setRegion(new Region(leftRange));
-        leftPartition.setId(Long.MIN_VALUE + "---100");
-        leftPartition.setParentPartitionId(rootPartition.getId());
-        leftPartition.setChildPartitionIds(new ArrayList<>());
-        Partition rightPartition = new Partition();
-        rightPartition.setLeafPartition(true);
+        Partition leftPartition = Partition.builder()
+                .leafPartition(true)
+                .region(new Region(leftRange))
+                .id(Long.MIN_VALUE + "---100")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         Range rightRange = new RangeFactory(schema).createRange(field, 100L, null);
-        rightPartition.setRegion(new Region(rightRange));
-        rightPartition.setId("100---");
-        rightPartition.setParentPartitionId(rootPartition.getId());
-        rightPartition.setChildPartitionIds(new ArrayList<>());
+        Partition rightPartition = Partition.builder()
+                .leafPartition(true)
+                .region(new Region(rightRange))
+                .id("100---")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
+        rootPartition.setLeafPartition(false);
         rootPartition.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
         dynamoStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
         //  - Update Dynamo state store with details of files
@@ -1286,12 +1331,13 @@ public class CompactSortedFilesIT {
         assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
-        FileInfo leftNewFile = new FileInfo();
-        leftNewFile.setRowKeyTypes(new LongType());
-        leftNewFile.setFilename(leftOutputFile);
-        leftNewFile.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        leftNewFile.setPartitionId(leftPartition.getId());
-        leftNewFile.setNumberOfRecords((long) leftExpectedResults.size());
+        FileInfo leftNewFile = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(leftOutputFile)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(leftPartition.getId())
+                .numberOfRecords((long) leftExpectedResults.size())
+                .build();
         long minKeyLeft = leftExpectedResults.stream()
                 .map(r -> (long) r.get("key"))
                 .min(Comparator.naturalOrder())
@@ -1302,14 +1348,15 @@ public class CompactSortedFilesIT {
                 .max(Comparator.naturalOrder())
                 .get();
         leftNewFile.setMaxRowKey(Key.create(maxKeyLeft));
-        FileInfo rightNewFile = new FileInfo();
-        rightNewFile.setRowKeyTypes(new LongType());
-        rightNewFile.setFilename(rightOutputFile);
-        rightNewFile.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        rightNewFile.setPartitionId(rightPartition.getId());
-        rightNewFile.setNumberOfRecords(0L);
-        rightNewFile.setMinRowKey(null);
-        rightNewFile.setMaxRowKey(null);
+        FileInfo rightNewFile = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(rightOutputFile)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(rightPartition.getId())
+                .numberOfRecords(0L)
+                .minRowKey(null)
+                .maxRowKey(null)
+                .build();
         assertThat(dynamoStateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(leftNewFile, rightNewFile);
@@ -1330,22 +1377,24 @@ public class CompactSortedFilesIT {
         List<String> files = new ArrayList<>();
         files.add(file1);
         files.add(file2);
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new LongType());
-        fileInfo1.setFilename(file1);
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId("1");
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setMinRowKey(Key.create(0L));
-        fileInfo1.setMaxRowKey(Key.create(198L));
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new LongType());
-        fileInfo2.setFilename(file2);
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId("1");
-        fileInfo2.setNumberOfRecords(100L);
-        fileInfo2.setMinRowKey(Key.create(1L));
-        fileInfo2.setMaxRowKey(Key.create(199L));
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file1)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(0L))
+                .maxRowKey(Key.create(198L))
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file2)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(199L))
+                .build();
         List<FileInfo> fileInfos = new ArrayList<>();
         fileInfos.add(fileInfo1);
         fileInfos.add(fileInfo2);
@@ -1414,12 +1463,13 @@ public class CompactSortedFilesIT {
         assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
-        FileInfo newFile = new FileInfo();
-        newFile.setRowKeyTypes(new LongType());
-        newFile.setFilename(outputFile);
-        newFile.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        newFile.setPartitionId("1");
-        newFile.setNumberOfRecords((long) expectedResults.size());
+        FileInfo newFile = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(outputFile)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords((long) expectedResults.size())
+                .build();
         long minKey = expectedResults.stream()
                 .map(r -> (long) r.get("key"))
                 .min(Comparator.naturalOrder())
@@ -1457,22 +1507,24 @@ public class CompactSortedFilesIT {
         List<String> files = new ArrayList<>();
         files.add(file1);
         files.add(file2);
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new LongType());
-        fileInfo1.setFilename(file1);
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId(rootPartition.getId());
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setMinRowKey(Key.create(0L));
-        fileInfo1.setMaxRowKey(Key.create(198L));
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new LongType());
-        fileInfo2.setFilename(file2);
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId(rootPartition.getId());
-        fileInfo2.setNumberOfRecords(100L);
-        fileInfo2.setMinRowKey(Key.create(1L));
-        fileInfo2.setMaxRowKey(Key.create(199L));
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file1)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(rootPartition.getId())
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(0L))
+                .maxRowKey(Key.create(198L))
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file2)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(rootPartition.getId())
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(199L))
+                .build();
         List<FileInfo> fileInfos = new ArrayList<>();
         fileInfos.add(fileInfo1);
         fileInfos.add(fileInfo2);
@@ -1500,21 +1552,23 @@ public class CompactSortedFilesIT {
         }
         writer2.close();
         //  - Split root partition
-        rootPartition.setLeafPartition(false);
-        Partition leftPartition = new Partition();
-        leftPartition.setLeafPartition(true);
         Range leftRange = new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 100L);
-        leftPartition.setRegion(new Region(leftRange));
-        leftPartition.setId(Long.MIN_VALUE + "---100");
-        leftPartition.setParentPartitionId(rootPartition.getId());
-        leftPartition.setChildPartitionIds(new ArrayList<>());
-        Partition rightPartition = new Partition();
-        rightPartition.setLeafPartition(true);
+        Partition leftPartition = Partition.builder()
+                .leafPartition(true)
+                .region(new Region(leftRange))
+                .id(Long.MIN_VALUE + "---100")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
         Range rightRange = new RangeFactory(schema).createRange(field, 100L, null);
-        rightPartition.setRegion(new Region(rightRange));
-        rightPartition.setId("100---");
-        rightPartition.setParentPartitionId(rootPartition.getId());
-        rightPartition.setChildPartitionIds(new ArrayList<>());
+        Partition rightPartition = Partition.builder()
+                .leafPartition(true)
+                .region(new Region(rightRange))
+                .id("100---")
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .build();
+        rootPartition.setLeafPartition(false);
         rootPartition.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
         dynamoStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
         //  - Update Dynamo state store with details of files
@@ -1568,12 +1622,13 @@ public class CompactSortedFilesIT {
         assertReadyForGC(dynamoStateStore, fileInfo1, fileInfo2);
 
         // - Check DynamoDBStateStore has correct active files
-        FileInfo leftNewFile = new FileInfo();
-        leftNewFile.setRowKeyTypes(new LongType());
-        leftNewFile.setFilename(leftOutputFile);
-        leftNewFile.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        leftNewFile.setPartitionId(leftPartition.getId());
-        leftNewFile.setNumberOfRecords((long) leftExpectedResults.size());
+        FileInfo leftNewFile = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(leftOutputFile)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(leftPartition.getId())
+                .numberOfRecords((long) leftExpectedResults.size())
+                .build();
         long minKeyLeft = leftExpectedResults.stream()
                 .map(r -> (long) r.get("key"))
                 .min(Comparator.naturalOrder())
@@ -1584,12 +1639,13 @@ public class CompactSortedFilesIT {
                 .max(Comparator.naturalOrder())
                 .get();
         leftNewFile.setMaxRowKey(Key.create(maxKeyLeft));
-        FileInfo rightNewFile = new FileInfo();
-        rightNewFile.setRowKeyTypes(new LongType());
-        rightNewFile.setFilename(rightOutputFile);
-        rightNewFile.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        rightNewFile.setPartitionId(rightPartition.getId());
-        rightNewFile.setNumberOfRecords((long) rightExpectedResults.size());
+        FileInfo rightNewFile = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(rightOutputFile)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(rightPartition.getId())
+                .numberOfRecords((long) rightExpectedResults.size())
+                .build();
         long minKeyRight = rightExpectedResults.stream()
                 .map(r -> (long) r.get("key"))
                 .min(Comparator.naturalOrder())
@@ -1606,15 +1662,19 @@ public class CompactSortedFilesIT {
     }
 
     private static void assertReadyForGC(DynamoDBStateStore dynamoStateStore, FileInfo... files) {
-        assertThat(dynamoStateStore.getReadyForGCFiles()).toIterable()
-                .extracting(
-                        FileInfo::getFilename,
-                        FileInfo::getRowKeyTypes,
-                        FileInfo::getPartitionId,
-                        FileInfo::getFileStatus)
-                .containsExactlyInAnyOrder(Arrays.stream(files)
-                        .map(file -> tuple(file.getFilename(), file.getRowKeyTypes(), file.getPartitionId(),
-                                FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION))
-                        .toArray(Tuple[]::new));
+        try {
+            assertThat(dynamoStateStore.getReadyForGCFiles()).toIterable()
+                    .extracting(
+                            FileInfo::getFilename,
+                            FileInfo::getRowKeyTypes,
+                            FileInfo::getPartitionId,
+                            FileInfo::getFileStatus)
+                    .containsExactlyInAnyOrder(Arrays.stream(files)
+                            .map(file -> tuple(file.getFilename(), file.getRowKeyTypes(), file.getPartitionId(),
+                                    FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION))
+                            .toArray(Tuple[]::new));
+        } catch (StateStoreException e) {
+            fail("StateStoreException generated: " + e.getMessage());
+        }
     }
 }

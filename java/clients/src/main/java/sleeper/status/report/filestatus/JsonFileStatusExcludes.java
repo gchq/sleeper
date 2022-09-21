@@ -13,26 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.io.parquet.record;
+package sleeper.status.report.filestatus;
 
-import org.apache.parquet.io.api.GroupConverter;
-import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
+import sleeper.statestore.FileInfo;
 
-public class RecordMaterializer extends org.apache.parquet.io.api.RecordMaterializer<Record> {
-    private final RecordConverter recordConverter;
-
-    public RecordMaterializer(Schema schema) {
-        this.recordConverter = new RecordConverter(schema);
+public class JsonFileStatusExcludes implements ExclusionStrategy {
+    @Override
+    public boolean shouldSkipField(FieldAttributes f) {
+        if (FileInfo.class == f.getDeclaringClass() && "rowKeyTypes".equals(f.getName())) {
+            return true;
+        }
+        return false;
     }
 
     @Override
-    public Record getCurrentRecord() {
-        return recordConverter.getRecord();
-    }
-
-    @Override
-    public GroupConverter getRootConverter() {
-        return recordConverter;
+    public boolean shouldSkipClass(Class<?> clazz) {
+        return false;
     }
 }

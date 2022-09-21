@@ -20,14 +20,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.facebook.collections.ByteArray;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import sleeper.ClientUtils;
@@ -44,7 +36,17 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.table.util.StateStoreProvider;
+import sleeper.statestore.StateStoreProvider;
+
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * Allows the split points to be exported from a table. They can then be used
@@ -54,17 +56,17 @@ import sleeper.table.util.StateStoreProvider;
 public class ExportSplitPoints {
     private final StateStore stateStore;
     private final Schema schema;
-    
+
     public ExportSplitPoints(StateStore stateStore, Schema schema) {
         this.stateStore = stateStore;
         this.schema = schema;
     }
-    
+
     public List<Object> getSplitPoints() throws StateStoreException {
         Type rowKey0Type = schema.getRowKeyTypes().get(0);
         List<Partition> leafPartitions = stateStore.getLeafPartitions();
         SortedSet<Comparable<?>> splitPoints = new TreeSet<>();
-        
+
         for (Partition partition : leafPartitions) {
             Range range = partition.getRegion().getRange(schema.getRowKeyFieldNames().get(0));
             Object min = range.getMin();
@@ -85,7 +87,7 @@ public class ExportSplitPoints {
                 }
             }
         }
-        
+
         // Remove minimum value as that is not a split point
         if (rowKey0Type instanceof IntType) {
             splitPoints.remove(Integer.MIN_VALUE);
@@ -96,7 +98,7 @@ public class ExportSplitPoints {
         } else if (rowKey0Type instanceof ByteArrayType) {
             splitPoints.remove(ByteArray.wrap(new byte[]{}));
         }
-        
+
         List<Object> splitPointsToReturn = new ArrayList<>();
         for (Comparable<?> splitPoint : splitPoints) {
             if (rowKey0Type instanceof ByteArrayType) {
@@ -105,10 +107,10 @@ public class ExportSplitPoints {
                 splitPointsToReturn.add(splitPoint);
             }
         }
-        
+
         return splitPointsToReturn;
     }
-    
+
     public static void main(String[] args) throws IOException, StateStoreException {
         if (3 != args.length) {
             throw new IllegalArgumentException("Usage: <instance id> <table name> <output file>");
@@ -116,7 +118,7 @@ public class ExportSplitPoints {
 
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
-        
+
         String tableName = args[1];
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(amazonS3, instanceProperties);
@@ -125,8 +127,8 @@ public class ExportSplitPoints {
         StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
         ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, tableProperties.getSchema());
         List<Object> splitPoints = exportSplitPoints.getSplitPoints();
-        
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(new File(args[2])))) {
+
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(args[2]), StandardCharsets.UTF_8))) {
             for (Object splitPoint : splitPoints) {
                 if (splitPoint instanceof ByteArray) {
                     writer.write(Base64.encodeBase64String(((ByteArray) splitPoint).getArray()));
@@ -136,7 +138,7 @@ public class ExportSplitPoints {
                 writer.write("\n");
             }
         }
-        
+
         amazonS3.shutdown();
         dynamoDBClient.shutdown();
     }

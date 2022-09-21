@@ -15,12 +15,6 @@
  */
 package sleeper.cdk.stack;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
-import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.statestore.s3.S3StateStore;
@@ -34,6 +28,14 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.constructs.Construct;
 
+import java.util.Locale;
+
+import static sleeper.cdk.Utils.removalPolicy;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+
 public class S3StateStoreStack implements StateStoreStack {
     private final Table revisionTable;
     private final Bucket dataBucket;
@@ -45,12 +47,7 @@ public class S3StateStoreStack implements StateStoreStack {
                              Provider tablesProvider) {
         this.dataBucket = dataBucket;
 
-        RemovalPolicy removalPolicy;
-        if (instanceProperties.getBoolean(RETAIN_INFRA_AFTER_DESTROY)) {
-            removalPolicy = RemovalPolicy.RETAIN;
-        } else {
-            removalPolicy = RemovalPolicy.DESTROY;
-        }
+        RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
         // Dynamo table to store latest revision version
         Attribute partitionKeyRevisionTable = Attribute.builder()
@@ -61,7 +58,7 @@ public class S3StateStoreStack implements StateStoreStack {
         this.revisionTable = Table.Builder
                 .create(scope, "DynamoDBRevisionTable")
                 .tableName(String.join("-", "sleeper", instanceProperties.get(ID), "table",
-                        tableProperties.get(TABLE_NAME), "revisions").toLowerCase())
+                        tableProperties.get(TABLE_NAME), "revisions").toLowerCase(Locale.ROOT))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(partitionKeyRevisionTable)

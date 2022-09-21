@@ -162,15 +162,16 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(new LongType());
-        fileInfo.setFilename("abc");
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setPartitionId("1");
-        fileInfo.setMinRowKey(Key.create(1L));
-        fileInfo.setMaxRowKey(Key.create(10L));
-        fileInfo.setLastStateStoreUpdateTime(1_000_000L);
-        fileInfo.setNumberOfRecords(1L);
+        FileInfo fileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("abc")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .numberOfRecords(1L)
+                .build();
 
         // When
         stateStore.addFile(fileInfo);
@@ -192,15 +193,16 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new ByteArrayType());
         StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(new ByteArrayType());
-        fileInfo.setFilename("abc");
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setPartitionId("1");
-        fileInfo.setMinRowKey(Key.create(new byte[]{1}));
-        fileInfo.setMaxRowKey(Key.create(new byte[]{10}));
-        fileInfo.setLastStateStoreUpdateTime(1_000_000L);
-        fileInfo.setNumberOfRecords(1L);
+        FileInfo fileInfo = FileInfo.builder()
+                .rowKeyTypes(new ByteArrayType())
+                .filename("abc")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .minRowKey(Key.create(new byte[]{1}))
+                .maxRowKey(Key.create(new byte[]{10}))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .numberOfRecords(1L)
+                .build();
 
         // When
         stateStore.addFile(fileInfo);
@@ -224,15 +226,16 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithTwoRowKeyTypes(new ByteArrayType(), new ByteArrayType());
         StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(new ByteArrayType(), new ByteArrayType());
-        fileInfo.setFilename("abc");
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setPartitionId("1");
-        fileInfo.setMinRowKey(Key.create(Arrays.asList(new byte[]{1}, new byte[]{2})));
-        fileInfo.setMaxRowKey(Key.create(Arrays.asList(new byte[]{10}, new byte[]{11})));
-        fileInfo.setLastStateStoreUpdateTime(1_000_000L);
-        fileInfo.setNumberOfRecords(1L);
+        FileInfo fileInfo = FileInfo.builder()
+                .rowKeyTypes(new ByteArrayType(), new ByteArrayType())
+                .filename("abc")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .minRowKey(Key.create(Arrays.asList(new byte[]{1}, new byte[]{2})))
+                .maxRowKey(Key.create(Arrays.asList(new byte[]{10}, new byte[]{11})))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .numberOfRecords(1L)
+                .build();
 
         // When
         stateStore.addFile(fileInfo);
@@ -258,15 +261,16 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithTwoRowKeyTypes(new LongType(), new StringType());
         StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(new LongType(), new StringType());
-        fileInfo.setFilename("abc");
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setPartitionId("1");
-        fileInfo.setMinRowKey(Key.create(Arrays.asList(1L, "Z")));
-        fileInfo.setMaxRowKey(Key.create(Arrays.asList(10L, "A")));
-        fileInfo.setLastStateStoreUpdateTime(1_000_000L);
-        fileInfo.setNumberOfRecords(1L);
+        FileInfo fileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .filename("abc")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .minRowKey(Key.create(Arrays.asList(1L, "Z")))
+                .maxRowKey(Key.create(Arrays.asList(10L, "A")))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .numberOfRecords(1L)
+                .build();
 
         // When
         stateStore.addFile(fileInfo);
@@ -290,15 +294,16 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema);
         Set<FileInfo> expected = new HashSet<>();
         for (int i = 0; i < 10000; i++) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(new LongType());
-            fileInfo.setFilename("file-" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId("" + i);
-            fileInfo.setMinRowKey(Key.create(1L));
-            fileInfo.setMaxRowKey(Key.create(10L));
-            fileInfo.setLastStateStoreUpdateTime(1_000_000L);
-            fileInfo.setNumberOfRecords(1L);
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file-" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("" + i)
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(1_000_000L)
+                    .numberOfRecords(1L)
+                    .build();
             expected.add(fileInfo);
         }
         stateStore.addFiles(new ArrayList<>(expected));
@@ -315,14 +320,15 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(new LongType());
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setPartitionId("1");
-        fileInfo.setMinRowKey(Key.create(1L));
-        fileInfo.setMaxRowKey(Key.create(10L));
-        fileInfo.setLastStateStoreUpdateTime(1_000_000L);
-        fileInfo.setNumberOfRecords(1L);
+        FileInfo fileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .numberOfRecords(1L)
+                .build();
 
         // When / Then
         assertThatThrownBy(() -> stateStore.addFile(fileInfo))
@@ -334,14 +340,15 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(new LongType());
-        fileInfo.setFilename("abc");
-        fileInfo.setPartitionId("1");
-        fileInfo.setMinRowKey(Key.create(1L));
-        fileInfo.setMaxRowKey(Key.create(10L));
-        fileInfo.setLastStateStoreUpdateTime(1_000_000L);
-        fileInfo.setNumberOfRecords(1L);
+        FileInfo fileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("abc")
+                .partitionId("1")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .numberOfRecords(1L)
+                .build();
 
         // When / Then
         assertThatThrownBy(() -> stateStore.addFile(fileInfo))
@@ -353,14 +360,15 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(new LongType());
-        fileInfo.setFilename("abc");
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setMinRowKey(Key.create(1L));
-        fileInfo.setMaxRowKey(Key.create(10L));
-        fileInfo.setLastStateStoreUpdateTime(1_000_000L);
-        fileInfo.setNumberOfRecords(1L);
+        FileInfo fileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("abc")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .numberOfRecords(1L)
+                .build();
 
         // When / Then
         assertThatThrownBy(() -> stateStore.addFile(fileInfo))
@@ -375,15 +383,16 @@ public class S3StateStoreIT {
         ExecutorService executorService = Executors.newFixedThreadPool(20);
         List<FileInfo> files = new ArrayList<>();
         for (int i = 0; i < 20; i++) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(new LongType());
-            fileInfo.setFilename("file-" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId("root");
-            fileInfo.setMinRowKey(Key.create(1L));
-            fileInfo.setMaxRowKey(Key.create(10L));
-            fileInfo.setLastStateStoreUpdateTime(1_000_000L);
-            fileInfo.setNumberOfRecords(1L);
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file-" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("root")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(1_000_000L)
+                    .numberOfRecords(1L)
+                    .build();
             files.add(fileInfo);
         }
 
@@ -419,38 +428,41 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema, 5);
         Partition partition = stateStore.getAllPartitions().get(0);
         //  - A file which should be garbage collected immediately
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new IntType());
-        fileInfo1.setFilename("file1");
-        fileInfo1.setFileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
-        fileInfo1.setPartitionId(partition.getId());
-        fileInfo1.setMinRowKey(Key.create(1));
-        fileInfo1.setMaxRowKey(Key.create(100));
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setLastStateStoreUpdateTime(System.currentTimeMillis() - 8000);
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new IntType())
+                .filename("file1")
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .partitionId(partition.getId())
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(100))
+                .numberOfRecords(100L)
+                .lastStateStoreUpdateTime(System.currentTimeMillis() - 8000)
+                .build();
         stateStore.addFile(fileInfo1);
         //  - An active file which should not be garbage collected
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new IntType());
-        fileInfo2.setFilename("file2");
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId(partition.getId());
-        fileInfo2.setMinRowKey(Key.create(1));
-        fileInfo2.setMaxRowKey(Key.create(100));
-        fileInfo2.setNumberOfRecords(100L);
-        fileInfo2.setLastStateStoreUpdateTime(System.currentTimeMillis());
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new IntType())
+                .filename("file2")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(partition.getId())
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(100))
+                .numberOfRecords(100L)
+                .lastStateStoreUpdateTime(System.currentTimeMillis())
+                .build();
         stateStore.addFile(fileInfo2);
         //  - A file which is ready for garbage collection but which should not be garbage collected now as it has only
         //      just been marked as ready for GC
-        FileInfo fileInfo3 = new FileInfo();
-        fileInfo3.setRowKeyTypes(new IntType());
-        fileInfo3.setFilename("file3");
-        fileInfo3.setFileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
-        fileInfo3.setPartitionId(partition.getId());
-        fileInfo3.setMinRowKey(Key.create(1));
-        fileInfo3.setMaxRowKey(Key.create(100));
-        fileInfo3.setNumberOfRecords(100L);
-        fileInfo3.setLastStateStoreUpdateTime(System.currentTimeMillis());
+        FileInfo fileInfo3 = FileInfo.builder()
+                .rowKeyTypes(new IntType())
+                .filename("file3")
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .partitionId(partition.getId())
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(100))
+                .numberOfRecords(100L)
+                .lastStateStoreUpdateTime(System.currentTimeMillis())
+                .build();
         stateStore.addFile(fileInfo3);
 
         // When 1
@@ -472,35 +484,38 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new LongType());
-        fileInfo1.setFilename("file1");
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId("1");
-        fileInfo1.setMinRowKey(Key.create(1L));
-        fileInfo1.setMaxRowKey(Key.create(10L));
-        fileInfo1.setLastStateStoreUpdateTime(1_000_000L);
-        fileInfo1.setNumberOfRecords(1L);
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file1")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .numberOfRecords(1L)
+                .build();
         stateStore.addFile(fileInfo1);
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new LongType());
-        fileInfo2.setFilename("file2");
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId("2");
-        fileInfo2.setMinRowKey(Key.create(20L));
-        fileInfo2.setMaxRowKey(Key.create(29L));
-        fileInfo2.setLastStateStoreUpdateTime(2_000_000L);
-        fileInfo2.setNumberOfRecords(2L);
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file2")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("2")
+                .minRowKey(Key.create(20L))
+                .maxRowKey(Key.create(29L))
+                .lastStateStoreUpdateTime(2_000_000L)
+                .numberOfRecords(2L)
+                .build();
         stateStore.addFile(fileInfo2);
-        FileInfo fileInfo3 = new FileInfo();
-        fileInfo3.setRowKeyTypes(new LongType());
-        fileInfo3.setFilename("file3");
-        fileInfo3.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo3.setPartitionId("3");
-        fileInfo3.setJobId("job1");
-        fileInfo3.setMinRowKey(Key.create(100L));
-        fileInfo3.setMaxRowKey(Key.create(10000L));
-        fileInfo3.setLastStateStoreUpdateTime(3_000_000L);
+        FileInfo fileInfo3 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file3")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("3")
+                .jobId("job1")
+                .minRowKey(Key.create(100L))
+                .maxRowKey(Key.create(10000L))
+                .lastStateStoreUpdateTime(3_000_000L)
+                .build();
         fileInfo3.setNumberOfRecords(3L);
         stateStore.addFile(fileInfo3);
 
@@ -516,24 +531,26 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new LongType());
-        fileInfo1.setFilename("file1");
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId("4");
-        fileInfo1.setMinRowKey(Key.create(1L));
-        fileInfo1.setMaxRowKey(Key.create(10L));
-        fileInfo1.setLastStateStoreUpdateTime(1_000_000L);
-        fileInfo1.setNumberOfRecords(1L);
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new LongType());
-        fileInfo2.setFilename("file2");
-        fileInfo2.setFileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
-        fileInfo2.setPartitionId("5");
-        fileInfo2.setMinRowKey(Key.create(1L));
-        fileInfo2.setMaxRowKey(Key.create(10L));
-        fileInfo2.setLastStateStoreUpdateTime(2_000_000L);
-        fileInfo2.setNumberOfRecords(2L);
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file1")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("4")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .numberOfRecords(1L)
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file2")
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .partitionId("5")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(2_000_000L)
+                .numberOfRecords(2L)
+                .build();
         stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2));
 
         // When
@@ -549,24 +566,26 @@ public class S3StateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new LongType());
-        fileInfo1.setFilename("file1");
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId("4");
-        fileInfo1.setMinRowKey(Key.create(1L));
-        fileInfo1.setMaxRowKey(Key.create(10L));
-        fileInfo1.setLastStateStoreUpdateTime(1_000_000L);
-        fileInfo1.setNumberOfRecords(1L);
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new LongType());
-        fileInfo2.setFilename("file2");
-        fileInfo2.setFileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
-        fileInfo2.setPartitionId("5");
-        fileInfo2.setMinRowKey(Key.create(1L));
-        fileInfo2.setMaxRowKey(Key.create(10L));
-        fileInfo2.setLastStateStoreUpdateTime(2_000_000L);
-        fileInfo2.setNumberOfRecords(2L);
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file1")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("4")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .numberOfRecords(1L)
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file2")
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .partitionId("5")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(2_000_000L)
+                .numberOfRecords(2L)
+                .build();
         stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2));
 
         // When
@@ -581,27 +600,29 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(new LongType());
-            fileInfo.setFilename("file" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId("7");
-            fileInfo.setMinRowKey(Key.create(1L));
-            fileInfo.setMaxRowKey(Key.create(10L));
-            fileInfo.setLastStateStoreUpdateTime(i * 1_000_000L);
-            fileInfo.setNumberOfRecords(1L);
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("7")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(i * 1_000_000L)
+                    .numberOfRecords(1L)
+                    .build();
             filesToMoveToReadyForGC.add(fileInfo);
             stateStore.addFile(fileInfo);
         }
-        FileInfo newFileInfo = new FileInfo();
-        newFileInfo.setRowKeyTypes(new LongType());
-        newFileInfo.setFilename("file-new");
-        newFileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        newFileInfo.setPartitionId("7");
-        newFileInfo.setMinRowKey(Key.create(1L));
-        newFileInfo.setMaxRowKey(Key.create(10L));
-        newFileInfo.setLastStateStoreUpdateTime(10_000_000L);
-        newFileInfo.setNumberOfRecords(4L);
+        FileInfo newFileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file-new")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("7")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(10_000_000L)
+                .numberOfRecords(4L)
+                .build();
 
         // When
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToMoveToReadyForGC, newFileInfo);
@@ -618,36 +639,39 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(new LongType());
-            fileInfo.setFilename("file" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId("7");
-            fileInfo.setMinRowKey(Key.create(1L));
-            fileInfo.setMaxRowKey(Key.create(10L));
-            fileInfo.setLastStateStoreUpdateTime(i * 1_000_000L);
-            fileInfo.setNumberOfRecords((long) i);
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("7")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(i * 1_000_000L)
+                    .numberOfRecords((long) i)
+                    .build();
             filesToMoveToReadyForGC.add(fileInfo);
         }
         stateStore.addFiles(filesToMoveToReadyForGC);
-        FileInfo newLeftFileInfo = new FileInfo();
-        newLeftFileInfo.setRowKeyTypes(new LongType());
-        newLeftFileInfo.setFilename("file-left-new");
-        newLeftFileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        newLeftFileInfo.setPartitionId("7");
-        newLeftFileInfo.setMinRowKey(Key.create(1L));
-        newLeftFileInfo.setMaxRowKey(Key.create(5L));
-        newLeftFileInfo.setLastStateStoreUpdateTime(10_000_000L);
-        newLeftFileInfo.setNumberOfRecords(5L);
-        FileInfo newRightFileInfo = new FileInfo();
-        newRightFileInfo.setRowKeyTypes(new LongType());
-        newRightFileInfo.setFilename("file-right-new");
-        newRightFileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        newRightFileInfo.setPartitionId("7");
-        newRightFileInfo.setMinRowKey(Key.create(5L));
-        newRightFileInfo.setMaxRowKey(Key.create(10L));
-        newRightFileInfo.setLastStateStoreUpdateTime(10_000_000L);
-        newRightFileInfo.setNumberOfRecords(5L);
+        FileInfo newLeftFileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file-left-new")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("7")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(5L))
+                .lastStateStoreUpdateTime(10_000_000L)
+                .numberOfRecords(5L)
+                .build();
+        FileInfo newRightFileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file-right-new")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("7")
+                .minRowKey(Key.create(5L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(10_000_000L)
+                .numberOfRecords(5L)
+                .build();
 
         // When
         stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo);
@@ -664,29 +688,31 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(new LongType());
-            fileInfo.setFilename("file" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId("7");
-            fileInfo.setMinRowKey(Key.create(1L));
-            fileInfo.setMaxRowKey(Key.create(10L));
-            fileInfo.setLastStateStoreUpdateTime(1_000_000L);
-            fileInfo.setNumberOfRecords(1L);
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("7")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(1_000_000L)
+                    .numberOfRecords(1L)
+                    .build();
             filesToMoveToReadyForGC.add(fileInfo);
         }
         //  - One of the files is not active
         filesToMoveToReadyForGC.get(3).setFileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
         stateStore.addFiles(filesToMoveToReadyForGC);
-        FileInfo newFileInfo = new FileInfo();
-        newFileInfo.setRowKeyTypes(new LongType());
-        newFileInfo.setFilename("file-new");
-        newFileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        newFileInfo.setPartitionId("7");
-        newFileInfo.setMinRowKey(Key.create(1L));
-        newFileInfo.setMaxRowKey(Key.create(10L));
-        newFileInfo.setLastStateStoreUpdateTime(1_000_000L);
-        newFileInfo.setNumberOfRecords(1L);
+        FileInfo newFileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file-new")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("7")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .numberOfRecords(1L)
+                .build();
 
         // When / Then
         assertThatThrownBy(() ->
@@ -701,36 +727,39 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(new LongType());
-            fileInfo.setFilename("file" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId("7");
-            fileInfo.setMinRowKey(Key.create(1L));
-            fileInfo.setMaxRowKey(Key.create(10L));
-            fileInfo.setLastStateStoreUpdateTime(i * 1_000_000L);
-            fileInfo.setNumberOfRecords((long) i);
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("7")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(i * 1_000_000L)
+                    .numberOfRecords((long) i)
+                    .build();
             filesToMoveToReadyForGC.add(fileInfo);
         }
         stateStore.addFiles(filesToMoveToReadyForGC);
-        FileInfo newLeftFileInfo = new FileInfo();
-        newLeftFileInfo.setRowKeyTypes(new LongType());
-        newLeftFileInfo.setFilename("file-left-new");
-        newLeftFileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        newLeftFileInfo.setPartitionId("7");
-        newLeftFileInfo.setMinRowKey(Key.create(1L));
-        newLeftFileInfo.setMaxRowKey(Key.create(5L));
-        newLeftFileInfo.setLastStateStoreUpdateTime(10_000_000L);
-        newLeftFileInfo.setNumberOfRecords(5L);
-        FileInfo newRightFileInfo = new FileInfo();
-        newRightFileInfo.setRowKeyTypes(new LongType());
-        newRightFileInfo.setFilename("file-right-new");
-        newRightFileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        newRightFileInfo.setPartitionId("7");
-        newRightFileInfo.setMinRowKey(Key.create(5L));
-        newRightFileInfo.setMaxRowKey(Key.create(10L));
-        newRightFileInfo.setLastStateStoreUpdateTime(10_000_000L);
-        newRightFileInfo.setNumberOfRecords(5L);
+        FileInfo newLeftFileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file-left-new")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("7")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(5L))
+                .lastStateStoreUpdateTime(10_000_000L)
+                .numberOfRecords(5L)
+                .build();
+        FileInfo newRightFileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file-right-new")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("7")
+                .minRowKey(Key.create(5L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(10_000_000L)
+                .numberOfRecords(5L)
+                .build();
         //  - One of the files is not active
         filesToMoveToReadyForGC.get(3).setFileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
         stateStore.addFiles(filesToMoveToReadyForGC);
@@ -748,15 +777,16 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> files = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(new LongType());
-            fileInfo.setFilename("file" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId("8");
-            fileInfo.setMinRowKey(Key.create(1L));
-            fileInfo.setMaxRowKey(Key.create(10L));
-            fileInfo.setLastStateStoreUpdateTime(i * 1_000_000L);
-            fileInfo.setNumberOfRecords(1L);
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("8")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(i * 1_000_000L)
+                    .numberOfRecords(1L)
+                    .build();
             files.add(fileInfo);
         }
         stateStore.addFiles(files);
@@ -780,15 +810,16 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> files = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(new LongType());
-            fileInfo.setFilename("file" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId("9");
-            fileInfo.setJobId("compactionJob");
-            fileInfo.setMinRowKey(Key.create(1L));
-            fileInfo.setMaxRowKey(Key.create(10L));
-            fileInfo.setLastStateStoreUpdateTime(i * 1_000_000L);
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("9")
+                    .jobId("compactionJob")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(i * 1_000_000L)
+                    .build();
             fileInfo.setNumberOfRecords(1L);
             files.add(fileInfo);
         }
@@ -852,8 +883,15 @@ public class S3StateStoreIT {
         Range range1 = rangeFactory.createRange(field1, min1, max1);
         Range range2 = rangeFactory.createRange(field2, min2, max2);
         Region region = new Region(Arrays.asList(range1, range2));
-        Partition partition = new Partition(schema.getRowKeyTypes(),
-                region, "id", true, "P", new ArrayList<>(), -1);
+        Partition partition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region)
+                .id("id")
+                .leafPartition(true)
+                .parentPartitionId("P")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         StateStore stateStore = getStateStore(schema, Collections.singletonList(partition));
 
         // When
@@ -878,8 +916,15 @@ public class S3StateStoreIT {
         byte[] max = new byte[]{5, 6, 7, 8, 9};
         Range range = new RangeFactory(schema).createRange(field.getName(), min, max);
         Region region = new Region(range);
-        Partition partition = new Partition(schema.getRowKeyTypes(),
-                region, "id", false, "P", new ArrayList<>(), 0);
+        Partition partition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region)
+                .id("id")
+                .leafPartition(false)
+                .parentPartitionId("P")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(0)
+                .build();
         StateStore stateStore = getStateStore(schema, Collections.singletonList(partition));
 
         // When
@@ -902,15 +947,16 @@ public class S3StateStoreIT {
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> files = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(new LongType());
-            fileInfo.setFilename("file" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId("" + (i % 5));
-            fileInfo.setMinRowKey(Key.create((long) i % 5));
-            fileInfo.setMaxRowKey(Key.create((long) i % 5));
-            fileInfo.setLastStateStoreUpdateTime(1_000_000L);
-            fileInfo.setNumberOfRecords((long) i);
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("" + (i % 5))
+                    .minRowKey(Key.create((long) i % 5))
+                    .maxRowKey(Key.create((long) i % 5))
+                    .lastStateStoreUpdateTime(1_000_000L)
+                    .numberOfRecords((long) i)
+                    .build();
             files.add(fileInfo);
         }
         stateStore.addFiles(files);
@@ -935,13 +981,45 @@ public class S3StateStoreIT {
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         Region region0 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 1L));
-        Partition partition0 = new Partition(schema.getRowKeyTypes(), region0, "id0", true, "root", new ArrayList<>(), -1);
+        Partition partition0 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region0)
+                .id("id0")
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         Region region1 = new Region(new RangeFactory(schema).createRange(field, 1L, 100L));
-        Partition partition1 = new Partition(schema.getRowKeyTypes(), region1, "id1", true, "root", new ArrayList<>(), -1);
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region1)
+                .id("id1")
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         Region region2 = new Region(new RangeFactory(schema).createRange(field, 100L, 200L));
-        Partition partition2 = new Partition(schema.getRowKeyTypes(), region2, "id2", true, "root", new ArrayList<>(), -1);
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region2)
+                .id("id2")
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         Region region3 = new Region(new RangeFactory(schema).createRange(field, 200L, null));
-        Partition partition3 = new Partition(schema.getRowKeyTypes(), region3, "id3", true, "root", new ArrayList<>(), -1);
+        Partition partition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region3)
+                .id("id3")
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         StateStore dynamoDBStateStore = getStateStore(schema, Arrays.asList(partition0, partition1, partition2, partition3));
 
         // When
@@ -969,16 +1047,48 @@ public class S3StateStoreIT {
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition rootPartition = dynamoDBStateStore.getAllPartitions().get(0);
         Region region1 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 1L));
-        Partition partition1 = new Partition(schema.getRowKeyTypes(), region1, "id1", true, rootPartition.getId(), new ArrayList<>(), -1);
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region1)
+                .id("id1")
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         Region region2 = new Region(new RangeFactory(schema).createRange(field, 1L, null));
-        Partition partition2 = new Partition(schema.getRowKeyTypes(), region2, "id2", true, rootPartition.getId(), new ArrayList<>(), -1);
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region2)
+                .id("id2")
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         rootPartition.setLeafPartition(false);
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, partition1, partition2);
         Region region3 = new Region(new RangeFactory(schema).createRange(field, 1L, 9L));
-        Partition partition3 = new Partition(schema.getRowKeyTypes(), region3, "id3", true, partition2.getId(), new ArrayList<>(), -1);
+        Partition partition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region3)
+                .id("id3")
+                .leafPartition(true)
+                .parentPartitionId(partition2.getId())
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         Region region4 = new Region(new RangeFactory(schema).createRange(field, 9L, null));
-        Partition partition4 = new Partition(schema.getRowKeyTypes(), region4, "id4", true, partition2.getId(), new ArrayList<>(), -1);
+        Partition partition4 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region4)
+                .id("id4")
+                .leafPartition(true)
+                .parentPartitionId(partition2.getId())
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         partition2.setLeafPartition(false);
         partition2.setChildPartitionIds(Arrays.asList(partition3.getId(), partition4.getId()));
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(partition2, partition3, partition4);
@@ -1012,24 +1122,26 @@ public class S3StateStoreIT {
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
         parentPartition.setDimension(1);
-        Partition childPartition1 = new Partition();
-        childPartition1.setRowKeyTypes(new LongType());
-        childPartition1.setLeafPartition(true);
-        childPartition1.setId("child1");
         Region region1 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 0L));
-        childPartition1.setRegion(region1);
-        childPartition1.setChildPartitionIds(new ArrayList<>());
-        childPartition1.setParentPartitionId(parentPartition.getId());
-        childPartition1.setDimension(-1);
-        Partition childPartition2 = new Partition();
-        childPartition2.setRowKeyTypes(new LongType());
-        childPartition2.setLeafPartition(true);
-        childPartition2.setId("child2");
+        Partition childPartition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child1")
+                .region(region1)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId(parentPartition.getId())
+                .dimension(-1)
+                .build();
         Region region2 = new Region(new RangeFactory(schema).createRange(field, 0L, null));
-        childPartition2.setRegion(region2);
-        childPartition2.setChildPartitionIds(new ArrayList<>());
-        childPartition2.setParentPartitionId(parentPartition.getId());
-        childPartition2.setDimension(-1);
+        Partition childPartition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child2")
+                .region(region2)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId(parentPartition.getId())
+                .dimension(-1)
+                .build();
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
 
         // Then
@@ -1046,23 +1158,24 @@ public class S3StateStoreIT {
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
-        Partition childPartition1 = new Partition();
-        childPartition1.setRowKeyTypes(new LongType());
-        childPartition1.setLeafPartition(true);
-        childPartition1.setId("child1");
         Region region1 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 0L));
-        childPartition1.setRegion(region1);
-        childPartition1.setChildPartitionIds(new ArrayList<>());
-        childPartition1.setParentPartitionId(parentPartition.getId());
-        Partition childPartition2 = new Partition();
-        childPartition2.setRowKeyTypes(new LongType());
-        childPartition2.setLeafPartition(true);
-        childPartition2.setId("child2");
+        Partition childPartition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child1")
+                .region(region1)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId(parentPartition.getId())
+                .build();
         Region region2 = new Region(new RangeFactory(schema).createRange(field, 0L, null));
-        childPartition2.setRegion(region2);
-
-        childPartition2.setChildPartitionIds(new ArrayList<>());
-        childPartition2.setParentPartitionId(parentPartition.getId());
+        Partition childPartition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child2")
+                .region(region2)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId(parentPartition.getId())
+                .build();
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
 
         // When / Then
@@ -1080,22 +1193,24 @@ public class S3StateStoreIT {
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
-        Partition childPartition1 = new Partition();
-        childPartition1.setRowKeyTypes(new LongType());
-        childPartition1.setLeafPartition(true);
-        childPartition1.setId("child1");
         Region region1 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null));
-        childPartition1.setRegion(region1);
-        childPartition1.setChildPartitionIds(new ArrayList<>());
-        childPartition1.setParentPartitionId("parent");
-        Partition childPartition2 = new Partition();
-        childPartition2.setRowKeyTypes(new LongType());
-        childPartition2.setLeafPartition(true);
-        childPartition2.setId("child2");
+        Partition childPartition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child1")
+                .region(region1)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
         Region region2 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null));
-        childPartition2.setRegion(region2);
-        childPartition2.setChildPartitionIds(new ArrayList<>());
-        childPartition2.setParentPartitionId("parent");
+        Partition childPartition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child2")
+                .region(region2)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
 
         // When / Then
         assertThatThrownBy(() ->
@@ -1112,22 +1227,24 @@ public class S3StateStoreIT {
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child3", "child2")); // Wrong children
-        Partition childPartition1 = new Partition();
-        childPartition1.setRowKeyTypes(new LongType());
-        childPartition1.setLeafPartition(true);
-        childPartition1.setId("child1");
         Region region1 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null));
-        childPartition1.setRegion(region1);
-        childPartition1.setChildPartitionIds(new ArrayList<>());
-        childPartition1.setParentPartitionId("parent");
-        Partition childPartition2 = new Partition();
-        childPartition2.setRowKeyTypes(new LongType());
-        childPartition2.setLeafPartition(true);
-        childPartition2.setId("child2");
+        Partition childPartition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child1")
+                .region(region1)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
         Region region2 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null));
-        childPartition2.setRegion(region2);
-        childPartition2.setChildPartitionIds(new ArrayList<>());
-        childPartition2.setParentPartitionId("parent");
+        Partition childPartition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child2")
+                .region(region2)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
 
         // When / Then
         assertThatThrownBy(() ->
@@ -1144,22 +1261,24 @@ public class S3StateStoreIT {
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
-        Partition childPartition1 = new Partition();
-        childPartition1.setRowKeyTypes(new LongType());
-        childPartition1.setLeafPartition(true);
-        childPartition1.setId("child1");
         Region region1 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null));
-        childPartition1.setRegion(region1);
-        childPartition1.setChildPartitionIds(new ArrayList<>());
-        childPartition1.setParentPartitionId("notparent"); // Wrong parent
-        Partition childPartition2 = new Partition();
-        childPartition2.setRowKeyTypes(new LongType());
-        childPartition2.setLeafPartition(true);
-        childPartition2.setId("child2");
+        Partition childPartition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child1")
+                .region(region1)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("notparent") // Wrong parent
+                .build();
         Region region2 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null));
-        childPartition2.setRegion(region2);
-        childPartition2.setChildPartitionIds(new ArrayList<>());
-        childPartition2.setParentPartitionId("parent");
+        Partition childPartition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child2")
+                .region(region2)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
 
         // When / Then
         assertThatThrownBy(() ->
@@ -1176,22 +1295,24 @@ public class S3StateStoreIT {
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         parentPartition.setLeafPartition(false);
         parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
-        Partition childPartition1 = new Partition();
-        childPartition1.setRowKeyTypes(new LongType());
-        childPartition1.setLeafPartition(true);
-        childPartition1.setId("child1");
         Region region1 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 0L));
-        childPartition1.setRegion(region1);
-        childPartition1.setChildPartitionIds(new ArrayList<>());
-        childPartition1.setParentPartitionId("parent");
-        Partition childPartition2 = new Partition();
-        childPartition2.setRowKeyTypes(new LongType());
-        childPartition2.setLeafPartition(false); // Not leaf
-        childPartition2.setId("child2");
+        Partition childPartition1 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(true)
+                .id("child1")
+                .region(region1)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
         Region region2 = new Region(new RangeFactory(schema).createRange(field, 0L, Long.MAX_VALUE));
-        childPartition2.setRegion(region2);
-        childPartition2.setChildPartitionIds(new ArrayList<>());
-        childPartition2.setParentPartitionId("parent");
+        Partition childPartition2 = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .leafPartition(false) // Not leaf
+                .id("child2")
+                .region(region2)
+                .childPartitionIds(new ArrayList<>())
+                .parentPartitionId("parent")
+                .build();
 
         // When / Then
         assertThatThrownBy(() ->
@@ -1212,8 +1333,15 @@ public class S3StateStoreIT {
         // Then
         assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, null));
-        Partition expectedPartition = new Partition(schema.getRowKeyTypes(),
-                expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
+        Partition expectedPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedRegion)
+                .id(partitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         assertThat(partitions).containsExactly(expectedPartition);
     }
 
@@ -1230,8 +1358,15 @@ public class S3StateStoreIT {
         // Then
         assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null));
-        Partition expectedPartition = new Partition(Collections.singletonList(new LongType()),
-                expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
+        Partition expectedPartition = Partition.builder()
+                .rowKeyTypes(Collections.singletonList(new LongType()))
+                .region(expectedRegion)
+                .id(partitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         assertThat(partitions).containsExactly(expectedPartition);
     }
 
@@ -1248,8 +1383,15 @@ public class S3StateStoreIT {
         // Then
         assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, "", null));
-        Partition expectedPartition = new Partition(Collections.singletonList(new StringType()),
-                expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
+        Partition expectedPartition = Partition.builder()
+                .rowKeyTypes(Collections.singletonList(new StringType()))
+                .region(expectedRegion)
+                .id(partitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         assertThat(partitions).containsExactly(expectedPartition);
     }
 
@@ -1266,8 +1408,15 @@ public class S3StateStoreIT {
         // Then
         assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, new byte[]{}, null));
-        Partition expectedPartition = new Partition(Collections.singletonList(new ByteArrayType()),
-                expectedRegion, partitions.get(0).getId(), true, null, new ArrayList<>(), -1);
+        Partition expectedPartition = Partition.builder()
+                .rowKeyTypes(Collections.singletonList(new ByteArrayType()))
+                .region(expectedRegion)
+                .id(partitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
         assertThat(partitions).containsExactly(expectedPartition);
     }
 }

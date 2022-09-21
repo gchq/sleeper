@@ -24,14 +24,14 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
+import sleeper.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.table.util.StateStoreProvider;
+import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
-import sleeper.ClientUtils;
 
 /**
  * A utility class to report information about the partitions, the files, the
@@ -60,7 +60,7 @@ public class StatusReport {
     }
 
     private void run() throws StateStoreException {
-        System.out.println( "\nFull Status Report:\n--------------------------");
+        System.out.println("\nFull Status Report:\n--------------------------");
         // Partitions
         new PartitionsStatusReport(stateStore).run();
 
@@ -83,7 +83,7 @@ public class StatusReport {
         }
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
-        
+
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();

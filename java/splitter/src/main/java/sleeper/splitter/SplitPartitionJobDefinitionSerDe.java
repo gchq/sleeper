@@ -25,12 +25,13 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionSerDe.PartitionJsonSerDe;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Serialises a {@link SplitPartitionJobDefinition} to and from byte arrays and
@@ -40,15 +41,15 @@ public class SplitPartitionJobDefinitionSerDe {
     public static final String TABLE_NAME = "tableName";
     public static final String FILE_NAMES = "filenames";
     public static final String PARTITION = "partition";
-    
+
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
-    
+
     public SplitPartitionJobDefinitionSerDe(TablePropertiesProvider tablePropertiesProvider) {
         try {
             GsonBuilder builder = new GsonBuilder()
-                        .registerTypeAdapter(Class.forName(SplitPartitionJobDefinition.class.getName()), new SplitPartitionJobDefinitionJsonSerDe(tablePropertiesProvider))
-                        .serializeNulls();
+                    .registerTypeAdapter(Class.forName(SplitPartitionJobDefinition.class.getName()), new SplitPartitionJobDefinitionJsonSerDe(tablePropertiesProvider))
+                    .serializeNulls();
             this.gson = builder.create();
             this.gsonPrettyPrinting = builder.setPrettyPrinting().create();
         } catch (ClassNotFoundException e) {
@@ -73,22 +74,22 @@ public class SplitPartitionJobDefinitionSerDe {
 
     public static class SplitPartitionJobDefinitionJsonSerDe implements JsonSerializer<SplitPartitionJobDefinition>, JsonDeserializer<SplitPartitionJobDefinition> {
         private final TablePropertiesProvider tablePropertiesProvider;
-        
+
         public SplitPartitionJobDefinitionJsonSerDe(TablePropertiesProvider tablePropertiesProvider) {
             this.tablePropertiesProvider = tablePropertiesProvider;
         }
-        
+
         @Override
         public JsonElement serialize(SplitPartitionJobDefinition job, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
             JsonObject json = new JsonObject();
             json.addProperty(TABLE_NAME, job.getTableName());
-            
+
             JsonArray fileNames = new JsonArray();
             for (String fileName : job.getFileNames()) {
                 fileNames.add(fileName);
             }
             json.add(FILE_NAMES, fileNames);
-            
+
             PartitionJsonSerDe partitionJsonSerDe = new PartitionJsonSerDe(tablePropertiesProvider.getTableProperties(job.getTableName()).getSchema());
             JsonElement jsonPartition = partitionJsonSerDe.serialize(job.getPartition(), typeOfSrc, context);
             json.add(PARTITION, jsonPartition);
@@ -101,20 +102,20 @@ public class SplitPartitionJobDefinitionSerDe {
                 throw new JsonParseException("Expected JsonObject, got " + jsonElement);
             }
             JsonObject json = (JsonObject) jsonElement;
-            
+
             String tableName = json.get(TABLE_NAME).getAsString();
-            
+
             JsonArray fileNamesArray = json.get(FILE_NAMES).getAsJsonArray();
             List<String> fileNames = new ArrayList<>();
             Iterator<JsonElement> it = fileNamesArray.iterator();
             while (it.hasNext()) {
-               fileNames.add(it.next().getAsString());
+                fileNames.add(it.next().getAsString());
             }
-            
+
             PartitionJsonSerDe partitionJsonSerDe = new PartitionJsonSerDe(tablePropertiesProvider.getTableProperties(tableName).getSchema());
             JsonElement jsonPartition = json.get(PARTITION);
             Partition partition = partitionJsonSerDe.deserialize(jsonPartition, typeOfT, context);
-            
+
             return new SplitPartitionJobDefinition(tableName, partition, fileNames);
         }
     }

@@ -17,10 +17,12 @@ package sleeper.statestore.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class DynamoDBAttributes {
+
+    private DynamoDBAttributes() {
+    }
 
     /**
      * Creates a String attribute. This method abstracts an AWS call to make life easier when upgrading SDK
@@ -42,7 +44,7 @@ public class DynamoDBAttributes {
         return new AttributeValue().withN("" + number);
     }
 
-    static AttributeValue createBinaryAttribute(byte[] bytes) throws IOException {
+    static AttributeValue createBinaryAttribute(byte[] bytes) {
         return new AttributeValue().withB(ByteBuffer.wrap(bytes));
     }
 

@@ -82,7 +82,8 @@ public class ChangeMessageVisibilityTimeoutActionIT {
 
         // When
         //  - Extend the message visibility timeout to 10 seconds
-        ChangeMessageVisibilityTimeoutAction action = new ChangeMessageVisibilityTimeoutAction(sqs, queueUrl, "test", receiptHandle, 10);
+        ChangeMessageVisibilityTimeoutAction action = new MessageReference(sqs, queueUrl, "test", receiptHandle)
+                .changeVisibilityTimeoutAction(10);
         action.call();
 
         // Then

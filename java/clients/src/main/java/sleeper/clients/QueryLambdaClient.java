@@ -21,26 +21,29 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
 import sleeper.ClientUtils;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.model.output.ResultsOutputConstants;
 import sleeper.query.model.output.SQSResultsOutput;
-import sleeper.query.tracker.QueryState;
 import sleeper.query.tracker.DynamoDBQueryTracker;
+import sleeper.query.tracker.QueryState;
 import sleeper.query.tracker.TrackedQuery;
 import sleeper.query.tracker.exception.QueryTrackerException;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.statestore.StateStoreException;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
+
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.statestore.StateStoreException;
 
 /**
  * Runs queries by sending them to an SQS queue which will trigger a lambda to
@@ -65,7 +68,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     protected void init(TableProperties tableProperties) throws StateStoreException {
         // No-op
     }
-    
+
     @Override
     protected void submitQuery(TableProperties tableProperties, Query query) {
         System.out.println("Submitting query with id " + query.getQueryId());
@@ -101,7 +104,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
 
     @Override
     protected void runQueries(TableProperties tableProperties) {
-        Scanner scanner = new Scanner(System.in);
+        Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.displayName());
         resultsPublisherConfig = new HashMap<>();
         while (true) {
             System.out.println("Send output to S3 results bucket (s) or SQS (q)?");
@@ -124,7 +127,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
         }
         super.runQueries(tableProperties);
     }
-    
+
     public void submitQuery(Query query) {
         query.setResultsPublisherConfig(resultsPublisherConfig);
         sqsClient.sendMessage(queryQueueUrl, querySerDe.toJson(query));

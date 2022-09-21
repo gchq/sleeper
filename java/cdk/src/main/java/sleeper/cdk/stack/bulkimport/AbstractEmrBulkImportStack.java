@@ -19,20 +19,13 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
-import java.io.InputStreamReader;
-import java.util.List;
-import java.util.Map;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_BUCKET_CREATE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import software.amazon.awscdk.CfnJson;
 import software.amazon.awscdk.CfnJsonProps;
-import software.constructs.Construct;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
@@ -62,6 +55,18 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.ITopic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
+import software.constructs.Construct;
+
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_BUCKET_CREATE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 public abstract class AbstractEmrBulkImportStack extends NestedStack {
     protected final String shortId;
@@ -75,11 +80,13 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
     protected final String region;
     protected final String vpc;
     protected final String subnet;
-    
+
     protected final Queue bulkImportJobQueue;
     protected IRole ec2Role;
 
-    public AbstractEmrBulkImportStack(Construct scope,
+    @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
+    public AbstractEmrBulkImportStack(
+            Construct scope,
             String id,
             String shortId,
             String bulkImportPlatform,
@@ -89,7 +96,6 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
             InstanceProperties instanceProperties,
             ITopic errorsTopic) {
         super(scope, id);
-        
         this.shortId = shortId;
         this.bulkImportPlatform = bulkImportPlatform;
         this.instanceProperties = instanceProperties;
@@ -99,7 +105,7 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
         this.region = instanceProperties.get(UserDefinedInstanceProperty.REGION);
         this.subnet = instanceProperties.get(UserDefinedInstanceProperty.SUBNET);
         this.vpc = instanceProperties.get(UserDefinedInstanceProperty.VPC_ID);
-        
+
         // Ingest bucket
         String ingestBucketName = instanceProperties.get(UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET);
         if (null != ingestBucketName && !ingestBucketName.isEmpty()) {
@@ -107,22 +113,22 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
         } else {
             this.ingestBucket = null;
         }
-        
+
         // Bucket for logs from bulk import
         createImportBucket();
-        
+
         // Queue for messages to trigger jobs - note that each concrete substack
         // will have its own queue. The shortId is used to ensure the names of
         // the queues are different.
         this.bulkImportJobQueue = createQueues(shortId, jobQueueUrl);
-        
+
         // Create roles
         createRoles(dataBuckets, stateStoreStacks, region, account, vpc, subnet);
-        
+
         // Create security configuration
         createSecurityConfiguration();
     }
-      
+
     private void createImportBucket() {
         // NB This method will be called twice if both the persistent and
         // non-persistent EMR stacks are deployed so we need to avoid creating
@@ -133,7 +139,7 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
             } else {
                 importBucket = Bucket.Builder.create(this, "BulkImportBucket")
                         .bucketName(String.join("-", "sleeper", instanceProperties.get(ID),
-                                 "bulk-import").toLowerCase())
+                                "bulk-import").toLowerCase(Locale.ROOT))
                         .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                         .versioned(false)
                         .autoDeleteObjects(true)
@@ -151,7 +157,7 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
             importBucket = null;
         }
     }
-    
+
     private Queue createQueues(String shortId, SystemDefinedInstanceProperty jobQueueUrl) {
         Queue queueForDLs = Queue.Builder
                 .create(this, "BulkImport" + shortId + "JobDeadLetterQueue")
@@ -164,9 +170,9 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
                 .build();
 
         queueForDLs.metricApproximateNumberOfMessagesVisible().with(MetricOptions.builder()
-                .period(Duration.seconds(60))
-                .statistic("Sum")
-                .build())
+                        .period(Duration.seconds(60))
+                        .statistic("Sum")
+                        .build())
                 .createAlarm(this, "BulkImport" + shortId + "UndeliveredJobsAlarm", CreateAlarmOptions.builder()
                         .alarmDescription("Alarms if there are any messages that have failed validation or failed to start a " + shortId + " EMR Spark job")
                         .evaluationPeriods(1)
@@ -184,21 +190,21 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
                 .build();
 
         instanceProperties.set(jobQueueUrl, emrBulkImportJobQueue.getQueueUrl());
-        
+
         return emrBulkImportJobQueue;
     }
-    
+
     protected void createRoles(List<IBucket> dataBuckets, List<StateStoreStack> stateStoreStacks,
-            String region, String account, String vpc, String subnet) {
+                               String region, String account, String vpc, String subnet) {
         // These roles are shared across all concrete substacks, so we need to
         // avoid creating them twice if more than one concrete substack is
         // deployed.
-        
+
         if (null != instanceProperties.get(BULK_IMPORT_EMR_EC2_ROLE_NAME)) {
             ec2Role = Role.fromRoleName(this, "Ec2Role", instanceProperties.get(BULK_IMPORT_EMR_EC2_ROLE_NAME));
             return;
         }
-        
+
         // The EC2 Role is the role assumed by the EC2 instances and is the one
         // we need to grant accesses to.
         ec2Role = new Role(this, "Ec2Role", RoleProps.builder()
@@ -215,7 +221,7 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
         // The role needs to be able to access user's jars
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(UserDefinedInstanceProperty.JARS_BUCKET));
         jarsBucket.grantRead(ec2Role);
-        
+
         // Required to enable debugging
         ec2Role.addToPrincipalPolicy(PolicyStatement.Builder.create()
                 .actions(Lists.newArrayList("sqs:GetQueueUrl", "sqs:SendMessage"))
@@ -239,48 +245,48 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
 
         // Allow SSM access
         ec2Role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore"));
-        
+
         instanceProperties.set(BULK_IMPORT_EMR_EC2_ROLE_NAME, ec2Role.getRoleName());
 
         new CfnInstanceProfile(this, "EC2InstanceProfile", CfnInstanceProfileProps.builder()
-            .instanceProfileName(ec2Role.getRoleName())
-            .roles(Lists.newArrayList(ec2Role.getRoleName()))
-            .build());
+                .instanceProfileName(ec2Role.getRoleName())
+                .roles(Lists.newArrayList(ec2Role.getRoleName()))
+                .build());
 
         // Use the policy which is derived from the AmazonEMRServicePolicy_v2 policy.
         PolicyDocument policyDoc = PolicyDocument.fromJson(new Gson().fromJson(new JsonReader(
-                new InputStreamReader(EmrBulkImportStack.class.getResourceAsStream("/iam/SleeperEMRPolicy.json"))),
+                        new InputStreamReader(EmrBulkImportStack.class.getResourceAsStream("/iam/SleeperEMRPolicy.json"), StandardCharsets.UTF_8)),
                 Map.class));
 
         ManagedPolicy customEmrManagedPolicy = new ManagedPolicy(this, "CustomEMRManagedPolicy", ManagedPolicyProps.builder()
                 .description("Custom policy for EMR bulk import to operate in VPC")
                 .managedPolicyName("sleeper-" + instanceId + "-VPCPolicy")
                 .document(PolicyDocument.Builder.create().statements(Lists.newArrayList(
-                        new PolicyStatement(PolicyStatementProps.builder()
-                                .sid("CreateSecurityGroupInVPC")
-                                .actions(Lists.newArrayList("ec2:CreateSecurityGroup"))
-                                .effect(Effect.ALLOW)
-                                .resources(Lists.newArrayList("arn:aws:ec2:" + region + ":" + account + ":vpc/" + vpc))
-                                .build()),
-                        new PolicyStatement(PolicyStatementProps.builder()
-                                .sid("ManageResourcesInSubnet")
-                                .actions(Lists.newArrayList(
-                                        "ec2:CreateNetworkInterface",
-                                        "ec2:RunInstances",
-                                        "ec2:CreateFleet",
-                                        "ec2:CreateLaunchTemplate",
-                                        "ec2:CreateLaunchTemplateVersion"))
-                                .effect(Effect.ALLOW)
-                                .resources(Lists.newArrayList("arn:aws:ec2:" + region + ":" + account + ":subnet/" + subnet))
-                                .build()),
-                        new PolicyStatement(PolicyStatementProps.builder()
-                                .sid("PassEc2Role")
-                                .effect(Effect.ALLOW)
-                                .actions(Lists.newArrayList("iam:PassRole"))
-                                .resources(Lists.newArrayList(ec2Role.getRoleArn()))
-                                .conditions(ImmutableMap.of("StringLike", ImmutableMap.of("iam:PassedToService", "ec2.amazonaws.com*")))
-                                .build()
-                        )))
+                                new PolicyStatement(PolicyStatementProps.builder()
+                                        .sid("CreateSecurityGroupInVPC")
+                                        .actions(Lists.newArrayList("ec2:CreateSecurityGroup"))
+                                        .effect(Effect.ALLOW)
+                                        .resources(Lists.newArrayList("arn:aws:ec2:" + region + ":" + account + ":vpc/" + vpc))
+                                        .build()),
+                                new PolicyStatement(PolicyStatementProps.builder()
+                                        .sid("ManageResourcesInSubnet")
+                                        .actions(Lists.newArrayList(
+                                                "ec2:CreateNetworkInterface",
+                                                "ec2:RunInstances",
+                                                "ec2:CreateFleet",
+                                                "ec2:CreateLaunchTemplate",
+                                                "ec2:CreateLaunchTemplateVersion"))
+                                        .effect(Effect.ALLOW)
+                                        .resources(Lists.newArrayList("arn:aws:ec2:" + region + ":" + account + ":subnet/" + subnet))
+                                        .build()),
+                                new PolicyStatement(PolicyStatementProps.builder()
+                                        .sid("PassEc2Role")
+                                        .effect(Effect.ALLOW)
+                                        .actions(Lists.newArrayList("iam:PassRole"))
+                                        .resources(Lists.newArrayList(ec2Role.getRoleArn()))
+                                        .conditions(ImmutableMap.of("StringLike", ImmutableMap.of("iam:PassedToService", "ec2.amazonaws.com*")))
+                                        .build()
+                                )))
                         .build())
                 .build());
 
@@ -307,16 +313,16 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
             ingestBucket.grantRead(ec2Role);
         }
     }
-    
+
     protected void createSecurityConfiguration() {
         if (null == instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME)) {
             // See https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-create-security-configuration.html
             String jsonSecurityConf = "{\n" +
-                "  \"InstanceMetadataServiceConfiguration\" : {\n" +
-                "      \"MinimumInstanceMetadataServiceVersion\": 2,\n" +
-                "      \"HttpPutResponseHopLimit\": 1\n" +
-                "   }\n" +
-                "}";
+                    "  \"InstanceMetadataServiceConfiguration\" : {\n" +
+                    "      \"MinimumInstanceMetadataServiceVersion\": 2,\n" +
+                    "      \"HttpPutResponseHopLimit\": 1\n" +
+                    "   }\n" +
+                    "}";
             CfnJsonProps jsonProps = CfnJsonProps.builder().value(jsonSecurityConf).build();
             CfnJson jsonObject = new CfnJson(this, "EMRSecurityConfigurationJSONObject", jsonProps);
             CfnSecurityConfigurationProps securityConfigurationProps = CfnSecurityConfigurationProps.builder()
@@ -327,7 +333,7 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
             instanceProperties.set(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME, securityConfigurationProps.getName());
         }
     }
-    
+
     public Queue getEmrBulkImportJobQueue() {
         return bulkImportJobQueue;
     }

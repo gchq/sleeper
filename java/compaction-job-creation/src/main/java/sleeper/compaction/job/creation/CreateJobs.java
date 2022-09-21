@@ -15,15 +15,12 @@
  */
 package sleeper.compaction.job.creation;
 
-import sleeper.compaction.job.CompactionJobSerDe;
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.strategy.CompactionStrategy;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
-import com.amazonaws.services.sqs.model.SendMessageResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.strategy.CompactionStrategy;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
@@ -33,21 +30,19 @@ import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableLister;
-import sleeper.table.util.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 
 /**
  * Creates compaction job definitions and posts them to an SQS queue.
- *
+ * <p>
  * This is done as follows:
  * - Queries the {@link StateStore} for active files which do not have a job id.
  * - Groups these by partition.
@@ -56,31 +51,42 @@ import static sleeper.configuration.properties.table.TableProperty.COMPACTION_ST
  * - These compaction jobs are then sent to SQS.
  */
 public class CreateJobs {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreateJobs.class);
+
     private final ObjectFactory objectFactory;
     private final InstanceProperties instanceProperties;
-    private static final Logger LOGGER = LoggerFactory.getLogger(CreateJobs.class);
-    private final AmazonDynamoDB dynamoDBClient;
-    private final AmazonSQS sqsClient;
+    private final JobSender jobSender;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
-    private final CompactionJobSerDe compactionJobSerDe;
     private final TableLister tableLister;
+    private final CompactionJobStatusStore jobStatusStore;
 
     public CreateJobs(ObjectFactory objectFactory,
                       InstanceProperties instanceProperties,
                       TablePropertiesProvider tablePropertiesProvider,
                       StateStoreProvider stateStoreProvider,
-                      AmazonDynamoDB dynamoDBClient,
                       AmazonSQS sqsClient,
-                      TableLister tableLister) {
+                      TableLister tableLister,
+                      CompactionJobStatusStore jobStatusStore) {
+        this(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
+                new SendCompactionJobToSqs(instanceProperties, tablePropertiesProvider, sqsClient)::send,
+                tableLister, jobStatusStore);
+    }
+
+    public CreateJobs(ObjectFactory objectFactory,
+                      InstanceProperties instanceProperties,
+                      TablePropertiesProvider tablePropertiesProvider,
+                      StateStoreProvider stateStoreProvider,
+                      JobSender jobSender,
+                      TableLister tableLister,
+                      CompactionJobStatusStore jobStatusStore) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
-        this.dynamoDBClient = dynamoDBClient;
-        this.sqsClient = sqsClient;
+        this.jobSender = jobSender;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
-        this.compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         this.tableLister = tableLister;
+        this.jobStatusStore = jobStatusStore;
     }
 
     public void createJobs() throws StateStoreException, IOException, ClassNotFoundException, IllegalAccessException, InstantiationException, ObjectFactoryException {
@@ -119,11 +125,7 @@ public class CreateJobs {
             // Send compaction job to SQS (NB Send compaction job to SQS before updating the job field of the files in the
             // StateStore so that if the send to SQS fails then the StateStore will not be updated and later another
             // job can be created for these files.)
-            if (compactionJob.isSplittingJob()) {
-                sendCompactionJobToSQS(compactionJob, instanceProperties.get(SPLITTING_COMPACTION_JOB_QUEUE_URL));
-            } else {
-                sendCompactionJobToSQS(compactionJob, instanceProperties.get(COMPACTION_JOB_QUEUE_URL));
-            }
+            jobSender.send(compactionJob);
 
             // Update the statuses of these files to record that a compaction job is in progress
             LOGGER.debug("Updating status of files in StateStore");
@@ -138,17 +140,12 @@ public class CreateJobs {
                 }
             }
             stateStore.atomicallyUpdateJobStatusOfFiles(compactionJob.getId(), fileInfos1);
+            jobStatusStore.jobCreated(compactionJob);
         }
     }
 
-    private void sendCompactionJobToSQS(CompactionJob compactionJob,
-                                        String queueUrl) throws IOException {
-        String serialisedJobDefinition = compactionJobSerDe.serialiseToString(compactionJob);
-        LOGGER.debug("Sending compaction job with id {} to SQS", compactionJob.getId());
-        SendMessageRequest sendMessageRequest = new SendMessageRequest()
-                .withQueueUrl(queueUrl)
-                .withMessageBody(serialisedJobDefinition);
-        SendMessageResult sendMessageResult = sqsClient.sendMessage(sendMessageRequest);
-        LOGGER.debug("Result of sending message: {}", sendMessageResult);
+    @FunctionalInterface
+    public interface JobSender {
+        void send(CompactionJob compactionJob) throws IOException;
     }
 }
