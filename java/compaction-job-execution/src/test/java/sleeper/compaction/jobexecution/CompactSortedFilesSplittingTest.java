@@ -42,6 +42,7 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUt
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTwoTypedValuesAndKeyFields;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createStateStore;
 
 public class CompactSortedFilesSplittingTest extends CompactSortedFilesTestBase {
 

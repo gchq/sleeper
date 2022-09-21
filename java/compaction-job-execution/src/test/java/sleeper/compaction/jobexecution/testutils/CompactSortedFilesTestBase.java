@@ -20,12 +20,6 @@ import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.core.CommonTestConstants;
-import sleeper.core.schema.Schema;
-import sleeper.statestore.DelegatingStateStore;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
-import sleeper.statestore.inmemory.FixedPartitionStore;
-import sleeper.statestore.inmemory.InMemoryFileInfoStore;
 
 public class CompactSortedFilesTestBase {
 
@@ -44,15 +38,5 @@ public class CompactSortedFilesTestBase {
 
     protected CompactionJobFactory.Builder compactionFactoryBuilder() {
         return CompactionJobFactory.withTableName("table").outputFilePrefix(folderName);
-    }
-
-    protected StateStore createInitStateStore(Schema schema) throws StateStoreException {
-        StateStore stateStore = createStateStore(schema);
-        stateStore.initialise();
-        return stateStore;
-    }
-
-    protected StateStore createStateStore(Schema schema) {
-        return new DelegatingStateStore(new InMemoryFileInfoStore(), new FixedPartitionStore(schema));
     }
 }

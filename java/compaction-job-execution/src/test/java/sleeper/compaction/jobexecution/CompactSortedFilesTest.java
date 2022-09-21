@@ -40,6 +40,7 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDa
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createInitStateStore;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 
 public class CompactSortedFilesTest extends CompactSortedFilesTestBase {

@@ -21,15 +21,12 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.GenericContainer;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobFactory;
+import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDataHelper;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsBuilder;
@@ -37,8 +34,6 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -51,9 +46,11 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDa
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createInitStateStore;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createStateStore;
 
-public class CompactSortedFilesIT {
+public class CompactSortedFilesIT extends CompactSortedFilesTestBase {
     private static final int DYNAMO_PORT = 8000;
 
     @ClassRule
@@ -77,33 +74,6 @@ public class CompactSortedFilesIT {
     public static void afterAll() {
         dynamoDBClient.shutdown();
         dynamoDBClient = null;
-    }
-
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
-    private String folderName;
-
-    @Before
-    public void setUp() throws Exception {
-        folderName = folder.newFolder().getAbsolutePath();
-    }
-
-    private CompactionJobFactory compactionFactory() {
-        return compactionFactoryBuilder().build();
-    }
-
-    private CompactionJobFactory.Builder compactionFactoryBuilder() {
-        return CompactionJobFactory.withTableName("table").outputFilePrefix(folderName);
-    }
-
-    private static StateStore createInitStateStore(String tablenameStub, Schema schema, AmazonDynamoDB dynamoDBClient) throws StateStoreException {
-        StateStore dynamoStateStore = createStateStore(tablenameStub, schema, dynamoDBClient);
-        dynamoStateStore.initialise();
-        return dynamoStateStore;
-    }
-
-    private static StateStore createStateStore(String tablenameStub, Schema schema, AmazonDynamoDB dynamoDBClient) throws StateStoreException {
-        return new DynamoDBStateStoreCreator(tablenameStub, schema, dynamoDBClient).create();
     }
 
     @Test
