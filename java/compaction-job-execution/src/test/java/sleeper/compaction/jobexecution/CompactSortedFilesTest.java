@@ -15,13 +15,8 @@
  */
 package sleeper.compaction.jobexecution;
 
-import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import sleeper.compaction.job.CompactionFactory;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.impl.AgeOffIterator;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
@@ -30,11 +25,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.statestore.DelegatingStateStore;
 import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
-import sleeper.statestore.inmemory.FixedPartitionStore;
-import sleeper.statestore.inmemory.InMemoryFileInfoStore;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,34 +50,7 @@ import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.create
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createSchemaWithTwoTypedValuesAndKeyFields;
 import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 
-public class CompactSortedFilesTest {
-
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
-    private String folderName;
-
-    @Before
-    public void setUp() throws Exception {
-        folderName = folder.newFolder().getAbsolutePath();
-    }
-
-    private CompactionFactory compactionFactory() {
-        return compactionFactoryBuilder().build();
-    }
-
-    private CompactionFactory.Builder compactionFactoryBuilder() {
-        return CompactionFactory.withTableName("table").outputFilePrefix(folderName);
-    }
-
-    private StateStore createInitStateStore(Schema schema) throws StateStoreException {
-        StateStore stateStore = createStateStore(schema);
-        stateStore.initialise();
-        return stateStore;
-    }
-
-    private StateStore createStateStore(Schema schema) {
-        return new DelegatingStateStore(new InMemoryFileInfoStore(), new FixedPartitionStore(schema));
-    }
+public class CompactSortedFilesTest extends CompactSortedFilesTestBase {
 
     @Test
     public void filesShouldMergeCorrectlyAndDynamoUpdatedLongKey() throws Exception {
