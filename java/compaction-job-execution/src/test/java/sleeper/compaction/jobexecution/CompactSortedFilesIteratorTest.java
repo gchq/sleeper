@@ -17,6 +17,9 @@ package sleeper.compaction.jobexecution;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
+import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDataHelper;
+import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils;
 import sleeper.core.iterator.impl.AgeOffIterator;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
@@ -28,11 +31,11 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.readDataFile;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.specifiedFromEvens;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.specifiedFromOdds;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.assertReadyForGC;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createCompactSortedFiles;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.specifiedFromEvens;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.specifiedFromOdds;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
 
 public class CompactSortedFilesIteratorTest extends CompactSortedFilesTestBase {
 

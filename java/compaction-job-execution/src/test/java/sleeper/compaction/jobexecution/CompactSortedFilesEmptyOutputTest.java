@@ -17,6 +17,8 @@ package sleeper.compaction.jobexecution;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
+import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDataHelper;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
@@ -28,13 +30,13 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.combineSortedBySingleKey;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.readDataFile;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.assertReadyForGC;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createCompactSortedFiles;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.combineSortedBySingleKey;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 
 public class CompactSortedFilesEmptyOutputTest extends CompactSortedFilesTestBase {
 

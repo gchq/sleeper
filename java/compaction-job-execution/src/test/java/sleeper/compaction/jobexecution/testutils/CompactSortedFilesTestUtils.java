@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.jobexecution;
+package sleeper.compaction.jobexecution.testutils;
 
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.assertj.core.groups.Tuple;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.jobexecution.CompactSortedFiles;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.schema.Field;

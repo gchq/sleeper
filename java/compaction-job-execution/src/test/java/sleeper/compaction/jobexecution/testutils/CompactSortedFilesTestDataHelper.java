@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.jobexecution;
+package sleeper.compaction.jobexecution.testutils;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.core.partition.Partition;
@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.writeDataFile;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.writeDataFile;
 
 public class CompactSortedFilesTestDataHelper {
     private final Schema schema;

@@ -17,6 +17,8 @@ package sleeper.compaction.jobexecution;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
+import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDataHelper;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -27,18 +29,18 @@ import sleeper.statestore.StateStore;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.combineSortedBySingleByteArrayKey;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.combineSortedBySingleKey;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenByteArrays;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenStrings;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedOddByteArrays;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.keyAndTwoValuesSortedOddStrings;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestData.readDataFile;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.assertReadyForGC;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createCompactSortedFiles;
-import static sleeper.compaction.jobexecution.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.combineSortedBySingleByteArrayKey;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.combineSortedBySingleKey;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenByteArrays;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenStrings;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddByteArrays;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddStrings;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
+import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 
 public class CompactSortedFilesTest extends CompactSortedFilesTestBase {
 
