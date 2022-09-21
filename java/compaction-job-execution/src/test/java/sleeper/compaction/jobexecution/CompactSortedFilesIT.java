@@ -569,7 +569,7 @@ public class CompactSortedFilesIT {
     public void filesShouldMergeAndSplitAndApplyIteratorCorrectlyLongKey() throws Exception {
         // Given
         Schema schema = CompactSortedFilesTestUtils.createSchemaWithKeyTimestampValue();
-        StateStore stateStore = createStateStore("fsmaaiclk", schema, dynamoDBClient);
+        StateStore stateStore = createStateStore("fsmasaaiclk", schema, dynamoDBClient);
         stateStore.initialise(new PartitionsBuilder(schema)
                 .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(100L))
                 .parentJoining("C", "A", "B")
