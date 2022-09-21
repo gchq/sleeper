@@ -29,6 +29,7 @@ import java.util.Map;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
+import static sleeper.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 
 public class InMemoryFileInfoStore implements FileInfoStore {
 
@@ -59,7 +60,9 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public List<FileInfo> getActiveFilesWithNoJobId() {
-        return Collections.unmodifiableList(new ArrayList<>(activeFiles.values()));
+        return Collections.unmodifiableList(activeFiles.values().stream()
+                .filter(file -> file.getJobId() == null)
+                .collect(toList()));
     }
 
     @Override
@@ -71,25 +74,39 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List<FileInfo> filesToBeMarkedReadyForGC, FileInfo newActiveFile) {
-        for (FileInfo file : filesToBeMarkedReadyForGC) {
-            activeFiles.remove(file.getFilename());
-            readyForGCFiles.put(file.getFilename(), file);
-        }
-        activeFiles.put(newActiveFile.getFilename(), newActiveFile);
+        filesToBeMarkedReadyForGC.forEach(this::moveToGC);
+        addFile(newActiveFile);
     }
 
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC, FileInfo leftFileInfo, FileInfo rightFileInfo) {
-        for (FileInfo file : filesToBeMarkedReadyForGC) {
-            activeFiles.remove(file.getFilename());
-            readyForGCFiles.put(file.getFilename(), file);
-        }
-        activeFiles.put(leftFileInfo.getFilename(), leftFileInfo);
-        activeFiles.put(rightFileInfo.getFilename(), rightFileInfo);
+        filesToBeMarkedReadyForGC.forEach(this::moveToGC);
+        addFile(leftFileInfo);
+        addFile(rightFileInfo);
+    }
+
+    private void moveToGC(FileInfo file) {
+        activeFiles.remove(file.getFilename());
+        readyForGCFiles.put(file.getFilename(),
+                file.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION).build());
     }
 
     @Override
-    public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos) {
+    public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos) throws StateStoreException {
+        List<String> filenamesWithJobId = findFilenamesWithJobIdSet(fileInfos);
+        if (!filenamesWithJobId.isEmpty()) {
+            throw new StateStoreException("Job ID already set: " + filenamesWithJobId);
+        }
+        for (FileInfo file : fileInfos) {
+            activeFiles.put(file.getFilename(), file.toBuilder().jobId(jobId).build());
+        }
+    }
+
+    private List<String> findFilenamesWithJobIdSet(List<FileInfo> fileInfos) {
+        return fileInfos.stream()
+                .filter(file -> activeFiles.getOrDefault(file.getFilename(), file).getJobId() != null)
+                .map(FileInfo::getFilename)
+                .collect(toList());
     }
 
     @Override
