@@ -19,7 +19,6 @@ import sleeper.core.key.Key;
 import sleeper.core.schema.type.PrimitiveType;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -35,26 +34,26 @@ public class FileInfo {
         ACTIVE, READY_FOR_GARBAGE_COLLECTION
     }
 
-    private List<PrimitiveType> rowKeyTypes;
-    private Key minRowKey;
-    private Key maxRowKey;
-    private String filename;
-    private String partitionId;
-    private Long numberOfRecords;
-    private FileStatus fileStatus;
-    private String jobId;
-    private Long lastStateStoreUpdateTime; // The latest time (in milliseconds since the epoch) that the status of the file was updated in the StateStore
+    private final List<PrimitiveType> rowKeyTypes;
+    private final Key minRowKey;
+    private final Key maxRowKey;
+    private final String filename;
+    private final String partitionId;
+    private final Long numberOfRecords;
+    private final FileStatus fileStatus;
+    private final String jobId;
+    private final Long lastStateStoreUpdateTime; // The latest time (in milliseconds since the epoch) that the status of the file was updated in the StateStore
 
     private FileInfo(Builder builder) {
-        setRowKeyTypes(builder.rowKeyTypes);
-        setMinRowKey(builder.minRowKey);
-        setMaxRowKey(builder.maxRowKey);
-        setFilename(builder.filename);
-        setPartitionId(builder.partitionId);
-        setNumberOfRecords(builder.numberOfRecords);
-        setFileStatus(builder.fileStatus);
-        setJobId(builder.jobId);
-        setLastStateStoreUpdateTime(builder.lastStateStoreUpdateTime);
+        this.rowKeyTypes = builder.rowKeyTypes;
+        this.minRowKey = builder.minRowKey;
+        this.maxRowKey = builder.maxRowKey;
+        this.filename = builder.filename;
+        this.partitionId = builder.partitionId;
+        this.numberOfRecords = builder.numberOfRecords;
+        this.fileStatus = builder.fileStatus;
+        this.jobId = builder.jobId;
+        this.lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
     }
 
     public static Builder builder() {
@@ -65,75 +64,32 @@ public class FileInfo {
         return rowKeyTypes;
     }
 
-    public void setRowKeyTypes(List<PrimitiveType> rowKeyTypes) {
-        this.rowKeyTypes = rowKeyTypes;
-    }
-
-    public void setRowKeyTypes(PrimitiveType... rowKeyTypes) {
-        this.rowKeyTypes = new ArrayList<>();
-        for (PrimitiveType type : rowKeyTypes) {
-            this.rowKeyTypes.add(type);
-        }
-    }
-
     public Key getMinRowKey() {
         return minRowKey;
-    }
-
-    public void setMinRowKey(Key minRowKey) {
-        this.minRowKey = minRowKey;
     }
 
     public Key getMaxRowKey() {
         return maxRowKey;
     }
 
-    public void setMaxRowKey(Key maxRowKey) {
-        this.maxRowKey = maxRowKey;
-    }
-
-    public void setFilename(String filename) {
-        this.filename = filename;
-    }
-
     public String getFilename() {
         return filename;
-    }
-
-    public void setFileStatus(FileStatus fileStatus) {
-        this.fileStatus = fileStatus;
     }
 
     public FileStatus getFileStatus() {
         return fileStatus;
     }
 
-    public void setJobId(String jobId) {
-        this.jobId = jobId;
-    }
-
     public String getJobId() {
         return jobId;
-    }
-
-    public void setLastStateStoreUpdateTime(Long lastStateStoreUpdateTime) {
-        this.lastStateStoreUpdateTime = lastStateStoreUpdateTime;
     }
 
     public Long getLastStateStoreUpdateTime() {
         return lastStateStoreUpdateTime;
     }
 
-    public void setPartitionId(String partitionId) {
-        this.partitionId = partitionId;
-    }
-
     public String getPartitionId() {
         return partitionId;
-    }
-
-    public void setNumberOfRecords(Long numberOfRecords) {
-        this.numberOfRecords = numberOfRecords;
     }
 
     public Long getNumberOfRecords() {
@@ -181,6 +137,19 @@ public class FileInfo {
                 ", jobId='" + jobId + '\'' +
                 ", lastStateStoreUpdateTime=" + lastStateStoreUpdateTime +
                 '}';
+    }
+
+    public Builder toBuilder() {
+        return FileInfo.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .minRowKey(minRowKey)
+                .maxRowKey(maxRowKey)
+                .filename(filename)
+                .partitionId(partitionId)
+                .numberOfRecords(numberOfRecords)
+                .fileStatus(fileStatus)
+                .jobId(jobId)
+                .lastStateStoreUpdateTime(lastStateStoreUpdateTime);
     }
 
     public static final class Builder {

@@ -515,8 +515,8 @@ public class S3StateStoreIT {
                 .minRowKey(Key.create(100L))
                 .maxRowKey(Key.create(10000L))
                 .lastStateStoreUpdateTime(3_000_000L)
+                .numberOfRecords(3L)
                 .build();
-        fileInfo3.setNumberOfRecords(3L);
         stateStore.addFile(fileInfo3);
 
         // When
@@ -701,7 +701,10 @@ public class S3StateStoreIT {
             filesToMoveToReadyForGC.add(fileInfo);
         }
         //  - One of the files is not active
-        filesToMoveToReadyForGC.get(3).setFileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
+        FileInfo updatedFileInfo = filesToMoveToReadyForGC.remove(3).toBuilder()
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .build();
+        filesToMoveToReadyForGC.add(3, updatedFileInfo);
         stateStore.addFiles(filesToMoveToReadyForGC);
         FileInfo newFileInfo = FileInfo.builder()
                 .rowKeyTypes(new LongType())
@@ -761,7 +764,10 @@ public class S3StateStoreIT {
                 .numberOfRecords(5L)
                 .build();
         //  - One of the files is not active
-        filesToMoveToReadyForGC.get(3).setFileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
+        FileInfo updatedFileInfo = filesToMoveToReadyForGC.remove(3).toBuilder()
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .build();
+        filesToMoveToReadyForGC.add(3, updatedFileInfo);
         stateStore.addFiles(filesToMoveToReadyForGC);
 
         // When / Then
@@ -819,8 +825,8 @@ public class S3StateStoreIT {
                     .minRowKey(Key.create(1L))
                     .maxRowKey(Key.create(10L))
                     .lastStateStoreUpdateTime(i * 1_000_000L)
+                    .numberOfRecords(1L)
                     .build();
-            fileInfo.setNumberOfRecords(1L);
             files.add(fileInfo);
         }
         stateStore.addFiles(files);
