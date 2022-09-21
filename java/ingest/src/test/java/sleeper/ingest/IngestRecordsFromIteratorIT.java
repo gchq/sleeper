@@ -57,6 +57,7 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
@@ -263,21 +264,9 @@ public class IngestRecordsFromIteratorIT {
         String localDir = folder.newFolder().getAbsolutePath();
 
         // When
-        long numWritten = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, "/tmp"),
-                getRecords().iterator(),
-                localDir,
-                10L,
-                1000L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120).write();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
+                localDir, folder.newFolder().getAbsolutePath()).build();
+        long numWritten = new IngestRecordsFromIterator(properties, getRecords().iterator()).write();
 
         // Then:
         //  - Check the correct number of records were written
@@ -354,21 +343,9 @@ public class IngestRecordsFromIteratorIT {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        long numWritten = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, "/tmp"),
-                getRecords().iterator(),
-                folder.newFolder().getAbsolutePath(),
-                10L,
-                1000L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120).write();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
+                folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        long numWritten = new IngestRecordsFromIterator(properties, getRecords().iterator()).write();
 
         // Then:
         //  - Check the correct number of records were written
@@ -475,21 +452,9 @@ public class IngestRecordsFromIteratorIT {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        long numWritten = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, "/tmp"),
-                getRecordsByteArrayKey().iterator(),
-                folder.newFolder().getAbsolutePath(),
-                10L,
-                1000L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120).write();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
+                folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        long numWritten = new IngestRecordsFromIterator(properties, getRecordsByteArrayKey().iterator()).write();
 
         // Then:
         //  - Check the correct number of records were written
@@ -609,21 +574,9 @@ public class IngestRecordsFromIteratorIT {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        long numWritten = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, "/tmp"),
-                getRecords2DimByteArrayKey().iterator(),
-                folder.newFolder().getAbsolutePath(),
-                10L,
-                1000L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120).write();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
+                folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        long numWritten = new IngestRecordsFromIterator(properties, getRecords2DimByteArrayKey().iterator()).write();
 
         // Then:
         //  - Check the correct number of records were written
@@ -739,21 +692,9 @@ public class IngestRecordsFromIteratorIT {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        long numWritten = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, "/tmp"),
-                getRecordsInFirstPartitionOnly().iterator(),
-                folder.newFolder().getAbsolutePath(),
-                10L,
-                1000L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120).write();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
+                folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        long numWritten = new IngestRecordsFromIterator(properties, getRecordsInFirstPartitionOnly().iterator()).write();
 
         // Then:
         //  - Check the correct number of records were written
@@ -802,21 +743,9 @@ public class IngestRecordsFromIteratorIT {
         // When
         List<Record> records = new ArrayList<>(getRecords());
         records.addAll(getRecords());
-        long numWritten = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, "/tmp"),
-                records.iterator(),
-                folder.newFolder().getAbsolutePath(),
-                10L,
-                1000L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120).write();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
+                folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        long numWritten = new IngestRecordsFromIterator(properties, records.iterator()).write();
 
         // Then:
         //  - Check the correct number of records were written
@@ -893,21 +822,11 @@ public class IngestRecordsFromIteratorIT {
         List<Record> records = getLotsOfRecords();
 
         // When
-        long numWritten = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, "/tmp"),
-                records.iterator(),
-                folder.newFolder().getAbsolutePath(),
-                1000L,
-                5L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120).write();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
+                folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath())
+                .maxRecordsToWriteLocally(1000L)
+                .maxInMemoryBatchSize(5L).build();
+        long numWritten = new IngestRecordsFromIterator(properties, records.iterator()).write();
 
         // Then:
         //  - Check the correct number of records were written
@@ -1069,21 +988,11 @@ public class IngestRecordsFromIteratorIT {
         List<Record> records = getLotsOfRecords();
 
         // When
-        long numWritten = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, "/tmp"),
-                records.iterator(),
-                folder.newFolder().getAbsolutePath(),
-                10L,
-                5L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120).write();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
+                folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath())
+                .maxRecordsToWriteLocally(10L)
+                .maxInMemoryBatchSize(5L).build();
+        long numWritten = new IngestRecordsFromIterator(properties, records.iterator()).write();
 
         // Then:
         //  - Check the correct number of records were written
@@ -1169,21 +1078,9 @@ public class IngestRecordsFromIteratorIT {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        long numWritten = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, "/tmp"),
-                getUnsortedRecords().iterator(),
-                folder.newFolder().getAbsolutePath(),
-                10L,
-                1000L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120).write();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
+                folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        long numWritten = new IngestRecordsFromIterator(properties, getUnsortedRecords().iterator()).write();
 
         // Then:
         //  - Check the correct number of records were written
@@ -1233,21 +1130,9 @@ public class IngestRecordsFromIteratorIT {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        long numWritten = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, "/tmp"),
-                Collections.emptyIterator(),
-                folder.newFolder().getAbsolutePath(),
-                10L,
-                1000L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120).write();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
+                folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        long numWritten = new IngestRecordsFromIterator(properties, Collections.emptyIterator()).write();
 
         // Then:
         //  - Check the correct number of records were written
@@ -1269,21 +1154,11 @@ public class IngestRecordsFromIteratorIT {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        long numWritten = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, "/tmp"),
-                getRecordsForAggregationIteratorTest().iterator(),
-                folder.newFolder().getAbsolutePath(),
-                10L,
-                1000L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                AdditionIterator.class.getName(),
-                "",
-                120).write();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
+                folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath())
+                .iteratorClassName(AdditionIterator.class.getName())
+                .build();
+        long numWritten = new IngestRecordsFromIterator(properties, getRecordsForAggregationIteratorTest().iterator()).write();
 
         // Then:
         //  - Check the correct number of records were written
@@ -1335,5 +1210,25 @@ public class IngestRecordsFromIteratorIT {
         for (double d = 0.0D; d < 1.0D; d += 0.1D) {
             assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch.getQuantile(d));
         }
+    }
+
+    private static IngestProperties.Builder defaultPropertiesBuilder(StateStore stateStore,
+                                                                     Schema sleeperSchema,
+                                                                     String ingestLocalWorkingDirectory,
+                                                                     String bucketName) throws IOException, ObjectFactoryException {
+        return IngestProperties.builder()
+                .objectFactory(new ObjectFactory(new InstanceProperties(), null, ingestLocalWorkingDirectory))
+                .stateStore(stateStore)
+                .schema(sleeperSchema)
+                .localDir(ingestLocalWorkingDirectory)
+                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
+                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
+                .compressionCodec("zstd")
+                .hadoopConfiguration(null)
+                .iteratorClassName(null)
+                .bucketName(bucketName)
+                .ingestPartitionRefreshFrequencyInSecond(120)
+                .maxRecordsToWriteLocally(10L)
+                .maxInMemoryBatchSize(1000L);
     }
 }
