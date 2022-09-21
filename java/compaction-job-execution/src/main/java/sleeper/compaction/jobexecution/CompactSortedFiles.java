@@ -29,6 +29,7 @@ import org.apache.parquet.schema.MessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
@@ -78,6 +79,7 @@ public class CompactSortedFiles {
     private final MessageType messageType;
     private final CompactionJob compactionJob;
     private final StateStore stateStore;
+    private final CompactionJobStatusStore jobStatusStore;
     private final int rowGroupSize;
     private final int pageSize;
     private final String compressionCodec;
@@ -90,6 +92,7 @@ public class CompactSortedFiles {
                               MessageType messageType,
                               CompactionJob compactionJob,
                               StateStore stateStore,
+                              CompactionJobStatusStore jobStatusStore,
                               int rowGroupSize,
                               int pageSize,
                               String compressionCodec) {
@@ -100,6 +103,7 @@ public class CompactSortedFiles {
         this.messageType = messageType;
         this.compactionJob = compactionJob;
         this.stateStore = stateStore;
+        this.jobStatusStore = jobStatusStore;
         this.rowGroupSize = rowGroupSize;
         this.pageSize = pageSize;
         this.compressionCodec = compressionCodec;
@@ -109,6 +113,7 @@ public class CompactSortedFiles {
         LocalDateTime startLDT = LocalDateTime.now();
         String id = compactionJob.getId();
         LOGGER.info("Compaction job {}: compaction called at {}", id, startLDT);
+        jobStatusStore.jobStarted(compactionJob);
 
         CompactionJobSummary summary;
         if (!compactionJob.isSplittingJob()) {

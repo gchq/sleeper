@@ -20,6 +20,9 @@ public interface CompactionJobStatusStore {
     default void jobCreated(CompactionJob job) {
     }
 
+    default void jobStarted(CompactionJob job) {
+    }
+
     static CompactionJobStatusStore none() {
         return new CompactionJobStatusStore() {
         };
