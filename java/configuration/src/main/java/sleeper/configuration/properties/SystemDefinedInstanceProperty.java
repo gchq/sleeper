@@ -68,7 +68,7 @@ public enum SystemDefinedInstanceProperty implements InstanceProperty {
     INGEST_CLUSTER("sleeper.ingest.cluster"),
 
     // Bulk import
-    BULK_IMPORT_BUCKET("sleeper.bulk.bucket"),
+    BULK_IMPORT_BUCKET("sleeper.bulk.import.bucket"),
 
     // Bulk import using EMR - these properties are used by both the persistent
     // and non-persistent EMR stacks

@@ -15,7 +15,6 @@
  */
 package sleeper.cdk.stack.bulkimport;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.configuration.properties.InstanceProperties;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
@@ -38,7 +37,6 @@ public class AbstractBulkImportStack extends NestedStack {
     protected final InstanceProperties instanceProperties;
     protected IBucket importBucket;
 
-    @SuppressFBWarnings("UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
     public AbstractBulkImportStack(Construct scope,
             String id,
             InstanceProperties instanceProperties) {

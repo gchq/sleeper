@@ -61,8 +61,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 
 /**
  * This abstract class executes a Spark job that reads in input Parquet files and writes
@@ -223,7 +223,10 @@ public abstract class BulkImportJobRunner {
             throw e;
         }
 
-        String bulkImportBucket = instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET);
+        String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
+        if (null == bulkImportBucket) {
+            throw new RuntimeException("sleeper.bulk.import.bucket was not set. Has one of the bulk import stacks been deployed?");
+        }
         String jsonJobKey = "bulk_import/" + args[0] + ".json";
         LOGGER.info("Loading bulk import job from key {} in bulk import bucket {}", bulkImportBucket, jsonJobKey);
         String jsonJob = amazonS3.getObjectAsString(bulkImportBucket, jsonJobKey);

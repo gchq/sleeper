@@ -142,7 +142,7 @@ public abstract class Executor {
             failedChecks.add("The input files must be set to a non-null and non-empty value.");
         }
 
-        if (failedChecks.size() > 0) {
+        if (!failedChecks.isEmpty()) {
             String errorMessage = "The bulk import job failed validation with the following checks failing: \n"
                     + String.join("\n", failedChecks);
 
@@ -163,6 +163,9 @@ public abstract class Executor {
 
     private void writeJobToJSONFile(BulkImportJob bulkImportJob) {
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
+        if (null == bulkImportBucket) {
+            throw new RuntimeException("sleeper.bulk.import.bucket was not set. Has one of the bulk import stacks been deployed?");
+        }
         String key = "bulk_import/" + bulkImportJob.getId() + ".json";
         String bulkImportJobJSON = new BulkImportJobSerDe().toJson(bulkImportJob);
         s3Client.putObject(bulkImportBucket, key, bulkImportJobJSON);
