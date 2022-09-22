@@ -114,14 +114,18 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
                 .build();
 
         JobFlowInstancesConfigProperty.Builder jobFlowInstancesConfigPropertyBuilder = JobFlowInstancesConfigProperty.builder()
-                .ec2KeyName(instanceProperties.get(BULK_IMPORT_EC2_KEY_NAME))
                 .ec2SubnetId(subnet)
                 .masterInstanceGroup(masterInstanceGroupConfigProperty)
                 .coreInstanceGroup(coreInstanceGroupConfigProperty);
-        if (null != instanceProperties.get(BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP)
-                && !instanceProperties.get(BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP).isEmpty()) {
+
+        String ec2KeyName = instanceProperties.get(BULK_IMPORT_EC2_KEY_NAME);
+        if (null != ec2KeyName && !ec2KeyName.isEmpty()) {
+            jobFlowInstancesConfigPropertyBuilder.ec2KeyName(ec2KeyName);
+        }
+        String additionalSecurityGroup = instanceProperties.get(BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP);
+        if (null != additionalSecurityGroup && !additionalSecurityGroup.isEmpty()) {
             jobFlowInstancesConfigPropertyBuilder.additionalMasterSecurityGroups(Collections.singletonList(
-                    instanceProperties.get(BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP)));
+                    additionalSecurityGroup));
         }
         JobFlowInstancesConfigProperty jobFlowInstancesConfigProperty = jobFlowInstancesConfigPropertyBuilder.build();
 
