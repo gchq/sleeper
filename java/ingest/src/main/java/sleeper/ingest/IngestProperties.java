@@ -97,7 +97,7 @@ public class IngestProperties {
     }
 
     public String getBucketName() {
-        return bucketName;
+        return null == bucketName ? "" : bucketName;
     }
 
     public String getIteratorClassName() {
