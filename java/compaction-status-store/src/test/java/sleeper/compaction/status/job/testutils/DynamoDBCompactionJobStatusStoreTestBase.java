@@ -15,9 +15,9 @@
  */
 package sleeper.compaction.status.job.testutils;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import org.assertj.core.api.ListAssert;
+import org.assertj.core.api.AbstractListAssert;
+import org.assertj.core.api.ObjectAssert;
 import org.junit.After;
 import org.junit.Before;
 import sleeper.compaction.job.CompactionJobFactory;
@@ -35,7 +35,6 @@ import sleeper.statestore.FileInfoFactory;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -83,7 +82,8 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return new FileInfoFactory(schema, partitions, Instant.now());
     }
 
-    protected ListAssert<Map<String, AttributeValue>> assertThatRawItemsInTable() {
-        return assertThat(dynamoDBClient.scan(new ScanRequest().withTableName(tableName)).getItems());
+    protected AbstractListAssert<?, List<? extends CompactionJobStatusRecord>, CompactionJobStatusRecord, ObjectAssert<CompactionJobStatusRecord>> assertThatItemsInTable() {
+        return assertThat(dynamoDBClient.scan(new ScanRequest().withTableName(tableName)).getItems())
+                .extracting(CompactionJobStatusRecord::readFrom);
     }
 }
