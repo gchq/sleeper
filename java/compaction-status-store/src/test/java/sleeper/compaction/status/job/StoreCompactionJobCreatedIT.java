@@ -24,7 +24,7 @@ import sleeper.statestore.FileInfoFactory;
 import java.util.Arrays;
 import java.util.Collections;
 
-public class DynamoDBCompactionJobStatusStoreIT extends DynamoDBCompactionJobStatusStoreTestBase {
+public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
     @Test
     public void shouldReportCompactionJobCreated() {
