@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
@@ -59,7 +60,7 @@ import java.nio.file.attribute.PosixFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
+
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 
@@ -233,7 +234,7 @@ public abstract class BulkImportJobRunner {
             LOGGER.error("Json job was malformed: {}", args[0]);
             throw e;
         }
-        
+
         runner.init(instanceProperties, amazonS3, AmazonDynamoDBClientBuilder.defaultClient());
         runner.run(bulkImportJob);
     }

@@ -156,6 +156,9 @@ public final class EksBulkImportStack extends AbstractBulkImportStack {
                 .build();
 
         configBucket.grantRead(bulkImportJobStarter);
+        if (null == importBucket) {
+            throw new RuntimeException("Import bucket should not be null; call create() first");
+        }
         importBucket.grantReadWrite(bulkImportJobStarter);
         if (null != ingestBucket) {
             ingestBucket.grantRead(bulkImportJobStarter);

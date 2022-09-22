@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
+import sleeper.cdk.Utils;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
@@ -45,6 +46,10 @@ import software.amazon.awscdk.services.iam.PolicyStatementProps;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.iam.RoleProps;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
+import software.amazon.awscdk.services.lambda.Code;
+import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.S3Code;
+import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.ITopic;
@@ -58,16 +63,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import sleeper.cdk.Utils;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
-import software.amazon.awscdk.services.lambda.Code;
-import software.amazon.awscdk.services.lambda.Function;
-import software.amazon.awscdk.services.lambda.S3Code;
-import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 
 public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack {
     protected final String shortId;
@@ -121,7 +121,7 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
     @Override
     public void create() {
         super.create();
-        
+
         // Queue for messages to trigger jobs - note that each concrete substack
         // will have its own queue. The shortId is used to ensure the names of
         // the queues are different.
@@ -132,13 +132,13 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
 
         // Create security configuration
         createSecurityConfiguration();
-        
+
         // Create bulk import job starter function
         createBulkImportJobStarterFunction();
-        
+
         Utils.addStackTagIfSet(this, instanceProperties);
     }
-    
+
     private Queue createQueues(String shortId, SystemDefinedInstanceProperty jobQueueUrl) {
         Queue queueForDLs = Queue.Builder
                 .create(this, "BulkImport" + shortId + "JobDeadLetterQueue")
@@ -317,7 +317,7 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
     public Queue getEmrBulkImportJobQueue() {
         return bulkImportJobQueue;
     }
-    
+
     protected void createBulkImportJobStarterFunction() {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
@@ -343,6 +343,9 @@ public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack
                 .build();
 
         configBucket.grantRead(bulkImportJobStarter);
+        if (null == importBucket) {
+            throw new RuntimeException("Import bucket should not be null; call create() first");
+        }
         importBucket.grantReadWrite(bulkImportJobStarter);
         if (ingestBucket != null) {
             ingestBucket.grantRead(bulkImportJobStarter);

@@ -20,6 +20,7 @@ import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -31,7 +32,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import sleeper.bulkimport.job.BulkImportJobSerDe;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_CLASS_NAME;
@@ -160,7 +160,7 @@ public abstract class Executor {
         }
         return false;
     }
-    
+
     private void writeJobToJSONFile(BulkImportJob bulkImportJob) {
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         String key = "bulk_import/" + bulkImportJob.getId() + ".json";

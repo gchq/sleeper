@@ -99,7 +99,7 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
     @Override
     public void create() {
         super.create();
-        
+
         // EMR cluster
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         String logUri = null == bulkImportBucket ? null : "s3://" + bulkImportBucket + "/logs";
@@ -159,7 +159,7 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
         CfnCluster emrCluster = new CfnCluster(this, id + "-PersistentEMRCluster", emrClusterProps);
         instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS, emrCluster.getAttrMasterPublicDns());
     }
-    
+
     @Override
     protected void createBulkImportJobStarterFunction() {
         super.createBulkImportJobStarterFunction();

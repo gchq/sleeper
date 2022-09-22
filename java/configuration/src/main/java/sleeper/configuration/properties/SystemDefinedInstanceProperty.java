@@ -69,7 +69,7 @@ public enum SystemDefinedInstanceProperty implements InstanceProperty {
 
     // Bulk import
     BULK_IMPORT_BUCKET("sleeper.bulk.bucket"),
-    
+
     // Bulk import using EMR - these properties are used by both the persistent
     // and non-persistent EMR stacks
     BULK_IMPORT_EMR_EC2_ROLE_NAME("sleeper.bulk.import.emr.ec2.role.name"),
