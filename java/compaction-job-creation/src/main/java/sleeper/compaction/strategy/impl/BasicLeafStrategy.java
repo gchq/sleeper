@@ -17,8 +17,8 @@ package sleeper.compaction.strategy.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sleeper.compaction.job.CompactionFactory;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.strategy.LeafPartitionCompactionStrategy;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -34,11 +34,11 @@ import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FI
 public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(BasicLeafStrategy.class);
 
-    private CompactionFactory factory;
+    private CompactionJobFactory factory;
     private int compactionFilesBatchSize;
 
     @Override
-    public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionFactory factory) {
+    public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory) {
         compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
         this.factory = factory;
     }

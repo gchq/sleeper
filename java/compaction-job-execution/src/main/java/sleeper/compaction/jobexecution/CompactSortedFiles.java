@@ -92,9 +92,7 @@ public class CompactSortedFiles {
                               StateStore stateStore,
                               int rowGroupSize,
                               int pageSize,
-                              String compressionCodec,
-                              int maxConnectionsToS3,
-                              int keepAliveFrequency) {
+                              String compressionCodec) {
         this.instanceProperties = instanceProperties;
         this.objectFactory = objectFactory;
         this.schema = schema;
