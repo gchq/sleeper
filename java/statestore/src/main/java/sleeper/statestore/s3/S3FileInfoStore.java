@@ -140,8 +140,10 @@ public class S3FileInfoStore implements FileInfoStore {
             List<FileInfo> filteredFiles = new ArrayList<>();
             for (FileInfo fileInfo : list) {
                 if (namesOfFilesToBeMarkedReadyForGC.contains(fileInfo.getFilename())) {
-                    fileInfo.setFileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
-                    fileInfo.setLastStateStoreUpdateTime(System.currentTimeMillis());
+                    fileInfo = fileInfo.toBuilder()
+                            .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                            .lastStateStoreUpdateTime(System.currentTimeMillis())
+                            .build();
                 }
                 filteredFiles.add(fileInfo);
             }
@@ -179,8 +181,10 @@ public class S3FileInfoStore implements FileInfoStore {
             List<FileInfo> filteredFiles = new ArrayList<>();
             for (FileInfo fileInfo : list) {
                 if (namesOfFilesToBeMarkedReadyForGC.contains(fileInfo.getFilename())) {
-                    fileInfo.setFileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
-                    fileInfo.setLastStateStoreUpdateTime(System.currentTimeMillis());
+                    fileInfo = fileInfo.toBuilder()
+                            .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                            .lastStateStoreUpdateTime(System.currentTimeMillis())
+                            .build();
                 }
                 filteredFiles.add(fileInfo);
             }
@@ -216,7 +220,7 @@ public class S3FileInfoStore implements FileInfoStore {
             List<FileInfo> filteredFiles = new ArrayList<>();
             for (FileInfo fileInfo : list) {
                 if (namesOfFiles.contains(fileInfo.getFilename())) {
-                    fileInfo.setJobId(jobId);
+                    fileInfo = fileInfo.toBuilder().jobId(jobId).build();
                 }
                 filteredFiles.add(fileInfo);
             }

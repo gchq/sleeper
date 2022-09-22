@@ -135,4 +135,27 @@ public class PartitionsBuilderTest {
         assertThatThrownBy(builder::anyTreeJoiningAllLeaves)
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    public void canBuildPartitionsSpecifyingSplitOnSecondDimension() {
+        // Given
+        Field field1 = new Field("key1", new StringType());
+        Field field2 = new Field("key2", new StringType());
+        Schema schema = Schema.builder().rowKeyFields(field1, field2).build();
+
+        // When
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .leavesWithSplitsOnDimension(1, Arrays.asList("A", "B"), Collections.singletonList("aaa"))
+                .anyTreeJoiningAllLeaves()
+                .buildTree();
+
+        // Then
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        assertThat(tree.getPartition("A").getRegion()).isEqualTo(new Region(Arrays.asList(
+                rangeFactory.createRange(field1, "", null),
+                rangeFactory.createRange(field2, "", "aaa"))));
+        assertThat(tree.getPartition("B").getRegion()).isEqualTo(new Region(Arrays.asList(
+                rangeFactory.createRange(field1, "", null),
+                rangeFactory.createRange(field2, "aaa", null))));
+    }
 }

@@ -44,7 +44,11 @@ public class PartitionsBuilder {
     }
 
     public PartitionsBuilder leavesWithSplits(List<String> ids, List<Object> splits) {
-        List<Region> regions = PartitionsFromSplitPoints.leafRegionsFromSplitPoints(schema, splits);
+        return leavesWithSplitsOnDimension(0, ids, splits);
+    }
+
+    public PartitionsBuilder leavesWithSplitsOnDimension(int dimension, List<String> ids, List<Object> splits) {
+        List<Region> regions = PartitionsFromSplitPoints.leafRegionsFromDimensionSplitPoints(schema, dimension, splits);
         if (ids.size() != regions.size()) {
             throw new IllegalArgumentException("Must specify IDs for all leaves before, after and in between splits");
         }

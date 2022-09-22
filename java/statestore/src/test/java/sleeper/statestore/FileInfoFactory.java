@@ -22,16 +22,29 @@ import sleeper.core.schema.Schema;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 public class FileInfoFactory {
     private final Schema schema;
     private final PartitionTree partitionTree;
     private final Instant lastStateStoreUpdate;
 
+    public FileInfoFactory(Schema schema, List<Partition> partitions) {
+        this(schema, partitions, null);
+    }
+
     public FileInfoFactory(Schema schema, List<Partition> partitions, Instant lastStateStoreUpdate) {
-        this.schema = schema;
-        this.lastStateStoreUpdate = lastStateStoreUpdate;
-        this.partitionTree = new PartitionTree(schema, partitions);
+        this(new Builder().schema(schema).partitions(partitions).lastStateStoreUpdate(lastStateStoreUpdate));
+    }
+
+    private FileInfoFactory(Builder builder) {
+        schema = Objects.requireNonNull(builder.schema, "schema must not be null");
+        partitionTree = Objects.requireNonNull(builder.partitionTree, "partitionTree must not be null");
+        lastStateStoreUpdate = builder.lastStateStoreUpdate;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public FileInfo leafFile(long records, Object min, Object max) {
@@ -54,16 +67,27 @@ public class FileInfoFactory {
         return fileForPartition(partitionTree.getRootPartition(), filename, records, min, max);
     }
 
+    public FileInfo partitionFile(String partitionId, String filename, long records, Object min, Object max) {
+        return fileForPartition(partitionTree.getPartition(partitionId), filename, records, min, max);
+    }
+
     private Partition leafPartition(Object min, Object max) {
-        Partition partition = partitionTree.getLeafPartition(Key.create(min));
-        if (!partition.isRowKeyInPartition(schema, Key.create(max))) {
+        if (min == null && max == null) {
+            Partition partition = partitionTree.getRootPartition();
+            if (!partition.getChildPartitionIds().isEmpty()) {
+                throw new IllegalArgumentException("Cannot choose leaf partition for " + min + ", " + max);
+            }
+            return partition;
+        }
+        Partition partition = partitionTree.getLeafPartition(rowKey(min));
+        if (!partition.isRowKeyInPartition(schema, rowKey(max))) {
             throw new IllegalArgumentException("Not in same leaf partition: " + min + ", " + max);
         }
         return partition;
     }
 
     private Partition middlePartition(Object min, Object max) {
-        Partition partition = partitionTree.getNearestCommonAncestor(Key.create(min), Key.create(max));
+        Partition partition = partitionTree.getNearestCommonAncestor(rowKey(min), rowKey(max));
         if (partition.isLeafPartition()) {
             throw new IllegalArgumentException("In same leaf partition: " + min + ", " + max);
         }
@@ -80,14 +104,53 @@ public class FileInfoFactory {
     private FileInfo fileForPartition(Partition partition, String filename, long records, Object min, Object max) {
         return FileInfo.builder()
                 .rowKeyTypes(partition.getRowKeyTypes())
-                .minRowKey(Key.create(min))
-                .maxRowKey(Key.create(max))
+                .minRowKey(rowKey(min))
+                .maxRowKey(rowKey(max))
                 .filename(filename)
                 .partitionId(partition.getId())
                 .numberOfRecords(records)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .lastStateStoreUpdateTime(lastStateStoreUpdate.toEpochMilli())
+                .lastStateStoreUpdateTime(lastStateStoreUpdate)
                 .build();
     }
 
+    private static Key rowKey(Object value) {
+        if (value == null) {
+            return null;
+        } else {
+            return Key.create(value);
+        }
+    }
+
+    public static final class Builder {
+        private Schema schema;
+        private PartitionTree partitionTree;
+        private Instant lastStateStoreUpdate;
+
+        private Builder() {
+        }
+
+        public Builder schema(Schema schema) {
+            this.schema = schema;
+            return this;
+        }
+
+        public Builder partitionTree(PartitionTree partitionTree) {
+            this.partitionTree = partitionTree;
+            return this;
+        }
+
+        public Builder partitions(List<Partition> partitions) {
+            return partitionTree(new PartitionTree(schema, partitions));
+        }
+
+        public Builder lastStateStoreUpdate(Instant lastStateStoreUpdate) {
+            this.lastStateStoreUpdate = lastStateStoreUpdate;
+            return this;
+        }
+
+        public FileInfoFactory build() {
+            return new FileInfoFactory(this);
+        }
+    }
 }
