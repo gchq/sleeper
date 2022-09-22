@@ -48,7 +48,7 @@ public class StandardIngestCoordinator {
                 .backedByArrayList()
                 .maxNoOfRecordsInMemory((int) ingestProperties.getMaxInMemoryBatchSize())
                 .maxNoOfRecordsInLocalStore(ingestProperties.getMaxRecordsToWriteLocally())
-                .buildDirectWrite(ingestProperties.getFilePrefix());
+                .buildDirectWrite(ingestProperties.getFilePrefix() + ingestProperties.getBucketName());
     }
 
     private static IngestCoordinator<Record> directWriteBackedByArrayList(
@@ -102,7 +102,7 @@ public class StandardIngestCoordinator {
                 .minBatchArrowBufferAllocatorBytes(minBatchArrowBufferAllocatorBytes)
                 .maxBatchArrowBufferAllocatorBytes(maxBatchArrowBufferAllocatorBytes)
                 .maxNoOfBytesToWriteLocally(ingestProperties.getMaxRecordsToWriteLocally())
-                .buildDirectWrite(ingestProperties.getFilePrefix());
+                .buildDirectWrite(ingestProperties.getFilePrefix() + ingestProperties.getBucketName());
     }
 
     private static IngestCoordinator<Record> directWriteBackedByArrow(
@@ -300,6 +300,7 @@ public class StandardIngestCoordinator {
                     .parquetPageSize(ingestProperties.getPageSize())
                     .stateStore(ingestProperties.getStateStore())
                     .schema(ingestProperties.getSchema())
+                    .parquetCompressionCodec(ingestProperties.getCompressionCodec())
                     .iteratorClassName(ingestProperties.getIteratorClassName())
                     .iteratorConfig(ingestProperties.getIteratorConfig())
                     .ingestPartitionRefreshFrequencyInSeconds(ingestProperties.getIngestPartitionRefreshFrequencyInSecond())

@@ -124,7 +124,7 @@ public class TestUtils {
         DynamoDBStateStore stateStore = new DynamoDBStateStore(table, dynamoClient);
         try {
             IngestProperties properties = IngestProperties.builder()
-                    .objectFactory(new ObjectFactory(instanceProperties, s3Client, ""))
+                    .objectFactory(new ObjectFactory(instanceProperties, s3Client, "/tmp"))
                     .localDir(dataDir)
                     .maxRecordsToWriteLocally(1000L)
                     .maxInMemoryBatchSize(1024L)
