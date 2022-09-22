@@ -48,7 +48,7 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUt
 public class CompactSortedFilesSplittingTest extends CompactSortedFilesTestBase {
 
     @Test
-    public void filesShouldMergeAndSplitCorrectlyAndDynamoUpdated() throws Exception {
+    public void filesShouldMergeAndSplitCorrectlyAndStateStoreUpdated() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         StateStore stateStore = createStateStore(schema);

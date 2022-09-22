@@ -92,8 +92,6 @@ public class AdminClientIT {
         // Then check some default property values are present in the output, don't check values in case they change
         assertThat(outputStreamCaptor.toString())
                 .contains("sleeper.athena.handler.memory")
-                .contains("sleeper.bulk.import.emr.bucket.create")
-                .contains("sleeper.bulk.import.emr.bucket.create")
                 .contains("sleeper.default.page.size")
                 .contains("sleeper.query.tracker.ttl.days")
                 // Then check some set property values are present in the output

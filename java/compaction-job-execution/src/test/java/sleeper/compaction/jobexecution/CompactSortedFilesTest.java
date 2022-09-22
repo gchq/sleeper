@@ -47,7 +47,7 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUt
 public class CompactSortedFilesTest extends CompactSortedFilesTestBase {
 
     @Test
-    public void filesShouldMergeCorrectlyAndDynamoUpdatedLongKey() throws Exception {
+    public void filesShouldMergeCorrectlyAndStateStoreUpdatedLongKey() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         StateStore stateStore = createInitStateStore(schema);
@@ -100,7 +100,7 @@ public class CompactSortedFilesTest extends CompactSortedFilesTestBase {
     }
 
     @Test
-    public void filesShouldMergeCorrectlyAndDynamoUpdatedStringKey() throws Exception {
+    public void filesShouldMergeCorrectlyAndStateStoreUpdatedStringKey() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new StringType(), new StringType(), new LongType());
         StateStore stateStore = createInitStateStore(schema);
@@ -158,7 +158,7 @@ public class CompactSortedFilesTest extends CompactSortedFilesTestBase {
     }
 
     @Test
-    public void filesShouldMergeCorrectlyAndDynamoUpdatedByteArrayKey() throws Exception {
+    public void filesShouldMergeCorrectlyAndStateStoreUpdatedByteArrayKey() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new ByteArrayType(), new ByteArrayType(), new LongType());
         StateStore stateStore = createInitStateStore(schema);

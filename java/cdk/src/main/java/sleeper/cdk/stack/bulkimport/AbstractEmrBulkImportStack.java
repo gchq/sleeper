@@ -19,7 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import sleeper.cdk.Utils;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
@@ -27,8 +27,6 @@ import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import software.amazon.awscdk.CfnJson;
 import software.amazon.awscdk.CfnJsonProps;
 import software.amazon.awscdk.Duration;
-import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
 import software.amazon.awscdk.services.cloudwatch.CreateAlarmOptions;
 import software.amazon.awscdk.services.cloudwatch.MetricOptions;
@@ -48,9 +46,11 @@ import software.amazon.awscdk.services.iam.PolicyStatementProps;
 import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.iam.RoleProps;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
-import software.amazon.awscdk.services.s3.BlockPublicAccess;
+import software.amazon.awscdk.services.lambda.Code;
+import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.lambda.S3Code;
+import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
-import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.ITopic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
@@ -64,27 +64,28 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_BUCKET_CREATE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 
-public abstract class AbstractEmrBulkImportStack extends NestedStack {
+public abstract class AbstractEmrBulkImportStack extends AbstractBulkImportStack {
     protected final String shortId;
     protected final String bulkImportPlatform;
-    protected final InstanceProperties instanceProperties;
+    protected final SystemDefinedInstanceProperty jobQueueUrl;
+    protected final List<IBucket> dataBuckets;
+    protected final List<StateStoreStack> stateStoreStacks;
     private final ITopic errorsTopic;
-    protected IBucket importBucket;
     protected final IBucket ingestBucket;
     protected final String instanceId;
     protected final String account;
     protected final String region;
     protected final String vpc;
     protected final String subnet;
-
-    protected final Queue bulkImportJobQueue;
+    protected Queue bulkImportJobQueue;
+    protected Function bulkImportJobStarter;
     protected IRole ec2Role;
 
-    @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
     public AbstractEmrBulkImportStack(
             Construct scope,
             String id,
@@ -95,10 +96,12 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
             List<StateStoreStack> stateStoreStacks,
             InstanceProperties instanceProperties,
             ITopic errorsTopic) {
-        super(scope, id);
+        super(scope, id, instanceProperties);
         this.shortId = shortId;
         this.bulkImportPlatform = bulkImportPlatform;
-        this.instanceProperties = instanceProperties;
+        this.jobQueueUrl = jobQueueUrl;
+        this.dataBuckets = dataBuckets;
+        this.stateStoreStacks = stateStoreStacks;
         this.errorsTopic = errorsTopic;
         this.instanceId = this.instanceProperties.get(ID);
         this.account = instanceProperties.get(UserDefinedInstanceProperty.ACCOUNT);
@@ -113,49 +116,27 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
         } else {
             this.ingestBucket = null;
         }
+    }
 
-        // Bucket for logs from bulk import
-        createImportBucket();
+    @Override
+    public void create() {
+        super.create();
 
         // Queue for messages to trigger jobs - note that each concrete substack
         // will have its own queue. The shortId is used to ensure the names of
         // the queues are different.
-        this.bulkImportJobQueue = createQueues(shortId, jobQueueUrl);
+        bulkImportJobQueue = createQueues(shortId, jobQueueUrl);
 
         // Create roles
         createRoles(dataBuckets, stateStoreStacks, region, account, vpc, subnet);
 
         // Create security configuration
         createSecurityConfiguration();
-    }
 
-    private void createImportBucket() {
-        // NB This method will be called twice if both the persistent and
-        // non-persistent EMR stacks are deployed so we need to avoid creating
-        // the same bucket twice.
-        if (instanceProperties.getBoolean(BULK_IMPORT_EMR_BUCKET_CREATE)) {
-            if (instanceProperties.get(BULK_IMPORT_EMR_BUCKET) != null) {
-                importBucket = Bucket.fromBucketName(this, "BulkImportBucket", instanceProperties.get(BULK_IMPORT_EMR_BUCKET));
-            } else {
-                importBucket = Bucket.Builder.create(this, "BulkImportBucket")
-                        .bucketName(String.join("-", "sleeper", instanceProperties.get(ID),
-                                "bulk-import").toLowerCase(Locale.ROOT))
-                        .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
-                        .versioned(false)
-                        .autoDeleteObjects(true)
-                        .removalPolicy(RemovalPolicy.DESTROY)
-                        .encryption(BucketEncryption.S3_MANAGED)
-                        .build();
+        // Create bulk import job starter function
+        createBulkImportJobStarterFunction();
 
-                // If the user doesn't specify a bucket name a default will be generated. We therefore need to
-                // override the bucket name as a precaution.
-                instanceProperties.set(BULK_IMPORT_EMR_BUCKET, importBucket.getBucketName());
-            }
-        } else if (instanceProperties.get(BULK_IMPORT_EMR_BUCKET) != null) {
-            importBucket = Bucket.fromBucketName(this, "BulkImportBucket", instanceProperties.get(BULK_IMPORT_EMR_BUCKET));
-        } else {
-            importBucket = null;
-        }
+        Utils.addStackTagIfSet(this, instanceProperties);
     }
 
     private Queue createQueues(String shortId, SystemDefinedInstanceProperty jobQueueUrl) {
@@ -199,7 +180,6 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
         // These roles are shared across all concrete substacks, so we need to
         // avoid creating them twice if more than one concrete substack is
         // deployed.
-
         if (null != instanceProperties.get(BULK_IMPORT_EMR_EC2_ROLE_NAME)) {
             ec2Role = Role.fromRoleName(this, "Ec2Role", instanceProperties.get(BULK_IMPORT_EMR_EC2_ROLE_NAME));
             return;
@@ -218,7 +198,7 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
             sss.grantReadPartitionMetadata(ec2Role);
         });
 
-        // The role needs to be able to access user's jars
+        // The role needs to be able to access the user's jars
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(UserDefinedInstanceProperty.JARS_BUCKET));
         jarsBucket.grantRead(ec2Role);
 
@@ -336,5 +316,39 @@ public abstract class AbstractEmrBulkImportStack extends NestedStack {
 
     public Queue getEmrBulkImportJobQueue() {
         return bulkImportJobQueue;
+    }
+
+    protected void createBulkImportJobStarterFunction() {
+        Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
+        env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
+        S3Code code = Code.fromBucket(Bucket.fromBucketName(this, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET)),
+                "bulk-import-starter-" + instanceProperties.get(UserDefinedInstanceProperty.VERSION) + ".jar");
+
+        IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
+
+        String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
+                instanceId.toLowerCase(Locale.ROOT), shortId, "bulk-import-job-starter"));
+
+        bulkImportJobStarter = Function.Builder.create(this, "BulkImport" + shortId + "JobStarter")
+                .code(code)
+                .functionName(functionName)
+                .description("Function to start " + shortId + " bulk import jobs")
+                .memorySize(1024)
+                .timeout(Duration.seconds(20))
+                .environment(env)
+                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_8)
+                .handler("sleeper.bulkimport.starter.BulkImportStarter")
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .events(Lists.newArrayList(new SqsEventSource(bulkImportJobQueue)))
+                .build();
+
+        configBucket.grantRead(bulkImportJobStarter);
+        if (null == importBucket) {
+            throw new RuntimeException("Import bucket should not be null; call create() first");
+        }
+        importBucket.grantReadWrite(bulkImportJobStarter);
+        if (ingestBucket != null) {
+            ingestBucket.grantRead(bulkImportJobStarter);
+        }
     }
 }
