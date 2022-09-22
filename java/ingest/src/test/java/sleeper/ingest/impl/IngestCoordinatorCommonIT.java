@@ -226,12 +226,12 @@ public class IngestCoordinatorCommonIT {
         String objectFactoryLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
         return IngestProperties.builder()
                 .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
-                .stateStore(stateStore)
-                .schema(sleeperSchema)
                 .localDir(ingestLocalWorkingDirectory)
                 .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
                 .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
                 .compressionCodec("zstd")
+                .stateStore(stateStore)
+                .schema(sleeperSchema)
                 .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
                 .iteratorClassName(sleeperIteratorClassName)
                 .ingestPartitionRefreshFrequencyInSecond(Integer.MAX_VALUE);

@@ -194,12 +194,14 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                                                                      String ingestLocalWorkingDirectory) throws IOException, ObjectFactoryException {
         return IngestProperties.builder()
                 .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
-                .stateStore(stateStore)
-                .schema(sleeperSchema)
                 .localDir(ingestLocalWorkingDirectory)
+                .maxRecordsToWriteLocally(10L)
+                .maxInMemoryBatchSize(1000L)
                 .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
                 .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
                 .compressionCodec("zstd")
+                .stateStore(stateStore)
+                .schema(sleeperSchema)
                 .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
                 .iteratorClassName(sleeperIteratorClassName)
                 .ingestPartitionRefreshFrequencyInSecond(Integer.MAX_VALUE);

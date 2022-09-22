@@ -1218,17 +1218,15 @@ public class IngestRecordsFromIteratorIT {
                                                                      String bucketName) throws IOException, ObjectFactoryException {
         return IngestProperties.builder()
                 .objectFactory(new ObjectFactory(new InstanceProperties(), null, ingestLocalWorkingDirectory))
-                .stateStore(stateStore)
-                .schema(sleeperSchema)
                 .localDir(ingestLocalWorkingDirectory)
+                .maxRecordsToWriteLocally(10L)
+                .maxInMemoryBatchSize(1000L)
                 .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
                 .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
                 .compressionCodec("zstd")
-                .hadoopConfiguration(null)
-                .iteratorClassName(null)
+                .stateStore(stateStore)
+                .schema(sleeperSchema)
                 .bucketName(bucketName)
-                .ingestPartitionRefreshFrequencyInSecond(120)
-                .maxRecordsToWriteLocally(10L)
-                .maxInMemoryBatchSize(1000L);
+                .ingestPartitionRefreshFrequencyInSecond(120);
     }
 }
