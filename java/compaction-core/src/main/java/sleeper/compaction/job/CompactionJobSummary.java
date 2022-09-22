@@ -15,23 +15,54 @@
  */
 package sleeper.compaction.job;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Objects;
 
 public class CompactionJobSummary {
-    private final long linesRead;
-    private final long linesWritten;
 
-    public CompactionJobSummary(long linesRead, long linesWritten) {
-        this.linesRead = linesRead;
-        this.linesWritten = linesWritten;
+    private final CompactionJobRecordsProcessed recordsProcessed;
+    private final Instant startTime;
+    private final Instant finishTime;
+    private final double durationInSeconds;
+    private final double recordsReadPerSecond;
+    private final double recordsWrittenPerSecond;
+
+    public CompactionJobSummary(CompactionJobRecordsProcessed recordsProcessed, Instant startTime, Instant finishTime) {
+        this.recordsProcessed = Objects.requireNonNull(recordsProcessed, "recordsProcessed must not be null");
+        this.startTime = Objects.requireNonNull(startTime, "startTime must not be null");
+        this.finishTime = Objects.requireNonNull(finishTime, "finishTime must not be null");
+        this.durationInSeconds = Duration.between(startTime, finishTime).toMillis() / 1000.0;
+        this.recordsReadPerSecond = recordsProcessed.getLinesRead() / this.durationInSeconds;
+        this.recordsWrittenPerSecond = recordsProcessed.getLinesWritten() / this.durationInSeconds;
     }
 
     public long getLinesRead() {
-        return linesRead;
+        return recordsProcessed.getLinesRead();
     }
 
     public long getLinesWritten() {
-        return linesWritten;
+        return recordsProcessed.getLinesWritten();
+    }
+
+    public Instant getStartTime() {
+        return startTime;
+    }
+
+    public Instant getFinishTime() {
+        return finishTime;
+    }
+
+    public double getDurationInSeconds() {
+        return durationInSeconds;
+    }
+
+    public double getRecordsReadPerSecond() {
+        return recordsReadPerSecond;
+    }
+
+    public double getRecordsWrittenPerSecond() {
+        return recordsWrittenPerSecond;
     }
 
     @Override
@@ -43,11 +74,12 @@ public class CompactionJobSummary {
             return false;
         }
         CompactionJobSummary that = (CompactionJobSummary) o;
-        return linesRead == that.linesRead && linesWritten == that.linesWritten;
+        return recordsProcessed.equals(that.recordsProcessed) &&
+                startTime.equals(that.startTime) && finishTime.equals(that.finishTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(linesRead, linesWritten);
+        return Objects.hash(recordsProcessed, startTime, finishTime);
     }
 }

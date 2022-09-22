@@ -29,6 +29,7 @@ import org.apache.parquet.schema.MessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobRecordsProcessed;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.configuration.jars.ObjectFactory;
@@ -56,7 +57,7 @@ import sleeper.statestore.StateStoreException;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
-import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -111,33 +112,31 @@ public class CompactSortedFiles {
     }
 
     public CompactionJobSummary compact() throws IOException, IteratorException {
-        LocalDateTime startLDT = LocalDateTime.now();
+        Instant startTime = Instant.now();
         String id = compactionJob.getId();
-        LOGGER.info("Compaction job {}: compaction called at {}", id, startLDT);
+        LOGGER.info("Compaction job {}: compaction called at {}", id, startTime);
         jobStatusStore.jobStarted(compactionJob);
 
-        CompactionJobSummary summary;
+        CompactionJobRecordsProcessed recordsProcessed;
         if (!compactionJob.isSplittingJob()) {
-            summary = compactNoSplitting();
+            recordsProcessed = compactNoSplitting();
         } else {
-            summary = compactSplitting();
+            recordsProcessed = compactSplitting();
         }
 
-        LocalDateTime finishLDT = LocalDateTime.now();
+        Instant finishTime = Instant.now();
         // Print summary
-        LOGGER.info("Compaction job {}: finished at {}", id, finishLDT);
+        LOGGER.info("Compaction job {}: finished at {}", id, finishTime);
 
-        double durationInSeconds = Duration.between(startLDT, finishLDT).toMillis() / 1000.0;
-        double recordsReadPerSecond = summary.getLinesRead() / durationInSeconds;
-        double recordsWrittenPerSecond = summary.getLinesWritten() / durationInSeconds;
-        METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", id, durationInSeconds);
-        METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", id, summary.getLinesRead(), String.format("%.1f", recordsReadPerSecond));
-        METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", id, summary.getLinesWritten(), String.format("%.1f", recordsWrittenPerSecond));
+        CompactionJobSummary summary = new CompactionJobSummary(recordsProcessed, startTime, finishTime);
+        METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", id, summary.getDurationInSeconds());
+        METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", id, summary.getLinesRead(), String.format("%.1f", summary.getRecordsReadPerSecond()));
+        METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", id, summary.getLinesWritten(), String.format("%.1f", summary.getRecordsWrittenPerSecond()));
         jobStatusStore.jobCompleted(compactionJob, summary);
         return summary;
     }
 
-    private CompactionJobSummary compactNoSplitting() throws IOException, IteratorException {
+    private CompactionJobRecordsProcessed compactNoSplitting() throws IOException, IteratorException {
         Configuration conf = getConfiguration();
 
         // Create a reader for each file
@@ -213,11 +212,10 @@ public class CompactSortedFiles {
                 schema.getRowKeyTypes());
         LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(), LocalDateTime.now());
 
-        CompactionJobSummary summary = new CompactionJobSummary(totalNumberOfLinesRead, linesWritten);
-        return summary;
+        return new CompactionJobRecordsProcessed(totalNumberOfLinesRead, linesWritten);
     }
 
-    private CompactionJobSummary compactSplitting() throws IOException, IteratorException {
+    private CompactionJobRecordsProcessed compactSplitting() throws IOException, IteratorException {
         Configuration conf = getConfiguration();
 
         // Create a reader for each file
@@ -327,8 +325,7 @@ public class CompactSortedFiles {
                 stateStore,
                 schema.getRowKeyTypes());
         LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(), LocalDateTime.now());
-        CompactionJobSummary summary = new CompactionJobSummary(totalNumberOfLinesRead, linesWrittenToLeftFile + linesWrittenToRightFile);
-        return summary;
+        return new CompactionJobRecordsProcessed(totalNumberOfLinesRead, linesWrittenToLeftFile + linesWrittenToRightFile);
     }
 
     private List<CloseableIterator<Record>> createInputIterators(Configuration conf) throws IOException {
