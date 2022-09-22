@@ -20,6 +20,7 @@ import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -32,6 +33,7 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_CLASS_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_CORES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_MEMORY;
@@ -60,7 +62,9 @@ public abstract class Executor {
         }
         LOGGER.info("Validating job: {}", bulkImportJob);
         validateJob(bulkImportJob);
-        LOGGER.info("Submitting job");
+        LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
+        writeJobToJSONFile(bulkImportJob);
+        LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
         runJobOnPlatform(bulkImportJob);
         LOGGER.info("Successfully submitted job");
     }
@@ -138,7 +142,7 @@ public abstract class Executor {
             failedChecks.add("The input files must be set to a non-null and non-empty value.");
         }
 
-        if (failedChecks.size() > 0) {
+        if (!failedChecks.isEmpty()) {
             String errorMessage = "The bulk import job failed validation with the following checks failing: \n"
                     + String.join("\n", failedChecks);
 
@@ -155,5 +159,16 @@ public abstract class Executor {
             LOGGER.warn("Could not find properties for table");
         }
         return false;
+    }
+
+    private void writeJobToJSONFile(BulkImportJob bulkImportJob) {
+        String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
+        if (null == bulkImportBucket) {
+            throw new RuntimeException("sleeper.bulk.import.bucket was not set. Has one of the bulk import stacks been deployed?");
+        }
+        String key = "bulk_import/" + bulkImportJob.getId() + ".json";
+        String bulkImportJobJSON = new BulkImportJobSerDe().toJson(bulkImportJob);
+        s3Client.putObject(bulkImportBucket, key, bulkImportJobJSON);
+        LOGGER.info("Put object for job {} to key {} in bucket {}", bulkImportJob.getId(), key, bulkImportBucket);
     }
 }

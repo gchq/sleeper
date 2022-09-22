@@ -90,8 +90,6 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
 
     // Bulk import using EMR - these properties are used by both the persistent
     // and non-persistent EMR stacks
-    BULK_IMPORT_EMR_BUCKET("sleeper.bulk.import.emr.bucket"),
-    BULK_IMPORT_EMR_BUCKET_CREATE("sleeper.bulk.import.emr.bucket.create", "true"),
     BULK_IMPORT_EC2_KEY_NAME("sleeper.bulk.import.emr.keypair.name"),
     BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP("sleeper.bulk.import.emr.master.additional.security.group"),
 
