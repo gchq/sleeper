@@ -24,8 +24,8 @@ import sleeper.statestore.FileInfoFactory;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static sleeper.compaction.status.job.testutils.CompactionJobCreatedRecord.createCompaction;
-import static sleeper.compaction.status.job.testutils.CompactionJobCreatedRecord.createSplittingCompaction;
+import static sleeper.compaction.status.job.testutils.AssertDynamoDBJobStatusRecord.createCompaction;
+import static sleeper.compaction.status.job.testutils.AssertDynamoDBJobStatusRecord.createSplittingCompaction;
 
 public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStoreTestBase {
 

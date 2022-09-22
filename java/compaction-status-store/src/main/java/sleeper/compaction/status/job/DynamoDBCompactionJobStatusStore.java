@@ -16,6 +16,7 @@
 package sleeper.compaction.status.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutItemResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
@@ -25,6 +26,9 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.CompactionStatusStoreException;
 import sleeper.configuration.properties.InstanceProperties;
+
+import java.time.Instant;
+import java.util.Map;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -50,17 +54,32 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
 
     @Override
     public void jobCreated(CompactionJob job) {
-        PutItemRequest putItemRequest = new PutItemRequest()
-                .withItem(DynamoDBCompactionJobStatusFormat.createJobCreatedRecord(job))
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
-                .withTableName(statusTableName);
         try {
-            PutItemResult putItemResult = dynamoDB.putItem(putItemRequest);
+            PutItemResult result = putItem(DynamoDBCompactionJobStatusFormat.createJobCreatedRecord(job));
             LOGGER.debug("Put created event for job {} to table {}, capacity consumed = {}",
-                    job.getId(), statusTableName, putItemResult.getConsumedCapacity().getCapacityUnits());
+                    job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
             throw new CompactionStatusStoreException("Failed putItem in jobCreated", e);
         }
+    }
+
+    @Override
+    public void jobStarted(CompactionJob job, Instant startTime) {
+        try {
+            PutItemResult result = putItem(DynamoDBCompactionJobStatusFormat.createJobStartedRecord(job, startTime));
+            LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
+                    job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+        } catch (RuntimeException e) {
+            throw new CompactionStatusStoreException("Failed putItem in jobStarted", e);
+        }
+    }
+
+    private PutItemResult putItem(Map<String, AttributeValue> item) {
+        PutItemRequest putItemRequest = new PutItemRequest()
+                .withItem(item)
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                .withTableName(statusTableName);
+        return dynamoDB.putItem(putItemRequest);
     }
 
     public static String jobStatusTableName(String instanceId) {

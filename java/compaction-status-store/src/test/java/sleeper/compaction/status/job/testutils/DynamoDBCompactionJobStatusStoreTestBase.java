@@ -82,8 +82,8 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return new FileInfoFactory(schema, partitions, Instant.now());
     }
 
-    protected AbstractListAssert<?, List<? extends CompactionJobStatusRecord>, CompactionJobStatusRecord, ObjectAssert<CompactionJobStatusRecord>> assertThatItemsInTable() {
+    protected AbstractListAssert<?, List<? extends AssertDynamoDBRecord>, AssertDynamoDBRecord, ObjectAssert<AssertDynamoDBRecord>> assertThatItemsInTable() {
         return assertThat(dynamoDBClient.scan(new ScanRequest().withTableName(tableName)).getItems())
-                .extracting(CompactionJobStatusRecord::readFrom);
+                .extracting(AssertDynamoDBJobStatusRecord::actualIgnoringTimes);
     }
 }
