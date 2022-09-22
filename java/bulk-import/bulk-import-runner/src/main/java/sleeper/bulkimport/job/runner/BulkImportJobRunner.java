@@ -42,7 +42,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
@@ -61,8 +60,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 
 /**
  * This abstract class executes a Spark job that reads in input Parquet files and writes
