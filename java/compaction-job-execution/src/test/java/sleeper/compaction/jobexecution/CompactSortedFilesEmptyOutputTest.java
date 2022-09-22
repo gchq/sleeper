@@ -17,6 +17,7 @@ package sleeper.compaction.jobexecution;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDataHelper;
 import sleeper.core.partition.PartitionsBuilder;
@@ -59,7 +60,7 @@ public class CompactSortedFilesEmptyOutputTest extends CompactSortedFilesTestBas
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
-        CompactSortedFiles.CompactionJobSummary summary = compactSortedFiles.compact();
+        CompactionJobSummary summary = compactSortedFiles.compact();
 
         // Then
         //  - Read output file and check that it contains the right results
@@ -92,7 +93,7 @@ public class CompactSortedFilesEmptyOutputTest extends CompactSortedFilesTestBas
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
-        CompactSortedFiles.CompactionJobSummary summary = compactSortedFiles.compact();
+        CompactionJobSummary summary = compactSortedFiles.compact();
 
         // Then
         //  - Read output file and check that it contains the right results
@@ -131,7 +132,7 @@ public class CompactSortedFilesEmptyOutputTest extends CompactSortedFilesTestBas
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore);
-        CompactSortedFiles.CompactionJobSummary summary = compactSortedFiles.compact();
+        CompactionJobSummary summary = compactSortedFiles.compact();
 
         // Then
         //  - Read output files and check that they contain the right results

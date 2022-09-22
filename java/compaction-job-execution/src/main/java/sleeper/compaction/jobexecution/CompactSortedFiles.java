@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
@@ -124,8 +125,7 @@ public class CompactSortedFiles {
 
         LocalDateTime finishLDT = LocalDateTime.now();
         // Print summary
-        LOGGER.info("Compaction job {}: finished at {} with status {}", id, finishLDT,
-                summary instanceof FailedCompactionJobSummary ? "failed" : "successful");
+        LOGGER.info("Compaction job {}: finished at {}", id, finishLDT);
 
         double durationInSeconds = Duration.between(startLDT, finishLDT).toMillis() / 1000.0;
         double recordsReadPerSecond = summary.getLinesRead() / durationInSeconds;
@@ -133,6 +133,7 @@ public class CompactSortedFiles {
         METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", id, durationInSeconds);
         METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", id, summary.getLinesRead(), String.format("%.1f", recordsReadPerSecond));
         METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", id, summary.getLinesWritten(), String.format("%.1f", recordsWrittenPerSecond));
+        jobStatusStore.jobCompleted(compactionJob, summary);
         return summary;
     }
 
@@ -452,31 +453,6 @@ public class CompactSortedFiles {
         } catch (StateStoreException e) {
             LOGGER.error("Exception updating DynamoDB while moving input files to ready for GC and creating new active file", e);
             return false;
-        }
-    }
-
-    public static class CompactionJobSummary {
-        private final long linesRead;
-        private final long linesWritten;
-
-        public CompactionJobSummary(long linesRead, long linesWritten) {
-            this.linesRead = linesRead;
-            this.linesWritten = linesWritten;
-        }
-
-        public long getLinesRead() {
-            return linesRead;
-        }
-
-        public long getLinesWritten() {
-            return linesWritten;
-        }
-    }
-
-    public static class FailedCompactionJobSummary extends CompactionJobSummary {
-
-        public FailedCompactionJobSummary(long linesRead, long linesWritten) {
-            super(linesRead, linesWritten);
         }
     }
 
