@@ -15,6 +15,9 @@
  */
 package sleeper.compaction.status.job;
 
+import org.assertj.core.api.AbstractListAssert;
+import org.assertj.core.api.ObjectAssert;
+import org.assertj.core.groups.Tuple;
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.status.job.testutils.DynamoDBCompactionJobStatusStoreTestBase;
@@ -23,6 +26,21 @@ import sleeper.statestore.FileInfoFactory;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.assertj.core.api.Assertions.tuple;
+import static sleeper.compaction.status.DynamoDBAttributes.getNumberAttribute;
+import static sleeper.compaction.status.DynamoDBAttributes.getStringAttribute;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.INPUT_FILES_COUNT;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.PARTITION_ID;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.SPLIT_TO_PARTITION_IDS;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UPDATE_TYPE;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UPDATE_TYPE_CREATED;
 
 public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
@@ -129,5 +147,28 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         assertThatItemsInTable().containsExactlyInAnyOrder(
                 createCompactionItem(job1.getId(), 1, "A"),
                 createSplittingCompactionItem(job2.getId(), 1, "C", "A, B"));
+    }
+
+    private AbstractListAssert<?, List<? extends Tuple>, Tuple, ObjectAssert<Tuple>> assertThatItemsInTable() {
+        return assertThatRawItemsInTable()
+                .extracting(
+                        Map::keySet,
+                        map -> getStringAttribute(map, JOB_ID),
+                        map -> getStringAttribute(map, UPDATE_TYPE),
+                        map -> getStringAttribute(map, PARTITION_ID),
+                        map -> getNumberAttribute(map, INPUT_FILES_COUNT),
+                        map -> getStringAttribute(map, SPLIT_TO_PARTITION_IDS));
+    }
+
+    private Tuple createCompactionItem(String jobId, int inputFilesCount, String partitionId) {
+        return tuple(
+                Stream.of(JOB_ID, UPDATE_TIME, UPDATE_TYPE, PARTITION_ID, INPUT_FILES_COUNT).collect(Collectors.toSet()),
+                jobId, UPDATE_TYPE_CREATED, partitionId, "" + inputFilesCount, null);
+    }
+
+    private Tuple createSplittingCompactionItem(String jobId, int inputFilesCount, String partitionId, String splitToPartitionIds) {
+        return tuple(
+                Stream.of(JOB_ID, UPDATE_TIME, UPDATE_TYPE, PARTITION_ID, INPUT_FILES_COUNT, SPLIT_TO_PARTITION_IDS).collect(Collectors.toSet()),
+                jobId, UPDATE_TYPE_CREATED, partitionId, "" + inputFilesCount, splitToPartitionIds);
     }
 }
