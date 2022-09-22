@@ -16,22 +16,24 @@
 package sleeper.compaction.job.status;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobSummary;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 
 public class CompactionJobStatus {
 
     private final String jobId;
     private final CompactionJobCreatedStatus createdStatus;
     private final CompactionJobStartedStatus startedStatus;
+    private final CompactionJobFinishedStatus finishedStatus;
 
     private CompactionJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         createdStatus = Objects.requireNonNull(builder.createdStatus, "createdStatus must not be null");
         startedStatus = builder.startedStatus;
+        finishedStatus = builder.finishedStatus;
     }
 
     public static Builder builder() {
@@ -83,10 +85,36 @@ public class CompactionJobStatus {
         return null;
     }
 
+    public boolean isFinished() {
+        return finishedStatus != null;
+    }
+
+    public Instant getFinishUpdateTime() {
+        if (isFinished()) {
+            return finishedStatus.getUpdateTime();
+        }
+        return null;
+    }
+
+    public Instant getFinishTime() {
+        if (isFinished()) {
+            return finishedStatus.getSummary().getFinishTime();
+        }
+        return null;
+    }
+
+    public CompactionJobSummary getFinishedSummary() {
+        if (isFinished()) {
+            return finishedStatus.getSummary();
+        }
+        return null;
+    }
+
     public static final class Builder {
         private String jobId;
         private CompactionJobCreatedStatus createdStatus;
         private CompactionJobStartedStatus startedStatus;
+        private CompactionJobFinishedStatus finishedStatus;
 
         private Builder() {
         }
@@ -106,10 +134,9 @@ public class CompactionJobStatus {
             return this;
         }
 
-        public Builder createdStatus(Consumer<CompactionJobCreatedStatus.Builder> config) {
-            CompactionJobCreatedStatus.Builder builder = CompactionJobCreatedStatus.builder();
-            config.accept(builder);
-            return createdStatus(builder.build());
+        public Builder finishedStatus(CompactionJobFinishedStatus finishedStatus) {
+            this.finishedStatus = finishedStatus;
+            return this;
         }
 
         public CompactionJobStatus build() {

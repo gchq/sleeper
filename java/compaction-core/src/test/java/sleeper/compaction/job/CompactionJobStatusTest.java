@@ -17,6 +17,7 @@ package sleeper.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.partition.Partition;
@@ -90,5 +91,42 @@ public class CompactionJobStatusTest {
         // Then
         assertThat(status).extracting("started", "startUpdateTime", "startTime")
                 .containsExactly(true, updateTime, startTime);
+    }
+
+    @Test
+    public void shouldReportCompactionJobNotFinished() {
+        // Given
+        CompactionJob job = dataHelper.singleFileCompaction();
+        Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
+
+        // When
+        CompactionJobStatus status = CompactionJobStatus.created(job, updateTime);
+
+        // Then
+        assertThat(status).extracting("finished", "finishUpdateTime", "startTime", "finishTime", "finishedSummary")
+                .containsExactly(false, null, null, null, null);
+    }
+
+    @Test
+    public void shouldBuildCompactionJobFinished() {
+        // Given
+        CompactionJob job = dataHelper.singleFileCompaction();
+        Instant updateTime = Instant.parse("2022-09-22T13:34:00.001Z");
+        Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
+        Instant finishTime = Instant.parse("2022-09-22T13:34:10.001Z");
+        CompactionJobSummary summary = new CompactionJobSummary(
+                new CompactionJobRecordsProcessed(450L, 300L), startTime, finishTime);
+
+        // When
+        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
+                .createdStatus(CompactionJobCreatedStatus.from(job, Instant.parse("2022-09-22T13:33:00.001Z")))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
+                        Instant.parse("2022-09-22T13:33:09.001Z"), startTime))
+                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary))
+                .build();
+
+        // Then
+        assertThat(status).extracting("finished", "finishUpdateTime", "startTime", "finishTime", "finishedSummary")
+                .containsExactly(true, updateTime, startTime, finishTime, summary);
     }
 }
