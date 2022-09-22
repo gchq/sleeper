@@ -17,38 +17,21 @@ package sleeper.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.schema.Schema;
-import sleeper.statestore.FileInfoFactory;
 
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.CompactionJobTestUtils.createInstanceProperties;
-import static sleeper.compaction.job.CompactionJobTestUtils.createSchema;
-import static sleeper.compaction.job.CompactionJobTestUtils.createTableProperties;
-import static sleeper.compaction.job.CompactionJobTestUtils.singlePartition;
 
 public class CompactionJobStatusTest {
 
-    private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final Schema schema = createSchema();
-    private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
-    private final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+    private final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
 
     @Test
     public void shouldBuildCompactionJobStartedFromJob() {
-        Partition partition = singlePartition(schema);
-        FileInfoFactory fileFactory = new FileInfoFactory(schema, Collections.singletonList(partition));
-        CompactionJob job = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile(100L, "a", "z")),
-                partition.getId());
+        Partition partition = dataHelper.singlePartition();
+        CompactionJob job = dataHelper.singleFileCompaction(partition);
         Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
 
         assertThat(CompactionJobStatus.created(job, updateTime)).isEqualTo(
@@ -62,23 +45,16 @@ public class CompactionJobStatusTest {
 
     @Test
     public void shouldBuildSplittingCompactionJobStartedFromJob() {
-        List<Partition> partitions = new PartitionsBuilder(schema)
-                .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList("p"))
-                .parentJoining("C", "A", "B")
-                .buildList();
-        FileInfoFactory fileFactory = new FileInfoFactory(schema, partitions);
-        CompactionJob job = jobFactory.createSplittingCompactionJob(
-                Collections.singletonList(fileFactory.rootFile(100L, "a", "z")),
-                "C", "A", "B", "p", 0);
+        CompactionJob job = dataHelper.singleFileSplittingCompaction("root", "left", "right");
         Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
 
         assertThat(CompactionJobStatus.created(job, updateTime)).isEqualTo(
                 CompactionJobStatus.builder().jobId(job.getId())
                         .createdStatus(created -> created
                                 .updateTime(updateTime)
-                                .partitionId("C")
+                                .partitionId("root")
                                 .inputFilesCount(1)
-                                .childPartitionIds(Arrays.asList("A", "B")))
+                                .childPartitionIds(Arrays.asList("left", "right")))
                         .build());
     }
 }
