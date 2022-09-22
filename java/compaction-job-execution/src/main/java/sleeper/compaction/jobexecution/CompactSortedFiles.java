@@ -29,6 +29,7 @@ import org.apache.parquet.schema.MessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
@@ -55,6 +56,7 @@ import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -78,6 +80,7 @@ public class CompactSortedFiles {
     private final MessageType messageType;
     private final CompactionJob compactionJob;
     private final StateStore stateStore;
+    private final CompactionJobStatusStore jobStatusStore;
     private final int rowGroupSize;
     private final int pageSize;
     private final String compressionCodec;
@@ -90,6 +93,7 @@ public class CompactSortedFiles {
                               MessageType messageType,
                               CompactionJob compactionJob,
                               StateStore stateStore,
+                              CompactionJobStatusStore jobStatusStore,
                               int rowGroupSize,
                               int pageSize,
                               String compressionCodec) {
@@ -100,15 +104,17 @@ public class CompactSortedFiles {
         this.messageType = messageType;
         this.compactionJob = compactionJob;
         this.stateStore = stateStore;
+        this.jobStatusStore = jobStatusStore;
         this.rowGroupSize = rowGroupSize;
         this.pageSize = pageSize;
         this.compressionCodec = compressionCodec;
     }
 
     public CompactionJobSummary compact() throws IOException, IteratorException {
-        LocalDateTime startLDT = LocalDateTime.now();
+        Instant startTime = Instant.now();
         String id = compactionJob.getId();
-        LOGGER.info("Compaction job {}: compaction called at {}", id, startLDT);
+        LOGGER.info("Compaction job {}: compaction called at {}", id, startTime);
+        jobStatusStore.jobStarted(compactionJob, startTime);
 
         CompactionJobSummary summary;
         if (!compactionJob.isSplittingJob()) {
@@ -117,12 +123,12 @@ public class CompactSortedFiles {
             summary = compactSplitting();
         }
 
-        LocalDateTime finishLDT = LocalDateTime.now();
+        Instant finishTime = Instant.now();
         // Print summary
-        LOGGER.info("Compaction job {}: finished at {} with status {}", id, finishLDT,
+        LOGGER.info("Compaction job {}: finished at {} with status {}", id, finishTime,
                 summary instanceof FailedCompactionJobSummary ? "failed" : "successful");
 
-        double durationInSeconds = Duration.between(startLDT, finishLDT).toMillis() / 1000.0;
+        double durationInSeconds = Duration.between(startTime, finishTime).toMillis() / 1000.0;
         double recordsReadPerSecond = summary.getLinesRead() / durationInSeconds;
         double recordsWrittenPerSecond = summary.getLinesWritten() / durationInSeconds;
         METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", id, durationInSeconds);

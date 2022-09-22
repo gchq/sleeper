@@ -33,6 +33,9 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
@@ -150,6 +153,8 @@ public class CompactSortedFilesRunnerIT {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
+        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDB);
+        CompactionJobStatusStore jobStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDB, instanceProperties);
         //  - Create four files of sorted data
         String folderName = folder.newFolder().getAbsolutePath();
         String file1 = folderName + "/file1.parquet";
@@ -257,8 +262,9 @@ public class CompactSortedFilesRunnerIT {
 
         // When
         CompactSortedFilesRunner runner = new CompactSortedFilesRunner(
-                instanceProperties, new ObjectFactory(new InstanceProperties(), null, ""),
-                tablePropertiesProvider, stateStoreProvider, instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqsClient,
+                instanceProperties, ObjectFactory.noUserJars(),
+                tablePropertiesProvider, stateStoreProvider, jobStatusStore,
+                instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqsClient,
                 1, 5);
         runner.run();
 

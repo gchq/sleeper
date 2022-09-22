@@ -19,6 +19,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.assertj.core.groups.Tuple;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.jobexecution.CompactSortedFiles;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
@@ -90,9 +91,15 @@ public class CompactSortedFilesTestUtils {
         return new DynamoDBStateStoreCreator(tablenameStub, schema, dynamoDBClient).create();
     }
 
-    public static CompactSortedFiles createCompactSortedFiles(Schema schema, CompactionJob compactionJob, StateStore stateStore) {
+    public static CompactSortedFiles createCompactSortedFiles(
+            Schema schema, CompactionJob compactionJob, StateStore stateStore) {
+        return createCompactSortedFiles(schema, compactionJob, stateStore, CompactionJobStatusStore.none());
+    }
+
+    public static CompactSortedFiles createCompactSortedFiles(
+            Schema schema, CompactionJob compactionJob, StateStore stateStore, CompactionJobStatusStore jobStatusStore) {
         return new CompactSortedFiles(new InstanceProperties(), ObjectFactory.noUserJars(),
-                schema, SchemaConverter.getSchema(schema), compactionJob, stateStore,
+                schema, SchemaConverter.getSchema(schema), compactionJob, stateStore, jobStatusStore,
                 ParquetWriter.DEFAULT_BLOCK_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE, "zstd");
     }
 
