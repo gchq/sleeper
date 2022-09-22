@@ -28,9 +28,12 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.statestore.StateStore;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedEvenLongs;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.keyAndTwoValuesSortedOddLongs;
@@ -64,7 +67,7 @@ public class CompactSortedFilesReportingTest extends CompactSortedFilesTestBase 
 
         // Then
         InOrder order = Mockito.inOrder(jobStatusStore);
-        order.verify(jobStatusStore).jobStarted(compactionJob);
+        order.verify(jobStatusStore).jobStarted(eq(compactionJob), any(Instant.class));
         order.verify(jobStatusStore).jobCompleted(compactionJob, summary);
         order.verifyNoMoreInteractions();
 

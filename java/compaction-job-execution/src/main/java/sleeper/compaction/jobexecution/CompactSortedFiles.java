@@ -58,6 +58,7 @@ import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -115,7 +116,7 @@ public class CompactSortedFiles {
         Instant startTime = Instant.now();
         String id = compactionJob.getId();
         LOGGER.info("Compaction job {}: compaction called at {}", id, startTime);
-        jobStatusStore.jobStarted(compactionJob);
+        jobStatusStore.jobStarted(compactionJob, startTime);
 
         CompactionJobRecordsProcessed recordsProcessed;
         if (!compactionJob.isSplittingJob()) {
