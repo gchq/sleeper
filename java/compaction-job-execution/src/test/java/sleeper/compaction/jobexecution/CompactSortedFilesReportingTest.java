@@ -25,8 +25,11 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.statestore.StateStore;
 
+import java.time.Instant;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -60,7 +63,7 @@ public class CompactSortedFilesReportingTest extends CompactSortedFilesTestBase 
         createCompactSortedFiles(schema, compactionJob, stateStore, jobStatusStore).compact();
 
         // Then
-        verify(jobStatusStore).jobStarted(compactionJob);
+        verify(jobStatusStore).jobStarted(eq(compactionJob), any(Instant.class));
         verifyNoMoreInteractions(jobStatusStore);
     }
 

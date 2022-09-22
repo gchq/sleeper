@@ -15,12 +15,14 @@
  */
 package sleeper.compaction.job;
 
+import java.time.Instant;
+
 public interface CompactionJobStatusStore {
 
     default void jobCreated(CompactionJob job) {
     }
 
-    default void jobStarted(CompactionJob job) {
+    default void jobStarted(CompactionJob job, Instant startTime) {
     }
 
     static CompactionJobStatusStore none() {
