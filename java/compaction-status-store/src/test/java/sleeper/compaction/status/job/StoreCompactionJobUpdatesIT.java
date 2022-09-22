@@ -30,7 +30,7 @@ import static sleeper.compaction.status.job.testutils.AssertDynamoDBJobStatusRec
 import static sleeper.compaction.status.job.testutils.AssertDynamoDBJobStatusRecord.finishCompaction;
 import static sleeper.compaction.status.job.testutils.AssertDynamoDBJobStatusRecord.startCompaction;
 
-public class StoreCompactionJobStartedIT extends DynamoDBCompactionJobStatusStoreTestBase {
+public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
     @Test
     public void shouldReportCompactionJobStartedSeparatelyFromCreation() {
