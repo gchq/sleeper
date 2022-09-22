@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.status.job;
+package sleeper.compaction.status.job.testutils;
 
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import org.assertj.core.api.AbstractListAssert;
@@ -23,6 +23,8 @@ import org.junit.After;
 import org.junit.Before;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
@@ -43,9 +45,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.compaction.status.DynamoDBAttributes.getNumberAttribute;
 import static sleeper.compaction.status.DynamoDBAttributes.getStringAttribute;
-import static sleeper.compaction.status.job.CompactionStatusStoreTestUtils.createInstanceProperties;
-import static sleeper.compaction.status.job.CompactionStatusStoreTestUtils.createSchema;
-import static sleeper.compaction.status.job.CompactionStatusStoreTestUtils.createTableProperties;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.INPUT_FILES_COUNT;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.PARTITION_ID;
@@ -54,6 +53,9 @@ import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UP
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UPDATE_TYPE;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UPDATE_TYPE_CREATED;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
+import static sleeper.compaction.status.job.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
+import static sleeper.compaction.status.job.testutils.CompactionStatusStoreTestUtils.createSchema;
+import static sleeper.compaction.status.job.testutils.CompactionStatusStoreTestUtils.createTableProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
