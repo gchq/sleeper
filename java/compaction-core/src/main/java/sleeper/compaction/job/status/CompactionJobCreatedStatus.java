@@ -18,6 +18,7 @@ package sleeper.compaction.job.status;
 import sleeper.compaction.job.CompactionJob;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -32,7 +33,7 @@ public class CompactionJobCreatedStatus {
         updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
         partitionId = Objects.requireNonNull(builder.partitionId, "partitionId must not be null");
         inputFilesCount = builder.inputFilesCount;
-        childPartitionIds = builder.childPartitionIds;
+        childPartitionIds = Objects.requireNonNull(builder.childPartitionIds, "childPartitionIds must not be null");
     }
 
     public static Builder builder() {
@@ -40,14 +41,28 @@ public class CompactionJobCreatedStatus {
     }
 
     public static CompactionJobCreatedStatus from(CompactionJob job, Instant updateTime) {
-        CompactionJobCreatedStatus.Builder builder = builder()
+        return builder()
                 .updateTime(updateTime)
                 .partitionId(job.getPartitionId())
-                .inputFilesCount(job.getInputFiles().size());
-        if (job.isSplittingJob()) {
-            builder.childPartitionIds(job.getChildPartitions());
-        }
-        return builder.build();
+                .inputFilesCount(job.getInputFiles().size())
+                .childPartitionIds(job.getChildPartitions())
+                .build();
+    }
+
+    public Instant getUpdateTime() {
+        return updateTime;
+    }
+
+    public String getPartitionId() {
+        return partitionId;
+    }
+
+    public int getInputFilesCount() {
+        return inputFilesCount;
+    }
+
+    public List<String> getChildPartitionIds() {
+        return childPartitionIds;
     }
 
     public static final class Builder {
@@ -75,6 +90,9 @@ public class CompactionJobCreatedStatus {
         }
 
         public Builder childPartitionIds(List<String> childPartitionIds) {
+            if (childPartitionIds == null) {
+                childPartitionIds = Collections.emptyList();
+            }
             this.childPartitionIds = childPartitionIds;
             return this;
         }

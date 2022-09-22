@@ -18,6 +18,7 @@ package sleeper.compaction.job.status;
 import sleeper.compaction.job.CompactionJob;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -25,10 +26,12 @@ public class CompactionJobStatus {
 
     private final String jobId;
     private final CompactionJobCreatedStatus createdStatus;
+    private final CompactionJobStartedStatus startedStatus;
 
     private CompactionJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         createdStatus = Objects.requireNonNull(builder.createdStatus, "createdStatus must not be null");
+        startedStatus = builder.startedStatus;
     }
 
     public static Builder builder() {
@@ -42,9 +45,48 @@ public class CompactionJobStatus {
                 .build();
     }
 
+    public Instant getCreateUpdateTime() {
+        return createdStatus.getUpdateTime();
+    }
+
+    public String getPartitionId() {
+        return createdStatus.getPartitionId();
+    }
+
+    public int getInputFilesCount() {
+        return createdStatus.getInputFilesCount();
+    }
+
+    public List<String> getChildPartitionIds() {
+        return createdStatus.getChildPartitionIds();
+    }
+
+    public boolean isSplittingCompaction() {
+        return !getChildPartitionIds().isEmpty();
+    }
+
+    public boolean isStarted() {
+        return startedStatus != null;
+    }
+
+    public Instant getStartUpdateTime() {
+        if (isStarted()) {
+            return startedStatus.getUpdateTime();
+        }
+        return null;
+    }
+
+    public Instant getStartTime() {
+        if (isStarted()) {
+            return startedStatus.getStartTime();
+        }
+        return null;
+    }
+
     public static final class Builder {
         private String jobId;
         private CompactionJobCreatedStatus createdStatus;
+        private CompactionJobStartedStatus startedStatus;
 
         private Builder() {
         }
@@ -56,6 +98,11 @@ public class CompactionJobStatus {
 
         public Builder createdStatus(CompactionJobCreatedStatus createdStatus) {
             this.createdStatus = createdStatus;
+            return this;
+        }
+
+        public Builder startedStatus(CompactionJobStartedStatus startedStatus) {
+            this.startedStatus = startedStatus;
             return this;
         }
 

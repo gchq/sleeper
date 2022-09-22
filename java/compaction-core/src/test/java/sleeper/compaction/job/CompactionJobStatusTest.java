@@ -16,11 +16,14 @@
 package sleeper.compaction.job;
 
 import org.junit.Test;
+import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.partition.Partition;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -29,32 +32,63 @@ public class CompactionJobStatusTest {
     private final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
 
     @Test
-    public void shouldBuildCompactionJobStartedFromJob() {
+    public void shouldBuildCompactionJobCreatedFromJob() {
+        // Given
         Partition partition = dataHelper.singlePartition();
         CompactionJob job = dataHelper.singleFileCompaction(partition);
         Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
 
-        assertThat(CompactionJobStatus.created(job, updateTime)).isEqualTo(
-                CompactionJobStatus.builder().jobId(job.getId())
-                        .createdStatus(created -> created
-                                .updateTime(updateTime)
-                                .partitionId(partition.getId())
-                                .inputFilesCount(1))
-                        .build());
+        // When
+        CompactionJobStatus status = CompactionJobStatus.created(job, updateTime);
+
+        // Then
+        assertThat(status).extracting("createUpdateTime", "partitionId", "inputFilesCount", "childPartitionIds", "splittingCompaction")
+                .containsExactly(updateTime, "root", 1, Collections.emptyList(), false);
     }
 
     @Test
-    public void shouldBuildSplittingCompactionJobStartedFromJob() {
+    public void shouldBuildSplittingCompactionJobCreatedFromJob() {
+        // Given
         CompactionJob job = dataHelper.singleFileSplittingCompaction("root", "left", "right");
         Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
 
-        assertThat(CompactionJobStatus.created(job, updateTime)).isEqualTo(
-                CompactionJobStatus.builder().jobId(job.getId())
-                        .createdStatus(created -> created
-                                .updateTime(updateTime)
-                                .partitionId("root")
-                                .inputFilesCount(1)
-                                .childPartitionIds(Arrays.asList("left", "right")))
-                        .build());
+        // When
+        CompactionJobStatus status = CompactionJobStatus.created(job, updateTime);
+
+        // Then
+        assertThat(status).extracting("createUpdateTime", "partitionId", "inputFilesCount", "childPartitionIds", "splittingCompaction")
+                .containsExactly(updateTime, "root", 1, Arrays.asList("left", "right"), true);
+    }
+
+    @Test
+    public void shouldReportCompactionJobNotStarted() {
+        // Given
+        CompactionJob job = dataHelper.singleFileCompaction();
+        Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
+
+        // When
+        CompactionJobStatus status = CompactionJobStatus.created(job, updateTime);
+
+        // Then
+        assertThat(status).extracting("started", "startUpdateTime", "startTime")
+                .containsExactly(false, null, null);
+    }
+
+    @Test
+    public void shouldBuildCompactionJobStarted() {
+        // Given
+        CompactionJob job = dataHelper.singleFileCompaction();
+        Instant updateTime = Instant.parse("2022-09-22T13:33:20.001Z");
+        Instant startTime = Instant.parse("2022-09-22T13:33:30.001Z");
+
+        // When
+        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
+                .createdStatus(CompactionJobCreatedStatus.from(job, Instant.parse("2022-09-22T13:33:12.001Z")))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(updateTime, startTime))
+                .build();
+
+        // Then
+        assertThat(status).extracting("started", "startUpdateTime", "startTime")
+                .containsExactly(true, updateTime, startTime);
     }
 }

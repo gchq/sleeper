@@ -42,6 +42,10 @@ public class CompactionJobTestDataHelper {
         return new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct().get(0);
     }
 
+    public CompactionJob singleFileCompaction() {
+        return singleFileCompaction(singlePartition());
+    }
+
     public CompactionJob singleFileCompaction(Partition partition) {
         FileInfoFactory fileFactory = new FileInfoFactory(schema, Collections.singletonList(partition));
         return jobFactory.createCompactionJob(
