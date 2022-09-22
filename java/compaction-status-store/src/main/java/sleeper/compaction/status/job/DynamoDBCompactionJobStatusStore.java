@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.status.CompactionStatusStoreException;
 import sleeper.configuration.properties.InstanceProperties;
 
@@ -71,6 +72,17 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                     job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
             throw new CompactionStatusStoreException("Failed putItem in jobStarted", e);
+        }
+    }
+
+    @Override
+    public void jobFinished(CompactionJob job, CompactionJobSummary summary) {
+        try {
+            PutItemResult result = putItem(DynamoDBCompactionJobStatusFormat.createJobFinishedRecord(job, summary));
+            LOGGER.debug("Put finished event for job {} to table {}, capacity consumed = {}",
+                    job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+        } catch (RuntimeException e) {
+            throw new CompactionStatusStoreException("Failed putItem in jobFinished", e);
         }
     }
 

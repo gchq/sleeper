@@ -25,7 +25,7 @@ public interface CompactionJobStatusStore {
     default void jobStarted(CompactionJob job, Instant startTime) {
     }
 
-    default void jobCompleted(CompactionJob compactionJob, CompactionJobSummary summary) {
+    default void jobFinished(CompactionJob compactionJob, CompactionJobSummary summary) {
     }
 
     static CompactionJobStatusStore none() {

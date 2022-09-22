@@ -17,6 +17,7 @@ package sleeper.compaction.status.job;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.status.DynamoDBRecordBuilder;
 
 import java.time.Instant;
@@ -34,9 +35,13 @@ public class DynamoDBCompactionJobStatusFormat {
     public static final String INPUT_FILES_COUNT = "InputFilesCount";
     public static final String SPLIT_TO_PARTITION_IDS = "SplitToPartitionIds";
     public static final String START_TIME = "StartTime";
+    public static final String FINISH_TIME = "FinishTime";
+    public static final String RECORDS_READ = "RecordsRead";
+    public static final String RECORDS_WRITTEN = "RecordsWritten";
 
     public static final String UPDATE_TYPE_CREATED = "created";
     public static final String UPDATE_TYPE_STARTED = "started";
+    public static final String UPDATE_TYPE_FINISHED = "finished";
 
     public static Map<String, AttributeValue> createJobCreatedRecord(CompactionJob job) {
         return createJobRecord(job, UPDATE_TYPE_CREATED)
@@ -52,6 +57,15 @@ public class DynamoDBCompactionJobStatusFormat {
     public static Map<String, AttributeValue> createJobStartedRecord(CompactionJob job, Instant startTime) {
         return createJobRecord(job, UPDATE_TYPE_STARTED)
                 .number(START_TIME, startTime.toEpochMilli())
+                .build();
+    }
+
+    public static Map<String, AttributeValue> createJobFinishedRecord(CompactionJob job, CompactionJobSummary summary) {
+        return createJobRecord(job, UPDATE_TYPE_FINISHED)
+                .number(START_TIME, summary.getStartTime().toEpochMilli())
+                .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
+                .number(RECORDS_READ, summary.getLinesRead())
+                .number(RECORDS_WRITTEN, summary.getLinesWritten())
                 .build();
     }
 
