@@ -15,8 +15,8 @@
  */
 package sleeper.compaction.strategy;
 
-import sleeper.compaction.job.CompactionFactory;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
@@ -26,7 +26,7 @@ import java.util.List;
 
 public interface LeafPartitionCompactionStrategy {
 
-    void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionFactory factory);
+    void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory);
 
     List<CompactionJob> createJobsForLeafPartition(Partition partition, List<FileInfo> activeFilesWithNoJobId);
 }
