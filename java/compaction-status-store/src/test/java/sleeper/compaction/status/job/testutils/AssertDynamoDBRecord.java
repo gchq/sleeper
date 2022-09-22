@@ -37,7 +37,7 @@ public class AssertDynamoDBRecord {
     }
 
     public static AssertDynamoDBRecord actualIgnoringTimes(Map<String, AttributeValue> item, Set<String> timeKeys) {
-        return new AssertDynamoDBRecord(item.keySet(), removeTimes(item, timeKeys));
+        return new AssertDynamoDBRecord(item.keySet(), removeNonNullTimes(item, timeKeys));
     }
 
     public static AssertDynamoDBRecord expected(Set<String> keys, DynamoDBRecordBuilder item) {
@@ -48,9 +48,9 @@ public class AssertDynamoDBRecord {
         return Stream.of(keys).collect(Collectors.toSet());
     }
 
-    private static Map<String, AttributeValue> removeTimes(Map<String, AttributeValue> item, Set<String> timeKeys) {
+    private static Map<String, AttributeValue> removeNonNullTimes(Map<String, AttributeValue> item, Set<String> timeKeys) {
         return item.entrySet().stream()
-                .filter(entry -> !timeKeys.contains(entry.getKey()))
+                .filter(entry -> !timeKeys.contains(entry.getKey()) && entry.getValue() != null)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 

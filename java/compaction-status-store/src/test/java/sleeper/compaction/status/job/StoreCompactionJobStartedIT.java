@@ -24,24 +24,27 @@ import sleeper.statestore.FileInfoFactory;
 import java.time.Instant;
 import java.util.Collections;
 
+import static sleeper.compaction.status.job.testutils.AssertDynamoDBJobStatusRecord.createCompaction;
 import static sleeper.compaction.status.job.testutils.AssertDynamoDBJobStatusRecord.startCompaction;
 
 public class StoreCompactionJobStartedIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
     @Test
-    public void shouldReportCompactionJobStarted() {
+    public void shouldReportCompactionJobStartedSeparatelyFromCreation() {
         // Given
         Partition partition = singlePartition();
         FileInfoFactory fileFactory = fileFactory(partition);
         CompactionJob job = jobFactory.createCompactionJob(
                 Collections.singletonList(fileFactory.leafFile(100L, "a", "z")),
                 partition.getId());
+        store.jobCreated(job);
 
         // When
         store.jobStarted(job, Instant.parse("2022-09-22T11:09:12.001Z"));
 
         // Then
         assertThatItemsInTable().containsExactly(
+                createCompaction(job.getId(), 1, partition.getId()),
                 startCompaction(job.getId()));
     }
 
