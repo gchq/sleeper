@@ -29,14 +29,14 @@ import java.util.stream.Stream;
 public class AssertDynamoDBRecord {
 
     private final Set<String> keys;
-    private final Map<String, AttributeValue> itemWithoutTimes;
+    private final Map<String, AttributeValue> itemWithoutIgnored;
 
-    private AssertDynamoDBRecord(Set<String> keys, Map<String, AttributeValue> itemWithoutTimes) {
+    private AssertDynamoDBRecord(Set<String> keys, Map<String, AttributeValue> itemWithoutIgnored) {
         this.keys = new TreeSet<>(keys);
-        this.itemWithoutTimes = new TreeMap<>(itemWithoutTimes);
+        this.itemWithoutIgnored = new TreeMap<>(itemWithoutIgnored);
     }
 
-    public static AssertDynamoDBRecord actualIgnoringTimes(Map<String, AttributeValue> item, Set<String> timeKeys) {
+    public static AssertDynamoDBRecord actualIgnoringKeys(Map<String, AttributeValue> item, Set<String> timeKeys) {
         return new AssertDynamoDBRecord(item.keySet(), removeNonNullTimes(item, timeKeys));
     }
 
@@ -63,19 +63,19 @@ public class AssertDynamoDBRecord {
             return false;
         }
         AssertDynamoDBRecord that = (AssertDynamoDBRecord) o;
-        return Objects.equals(keys, that.keys) && Objects.equals(itemWithoutTimes, that.itemWithoutTimes);
+        return Objects.equals(keys, that.keys) && Objects.equals(itemWithoutIgnored, that.itemWithoutIgnored);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(keys, itemWithoutTimes);
+        return Objects.hash(keys, itemWithoutIgnored);
     }
 
     @Override
     public String toString() {
         return "CompactionJobStatusRecord{" +
                 "keys=" + keys +
-                ", attributesExceptTimes=" + itemWithoutTimes +
+                ", attributesExceptTimes=" + itemWithoutIgnored +
                 '}';
     }
 }

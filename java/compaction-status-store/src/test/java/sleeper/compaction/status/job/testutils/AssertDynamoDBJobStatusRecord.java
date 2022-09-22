@@ -18,6 +18,7 @@ package sleeper.compaction.status.job.testutils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import sleeper.compaction.status.DynamoDBRecordBuilder;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 
@@ -46,8 +47,6 @@ public class AssertDynamoDBJobStatusRecord {
     private static final Set<String> START_COMPACTION_KEYS = keySet(
             JOB_ID, UPDATE_TIME, UPDATE_TYPE, START_TIME);
 
-    private static final Set<String> DATETIME_KEYS = keySet(UPDATE_TIME, START_TIME);
-
     public static AssertDynamoDBRecord createCompaction(String jobId, int inputFilesCount, String partitionId) {
         return AssertDynamoDBRecord.expected(CREATE_COMPACTION_KEYS, new DynamoDBRecordBuilder()
                 .string(JOB_ID, jobId)
@@ -66,13 +65,14 @@ public class AssertDynamoDBJobStatusRecord {
                 .string(SPLIT_TO_PARTITION_IDS, splitToPartitionIds));
     }
 
-    public static AssertDynamoDBRecord startCompaction(String jobId) {
+    public static AssertDynamoDBRecord startCompaction(String jobId, Instant startTime) {
         return AssertDynamoDBRecord.expected(START_COMPACTION_KEYS, new DynamoDBRecordBuilder()
                 .string(JOB_ID, jobId)
+                .number(START_TIME, startTime.toEpochMilli())
                 .string(UPDATE_TYPE, UPDATE_TYPE_STARTED));
     }
 
-    public static AssertDynamoDBRecord actualIgnoringTimes(Map<String, AttributeValue> item) {
-        return AssertDynamoDBRecord.actualIgnoringTimes(item, DATETIME_KEYS);
+    public static AssertDynamoDBRecord actualIgnoringUpdateTime(Map<String, AttributeValue> item) {
+        return AssertDynamoDBRecord.actualIgnoringKeys(item, keySet(UPDATE_TIME));
     }
 }

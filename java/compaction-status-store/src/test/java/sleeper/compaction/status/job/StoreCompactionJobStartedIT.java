@@ -40,12 +40,13 @@ public class StoreCompactionJobStartedIT extends DynamoDBCompactionJobStatusStor
         store.jobCreated(job);
 
         // When
-        store.jobStarted(job, Instant.parse("2022-09-22T11:09:12.001Z"));
+        Instant startTime = Instant.parse("2022-09-22T11:09:12.001Z");
+        store.jobStarted(job, startTime);
 
         // Then
-        assertThatItemsInTable().containsExactly(
+        assertThatItemsInTable().containsExactlyInAnyOrder(
                 createCompaction(job.getId(), 1, partition.getId()),
-                startCompaction(job.getId()));
+                startCompaction(job.getId(), startTime));
     }
 
 }

@@ -84,6 +84,6 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
 
     protected AbstractListAssert<?, List<? extends AssertDynamoDBRecord>, AssertDynamoDBRecord, ObjectAssert<AssertDynamoDBRecord>> assertThatItemsInTable() {
         return assertThat(dynamoDBClient.scan(new ScanRequest().withTableName(tableName)).getItems())
-                .extracting(AssertDynamoDBJobStatusRecord::actualIgnoringTimes);
+                .extracting(AssertDynamoDBJobStatusRecord::actualIgnoringUpdateTime);
     }
 }
