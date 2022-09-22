@@ -132,7 +132,7 @@ public class CompactSortedFiles {
         METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", id, summary.getDurationInSeconds());
         METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", id, summary.getLinesRead(), String.format("%.1f", summary.getRecordsReadPerSecond()));
         METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", id, summary.getLinesWritten(), String.format("%.1f", summary.getRecordsWrittenPerSecond()));
-        jobStatusStore.jobCompleted(compactionJob, summary);
+        jobStatusStore.jobFinished(compactionJob, summary);
         return summary;
     }
 

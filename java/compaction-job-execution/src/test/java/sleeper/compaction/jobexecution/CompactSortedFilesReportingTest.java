@@ -68,7 +68,7 @@ public class CompactSortedFilesReportingTest extends CompactSortedFilesTestBase 
         // Then
         InOrder order = Mockito.inOrder(jobStatusStore);
         order.verify(jobStatusStore).jobStarted(eq(compactionJob), any(Instant.class));
-        order.verify(jobStatusStore).jobCompleted(compactionJob, summary);
+        order.verify(jobStatusStore).jobFinished(compactionJob, summary);
         order.verifyNoMoreInteractions();
 
         assertThat(summary.getStartTime()).isNotNull();
