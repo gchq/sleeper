@@ -21,7 +21,6 @@ import sleeper.compaction.status.job.testutils.DynamoDBCompactionJobStatusStoreT
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfoFactory;
 
-import java.time.Instant;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,8 +38,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
 
         // When
         store.jobCreated(job);
-        Instant startTime = Instant.parse("2022-09-22T11:09:12.001Z");
-        store.jobStarted(job, startTime);
+        store.jobStarted(job, defaultStartTime());
 
         // Then
         assertThat(getAllJobStatuses())
