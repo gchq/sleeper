@@ -76,7 +76,7 @@ public class StatusReporterQueryUnfinishedTest {
         System.out.println(status);
         assertThat(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED))
                 .isEqualTo(example("reports/compactionjobstatus/standard/unfinishedSplittingJobCreated.txt")
-                        .replace("$(jobId)",job.getId()));
+                        .replace("$(jobId)", job.getId()));
     }
 
     private static String example(String path) throws IOException {
