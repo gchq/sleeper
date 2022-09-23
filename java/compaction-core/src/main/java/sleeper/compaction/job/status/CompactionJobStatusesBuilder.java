@@ -16,8 +16,10 @@
 package sleeper.compaction.job.status;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -61,5 +63,13 @@ public class CompactionJobStatusesBuilder {
                 .startedStatus(startedById.get(jobId))
                 .finishedStatus(finishedById.get(jobId))
                 .build();
+    }
+
+    public Set<String> jobIdsMissingCreatedStatus() {
+        Set<String> jobIds = new HashSet<>();
+        jobIds.addAll(startedById.keySet());
+        jobIds.addAll(finishedById.keySet());
+        jobIds.removeAll(createdById.keySet());
+        return jobIds;
     }
 }
