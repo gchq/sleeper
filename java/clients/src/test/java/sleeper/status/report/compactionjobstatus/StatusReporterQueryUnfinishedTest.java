@@ -20,8 +20,11 @@ import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobRecordsProcessed;
+import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.partition.Partition;
@@ -34,7 +37,10 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -59,7 +65,6 @@ public class StatusReporterQueryUnfinishedTest {
         CompactionJobStatus status = CompactionJobStatus.created(job, updateTime);
 
         // Then
-        System.out.println(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED));
         assertThat(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED))
                 .isEqualTo(example("reports/compactionjobstatus/standard/unfinishedStandardJobCreated.txt")
                         .replace("$(jobId)", job.getId()));
@@ -75,7 +80,6 @@ public class StatusReporterQueryUnfinishedTest {
         CompactionJobStatus status = CompactionJobStatus.created(job, updateTime);
 
         // Then
-        System.out.println(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED));
         assertThat(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED))
                 .isEqualTo(example("reports/compactionjobstatus/standard/unfinishedSplittingJobCreated.txt")
                         .replace("$(jobId)", job.getId()));
@@ -97,7 +101,6 @@ public class StatusReporterQueryUnfinishedTest {
                 .build();
 
         // Then
-        System.out.println(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED));
         assertThat(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED))
                 .isEqualTo(example("reports/compactionjobstatus/standard/unfinishedStandardJobStarted.txt")
                         .replace("$(jobId)", job.getId()));
@@ -119,9 +122,58 @@ public class StatusReporterQueryUnfinishedTest {
 
 
         // Then
-        System.out.println(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED));
         assertThat(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED))
                 .isEqualTo(example("reports/compactionjobstatus/standard/unfinishedSplittingJobStarted.txt")
+                        .replace("$(jobId)", job.getId()));
+    }
+
+    @Test
+    public void shouldNotReportAnyCompactionJobStatusWithOnlyFinishedJobs() throws Exception {
+        // Given
+        Partition partition = dataHelper.singlePartition();
+        CompactionJob job = dataHelper.singleFileCompaction(partition);
+        Instant creationTime = Instant.parse("2022-09-22T13:33:12.001Z");
+        Instant startedTime = Instant.parse("2022-09-22T13:34:12.001Z");
+        Instant startedUpdateTime = Instant.parse("2022-09-22T13:39:12.001Z");
+        Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
+
+        // When
+        CompactionJobSummary summary = new CompactionJobSummary(
+                new CompactionJobRecordsProcessed(600L, 300L), startedUpdateTime, finishedTime);
+        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
+                .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(startedUpdateTime, startedTime))
+                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(finishedTime, summary))
+                .build();
+
+        // Then
+        List<CompactionJobStatus> statusList = Stream.of(status).filter(s -> !s.isFinished()).collect(Collectors.toList());
+        assertThat(statusReporter.report(statusList, QueryType.UNFINISHED))
+                .isEqualTo(example("reports/compactionjobstatus/standard/unfinishedStandardJobFinished.txt"));
+    }
+
+    @Test
+    public void shouldNotReportAnySplittingCompactionJobStatusWithOnlyFinishedJobs() throws Exception {
+        // Given
+        CompactionJob job = dataHelper.singleFileSplittingCompaction("C", "A", "B");
+        Instant creationTime = Instant.parse("2022-09-22T13:33:12.001Z");
+        Instant startedTime = Instant.parse("2022-09-22T13:34:12.001Z");
+        Instant startedUpdateTime = Instant.parse("2022-09-22T13:39:12.001Z");
+        Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
+
+        // When
+        CompactionJobSummary summary = new CompactionJobSummary(
+                new CompactionJobRecordsProcessed(600L, 300L), startedUpdateTime, finishedTime);
+        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
+                .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(startedUpdateTime, startedTime))
+                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(finishedTime, summary))
+                .build();
+
+        // Then
+        List<CompactionJobStatus> statusList = Stream.of(status).filter(s -> !s.isFinished()).collect(Collectors.toList());
+        assertThat(statusReporter.report(statusList, QueryType.UNFINISHED))
+                .isEqualTo(example("reports/compactionjobstatus/standard/unfinishedSplittingJobFinished.txt")
                         .replace("$(jobId)", job.getId()));
     }
 
