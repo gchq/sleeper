@@ -44,7 +44,7 @@ public class StatusReporterQueryUnfinishedTest {
 
     @Before
     public void setup() {
-        statusReporter = new CompactionJobStatusReporter(System.out);
+        statusReporter = new CompactionJobStatusReporter();
         dataHelper = new CompactionJobTestDataHelper();
     }
 

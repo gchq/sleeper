@@ -18,20 +18,16 @@ package sleeper.status.report.compactionjob;
 
 import sleeper.compaction.job.status.CompactionJobStatus;
 
-import java.io.PrintStream;
 import java.util.List;
 
 public class CompactionJobStatusReporter {
-    private final PrintStream out;
-
     public enum QueryType {
         RANGE,
         SPECIFIC,
         UNFINISHED
     }
 
-    public CompactionJobStatusReporter(PrintStream out) {
-        this.out = out;
+    public CompactionJobStatusReporter() {
     }
 
     public String report(List<CompactionJobStatus> jobStatusList, QueryType queryType) {
