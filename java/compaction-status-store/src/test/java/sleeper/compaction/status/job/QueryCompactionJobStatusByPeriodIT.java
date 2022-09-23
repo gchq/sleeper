@@ -98,4 +98,74 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
                 .containsExactlyInAnyOrder(
                         CompactionJobStatus.created(job1, ignoredUpdateTime()));
     }
+
+    @Test
+    public void shouldExcludeFinishedStatusUpdateOutsidePeriod() throws Exception {
+        // Given
+        Partition partition = singlePartition();
+        FileInfoFactory fileFactory = fileFactory(partition);
+        CompactionJob job = jobFactory.createCompactionJob(
+                Collections.singletonList(fileFactory.leafFile(123L, "a", "z")),
+                partition.getId());
+
+        // When
+        Instant periodStart = Instant.now().minus(Period.ofDays(1));
+        store.jobCreated(job);
+        store.jobStarted(job, defaultStartTime());
+        Thread.sleep(1);
+        Instant periodEnd = Instant.now();
+        Thread.sleep(1);
+        store.jobFinished(job, defaultSummary());
+
+        // Then
+        assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd))
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactlyInAnyOrder(
+                        startedStatusWithDefaults(job));
+    }
+
+    @Test
+    public void shouldIncludeFinishedStatusUpdateInsidePeriod() {
+        // Given
+        Partition partition = singlePartition();
+        FileInfoFactory fileFactory = fileFactory(partition);
+        CompactionJob job = jobFactory.createCompactionJob(
+                Collections.singletonList(fileFactory.leafFile(123L, "a", "z")),
+                partition.getId());
+
+        // When
+        store.jobCreated(job);
+        store.jobStarted(job, defaultStartTime());
+        store.jobFinished(job, defaultSummary());
+
+        // Then
+        Instant periodStart = Instant.now().minus(Period.ofDays(1));
+        Instant periodEnd = periodStart.plus(Period.ofDays(2));
+        assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd))
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactlyInAnyOrder(
+                        finishedStatusWithDefaults(job));
+    }
+
+    @Test
+    public void shouldExcludeJobCreatedOutsidePeriod() throws Exception {
+        // Given
+        Partition partition = singlePartition();
+        FileInfoFactory fileFactory = fileFactory(partition);
+        CompactionJob job = jobFactory.createCompactionJob(
+                Collections.singletonList(fileFactory.leafFile(123L, "a", "z")),
+                partition.getId());
+
+        // When
+        store.jobCreated(job);
+        Thread.sleep(1);
+        Instant periodStart = Instant.now();
+        Thread.sleep(1);
+        store.jobStarted(job, defaultStartTime());
+        store.jobFinished(job, defaultSummary());
+        Instant periodEnd = periodStart.plus(Period.ofDays(1));
+
+        // Then
+        assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd)).isEmpty();
+    }
 }
