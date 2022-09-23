@@ -166,6 +166,8 @@ public class CompactionJobStatus {
         return "CompactionJobStatus{" +
                 "jobId='" + jobId + '\'' +
                 ", createdStatus=" + createdStatus +
+                ", startedStatus=" + startedStatus +
+                ", finishedStatus=" + finishedStatus +
                 '}';
     }
 }
