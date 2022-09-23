@@ -384,6 +384,7 @@ public class CompactionStack extends NestedStack {
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDefinition.getTaskRole()));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(taskDefinition.getTaskRole()));
         eventStore.grantWriteJobEvent(taskDefinition.getTaskRole());
+        eventStore.grantWriteTaskEvent(taskDefinition.getTaskRole());
 
         compactionMergeJobsQueue.grantConsumeMessages(taskDefinition.getTaskRole());
 
@@ -445,6 +446,7 @@ public class CompactionStack extends NestedStack {
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDefinition.getTaskRole()));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(taskDefinition.getTaskRole()));
         eventStore.grantWriteJobEvent(taskDefinition.getTaskRole());
+        eventStore.grantWriteTaskEvent(taskDefinition.getTaskRole());
 
         compactionSplittingMergeJobsQueue.grantConsumeMessages(taskDefinition.getTaskRole());
 
