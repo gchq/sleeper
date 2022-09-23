@@ -39,4 +39,29 @@ public class CompactionJobStartedStatus {
     public Instant getStartTime() {
         return startTime;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        CompactionJobStartedStatus that = (CompactionJobStartedStatus) o;
+        return updateTime.equals(that.updateTime) && startTime.equals(that.startTime);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(updateTime, startTime);
+    }
+
+    @Override
+    public String toString() {
+        return "CompactionJobStartedStatus{" +
+                "updateTime=" + updateTime +
+                ", startTime=" + startTime +
+                '}';
+    }
 }
