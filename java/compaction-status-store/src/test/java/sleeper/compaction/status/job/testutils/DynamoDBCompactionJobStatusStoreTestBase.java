@@ -15,9 +15,6 @@
  */
 package sleeper.compaction.status.job.testutils;
 
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import org.assertj.core.api.AbstractListAssert;
-import org.assertj.core.api.ObjectAssert;
 import org.junit.After;
 import org.junit.Before;
 import sleeper.compaction.job.CompactionJobFactory;
@@ -39,7 +36,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
 import static sleeper.compaction.status.job.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
 import static sleeper.compaction.status.job.testutils.CompactionStatusStoreTestUtils.createSchema;
@@ -90,10 +86,5 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         Instant epochStart = Instant.ofEpochMilli(0);
         Instant farFuture = epochStart.plus(Period.ofDays(999999999));
         return store.getJobsInTimePeriod(tableName, epochStart, farFuture);
-    }
-
-    protected AbstractListAssert<?, List<? extends AssertDynamoDBRecord>, AssertDynamoDBRecord, ObjectAssert<AssertDynamoDBRecord>> assertThatItemsInTable() {
-        return assertThat(dynamoDBClient.scan(new ScanRequest().withTableName(jobStatusTableName)).getItems())
-                .extracting(AssertDynamoDBJobStatusRecord::actualIgnoringUpdateTime);
     }
 }
