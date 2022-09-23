@@ -110,6 +110,25 @@ public class CompactionJobStatus {
         return null;
     }
 
+    public boolean isInPeriod(Instant startTime, Instant endTime) {
+        return startTime.isBefore(lastTime())
+                && endTime.isAfter(firstTime());
+    }
+
+    private Instant firstTime() {
+        return createdStatus.getUpdateTime();
+    }
+
+    private Instant lastTime() {
+        if (isFinished()) {
+            return finishedStatus.getUpdateTime();
+        } else if (isStarted()) {
+            return startedStatus.getUpdateTime();
+        } else {
+            return createdStatus.getUpdateTime();
+        }
+    }
+
     public static final class Builder {
         private String jobId;
         private CompactionJobCreatedStatus createdStatus;
