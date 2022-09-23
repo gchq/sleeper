@@ -17,9 +17,12 @@ package sleeper.compaction.status.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
+import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutItemResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
@@ -30,9 +33,12 @@ import sleeper.compaction.status.CompactionStatusStoreException;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static sleeper.compaction.status.DynamoDBAttributes.createStringAttribute;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.TABLE_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
@@ -98,7 +104,15 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
 
     @Override
     public List<CompactionJobStatus> getUnfinishedJobs(String tableName) {
-        return CompactionJobStatusStore.super.getUnfinishedJobs(tableName);
+        return getAllJobs(tableName);
+    }
+
+    private List<CompactionJobStatus> getAllJobs(String tableName) {
+        ScanResult result = dynamoDB.scan(statusTableName,
+                Collections.singletonMap(TABLE_NAME, new Condition()
+                        .withAttributeValueList(createStringAttribute(tableName))
+                        .withComparisonOperator(ComparisonOperator.EQ)));
+        return DynamoDBCompactionJobStatusFormat.getJobStatuses(result.getItems());
     }
 
     public static String jobStatusTableName(String instanceId) {

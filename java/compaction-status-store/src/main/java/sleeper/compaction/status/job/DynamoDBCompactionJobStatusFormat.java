@@ -16,14 +16,28 @@
 package sleeper.compaction.status.job;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
 import sleeper.compaction.status.DynamoDBRecordBuilder;
 
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
+import static sleeper.compaction.status.DynamoDBAttributes.getInstantAttribute;
+import static sleeper.compaction.status.DynamoDBAttributes.getIntAttribute;
+import static sleeper.compaction.status.DynamoDBAttributes.getStringAttribute;
+
 public class DynamoDBCompactionJobStatusFormat {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobStatusFormat.class);
 
     private DynamoDBCompactionJobStatusFormat() {
     }
@@ -78,4 +92,33 @@ public class DynamoDBCompactionJobStatusFormat {
                 .string(UPDATE_TYPE, updateType);
     }
 
+    public static List<CompactionJobStatus> getJobStatuses(List<Map<String, AttributeValue>> items) {
+        CompactionJobStatusesBuilder builder = new CompactionJobStatusesBuilder();
+        items.forEach(item -> addStatusUpdate(item, builder));
+        return builder.build();
+    }
+
+    private static void addStatusUpdate(Map<String, AttributeValue> item, CompactionJobStatusesBuilder builder) {
+        String jobId = getStringAttribute(item, JOB_ID);
+        switch (getStringAttribute(item, UPDATE_TYPE)) {
+            case UPDATE_TYPE_CREATED:
+                builder.jobCreated(jobId, CompactionJobCreatedStatus.builder()
+                        .updateTime(getInstantAttribute(item, UPDATE_TIME))
+                        .partitionId(getStringAttribute(item, PARTITION_ID))
+                        .childPartitionIds(getChildPartitionIds(item))
+                        .inputFilesCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))
+                        .build());
+                break;
+            default:
+                LOGGER.warn("Found record with unrecognised update type: {}", item);
+        }
+    }
+
+    private static List<String> getChildPartitionIds(Map<String, AttributeValue> item) {
+        String string = getStringAttribute(item, SPLIT_TO_PARTITION_IDS);
+        if (string == null) {
+            return Collections.emptyList();
+        }
+        return Arrays.asList(string.split(", "));
+    }
 }

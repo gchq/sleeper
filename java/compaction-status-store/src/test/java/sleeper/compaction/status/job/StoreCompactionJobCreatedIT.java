@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.status.job;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobStatus;
@@ -34,7 +33,6 @@ import static sleeper.compaction.status.job.testutils.AssertDynamoDBJobStatusRec
 public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
     @Test
-    @Ignore("getUnfinishedJobs not yet implemented")
     public void shouldReportCompactionJobCreated() {
         // Given
         Partition partition = singlePartition();

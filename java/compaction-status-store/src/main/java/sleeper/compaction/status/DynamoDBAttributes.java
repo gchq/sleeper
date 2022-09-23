@@ -18,6 +18,7 @@ package sleeper.compaction.status;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import java.nio.ByteBuffer;
+import java.time.Instant;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -56,6 +57,22 @@ public class DynamoDBAttributes {
 
     public static String getNumberAttribute(Map<String, AttributeValue> item, String name) {
         return getAttribute(item, name, AttributeValue::getN);
+    }
+
+    public static int getIntAttribute(Map<String, AttributeValue> item, String name, int defaultValue) {
+        String string = getNumberAttribute(item, name);
+        if (string == null) {
+            return defaultValue;
+        }
+        return Integer.parseInt(string);
+    }
+
+    public static Instant getInstantAttribute(Map<String, AttributeValue> item, String name) {
+        String string = getNumberAttribute(item, name);
+        if (string == null) {
+            return null;
+        }
+        return Instant.ofEpochMilli(Long.parseLong(string));
     }
 
     private static <T> T getAttribute(Map<String, AttributeValue> item, String name, Function<AttributeValue, T> getter) {
