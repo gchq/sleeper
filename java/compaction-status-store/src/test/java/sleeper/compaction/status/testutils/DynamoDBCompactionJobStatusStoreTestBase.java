@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.status.job.testutils;
+package sleeper.compaction.status.testutils;
 
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.After;
@@ -44,9 +44,9 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
-import static sleeper.compaction.status.job.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
-import static sleeper.compaction.status.job.testutils.CompactionStatusStoreTestUtils.createSchema;
-import static sleeper.compaction.status.job.testutils.CompactionStatusStoreTestUtils.createTableProperties;
+import static sleeper.compaction.status.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
+import static sleeper.compaction.status.testutils.CompactionStatusStoreTestUtils.createSchema;
+import static sleeper.compaction.status.testutils.CompactionStatusStoreTestUtils.createTableProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
