@@ -18,6 +18,7 @@ package sleeper.compaction.job.status;
 import sleeper.compaction.job.CompactionJobSummary;
 
 import java.time.Instant;
+import java.util.Objects;
 
 public class CompactionJobFinishedStatus {
 
@@ -25,8 +26,8 @@ public class CompactionJobFinishedStatus {
     private final CompactionJobSummary summary;
 
     private CompactionJobFinishedStatus(Instant updateTime, CompactionJobSummary summary) {
-        this.updateTime = updateTime;
-        this.summary = summary;
+        this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
+        this.summary = Objects.requireNonNull(summary, "summary must not be null");
     }
 
     public static CompactionJobFinishedStatus updateTimeAndSummary(Instant updateTime, CompactionJobSummary summary) {
@@ -39,5 +40,30 @@ public class CompactionJobFinishedStatus {
 
     public CompactionJobSummary getSummary() {
         return summary;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        CompactionJobFinishedStatus that = (CompactionJobFinishedStatus) o;
+        return updateTime.equals(that.updateTime) && summary.equals(that.summary);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(updateTime, summary);
+    }
+
+    @Override
+    public String toString() {
+        return "CompactionJobFinishedStatus{" +
+                "updateTime=" + updateTime +
+                ", summary=" + summary +
+                '}';
     }
 }
