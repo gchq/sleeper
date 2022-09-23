@@ -19,6 +19,9 @@ import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobRecordsProcessed;
 import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobStartedStatus;
+import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.job.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfoFactory;
@@ -26,6 +29,7 @@ import sleeper.statestore.FileInfoFactory;
 import java.time.Instant;
 import java.util.Collections;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.status.job.testutils.AssertDynamoDBJobStatusRecord.createCompaction;
 import static sleeper.compaction.status.job.testutils.AssertDynamoDBJobStatusRecord.finishCompaction;
 import static sleeper.compaction.status.job.testutils.AssertDynamoDBJobStatusRecord.startCompaction;
@@ -47,9 +51,14 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         store.jobStarted(job, startTime);
 
         // Then
-        assertThatItemsInTable().containsExactlyInAnyOrder(
-                createCompaction(job.getId(), 1, tableName, partition.getId()),
-                startCompaction(job.getId(), startTime));
+        assertThat(store.getUnfinishedJobs(tableName))
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
+                        "createdStatus.updateTime", "startedStatus.updateTime")
+                .containsExactly(
+                        CompactionJobStatus.builder().jobId(job.getId())
+                                .createdStatus(CompactionJobCreatedStatus.from(job, Instant.now()))
+                                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(Instant.now(), startTime))
+                                .build());
     }
 
     @Test

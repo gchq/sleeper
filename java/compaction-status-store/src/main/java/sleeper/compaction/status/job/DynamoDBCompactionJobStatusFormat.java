@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
 import sleeper.compaction.status.DynamoDBRecordBuilder;
@@ -108,6 +109,11 @@ public class DynamoDBCompactionJobStatusFormat {
                         .childPartitionIds(getChildPartitionIds(item))
                         .inputFilesCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))
                         .build());
+                break;
+            case UPDATE_TYPE_STARTED:
+                builder.jobStarted(jobId, CompactionJobStartedStatus.updateAndStartTime(
+                        getInstantAttribute(item, UPDATE_TIME),
+                        getInstantAttribute(item, START_TIME)));
                 break;
             default:
                 LOGGER.warn("Found record with unrecognised update type: {}", item);
