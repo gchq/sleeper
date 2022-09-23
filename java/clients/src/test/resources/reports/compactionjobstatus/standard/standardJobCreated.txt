@@ -1,0 +1,7 @@
+
+Compaction Job Status Report:
+--------------------------
+Total unfinished jobs: 1
+Total unfinished jobs in progress: 0
+Total unfinished jobs not started: 1
+--------------------------
