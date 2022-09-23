@@ -33,6 +33,10 @@ public class DynamoDBUtils {
     private DynamoDBUtils() {
     }
 
+    public static String instanceTableName(String instanceId, String tableName) {
+        return String.join("-", "sleeper", instanceId, tableName);
+    }
+
     public static void initialiseTable(
             AmazonDynamoDB dynamoDB,
             String tableName,

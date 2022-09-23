@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.compaction.status.DynamoDBAttributes.createStringAttribute;
+import static sleeper.compaction.status.DynamoDBUtils.instanceTableName;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.TABLE_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
@@ -63,6 +64,10 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
         } else {
             return CompactionJobStatusStore.none();
         }
+    }
+
+    public static String jobStatusTableName(String instanceId) {
+        return instanceTableName(instanceId, "compaction-job-status");
     }
 
     @Override
@@ -139,13 +144,5 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                 .addScanFilterEntry(TABLE_NAME, new Condition()
                         .withAttributeValueList(createStringAttribute(tableName))
                         .withComparisonOperator(ComparisonOperator.EQ));
-    }
-
-    public static String jobStatusTableName(String instanceId) {
-        return instanceTableName(instanceId, "compaction-job-status");
-    }
-
-    private static String instanceTableName(String instanceId, String tableName) {
-        return String.join("-", "sleeper", instanceId, tableName);
     }
 }
