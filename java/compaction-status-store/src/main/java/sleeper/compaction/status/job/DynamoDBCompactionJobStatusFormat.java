@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static sleeper.compaction.status.DynamoDBAttributes.getInstantAttribute;
 import static sleeper.compaction.status.DynamoDBAttributes.getIntAttribute;
@@ -96,10 +97,14 @@ public class DynamoDBCompactionJobStatusFormat {
                 .string(UPDATE_TYPE, updateType);
     }
 
-    public static List<CompactionJobStatus> getJobStatuses(List<Map<String, AttributeValue>> items) {
+    public static Stream<CompactionJobStatus> streamJobStatuses(List<Map<String, AttributeValue>> items) {
+        return streamJobStatuses(items.stream());
+    }
+
+    public static Stream<CompactionJobStatus> streamJobStatuses(Stream<Map<String, AttributeValue>> items) {
         CompactionJobStatusesBuilder builder = new CompactionJobStatusesBuilder();
         items.forEach(item -> addStatusUpdate(item, builder));
-        return builder.build();
+        return builder.stream();
     }
 
     private static void addStatusUpdate(Map<String, AttributeValue> item, CompactionJobStatusesBuilder builder) {

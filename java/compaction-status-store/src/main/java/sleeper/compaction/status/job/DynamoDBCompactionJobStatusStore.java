@@ -38,9 +38,14 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.compaction.status.DynamoDBAttributes.createStringAttribute;
+import static sleeper.compaction.status.DynamoDBAttributes.getStringAttribute;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.TABLE_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
@@ -111,26 +116,35 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                 .addKeyConditionsEntry(JOB_ID, new Condition()
                         .withAttributeValueList(createStringAttribute(jobId))
                         .withComparisonOperator(ComparisonOperator.EQ)));
-        List<CompactionJobStatus> statuses = DynamoDBCompactionJobStatusFormat.getJobStatuses(result.getItems());
-        if (statuses.isEmpty()) {
-            return null;
-        }
-        return statuses.get(0);
+        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems())
+                .findFirst().orElse(null);
     }
 
     @Override
     public List<CompactionJobStatus> getUnfinishedJobs(String tableName) {
-        return getAllJobs();
+        return streamJobsInTable(tableName)
+                .filter(job -> !job.isFinished())
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<CompactionJobStatus> getJobsInTimePeriod(String tableName, Instant startTime, Instant endTime) {
-        return getAllJobs();
+        return streamJobsInTable(tableName).collect(Collectors.toList());
     }
 
-    private List<CompactionJobStatus> getAllJobs() {
+    private Stream<CompactionJobStatus> streamJobsInTable(String tableName) {
         ScanResult result = dynamoDB.scan(statusTableName, Collections.emptyMap());
-        return DynamoDBCompactionJobStatusFormat.getJobStatuses(result.getItems());
+        List<Map<String, AttributeValue>> items = result.getItems();
+
+        // Only the created record has the table name.
+        // We need to find the jobs for the table we care about from those.
+        Set<String> jobIds = items.stream()
+                .filter(item -> tableName.equals(getStringAttribute(item, TABLE_NAME)))
+                .map(item -> getStringAttribute(item, JOB_ID))
+                .collect(Collectors.toSet());
+
+        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(
+                items.stream().filter(item -> jobIds.contains(getStringAttribute(item, JOB_ID))));
     }
 
     public static String jobStatusTableName(String instanceId) {

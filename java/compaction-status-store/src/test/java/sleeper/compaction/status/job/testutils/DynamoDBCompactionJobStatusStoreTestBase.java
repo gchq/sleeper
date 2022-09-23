@@ -18,8 +18,14 @@ package sleeper.compaction.status.job.testutils;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.After;
 import org.junit.Before;
+import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
+import sleeper.compaction.job.CompactionJobRecordsProcessed;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobFinishedStatus;
+import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStoreCreator;
@@ -85,6 +91,47 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     private FileInfoFactory fileFactory(List<Partition> partitions) {
         return new FileInfoFactory(schema, partitions, Instant.now());
     }
+
+    protected CompactionJobFactory jobFactoryForTable(String tableName) {
+        TableProperties tableProperties = createTableProperties(schema, instanceProperties);
+        tableProperties.set(TABLE_NAME, tableName);
+        return new CompactionJobFactory(instanceProperties, tableProperties);
+    }
+
+    protected static Instant ignoredUpdateTime() {
+        return Instant.now();
+    }
+
+    protected static Instant defaultStartTime() {
+        return Instant.parse("2022-09-23T10:51:00.001Z");
+    }
+
+    protected static CompactionJobSummary defaultSummary() {
+        return new CompactionJobSummary(
+                new CompactionJobRecordsProcessed(200L, 100L),
+                defaultStartTime(), Instant.parse("2022-09-23T10:52:00.001Z"));
+    }
+
+    protected static CompactionJobStatus startedStatusWithDefaults(CompactionJob job) {
+        return CompactionJobStatus.builder().jobId(job.getId())
+                .createdStatus(CompactionJobCreatedStatus.from(
+                        job, ignoredUpdateTime()))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
+                        ignoredUpdateTime(), defaultStartTime()))
+                .build();
+    }
+
+    protected static CompactionJobStatus finishedStatusWithDefaults(CompactionJob job) {
+        return CompactionJobStatus.builder().jobId(job.getId())
+                .createdStatus(CompactionJobCreatedStatus.from(
+                        job, ignoredUpdateTime()))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
+                        ignoredUpdateTime(), defaultStartTime()))
+                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(
+                        ignoredUpdateTime(), defaultSummary()))
+                .build();
+    }
+
 
     protected List<CompactionJobStatus> getAllJobStatuses() {
         Instant epochStart = Instant.ofEpochMilli(0);

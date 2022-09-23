@@ -22,12 +22,11 @@ import sleeper.compaction.status.job.testutils.DynamoDBCompactionJobStatusStoreT
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfoFactory;
 
-import java.time.Instant;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class QueryCompactionJobStatusIT extends DynamoDBCompactionJobStatusStoreTestBase {
+public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
     @Test
     public void shouldReturnCompactionJobById() {
@@ -48,7 +47,7 @@ public class QueryCompactionJobStatusIT extends DynamoDBCompactionJobStatusStore
         // Then
         assertThat(store.getJob(job1.getId()))
                 .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
-                .isEqualTo(CompactionJobStatus.created(job1, Instant.now()));
+                .isEqualTo(CompactionJobStatus.created(job1, ignoredUpdateTime()));
     }
 
     @Test

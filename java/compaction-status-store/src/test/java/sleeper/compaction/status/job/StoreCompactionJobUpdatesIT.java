@@ -17,12 +17,6 @@ package sleeper.compaction.status.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobRecordsProcessed;
-import sleeper.compaction.job.CompactionJobSummary;
-import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
-import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.job.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfoFactory;
@@ -51,11 +45,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(
-                        CompactionJobStatus.builder().jobId(job.getId())
-                                .createdStatus(CompactionJobCreatedStatus.from(job, Instant.now()))
-                                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(Instant.now(), startTime))
-                                .build());
+                .containsExactly(startedStatusWithDefaults(job));
     }
 
     @Test
@@ -66,27 +56,16 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         CompactionJob job = jobFactory.createCompactionJob(
                 Collections.singletonList(fileFactory.leafFile(100L, "a", "z")),
                 partition.getId());
-        Instant startTime = Instant.parse("2022-09-22T11:09:12.001Z");
-        Instant startTimeAtFinish = Instant.parse("2022-09-22T11:09:13.001Z");
-        Instant finishTime = Instant.parse("2022-09-22T11:09:20.001Z");
-        CompactionJobSummary summary = new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(200L, 100L),
-                startTimeAtFinish, finishTime);
 
         // When
         store.jobCreated(job);
-        store.jobStarted(job, startTime);
-        store.jobFinished(job, summary);
+        store.jobStarted(job, defaultStartTime());
+        store.jobFinished(job, defaultSummary());
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(
-                        CompactionJobStatus.builder().jobId(job.getId())
-                                .createdStatus(CompactionJobCreatedStatus.from(job, Instant.now()))
-                                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(Instant.now(), startTime))
-                                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(Instant.now(), summary))
-                                .build());
+                .containsExactly(finishedStatusWithDefaults(job));
     }
 
 }
