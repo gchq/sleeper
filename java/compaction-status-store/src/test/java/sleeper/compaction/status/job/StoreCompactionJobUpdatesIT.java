@@ -20,6 +20,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobRecordsProcessed;
 import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.job.testutils.DynamoDBCompactionJobStatusStoreTestBase;
@@ -30,9 +31,6 @@ import java.time.Instant;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.status.job.testutils.AssertDynamoDBJobStatusRecord.createCompaction;
-import static sleeper.compaction.status.job.testutils.AssertDynamoDBJobStatusRecord.finishCompaction;
-import static sleeper.compaction.status.job.testutils.AssertDynamoDBJobStatusRecord.startCompaction;
 
 public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
@@ -51,7 +49,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         store.jobStarted(job, startTime);
 
         // Then
-        assertThat(store.getUnfinishedJobs(tableName))
+        assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
                         "createdStatus.updateTime", "startedStatus.updateTime")
                 .containsExactly(
@@ -82,10 +80,15 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         store.jobFinished(job, summary);
 
         // Then
-        assertThatItemsInTable().containsExactlyInAnyOrder(
-                createCompaction(job.getId(), 1, tableName, partition.getId()),
-                startCompaction(job.getId(), startTime),
-                finishCompaction(job.getId(), summary));
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields(
+                        "createdStatus.updateTime", "startedStatus.updateTime", "finishedStatus.updateTime")
+                .containsExactly(
+                        CompactionJobStatus.builder().jobId(job.getId())
+                                .createdStatus(CompactionJobCreatedStatus.from(job, Instant.now()))
+                                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(Instant.now(), startTime))
+                                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(Instant.now(), summary))
+                                .build());
     }
 
 }

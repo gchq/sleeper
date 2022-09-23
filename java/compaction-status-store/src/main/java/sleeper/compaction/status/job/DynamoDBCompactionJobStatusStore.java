@@ -103,6 +103,11 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
         return getAllJobs();
     }
 
+    @Override
+    public List<CompactionJobStatus> getJobsInTimePeriod(String tableName, Instant startTime, Instant endTime) {
+        return getAllJobs();
+    }
+
     private List<CompactionJobStatus> getAllJobs() {
         ScanResult result = dynamoDB.scan(statusTableName, Collections.emptyMap());
         return DynamoDBCompactionJobStatusFormat.getJobStatuses(result.getItems());

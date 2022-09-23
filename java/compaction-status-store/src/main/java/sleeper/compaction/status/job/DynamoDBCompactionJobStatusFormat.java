@@ -19,8 +19,10 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobRecordsProcessed;
 import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
@@ -34,6 +36,7 @@ import java.util.Map;
 
 import static sleeper.compaction.status.DynamoDBAttributes.getInstantAttribute;
 import static sleeper.compaction.status.DynamoDBAttributes.getIntAttribute;
+import static sleeper.compaction.status.DynamoDBAttributes.getLongAttribute;
 import static sleeper.compaction.status.DynamoDBAttributes.getStringAttribute;
 
 public class DynamoDBCompactionJobStatusFormat {
@@ -114,6 +117,15 @@ public class DynamoDBCompactionJobStatusFormat {
                 builder.jobStarted(jobId, CompactionJobStartedStatus.updateAndStartTime(
                         getInstantAttribute(item, UPDATE_TIME),
                         getInstantAttribute(item, START_TIME)));
+                break;
+            case UPDATE_TYPE_FINISHED:
+                builder.jobFinished(jobId, CompactionJobFinishedStatus.updateTimeAndSummary(
+                        getInstantAttribute(item, UPDATE_TIME),
+                        new CompactionJobSummary(new CompactionJobRecordsProcessed(
+                                getLongAttribute(item, RECORDS_READ, 0),
+                                getLongAttribute(item, RECORDS_WRITTEN, 0)),
+                                getInstantAttribute(item, START_TIME),
+                                getInstantAttribute(item, FINISH_TIME))));
                 break;
             default:
                 LOGGER.warn("Found record with unrecognised update type: {}", item);

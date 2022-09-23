@@ -22,6 +22,7 @@ import org.junit.After;
 import org.junit.Before;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.configuration.properties.InstanceProperties;
@@ -33,6 +34,7 @@ import sleeper.core.schema.Schema;
 import sleeper.statestore.FileInfoFactory;
 
 import java.time.Instant;
+import java.time.Period;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
@@ -82,6 +84,12 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
 
     private FileInfoFactory fileFactory(List<Partition> partitions) {
         return new FileInfoFactory(schema, partitions, Instant.now());
+    }
+
+    protected List<CompactionJobStatus> getAllJobStatuses() {
+        Instant epochStart = Instant.ofEpochMilli(0);
+        Instant farFuture = epochStart.plus(Period.ofDays(999999999));
+        return store.getJobsInTimePeriod(tableName, epochStart, farFuture);
     }
 
     protected AbstractListAssert<?, List<? extends AssertDynamoDBRecord>, AssertDynamoDBRecord, ObjectAssert<AssertDynamoDBRecord>> assertThatItemsInTable() {
