@@ -48,7 +48,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
 
         // Then
         assertThatItemsInTable().containsExactlyInAnyOrder(
-                createCompaction(job.getId(), 1, partition.getId()),
+                createCompaction(job.getId(), 1, tableName, partition.getId()),
                 startCompaction(job.getId(), startTime));
     }
 
@@ -74,7 +74,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
 
         // Then
         assertThatItemsInTable().containsExactlyInAnyOrder(
-                createCompaction(job.getId(), 1, partition.getId()),
+                createCompaction(job.getId(), 1, tableName, partition.getId()),
                 startCompaction(job.getId(), startTime),
                 finishCompaction(job.getId(), summary));
     }

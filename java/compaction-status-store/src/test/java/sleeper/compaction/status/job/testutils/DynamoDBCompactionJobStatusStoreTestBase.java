@@ -43,14 +43,16 @@ import static sleeper.compaction.status.job.testutils.CompactionStatusStoreTestU
 import static sleeper.compaction.status.job.testutils.CompactionStatusStoreTestUtils.createSchema;
 import static sleeper.compaction.status.job.testutils.CompactionStatusStoreTestUtils.createTableProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final String tableName = jobStatusTableName(instanceProperties.get(ID));
+    private final String jobStatusTableName = jobStatusTableName(instanceProperties.get(ID));
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
 
+    protected final String tableName = tableProperties.get(TABLE_NAME);
     protected final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
     protected final CompactionJobStatusStore store = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
 
@@ -61,7 +63,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
 
     @After
     public void tearDown() {
-        dynamoDBClient.deleteTable(tableName);
+        dynamoDBClient.deleteTable(jobStatusTableName);
     }
 
     protected Partition singlePartition() {
@@ -83,7 +85,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected AbstractListAssert<?, List<? extends AssertDynamoDBRecord>, AssertDynamoDBRecord, ObjectAssert<AssertDynamoDBRecord>> assertThatItemsInTable() {
-        return assertThat(dynamoDBClient.scan(new ScanRequest().withTableName(tableName)).getItems())
+        return assertThat(dynamoDBClient.scan(new ScanRequest().withTableName(jobStatusTableName)).getItems())
                 .extracting(AssertDynamoDBJobStatusRecord::actualIgnoringUpdateTime);
     }
 }

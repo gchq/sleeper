@@ -25,10 +25,12 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.CompactionStatusStoreException;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
@@ -92,6 +94,11 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTableName(statusTableName);
         return dynamoDB.putItem(putItemRequest);
+    }
+
+    @Override
+    public List<CompactionJobStatus> getUnfinishedJobs(String tableName) {
+        return CompactionJobStatusStore.super.getUnfinishedJobs(tableName);
     }
 
     public static String jobStatusTableName(String instanceId) {

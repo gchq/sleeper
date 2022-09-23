@@ -31,6 +31,7 @@ import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.RE
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.RECORDS_WRITTEN;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.SPLIT_TO_PARTITION_IDS;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.START_TIME;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.TABLE_NAME;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UPDATE_TYPE;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UPDATE_TYPE_CREATED;
@@ -44,10 +45,10 @@ public class AssertDynamoDBJobStatusRecord {
     }
 
     private static final Set<String> CREATE_COMPACTION_KEYS = keySet(
-            JOB_ID, UPDATE_TIME, UPDATE_TYPE, PARTITION_ID, INPUT_FILES_COUNT);
+            JOB_ID, UPDATE_TIME, UPDATE_TYPE, TABLE_NAME, PARTITION_ID, INPUT_FILES_COUNT);
 
     private static final Set<String> CREATE_SPLITTING_KEYS = keySet(
-            JOB_ID, UPDATE_TIME, UPDATE_TYPE, PARTITION_ID, INPUT_FILES_COUNT, SPLIT_TO_PARTITION_IDS);
+            JOB_ID, UPDATE_TIME, UPDATE_TYPE, TABLE_NAME, PARTITION_ID, INPUT_FILES_COUNT, SPLIT_TO_PARTITION_IDS);
 
     private static final Set<String> START_COMPACTION_KEYS = keySet(
             JOB_ID, UPDATE_TIME, UPDATE_TYPE, START_TIME);
@@ -55,20 +56,22 @@ public class AssertDynamoDBJobStatusRecord {
     private static final Set<String> FINISH_COMPACTION_KEYS = keySet(
             JOB_ID, UPDATE_TIME, UPDATE_TYPE, START_TIME, FINISH_TIME, RECORDS_READ, RECORDS_WRITTEN);
 
-    public static AssertDynamoDBRecord createCompaction(String jobId, int inputFilesCount, String partitionId) {
+    public static AssertDynamoDBRecord createCompaction(String jobId, int inputFilesCount, String tableName, String partitionId) {
         return AssertDynamoDBRecord.expected(CREATE_COMPACTION_KEYS, new DynamoDBRecordBuilder()
                 .string(JOB_ID, jobId)
                 .string(UPDATE_TYPE, UPDATE_TYPE_CREATED)
                 .string(PARTITION_ID, partitionId)
+                .string(TABLE_NAME, tableName)
                 .number(INPUT_FILES_COUNT, inputFilesCount));
     }
 
     public static AssertDynamoDBRecord createSplittingCompaction(
-            String jobId, int inputFilesCount, String partitionId, String splitToPartitionIds) {
+            String jobId, int inputFilesCount, String tableName, String partitionId, String splitToPartitionIds) {
         return AssertDynamoDBRecord.expected(CREATE_SPLITTING_KEYS, new DynamoDBRecordBuilder()
                 .string(JOB_ID, jobId)
                 .string(UPDATE_TYPE, UPDATE_TYPE_CREATED)
                 .string(PARTITION_ID, partitionId)
+                .string(TABLE_NAME, tableName)
                 .number(INPUT_FILES_COUNT, inputFilesCount)
                 .string(SPLIT_TO_PARTITION_IDS, splitToPartitionIds));
     }

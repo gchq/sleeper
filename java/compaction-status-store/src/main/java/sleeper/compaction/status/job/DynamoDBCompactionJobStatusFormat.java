@@ -31,6 +31,7 @@ public class DynamoDBCompactionJobStatusFormat {
     public static final String JOB_ID = "JobId";
     public static final String UPDATE_TIME = "UpdateTime";
     public static final String UPDATE_TYPE = "UpdateType";
+    public static final String TABLE_NAME = "TableName";
     public static final String PARTITION_ID = "PartitionId";
     public static final String INPUT_FILES_COUNT = "InputFilesCount";
     public static final String SPLIT_TO_PARTITION_IDS = "SplitToPartitionIds";
@@ -45,6 +46,7 @@ public class DynamoDBCompactionJobStatusFormat {
 
     public static Map<String, AttributeValue> createJobCreatedRecord(CompactionJob job) {
         return createJobRecord(job, UPDATE_TYPE_CREATED)
+                .string(TABLE_NAME, job.getTableName())
                 .string(PARTITION_ID, job.getPartitionId())
                 .number(INPUT_FILES_COUNT, job.getInputFiles().size())
                 .apply(builder -> {
