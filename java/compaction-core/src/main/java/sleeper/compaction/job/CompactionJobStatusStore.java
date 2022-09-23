@@ -15,9 +15,17 @@
  */
 package sleeper.compaction.job;
 
+import sleeper.compaction.job.status.CompactionJobStatus;
+
 import java.time.Instant;
+import java.util.List;
 
 public interface CompactionJobStatusStore {
+
+    static CompactionJobStatusStore none() {
+        return new CompactionJobStatusStore() {
+        };
+    }
 
     default void jobCreated(CompactionJob job) {
     }
@@ -28,8 +36,15 @@ public interface CompactionJobStatusStore {
     default void jobFinished(CompactionJob compactionJob, CompactionJobSummary summary) {
     }
 
-    static CompactionJobStatusStore none() {
-        return new CompactionJobStatusStore() {
-        };
+    default List<CompactionJobStatus> getJobsInTimePeriod(String tableName, Instant startTime, Instant endTime) {
+        throw new UnsupportedOperationException("Instance has no compaction job status store");
+    }
+
+    default List<CompactionJobStatus> getUnfinishedJobs(String tableName) {
+        throw new UnsupportedOperationException("Instance has no compaction job status store");
+    }
+
+    default CompactionJobStatus getJob(String jobId) {
+        throw new UnsupportedOperationException("Instance has no compaction job status store");
     }
 }
