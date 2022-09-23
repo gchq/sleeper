@@ -65,7 +65,6 @@ public class DynamoDBCompactionJobStatusFormat {
 
     public static Map<String, AttributeValue> createJobCreatedRecord(CompactionJob job) {
         return createJobRecord(job, UPDATE_TYPE_CREATED)
-                .string(TABLE_NAME, job.getTableName())
                 .string(PARTITION_ID, job.getPartitionId())
                 .number(INPUT_FILES_COUNT, job.getInputFiles().size())
                 .apply(builder -> {
@@ -93,15 +92,12 @@ public class DynamoDBCompactionJobStatusFormat {
     private static DynamoDBRecordBuilder createJobRecord(CompactionJob job, String updateType) {
         return new DynamoDBRecordBuilder()
                 .string(JOB_ID, job.getId())
+                .string(TABLE_NAME, job.getTableName())
                 .number(UPDATE_TIME, Instant.now().toEpochMilli())
                 .string(UPDATE_TYPE, updateType);
     }
 
     public static Stream<CompactionJobStatus> streamJobStatuses(List<Map<String, AttributeValue>> items) {
-        return streamJobStatuses(items.stream());
-    }
-
-    public static Stream<CompactionJobStatus> streamJobStatuses(Stream<Map<String, AttributeValue>> items) {
         CompactionJobStatusesBuilder builder = new CompactionJobStatusesBuilder();
         items.forEach(item -> addStatusUpdate(item, builder));
         return builder.stream();

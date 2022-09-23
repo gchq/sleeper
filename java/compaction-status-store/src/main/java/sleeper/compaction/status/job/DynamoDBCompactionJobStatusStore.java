@@ -38,12 +38,10 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.compaction.status.DynamoDBAttributes.createStringAttribute;
-import static sleeper.compaction.status.DynamoDBAttributes.getStringAttribute;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.TABLE_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
@@ -135,18 +133,12 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     private Stream<CompactionJobStatus> streamJobsInTable(String tableName) {
-        ScanResult result = dynamoDB.scan(statusTableName, Collections.emptyMap());
-        List<Map<String, AttributeValue>> items = result.getItems();
+        ScanResult result = dynamoDB.scan(statusTableName,
+                Collections.singletonMap(TABLE_NAME, new Condition()
+                        .withAttributeValueList(createStringAttribute(tableName))
+                        .withComparisonOperator(ComparisonOperator.EQ)));
 
-        // Only the created record has the table name.
-        // We need to find the jobs for the table we care about from those.
-        Set<String> jobIds = items.stream()
-                .filter(item -> tableName.equals(getStringAttribute(item, TABLE_NAME)))
-                .map(item -> getStringAttribute(item, JOB_ID))
-                .collect(Collectors.toSet());
-
-        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(
-                items.stream().filter(item -> jobIds.contains(getStringAttribute(item, JOB_ID))));
+        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems());
     }
 
     public static String jobStatusTableName(String instanceId) {
