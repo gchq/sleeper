@@ -40,11 +40,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.compaction.status.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.compaction.status.DynamoDBAttributes.createStringAttribute;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.TABLE_NAME;
-import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
@@ -129,13 +127,9 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
 
     @Override
     public List<CompactionJobStatus> getJobsInTimePeriod(String tableName, Instant startTime, Instant endTime) {
-        ScanResult result = dynamoDB.scan(createScanRequestByTable(tableName)
-                .addScanFilterEntry(UPDATE_TIME, new Condition()
-                        .withAttributeValueList(
-                                createNumberAttribute(startTime.toEpochMilli()),
-                                createNumberAttribute(endTime.toEpochMilli()))
-                        .withComparisonOperator(ComparisonOperator.BETWEEN)));
+        ScanResult result = dynamoDB.scan(createScanRequestByTable(tableName));
         return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems())
+                .filter(job -> job.isInPeriod(startTime, endTime))
                 .collect(Collectors.toList());
     }
 

@@ -95,12 +95,11 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         Instant farFuture = epochStart.plus(Period.ofDays(999999999));
         assertThat(store.getJobsInTimePeriod(tableName, epochStart, farFuture))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactlyInAnyOrder(
-                        CompactionJobStatus.created(job1, ignoredUpdateTime()));
+                .containsExactly(CompactionJobStatus.created(job1, ignoredUpdateTime()));
     }
 
     @Test
-    public void shouldExcludeFinishedStatusUpdateOutsidePeriod() throws Exception {
+    public void shouldIncludeFinishedStatusUpdateOutsidePeriod() throws Exception {
         // Given
         Partition partition = singlePartition();
         FileInfoFactory fileFactory = fileFactory(partition);
@@ -120,35 +119,11 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         // Then
         assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactlyInAnyOrder(
-                        startedStatusWithDefaults(job));
+                .containsExactly(finishedStatusWithDefaults(job));
     }
 
     @Test
-    public void shouldIncludeFinishedStatusUpdateInsidePeriod() {
-        // Given
-        Partition partition = singlePartition();
-        FileInfoFactory fileFactory = fileFactory(partition);
-        CompactionJob job = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile(123L, "a", "z")),
-                partition.getId());
-
-        // When
-        store.jobCreated(job);
-        store.jobStarted(job, defaultStartTime());
-        store.jobFinished(job, defaultSummary());
-
-        // Then
-        Instant periodStart = Instant.now().minus(Period.ofDays(1));
-        Instant periodEnd = periodStart.plus(Period.ofDays(2));
-        assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd))
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactlyInAnyOrder(
-                        finishedStatusWithDefaults(job));
-    }
-
-    @Test
-    public void shouldExcludeJobCreatedOutsidePeriod() throws Exception {
+    public void shouldIncludeJobCreatedOutsidePeriod() throws Exception {
         // Given
         Partition partition = singlePartition();
         FileInfoFactory fileFactory = fileFactory(partition);
@@ -166,6 +141,8 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         Instant periodEnd = periodStart.plus(Period.ofDays(1));
 
         // Then
-        assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd)).isEmpty();
+        assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd))
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(finishedStatusWithDefaults(job));
     }
 }
