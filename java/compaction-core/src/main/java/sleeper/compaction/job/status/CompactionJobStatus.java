@@ -110,6 +110,10 @@ public class CompactionJobStatus {
         return null;
     }
 
+    public String getJobId() {
+        return this.jobId;
+    }
+
     public static final class Builder {
         private String jobId;
         private CompactionJobCreatedStatus createdStatus;
