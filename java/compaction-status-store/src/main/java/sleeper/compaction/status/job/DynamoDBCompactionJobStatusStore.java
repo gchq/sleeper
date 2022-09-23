@@ -17,8 +17,12 @@ package sleeper.compaction.status.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
+import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutItemResult;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import org.slf4j.Logger;
@@ -35,6 +39,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static sleeper.compaction.status.DynamoDBAttributes.createStringAttribute;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
@@ -96,6 +102,20 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTableName(statusTableName);
         return dynamoDB.putItem(putItemRequest);
+    }
+
+    @Override
+    public CompactionJobStatus getJob(String jobId) {
+        QueryResult result = dynamoDB.query(new QueryRequest()
+                .withTableName(statusTableName)
+                .addKeyConditionsEntry(JOB_ID, new Condition()
+                        .withAttributeValueList(createStringAttribute(jobId))
+                        .withComparisonOperator(ComparisonOperator.EQ)));
+        List<CompactionJobStatus> statuses = DynamoDBCompactionJobStatusFormat.getJobStatuses(result.getItems());
+        if (statuses.isEmpty()) {
+            return null;
+        }
+        return statuses.get(0);
     }
 
     @Override
