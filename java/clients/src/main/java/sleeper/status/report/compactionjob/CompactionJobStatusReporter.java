@@ -40,6 +40,8 @@ public class CompactionJobStatusReporter {
         sb.append("--------------------------\n");
         sb.append(printSummary(jobStatusList, queryType));
         sb.append("--------------------------\n");
+        sb.append(printHeaders()).append('\n');
+        jobStatusList.forEach(s -> sb.append(verboseString(s)));
         return sb.toString();
     }
 
@@ -70,27 +72,31 @@ public class CompactionJobStatusReporter {
 
     private String printUnfinishedSummary(List<CompactionJobStatus> jobStatusList) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Total unfinished jobs: " + jobStatusList.size() + '\n');
-        sb.append("Total unfinished jobs in progress: " + jobStatusList.stream().filter(CompactionJobStatus::isStarted).count() + '\n');
-        sb.append("Total unfinished jobs not started: " + (jobStatusList.size() - jobStatusList.stream().filter(CompactionJobStatus::isStarted).count()) + '\n');
+        sb.append("Total unfinished jobs: ").append(jobStatusList.size()).append('\n');
+        sb.append("Total unfinished jobs in progress: ")
+                .append(jobStatusList.stream().filter(CompactionJobStatus::isStarted).count())
+                .append('\n');
+        sb.append("Total unfinished jobs not started: ")
+                .append(jobStatusList.size() - jobStatusList.stream().filter(CompactionJobStatus::isStarted).count())
+                .append('\n');
         return sb.toString();
     }
 
-    private void printHeaders() {
+    private String printHeaders() {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("%11s", "STATE")).append('|');
-        sb.append(String.format("%20s", "CREATE_TIME")).append('|');
-        sb.append(String.format("%36s", "JOB_ID")).append('|');
-        sb.append(String.format("%36s", "PARTITION_ID")).append('|');
-        sb.append(String.format("%20s", "CHILD_IDS")).append('|');
-        sb.append(String.format("%20s", "START_TIME")).append('|');
-        sb.append(String.format("%20s", "START_UPDATE_TIME")).append('|');
-        sb.append(String.format("%20s", "FINISH_TIME")).append('|');
-        sb.append(String.format("%20s", "DURATION (s)")).append('|');
-        sb.append(String.format("%20s", "LINES_READ")).append('|');
-        sb.append(String.format("%20s", "LINES_WRITTEN")).append('|');
-        sb.append(String.format("%20s", "READ_RATE (read/s)")).append('|');
-        sb.append(String.format("%20s", "WRITE_RATE (write/s)"));
-        out.println(sb);
+        sb.append(String.format("%-11s", "STATE")).append('|');
+        sb.append(String.format("%-24s", "CREATE_TIME")).append('|');
+        sb.append(String.format("%-36s", "JOB_ID")).append('|');
+        sb.append(String.format("%-36s", "PARTITION_ID")).append('|');
+        sb.append(String.format("%-20s", "CHILD_IDS")).append('|');
+        sb.append(String.format("%-24s", "START_TIME")).append('|');
+        sb.append(String.format("%-24s", "START_UPDATE_TIME")).append('|');
+        sb.append(String.format("%-24s", "FINISH_TIME")).append('|');
+        sb.append(String.format("%-20s", "DURATION (s)")).append('|');
+        sb.append(String.format("%-20s", "LINES_READ")).append('|');
+        sb.append(String.format("%-20s", "LINES_WRITTEN")).append('|');
+        sb.append(String.format("%-20s", "READ_RATE (read/s)")).append('|');
+        sb.append(String.format("%-20s", "WRITE_RATE (write/s)"));
+        return sb.toString();
     }
 }

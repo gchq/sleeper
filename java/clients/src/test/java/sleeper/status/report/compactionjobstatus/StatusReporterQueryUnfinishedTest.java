@@ -36,7 +36,7 @@ import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class CompactionJobStatusReporterTest {
+public class StatusReporterQueryUnfinishedTest {
     private CompactionJobTestDataHelper dataHelper;
     private CompactionJobStatusReporter statusReporter;
 
@@ -47,7 +47,7 @@ public class CompactionJobStatusReporterTest {
     }
 
     @Test
-    public void shouldReportCompactionJobStatusCreated() throws Exception {
+    public void shouldReportUnfinishedCompactionJobStatusWithCreatedJobs() throws Exception {
         // Given
         Partition partition = dataHelper.singlePartition();
         CompactionJob job = dataHelper.singleFileCompaction(partition);
@@ -57,13 +57,14 @@ public class CompactionJobStatusReporterTest {
         CompactionJobStatus status = CompactionJobStatus.created(job, updateTime);
 
         // Then
-        System.out.println(status);
+        System.out.println(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED));
         assertThat(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/standard/standardJobCreated.txt"));
+                .isEqualTo(example("reports/compactionjobstatus/standard/unfinishedStandardJobCreated.txt")
+                        .replace("$(jobId)", job.getId()));
     }
 
     @Test
-    public void shouldReportSplittingCompactionJobStatusCreated() throws Exception {
+    public void shouldReportUnfinishedSplittingCompactionJobStatusWithCreatedJobs() throws Exception {
         // Given
         CompactionJob job = dataHelper.singleFileSplittingCompaction("C", "A", "B");
         Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
@@ -74,7 +75,8 @@ public class CompactionJobStatusReporterTest {
         // Then
         System.out.println(status);
         assertThat(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/standard/splittingJobCreated.txt"));
+                .isEqualTo(example("reports/compactionjobstatus/standard/unfinishedSplittingJobCreated.txt")
+                        .replace("$(jobId)",job.getId()));
     }
 
     private static String example(String path) throws IOException {

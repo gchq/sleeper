@@ -31,16 +31,16 @@ public class CompactionJobStatusResult {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(getState(status)).append('|');
-        sb.append(status.getCreateUpdateTime().toString()).append('|');
-        sb.append(status.getJobId()).append('|');
-        sb.append(status.getPartitionId()).append('|');
-        sb.append(status.getChildPartitionIds()).append('|');
+        sb.append(String.format("%-11s", getState(status))).append('|');
+        sb.append(String.format("%-24s", status.getCreateUpdateTime().toString())).append('|');
+        sb.append(String.format("%-36s", status.getJobId())).append('|');
+        sb.append(String.format("%-36s", status.getPartitionId())).append('|');
+        sb.append(String.format("%-20s", status.getChildPartitionIds())).append('|');
 
-        sb.append(status.isStarted() ? status.getStartTime() : "").append('|');
-        sb.append(status.isStarted() ? status.getStartUpdateTime() : "").append('|');
+        sb.append(String.format("%-24s", status.isStarted() ? status.getStartTime() : "")).append('|');
+        sb.append(String.format("%-24s", status.isStarted() ? status.getStartUpdateTime() : "")).append('|');
 
-        sb.append(status.isFinished() ? status.getFinishTime() : "").append('|');
+        sb.append(String.format("%-24s", status.isFinished() ? status.getFinishTime() : "")).append('|');
         String linesRead = "";
         String linesWritten = "";
         String recordsReadPerSecond = "";
@@ -53,11 +53,11 @@ public class CompactionJobStatusResult {
             recordsWrittenPerSecond = String.valueOf(status.getFinishedSummary().getRecordsWrittenPerSecond());
             durationInSeconds = String.valueOf(status.getFinishedSummary().getDurationInSeconds());
         }
-        sb.append(durationInSeconds).append('|');
-        sb.append(linesRead).append('|');
-        sb.append(linesWritten).append('|');
-        sb.append(recordsReadPerSecond).append('|');
-        sb.append(recordsWrittenPerSecond);
+        sb.append(String.format("%-20s", durationInSeconds)).append('|');
+        sb.append(String.format("%-20s", linesRead)).append('|');
+        sb.append(String.format("%-20s", linesWritten)).append('|');
+        sb.append(String.format("%-20s", recordsReadPerSecond)).append('|');
+        sb.append(String.format("%-20s", recordsWrittenPerSecond));
         return sb.toString();
     }
 
