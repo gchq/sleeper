@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CompactionJobStatusesBuilder {
 
@@ -45,10 +46,13 @@ public class CompactionJobStatusesBuilder {
         return this;
     }
 
-    public List<CompactionJobStatus> build() {
+    public Stream<CompactionJobStatus> stream() {
         return createdById.entrySet().stream()
-                .map(entry -> fullStatus(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList());
+                .map(entry -> fullStatus(entry.getKey(), entry.getValue()));
+    }
+
+    public List<CompactionJobStatus> build() {
+        return stream().collect(Collectors.toList());
     }
 
     private CompactionJobStatus fullStatus(String jobId, CompactionJobCreatedStatus created) {
