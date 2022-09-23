@@ -129,7 +129,9 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
 
     @Override
     public List<CompactionJobStatus> getJobsInTimePeriod(String tableName, Instant startTime, Instant endTime) {
-        return streamJobsInTable(tableName).collect(Collectors.toList());
+        return streamJobsInTable(tableName)
+                .filter(job -> job.isInPeriod(startTime, endTime))
+                .collect(Collectors.toList());
     }
 
     private Stream<CompactionJobStatus> streamJobsInTable(String tableName) {
