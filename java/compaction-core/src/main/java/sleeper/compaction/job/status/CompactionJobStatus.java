@@ -152,13 +152,13 @@ public class CompactionJobStatus {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        CompactionJobStatus that = (CompactionJobStatus) o;
-        return jobId.equals(that.jobId) && createdStatus.equals(that.createdStatus);
+        CompactionJobStatus status = (CompactionJobStatus) o;
+        return jobId.equals(status.jobId) && createdStatus.equals(status.createdStatus) && Objects.equals(startedStatus, status.startedStatus) && Objects.equals(finishedStatus, status.finishedStatus);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, createdStatus);
+        return Objects.hash(jobId, createdStatus, startedStatus, finishedStatus);
     }
 
     @Override
