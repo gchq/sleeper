@@ -97,7 +97,7 @@ public class StateMachineExecutor extends Executor {
     }
 
     private Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties, InstanceProperties instanceProperties) {
-        Map<String, String> defaultConfig = new HashMap<>(DEFAULT_CONFIG);
+        Map<String, String> defaultConfig = new HashMap<>(ConfigurationUtils.getSparkConfigurationFromInstanceProperties(instanceProperties));
         String imageName = instanceProperties.get(ACCOUNT) + ".dkr.ecr." +
                 instanceProperties.get(REGION) + ".amazonaws.com/" +
                 instanceProperties.get(BULK_IMPORT_REPO) + ":" + instanceProperties.get(VERSION);
@@ -107,22 +107,32 @@ public class StateMachineExecutor extends Executor {
         defaultConfig.put("spark.kubernetes.namespace", instanceProperties.get(BULK_IMPORT_EKS_NAMESPACE));
         defaultConfig.put("spark.kubernetes.driver.pod.name", bulkImportJob.getId());
 
-        defaultConfig.putAll(ConfigurationUtils.getSparkConfigurationFromInstanceProperties(instanceProperties));
+        defaultConfig.putAll(DEFAULT_CONFIG);
 
         return defaultConfig;
     }
 
     @Override
     protected List<String> constructArgs(BulkImportJob bulkImportJob) {
-        List<String> args = super.constructArgs(bulkImportJob);
+        Map<String, String> sparkProperties = getDefaultSparkConfig(bulkImportJob, DEFAULT_CONFIG, tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName()), instanceProperties);
 
-        Map<String, String> defaultProperties = getDefaultSparkConfig(bulkImportJob, DEFAULT_CONFIG, tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName()), instanceProperties);
-
-        for (Map.Entry<String, String> configurationItem : defaultProperties.entrySet()) {
-            args.add("--conf");
-            args.add(configurationItem.getKey() + "=" + configurationItem.getValue());
+        // Create Spark conf by copying DEFAULT_CONFIG and over-writing any entries
+        // which have been specified in the Spark conf on the bulk import job.
+        if (null != bulkImportJob.getSparkConf()) {
+            for (Map.Entry<String, String> entry : bulkImportJob.getSparkConf().entrySet()) {
+                sparkProperties.put(entry.getKey(), entry.getValue());
+            }
         }
 
+        BulkImportJob cloneWithUpdatedProps = new BulkImportJob.Builder()
+                .className(bulkImportJob.getClassName())
+                .files(bulkImportJob.getFiles())
+                .id(bulkImportJob.getId())
+                .tableName(bulkImportJob.getTableName())
+                .platformSpec(bulkImportJob.getPlatformSpec())
+                .sparkConf(sparkProperties)
+                .build();
+        List<String> args = super.constructArgs(cloneWithUpdatedProps);
         args.add(bulkImportJob.getId());
         args.add(instanceProperties.get(CONFIG_BUCKET));
         return args;
