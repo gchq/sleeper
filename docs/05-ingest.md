@@ -65,19 +65,20 @@ then ingest the data. This process is asynchronous, i.e. it may be several minut
 
 ## Bulk Import
 
-The bulk import stack allows data to be ingested using Apache Spark. This can be run on either EMR or EKS. The advantage
-of bulk import over the standard ingest process described above is that it reduces the number of writes to S3. For example,
-suppose there are currently 100 leaf partitions for a table, and suppose that we have 1000 files of data to ingest. With the
-standard approach, if we create one ingest job per file and send it to the SQS queue, then there will be 100,000 writes to S3.
+Bulk importing data into a Sleeper table means importing data by using Apache Spark to run a MapReduce-like job to
+take a batch of data then partition, sort and write it out so that the resulting files can be added into a Sleeper table.
+The advantage of bulk import over the standard ingest process described above is that it reduces the number of writes to S3.
+For example, suppose there are currently 100 leaf partitions for a table, and suppose that we have 1000 files of data to ingest.
+With the standard approach, if we create one ingest job per file and send it to the SQS queue, then there will be 100,000 writes to S3.
 (In fact, there might be more if the files contain more records than the value of sleeper.ingest.max.local.records.) Using
 the bulk import method, there will only be 100 writes to S3 (assuming that the 1000 files are all imported in the same bulk
 import job).
 
 There are several stacks that allow data to be imported using the bulk import process:
 
-- EmrBulkImportStack - this causes an EMR cluster to be deployed each time a job appears on the bulk import queue. Each
+- EmrBulkImportStack - this causes an EMR cluster to be deployed each time a job is submitted to the EMR bulk import queue. Each
 job is processed on a separate EMR cluster. The advantage of the cluster being used for one job and then destroyed is
-that there is no wasted compute if jobs come in infrequently. The downside is that there is a significant delay whilst
+that there is no wasted compute if jobs are submitted infrequently. The downside is that there is a significant delay whilst
 the cluster is created and bootstrapped.
 - PersistentEmrBulkImportStack - this causes an EMR cluster to be created when the Sleeper instance is deployed. This
 cluster runs continually. By default, it uses managed scaling so that the number of servers running scales up and down
@@ -136,20 +137,15 @@ desired configuration. Once the cluster initialises (around 10 minutes), you wil
 console to access your Spark UI and application master UI. These will allow you to monitor your job and view logs from the
 Spark executors and driver. After your job finishes the cluster terminates.
 
-The bulk import using EMR approach has the following configuration options in the instance properties. These values will be
-used unless they are overridden by either the table properties or the specification in the bulk import job specification.
-
+There are many configuration options that can be specified to control properties of the EMR cluster and the Spark configuration.
+The following properties are instance properties that can be overridden by table properties and by using the platformSpec
+part of the job specification:
 ```properties
-sleeper.bulk.import.emr.keypair.name=my-key # An EC2 keypair to use for the EC2 instances. Specifying this will allow you to SSH to the nodes in the cluster while it's running. (NB. This 
-cannot be overriden by a table property or by the specification in the bulk import job specification.)
 sleeper.default.bulk.import.emr.release.label=emr-6.4.0 # The EMR release label to be used when creating an EMR cluster for bulk importing data using Spark running on EMR. This default can be overridden by a table property or by a property in the bulk import job specification.
 sleeper.default.bulk.import.emr.master.instance.type=m5.xlarge # The EC2 instance type to be used for the master node of the EMR cluster.
 sleeper.default.bulk.import.emr.executor.instance.type=m5.4xlarge # The EC2 instance type to be used for the executor nodes of the EMR cluster.
 sleeper.default.bulk.import.emr.executor.initial.instances=2 # The initial number of EC2 instances to be used as executors in the EMR cluster.
 sleeper.default.bulk.import.emr.executor.max.instances=10 # The maximum number of EC2 instances to be used as executors in the EMR cluster.
-sleeper.default.bulk.import.spark.shuffle.mapStatus.compression.codec=lz4 # This is used to set the value of spark.shuffle.mapStatus.compression.codec on the Spark configuration for bulk import jobs. Setting this to "lz4" stops "Decompression error: Version not supported" errors - only a value of "lz4" has been tested. This default can be overridden by a table property or by a property in the bulk import job specification.
-sleeper.default.bulk.import.spark.speculation=true # This is used to set the value of spark.speculation on the Spark configuration for bulk import jobs. This default can be overridden by a table property or by a property in the bulk import job specification.
-sleeper.default.bulk.import.spark.speculation.quantile=0.5 # This is used to set the value of spark.speculation.quantile on the Spark configuration. Lowering this from the default 0.75 allows us to try re-running hanging tasks sooner. This default can be overridden by a table property or by a property in the bulk import job specification.
 ```
 
 The following options can be specified in the table properties. For jobs importing data to a particular table these values
@@ -194,6 +190,55 @@ object in the bucket named 'sleeper-<instance-id>-config'.
 Note however that as there is one persistent EMR cluster deployed for the whole instance there are no per-table persistent
 EMR properties, and it does not make sense to change the cluster properties on a per-job basis.
 
+#### Instance properties common to the EMR and persistent EMR stacks
+
+The following options are based on https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/.
+
+```properties
+// spark.driver options
+sleeper.bulk.import.emr.spark.driver.cores=5 # The number of cores allocated to the Spark driver. Used to set spark.driver.cores.
+sleeper.bulk.import.emr.spark.driver.memory=16g # The memory allocated to the Spark driver. Used to set spark.driver.memory.
+sleeper.bulk.import.emr.spark.driver.extra.java.options=-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p' # Used to set spark.driver.extraJavaOptions.
+// spark.executor options
+sleeper.bulk.import.emr.spark.executor.cores=5 # The number of cores allocated to the Spark executor. Used to set spark.executor.cores.
+sleeper.bulk.import.emr.spark.executor.memory=16g # The memory allocated to a Spark executor. Used to set spark.executor.memory.
+sleeper.bulk.import.emr.spark.executor.heartbeat.interval=60s # Used to set spark.executor.heartbeatInterval.
+sleeper.bulk.import.emr.spark.executor.instances=29 # The number of Spark executors. Used to set spark.executor.instances.
+sleeper.bulk.import.emr.spark.executor.extra.java.options=-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p' # Used to set spark.executor.extraJavaOptions.
+// spark.yarn options
+sleeper.bulk.import.emr.spark.yarn.executor.memory.overhead=2g
+sleeper.bulk.import.emr.spark.yarn.driver.memory.overhead=2g
+sleeper.bulk.import.emr.spark.yarn.scheduler.reporter.thread.max.failures=5"
+// spark.dynamicAllocation option
+sleeper.bulk.import.emr.spark.dynamic.allocation.enabled=false
+// spark.default.parallelism option
+sleeper.bulk.import.emr.spark.default.parallelism=290
+// spark.memory options
+sleeper.bulk.import.emr.spark.memory.fraction=0.80
+sleeper.bulk.import.emr.spark.memory.storage.fraction=0.30
+// spark.network options
+sleeper.bulk.import.emr.spark.network.timeout=800s
+
+sleeper.bulk.import.emr.spark.storage.level=MEMORY_AND_DISK_SER
+sleeper.bulk.import.emr.spark.rdd.compress=true
+sleeper.bulk.import.emr.spark.shuffle.compress=true
+sleeper.bulk.import.emr.spark.shuffle.spill.compress=true
+
+sleeper.default.bulk.import.spark.shuffle.mapStatus.compression.codec=lz4 # This is used to set the value of spark.shuffle.mapStatus.compression.codec on the Spark configuration for bulk import jobs. Setting this to "lz4" stops "Decompression error: Version not supported" errors - only a value of "lz4" has been tested. This default can be overridden by a table property or by a property in the bulk import job specification.
+sleeper.default.bulk.import.spark.speculation=true # This is used to set the value of spark.speculation on the Spark configuration for bulk import jobs. This default can be overridden by a table property or by a property in the bulk import job specification.
+sleeper.default.bulk.import.spark.speculation.quantile=0.5 # This is used to set the value of spark.speculation.quantile on the Spark configuration. Lowering this from the default 0.75 allows us to try re-running hanging tasks sooner. This default can be overridden by a table property or by a property in the bulk import job specification.
+```
+
+#### Accessing YARN web interface and Spark application UI on EMR and persistent EMR clusters
+
+To access the YARN and Spark web interfaces whilst running bulk import jobs on either the EMR or persistent EMR clusters, you
+need to set the following instance properties:
+
+```properties
+sleeper.bulk.import.emr.keypair.name=my-key # An EC2 keypair to use for the EC2 instances. Specifying this will allow you to SSH to the nodes in the cluster while it's running.
+sleeper.bulk.import.emr.master.additional.security.group=my-group # An EC2 Security Group. This will be added to the list of security groups that are allowed to access the
+servers in the cluster.
+```
 
 #### Bulk import on EKS
 

@@ -27,9 +27,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_SPARK_SPECULATION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_SPARK_SPECULATION_QUANTILE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPRESSION_CODEC;
@@ -65,15 +62,13 @@ public enum TableProperty implements ITableProperty {
     COMPACTION_FILES_BATCH_SIZE("sleeper.table.compaction.files.batch.size", DEFAULT_COMPACTION_FILES_BATCH_SIZE),
     PARTITION_SPLIT_THRESHOLD("sleeper.table.partition.splitting.threshold", DEFAULT_PARTITION_SPLIT_THRESHOLD),
     STATESTORE_CLASSNAME("sleeper.table.statestore.classname", "sleeper.statestore.dynamodb.DynamoDBStateStore"),
+
     BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE("sleeper.table.bulk.import.emr.master.instance.type", DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE),
     BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE("sleeper.table.bulk.import.emr.executor.instance.type", DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE),
     BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE("sleeper.table.bulk.import.emr.executor.market.type", DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE),
     BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS("sleeper.table.bulk.import.emr.executor.initial.instances", DEFAULT_BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS),
     BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS("sleeper.table.bulk.import.emr.executor.max.instances", DEFAULT_BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS),
     BULK_IMPORT_EMR_RELEASE_LABEL("sleeper.table.bulk.import.emr.release.label", DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL),
-    BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC("sleeper.table.bulk.import.spark.shuffle.mapStatus.compression.codec", DEFAULT_BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC),
-    BULK_IMPORT_SPARK_SPECULATION("sleeper.table.bulk.import.spark.speculation", DEFAULT_BULK_IMPORT_SPARK_SPECULATION),
-    BULK_IMPORT_SPARK_SPECULATION_QUANTILE("sleeper.table.bulk.import.spark.speculation.quantile", DEFAULT_BULK_IMPORT_SPARK_SPECULATION_QUANTILE),
 
     // Size ratio compaction strategy
     SIZE_RATIO_COMPACTION_STRATEGY_RATIO("sleeper.table.compaction.strategy.sizeratio.ratio", DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO),

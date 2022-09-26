@@ -17,6 +17,7 @@ package sleeper.cdk.stack.bulkimport;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import sleeper.bulkimport.configuration.ConfigurationUtils;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.configuration.properties.InstanceProperties;
 import software.amazon.awscdk.CfnTag;
@@ -34,7 +35,6 @@ import software.constructs.Construct;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -46,33 +46,13 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EC2_KEY_NAME;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_INSTANCE_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_NUMBER_OF_INSTANCES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_NUMBER_OF_INSTANCES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_DEFAULT_PARALLELISM;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_CORES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_EXTRA_JAVA_OPTIONS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_MEMORY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_DYNAMIC_ALLOCATION_ENABLED;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_CORES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_HEARTBEAT_INTERVAL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_INSTANCES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_MEMORY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_MEMORY_FRACTION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_MEMORY_STORAGE_FRACTION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_NETWORK_TIMEOUT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_RDD_COMPRESS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_SHUFFLE_COMPRESS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_SHUFFLE_SPILL_COMPRESS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_STORAGE_LEVEL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_YARN_DRIVER_MEMORY_OVERHEAD;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_STEP_CONCURRENCY_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
 
@@ -118,7 +98,7 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
                 .masterInstanceGroup(masterInstanceGroupConfigProperty)
                 .coreInstanceGroup(coreInstanceGroupConfigProperty);
 
-        String ec2KeyName = instanceProperties.get(BULK_IMPORT_EC2_KEY_NAME);
+        String ec2KeyName = instanceProperties.get(BULK_IMPORT_EMR_EC2_KEYPAIR_NAME);
         if (null != ec2KeyName && !ec2KeyName.isEmpty()) {
             jobFlowInstancesConfigPropertyBuilder.ec2KeyName(ec2KeyName);
         }
@@ -198,65 +178,38 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
     private List<CfnCluster.ConfigurationProperty> getConfigurations() {
         List<CfnCluster.ConfigurationProperty> configurations = new ArrayList<>();
 
-        // The following YARN and Spark properties are as recommended in this blog:
-        // https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/
-        Map<String, String> props = new HashMap<>();
-        props.put("maximizeResourceAllocation", "false");
+        Map<String, String> emrSparkProps = ConfigurationUtils.getSparkEMRConfiguration();
         CfnCluster.ConfigurationProperty emrConfigurations = CfnCluster.ConfigurationProperty.builder()
                 .classification("spark")
-                .configurationProperties(props)
+                .configurationProperties(emrSparkProps)
                 .build();
         configurations.add(emrConfigurations);
 
-        Map<String, String> yarnProps = new HashMap<>();
-        yarnProps.put("yarn.nodemanager.vmem-check-enabled", "false");
-        yarnProps.put("yarn.nodemanager.pmem-check-enabled", "false");
+        Map<String, String> yarnConf = ConfigurationUtils.getYarnConfiguration();
         CfnCluster.ConfigurationProperty yarnConfigurations = CfnCluster.ConfigurationProperty.builder()
                 .classification("yarn-site")
-                .configurationProperties(yarnProps)
+                .configurationProperties(yarnConf)
                 .build();
         configurations.add(yarnConfigurations);
 
-        Map<String, String> sparkProps = new HashMap<>();
-        sparkProps.put("spark.executor.memory", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_MEMORY));
-        sparkProps.put("spark.driver.memory", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_MEMORY));
-        sparkProps.put("spark.executor.instances", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_INSTANCES));
-        sparkProps.put("spark.yarn.executor.memoryOverhead", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD));
-        sparkProps.put("spark.yarn.driver.memoryOverhead", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_YARN_DRIVER_MEMORY_OVERHEAD));
-        sparkProps.put("spark.default.parallelism", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_DEFAULT_PARALLELISM));
-        sparkProps.put("spark.executor.cores", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_CORES));
-        sparkProps.put("spark.driver.cores", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_CORES));
-        sparkProps.put("spark.network.timeout", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_NETWORK_TIMEOUT));
-        sparkProps.put("spark.executor.heartbeatInterval", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_HEARTBEAT_INTERVAL));
-        sparkProps.put("spark.dynamicAllocation.enabled", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_DYNAMIC_ALLOCATION_ENABLED));
-        sparkProps.put("spark.memory.fraction", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_MEMORY_FRACTION));
-        sparkProps.put("spark.memory.storageFraction", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_MEMORY_STORAGE_FRACTION));
-        sparkProps.put("spark.executor.extraJavaOptions", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS));
-        sparkProps.put("spark.driver.extraJavaOptions", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_EXTRA_JAVA_OPTIONS));
-        sparkProps.put("spark.yarn.scheduler.reporterThread.maxFailures", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES));
-        sparkProps.put("spark.storage.level", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_STORAGE_LEVEL));
-        sparkProps.put("spark.rdd.compress", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_RDD_COMPRESS));
-        sparkProps.put("spark.shuffle.compress", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_SHUFFLE_COMPRESS));
-        sparkProps.put("spark.shuffle.spill.compress", instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_SHUFFLE_SPILL_COMPRESS));
+        Map<String, String> sparkConf = ConfigurationUtils.getSparkConfigurationFromInstanceProperties(instanceProperties);
         CfnCluster.ConfigurationProperty sparkDefaultsConfigurations = CfnCluster.ConfigurationProperty.builder()
                 .classification("spark-defaults")
-                .configurationProperties(sparkProps)
+                .configurationProperties(sparkConf)
                 .build();
         configurations.add(sparkDefaultsConfigurations);
 
-        Map<String, String> mapRedSiteProps = new HashMap<>();
-        mapRedSiteProps.put("mapreduce.map.output.compress", "true");
+        Map<String, String> mapReduceSiteConf = ConfigurationUtils.getMapRedSiteConfiguration();
         CfnCluster.ConfigurationProperty mapRedSiteConfigurations = CfnCluster.ConfigurationProperty.builder()
                 .classification("mapred-site")
-                .configurationProperties(mapRedSiteProps)
+                .configurationProperties(mapReduceSiteConf)
                 .build();
         configurations.add(mapRedSiteConfigurations);
 
-        Map<String, String> hadoopEnvExportProperties = new HashMap<>();
-        hadoopEnvExportProperties.put("JAVA_HOME", "/usr/lib/jvm/java-1.8.0-amazon-corretto.x86_64");
+        Map<String, String> javaHomeConf = ConfigurationUtils.getJavaHomeConfiguration();
         CfnCluster.ConfigurationProperty hadoopEnvExportConfigurations = CfnCluster.ConfigurationProperty.builder()
                 .classification("export")
-                .configurationProperties(hadoopEnvExportProperties)
+                .configurationProperties(javaHomeConf)
                 .build();
         CfnCluster.ConfigurationProperty hadoopEnvConfigurations = CfnCluster.ConfigurationProperty.builder()
                 .classification("hadoop-env")
@@ -264,11 +217,9 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
                 .build();
         configurations.add(hadoopEnvConfigurations);
 
-        Map<String, String> sparkEnvProperties = new HashMap<>();
-        sparkEnvProperties.put("JAVA_HOME", "/usr/lib/jvm/java-1.8.0-amazon-corretto.x86_64");
         CfnCluster.ConfigurationProperty sparkEnvExportConfigurations = CfnCluster.ConfigurationProperty.builder()
                 .classification("export")
-                .configurationProperties(sparkEnvProperties)
+                .configurationProperties(javaHomeConf)
                 .build();
         CfnCluster.ConfigurationProperty sparkEnvConfigurations = CfnCluster.ConfigurationProperty.builder()
                 .classification("spark-env")
