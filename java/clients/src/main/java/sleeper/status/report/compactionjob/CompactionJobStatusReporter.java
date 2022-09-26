@@ -72,7 +72,7 @@ public class CompactionJobStatusReporter {
         StringBuilder sb = new StringBuilder();
         sb.append("Total jobs finished between ").append(startRange.toString());
         sb.append(" and ").append(endRange.toString()).append(": ")
-                .append(jobStatusList.stream().filter(this::isFinishedInRange).count())
+                .append(jobStatusList.size())
                 .append('\n');
         return sb.toString();
     }
@@ -111,7 +111,7 @@ public class CompactionJobStatusReporter {
         return sb.toString();
     }
 
-    private boolean isFinishedInRange(CompactionJobStatus jobStatus) {
+    public boolean isFinishedInRange(CompactionJobStatus jobStatus) {
         return jobStatus.getFinishTime().isAfter(startRange) && jobStatus.getFinishTime().isBefore(endRange);
     }
 }

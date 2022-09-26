@@ -1,0 +1,6 @@
+
+Compaction Job Status Report:
+--------------------------
+Total jobs finished between $(startRange) and $(endRange): 0
+--------------------------
+STATE      |CREATE_TIME             |JOB_ID                              |PARTITION_ID                        |CHILD_IDS           |START_TIME              |START_UPDATE_TIME       |FINISH_TIME             |DURATION (s)        |LINES_READ          |LINES_WRITTEN       |READ_RATE (read/s)  |WRITE_RATE (write/s)

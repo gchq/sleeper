@@ -24,6 +24,9 @@ import sleeper.status.report.compactionjob.CompactionJobStatusReporter;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -74,5 +77,99 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
                         .replace("$(startRange)", startRange.toString())
                         .replace("$(endRange)", endRange.toString())
                         .replace("$(jobId)", job.getId()));
+    }
+
+    @Test
+    public void shouldNotReportCompactionJobStatusFinishedBeforeRange() throws Exception {
+        // Given
+        Partition partition = dataHelper.singlePartition();
+        CompactionJob job = dataHelper.singleFileCompaction(partition);
+        Instant creationTime = Instant.parse("2022-09-22T13:33:12.001Z");
+        Instant startedTime = Instant.parse("2022-09-22T13:34:12.001Z");
+        Instant startedUpdateTime = Instant.parse("2022-09-22T13:39:12.001Z");
+        Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
+
+        // When
+        CompactionJobStatus status = jobFinished(job, creationTime, startedTime, startedUpdateTime, finishedTime);
+        Instant startRange = Instant.parse("2022-09-25T00:00:00.001Z");
+        Instant endRange = Instant.parse("2022-09-25T23:59:59.001Z");
+        statusReporter.setRange(startRange, endRange);
+
+        // Then
+        List<CompactionJobStatus> statusList = Stream.of(status).filter(statusReporter::isFinishedInRange).collect(Collectors.toList());
+        assertThat(statusReporter.report(statusList, CompactionJobStatusReporter.QueryType.RANGE))
+                .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt")
+                        .replace("$(startRange)", startRange.toString())
+                        .replace("$(endRange)", endRange.toString()));
+    }
+
+    @Test
+    public void shouldNotReportSplittingCompactionJobStatusFinishedBeforeRange() throws Exception {
+        // Given
+        CompactionJob job = dataHelper.singleFileSplittingCompaction("C", "A", "B");
+        Instant creationTime = Instant.parse("2022-09-22T13:33:12.001Z");
+        Instant startedTime = Instant.parse("2022-09-22T13:34:12.001Z");
+        Instant startedUpdateTime = Instant.parse("2022-09-22T13:39:12.001Z");
+        Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
+
+        // When
+        CompactionJobStatus status = jobFinished(job, creationTime, startedTime, startedUpdateTime, finishedTime);
+        Instant startRange = Instant.parse("2022-09-25T00:00:00.001Z");
+        Instant endRange = Instant.parse("2022-09-25T23:59:59.001Z");
+        statusReporter.setRange(startRange, endRange);
+
+        // Then
+        List<CompactionJobStatus> statusList = Stream.of(status).filter(statusReporter::isFinishedInRange).collect(Collectors.toList());
+        assertThat(statusReporter.report(statusList, CompactionJobStatusReporter.QueryType.RANGE))
+                .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt")
+                        .replace("$(startRange)", startRange.toString())
+                        .replace("$(endRange)", endRange.toString()));
+    }
+
+    @Test
+    public void shouldNotReportCompactionJobStatusFinishedAfterRange() throws Exception {
+        // Given
+        Partition partition = dataHelper.singlePartition();
+        CompactionJob job = dataHelper.singleFileCompaction(partition);
+        Instant creationTime = Instant.parse("2022-09-22T13:33:12.001Z");
+        Instant startedTime = Instant.parse("2022-09-22T13:34:12.001Z");
+        Instant startedUpdateTime = Instant.parse("2022-09-22T13:39:12.001Z");
+        Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
+
+        // When
+        CompactionJobStatus status = jobFinished(job, creationTime, startedTime, startedUpdateTime, finishedTime);
+        Instant startRange = Instant.parse("2022-09-20T00:00:00.001Z");
+        Instant endRange = Instant.parse("2022-09-20T23:59:59.001Z");
+        statusReporter.setRange(startRange, endRange);
+
+        // Then
+        List<CompactionJobStatus> statusList = Stream.of(status).filter(statusReporter::isFinishedInRange).collect(Collectors.toList());
+        assertThat(statusReporter.report(statusList, CompactionJobStatusReporter.QueryType.RANGE))
+                .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt")
+                        .replace("$(startRange)", startRange.toString())
+                        .replace("$(endRange)", endRange.toString()));
+    }
+
+    @Test
+    public void shouldNotReportSplittingCompactionJobStatusFinishedAfterRange() throws Exception {
+        // Given
+        CompactionJob job = dataHelper.singleFileSplittingCompaction("C", "A", "B");
+        Instant creationTime = Instant.parse("2022-09-22T13:33:12.001Z");
+        Instant startedTime = Instant.parse("2022-09-22T13:34:12.001Z");
+        Instant startedUpdateTime = Instant.parse("2022-09-22T13:39:12.001Z");
+        Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
+
+        // When
+        CompactionJobStatus status = jobFinished(job, creationTime, startedTime, startedUpdateTime, finishedTime);
+        Instant startRange = Instant.parse("2022-09-20T00:00:00.001Z");
+        Instant endRange = Instant.parse("2022-09-20T23:59:59.001Z");
+        statusReporter.setRange(startRange, endRange);
+
+        // Then
+        List<CompactionJobStatus> statusList = Stream.of(status).filter(statusReporter::isFinishedInRange).collect(Collectors.toList());
+        assertThat(statusReporter.report(statusList, CompactionJobStatusReporter.QueryType.RANGE))
+                .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt")
+                        .replace("$(startRange)", startRange.toString())
+                        .replace("$(endRange)", endRange.toString()));
     }
 }
