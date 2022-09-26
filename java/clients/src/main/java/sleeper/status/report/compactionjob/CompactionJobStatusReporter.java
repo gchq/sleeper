@@ -18,6 +18,8 @@ package sleeper.status.report.compactionjob;
 
 import sleeper.compaction.job.status.CompactionJobStatus;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 public class CompactionJobStatusReporter {
@@ -26,6 +28,9 @@ public class CompactionJobStatusReporter {
         SPECIFIC,
         UNFINISHED
     }
+
+    private Instant startRange = Instant.now().minus(6, ChronoUnit.HOURS);
+    private Instant endRange = Instant.now();
 
     public CompactionJobStatusReporter() {
     }
@@ -39,6 +44,11 @@ public class CompactionJobStatusReporter {
         sb.append(printHeaders()).append('\n');
         jobStatusList.forEach(s -> sb.append(verboseString(s)));
         return sb.toString();
+    }
+
+    public void setRange(Instant startRange, Instant endRange) {
+        this.startRange = startRange;
+        this.endRange = endRange;
     }
 
     public String verboseString(CompactionJobStatus jobStatus) {
@@ -59,7 +69,12 @@ public class CompactionJobStatusReporter {
     }
 
     private String printRangeSummary(List<CompactionJobStatus> jobStatusList) {
-        return "";
+        StringBuilder sb = new StringBuilder();
+        sb.append("Total jobs finished between ").append(startRange.toString());
+        sb.append(" and ").append(endRange.toString()).append(": ")
+                .append(jobStatusList.stream().filter(this::isFinishedInRange).count())
+                .append('\n');
+        return sb.toString();
     }
 
     private String printSpecificSummary(List<CompactionJobStatus> jobStatusList) {
@@ -94,5 +109,9 @@ public class CompactionJobStatusReporter {
         sb.append(String.format("%-20s", "READ_RATE (read/s)")).append('|');
         sb.append(String.format("%-20s", "WRITE_RATE (write/s)"));
         return sb.toString();
+    }
+
+    private boolean isFinishedInRange(CompactionJobStatus jobStatus) {
+        return jobStatus.getFinishTime().isAfter(startRange) && jobStatus.getFinishTime().isBefore(endRange);
     }
 }
