@@ -61,4 +61,23 @@ public class StatusReporterDetailedQueryTest extends StatusReporterTest {
                 .isEqualTo(example("reports/compactionjobstatus/standard/detailed/standardJobStarted.txt")
                         .replace("$(jobId)", job.getId()));
     }
+
+    @Test
+    public void shouldReportCompactionJobStatusFinished() throws Exception {
+        // Given
+        Partition partition = dataHelper.singlePartition();
+        CompactionJob job = dataHelper.singleFileCompaction(partition);
+        Instant creationTime = Instant.parse("2022-09-22T13:33:12.001Z");
+        Instant startedTime = Instant.parse("2022-09-22T13:34:12.001Z");
+        Instant startedUpdateTime = Instant.parse("2022-09-22T13:39:12.001Z");
+        Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
+
+        // When
+        CompactionJobStatus status = jobFinished(job, creationTime, startedTime, startedUpdateTime, finishedTime);
+
+        // Then
+        assertThat(statusReporter.report(Collections.singletonList(status), CompactionJobStatusReporter.QueryType.DETAILED))
+                .isEqualTo(example("reports/compactionjobstatus/standard/detailed/standardJobFinished.txt")
+                        .replace("$(jobId)", job.getId()));
+    }
 }

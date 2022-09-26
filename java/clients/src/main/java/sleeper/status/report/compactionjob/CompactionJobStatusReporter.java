@@ -96,6 +96,14 @@ public class CompactionJobStatusReporter {
             sb.append("\nStart Time: ").append(jobStatus.getStartTime()).append('\n');
             sb.append("Start Update Time: ").append(jobStatus.getStartUpdateTime()).append('\n');
         }
+        if (jobStatus.isFinished()) {
+            sb.append("\nFinish Time: ").append(jobStatus.getFinishTime()).append('\n');
+            sb.append("Duration: ").append(jobStatus.getFinishedSummary().getDurationInSeconds()).append("s\n");
+            sb.append("Lines Read: ").append(jobStatus.getFinishedSummary().getLinesRead()).append('\n');
+            sb.append("Lines Written: ").append(jobStatus.getFinishedSummary().getLinesWritten()).append('\n');
+            sb.append("Read Rate (reads per second): ").append(jobStatus.getFinishedSummary().getRecordsReadPerSecond()).append('\n');
+            sb.append("Write Rate (writes per second): ").append(jobStatus.getFinishedSummary().getRecordsWrittenPerSecond()).append('\n');
+        }
         sb.append("--------------------------\n");
         return sb.toString();
     }
