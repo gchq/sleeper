@@ -92,6 +92,10 @@ public class CompactionJobStatusReporter {
         sb.append("Creation Time: ").append(jobStatus.getCreateUpdateTime().toString()).append('\n');
         sb.append("Partition ID: ").append(jobStatus.getPartitionId()).append('\n');
         sb.append("Child partition IDs: ").append(jobStatus.getChildPartitionIds().toString()).append('\n');
+        if (jobStatus.isStarted()) {
+            sb.append("\nStart Time: ").append(jobStatus.getStartTime()).append('\n');
+            sb.append("Start Update Time: ").append(jobStatus.getStartUpdateTime()).append('\n');
+        }
         sb.append("--------------------------\n");
         return sb.toString();
     }
