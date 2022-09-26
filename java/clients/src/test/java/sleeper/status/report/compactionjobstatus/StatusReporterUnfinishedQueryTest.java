@@ -44,7 +44,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class StatusReporterQueryUnfinishedTest {
+public class StatusReporterUnfinishedQueryTest {
     private CompactionJobTestDataHelper dataHelper;
     private CompactionJobStatusReporter statusReporter;
 
@@ -66,7 +66,7 @@ public class StatusReporterQueryUnfinishedTest {
 
         // Then
         assertThat(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/standard/unfinishedStandardJobCreated.txt")
+                .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/standardJobCreated.txt")
                         .replace("$(jobId)", job.getId()));
     }
 
@@ -81,7 +81,7 @@ public class StatusReporterQueryUnfinishedTest {
 
         // Then
         assertThat(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/standard/unfinishedSplittingJobCreated.txt")
+                .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/splittingJobCreated.txt")
                         .replace("$(jobId)", job.getId()));
     }
 
@@ -102,7 +102,7 @@ public class StatusReporterQueryUnfinishedTest {
 
         // Then
         assertThat(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/standard/unfinishedStandardJobStarted.txt")
+                .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/standardJobStarted.txt")
                         .replace("$(jobId)", job.getId()));
     }
 
@@ -123,7 +123,7 @@ public class StatusReporterQueryUnfinishedTest {
 
         // Then
         assertThat(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/standard/unfinishedSplittingJobStarted.txt")
+                .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/splittingJobStarted.txt")
                         .replace("$(jobId)", job.getId()));
     }
 
@@ -149,7 +149,7 @@ public class StatusReporterQueryUnfinishedTest {
         // Then
         List<CompactionJobStatus> statusList = Stream.of(status).filter(s -> !s.isFinished()).collect(Collectors.toList());
         assertThat(statusReporter.report(statusList, QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/standard/unfinishedStandardJobFinished.txt"));
+                .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/standardJobFinished.txt"));
     }
 
     @Test
@@ -173,7 +173,7 @@ public class StatusReporterQueryUnfinishedTest {
         // Then
         List<CompactionJobStatus> statusList = Stream.of(status).filter(s -> !s.isFinished()).collect(Collectors.toList());
         assertThat(statusReporter.report(statusList, QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/standard/unfinishedSplittingJobFinished.txt")
+                .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/splittingJobFinished.txt")
                         .replace("$(jobId)", job.getId()));
     }
 
