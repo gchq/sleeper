@@ -72,11 +72,13 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("Partition ID: %s%n", jobStatus.getPartitionId());
         out.printf("Child partition IDs: %s%n", jobStatus.getChildPartitionIds().toString());
         if (jobStatus.isStarted()) {
-            out.printf("\nStart Time: %s%n", jobStatus.getStartTime());
+            out.println();
+            out.printf("Start Time: %s%n", jobStatus.getStartTime());
             out.printf("Start Update Time: %s%n", jobStatus.getStartUpdateTime());
         }
         if (jobStatus.isFinished()) {
-            out.printf("\nFinish Time: %s%n", jobStatus.getFinishTime());
+            out.println();
+            out.printf("Finish Time: %s%n", jobStatus.getFinishTime());
             out.printf("Duration: %.1fs%n", jobStatus.getFinishedSummary().getDurationInSeconds());
             out.printf("Lines Read: %d%n", jobStatus.getFinishedSummary().getLinesRead());
             out.printf("Lines Written: %d%n", jobStatus.getFinishedSummary().getLinesWritten());
@@ -89,8 +91,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private void printUnfinishedSummary(List<CompactionJobStatus> jobStatusList) {
         out.printf("Total unfinished jobs: %d%n", jobStatusList.size());
         out.printf("Total unfinished jobs in progress: %d%n",
-                jobStatusList.stream().filter(CompactionJobStatus::isStarted).count())
-        ;
+                jobStatusList.stream().filter(CompactionJobStatus::isStarted).count());
         out.printf("Total unfinished jobs not started: %d%n",
                 jobStatusList.size() - jobStatusList.stream().filter(CompactionJobStatus::isStarted).count());
     }
