@@ -25,7 +25,7 @@ import java.util.List;
 public class CompactionJobStatusReporter {
     public enum QueryType {
         RANGE,
-        SPECIFIC,
+        DETAILED,
         UNFINISHED
     }
 
@@ -40,7 +40,7 @@ public class CompactionJobStatusReporter {
         sb.append("\nCompaction Job Status Report:\n");
         sb.append("--------------------------\n");
         sb.append(printSummary(jobStatusList, queryType));
-        if (!queryType.equals(QueryType.SPECIFIC)) {
+        if (!queryType.equals(QueryType.DETAILED)) {
             sb.append("--------------------------\n");
             sb.append(printHeaders()).append('\n');
             jobStatusList.forEach(s -> sb.append(verboseString(s)));
@@ -61,8 +61,8 @@ public class CompactionJobStatusReporter {
         if (queryType.equals(QueryType.RANGE)) {
             return printRangeSummary(jobStatusList);
         }
-        if (queryType.equals(QueryType.SPECIFIC)) {
-            return printSpecificSummary(jobStatusList);
+        if (queryType.equals(QueryType.DETAILED)) {
+            return printDetailedSummary(jobStatusList);
         }
         if (queryType.equals(QueryType.UNFINISHED)) {
             return printUnfinishedSummary(jobStatusList);
@@ -79,7 +79,7 @@ public class CompactionJobStatusReporter {
         return sb.toString();
     }
 
-    private String printSpecificSummary(List<CompactionJobStatus> jobStatusList) {
+    private String printDetailedSummary(List<CompactionJobStatus> jobStatusList) {
         StringBuilder sb = new StringBuilder();
         jobStatusList.forEach(job -> sb.append(printSingleJobSummary(job)));
         return sb.toString();

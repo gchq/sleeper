@@ -27,7 +27,7 @@ import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class StatusReporterSpecificQueryTest extends StatusReporterTest {
+public class StatusReporterDetailedQueryTest extends StatusReporterTest {
     @Test
     public void shouldReportCompactionJobStatusCreated() throws Exception {
         // Given
@@ -39,8 +39,8 @@ public class StatusReporterSpecificQueryTest extends StatusReporterTest {
         CompactionJobStatus status = jobCreated(job, creationTime);
 
         // Then
-        assertThat(statusReporter.report(Collections.singletonList(status), CompactionJobStatusReporter.QueryType.SPECIFIC))
-                .isEqualTo(example("reports/compactionjobstatus/standard/specific/standardJobCreated.txt")
+        assertThat(statusReporter.report(Collections.singletonList(status), CompactionJobStatusReporter.QueryType.DETAILED))
+                .isEqualTo(example("reports/compactionjobstatus/standard/detailed/standardJobCreated.txt")
                         .replace("$(jobId)", job.getId()));
     }
 }
