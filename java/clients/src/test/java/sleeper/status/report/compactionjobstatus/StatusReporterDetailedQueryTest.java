@@ -23,7 +23,9 @@ import sleeper.core.partition.Partition;
 import sleeper.status.report.compactionjob.CompactionJobStatusReporter;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -80,4 +82,35 @@ public class StatusReporterDetailedQueryTest extends StatusReporterTest {
                 .isEqualTo(example("reports/compactionjobstatus/standard/detailed/standardJobFinished.txt")
                         .replace("$(jobId)", job.getId()));
     }
+
+    @Test
+    public void shouldReportMultipleCompactionJobStatus() throws Exception {
+        // Given
+        CompactionJob job1 = dataHelper.singleFileSplittingCompaction("C", "A", "B");
+        Instant creationTime1 = Instant.parse("2022-09-22T13:33:12.001Z");
+        CompactionJob job2 = dataHelper.singleFileSplittingCompaction("F", "D", "E");
+        Instant creationTime2 = Instant.parse("2022-09-23T13:33:12.001Z");
+        Instant startedTime2 = Instant.parse("2022-09-23T13:34:00.001Z");
+        Instant startedUpdateTime2 = Instant.parse("2022-09-23T13:36:00.001Z");
+        CompactionJob job3 = dataHelper.singleFileSplittingCompaction("I", "G", "H");
+        Instant creationTime3 = Instant.parse("2022-09-24T13:33:12.001Z");
+        Instant startedTime3 = Instant.parse("2022-09-24T13:34:12.001Z");
+        Instant startedUpdateTime3 = Instant.parse("2022-09-24T13:39:12.001Z");
+        Instant finishedTime3 = Instant.parse("2022-09-24T13:40:12.001Z");
+
+        // When
+        CompactionJobStatus status1 = jobCreated(job1, creationTime1);
+        CompactionJobStatus status2 = jobStarted(job2, creationTime2, startedTime2, startedUpdateTime2);
+        CompactionJobStatus status3 = jobFinished(job3, creationTime3, startedTime3, startedUpdateTime3, finishedTime3);
+        List<CompactionJobStatus> statusList = Arrays.asList(status1, status2, status3);
+
+        // Then
+        assertThat(statusReporter.report(statusList, CompactionJobStatusReporter.QueryType.DETAILED))
+                .isEqualTo(example("reports/compactionjobstatus/standard/detailed/multipleJobs.txt")
+                        .replace("$(jobId1)", job1.getId())
+                        .replace("$(jobId2)", job2.getId())
+                        .replace("$(jobId3)", job3.getId()));
+    }
+
+
 }
