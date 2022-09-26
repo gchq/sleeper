@@ -27,21 +27,24 @@ import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.status.report.compactionjob.CompactionJobStatusReporter;
+import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
 import sleeper.status.report.filestatus.FilesStatusReportTest;
 
 import java.io.IOException;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 public abstract class StatusReporterTest {
     protected CompactionJobTestDataHelper dataHelper;
-    protected CompactionJobStatusReporter statusReporter;
 
     @Before
     public void setup() {
-        statusReporter = new CompactionJobStatusReporter();
         dataHelper = new CompactionJobTestDataHelper();
     }
 
@@ -69,5 +72,10 @@ public abstract class StatusReporterTest {
                 .startedStatus(CompactionJobStartedStatus.updateAndStartTime(startUpdateTime, startTime))
                 .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(finishedTime, summary))
                 .build();
+    }
+
+    public String verboseReportString(Function<PrintStream, CompactionJobStatusReporter> getReporter, List<CompactionJobStatus> statusList,
+                                      QueryType queryType) throws UnsupportedEncodingException {
+        return CompactionJobStatusReporter.asString(getReporter, statusList, queryType);
     }
 }

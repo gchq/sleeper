@@ -21,9 +21,9 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.partition.Partition;
 import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
+import sleeper.status.report.compactionjob.StandardCompactionJobStatusReporter;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -43,7 +43,8 @@ public class StatusReporterUnfinishedQueryTest extends StatusReporterTest {
         CompactionJobStatus status = jobCreated(job, creationTime);
 
         // Then
-        assertThat(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED))
+        List<CompactionJobStatus> statusList = Stream.of(status).filter(s -> !s.isFinished()).collect(Collectors.toList());
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
                 .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/standardJobCreated.txt")
                         .replace("$(jobId)", job.getId()));
     }
@@ -58,7 +59,8 @@ public class StatusReporterUnfinishedQueryTest extends StatusReporterTest {
         CompactionJobStatus status = jobCreated(job, creationTime);
 
         // Then
-        assertThat(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED))
+        List<CompactionJobStatus> statusList = Stream.of(status).filter(s -> !s.isFinished()).collect(Collectors.toList());
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
                 .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/splittingJobCreated.txt")
                         .replace("$(jobId)", job.getId()));
     }
@@ -76,7 +78,8 @@ public class StatusReporterUnfinishedQueryTest extends StatusReporterTest {
         CompactionJobStatus status = jobStarted(job, creationTime, startedTime, startedUpdateTime);
 
         // Then
-        assertThat(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED))
+        List<CompactionJobStatus> statusList = Stream.of(status).filter(s -> !s.isFinished()).collect(Collectors.toList());
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
                 .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/standardJobStarted.txt")
                         .replace("$(jobId)", job.getId()));
     }
@@ -94,7 +97,8 @@ public class StatusReporterUnfinishedQueryTest extends StatusReporterTest {
 
 
         // Then
-        assertThat(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED))
+        List<CompactionJobStatus> statusList = Stream.of(status).filter(s -> !s.isFinished()).collect(Collectors.toList());
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
                 .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/splittingJobStarted.txt")
                         .replace("$(jobId)", job.getId()));
     }
@@ -114,7 +118,7 @@ public class StatusReporterUnfinishedQueryTest extends StatusReporterTest {
 
         // Then
         List<CompactionJobStatus> statusList = Stream.of(status).filter(s -> !s.isFinished()).collect(Collectors.toList());
-        assertThat(statusReporter.report(statusList, QueryType.UNFINISHED))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
                 .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/standardJobFinished.txt"));
     }
 
@@ -132,7 +136,7 @@ public class StatusReporterUnfinishedQueryTest extends StatusReporterTest {
 
         // Then
         List<CompactionJobStatus> statusList = Stream.of(status).filter(s -> !s.isFinished()).collect(Collectors.toList());
-        assertThat(statusReporter.report(statusList, QueryType.UNFINISHED))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
                 .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/splittingJobFinished.txt")
                         .replace("$(jobId)", job.getId()));
     }

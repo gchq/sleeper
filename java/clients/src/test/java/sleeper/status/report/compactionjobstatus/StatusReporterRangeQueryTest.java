@@ -21,9 +21,9 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.partition.Partition;
 import sleeper.status.report.compactionjob.CompactionJobStatusReporter;
+import sleeper.status.report.compactionjob.StandardCompactionJobStatusReporter;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -46,13 +46,13 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
         CompactionJobStatus status = jobFinished(job, creationTime, startedTime, startedUpdateTime, finishedTime);
         Instant startRange = Instant.parse("2022-09-22T00:00:00.001Z");
         Instant endRange = Instant.parse("2022-09-22T23:59:59.001Z");
-        statusReporter.setRange(startRange, endRange);
 
         // Then
-        assertThat(statusReporter.report(Collections.singletonList(status), CompactionJobStatusReporter.QueryType.RANGE))
+        List<CompactionJobStatus> statusList = Stream.of(status)
+                .filter(j -> isFinishedInRange(j, startRange, endRange))
+                .collect(Collectors.toList());
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
                 .isEqualTo(example("reports/compactionjobstatus/standard/range/standardJobFinishedInRange.txt")
-                        .replace("$(startRange)", startRange.toString())
-                        .replace("$(endRange)", endRange.toString())
                         .replace("$(jobId)", job.getId()));
     }
 
@@ -69,13 +69,13 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
         CompactionJobStatus status = jobFinished(job, creationTime, startedTime, startedUpdateTime, finishedTime);
         Instant startRange = Instant.parse("2022-09-22T00:00:00.001Z");
         Instant endRange = Instant.parse("2022-09-22T23:59:59.001Z");
-        statusReporter.setRange(startRange, endRange);
 
         // Then
-        assertThat(statusReporter.report(Collections.singletonList(status), CompactionJobStatusReporter.QueryType.RANGE))
+        List<CompactionJobStatus> statusList = Stream.of(status)
+                .filter(j -> isFinishedInRange(j, startRange, endRange))
+                .collect(Collectors.toList());
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
                 .isEqualTo(example("reports/compactionjobstatus/standard/range/splittingJobFinishedInRange.txt")
-                        .replace("$(startRange)", startRange.toString())
-                        .replace("$(endRange)", endRange.toString())
                         .replace("$(jobId)", job.getId()));
     }
 
@@ -93,14 +93,13 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
         CompactionJobStatus status = jobFinished(job, creationTime, startedTime, startedUpdateTime, finishedTime);
         Instant startRange = Instant.parse("2022-09-25T00:00:00.001Z");
         Instant endRange = Instant.parse("2022-09-25T23:59:59.001Z");
-        statusReporter.setRange(startRange, endRange);
 
         // Then
-        List<CompactionJobStatus> statusList = Stream.of(status).filter(statusReporter::isFinishedInRange).collect(Collectors.toList());
-        assertThat(statusReporter.report(statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt")
-                        .replace("$(startRange)", startRange.toString())
-                        .replace("$(endRange)", endRange.toString()));
+        List<CompactionJobStatus> statusList = Stream.of(status)
+                .filter(j -> isFinishedInRange(j, startRange, endRange))
+                .collect(Collectors.toList());
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
+                .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt"));
     }
 
     @Test
@@ -116,14 +115,13 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
         CompactionJobStatus status = jobFinished(job, creationTime, startedTime, startedUpdateTime, finishedTime);
         Instant startRange = Instant.parse("2022-09-25T00:00:00.001Z");
         Instant endRange = Instant.parse("2022-09-25T23:59:59.001Z");
-        statusReporter.setRange(startRange, endRange);
 
         // Then
-        List<CompactionJobStatus> statusList = Stream.of(status).filter(statusReporter::isFinishedInRange).collect(Collectors.toList());
-        assertThat(statusReporter.report(statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt")
-                        .replace("$(startRange)", startRange.toString())
-                        .replace("$(endRange)", endRange.toString()));
+        List<CompactionJobStatus> statusList = Stream.of(status)
+                .filter(j -> isFinishedInRange(j, startRange, endRange))
+                .collect(Collectors.toList());
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
+                .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt"));
     }
 
     @Test
@@ -140,14 +138,13 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
         CompactionJobStatus status = jobFinished(job, creationTime, startedTime, startedUpdateTime, finishedTime);
         Instant startRange = Instant.parse("2022-09-20T00:00:00.001Z");
         Instant endRange = Instant.parse("2022-09-20T23:59:59.001Z");
-        statusReporter.setRange(startRange, endRange);
 
         // Then
-        List<CompactionJobStatus> statusList = Stream.of(status).filter(statusReporter::isFinishedInRange).collect(Collectors.toList());
-        assertThat(statusReporter.report(statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt")
-                        .replace("$(startRange)", startRange.toString())
-                        .replace("$(endRange)", endRange.toString()));
+        List<CompactionJobStatus> statusList = Stream.of(status)
+                .filter(j -> isFinishedInRange(j, startRange, endRange))
+                .collect(Collectors.toList());
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
+                .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt"));
     }
 
     @Test
@@ -163,13 +160,16 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
         CompactionJobStatus status = jobFinished(job, creationTime, startedTime, startedUpdateTime, finishedTime);
         Instant startRange = Instant.parse("2022-09-20T00:00:00.001Z");
         Instant endRange = Instant.parse("2022-09-20T23:59:59.001Z");
-        statusReporter.setRange(startRange, endRange);
 
         // Then
-        List<CompactionJobStatus> statusList = Stream.of(status).filter(statusReporter::isFinishedInRange).collect(Collectors.toList());
-        assertThat(statusReporter.report(statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt")
-                        .replace("$(startRange)", startRange.toString())
-                        .replace("$(endRange)", endRange.toString()));
+        List<CompactionJobStatus> statusList = Stream.of(status)
+                .filter(j -> isFinishedInRange(j, startRange, endRange))
+                .collect(Collectors.toList());
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
+                .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt"));
+    }
+
+    private boolean isFinishedInRange(CompactionJobStatus jobStatus, Instant startRange, Instant endRange) {
+        return jobStatus.getFinishTime().isAfter(startRange) && jobStatus.getFinishTime().isBefore(endRange);
     }
 }
