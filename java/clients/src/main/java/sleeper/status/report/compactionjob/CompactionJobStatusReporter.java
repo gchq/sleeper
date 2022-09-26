@@ -40,9 +40,11 @@ public class CompactionJobStatusReporter {
         sb.append("\nCompaction Job Status Report:\n");
         sb.append("--------------------------\n");
         sb.append(printSummary(jobStatusList, queryType));
-        sb.append("--------------------------\n");
-        sb.append(printHeaders()).append('\n');
-        jobStatusList.forEach(s -> sb.append(verboseString(s)));
+        if (!queryType.equals(QueryType.SPECIFIC)) {
+            sb.append("--------------------------\n");
+            sb.append(printHeaders()).append('\n');
+            jobStatusList.forEach(s -> sb.append(verboseString(s)));
+        }
         return sb.toString();
     }
 
@@ -78,7 +80,20 @@ public class CompactionJobStatusReporter {
     }
 
     private String printSpecificSummary(List<CompactionJobStatus> jobStatusList) {
-        return "";
+        StringBuilder sb = new StringBuilder();
+        jobStatusList.forEach(job -> sb.append(printSingleJobSummary(job)));
+        return sb.toString();
+    }
+
+    private String printSingleJobSummary(CompactionJobStatus jobStatus) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Details for job ").append(jobStatus.getJobId()).append(":\n");
+        sb.append("State: ").append(CompactionJobStatusResult.getState(jobStatus)).append('\n');
+        sb.append("Creation Time: ").append(jobStatus.getCreateUpdateTime().toString()).append('\n');
+        sb.append("Partition ID: ").append(jobStatus.getPartitionId()).append('\n');
+        sb.append("Child partition IDs: ").append(jobStatus.getChildPartitionIds().toString()).append('\n');
+        sb.append("--------------------------\n");
+        return sb.toString();
     }
 
     private String printUnfinishedSummary(List<CompactionJobStatus> jobStatusList) {

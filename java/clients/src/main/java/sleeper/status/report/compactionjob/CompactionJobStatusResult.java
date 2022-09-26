@@ -61,7 +61,7 @@ public class CompactionJobStatusResult {
         return sb.toString();
     }
 
-    private static String getState(CompactionJobStatus status) {
+    public static String getState(CompactionJobStatus status) {
         if (status.isFinished()) {
             return "FINISHED";
         }
