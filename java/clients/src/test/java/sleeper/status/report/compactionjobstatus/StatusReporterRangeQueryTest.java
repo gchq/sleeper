@@ -21,6 +21,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.partition.Partition;
 import sleeper.status.report.compactionjob.CompactionJobStatusReporter;
+import sleeper.status.report.compactionjob.JsonCompactionJobStatusReporter;
 import sleeper.status.report.compactionjob.StandardCompactionJobStatusReporter;
 
 import java.time.Instant;
@@ -54,6 +55,9 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
                 .isEqualTo(example("reports/compactionjobstatus/standard/range/standardJobFinishedInRange.txt")
                         .replace("$(jobId)", job.getId()));
+        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
+                .isEqualTo(example("reports/compactionjobstatus/json/standardJobFinished.json")
+                        .replace("$(jobId)", job.getId()));
     }
 
     @Test
@@ -76,6 +80,9 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
                 .collect(Collectors.toList());
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
                 .isEqualTo(example("reports/compactionjobstatus/standard/range/splittingJobFinishedInRange.txt")
+                        .replace("$(jobId)", job.getId()));
+        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
+                .isEqualTo(example("reports/compactionjobstatus/json/splittingJobFinished.json")
                         .replace("$(jobId)", job.getId()));
     }
 
@@ -100,6 +107,8 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
                 .collect(Collectors.toList());
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
                 .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt"));
+        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
+                .isEqualTo(example("reports/compactionjobstatus/json/noJobs.json"));
     }
 
     @Test
@@ -122,6 +131,8 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
                 .collect(Collectors.toList());
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
                 .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt"));
+        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
+                .isEqualTo(example("reports/compactionjobstatus/json/noJobs.json"));
     }
 
     @Test
@@ -145,6 +156,8 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
                 .collect(Collectors.toList());
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
                 .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt"));
+        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
+                .isEqualTo(example("reports/compactionjobstatus/json/noJobs.json"));
     }
 
     @Test
@@ -167,6 +180,8 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
                 .collect(Collectors.toList());
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
                 .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt"));
+        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
+                .isEqualTo(example("reports/compactionjobstatus/json/noJobs.json"));
     }
 
     private boolean isFinishedInRange(CompactionJobStatus jobStatus, Instant startRange, Instant endRange) {
