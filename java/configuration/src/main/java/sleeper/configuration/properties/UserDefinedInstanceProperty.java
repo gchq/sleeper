@@ -125,7 +125,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     BULK_IMPORT_PERSISTENT_EMR_SPARK_DEFAULT_PARALLELISM("sleeper.bulk.import.persistent.emr.spark.default.parallelisn", "290"),
     //  - Properties that are independent of the instance type and number of instances:
     BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_CORES("sleeper.bulk.import.persistent.emr.spark.executor.cores", "5"),
-    BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_CORES("sleeper.bulk.import.persistent.emr.spark.executor.cores", BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_CORES.getDefaultValue()),
+    BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_CORES("sleeper.bulk.import.persistent.emr.spark.driver.cores", BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_CORES.getDefaultValue()),
     BULK_IMPORT_PERSISTENT_EMR_SPARK_NETWORK_TIMEOUT("sleeper.bulk.import.persistent.emr.spark.network.timeout", "800s"),
     BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_HEARTBEAT_INTERVAL("sleeper.bulk.import.persistent.emr.spark.executor.heartbeat.interval", "60s"),
     BULK_IMPORT_PERSISTENT_EMR_SPARK_DYNAMIC_ALLOCATION_ENABLED("sleeper.bulk.import.persistent.emr.spark.dynamic.allocation.enabled", "false"),
