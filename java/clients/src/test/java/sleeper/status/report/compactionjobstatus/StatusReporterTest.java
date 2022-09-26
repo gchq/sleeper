@@ -18,25 +18,56 @@ package sleeper.status.report.compactionjobstatus;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
+import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobRecordsProcessed;
+import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
+import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobFinishedStatus;
+import sleeper.compaction.job.status.CompactionJobStartedStatus;
+import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.status.report.compactionjob.CompactionJobStatusReporter;
 import sleeper.status.report.filestatus.FilesStatusReportTest;
 
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.time.Instant;
 import java.util.Objects;
 
 public abstract class StatusReporterTest {
     protected CompactionJobTestDataHelper dataHelper;
     protected CompactionJobStatusReporter statusReporter;
+
     @Before
     public void setup() {
         statusReporter = new CompactionJobStatusReporter();
         dataHelper = new CompactionJobTestDataHelper();
     }
+
     protected static String example(String path) throws IOException {
         URL url = FilesStatusReportTest.class.getClassLoader().getResource(path);
         return IOUtils.toString(Objects.requireNonNull(url), Charset.defaultCharset());
+    }
+
+    protected static CompactionJobStatus jobCreated(CompactionJob job, Instant creationTime) {
+        return CompactionJobStatus.created(job, creationTime);
+    }
+
+    protected static CompactionJobStatus jobStarted(CompactionJob job, Instant creationTime, Instant startTime, Instant startUpdateTime) {
+        return CompactionJobStatus.builder().jobId(job.getId())
+                .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(startUpdateTime, startTime))
+                .build();
+    }
+
+    protected static CompactionJobStatus jobFinished(CompactionJob job, Instant creationTime, Instant startTime, Instant startUpdateTime, Instant finishedTime) {
+        CompactionJobSummary summary = new CompactionJobSummary(
+                new CompactionJobRecordsProcessed(600L, 300L), startUpdateTime, finishedTime);
+        return CompactionJobStatus.builder().jobId(job.getId())
+                .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(startUpdateTime, startTime))
+                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(finishedTime, summary))
+                .build();
     }
 }

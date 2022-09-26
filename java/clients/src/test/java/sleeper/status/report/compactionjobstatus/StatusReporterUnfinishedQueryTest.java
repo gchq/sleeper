@@ -18,11 +18,6 @@ package sleeper.status.report.compactionjobstatus;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobRecordsProcessed;
-import sleeper.compaction.job.CompactionJobSummary;
-import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.partition.Partition;
 import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
@@ -42,10 +37,10 @@ public class StatusReporterUnfinishedQueryTest extends StatusReporterTest {
         // Given
         Partition partition = dataHelper.singlePartition();
         CompactionJob job = dataHelper.singleFileCompaction(partition);
-        Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
+        Instant creationTime = Instant.parse("2022-09-22T13:33:12.001Z");
 
         // When
-        CompactionJobStatus status = CompactionJobStatus.created(job, updateTime);
+        CompactionJobStatus status = jobCreated(job, creationTime);
 
         // Then
         assertThat(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED))
@@ -57,10 +52,10 @@ public class StatusReporterUnfinishedQueryTest extends StatusReporterTest {
     public void shouldReportSplittingCompactionJobStatusWithCreatedJobs() throws Exception {
         // Given
         CompactionJob job = dataHelper.singleFileSplittingCompaction("C", "A", "B");
-        Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
+        Instant creationTime = Instant.parse("2022-09-22T13:33:12.001Z");
 
         // When
-        CompactionJobStatus status = CompactionJobStatus.created(job, updateTime);
+        CompactionJobStatus status = jobCreated(job, creationTime);
 
         // Then
         assertThat(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED))
@@ -78,10 +73,7 @@ public class StatusReporterUnfinishedQueryTest extends StatusReporterTest {
         Instant startedUpdateTime = Instant.parse("2022-09-22T13:39:12.001Z");
 
         // When
-        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(startedUpdateTime, startedTime))
-                .build();
+        CompactionJobStatus status = jobStarted(job, creationTime, startedTime, startedUpdateTime);
 
         // Then
         assertThat(statusReporter.report(Collections.singletonList(status), QueryType.UNFINISHED))
@@ -98,10 +90,7 @@ public class StatusReporterUnfinishedQueryTest extends StatusReporterTest {
         Instant startedUpdateTime = Instant.parse("2022-09-22T13:39:12.001Z");
 
         // When
-        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(startedUpdateTime, startedTime))
-                .build();
+        CompactionJobStatus status = jobStarted(job, creationTime, startedTime, startedUpdateTime);
 
 
         // Then
@@ -121,13 +110,7 @@ public class StatusReporterUnfinishedQueryTest extends StatusReporterTest {
         Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
 
         // When
-        CompactionJobSummary summary = new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(600L, 300L), startedUpdateTime, finishedTime);
-        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(startedUpdateTime, startedTime))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(finishedTime, summary))
-                .build();
+        CompactionJobStatus status = jobFinished(job, creationTime, startedTime, startedUpdateTime, finishedTime);
 
         // Then
         List<CompactionJobStatus> statusList = Stream.of(status).filter(s -> !s.isFinished()).collect(Collectors.toList());
@@ -145,13 +128,7 @@ public class StatusReporterUnfinishedQueryTest extends StatusReporterTest {
         Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
 
         // When
-        CompactionJobSummary summary = new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(600L, 300L), startedUpdateTime, finishedTime);
-        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(startedUpdateTime, startedTime))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(finishedTime, summary))
-                .build();
+        CompactionJobStatus status = jobFinished(job, creationTime, startedTime, startedUpdateTime, finishedTime);
 
         // Then
         List<CompactionJobStatus> statusList = Stream.of(status).filter(s -> !s.isFinished()).collect(Collectors.toList());
