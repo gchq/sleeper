@@ -16,43 +16,26 @@
 
 package sleeper.status.report.compactionjobstatus;
 
-import org.apache.commons.io.IOUtils;
-import org.junit.Before;
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobRecordsProcessed;
 import sleeper.compaction.job.CompactionJobSummary;
-import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.partition.Partition;
-import sleeper.status.report.compactionjob.CompactionJobStatusReporter;
 import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
-import sleeper.status.report.filestatus.FilesStatusReportTest;
 
-import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class StatusReporterUnfinishedQueryTest {
-    private CompactionJobTestDataHelper dataHelper;
-    private CompactionJobStatusReporter statusReporter;
-
-    @Before
-    public void setup() {
-        statusReporter = new CompactionJobStatusReporter();
-        dataHelper = new CompactionJobTestDataHelper();
-    }
+public class StatusReporterUnfinishedQueryTest extends StatusReporterTest {
 
     @Test
     public void shouldReportCompactionJobStatusWithCreatedJobs() throws Exception {
@@ -175,10 +158,5 @@ public class StatusReporterUnfinishedQueryTest {
         assertThat(statusReporter.report(statusList, QueryType.UNFINISHED))
                 .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/splittingJobFinished.txt")
                         .replace("$(jobId)", job.getId()));
-    }
-
-    private static String example(String path) throws IOException {
-        URL url = FilesStatusReportTest.class.getClassLoader().getResource(path);
-        return IOUtils.toString(Objects.requireNonNull(url), Charset.defaultCharset());
     }
 }
