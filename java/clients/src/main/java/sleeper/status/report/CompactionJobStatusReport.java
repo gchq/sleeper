@@ -37,7 +37,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -165,8 +164,15 @@ public class CompactionJobStatusReport {
     }
 
     public void handleDetailedQuery(Scanner scanner) {
-        List<String> jobIds = Collections.emptyList();
-        // TODO loop and prompt for jobIds
+        List<String> jobIds;
+
+        System.out.print("Enter jobId to get detailed information about:");
+        String input = scanner.nextLine();
+        if ("".equals(input)) {
+            return;
+        }
+        jobIds = Collections.singletonList(input);
+
         handleDetailedQuery(jobIds);
     }
 
@@ -179,7 +185,7 @@ public class CompactionJobStatusReport {
         if (queryType.equals(QueryType.UNFINISHED)) {
             handleUnfinishedQuery();
         } else if (queryType.equals(QueryType.DETAILED)) {
-            List<String> jobIds = Arrays.asList(queryParameters.split(","));
+            List<String> jobIds = Collections.singletonList(queryParameters);
             handleDetailedQuery(jobIds);
         } else if (queryType.equals(QueryType.RANGE)) {
             Instant startRange;
@@ -213,7 +219,7 @@ public class CompactionJobStatusReport {
         if (!(args.length >= 1 && args.length <= 4)) {
             throw new IllegalArgumentException("Usage: <instance id> <report_type_standard_or_json> <optional_query_type> <optional_query_parameters> \n" +
                     "Query types are:\n" +
-                    "-d (Detailed, provide comma separated list of jobIds)\n" +
+                    "-d (Detailed, provide a jobId)\n" +
                     "-r (Provide startRange and endRange separated by commas in format yyyyMMddhhmmss)\n" +
                     "-u (Unfinished jobs)");
         }
