@@ -62,7 +62,12 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     }
 
     private void printDetailedSummary(List<CompactionJobStatus> jobStatusList) {
-        jobStatusList.forEach(this::printSingleJobSummary);
+        if (jobStatusList.isEmpty()) {
+            out.printf("No job found with provided jobId%n");
+            out.printf("--------------------------%n");
+        } else {
+            jobStatusList.forEach(this::printSingleJobSummary);
+        }
     }
 
     private void printSingleJobSummary(CompactionJobStatus jobStatus) {

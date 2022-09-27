@@ -28,6 +28,8 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -132,5 +134,24 @@ public class StatusReporterDetailedQueryTest extends StatusReporterTest {
                         .replace("$(jobId3)", job3.getId()));
     }
 
+    @Test
+    public void shouldReportNoCompactionJobStatusIfNoMatchingId() throws Exception {
+        // Given
+        String searchingJobId = "non-existent-job";
+        CompactionJob job = dataHelper.singleFileSplittingCompaction("C", "A", "B");
+        Instant creationTime = Instant.parse("2022-09-22T13:33:12.001Z");
 
+        // When
+        CompactionJobStatus status = jobCreated(job, creationTime);
+
+        // Then
+        List<CompactionJobStatus> statusList = Stream.of(status)
+                .filter(j -> j.getJobId().equals(searchingJobId))
+                .collect(Collectors.toList());
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
+                .isEqualTo(example("reports/compactionjobstatus/standard/detailed/noJobFound.txt"));
+        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
+                .isEqualTo(example("reports/compactionjobstatus/json/noJobs.json"));
+
+    }
 }
