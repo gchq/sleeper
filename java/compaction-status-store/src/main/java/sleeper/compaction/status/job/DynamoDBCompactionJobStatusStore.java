@@ -17,20 +17,32 @@ package sleeper.compaction.status.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
+import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutItemResult;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.CompactionStatusStoreException;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import static sleeper.compaction.status.DynamoDBAttributes.createStringAttribute;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.TABLE_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
@@ -92,6 +104,41 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTableName(statusTableName);
         return dynamoDB.putItem(putItemRequest);
+    }
+
+    @Override
+    public CompactionJobStatus getJob(String jobId) {
+        QueryResult result = dynamoDB.query(new QueryRequest()
+                .withTableName(statusTableName)
+                .addKeyConditionsEntry(JOB_ID, new Condition()
+                        .withAttributeValueList(createStringAttribute(jobId))
+                        .withComparisonOperator(ComparisonOperator.EQ)));
+        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems())
+                .findFirst().orElse(null);
+    }
+
+    @Override
+    public List<CompactionJobStatus> getUnfinishedJobs(String tableName) {
+        ScanResult result = dynamoDB.scan(createScanRequestByTable(tableName));
+        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems())
+                .filter(job -> !job.isFinished())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CompactionJobStatus> getJobsInTimePeriod(String tableName, Instant startTime, Instant endTime) {
+        ScanResult result = dynamoDB.scan(createScanRequestByTable(tableName));
+        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems())
+                .filter(job -> job.isInPeriod(startTime, endTime))
+                .collect(Collectors.toList());
+    }
+
+    private ScanRequest createScanRequestByTable(String tableName) {
+        return new ScanRequest()
+                .withTableName(statusTableName)
+                .addScanFilterEntry(TABLE_NAME, new Condition()
+                        .withAttributeValueList(createStringAttribute(tableName))
+                        .withComparisonOperator(ComparisonOperator.EQ));
     }
 
     public static String jobStatusTableName(String instanceId) {

@@ -114,6 +114,25 @@ public class CompactionJobStatus {
         return this.jobId;
     }
 
+    public boolean isInPeriod(Instant startTime, Instant endTime) {
+        return startTime.isBefore(lastTime())
+                && endTime.isAfter(firstTime());
+    }
+
+    private Instant firstTime() {
+        return createdStatus.getUpdateTime();
+    }
+
+    private Instant lastTime() {
+        if (isFinished()) {
+            return finishedStatus.getUpdateTime();
+        } else if (isStarted()) {
+            return startedStatus.getUpdateTime();
+        } else {
+            return createdStatus.getUpdateTime();
+        }
+    }
+
     public static final class Builder {
         private String jobId;
         private CompactionJobCreatedStatus createdStatus;
@@ -156,13 +175,13 @@ public class CompactionJobStatus {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        CompactionJobStatus that = (CompactionJobStatus) o;
-        return jobId.equals(that.jobId) && createdStatus.equals(that.createdStatus);
+        CompactionJobStatus status = (CompactionJobStatus) o;
+        return jobId.equals(status.jobId) && createdStatus.equals(status.createdStatus) && Objects.equals(startedStatus, status.startedStatus) && Objects.equals(finishedStatus, status.finishedStatus);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, createdStatus);
+        return Objects.hash(jobId, createdStatus, startedStatus, finishedStatus);
     }
 
     @Override
@@ -170,6 +189,8 @@ public class CompactionJobStatus {
         return "CompactionJobStatus{" +
                 "jobId='" + jobId + '\'' +
                 ", createdStatus=" + createdStatus +
+                ", startedStatus=" + startedStatus +
+                ", finishedStatus=" + finishedStatus +
                 '}';
     }
 }

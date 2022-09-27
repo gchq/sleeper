@@ -15,13 +15,18 @@
  */
 package sleeper.compaction.status.job.testutils;
 
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import org.assertj.core.api.AbstractListAssert;
-import org.assertj.core.api.ObjectAssert;
+import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.After;
 import org.junit.Before;
+import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
+import sleeper.compaction.job.CompactionJobRecordsProcessed;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobFinishedStatus;
+import sleeper.compaction.job.status.CompactionJobStartedStatus;
+import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.configuration.properties.InstanceProperties;
@@ -33,24 +38,29 @@ import sleeper.core.schema.Schema;
 import sleeper.statestore.FileInfoFactory;
 
 import java.time.Instant;
+import java.time.Period;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
 import static sleeper.compaction.status.job.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
 import static sleeper.compaction.status.job.testutils.CompactionStatusStoreTestUtils.createSchema;
 import static sleeper.compaction.status.job.testutils.CompactionStatusStoreTestUtils.createTableProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
 
+    protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
+            .withIgnoredFields("createdStatus.updateTime", "startedStatus.updateTime", "finishedStatus.updateTime").build();
+
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final String tableName = jobStatusTableName(instanceProperties.get(ID));
+    private final String jobStatusTableName = jobStatusTableName(instanceProperties.get(ID));
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
 
+    protected final String tableName = tableProperties.get(TABLE_NAME);
     protected final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
     protected final CompactionJobStatusStore store = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
 
@@ -61,7 +71,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
 
     @After
     public void tearDown() {
-        dynamoDBClient.deleteTable(tableName);
+        dynamoDBClient.deleteTable(jobStatusTableName);
     }
 
     protected Partition singlePartition() {
@@ -82,8 +92,50 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return new FileInfoFactory(schema, partitions, Instant.now());
     }
 
-    protected AbstractListAssert<?, List<? extends AssertDynamoDBRecord>, AssertDynamoDBRecord, ObjectAssert<AssertDynamoDBRecord>> assertThatItemsInTable() {
-        return assertThat(dynamoDBClient.scan(new ScanRequest().withTableName(tableName)).getItems())
-                .extracting(AssertDynamoDBJobStatusRecord::actualIgnoringUpdateTime);
+    protected CompactionJobFactory jobFactoryForTable(String tableName) {
+        TableProperties tableProperties = createTableProperties(schema, instanceProperties);
+        tableProperties.set(TABLE_NAME, tableName);
+        return new CompactionJobFactory(instanceProperties, tableProperties);
+    }
+
+    protected static Instant ignoredUpdateTime() {
+        return Instant.now();
+    }
+
+    protected static Instant defaultStartTime() {
+        return Instant.parse("2022-09-23T10:51:00.001Z");
+    }
+
+    protected static CompactionJobSummary defaultSummary() {
+        return new CompactionJobSummary(
+                new CompactionJobRecordsProcessed(200L, 100L),
+                defaultStartTime(), Instant.parse("2022-09-23T10:52:00.001Z"));
+    }
+
+    protected static CompactionJobStatus startedStatusWithDefaults(CompactionJob job) {
+        return CompactionJobStatus.builder().jobId(job.getId())
+                .createdStatus(CompactionJobCreatedStatus.from(
+                        job, ignoredUpdateTime()))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
+                        ignoredUpdateTime(), defaultStartTime()))
+                .build();
+    }
+
+    protected static CompactionJobStatus finishedStatusWithDefaults(CompactionJob job) {
+        return CompactionJobStatus.builder().jobId(job.getId())
+                .createdStatus(CompactionJobCreatedStatus.from(
+                        job, ignoredUpdateTime()))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
+                        ignoredUpdateTime(), defaultStartTime()))
+                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(
+                        ignoredUpdateTime(), defaultSummary()))
+                .build();
+    }
+
+
+    protected List<CompactionJobStatus> getAllJobStatuses() {
+        Instant epochStart = Instant.ofEpochMilli(0);
+        Instant farFuture = epochStart.plus(Period.ofDays(999999999));
+        return store.getJobsInTimePeriod(tableName, epochStart, farFuture);
     }
 }
