@@ -70,6 +70,7 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
+import sleeper.ingest.IngestProperties;
 import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -686,22 +687,21 @@ public class SqsQueryProcessorLambdaIT {
         AmazonS3 s3Client = createS3Client();
         DynamoDBStateStore stateStore = new DynamoDBStateStore(tableProperties, dynamoClient);
         try {
-            new IngestRecordsFromIterator(new ObjectFactory(instanceProperties, s3Client, "/tmp"),
-                    generateTimeSeriesData(minYear, maxYear).iterator(),
-                    dataDir,
-                    1000L,
-                    1024L,
-                    tableProperties.getInt(ROW_GROUP_SIZE),
-                    tableProperties.getInt(PAGE_SIZE),
-                    tableProperties.get(COMPRESSION_CODEC),
-                    stateStore,
-                    tableProperties.getSchema(),
-                    "file://",
-                    tableProperties.get(DATA_BUCKET),
-                    null,
-                    null,
-                    10
-            ).write();
+            IngestProperties properties = IngestProperties.builder()
+                    .objectFactory(new ObjectFactory(instanceProperties, null, "/tmp"))
+                    .localDir(dataDir)
+                    .maxRecordsToWriteLocally(10L)
+                    .maxInMemoryBatchSize(1000L)
+                    .rowGroupSize(tableProperties.getInt(ROW_GROUP_SIZE))
+                    .pageSize(tableProperties.getInt(PAGE_SIZE))
+                    .compressionCodec(tableProperties.get(COMPRESSION_CODEC))
+                    .stateStore(stateStore)
+                    .schema(tableProperties.getSchema())
+                    .filePathPrefix("file://")
+                    .bucketName(tableProperties.get(DATA_BUCKET))
+                    .ingestPartitionRefreshFrequencyInSecond(10)
+                    .build();
+            new IngestRecordsFromIterator(properties, generateTimeSeriesData(minYear, maxYear).iterator()).write();
         } catch (IOException | StateStoreException | InterruptedException | IteratorException |
                  ObjectFactoryException e) {
             throw new RuntimeException("Failed to Ingest data", e);
