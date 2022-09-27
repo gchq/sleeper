@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class StatusReporterDetailedQueryTest extends StatusReporterTest {
@@ -47,7 +48,7 @@ public class StatusReporterDetailedQueryTest extends StatusReporterTest {
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
                 .isEqualTo(example("reports/compactionjobstatus/standard/detailed/standardJobCreated.txt")
                         .replace("$(jobId)", job.getId()));
-        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
+        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
                 .isEqualTo(example("reports/compactionjobstatus/json/standardJobCreated.json")
                         .replace("$(jobId)", job.getId()));
     }
@@ -69,7 +70,7 @@ public class StatusReporterDetailedQueryTest extends StatusReporterTest {
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
                 .isEqualTo(example("reports/compactionjobstatus/standard/detailed/standardJobStarted.txt")
                         .replace("$(jobId)", job.getId()));
-        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
+        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
                 .isEqualTo(example("reports/compactionjobstatus/json/standardJobStarted.json")
                         .replace("$(jobId)", job.getId()));
     }
@@ -92,7 +93,7 @@ public class StatusReporterDetailedQueryTest extends StatusReporterTest {
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
                 .isEqualTo(example("reports/compactionjobstatus/standard/detailed/standardJobFinished.txt")
                         .replace("$(jobId)", job.getId()));
-        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
+        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
                 .isEqualTo(example("reports/compactionjobstatus/json/standardJobFinished.json")
                         .replace("$(jobId)", job.getId()));
     }
@@ -124,7 +125,7 @@ public class StatusReporterDetailedQueryTest extends StatusReporterTest {
                         .replace("$(jobId1)", job1.getId())
                         .replace("$(jobId2)", job2.getId())
                         .replace("$(jobId3)", job3.getId()));
-        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
+        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
                 .isEqualTo(example("reports/compactionjobstatus/json/multipleJobs.json")
                         .replace("$(jobId1)", job1.getId())
                         .replace("$(jobId2)", job2.getId())
