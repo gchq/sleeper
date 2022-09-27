@@ -46,6 +46,25 @@ public class CompactionJob {
         this.jobId = jobId;
     }
 
+    private CompactionJob(Builder builder) {
+        setTableName(builder.tableName);
+        jobId = builder.jobId;
+        setInputFiles(builder.inputFiles);
+        setOutputFile(builder.outputFile);
+        setOutputFiles(builder.outputFiles);
+        setChildPartitions(builder.childPartitions);
+        setPartitionId(builder.partitionId);
+        isSplittingJob = builder.isSplittingJob;
+        setSplitPoint(builder.splitPoint);
+        setDimension(builder.dimension);
+        setIteratorClassName(builder.iteratorClassName);
+        setIteratorConfig(builder.iteratorConfig);
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public String getTableName() {
         return tableName;
     }
@@ -217,5 +236,87 @@ public class CompactionJob {
                 ", iteratorClassName=" + iteratorClassName +
                 ", iteratorConfig=" + iteratorConfig +
                 '}';
+    }
+
+    public static final class Builder {
+        private String tableName;
+        private String jobId;
+        private List<String> inputFiles;
+        private String outputFile;
+        private MutablePair<String, String> outputFiles;
+        private List<String> childPartitions;
+        private String partitionId;
+        private boolean isSplittingJob;
+        private Object splitPoint;
+        private int dimension;
+        private String iteratorClassName;
+        private String iteratorConfig;
+
+        private Builder() {
+        }
+
+        public Builder tableName(String tableName) {
+            this.tableName = tableName;
+            return this;
+        }
+
+        public Builder jobId(String jobId) {
+            this.jobId = jobId;
+            return this;
+        }
+
+        public Builder inputFiles(List<String> inputFiles) {
+            this.inputFiles = inputFiles;
+            return this;
+        }
+
+        public Builder outputFile(String outputFile) {
+            this.outputFile = outputFile;
+            return this;
+        }
+
+        public Builder outputFiles(MutablePair<String, String> outputFiles) {
+            this.outputFiles = outputFiles;
+            return this;
+        }
+
+        public Builder childPartitions(List<String> childPartitions) {
+            this.childPartitions = childPartitions;
+            return this;
+        }
+
+        public Builder partitionId(String partitionId) {
+            this.partitionId = partitionId;
+            return this;
+        }
+
+        public Builder isSplittingJob(boolean isSplittingJob) {
+            this.isSplittingJob = isSplittingJob;
+            return this;
+        }
+
+        public Builder splitPoint(Object splitPoint) {
+            this.splitPoint = splitPoint;
+            return this;
+        }
+
+        public Builder dimension(int dimension) {
+            this.dimension = dimension;
+            return this;
+        }
+
+        public Builder iteratorClassName(String iteratorClassName) {
+            this.iteratorClassName = iteratorClassName;
+            return this;
+        }
+
+        public Builder iteratorConfig(String iteratorConfig) {
+            this.iteratorConfig = iteratorConfig;
+            return this;
+        }
+
+        public CompactionJob build() {
+            return new CompactionJob(this);
+        }
     }
 }
