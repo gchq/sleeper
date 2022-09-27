@@ -51,7 +51,7 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
 
         // Then
         List<CompactionJobStatus> statusList = Stream.of(status)
-                .filter(j -> isFinishedInRange(j, startRange, endRange))
+                .filter(j -> j.isInPeriod(startRange, endRange))
                 .collect(Collectors.toList());
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
                 .isEqualTo(example("reports/compactionjobstatus/standard/range/standardJobFinishedInRange.txt")
@@ -77,7 +77,7 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
 
         // Then
         List<CompactionJobStatus> statusList = Stream.of(status)
-                .filter(j -> isFinishedInRange(j, startRange, endRange))
+                .filter(j -> j.isInPeriod(startRange, endRange))
                 .collect(Collectors.toList());
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
                 .isEqualTo(example("reports/compactionjobstatus/standard/range/splittingJobFinishedInRange.txt")
@@ -104,7 +104,7 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
 
         // Then
         List<CompactionJobStatus> statusList = Stream.of(status)
-                .filter(j -> isFinishedInRange(j, startRange, endRange))
+                .filter(j -> j.isInPeriod(startRange, endRange))
                 .collect(Collectors.toList());
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
                 .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt"));
@@ -128,7 +128,7 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
 
         // Then
         List<CompactionJobStatus> statusList = Stream.of(status)
-                .filter(j -> isFinishedInRange(j, startRange, endRange))
+                .filter(j -> j.isInPeriod(startRange, endRange))
                 .collect(Collectors.toList());
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
                 .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt"));
@@ -153,7 +153,7 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
 
         // Then
         List<CompactionJobStatus> statusList = Stream.of(status)
-                .filter(j -> isFinishedInRange(j, startRange, endRange))
+                .filter(j -> j.isInPeriod(startRange, endRange))
                 .collect(Collectors.toList());
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
                 .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt"));
@@ -177,7 +177,7 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
 
         // Then
         List<CompactionJobStatus> statusList = Stream.of(status)
-                .filter(j -> isFinishedInRange(j, startRange, endRange))
+                .filter(j -> j.isInPeriod(startRange, endRange))
                 .collect(Collectors.toList());
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
                 .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt"));
