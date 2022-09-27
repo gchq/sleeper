@@ -25,7 +25,6 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.statestore.StateStoreException;
 import sleeper.status.report.compactionjob.CompactionJobStatusCollector;
 import sleeper.status.report.compactionjob.CompactionJobStatusReporter;
 import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
@@ -199,9 +198,20 @@ public class CompactionJobStatusReport {
         }
     }
 
-    public static void main(String[] args) throws IOException, StateStoreException {
+    /**
+     * Command line interface to retrieve compaction job statistics.
+     * Can define query type and parameters or interactive if no query type provided
+     * Range example
+     * java CompactionJobStatusReport "test-instance" "standard" -r 20220927120000,20220927184500
+     * Interactive example
+     * java CompactionJobStatusReport "test-instance" "standard"
+     *
+     * @param args -
+     * @throws IOException -
+     */
+    public static void main(String[] args) throws IOException {
         if (!(args.length >= 1 && args.length <= 4)) {
-            throw new IllegalArgumentException("Usage: <instance id> <report_type_standard_or_csv_or_json> <optional_query_type> <optional_query_parameters> \n" +
+            throw new IllegalArgumentException("Usage: <instance id> <report_type_standard_or_json> <optional_query_type> <optional_query_parameters> \n" +
                     "Query types are:\n" +
                     "-d (Detailed, provide comma separated list of jobIds)\n" +
                     "-r (Provide startRange and endRange separated by commas in format yyyyMMddhhmmss)\n" +
