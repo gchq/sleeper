@@ -37,8 +37,8 @@ public class CompactionJobStatusCollector {
         return compactionJobStatusStore.getUnfinishedJobs(tableName);
     }
 
-    public List<CompactionJobStatus> runRangeQuery(Instant startTime, Instant endTime) {
-        return compactionJobStatusStore.getJobsInTimePeriod(tableName, startTime, endTime);
+    public List<CompactionJobStatus> runRangeQuery(Instant startRange, Instant endRange) {
+        return compactionJobStatusStore.getJobsInTimePeriod(tableName, startRange, endRange);
     }
 
     public List<CompactionJobStatus> runDetailedQuery(List<String> jobIds) {
