@@ -253,21 +253,23 @@ public class SizeRatioCompactionStrategyTest {
     }
 
     private void checkJob(CompactionJob job, List<String> files, String partitionId, String fs, String bucket) {
-        CompactionJob expectedCompactionJob = new CompactionJob("table", job.getId()); // Job id is a UUID so we don't know what it will be
-        expectedCompactionJob.setPartitionId(partitionId);
         List<String> filesForJob = new ArrayList<>();
         for (String file : files) {
             filesForJob.add(file);
         }
-        expectedCompactionJob.setInputFiles(filesForJob);
+        CompactionJob expectedCompactionJob = CompactionJob.builder()
+                .tableName("table")
+                .jobId(job.getId()) // Job id is a UUID so we don't know what it will be
+                .partitionId(partitionId)
+                .inputFiles(filesForJob)
+                .isSplittingJob(false)
+                .outputFile(fs + bucket + "/partition_" + partitionId + "/" + job.getId() + ".parquet")
+                .childPartitions(null)
+                .splitPoint(null)
+                .dimension(-1)
+                .iteratorClassName(null)
+                .iteratorConfig(null).build();
         job.getInputFiles().sort(Comparator.naturalOrder());
-        expectedCompactionJob.setIsSplittingJob(false);
-        expectedCompactionJob.setOutputFile(fs + bucket + "/partition_" + partitionId + "/" + job.getId() + ".parquet");
-        expectedCompactionJob.setChildPartitions(null);
-        expectedCompactionJob.setSplitPoint(null);
-        expectedCompactionJob.setDimension(-1);
-        expectedCompactionJob.setIteratorClassName(null);
-        expectedCompactionJob.setIteratorConfig(null);
         assertThat(job).isEqualTo(expectedCompactionJob);
     }
 }

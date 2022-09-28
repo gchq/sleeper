@@ -236,18 +236,22 @@ public class CompactSortedFilesRunnerIT {
         //  - Update Dynamo state store with details of files
         stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
         //  - Create two compaction jobs and put on queue
-        CompactionJob compactionJob1 = new CompactionJob(tableName, "job1");
-        compactionJob1.setPartitionId("root");
-        compactionJob1.setDimension(0);
-        compactionJob1.setInputFiles(Arrays.asList(file1, file2));
-        compactionJob1.setIsSplittingJob(false);
-        compactionJob1.setOutputFile(folderName + "/output1.parquet");
-        CompactionJob compactionJob2 = new CompactionJob(tableName, "job2");
-        compactionJob2.setPartitionId("root");
-        compactionJob2.setDimension(0);
-        compactionJob2.setInputFiles(Arrays.asList(file3, file4));
-        compactionJob2.setIsSplittingJob(false);
-        compactionJob2.setOutputFile(folderName + "/output2.parquet");
+        CompactionJob compactionJob1 = CompactionJob.builder()
+                .tableName(tableName)
+                .jobId("job1")
+                .partitionId("root")
+                .dimension(0)
+                .inputFiles(Arrays.asList(file1, file2))
+                .isSplittingJob(false)
+                .outputFile(folderName + "/output1.parquet").build();
+        CompactionJob compactionJob2 = CompactionJob.builder()
+                .tableName(tableName)
+                .jobId("job2")
+                .partitionId("root")
+                .dimension(0)
+                .inputFiles(Arrays.asList(file3, file4))
+                .isSplittingJob(false)
+                .outputFile(folderName + "/output2.parquet").build();
         CompactionJobSerDe jobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         String job1Json = jobSerDe.serialiseToString(compactionJob1);
         String job2Json = jobSerDe.serialiseToString(compactionJob2);

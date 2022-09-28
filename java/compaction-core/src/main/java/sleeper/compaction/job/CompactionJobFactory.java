@@ -70,18 +70,20 @@ public class CompactionJobFactory {
         List<String> jobFiles = files.stream()
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
-        CompactionJob compactionJob = new CompactionJob(tableName, jobId);
-        compactionJob.setIsSplittingJob(true);
-        compactionJob.setInputFiles(jobFiles);
         String leftOutputFile = outputFileForPartitionAndJob(leftPartitionId, jobId);
         String rightOutputFile = outputFileForPartitionAndJob(rightPartitionId, jobId);
-        compactionJob.setOutputFiles(new MutablePair<>(leftOutputFile, rightOutputFile));
-        compactionJob.setSplitPoint(splitPoint);
-        compactionJob.setDimension(dimension);
-        compactionJob.setPartitionId(partition);
-        compactionJob.setChildPartitions(Arrays.asList(leftPartitionId, rightPartitionId));
-        compactionJob.setIteratorClassName(iteratorClassName);
-        compactionJob.setIteratorConfig(iteratorConfig);
+        CompactionJob compactionJob = CompactionJob.builder()
+                .tableName(tableName)
+                .jobId(jobId)
+                .isSplittingJob(true)
+                .inputFiles(jobFiles)
+                .outputFiles(new MutablePair<>(leftOutputFile, rightOutputFile))
+                .splitPoint(splitPoint)
+                .dimension(dimension)
+                .partitionId(partition)
+                .childPartitions(Arrays.asList(leftPartitionId, rightPartitionId))
+                .iteratorClassName(iteratorClassName)
+                .iteratorConfig(iteratorConfig).build();
 
         LOGGER.info("Created compaction job of id {} to compact and split {} files in partition {}, into partitions {} and {}, to output files {}, {}",
                 jobId, files.size(), partition, leftPartitionId, rightPartitionId, leftOutputFile, rightOutputFile);
@@ -103,14 +105,16 @@ public class CompactionJobFactory {
         List<String> jobFiles = files.stream()
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
-        CompactionJob compactionJob = new CompactionJob(tableName, jobId);
-        compactionJob.setIsSplittingJob(false);
-        compactionJob.setDimension(-1);
-        compactionJob.setInputFiles(jobFiles);
-        compactionJob.setOutputFile(outputFile);
-        compactionJob.setPartitionId(partition);
-        compactionJob.setIteratorClassName(iteratorClassName);
-        compactionJob.setIteratorConfig(iteratorConfig);
+        CompactionJob compactionJob = CompactionJob.builder()
+                .tableName(tableName)
+                .jobId(jobId)
+                .isSplittingJob(false)
+                .dimension(-1)
+                .inputFiles(jobFiles)
+                .outputFile(outputFile)
+                .partitionId(partition)
+                .iteratorClassName(iteratorClassName)
+                .iteratorConfig(iteratorConfig).build();
 
         LOGGER.info("Created compaction job of id {} to compact and split {} files in partition {} to output file {}",
                 jobId, files.size(), partition, outputFile);
