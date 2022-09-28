@@ -1,0 +1,81 @@
+[
+  {
+    "jobId": "$(jobId1)",
+    "createdStatus": {
+      "updateTime": {
+        "seconds": 1663421592,
+        "nanos": 1000000
+      },
+      "partitionId": "root",
+      "inputFilesCount": 1,
+      "childPartitionIds": []
+    }
+  },
+  {
+    "jobId": "$(jobId2)",
+    "createdStatus": {
+      "updateTime": {
+        "seconds": 1663507992,
+        "nanos": 1000000
+      },
+      "partitionId": "root",
+      "inputFilesCount": 1,
+      "childPartitionIds": []
+    },
+    "startedStatus": {
+      "updateTime": {
+        "seconds": 1663508352,
+        "nanos": 1000000
+      },
+      "startTime": {
+        "seconds": 1663508052,
+        "nanos": 1000000
+      }
+    }
+  },
+  {
+    "jobId": "$(jobId3)",
+    "createdStatus": {
+      "updateTime": {
+        "seconds": 1663594392,
+        "nanos": 1000000
+      },
+      "partitionId": "root",
+      "inputFilesCount": 1,
+      "childPartitionIds": []
+    },
+    "startedStatus": {
+      "updateTime": {
+        "seconds": 1663594752,
+        "nanos": 1000000
+      },
+      "startTime": {
+        "seconds": 1663594452,
+        "nanos": 1000000
+      }
+    },
+    "finishedStatus": {
+      "updateTime": {
+        "seconds": 1663594812,
+        "nanos": 1000000
+      },
+      "summary": {
+        "recordsProcessed": {
+          "linesRead": 600,
+          "linesWritten": 300
+        },
+        "startTime": {
+          "seconds": 1663594752,
+          "nanos": 1000000
+        },
+        "finishTime": {
+          "seconds": 1663594812,
+          "nanos": 1000000
+        },
+        "durationInSeconds": 60.0,
+        "recordsReadPerSecond": 10.0,
+        "recordsWrittenPerSecond": 5.0
+      }
+    }
+  }
+]
