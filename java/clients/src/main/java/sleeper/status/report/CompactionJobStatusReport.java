@@ -17,10 +17,6 @@
 package sleeper.status.report;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import sleeper.ClientUtils;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
@@ -83,22 +79,49 @@ public class CompactionJobStatusReport {
     public void run() {
         Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.displayName());
         while (true) {
-            System.out.print("Detailed (d), range (r), or unfinished (u) query? ");
+            System.out.print("All (a), Detailed (d), range (r), or unfinished (u) query? ");
             String type = scanner.nextLine();
             if ("".equals(type)) {
                 break;
             }
             if (!type.equalsIgnoreCase("d") && !type.equalsIgnoreCase("r")
-                    && !type.equalsIgnoreCase("u")) {
+                    && !type.equalsIgnoreCase("u") && !type.equalsIgnoreCase("a")) {
                 continue;
             }
-            if (type.equalsIgnoreCase("d")) {
+            if (type.equalsIgnoreCase("a")) {
+                handleAllQuery();
+            } else if (type.equalsIgnoreCase("d")) {
                 handleDetailedQuery(scanner);
             } else if (type.equalsIgnoreCase("r")) {
                 handleRangeQuery(scanner);
             } else {
                 handleUnfinishedQuery();
             }
+        }
+    }
+
+    public void parseQueryParameters(QueryType queryType, String queryParameters) {
+        if (queryType.equals(QueryType.UNFINISHED)) {
+            handleUnfinishedQuery();
+        } else if (queryType.equals(QueryType.DETAILED)) {
+            List<String> jobIds = Collections.singletonList(queryParameters);
+            handleDetailedQuery(jobIds);
+        } else if (queryType.equals(QueryType.RANGE)) {
+            Instant startRange;
+            Instant endRange;
+            try {
+                Date startRangeDate = dateInputFormat.parse(queryParameters.split(",")[0]);
+                startRange = startRangeDate.toInstant();
+                Date endRangeDate = dateInputFormat.parse(queryParameters.split(",")[1]);
+                endRange = endRangeDate.toInstant();
+            } catch (ParseException e) {
+                System.out.println("Error while parsing input string, using system defaults (past 4 hours)");
+                startRange = DEFAULT_RANGE_START;
+                endRange = DEFAULT_RANGE_END;
+            }
+            handleRangeQuery(startRange, endRange);
+        } else if (queryType.equals(QueryType.ALL)) {
+            handleAllQuery();
         }
     }
 
@@ -170,27 +193,9 @@ public class CompactionJobStatusReport {
         compactionJobStatusReporter.report(statusList, QueryType.DETAILED);
     }
 
-    public void parseQueryParameters(QueryType queryType, String queryParameters) {
-        if (queryType.equals(QueryType.UNFINISHED)) {
-            handleUnfinishedQuery();
-        } else if (queryType.equals(QueryType.DETAILED)) {
-            List<String> jobIds = Collections.singletonList(queryParameters);
-            handleDetailedQuery(jobIds);
-        } else if (queryType.equals(QueryType.RANGE)) {
-            Instant startRange;
-            Instant endRange;
-            try {
-                Date startRangeDate = dateInputFormat.parse(queryParameters.split(",")[0]);
-                startRange = startRangeDate.toInstant();
-                Date endRangeDate = dateInputFormat.parse(queryParameters.split(",")[1]);
-                endRange = endRangeDate.toInstant();
-            } catch (ParseException e) {
-                System.out.println("Error while parsing input string, using system defaults (past 4 hours)");
-                startRange = DEFAULT_RANGE_START;
-                endRange = DEFAULT_RANGE_END;
-            }
-            handleRangeQuery(startRange, endRange);
-        }
+    public void handleAllQuery() {
+        List<CompactionJobStatus> statusList = compactionJobStatusCollector.runAllQuery();
+        compactionJobStatusReporter.report(statusList, QueryType.ALL);
     }
 
     /**
@@ -208,6 +213,7 @@ public class CompactionJobStatusReport {
         if (!(args.length >= 1 && args.length <= 4)) {
             throw new IllegalArgumentException("Usage: <instance id> <report_type_standard_or_json> <optional_query_type> <optional_query_parameters> \n" +
                     "Query types are:\n" +
+                    "-a (Return all jobs)\n" +
                     "-d (Detailed, provide a jobId)\n" +
                     "-r (Provide startRange and endRange separated by commas in format yyyyMMddhhmmss)\n" +
                     "-u (Unfinished jobs)");
@@ -224,7 +230,7 @@ public class CompactionJobStatusReport {
                 throw new IllegalArgumentException("Invalid query type " + args[2] + ". Valid query types are -d (Detailed), -r (Range), -u (Unfinished)");
             }
             queryType = QUERY_TYPES.get(args[2]);
-            if (args.length >= 4 && !queryType.equals(QueryType.UNFINISHED)) {
+            if (args.length >= 4 && !(queryType.equals(QueryType.UNFINISHED) || queryType.equals(QueryType.ALL))) {
                 throw new IllegalArgumentException("No parameters provided for query type " + queryType);
             }
             queryParameters = "";
@@ -233,11 +239,11 @@ public class CompactionJobStatusReport {
             }
         }
 
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
-
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        CompactionJobStatusReport statusReport = new CompactionJobStatusReport(dynamoDBClient, instanceProperties, reporterType);
+//        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
+//        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
+//
+//        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        CompactionJobStatusReport statusReport = new CompactionJobStatusReport(null, new InstanceProperties(), reporterType);
         if (null != queryType) {
             statusReport.parseQueryParameters(queryType, queryParameters);
         } else {

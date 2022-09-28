@@ -20,7 +20,9 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 
 import java.time.Instant;
+import java.time.Period;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,6 +45,13 @@ public class CompactionJobStatusCollector {
 
     public List<CompactionJobStatus> runDetailedQuery(List<String> jobIds) {
         return jobIds.stream().map(compactionJobStatusStore::getJob).collect(Collectors.toList());
+    }
+
+    public List<CompactionJobStatus> runAllQuery() {
+        Instant epochStart = Instant.ofEpochMilli(0);
+        Instant farFuture = epochStart.plus(Period.ofDays(999999999));
+        //return compactionJobStatusStore.getJobsInTimePeriod(tableName, epochStart, farFuture);
+        return Collections.emptyList();
     }
 
     public List<CompactionJobStatus> runDetailedQuery(String... jobIds) {
