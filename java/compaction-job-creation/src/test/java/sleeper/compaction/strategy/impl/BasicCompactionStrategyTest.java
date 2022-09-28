@@ -92,16 +92,18 @@ public class BasicCompactionStrategyTest {
 
         // Then
         assertThat(compactionJobs).hasSize(1);
-        CompactionJob expectedCompactionJob = new CompactionJob("table", compactionJobs.get(0).getId()); // Job id is a UUID so we don't know what it will be
-        expectedCompactionJob.setPartitionId(partition.getId());
-        expectedCompactionJob.setInputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()));
-        expectedCompactionJob.setIsSplittingJob(false);
-        expectedCompactionJob.setOutputFile(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET) + "/partition_" + partition.getId() + "/" + compactionJobs.get(0).getId() + ".parquet");
-        expectedCompactionJob.setChildPartitions(null);
-        expectedCompactionJob.setSplitPoint(null);
-        expectedCompactionJob.setDimension(-1);
-        expectedCompactionJob.setIteratorClassName(null);
-        expectedCompactionJob.setIteratorConfig(null);
+        CompactionJob expectedCompactionJob = CompactionJob.builder()
+                .tableName("table")
+                .jobId(compactionJobs.get(0).getId()) // Job id is a UUID so we don't know what it will be
+                .partitionId(partition.getId())
+                .inputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()))
+                .isSplittingJob(false)
+                .outputFile(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET) + "/partition_" + partition.getId() + "/" + compactionJobs.get(0).getId() + ".parquet")
+                .childPartitions(null)
+                .splitPoint(null)
+                .dimension(-1)
+                .iteratorClassName(null)
+                .iteratorConfig(null).build();
         assertThat(compactionJobs).containsExactly(expectedCompactionJob);
     }
 
@@ -143,21 +145,22 @@ public class BasicCompactionStrategyTest {
 
         // Then
         assertThat(compactionJobs).hasSize(10).isEqualTo(IntStream.range(0, 10).mapToObj(i -> {
-            CompactionJob expectedCompactionJob = new CompactionJob("table", compactionJobs.get(i).getId()); // Job id is a UUID so we don't know what it will be
-            expectedCompactionJob.setPartitionId(partition.getId());
             List<String> inputFiles = new ArrayList<>();
             for (int j = 99 - i * 10; j > 99 - (i + 1) * 10; j--) {
                 inputFiles.add("file-" + j);
             }
-            expectedCompactionJob.setInputFiles(inputFiles);
-            expectedCompactionJob.setIsSplittingJob(false);
-            expectedCompactionJob.setOutputFile(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET) + "/partition_" + partition.getId() + "/" + compactionJobs.get(i).getId() + ".parquet");
-            expectedCompactionJob.setChildPartitions(null);
-            expectedCompactionJob.setSplitPoint(null);
-            expectedCompactionJob.setDimension(-1);
-            expectedCompactionJob.setIteratorClassName(null);
-            expectedCompactionJob.setIteratorConfig(null);
-            return expectedCompactionJob;
+            return CompactionJob.builder()
+                    .tableName("table")
+                    .jobId(compactionJobs.get(i).getId()) // Job id is a UUID so we don't know what it will be
+                    .partitionId(partition.getId())
+                    .inputFiles(inputFiles)
+                    .isSplittingJob(false)
+                    .outputFile(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET) + "/partition_" + partition.getId() + "/" + compactionJobs.get(i).getId() + ".parquet")
+                    .childPartitions(null)
+                    .splitPoint(null)
+                    .dimension(-1)
+                    .iteratorClassName(null)
+                    .iteratorConfig(null).build();
         }).collect(Collectors.toList()));
     }
 
@@ -310,36 +313,42 @@ public class BasicCompactionStrategyTest {
 
         // Then
         assertThat(compactionJobs).hasSize(3);
-        CompactionJob expectedCompactionJob1 = new CompactionJob("table", compactionJobs.get(0).getId()); // Job id is a UUID so we don't know what it will be
-        expectedCompactionJob1.setPartitionId("left");
-        expectedCompactionJob1.setInputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()));
-        expectedCompactionJob1.setIsSplittingJob(false);
-        expectedCompactionJob1.setOutputFile(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET) + "/partition_left/" + compactionJobs.get(0).getId() + ".parquet");
-        expectedCompactionJob1.setChildPartitions(null);
-        expectedCompactionJob1.setSplitPoint(null);
-        expectedCompactionJob1.setDimension(-1);
-        expectedCompactionJob1.setIteratorClassName(null);
-        expectedCompactionJob1.setIteratorConfig(null);
-        CompactionJob expectedCompactionJob2 = new CompactionJob("table", compactionJobs.get(1).getId()); // Job id is a UUID so we don't know what it will be
-        expectedCompactionJob2.setPartitionId("left");
-        expectedCompactionJob2.setInputFiles(Arrays.asList(fileInfo3.getFilename(), fileInfo4.getFilename()));
-        expectedCompactionJob2.setIsSplittingJob(false);
-        expectedCompactionJob2.setOutputFile(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET) + "/partition_left/" + compactionJobs.get(1).getId() + ".parquet");
-        expectedCompactionJob2.setChildPartitions(null);
-        expectedCompactionJob2.setSplitPoint(null);
-        expectedCompactionJob2.setDimension(-1);
-        expectedCompactionJob2.setIteratorClassName(null);
-        expectedCompactionJob2.setIteratorConfig(null);
-        CompactionJob expectedCompactionJob3 = new CompactionJob("table", compactionJobs.get(2).getId()); // Job id is a UUID so we don't know what it will be
-        expectedCompactionJob3.setPartitionId("right");
-        expectedCompactionJob3.setInputFiles(Arrays.asList(fileInfo5.getFilename(), fileInfo6.getFilename()));
-        expectedCompactionJob3.setIsSplittingJob(false);
-        expectedCompactionJob3.setOutputFile(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET) + "/partition_right/" + compactionJobs.get(2).getId() + ".parquet");
-        expectedCompactionJob3.setChildPartitions(null);
-        expectedCompactionJob3.setSplitPoint(null);
-        expectedCompactionJob3.setDimension(-1);
-        expectedCompactionJob3.setIteratorClassName(null);
-        expectedCompactionJob3.setIteratorConfig(null);
+        CompactionJob expectedCompactionJob1 = CompactionJob.builder()
+                .tableName("table")
+                .jobId(compactionJobs.get(0).getId()) // Job id is a UUID so we don't know what it will be
+                .partitionId("left")
+                .inputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()))
+                .isSplittingJob(false)
+                .outputFile(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET) + "/partition_left/" + compactionJobs.get(0).getId() + ".parquet")
+                .childPartitions(null)
+                .splitPoint(null)
+                .dimension(-1)
+                .iteratorClassName(null)
+                .iteratorConfig(null).build();
+        CompactionJob expectedCompactionJob2 = CompactionJob.builder()
+                .tableName("table")
+                .jobId(compactionJobs.get(1).getId()) // Job id is a UUID so we don't know what it will be
+                .partitionId("left")
+                .inputFiles(Arrays.asList(fileInfo3.getFilename(), fileInfo4.getFilename()))
+                .isSplittingJob(false)
+                .outputFile(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET) + "/partition_left/" + compactionJobs.get(1).getId() + ".parquet")
+                .childPartitions(null)
+                .splitPoint(null)
+                .dimension(-1)
+                .iteratorClassName(null)
+                .iteratorConfig(null).build();
+        CompactionJob expectedCompactionJob3 = CompactionJob.builder()
+                .tableName("table")
+                .jobId(compactionJobs.get(2).getId()) // Job id is a UUID so we don't know what it will be
+                .partitionId("right")
+                .inputFiles(Arrays.asList(fileInfo5.getFilename(), fileInfo6.getFilename()))
+                .isSplittingJob(false)
+                .outputFile(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET) + "/partition_right/" + compactionJobs.get(2).getId() + ".parquet")
+                .childPartitions(null)
+                .splitPoint(null)
+                .dimension(-1)
+                .iteratorClassName(null)
+                .iteratorConfig(null).build();
         assertThat(compactionJobs).containsExactly(
                 expectedCompactionJob1, expectedCompactionJob2, expectedCompactionJob3);
     }
@@ -414,19 +423,21 @@ public class BasicCompactionStrategyTest {
 
         // Then
         assertThat(compactionJobs).hasSize(1);
-        CompactionJob expectedCompactionJob = new CompactionJob("table", compactionJobs.get(0).getId()); // Job id is a UUID so we don't know what it will be
-        expectedCompactionJob.setPartitionId("root");
-        expectedCompactionJob.setInputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()));
-        expectedCompactionJob.setIsSplittingJob(true);
-        expectedCompactionJob.setOutputFile(null);
-        expectedCompactionJob.setOutputFiles(new MutablePair<>(
-                compactionJobs.get(0).getOutputFiles().getLeft(),
-                compactionJobs.get(0).getOutputFiles().getRight()));
-        expectedCompactionJob.setChildPartitions(Arrays.asList("left", "right"));
-        expectedCompactionJob.setSplitPoint(10);
-        expectedCompactionJob.setDimension(0);
-        expectedCompactionJob.setIteratorClassName(null);
-        expectedCompactionJob.setIteratorConfig(null);
+        CompactionJob expectedCompactionJob = CompactionJob.builder()
+                .tableName("table")
+                .jobId(compactionJobs.get(0).getId()) // Job id is a UUID so we don't know what it will be
+                .partitionId("root")
+                .inputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()))
+                .isSplittingJob(true)
+                .outputFile(null)
+                .outputFiles(new MutablePair<>(
+                        compactionJobs.get(0).getOutputFiles().getLeft(),
+                        compactionJobs.get(0).getOutputFiles().getRight()))
+                .childPartitions(Arrays.asList("left", "right"))
+                .splitPoint(10)
+                .dimension(0)
+                .iteratorClassName(null)
+                .iteratorConfig(null).build();
         assertThat(compactionJobs).containsExactly(expectedCompactionJob);
     }
 }

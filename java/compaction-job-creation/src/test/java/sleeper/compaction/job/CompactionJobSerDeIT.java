@@ -107,11 +107,13 @@ public class CompactionJobSerDeIT {
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoDBClient = createDynamoClient();
         String tableName = UUID.randomUUID().toString();
-        CompactionJob compactionJob = new CompactionJob(tableName, "compactionJob-1");
-        compactionJob.setInputFiles(Arrays.asList("file1", "file2"));
-        compactionJob.setOutputFile("outputfile");
-        compactionJob.setPartitionId("partition1");
-        compactionJob.setIsSplittingJob(false);
+        CompactionJob compactionJob = CompactionJob.builder()
+                .tableName(tableName)
+                .jobId("compactionJob-1")
+                .inputFiles(Arrays.asList("file1", "file2"))
+                .outputFile("outputfile")
+                .partitionId("partition1")
+                .isSplittingJob(false).build();
         Schema schema = schemaWithStringKey();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
@@ -134,13 +136,15 @@ public class CompactionJobSerDeIT {
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoDBClient = createDynamoClient();
         String tableName = UUID.randomUUID().toString();
-        CompactionJob compactionJob = new CompactionJob(tableName, "compactionJob-1");
-        compactionJob.setInputFiles(Arrays.asList("file1", "file2"));
-        compactionJob.setOutputFile("outputfile");
-        compactionJob.setPartitionId("partition1");
-        compactionJob.setIsSplittingJob(false);
-        compactionJob.setIteratorClassName("Iterator.class");
-        compactionJob.setIteratorConfig("config1");
+        CompactionJob compactionJob = CompactionJob.builder()
+                .tableName(tableName)
+                .jobId("compactionJob-1")
+                .inputFiles(Arrays.asList("file1", "file2"))
+                .outputFile("outputfile")
+                .partitionId("partition1")
+                .isSplittingJob(false)
+                .iteratorClassName("Iterator.class")
+                .iteratorConfig("config1").build();
         Schema schema = schemaWithStringKey();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
@@ -163,14 +167,16 @@ public class CompactionJobSerDeIT {
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoDBClient = createDynamoClient();
         String tableName = UUID.randomUUID().toString();
-        CompactionJob compactionJob = new CompactionJob(tableName, "compactionJob-1");
-        compactionJob.setInputFiles(Arrays.asList("file1", "file2"));
-        compactionJob.setOutputFiles(new MutablePair<>("leftoutputfile", "rightoutputfile"));
-        compactionJob.setPartitionId("partition1");
-        compactionJob.setIsSplittingJob(true);
-        compactionJob.setSplitPoint("G");
-        compactionJob.setDimension(2);
-        compactionJob.setChildPartitions(Arrays.asList("childPartition1", "childPartition2"));
+        CompactionJob compactionJob = CompactionJob.builder()
+                .tableName(tableName)
+                .jobId("compactionJob-1")
+                .inputFiles(Arrays.asList("file1", "file2"))
+                .outputFiles(new MutablePair<>("leftoutputfile", "rightoutputfile"))
+                .partitionId("partition1")
+                .isSplittingJob(true)
+                .splitPoint("G")
+                .dimension(2)
+                .childPartitions(Arrays.asList("childPartition1", "childPartition2")).build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new StringType());
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
@@ -193,16 +199,16 @@ public class CompactionJobSerDeIT {
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoDBClient = createDynamoClient();
         String tableName = UUID.randomUUID().toString();
-        CompactionJob compactionJob = new CompactionJob(tableName, "compactionJob-1");
-        compactionJob.setInputFiles(Arrays.asList("file1", "file2"));
-        compactionJob.setOutputFiles(new MutablePair<>("leftoutputfile", "rightoutputfile"));
-        compactionJob.setPartitionId("partition1");
-        compactionJob.setIsSplittingJob(true);
-        compactionJob.setSplitPoint(10);
-        compactionJob.setIteratorClassName("Iterator.class");
-        compactionJob.setIteratorConfig("config1");
-        compactionJob.setDimension(2);
-        compactionJob.setChildPartitions(Arrays.asList("childPartition1", "childPartition2"));
+        CompactionJob compactionJob = CompactionJob.builder().tableName(tableName).jobId("compactionJob-1")
+                .inputFiles(Arrays.asList("file1", "file2"))
+                .outputFiles(new MutablePair<>("leftoutputfile", "rightoutputfile"))
+                .partitionId("partition1")
+                .isSplittingJob(true)
+                .splitPoint(10)
+                .iteratorClassName("Iterator.class")
+                .iteratorConfig("config1")
+                .dimension(2)
+                .childPartitions(Arrays.asList("childPartition1", "childPartition2")).build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new IntType());
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
@@ -225,16 +231,16 @@ public class CompactionJobSerDeIT {
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoDBClient = createDynamoClient();
         String tableName = UUID.randomUUID().toString();
-        CompactionJob compactionJob = new CompactionJob(tableName, "compactionJob-1");
-        compactionJob.setInputFiles(Arrays.asList("file1", "file2"));
-        compactionJob.setOutputFiles(new MutablePair<>("leftoutputfile", "rightoutputfile"));
-        compactionJob.setPartitionId("partition1");
-        compactionJob.setIsSplittingJob(true);
-        compactionJob.setSplitPoint(10L);
-        compactionJob.setIteratorClassName("Iterator.class");
-        compactionJob.setIteratorConfig("config1");
-        compactionJob.setDimension(2);
-        compactionJob.setChildPartitions(Arrays.asList("childPartition1", "childPartition2"));
+        CompactionJob compactionJob = CompactionJob.builder().tableName(tableName).jobId("compactionJob-1")
+                .inputFiles(Arrays.asList("file1", "file2"))
+                .outputFiles(new MutablePair<>("leftoutputfile", "rightoutputfile"))
+                .partitionId("partition1")
+                .isSplittingJob(true)
+                .splitPoint(10L)
+                .iteratorClassName("Iterator.class")
+                .iteratorConfig("config1")
+                .dimension(2)
+                .childPartitions(Arrays.asList("childPartition1", "childPartition2")).build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new LongType());
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
@@ -257,16 +263,16 @@ public class CompactionJobSerDeIT {
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoDBClient = createDynamoClient();
         String tableName = UUID.randomUUID().toString();
-        CompactionJob compactionJob = new CompactionJob(tableName, "compactionJob-1");
-        compactionJob.setInputFiles(Arrays.asList("file1", "file2"));
-        compactionJob.setOutputFiles(new MutablePair<>("leftoutputfile", "rightoutputfile"));
-        compactionJob.setPartitionId("partition1");
-        compactionJob.setIsSplittingJob(true);
-        compactionJob.setSplitPoint("G");
-        compactionJob.setIteratorClassName("Iterator.class");
-        compactionJob.setIteratorConfig("config1");
-        compactionJob.setDimension(2);
-        compactionJob.setChildPartitions(Arrays.asList("childPartition1", "childPartition2"));
+        CompactionJob compactionJob = CompactionJob.builder().tableName(tableName).jobId("compactionJob-1")
+                .inputFiles(Arrays.asList("file1", "file2"))
+                .outputFiles(new MutablePair<>("leftoutputfile", "rightoutputfile"))
+                .partitionId("partition1")
+                .isSplittingJob(true)
+                .splitPoint("G")
+                .iteratorClassName("Iterator.class")
+                .iteratorConfig("config1")
+                .dimension(2)
+                .childPartitions(Arrays.asList("childPartition1", "childPartition2")).build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new StringType());
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
@@ -289,16 +295,18 @@ public class CompactionJobSerDeIT {
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoDBClient = createDynamoClient();
         String tableName = UUID.randomUUID().toString();
-        CompactionJob compactionJob = new CompactionJob(tableName, "compactionJob-1");
-        compactionJob.setInputFiles(Arrays.asList("file1", "file2"));
-        compactionJob.setOutputFiles(new MutablePair<>("leftoutputfile", "rightoutputfile"));
-        compactionJob.setPartitionId("partition1");
-        compactionJob.setIsSplittingJob(true);
-        compactionJob.setSplitPoint(new byte[]{1, 2, 4, 8});
-        compactionJob.setIteratorClassName("Iterator.class");
-        compactionJob.setIteratorConfig("config1");
-        compactionJob.setDimension(2);
-        compactionJob.setChildPartitions(Arrays.asList("childPartition1", "childPartition2"));
+        CompactionJob compactionJob = CompactionJob.builder()
+                .tableName(tableName)
+                .jobId("compactionJob-1")
+                .inputFiles(Arrays.asList("file1", "file2"))
+                .outputFiles(new MutablePair<>("leftoutputfile", "rightoutputfile"))
+                .partitionId("partition1")
+                .isSplittingJob(true)
+                .splitPoint(new byte[]{1, 2, 4, 8})
+                .iteratorClassName("Iterator.class")
+                .iteratorConfig("config1")
+                .dimension(2)
+                .childPartitions(Arrays.asList("childPartition1", "childPartition2")).build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new ByteArrayType());
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
