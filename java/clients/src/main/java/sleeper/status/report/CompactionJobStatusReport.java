@@ -17,6 +17,10 @@
 package sleeper.status.report;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import sleeper.ClientUtils;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
@@ -239,11 +243,11 @@ public class CompactionJobStatusReport {
             }
         }
 
-//        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-//        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
-//
-//        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        CompactionJobStatusReport statusReport = new CompactionJobStatusReport(null, new InstanceProperties(), reporterType);
+        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
+        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
+
+        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        CompactionJobStatusReport statusReport = new CompactionJobStatusReport(dynamoDBClient, instanceProperties, reporterType);
         if (null != queryType) {
             statusReport.parseQueryParameters(queryType, queryParameters);
         } else {
