@@ -52,7 +52,7 @@ public class CompactionJobStatusReport {
     private final CompactionJobStatusCollector compactionJobStatusCollector;
     private static final String DEFAULT_STATUS_REPORTER = "STANDARD";
     private static final Map<String, CompactionJobStatusReporter> FILE_STATUS_REPORTERS = new HashMap<>();
-    private static final SimpleDateFormat DATE_INPUT_FORMAT = new SimpleDateFormat("yyyyMMddhhmmss");
+    private final SimpleDateFormat dateInputFormat = new SimpleDateFormat("yyyyMMddhhmmss");
     private static final Instant DEFAULT_RANGE_START = Instant.now().minus(4L, ChronoUnit.HOURS);
     private static final Instant DEFAULT_RANGE_END = Instant.now();
 
@@ -124,44 +124,32 @@ public class CompactionJobStatusReport {
     }
 
     private Instant promptForStartRange(Scanner scanner) {
-        Instant startTime = DEFAULT_RANGE_START;
-        while (true) {
-            System.out.printf("Enter start range in format yyyyMMddhhmmss (default is %s):", DEFAULT_RANGE_START.toString());
-            String time = scanner.nextLine();
-            if ("".equals(time)) {
-                System.out.printf("Using default start range %s%n", DEFAULT_RANGE_START);
-                break;
-            }
-            try {
-                Date date = DATE_INPUT_FORMAT.parse(time);
-                startTime = date.toInstant();
-                break;
-            } catch (ParseException e) {
-                System.out.println("Error while parsing input string");
-            }
-        }
-        return startTime;
+        return promptForRange(scanner, "start", DEFAULT_RANGE_START);
     }
 
     private Instant promptForEndRange(Scanner scanner) {
-        Instant endTime = DEFAULT_RANGE_END;
+        return promptForRange(scanner, "end", DEFAULT_RANGE_END);
+    }
 
+    private Instant promptForRange(Scanner scanner, String rangeName, Instant defaultRange) {
         while (true) {
-            System.out.printf("Enter end range in format yyyyMMddhhmmss (default is %s):", DEFAULT_RANGE_END.toString());
+            System.out.printf("Enter %s range in format %s (default is %s):",
+                    rangeName,
+                    dateInputFormat.toPattern(),
+                    dateInputFormat.format(Date.from(defaultRange)));
             String time = scanner.nextLine();
             if ("".equals(time)) {
-                System.out.printf("Using default end range %s%n", DEFAULT_RANGE_END);
+                System.out.printf("Using default %s range %s%n", rangeName, dateInputFormat.format(Date.from(defaultRange)));
                 break;
             }
             try {
-                Date date = DATE_INPUT_FORMAT.parse(time);
-                endTime = date.toInstant();
-                break;
+                Date date = dateInputFormat.parse(time);
+                return date.toInstant();
             } catch (ParseException e) {
                 System.out.println("Error while parsing input string");
             }
         }
-        return endTime;
+        return defaultRange;
     }
 
     public void handleDetailedQuery(Scanner scanner) {
@@ -192,9 +180,9 @@ public class CompactionJobStatusReport {
             Instant startRange;
             Instant endRange;
             try {
-                Date startRangeDate = DATE_INPUT_FORMAT.parse(queryParameters.split(",")[0]);
+                Date startRangeDate = dateInputFormat.parse(queryParameters.split(",")[0]);
                 startRange = startRangeDate.toInstant();
-                Date endRangeDate = DATE_INPUT_FORMAT.parse(queryParameters.split(",")[1]);
+                Date endRangeDate = dateInputFormat.parse(queryParameters.split(",")[1]);
                 endRange = endRangeDate.toInstant();
             } catch (ParseException e) {
                 System.out.println("Error while parsing input string, using system defaults (past 4 hours)");
