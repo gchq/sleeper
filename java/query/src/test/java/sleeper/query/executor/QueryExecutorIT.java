@@ -50,6 +50,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
+import sleeper.ingest.IngestProperties;
 import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
@@ -1335,21 +1336,21 @@ public class QueryExecutorIT {
 
     protected void ingestData(InstanceProperties instanceProperties, StateStore stateStore, Schema schema, Iterator<Record> recordIterator)
             throws IOException, ObjectFactoryException, InterruptedException, IteratorException, StateStoreException {
-        new IngestRecordsFromIterator(new ObjectFactory(instanceProperties, null, "/tmp"),
-                recordIterator,
-                folder.newFolder().getAbsolutePath(),
-                100L,
-                100L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "snappy",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120).write();
+        IngestProperties properties = IngestProperties.builder()
+                .objectFactory(new ObjectFactory(instanceProperties, null, "/tmp"))
+                .localDir(folder.newFolder().getAbsolutePath())
+                .maxRecordsToWriteLocally(100L)
+                .maxInMemoryBatchSize(100L)
+                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
+                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
+                .compressionCodec("snappy")
+                .stateStore(stateStore)
+                .schema(schema)
+                .filePathPrefix("")
+                .bucketName(folder.newFolder().getAbsolutePath())
+                .ingestPartitionRefreshFrequencyInSecond(120)
+                .build();
+        new IngestRecordsFromIterator(properties, recordIterator).write();
     }
 
     protected List<Record> getRecords() {

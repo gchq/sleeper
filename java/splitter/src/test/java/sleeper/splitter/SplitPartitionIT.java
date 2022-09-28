@@ -47,6 +47,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+import sleeper.ingest.IngestProperties;
 import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
@@ -123,21 +124,9 @@ public class SplitPartitionIT {
                 record.put("key", r);
                 records.add(record);
             }
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, ""),
-                    records.iterator(),
-                    path,
-                    1_000_000L,
-                    1_000_000L,
-                    ParquetWriter.DEFAULT_BLOCK_SIZE,
-                    ParquetWriter.DEFAULT_PAGE_SIZE,
-                    "zstd",
-                    stateStore,
-                    schema,
-                    "",
-                    path2,
-                    null,
-                    null,
-                    1_000_000
+            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
+            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
+                    records.iterator()
             );
             ingestRecordsFromIterator.write();
         }
@@ -250,21 +239,9 @@ public class SplitPartitionIT {
                     record.put("key", r);
                     records.add(record);
                 }
-                IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, ""),
-                        records.iterator(),
-                        path,
-                        1_000_000L,
-                        1_000_000L,
-                        ParquetWriter.DEFAULT_BLOCK_SIZE,
-                        ParquetWriter.DEFAULT_PAGE_SIZE,
-                        "zstd",
-                        stateStore,
-                        schema,
-                        "",
-                        path2,
-                        null,
-                        null,
-                        1_000_000
+                IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
+                IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
+                        records.iterator()
                 );
                 ingestRecordsFromIterator.write();
             }
@@ -370,21 +347,9 @@ public class SplitPartitionIT {
                         records.add(record);
                     }
                 }
-                IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, ""),
-                        records.iterator(),
-                        path,
-                        1_000_000L,
-                        1_000_000L,
-                        ParquetWriter.DEFAULT_BLOCK_SIZE,
-                        ParquetWriter.DEFAULT_PAGE_SIZE,
-                        "zstd",
-                        stateStore,
-                        schema,
-                        "",
-                        path2,
-                        null,
-                        null,
-                        1_000_000
+                IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
+                IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
+                        records.iterator()
                 );
                 ingestRecordsFromIterator.write();
             }
@@ -423,21 +388,9 @@ public class SplitPartitionIT {
                 record.put("key2", 10);
                 records.add(record);
             }
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, ""),
-                    records.iterator(),
-                    path,
-                    1_000_000L,
-                    1_000_000L,
-                    ParquetWriter.DEFAULT_BLOCK_SIZE,
-                    ParquetWriter.DEFAULT_PAGE_SIZE,
-                    "zstd",
-                    stateStore,
-                    schema,
-                    "",
-                    path2,
-                    null,
-                    null,
-                    1_000_000
+            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
+            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
+                    records.iterator()
             );
             ingestRecordsFromIterator.write();
         }
@@ -504,21 +457,9 @@ public class SplitPartitionIT {
                 record.put("key2", r);
                 records.add(record);
             }
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, ""),
-                    records.iterator(),
-                    path,
-                    1_000_000L,
-                    1_000_000L,
-                    ParquetWriter.DEFAULT_BLOCK_SIZE,
-                    ParquetWriter.DEFAULT_PAGE_SIZE,
-                    "zstd",
-                    stateStore,
-                    schema,
-                    "",
-                    path2,
-                    null,
-                    null,
-                    1_000_000
+            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
+            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
+                    records.iterator()
             );
             ingestRecordsFromIterator.write();
         }
@@ -590,21 +531,9 @@ public class SplitPartitionIT {
                 record.put("key2", r);
                 records.add(record);
             }
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, ""),
-                    records.iterator(),
-                    path,
-                    1_000_000L,
-                    1_000_000L,
-                    ParquetWriter.DEFAULT_BLOCK_SIZE,
-                    ParquetWriter.DEFAULT_PAGE_SIZE,
-                    "zstd",
-                    stateStore,
-                    schema,
-                    "",
-                    path2,
-                    null,
-                    null,
-                    1_000_000
+            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
+            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
+                    records.iterator()
             );
             ingestRecordsFromIterator.write();
         }
@@ -668,21 +597,9 @@ public class SplitPartitionIT {
                 record.put("key", r);
                 records.add(record);
             }
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, ""),
-                    records.iterator(),
-                    path,
-                    1_000_000L,
-                    1_000_000L,
-                    ParquetWriter.DEFAULT_BLOCK_SIZE,
-                    ParquetWriter.DEFAULT_PAGE_SIZE,
-                    "zstd",
-                    stateStore,
-                    schema,
-                    "",
-                    path2,
-                    null,
-                    null,
-                    1_000_000
+            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
+            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
+                    records.iterator()
             );
             ingestRecordsFromIterator.write();
         }
@@ -737,21 +654,9 @@ public class SplitPartitionIT {
                 record.put("key", "A" + i + "" + r);
                 records.add(record);
             }
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, ""),
-                    records.iterator(),
-                    path,
-                    1_000_000L,
-                    1_000_000L,
-                    ParquetWriter.DEFAULT_BLOCK_SIZE,
-                    ParquetWriter.DEFAULT_PAGE_SIZE,
-                    "zstd",
-                    stateStore,
-                    schema,
-                    "",
-                    path2,
-                    null,
-                    null,
-                    1_000_000
+            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
+            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
+                    records.iterator()
             );
             ingestRecordsFromIterator.write();
         }
@@ -816,21 +721,9 @@ public class SplitPartitionIT {
                 record.put("key", new byte[]{(byte) r});
                 records.add(record);
             }
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, ""),
-                    records.iterator(),
-                    path,
-                    1_000_000L,
-                    1_000_000L,
-                    ParquetWriter.DEFAULT_BLOCK_SIZE,
-                    ParquetWriter.DEFAULT_PAGE_SIZE,
-                    "zstd",
-                    stateStore,
-                    schema,
-                    "",
-                    path2,
-                    null,
-                    null,
-                    1_000_000
+            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
+            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
+                    records.iterator()
             );
             ingestRecordsFromIterator.write();
         }
@@ -969,21 +862,9 @@ public class SplitPartitionIT {
                         records.add(record);
                     }
                 }
-                IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, ""),
-                        records.iterator(),
-                        path,
-                        1_000_000L,
-                        1_000_000L,
-                        ParquetWriter.DEFAULT_BLOCK_SIZE,
-                        ParquetWriter.DEFAULT_PAGE_SIZE,
-                        "zstd",
-                        stateStore,
-                        schema,
-                        "",
-                        path2,
-                        null,
-                        null,
-                        1_000_000
+                IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
+                IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
+                        records.iterator()
                 );
                 ingestRecordsFromIterator.write();
             }
@@ -1097,21 +978,9 @@ public class SplitPartitionIT {
                         records.add(record);
                     }
                 }
-                IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, ""),
-                        records.iterator(),
-                        path,
-                        1_000_000L,
-                        1_000_000L,
-                        ParquetWriter.DEFAULT_BLOCK_SIZE,
-                        ParquetWriter.DEFAULT_PAGE_SIZE,
-                        "zstd",
-                        stateStore,
-                        schema,
-                        "",
-                        path2,
-                        null,
-                        null,
-                        1_000_000
+                IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
+                IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
+                        records.iterator()
                 );
                 ingestRecordsFromIterator.write();
             }
@@ -1150,21 +1019,9 @@ public class SplitPartitionIT {
                 record.put("key2", new byte[]{(byte) -100});
                 records.add(record);
             }
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, ""),
-                    records.iterator(),
-                    path,
-                    1_000_000L,
-                    1_000_000L,
-                    ParquetWriter.DEFAULT_BLOCK_SIZE,
-                    ParquetWriter.DEFAULT_PAGE_SIZE,
-                    "zstd",
-                    stateStore,
-                    schema,
-                    "",
-                    path2,
-                    null,
-                    null,
-                    1_000_000
+            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
+            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
+                    records.iterator()
             );
             ingestRecordsFromIterator.write();
         }
@@ -1233,21 +1090,9 @@ public class SplitPartitionIT {
                 record.put("key2", new byte[]{(byte) r});
                 records.add(record);
             }
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, ""),
-                    records.iterator(),
-                    path,
-                    1_000_000L,
-                    1_000_000L,
-                    ParquetWriter.DEFAULT_BLOCK_SIZE,
-                    ParquetWriter.DEFAULT_PAGE_SIZE,
-                    "zstd",
-                    stateStore,
-                    schema,
-                    "",
-                    path2,
-                    null,
-                    null,
-                    1_000_000
+            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
+            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
+                    records.iterator()
             );
             ingestRecordsFromIterator.write();
         }
@@ -1308,5 +1153,25 @@ public class SplitPartitionIT {
         } else {
             return range1.getMax();
         }
+    }
+
+    private static IngestProperties defaultPropertiesBuilder(StateStore stateStore,
+                                                             Schema sleeperSchema,
+                                                             String path,
+                                                             String path2) throws IOException, ObjectFactoryException {
+        return IngestProperties.builder()
+                .objectFactory(new ObjectFactory(new InstanceProperties(), null, ""))
+                .localDir(path)
+                .maxRecordsToWriteLocally(1_000_000)
+                .maxInMemoryBatchSize(1_000_000)
+                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
+                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
+                .compressionCodec("zstd")
+                .stateStore(stateStore)
+                .schema(sleeperSchema)
+                .filePathPrefix("")
+                .bucketName(path2)
+                .ingestPartitionRefreshFrequencyInSecond(1_000_000)
+                .build();
     }
 }

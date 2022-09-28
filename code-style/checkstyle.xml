@@ -86,6 +86,10 @@
         <module name="ParameterName">
             <property name="id" value="parameterName"/>
         </module>
+        <module name="ParameterNumber">
+            <property name="id" value="parameterNumber"/>
+            <property name="max" value="12"/>
+        </module>
         <module name="StaticVariableName">
             <property name="id" value="staticVariableName"/>
         </module>
