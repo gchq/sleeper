@@ -26,6 +26,9 @@ public interface CompactionStatusStoreStack {
     default void grantWriteJobEvent(IGrantable grantee) {
     }
 
+    default void grantWriteTaskEvent(IGrantable grantee) {
+    }
+
     static CompactionStatusStoreStack from(Construct scope, InstanceProperties properties) {
         if (properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
             return new DynamoDBCompactionStatusStoreStack(scope, properties);

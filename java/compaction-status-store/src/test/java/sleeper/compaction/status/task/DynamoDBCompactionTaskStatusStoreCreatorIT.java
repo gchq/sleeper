@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.status.job;
+package sleeper.compaction.status.task;
 
 import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
 import org.junit.After;
@@ -22,19 +22,19 @@ import sleeper.compaction.status.testutils.DynamoDBTestBase;
 import sleeper.configuration.properties.InstanceProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
+import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore.taskStatusTableName;
 import static sleeper.compaction.status.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
-public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase {
+public class DynamoDBCompactionTaskStatusStoreCreatorIT extends DynamoDBTestBase {
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final String tableName = jobStatusTableName(instanceProperties.get(ID));
+    private final String tableName = taskStatusTableName(instanceProperties.get(ID));
 
     @Test
     public void shouldCreateStore() {
         // When
-        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDBClient);
 
         // Then
         assertThat(dynamoDBClient.describeTable(tableName))
