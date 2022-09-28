@@ -42,6 +42,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
             printHeaders();
             out.println();
             jobStatusList.forEach(this::printJobRow);
+            out.printf("--------------------------%n");
         }
     }
 
