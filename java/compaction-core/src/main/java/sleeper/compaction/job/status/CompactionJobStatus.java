@@ -111,7 +111,7 @@ public class CompactionJobStatus {
     }
 
     public String getJobId() {
-        return this.jobId;
+        return jobId;
     }
 
     public boolean isInPeriod(Instant startTime, Instant endTime) {
