@@ -203,4 +203,11 @@ public class EmrExecutor extends AbstractEmrExecutor {
 
         return configurations;
     }
+
+    protected String getFromPlatformSpec(TableProperty tableProperty, Map<String, String> platformSpec, TableProperties tableProperties) {
+        if (null == platformSpec) {
+            return tableProperties.get(tableProperty);
+        }
+        return platformSpec.getOrDefault(tableProperty.getPropertyName(), tableProperties.get(tableProperty));
+    }
 }

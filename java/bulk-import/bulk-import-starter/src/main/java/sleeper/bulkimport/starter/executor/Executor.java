@@ -88,13 +88,6 @@ public abstract class Executor {
         return args;
     }
 
-    protected String getFromPlatformSpec(TableProperty tableProperty, Map<String, String> platformSpec, TableProperties tableProperties) {
-        if (null == platformSpec) {
-            return tableProperties.get(tableProperty);
-        }
-        return platformSpec.getOrDefault(tableProperty.getPropertyName(), tableProperties.get(tableProperty));
-    }
-
     private void validateJob(BulkImportJob bulkImportJob) {
         List<String> failedChecks = new ArrayList<>();
         String id = bulkImportJob.getId();
