@@ -29,22 +29,17 @@ import java.util.Objects;
  */
 public class CompactionJob {
     private String tableName;
-    private String jobId;
+    private final String jobId;
     private List<String> inputFiles;
     private String outputFile;
     private MutablePair<String, String> outputFiles;
     private List<String> childPartitions;
     private String partitionId;
-    private boolean isSplittingJob;
+    private final boolean isSplittingJob;
     private Object splitPoint;
     private int dimension; // Determines the row key to be used for splitting
     private String iteratorClassName;
     private String iteratorConfig;
-
-    public CompactionJob(String tableName, String jobId) {
-        this.tableName = tableName;
-        this.jobId = jobId;
-    }
 
     private CompactionJob(Builder builder) {
         setTableName(builder.tableName);
@@ -69,7 +64,7 @@ public class CompactionJob {
         return tableName;
     }
 
-    public void setTableName(String tableName) {
+    private void setTableName(String tableName) {
         this.tableName = tableName;
     }
 
@@ -77,15 +72,11 @@ public class CompactionJob {
         return jobId;
     }
 
-    public void setId(String jobId) {
-        this.jobId = jobId;
-    }
-
     public String getPartitionId() {
         return partitionId;
     }
 
-    public void setPartitionId(String partitionId) {
+    private void setPartitionId(String partitionId) {
         this.partitionId = partitionId;
     }
 
@@ -93,7 +84,7 @@ public class CompactionJob {
         return childPartitions;
     }
 
-    public void setChildPartitions(List<String> childPartitions) {
+    private void setChildPartitions(List<String> childPartitions) {
         this.childPartitions = childPartitions;
     }
 
@@ -101,7 +92,7 @@ public class CompactionJob {
         return inputFiles;
     }
 
-    public void setInputFiles(List<String> inputFiles) {
+    private void setInputFiles(List<String> inputFiles) {
         checkDuplicates(inputFiles);
         this.inputFiles = inputFiles;
     }
@@ -125,7 +116,7 @@ public class CompactionJob {
         return outputFile;
     }
 
-    public void setOutputFile(String outputFile) {
+    private void setOutputFile(String outputFile) {
         this.outputFile = outputFile;
     }
 
@@ -136,7 +127,7 @@ public class CompactionJob {
         return splitPoint;
     }
 
-    public void setSplitPoint(Object splitPoint) {
+    private void setSplitPoint(Object splitPoint) {
         if (splitPoint instanceof byte[]) {
             this.splitPoint = ByteArray.wrap((byte[]) splitPoint);
         } else {
@@ -148,7 +139,7 @@ public class CompactionJob {
         return dimension;
     }
 
-    public void setDimension(int dimension) {
+    private void setDimension(int dimension) {
         this.dimension = dimension;
     }
 
@@ -156,7 +147,7 @@ public class CompactionJob {
         return iteratorClassName;
     }
 
-    public void setIteratorClassName(String iteratorClassName) {
+    private void setIteratorClassName(String iteratorClassName) {
         this.iteratorClassName = iteratorClassName;
     }
 
@@ -164,7 +155,7 @@ public class CompactionJob {
         return iteratorConfig;
     }
 
-    public void setIteratorConfig(String iteratorConfig) {
+    private void setIteratorConfig(String iteratorConfig) {
         this.iteratorConfig = iteratorConfig;
     }
 
@@ -176,12 +167,8 @@ public class CompactionJob {
         return outputFiles;
     }
 
-    public void setOutputFiles(MutablePair<String, String> outputFiles) {
+    private void setOutputFiles(MutablePair<String, String> outputFiles) {
         this.outputFiles = outputFiles;
-    }
-
-    public void setIsSplittingJob(boolean isSplittingJob) {
-        this.isSplittingJob = isSplittingJob;
     }
 
     @Override
