@@ -28,8 +28,9 @@ import java.util.function.Function;
 public interface CompactionJobStatusReporter {
 
     enum QueryType {
-        RANGE,
+        ALL,
         DETAILED,
+        RANGE,
         UNFINISHED
     }
 

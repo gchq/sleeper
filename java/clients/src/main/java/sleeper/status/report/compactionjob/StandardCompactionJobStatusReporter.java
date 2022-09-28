@@ -20,6 +20,7 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 
 import java.io.PrintStream;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class StandardCompactionJobStatusReporter implements CompactionJobStatusReporter {
     private final PrintStream out;
@@ -53,6 +54,9 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         }
         if (queryType.equals(QueryType.UNFINISHED)) {
             printUnfinishedSummary(jobStatusList);
+        }
+        if (queryType.equals(QueryType.ALL)) {
+            printAllSummary(jobStatusList);
         }
     }
 
@@ -99,6 +103,22 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
                 jobStatusList.stream().filter(CompactionJobStatus::isStarted).count());
         out.printf("Total unfinished jobs not started: %d%n",
                 jobStatusList.size() - jobStatusList.stream().filter(CompactionJobStatus::isStarted).count());
+    }
+
+    private void printAllSummary(List<CompactionJobStatus> jobStatusList) {
+        List<CompactionJobStatus> splittingJobs = jobStatusList.stream().filter(CompactionJobStatus::isSplittingCompaction).collect(Collectors.toList());
+        List<CompactionJobStatus> standardJobs = jobStatusList.stream().filter(job -> !job.isSplittingCompaction()).collect(Collectors.toList());
+        out.printf("Total jobs: %d%n", jobStatusList.size());
+        out.println();
+        out.printf("Total standard jobs: %d%n", standardJobs.size());
+        out.printf("Total standard jobs pending: %d%n", standardJobs.stream().filter(job -> getState(job).equals("PENDING")).count());
+        out.printf("Total standard jobs in progress: %d%n", standardJobs.stream().filter(job -> getState(job).equals("IN PROGRESS")).count());
+        out.printf("Total standard jobs finished: %d%n", standardJobs.stream().filter(job -> getState(job).equals("FINISHED")).count());
+        out.println();
+        out.printf("Total splitting jobs: %d%n", splittingJobs.size());
+        out.printf("Total splitting jobs pending: %d%n", splittingJobs.stream().filter(job -> getState(job).equals("PENDING")).count());
+        out.printf("Total splitting jobs in progress: %d%n", splittingJobs.stream().filter(job -> getState(job).equals("IN PROGRESS")).count());
+        out.printf("Total splitting jobs finished: %d%n", splittingJobs.stream().filter(job -> getState(job).equals("FINISHED")).count());
     }
 
     private void printHeaders() {
