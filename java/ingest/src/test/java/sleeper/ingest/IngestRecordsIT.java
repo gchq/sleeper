@@ -58,6 +58,7 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
@@ -293,21 +294,8 @@ public class IngestRecordsIT {
         String localDir = folder.newFolder().getAbsolutePath();
 
         // When
-        IngestRecords ingestRecords = new IngestRecords(
-                new ObjectFactory(new InstanceProperties(), null, ""),
-                localDir,
-                10L,
-                1000L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120);
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, localDir, folder.newFolder().getAbsolutePath()).build();
+        IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         for (Record record : getRecords()) {
             ingestRecords.write(record);
@@ -390,21 +378,8 @@ public class IngestRecordsIT {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        IngestRecords ingestRecords = new IngestRecords(
-                new ObjectFactory(new InstanceProperties(), null, ""),
-                folder.newFolder().getAbsolutePath(),
-                10L,
-                1000L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120);
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         for (Record record : getRecords()) {
             ingestRecords.write(record);
@@ -518,21 +493,8 @@ public class IngestRecordsIT {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        IngestRecords ingestRecords = new IngestRecords(
-                new ObjectFactory(new InstanceProperties(), null, ""),
-                folder.newFolder().getAbsolutePath(),
-                10L,
-                1000L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120);
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         for (Record record : getRecordsByteArrayKey()) {
             ingestRecords.write(record);
@@ -658,21 +620,8 @@ public class IngestRecordsIT {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        IngestRecords ingestRecords = new IngestRecords(
-                new ObjectFactory(new InstanceProperties(), null, ""),
-                folder.newFolder().getAbsolutePath(),
-                10L,
-                1000L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120);
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         for (Record record : getRecords2DimByteArrayKey()) {
             ingestRecords.write(record);
@@ -827,21 +776,10 @@ public class IngestRecordsIT {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        IngestRecords ingestRecords = new IngestRecords(
-                new ObjectFactory(new InstanceProperties(), null, ""),
-                folder.newFolder().getAbsolutePath(),
-                10L,
-                1000L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "snappy",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120);
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath())
+                .compressionCodec("snappy")
+                .build();
+        IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         //  - When sorted the records in getRecordsOscillateBetweenTwoPartitions
         //  appear in partition 1 then partition 2 then partition 1, then 2, etc
@@ -958,21 +896,8 @@ public class IngestRecordsIT {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        IngestRecords ingestRecords = new IngestRecords(
-                new ObjectFactory(new InstanceProperties(), null, ""),
-                folder.newFolder().getAbsolutePath(),
-                10L,
-                1000L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120);
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         for (Record record : getRecordsInFirstPartitionOnly()) {
             ingestRecords.write(record);
@@ -1026,21 +951,8 @@ public class IngestRecordsIT {
         // When
         List<Record> records = new ArrayList<>(getRecords());
         records.addAll(getRecords());
-        IngestRecords ingestRecords = new IngestRecords(
-                new ObjectFactory(new InstanceProperties(), null, ""),
-                folder.newFolder().getAbsolutePath(),
-                10L,
-                1000L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120);
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         for (Record record : records) {
             ingestRecords.write(record);
@@ -1124,21 +1036,10 @@ public class IngestRecordsIT {
         List<Record> records = getLotsOfRecords();
 
         // When
-        IngestRecords ingestRecords = new IngestRecords(
-                new ObjectFactory(new InstanceProperties(), null, ""),
-                folder.newFolder().getAbsolutePath(),
-                1000L,
-                5L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120);
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath())
+                .maxRecordsToWriteLocally(1000L)
+                .maxInMemoryBatchSize(5L).build();
+        IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         for (Record record : records) {
             ingestRecords.write(record);
@@ -1305,21 +1206,10 @@ public class IngestRecordsIT {
         List<Record> records = getLotsOfRecords();
 
         // When
-        IngestRecords ingestRecords = new IngestRecords(
-                new ObjectFactory(new InstanceProperties(), null, ""),
-                folder.newFolder().getAbsolutePath(),
-                10L,
-                5L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120);
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath())
+                .maxRecordsToWriteLocally(10L)
+                .maxInMemoryBatchSize(5L).build();
+        IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         for (Record record : records) {
             ingestRecords.write(record);
@@ -1410,21 +1300,8 @@ public class IngestRecordsIT {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        IngestRecords ingestRecords = new IngestRecords(
-                new ObjectFactory(new InstanceProperties(), null, ""),
-                folder.newFolder().getAbsolutePath(),
-                10L,
-                1000L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120);
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         for (Record record : getUnsortedRecords()) {
             ingestRecords.write(record);
@@ -1479,21 +1356,8 @@ public class IngestRecordsIT {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        IngestRecords ingestRecords = new IngestRecords(
-                new ObjectFactory(new InstanceProperties(), null, ""),
-                folder.newFolder().getAbsolutePath(),
-                10L,
-                1000L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                null,
-                null,
-                120);
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         long numWritten = ingestRecords.close();
 
@@ -1516,21 +1380,9 @@ public class IngestRecordsIT {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        IngestRecords ingestRecords = new IngestRecords(
-                new ObjectFactory(new InstanceProperties(), null, ""),
-                folder.newFolder().getAbsolutePath(),
-                10L,
-                1000L,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                stateStore,
-                schema,
-                "",
-                folder.newFolder().getAbsolutePath(),
-                AdditionIterator.class.getName(),
-                "",
-                120);
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath())
+                .iteratorClassName(AdditionIterator.class.getName()).build();
+        IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         for (Record record : getRecordsForAggregationIteratorTest()) {
             ingestRecords.write(record);
@@ -1589,5 +1441,23 @@ public class IngestRecordsIT {
         for (double d = 0.0D; d < 1.0D; d += 0.1D) {
             assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch.getQuantile(d));
         }
+    }
+
+    private static IngestProperties.Builder defaultPropertiesBuilder(StateStore stateStore,
+                                                                     Schema sleeperSchema,
+                                                                     String ingestLocalWorkingDirectory,
+                                                                     String bucketName) throws ObjectFactoryException {
+        return IngestProperties.builder()
+                .objectFactory(new ObjectFactory(new InstanceProperties(), null, ""))
+                .localDir(ingestLocalWorkingDirectory)
+                .maxRecordsToWriteLocally(10L)
+                .maxInMemoryBatchSize(1000L)
+                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
+                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
+                .compressionCodec("zstd")
+                .stateStore(stateStore)
+                .schema(sleeperSchema)
+                .bucketName(bucketName)
+                .ingestPartitionRefreshFrequencyInSecond(120);
     }
 }
