@@ -28,12 +28,14 @@ public class CompactionJobStatus {
     private final CompactionJobCreatedStatus createdStatus;
     private final CompactionJobStartedStatus startedStatus;
     private final CompactionJobFinishedStatus finishedStatus;
+    private final Instant expiryDate;
 
     private CompactionJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         createdStatus = Objects.requireNonNull(builder.createdStatus, "createdStatus must not be null");
         startedStatus = builder.startedStatus;
         finishedStatus = builder.finishedStatus;
+        expiryDate = builder.expiryDate;
     }
 
     public static Builder builder() {
@@ -110,6 +112,10 @@ public class CompactionJobStatus {
         return null;
     }
 
+    public Instant getExpiryDate() {
+        return expiryDate;
+    }
+
     public String getJobId() {
         return jobId;
     }
@@ -123,7 +129,7 @@ public class CompactionJobStatus {
         return createdStatus.getUpdateTime();
     }
 
-    private Instant lastTime() {
+    public Instant lastTime() {
         if (isFinished()) {
             return finishedStatus.getUpdateTime();
         } else if (isStarted()) {
@@ -138,6 +144,7 @@ public class CompactionJobStatus {
         private CompactionJobCreatedStatus createdStatus;
         private CompactionJobStartedStatus startedStatus;
         private CompactionJobFinishedStatus finishedStatus;
+        private Instant expiryDate;
 
         private Builder() {
         }
@@ -159,6 +166,11 @@ public class CompactionJobStatus {
 
         public Builder finishedStatus(CompactionJobFinishedStatus finishedStatus) {
             this.finishedStatus = finishedStatus;
+            return this;
+        }
+
+        public Builder expiryDate(Instant expiryDate) {
+            this.expiryDate = expiryDate;
             return this;
         }
 
@@ -191,6 +203,7 @@ public class CompactionJobStatus {
                 ", createdStatus=" + createdStatus +
                 ", startedStatus=" + startedStatus +
                 ", finishedStatus=" + finishedStatus +
+                ", expiryDate=" + expiryDate +
                 '}';
     }
 }
