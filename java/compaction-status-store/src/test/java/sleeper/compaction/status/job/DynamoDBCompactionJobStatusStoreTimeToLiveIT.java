@@ -74,8 +74,8 @@ public class DynamoDBCompactionJobStatusStoreTimeToLiveIT extends DynamoDBCompac
         store.jobCreated(job);
         Thread.sleep(2000L);
 
-        Instant startedExpiryDate = Instant.now().plus(Duration.ofMillis(store.getTimeToLive()));
         Instant startedTime = Instant.now();
+        Instant startedExpiryDate = startedTime.plus(Duration.ofMillis(store.getTimeToLive()));
         store.jobStarted(job, startedTime);
 
         // Then
@@ -98,7 +98,7 @@ public class DynamoDBCompactionJobStatusStoreTimeToLiveIT extends DynamoDBCompac
         Thread.sleep(2000L);
 
         Instant finishedTime = Instant.now();
-        Instant finishedExpiryDate = Instant.now().plus(Duration.ofMillis(store.getTimeToLive()));
+        Instant finishedExpiryDate = finishedTime.plus(Duration.ofMillis(store.getTimeToLive()));
         store.jobFinished(job, new CompactionJobSummary(
                 new CompactionJobRecordsProcessed(60L, 60L), startedTime, finishedTime));
 
