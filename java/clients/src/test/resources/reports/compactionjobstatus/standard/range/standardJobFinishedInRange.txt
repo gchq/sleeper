@@ -1,0 +1,8 @@
+
+Compaction Job Status Report:
+--------------------------
+Total jobs finished between defined range: 1
+--------------------------
+STATE      |CREATE_TIME             |JOB_ID                              |PARTITION_ID                        |CHILD_IDS           |START_TIME              |START_UPDATE_TIME       |FINISH_TIME             |DURATION (s)        |LINES_READ          |LINES_WRITTEN       |READ_RATE (read/s)  |WRITE_RATE (write/s)
+FINISHED   |2022-09-22T13:33:12.001Z|$(jobId)|root                                |[]                  |2022-09-22T13:34:12.001Z|2022-09-22T13:39:12.001Z|2022-09-22T13:40:12.001Z|60.0                |600                 |300                 |10.0                |5.0                 
+--------------------------

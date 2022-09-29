@@ -18,12 +18,12 @@ package sleeper.compaction.status.job;
 import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
 import org.junit.After;
 import org.junit.Test;
-import sleeper.compaction.status.job.testutils.DynamoDBTestBase;
+import sleeper.compaction.status.testutils.DynamoDBTestBase;
 import sleeper.configuration.properties.InstanceProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
-import static sleeper.compaction.status.job.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
+import static sleeper.compaction.status.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase {

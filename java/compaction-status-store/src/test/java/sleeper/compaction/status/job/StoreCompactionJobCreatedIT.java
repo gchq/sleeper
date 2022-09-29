@@ -17,15 +17,15 @@ package sleeper.compaction.status.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.status.job.testutils.DynamoDBCompactionJobStatusStoreTestBase;
+import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.status.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfoFactory;
 
 import java.util.Arrays;
 import java.util.Collections;
 
-import static sleeper.compaction.status.job.testutils.AssertDynamoDBJobStatusRecord.createCompaction;
-import static sleeper.compaction.status.job.testutils.AssertDynamoDBJobStatusRecord.createSplittingCompaction;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
@@ -42,8 +42,9 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         store.jobCreated(job);
 
         // Then
-        assertThatItemsInTable().containsExactly(
-                createCompaction(job.getId(), 1, partition.getId()));
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(CompactionJobStatus.created(job, ignoredUpdateTime()));
     }
 
     @Test
@@ -64,8 +65,9 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         store.jobCreated(job);
 
         // Then
-        assertThatItemsInTable().containsExactly(
-                createSplittingCompaction(job.getId(), 2, "C", "A, B"));
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(CompactionJobStatus.created(job, ignoredUpdateTime()));
     }
 
     @Test
@@ -83,8 +85,9 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         store.jobCreated(job);
 
         // Then
-        assertThatItemsInTable().containsExactly(
-                createCompaction(job.getId(), 2, partition.getId()));
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(CompactionJobStatus.created(job, ignoredUpdateTime()));
     }
 
     @Test
@@ -105,9 +108,11 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         store.jobCreated(job2);
 
         // Then
-        assertThatItemsInTable().containsExactlyInAnyOrder(
-                createCompaction(job1.getId(), 1, "A"),
-                createCompaction(job2.getId(), 1, "B"));
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactlyInAnyOrder(
+                        CompactionJobStatus.created(job1, ignoredUpdateTime()),
+                        CompactionJobStatus.created(job2, ignoredUpdateTime()));
     }
 
     @Test
@@ -129,8 +134,10 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         store.jobCreated(job2);
 
         // Then
-        assertThatItemsInTable().containsExactlyInAnyOrder(
-                createCompaction(job1.getId(), 1, "A"),
-                createSplittingCompaction(job2.getId(), 1, "C", "A, B"));
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactlyInAnyOrder(
+                        CompactionJobStatus.created(job1, ignoredUpdateTime()),
+                        CompactionJobStatus.created(job2, ignoredUpdateTime()));
     }
 }

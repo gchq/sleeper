@@ -33,7 +33,9 @@ import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.key.Key;
 import sleeper.core.record.Record;
+import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.ingest.IngestProperties;
 import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.PartitionedTableCreator;
 import sleeper.ingest.testutils.RecordGenerator;
@@ -155,25 +157,17 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                 keyAndDimensionToSplitOnInOrder);
         String objectFactoryLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
         String ingestLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
+        IngestProperties properties = defaultPropertiesBuilder(objectFactoryLocalWorkingDirectory, stateStore, recordListAndSchema.sleeperSchema, null, ingestLocalWorkingDirectory)
+                .filePathPrefix("s3a://" + DATA_BUCKET_NAME)
+                .maxRecordsToWriteLocally(localStoreBytes).build();
         IngestCoordinator<sleeper.core.record.Record> ingestCoordinator = StandardIngestCoordinator.directWriteBackedByArrow(
-                new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory),
-                stateStore,
-                recordListAndSchema.sleeperSchema,
-                ingestLocalWorkingDirectory,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
-                null,
-                null,
-                Integer.MAX_VALUE,
-                "s3a://" + DATA_BUCKET_NAME,
+                properties,
                 bufferAllocator,
                 128,
                 arrowWorkingBytes,
                 arrowBatchBytes,
-                arrowBatchBytes,
-                localStoreBytes);
+                arrowBatchBytes
+        );
 
         try {
             for (Record record : recordListAndSchema.recordList) {
@@ -191,5 +185,25 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                 partitionNoToExpectedNoOfFilesMap,
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
                 ingestLocalWorkingDirectory);
+    }
+
+    private static IngestProperties.Builder defaultPropertiesBuilder(String objectFactoryLocalWorkingDirectory,
+                                                                     StateStore stateStore,
+                                                                     Schema sleeperSchema,
+                                                                     String sleeperIteratorClassName,
+                                                                     String ingestLocalWorkingDirectory) throws IOException, ObjectFactoryException {
+        return IngestProperties.builder()
+                .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
+                .localDir(ingestLocalWorkingDirectory)
+                .maxRecordsToWriteLocally(10L)
+                .maxInMemoryBatchSize(1000L)
+                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
+                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
+                .compressionCodec("zstd")
+                .stateStore(stateStore)
+                .schema(sleeperSchema)
+                .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
+                .iteratorClassName(sleeperIteratorClassName)
+                .ingestPartitionRefreshFrequencyInSecond(Integer.MAX_VALUE);
     }
 }

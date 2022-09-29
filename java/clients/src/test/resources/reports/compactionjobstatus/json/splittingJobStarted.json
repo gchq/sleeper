@@ -1,0 +1,27 @@
+[
+  {
+    "jobId": "$(jobId)",
+    "createdStatus": {
+      "updateTime": {
+        "seconds": 1663853592,
+        "nanos": 1000000
+      },
+      "partitionId": "C",
+      "inputFilesCount": 1,
+      "childPartitionIds": [
+        "A",
+        "B"
+      ]
+    },
+    "startedStatus": {
+      "updateTime": {
+        "seconds": 1663853952,
+        "nanos": 1000000
+      },
+      "startTime": {
+        "seconds": 1663853652,
+        "nanos": 1000000
+      }
+    }
+  }
+]

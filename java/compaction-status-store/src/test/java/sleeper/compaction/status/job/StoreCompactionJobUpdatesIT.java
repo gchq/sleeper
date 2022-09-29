@@ -17,18 +17,13 @@ package sleeper.compaction.status.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobRecordsProcessed;
-import sleeper.compaction.job.CompactionJobSummary;
-import sleeper.compaction.status.job.testutils.DynamoDBCompactionJobStatusStoreTestBase;
+import sleeper.compaction.status.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfoFactory;
 
-import java.time.Instant;
 import java.util.Collections;
 
-import static sleeper.compaction.status.job.testutils.AssertDynamoDBJobStatusRecord.createCompaction;
-import static sleeper.compaction.status.job.testutils.AssertDynamoDBJobStatusRecord.finishCompaction;
-import static sleeper.compaction.status.job.testutils.AssertDynamoDBJobStatusRecord.startCompaction;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
@@ -43,13 +38,12 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
 
         // When
         store.jobCreated(job);
-        Instant startTime = Instant.parse("2022-09-22T11:09:12.001Z");
-        store.jobStarted(job, startTime);
+        store.jobStarted(job, defaultStartTime());
 
         // Then
-        assertThatItemsInTable().containsExactlyInAnyOrder(
-                createCompaction(job.getId(), 1, partition.getId()),
-                startCompaction(job.getId(), startTime));
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(startedStatusWithDefaults(job));
     }
 
     @Test
@@ -60,23 +54,16 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         CompactionJob job = jobFactory.createCompactionJob(
                 Collections.singletonList(fileFactory.leafFile(100L, "a", "z")),
                 partition.getId());
-        Instant startTime = Instant.parse("2022-09-22T11:09:12.001Z");
-        Instant startTimeAtFinish = Instant.parse("2022-09-22T11:09:13.001Z");
-        Instant finishTime = Instant.parse("2022-09-22T11:09:20.001Z");
-        CompactionJobSummary summary = new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(200L, 100L),
-                startTimeAtFinish, finishTime);
 
         // When
         store.jobCreated(job);
-        store.jobStarted(job, startTime);
-        store.jobFinished(job, summary);
+        store.jobStarted(job, defaultStartTime());
+        store.jobFinished(job, defaultSummary());
 
         // Then
-        assertThatItemsInTable().containsExactlyInAnyOrder(
-                createCompaction(job.getId(), 1, partition.getId()),
-                startCompaction(job.getId(), startTime),
-                finishCompaction(job.getId(), summary));
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(finishedStatusWithDefaults(job));
     }
 
 }
