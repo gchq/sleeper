@@ -31,7 +31,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
-import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -236,12 +235,6 @@ public class ExecutorTest {
         @Override
         protected void runJobOnPlatform(BulkImportJob bulkImportJob) {
             runJobOnPlatformCalled = true;
-        }
-
-        @Override
-        protected Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec,
-                                                            TableProperties tableProperties, InstanceProperties instanceProperties) {
-            return null;
         }
 
         @Override

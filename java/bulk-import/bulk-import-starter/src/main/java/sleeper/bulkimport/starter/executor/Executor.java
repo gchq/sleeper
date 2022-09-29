@@ -22,9 +22,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperty;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,11 +33,6 @@ import java.util.regex.Pattern;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_CLASS_NAME;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_CORES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_MEMORY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_CORES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_INSTANCES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_MEMORY;
 
 public abstract class Executor {
     private static final Logger LOGGER = LoggerFactory.getLogger(Executor.class);
@@ -71,49 +64,26 @@ public abstract class Executor {
 
     protected abstract void runJobOnPlatform(BulkImportJob bulkImportJob);
 
-    protected abstract Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties, InstanceProperties instanceProperties);
-
     protected abstract String getJarLocation();
 
     protected List<String> constructArgs(BulkImportJob bulkImportJob) {
-        Map<String, String> config = getDefaultSparkConfig(bulkImportJob,
-                bulkImportJob.getPlatformSpec(), tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName()), instanceProperties);
         Map<String, String> userConfig = bulkImportJob.getSparkConf();
-        if (null != userConfig) {
-            config.putAll(userConfig);
-        }
-        LOGGER.info("Using Spark config {}", config);
+        LOGGER.info("Using Spark config {}", userConfig);
 
         String className = bulkImportJob.getClassName() != null ? bulkImportJob.getClassName() : instanceProperties.get(BULK_IMPORT_CLASS_NAME);
 
         List<String> args = Lists.newArrayList("spark-submit", "--deploy-mode", "cluster", "--class", className);
 
-        args.add("--executor-cores");
-        args.add("" + instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_CORES));
-        args.add("--driver-cores");
-        args.add("" + instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_CORES));
-        args.add("--executor-memory");
-        args.add("" + instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_MEMORY));
-        args.add("--driver-memory");
-        args.add("" + instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_DRIVER_MEMORY));
-        args.add("--num-executors");
-        args.add("" + instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_SPARK_EXECUTOR_INSTANCES));
-
-        for (Map.Entry<String, String> configurationItem : config.entrySet()) {
-            args.add("--conf");
-            args.add(configurationItem.getKey() + "=" + configurationItem.getValue());
+        if (null != userConfig) {
+            for (Map.Entry<String, String> configurationItem : userConfig.entrySet()) {
+                args.add("--conf");
+                args.add(configurationItem.getKey() + "=" + configurationItem.getValue());
+            }
         }
 
         args.add(getJarLocation());
 
         return args;
-    }
-
-    protected String getFromPlatformSpec(TableProperty tableProperty, Map<String, String> platformSpec, TableProperties tableProperties) {
-        if (null == platformSpec) {
-            return tableProperties.get(tableProperty);
-        }
-        return platformSpec.getOrDefault(tableProperty.getPropertyName(), tableProperties.get(tableProperty));
     }
 
     private void validateJob(BulkImportJob bulkImportJob) {
