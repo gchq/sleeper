@@ -42,7 +42,6 @@ public class DynamoDBCompactionJobStatusStoreTimeToLiveIT extends DynamoDBCompac
         store.jobCreated(job);
 
         // Then
-        System.out.println(store.getJob(job.getId()));
         assertThat(store.getJob(job.getId()).getExpiryDate()).isAfterOrEqualTo(createdTime);
         assertThat(store.getTimeToLive())
                 .isEqualTo(Long.parseLong(COMPACTION_JOB_STATUS_TTL_IN_SECONDS.getDefaultValue()) * 1000L);
