@@ -41,7 +41,7 @@ public class PersistentEmrExecutor extends AbstractEmrExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(PersistentEmrExecutor.class);
 
     private final AmazonElasticMapReduce emrClient;
-    private String clusterId;
+    private final String clusterId;
 
     public PersistentEmrExecutor(
             AmazonElasticMapReduce emrClient,
