@@ -15,11 +15,23 @@
  */
 package sleeper.compaction.status.task;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import sleeper.configuration.properties.InstanceProperties;
+
 import static sleeper.compaction.status.DynamoDBUtils.instanceTableName;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 public class DynamoDBCompactionTaskStatusStore {
+    private final AmazonDynamoDB dynamoDB;
+    private final String statusTableName;
 
-    private DynamoDBCompactionTaskStatusStore() {
+    private DynamoDBCompactionTaskStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+        this.dynamoDB = dynamoDB;
+        this.statusTableName = taskStatusTableName(properties.get(ID));
+    }
+
+    public static DynamoDBCompactionTaskStatusStore from(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+        return new DynamoDBCompactionTaskStatusStore(dynamoDB, properties);
     }
 
     public static String taskStatusTableName(String instanceId) {
