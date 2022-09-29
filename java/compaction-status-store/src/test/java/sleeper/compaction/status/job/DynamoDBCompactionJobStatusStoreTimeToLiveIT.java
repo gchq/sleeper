@@ -101,7 +101,7 @@ public class DynamoDBCompactionJobStatusStoreTimeToLiveIT extends DynamoDBCompac
         Instant finishedExpiryDate = Instant.now().plus(Duration.ofMillis(store.getTimeToLive()));
         store.jobFinished(job, new CompactionJobSummary(
                 new CompactionJobRecordsProcessed(60L, 60L), startedTime, finishedTime));
-        
+
         // Then
         assertThat(store.getJob(job.getId()).getExpiryDate()).isAfterOrEqualTo(finishedExpiryDate);
         assertThat(store.getTimeToLive())
