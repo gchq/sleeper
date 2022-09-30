@@ -89,6 +89,7 @@ public class CompactionTaskStatus {
                 "taskId='" + taskId + '\'' +
                 ", startedStatus=" + startedStatus +
                 ", finishedStatus=" + finishedStatus +
+                ", expiryDate=" + expiryDate +
                 '}';
     }
 
