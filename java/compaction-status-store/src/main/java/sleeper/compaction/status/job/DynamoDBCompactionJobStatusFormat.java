@@ -62,9 +62,10 @@ public class DynamoDBCompactionJobStatusFormat {
     public static final String UPDATE_TYPE_CREATED = "created";
     public static final String UPDATE_TYPE_STARTED = "started";
     public static final String UPDATE_TYPE_FINISHED = "finished";
+    public static final String EXPIRY_DATE = "ExpiryDate";
 
-    public static Map<String, AttributeValue> createJobCreatedRecord(CompactionJob job) {
-        return createJobRecord(job, UPDATE_TYPE_CREATED)
+    public static Map<String, AttributeValue> createJobCreatedRecord(CompactionJob job, Long timeToLive) {
+        return createJobRecord(job, UPDATE_TYPE_CREATED, timeToLive)
                 .string(PARTITION_ID, job.getPartitionId())
                 .number(INPUT_FILES_COUNT, job.getInputFiles().size())
                 .apply(builder -> {
@@ -74,14 +75,14 @@ public class DynamoDBCompactionJobStatusFormat {
                 }).build();
     }
 
-    public static Map<String, AttributeValue> createJobStartedRecord(CompactionJob job, Instant startTime) {
-        return createJobRecord(job, UPDATE_TYPE_STARTED)
+    public static Map<String, AttributeValue> createJobStartedRecord(CompactionJob job, Instant startTime, Long timeToLive) {
+        return createJobRecord(job, UPDATE_TYPE_STARTED, timeToLive)
                 .number(START_TIME, startTime.toEpochMilli())
                 .build();
     }
 
-    public static Map<String, AttributeValue> createJobFinishedRecord(CompactionJob job, CompactionJobSummary summary) {
-        return createJobRecord(job, UPDATE_TYPE_FINISHED)
+    public static Map<String, AttributeValue> createJobFinishedRecord(CompactionJob job, CompactionJobSummary summary, Long timeToLive) {
+        return createJobRecord(job, UPDATE_TYPE_FINISHED, timeToLive)
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
                 .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
                 .number(RECORDS_READ, summary.getLinesRead())
@@ -89,12 +90,14 @@ public class DynamoDBCompactionJobStatusFormat {
                 .build();
     }
 
-    private static DynamoDBRecordBuilder createJobRecord(CompactionJob job, String updateType) {
+    private static DynamoDBRecordBuilder createJobRecord(CompactionJob job, String updateType, Long timeToLive) {
+        Long timeNow = Instant.now().toEpochMilli();
         return new DynamoDBRecordBuilder()
                 .string(JOB_ID, job.getId())
                 .string(TABLE_NAME, job.getTableName())
-                .number(UPDATE_TIME, Instant.now().toEpochMilli())
-                .string(UPDATE_TYPE, updateType);
+                .number(UPDATE_TIME, timeNow)
+                .string(UPDATE_TYPE, updateType)
+                .number(EXPIRY_DATE, timeNow + timeToLive);
     }
 
     public static Stream<CompactionJobStatus> streamJobStatuses(List<Map<String, AttributeValue>> items) {
@@ -112,21 +115,23 @@ public class DynamoDBCompactionJobStatusFormat {
                         .partitionId(getStringAttribute(item, PARTITION_ID))
                         .childPartitionIds(getChildPartitionIds(item))
                         .inputFilesCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))
-                        .build());
+                        .build()).expiryDate(jobId, getInstantAttribute(item, EXPIRY_DATE));
                 break;
             case UPDATE_TYPE_STARTED:
                 builder.jobStarted(jobId, CompactionJobStartedStatus.updateAndStartTime(
-                        getInstantAttribute(item, UPDATE_TIME),
-                        getInstantAttribute(item, START_TIME)));
+                                getInstantAttribute(item, UPDATE_TIME),
+                                getInstantAttribute(item, START_TIME)))
+                        .expiryDate(jobId, getInstantAttribute(item, EXPIRY_DATE));
                 break;
             case UPDATE_TYPE_FINISHED:
                 builder.jobFinished(jobId, CompactionJobFinishedStatus.updateTimeAndSummary(
-                        getInstantAttribute(item, UPDATE_TIME),
-                        new CompactionJobSummary(new CompactionJobRecordsProcessed(
-                                getLongAttribute(item, RECORDS_READ, 0),
-                                getLongAttribute(item, RECORDS_WRITTEN, 0)),
-                                getInstantAttribute(item, START_TIME),
-                                getInstantAttribute(item, FINISH_TIME))));
+                                getInstantAttribute(item, UPDATE_TIME),
+                                new CompactionJobSummary(new CompactionJobRecordsProcessed(
+                                        getLongAttribute(item, RECORDS_READ, 0),
+                                        getLongAttribute(item, RECORDS_WRITTEN, 0)),
+                                        getInstantAttribute(item, START_TIME),
+                                        getInstantAttribute(item, FINISH_TIME))))
+                        .expiryDate(jobId, getInstantAttribute(item, EXPIRY_DATE));
                 break;
             default:
                 LOGGER.warn("Found record with unrecognised update type: {}", item);
