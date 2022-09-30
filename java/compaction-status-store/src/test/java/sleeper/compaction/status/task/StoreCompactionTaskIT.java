@@ -17,19 +17,32 @@
 package sleeper.compaction.status.task;
 
 import org.junit.Test;
+import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobRecordsProcessed;
+import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobFinishedStatus;
+import sleeper.compaction.job.status.CompactionJobStartedStatus;
+import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.testutils.DynamoDBCompactionTaskStatusStoreTestBase;
 import sleeper.compaction.task.CompactionTaskStatus;
+import sleeper.core.partition.Partition;
+import sleeper.statestore.FileInfoFactory;
+
+import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTestBase {
     @Test
-    public void shouldReportCompactionTaskCreated() {
+    public void shouldReportCompactionTaskStarted() {
         //Given
         CompactionTaskStatus taskStatus = startedTaskWithDefaults();
 
         //When  
-        store.taskCreated(taskStatus, defaultStartTime());
+        store.taskStarted(taskStatus, defaultStartTime());
 
         //Then
         assertThat(store.getTask(taskStatus.getTaskId()))
@@ -39,11 +52,69 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
 
     @Test
     public void shouldReportCompactionTaskFinished() {
-        assertThat(false).isTrue();
+        //Given
+        Partition partition = singlePartition();
+        FileInfoFactory fileFactory = fileFactory(partition);
+        CompactionJob job1 = jobFactory.createCompactionJob(
+                Collections.singletonList(fileFactory.leafFile(100L, "a", "z")),
+                partition.getId());
+
+        //When
+        CompactionTaskStatus taskStatus = finishedTaskWithDefaults(createJobStatus(job1));
+        store.taskStarted(taskStatus, defaultStartTime());
+        store.taskFinished(taskStatus, defaultFinishTime());
+
+        //Then
+        assertThat(store.getTask(taskStatus.getTaskId()))
+                .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
+                .isEqualTo(taskStatus);
     }
 
     @Test
     public void shouldReportSplittingCompactionTaskFinished() {
-        assertThat(false).isTrue();
+        //Given
+        CompactionJob job1 = singleFileSplittingCompaction("C", "A", "B");
+
+        //When
+        CompactionTaskStatus taskStatus = finishedTaskWithDefaults(createJobStatus(job1));
+        store.taskStarted(taskStatus, defaultStartTime());
+        store.taskFinished(taskStatus, defaultFinishTime());
+
+        //Then
+        assertThat(store.getTask(taskStatus.getTaskId()))
+                .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
+                .isEqualTo(taskStatus);
+    }
+
+    @Test
+    public void shouldReportNoCompactionTaskExistsInStore() {
+        //Given
+        CompactionTaskStatus taskStatus = startedTaskWithDefaults();
+
+        // When/Then
+        assertThat(store.getTask(taskStatus.getTaskId()))
+                .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
+                .isNull();
+    }
+
+    private List<CompactionJobStatus> createJobStatus(CompactionJob job1) {
+        Instant jobCreationTime = Instant.parse("2022-09-22T14:00:00.000Z");
+        Instant jobStartedTime = Instant.parse("2022-09-22T14:00:02.000Z");
+        Instant jobStartedUpdateTime = Instant.parse("2022-09-22T14:00:04.000Z");
+        Instant jobFinishTime = Instant.parse("2022-09-22T14:00:14.000Z");
+
+        CompactionJobSummary summary = new CompactionJobSummary(
+                new CompactionJobRecordsProcessed(4800L, 2400L), jobStartedUpdateTime, jobFinishTime);
+
+        // When
+        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job1.getId())
+                .createdStatus(CompactionJobCreatedStatus.from(job1, jobCreationTime))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
+                        jobStartedUpdateTime, jobStartedTime))
+                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(jobStartedUpdateTime, summary))
+                .build();
+
+        return Collections.singletonList(status);
+
     }
 }

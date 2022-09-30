@@ -50,7 +50,7 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
     }
 
     @Override
-    public void taskCreated(CompactionTaskStatus taskStatus, Instant startTime) {
+    public void taskStarted(CompactionTaskStatus taskStatus, Instant startTime) {
         try {
             PutItemResult result = putItem(DynamoDBCompactionTaskStatusFormat.createTaskStartedRecord(taskStatus, startTime));
             LOGGER.debug("Put created event for job {} to table {}, capacity consumed = {}",

@@ -46,7 +46,7 @@ public class DynamoDBCompactionTaskStatusFormat {
     public static final String DURATION = "Duration";
     public static final String NUMBER_OF_JOBS = "NumberOfJobs";
     public static final String LINES_READ = "LinesRead";
-    public static final String LINES_WRITTEN = "LinesRead";
+    public static final String LINES_WRITTEN = "LinesWritten";
     public static final String READ_RATE = "ReadRate";
     public static final String WRITE_RATE = "WriteRate";
 
@@ -92,8 +92,7 @@ public class DynamoDBCompactionTaskStatusFormat {
             case STARTED:
                 builder.jobStarted(jobId, CompactionTaskStartedStatus.builder()
                         .startTime(getInstantAttribute(item, START_TIME))
-                        .startUpdateTime(getInstantAttribute(item, UPDATE_TIME)).build()
-                ).build();
+                        .startUpdateTime(getInstantAttribute(item, UPDATE_TIME)).build());
                 break;
             case FINISHED:
                 builder.jobFinished(jobId, CompactionTaskFinishedStatus.builder()

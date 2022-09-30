@@ -27,7 +27,7 @@ public interface CompactionTaskStatusStore {
         };
     }
 
-    default void taskCreated(CompactionTaskStatus taskStatus, Instant startTime) {
+    default void taskStarted(CompactionTaskStatus taskStatus, Instant startTime) {
     }
 
     default void taskFinished(CompactionTaskStatus taskStatus, Instant finishTime) {

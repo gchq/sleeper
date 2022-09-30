@@ -18,6 +18,7 @@ package sleeper.compaction.status.testutils;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.After;
 import org.junit.Before;
+import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore;
@@ -33,6 +34,7 @@ import sleeper.core.schema.Schema;
 import sleeper.statestore.FileInfoFactory;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
@@ -93,11 +95,11 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
     }
 
     protected static Instant defaultStartTime() {
-        return Instant.parse("2022-09-23T10:00:00.000Z");
+        return Instant.parse("2022-09-22T12:30:00.000Z");
     }
 
     protected static Instant defaultFinishTime() {
-        return Instant.parse("2022-09-23T11:00:00.000Z");
+        return Instant.parse("2022-09-22T16:30:00.000Z");
     }
 
 
@@ -105,13 +107,25 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
         return CompactionTaskStatus.started(defaultStartTime().toEpochMilli());
     }
 
-    protected static CompactionTaskStatus finishedTaskWithDefaults(CompactionTaskStatus task, List<CompactionJobStatus> jobStatusList) {
-        task.finished(jobStatusList, defaultFinishTime().toEpochMilli());
-        return task;
+    protected static CompactionTaskStatus finishedTaskWithDefaults(List<CompactionJobStatus> jobStatusList) {
+        CompactionTaskStatus taskStatus = startedTaskWithDefaults();
+        taskStatus.finished(jobStatusList, defaultFinishTime().toEpochMilli());
+        return taskStatus;
     }
 
     public static String jobStatusTableName(String instanceId) {
         return instanceTableName(instanceId, "compaction-task-status");
+    }
+
+    public CompactionJob singleFileSplittingCompaction(String rootPartitionId, String leftPartitionId, String rightPartitionId) {
+        List<Partition> partitions = new PartitionsBuilder(schema)
+                .leavesWithSplits(Arrays.asList(leftPartitionId, rightPartitionId), Collections.singletonList("p"))
+                .parentJoining(rootPartitionId, leftPartitionId, rightPartitionId)
+                .buildList();
+        FileInfoFactory fileFactory = new FileInfoFactory(schema, partitions);
+        return jobFactory.createSplittingCompactionJob(
+                Collections.singletonList(fileFactory.rootFile(100L, "a", "z")),
+                rootPartitionId, leftPartitionId, rightPartitionId, "p", 0);
     }
 
 }
