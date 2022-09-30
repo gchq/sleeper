@@ -25,23 +25,27 @@ import java.util.UUID;
 
 public class CompactionTaskStatus {
     private final String taskId;
-    private final Instant creationTime;
+    private final CompactionTaskStartedStatus startedStatus;
     private CompactionTaskFinishedStatus finishedStatus;
 
     private CompactionTaskStatus(Builder builder) {
         taskId = builder.taskId;
-        creationTime = builder.creationTime;
+        startedStatus = builder.startedStatus;
         finishedStatus = builder.finishedStatus;
     }
 
-    public static CompactionTaskStatus created(long creationTime) {
-        return builder().taskId(UUID.randomUUID().toString()).creationTime(Instant.ofEpochMilli(creationTime))
+    public static CompactionTaskStatus started(long startTime) {
+        return builder().taskId(UUID.randomUUID().toString()).startedStatus(
+                        CompactionTaskStartedStatus.builder()
+                                .startTime(Instant.ofEpochMilli(startTime))
+                                .startUpdateTime(Instant.ofEpochMilli(startTime))
+                                .build())
                 .build();
     }
 
     public void finished(List<CompactionJobStatus> jobStatusList, long finishTime) {
         this.finishedStatus = CompactionTaskFinishedStatus.fromJobList(jobStatusList,
-                Instant.ofEpochMilli(finishTime), (finishTime - creationTime.toEpochMilli()) / 1000.0);
+                Instant.ofEpochMilli(finishTime), (finishTime - startedStatus.getStartTime().toEpochMilli()) / 1000.0);
     }
 
     public static Builder builder() {
@@ -52,8 +56,8 @@ public class CompactionTaskStatus {
         return taskId;
     }
 
-    public Instant getCreationTime() {
-        return creationTime;
+    public CompactionTaskStartedStatus getStartedStatus() {
+        return startedStatus;
     }
 
     public CompactionTaskFinishedStatus getFinishedStatus() {
@@ -65,26 +69,26 @@ public class CompactionTaskStatus {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         CompactionTaskStatus that = (CompactionTaskStatus) o;
-        return Objects.equals(taskId, that.taskId) && Objects.equals(creationTime, that.creationTime) && Objects.equals(finishedStatus, that.finishedStatus);
+        return Objects.equals(taskId, that.taskId) && Objects.equals(startedStatus, that.startedStatus) && Objects.equals(finishedStatus, that.finishedStatus);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(taskId, creationTime, finishedStatus);
+        return Objects.hash(taskId, startedStatus, finishedStatus);
     }
 
     @Override
     public String toString() {
         return "CompactionTaskStatus{" +
                 "taskId='" + taskId + '\'' +
-                ", creationTime=" + creationTime +
+                ", startedStatus=" + startedStatus +
                 ", finishedStatus=" + finishedStatus +
                 '}';
     }
 
     public static final class Builder {
         private String taskId;
-        private Instant creationTime;
+        private CompactionTaskStartedStatus startedStatus;
         private CompactionTaskFinishedStatus finishedStatus;
 
         private Builder() {
@@ -95,8 +99,8 @@ public class CompactionTaskStatus {
             return this;
         }
 
-        public Builder creationTime(Instant creationTime) {
-            this.creationTime = creationTime;
+        public Builder startedStatus(CompactionTaskStartedStatus startedStatus) {
+            this.startedStatus = startedStatus;
             return this;
         }
 

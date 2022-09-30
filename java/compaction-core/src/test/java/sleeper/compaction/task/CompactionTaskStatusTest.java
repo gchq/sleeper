@@ -42,7 +42,7 @@ public class CompactionTaskStatusTest {
         Instant taskCreationTime = Instant.parse("2022-09-22T12:00:14.000Z");
 
         // When
-        CompactionTaskStatus status = CompactionTaskStatus.created(taskCreationTime.toEpochMilli());
+        CompactionTaskStatus status = CompactionTaskStatus.started(taskCreationTime.toEpochMilli());
 
         // Then
         assertThat(status).extracting("creationTime")
@@ -63,7 +63,7 @@ public class CompactionTaskStatusTest {
         CompactionJob job3 = dataHelper.singleFileCompaction(partition3);
 
         // When
-        CompactionTaskStatus status = CompactionTaskStatus.created(taskCreationTime.toEpochMilli());
+        CompactionTaskStatus status = CompactionTaskStatus.started(taskCreationTime.toEpochMilli());
         status.finished(createJobStatuses(job1, job2, job3), jobFinishTime3.toEpochMilli());
 
         // Then
@@ -87,7 +87,7 @@ public class CompactionTaskStatusTest {
         CompactionJob job3 = dataHelper.singleFileSplittingCompaction(partition3.getId(), "G", "H");
 
         // When
-        CompactionTaskStatus status = CompactionTaskStatus.created(taskCreationTime.toEpochMilli());
+        CompactionTaskStatus status = CompactionTaskStatus.started(taskCreationTime.toEpochMilli());
         status.finished(createJobStatuses(job1, job2, job3), jobFinishTime3.toEpochMilli());
 
         // Then

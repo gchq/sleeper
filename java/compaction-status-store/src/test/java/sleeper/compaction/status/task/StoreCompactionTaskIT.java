@@ -17,46 +17,33 @@
 package sleeper.compaction.status.task;
 
 import org.junit.Test;
-import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.status.testutils.DynamoDBCompactionTaskStatusStoreTestBase;
-import sleeper.core.partition.Partition;
-import sleeper.statestore.FileInfoFactory;
-
-import java.util.Collections;
+import sleeper.compaction.task.CompactionTaskStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTestBase {
     @Test
     public void shouldReportCompactionTaskCreated() {
-        Partition partition = singlePartition();
-        FileInfoFactory fileFactory = fileFactory(partition);
-        CompactionJob job = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile(100L, "a", "z")),
-                partition.getId());
+        //Given
+        CompactionTaskStatus taskStatus = startedTaskWithDefaults();
 
+        //When  
+        store.taskCreated(taskStatus, defaultStartTime());
+
+        //Then
+        assertThat(store.getTask(taskStatus.getTaskId()))
+                .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
+                .isEqualTo(taskStatus);
+    }
+
+    @Test
+    public void shouldReportCompactionTaskFinished() {
         assertThat(false).isTrue();
     }
 
     @Test
-    public void shouldReportCompactionTaskCompleted() {
-        Partition partition = singlePartition();
-        FileInfoFactory fileFactory = fileFactory(partition);
-        CompactionJob job = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile(100L, "a", "z")),
-                partition.getId());
-
-        assertThat(false).isTrue();
-    }
-
-    @Test
-    public void shouldReportSplittingCompactionTaskCompleted() {
-        Partition partition = singlePartition();
-        FileInfoFactory fileFactory = fileFactory(partition);
-        CompactionJob job = jobFactory.createSplittingCompactionJob(
-                Collections.singletonList(fileFactory.leafFile(100L, "a", "z")),
-                partition.getId(), "A", "B", "C", 0);
-
+    public void shouldReportSplittingCompactionTaskFinished() {
         assertThat(false).isTrue();
     }
 }

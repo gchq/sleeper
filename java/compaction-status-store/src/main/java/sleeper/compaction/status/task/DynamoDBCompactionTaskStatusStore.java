@@ -16,18 +16,78 @@
 package sleeper.compaction.status.task;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
+import com.amazonaws.services.dynamodbv2.model.Condition;
+import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import com.amazonaws.services.dynamodbv2.model.PutItemResult;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryResult;
+import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sleeper.compaction.status.CompactionStatusStoreException;
+import sleeper.compaction.task.CompactionTaskStatus;
+import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 
+import java.time.Instant;
+import java.util.Map;
+
+import static sleeper.compaction.status.DynamoDBAttributes.createStringAttribute;
 import static sleeper.compaction.status.DynamoDBUtils.instanceTableName;
+import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusFormat.TASK_ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
-public class DynamoDBCompactionTaskStatusStore {
+public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusStore {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskStatusStore.class);
     private final AmazonDynamoDB dynamoDB;
     private final String statusTableName;
 
     private DynamoDBCompactionTaskStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         this.dynamoDB = dynamoDB;
         this.statusTableName = taskStatusTableName(properties.get(ID));
+    }
+
+    @Override
+    public void taskCreated(CompactionTaskStatus taskStatus, Instant startTime) {
+        try {
+            PutItemResult result = putItem(DynamoDBCompactionTaskStatusFormat.createTaskStartedRecord(taskStatus, startTime));
+            LOGGER.debug("Put created event for job {} to table {}, capacity consumed = {}",
+                    taskStatus.getTaskId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+        } catch (RuntimeException e) {
+            throw new CompactionStatusStoreException("Failed putItem in taskCreated", e);
+        }
+    }
+
+    @Override
+    public void taskFinished(CompactionTaskStatus taskStatus, Instant finishTime) {
+        try {
+            PutItemResult result = putItem(DynamoDBCompactionTaskStatusFormat.createTaskFinishedRecord(taskStatus, finishTime));
+            LOGGER.debug("Put created event for job {} to table {}, capacity consumed = {}",
+                    taskStatus.getTaskId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+        } catch (RuntimeException e) {
+            throw new CompactionStatusStoreException("Failed putItem in taskCreated", e);
+        }
+    }
+
+    @Override
+    public CompactionTaskStatus getTask(String taskId) {
+        QueryResult result = dynamoDB.query(new QueryRequest()
+                .withTableName(statusTableName)
+                .addKeyConditionsEntry(TASK_ID, new Condition()
+                        .withAttributeValueList(createStringAttribute(taskId))
+                        .withComparisonOperator(ComparisonOperator.EQ)));
+        return DynamoDBCompactionTaskStatusFormat.streamJobStatuses(result.getItems())
+                .findFirst().orElse(null);
+    }
+
+    private PutItemResult putItem(Map<String, AttributeValue> item) {
+        PutItemRequest putItemRequest = new PutItemRequest()
+                .withItem(item)
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                .withTableName(statusTableName);
+        return dynamoDB.putItem(putItemRequest);
     }
 
     public static DynamoDBCompactionTaskStatusStore from(AmazonDynamoDB dynamoDB, InstanceProperties properties) {

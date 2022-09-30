@@ -18,16 +18,12 @@ package sleeper.compaction.status.testutils;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.After;
 import org.junit.Before;
-import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
-import sleeper.compaction.job.CompactionJobRecordsProcessed;
-import sleeper.compaction.job.CompactionJobSummary;
-import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStoreCreator;
+import sleeper.compaction.task.CompactionTaskStatus;
+import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
@@ -41,7 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
+import static sleeper.compaction.status.DynamoDBUtils.instanceTableName;
 import static sleeper.compaction.status.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
 import static sleeper.compaction.status.testutils.CompactionStatusStoreTestUtils.createSchema;
 import static sleeper.compaction.status.testutils.CompactionStatusStoreTestUtils.createTableProperties;
@@ -51,7 +47,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase {
 
     protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
-            .withIgnoredFields("updateTime", "expiryDate").build();
+            .withIgnoredFields("startedStatus.startUpdateTime", "finishedStatus.updateTime").build();
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final String jobStatusTableName = jobStatusTableName(instanceProperties.get(ID));
@@ -60,7 +56,7 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
 
     protected final String tableName = tableProperties.get(TABLE_NAME);
     protected final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-    protected final DynamoDBCompactionTaskStatusStore store = DynamoDBCompactionTaskStatusStore.from(dynamoDBClient, instanceProperties);
+    protected final CompactionTaskStatusStore store = DynamoDBCompactionTaskStatusStore.from(dynamoDBClient, instanceProperties);
 
     @Before
     public void setUp() {
@@ -96,38 +92,26 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    protected static Instant ignoredUpdateTime() {
-        return Instant.now();
-    }
-
     protected static Instant defaultStartTime() {
-        return Instant.parse("2022-09-23T10:51:00.001Z");
+        return Instant.parse("2022-09-23T10:00:00.000Z");
     }
 
-    protected static CompactionJobSummary defaultSummary() {
-        return new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(200L, 100L),
-                defaultStartTime(), Instant.parse("2022-09-23T10:52:00.001Z"));
+    protected static Instant defaultFinishTime() {
+        return Instant.parse("2022-09-23T11:00:00.000Z");
     }
 
-    protected static CompactionJobStatus startedStatusWithDefaults(CompactionJob job) {
-        return CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(
-                        job, ignoredUpdateTime()))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
-                        ignoredUpdateTime(), defaultStartTime()))
-                .build();
+
+    protected static CompactionTaskStatus startedTaskWithDefaults() {
+        return CompactionTaskStatus.started(defaultStartTime().toEpochMilli());
     }
 
-    protected static CompactionJobStatus finishedStatusWithDefaults(CompactionJob job) {
-        return CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(
-                        job, ignoredUpdateTime()))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
-                        ignoredUpdateTime(), defaultStartTime()))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(
-                        ignoredUpdateTime(), defaultSummary()))
-                .build();
+    protected static CompactionTaskStatus finishedTaskWithDefaults(CompactionTaskStatus task, List<CompactionJobStatus> jobStatusList) {
+        task.finished(jobStatusList, defaultFinishTime().toEpochMilli());
+        return task;
     }
-    
+
+    public static String jobStatusTableName(String instanceId) {
+        return instanceTableName(instanceId, "compaction-task-status");
+    }
+
 }

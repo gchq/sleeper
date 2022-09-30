@@ -15,11 +15,97 @@
  */
 package sleeper.compaction.status.task;
 
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import sleeper.compaction.status.DynamoDBRecordBuilder;
+import sleeper.compaction.task.CompactionTaskFinishedStatus;
+import sleeper.compaction.task.CompactionTaskStartedStatus;
+import sleeper.compaction.task.CompactionTaskStatus;
+import sleeper.compaction.task.CompactionTaskStatusesBuilder;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
+import static sleeper.compaction.status.DynamoDBAttributes.getInstantAttribute;
+import static sleeper.compaction.status.DynamoDBAttributes.getIntAttribute;
+import static sleeper.compaction.status.DynamoDBAttributes.getLongAttribute;
+import static sleeper.compaction.status.DynamoDBAttributes.getNumberAttribute;
+import static sleeper.compaction.status.DynamoDBAttributes.getStringAttribute;
+
 public class DynamoDBCompactionTaskStatusFormat {
 
     private DynamoDBCompactionTaskStatusFormat() {
     }
 
     public static final String TASK_ID = "TaskId";
+    public static final String UPDATE_TYPE = "UpdateType";
+    public static final String START_TIME = "StartTime";
     public static final String UPDATE_TIME = "UpdateTime";
+    public static final String FINISH_TIME = "FinishTime";
+    public static final String DURATION = "Duration";
+    public static final String NUMBER_OF_JOBS = "NumberOfJobs";
+    public static final String LINES_READ = "LinesRead";
+    public static final String LINES_WRITTEN = "LinesRead";
+    public static final String READ_RATE = "ReadRate";
+    public static final String WRITE_RATE = "WriteRate";
+
+    public static final String STARTED = "started";
+    public static final String FINISHED = "finished";
+
+    public static Map<String, AttributeValue> createTaskStartedRecord(CompactionTaskStatus taskStatus, Instant startTime) {
+        return createTaskRecord(taskStatus)
+                .number(START_TIME, startTime.toEpochMilli())
+                .string(UPDATE_TYPE, STARTED)
+                .build();
+    }
+
+    public static Map<String, AttributeValue> createTaskFinishedRecord(CompactionTaskStatus taskStatus, Instant finishTime) {
+        return createTaskRecord(taskStatus)
+                .string(UPDATE_TYPE, FINISHED)
+                .number(START_TIME, taskStatus.getStartedStatus().getStartTime().toEpochMilli())
+                .number(FINISH_TIME, finishTime.toEpochMilli())
+                .number(DURATION, taskStatus.getFinishedStatus().getTotalRuntime())
+                .number(NUMBER_OF_JOBS, taskStatus.getFinishedStatus().getTotalJobs())
+                .number(LINES_READ, taskStatus.getFinishedStatus().getTotalReads())
+                .number(LINES_WRITTEN, taskStatus.getFinishedStatus().getTotalWrites())
+                .number(READ_RATE, taskStatus.getFinishedStatus().getRecordsReadPerSecond())
+                .number(WRITE_RATE, taskStatus.getFinishedStatus().getRecordsWrittenPerSecond())
+                .build();
+    }
+
+    private static DynamoDBRecordBuilder createTaskRecord(CompactionTaskStatus taskStatus) {
+        return new DynamoDBRecordBuilder()
+                .string(TASK_ID, taskStatus.getTaskId())
+                .number(UPDATE_TIME, Instant.now().toEpochMilli());
+    }
+
+    public static Stream<CompactionTaskStatus> streamJobStatuses(List<Map<String, AttributeValue>> items) {
+        CompactionTaskStatusesBuilder builder = new CompactionTaskStatusesBuilder();
+        items.forEach(item -> addStatusUpdate(item, builder));
+        return builder.stream();
+    }
+
+    private static void addStatusUpdate(Map<String, AttributeValue> item, CompactionTaskStatusesBuilder builder) {
+        String jobId = getStringAttribute(item, TASK_ID);
+        switch (getStringAttribute(item, UPDATE_TYPE)) {
+            case STARTED:
+                builder.jobStarted(jobId, CompactionTaskStartedStatus.builder()
+                        .startTime(getInstantAttribute(item, START_TIME))
+                        .startUpdateTime(getInstantAttribute(item, UPDATE_TIME)).build()
+                ).build();
+                break;
+            case FINISHED:
+                builder.jobFinished(jobId, CompactionTaskFinishedStatus.builder()
+                        .finishTime(getInstantAttribute(item, FINISH_TIME))
+                        .totalRuntime(getLongAttribute(item, DURATION, 0))
+                        .totalJobs(getIntAttribute(item, NUMBER_OF_JOBS, 0))
+                        .totalReads(getIntAttribute(item, LINES_READ, 0))
+                        .totalWrites(getIntAttribute(item, LINES_WRITTEN, 0))
+                        .recordsReadPerSecond(Double.parseDouble(getNumberAttribute(item, READ_RATE)))
+                        .recordsWrittenPerSecond(Double.parseDouble(getNumberAttribute(item, WRITE_RATE)))
+                        .build());
+                break;
+        }
+    }
 }
