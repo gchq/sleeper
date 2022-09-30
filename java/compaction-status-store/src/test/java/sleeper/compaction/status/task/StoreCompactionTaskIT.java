@@ -41,7 +41,7 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
         //Given
         CompactionTaskStatus taskStatus = startedTaskWithDefaults();
 
-        //When  
+        //When
         store.taskStarted(taskStatus, defaultStartTime());
 
         //Then

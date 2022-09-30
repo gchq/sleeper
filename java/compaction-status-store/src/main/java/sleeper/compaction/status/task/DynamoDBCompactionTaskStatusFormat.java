@@ -16,6 +16,8 @@
 package sleeper.compaction.status.task;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sleeper.compaction.status.DynamoDBRecordBuilder;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStartedStatus;
@@ -34,6 +36,7 @@ import static sleeper.compaction.status.DynamoDBAttributes.getNumberAttribute;
 import static sleeper.compaction.status.DynamoDBAttributes.getStringAttribute;
 
 public class DynamoDBCompactionTaskStatusFormat {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskStatusFormat.class);
 
     private DynamoDBCompactionTaskStatusFormat() {
     }
@@ -105,6 +108,8 @@ public class DynamoDBCompactionTaskStatusFormat {
                         .recordsWrittenPerSecond(Double.parseDouble(getNumberAttribute(item, WRITE_RATE)))
                         .build());
                 break;
+            default:
+                LOGGER.warn("Found record with unrecognised update type: {}", item);
         }
     }
 }

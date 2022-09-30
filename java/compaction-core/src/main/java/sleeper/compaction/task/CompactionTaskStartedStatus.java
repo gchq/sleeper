@@ -33,8 +33,12 @@ public class CompactionTaskStartedStatus {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         CompactionTaskStartedStatus that = (CompactionTaskStartedStatus) o;
         return Objects.equals(startTime, that.startTime) && Objects.equals(startUpdateTime, that.startUpdateTime);
     }

@@ -66,8 +66,12 @@ public class CompactionTaskStatus {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         CompactionTaskStatus that = (CompactionTaskStatus) o;
         return Objects.equals(taskId, that.taskId) && Objects.equals(startedStatus, that.startedStatus) && Objects.equals(finishedStatus, that.finishedStatus);
     }
