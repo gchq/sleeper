@@ -126,6 +126,14 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
+    public List<CompactionJobStatus> getJobsByTaskId(String tableName, String taskId) {
+        ScanResult result = dynamoDB.scan(createScanRequestByTable(tableName));
+        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems())
+                .filter(job -> job.getTaskId().equals(taskId))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<CompactionJobStatus> getUnfinishedJobs(String tableName) {
         ScanResult result = dynamoDB.scan(createScanRequestByTable(tableName));
         return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems())

@@ -73,8 +73,7 @@ public class DynamoDBCompactionJobStatusFormat {
                     if (job.isSplittingJob()) {
                         builder.string(SPLIT_TO_PARTITION_IDS, String.join(", ", job.getChildPartitions()));
                     }
-                })
-                .string(TASK_ID, job.getTaskId()).build();
+                }).build();
     }
 
     public static Map<String, AttributeValue> createJobStartedRecord(CompactionJob job, Instant startTime, Long timeToLive) {
@@ -99,7 +98,8 @@ public class DynamoDBCompactionJobStatusFormat {
                 .string(TABLE_NAME, job.getTableName())
                 .number(UPDATE_TIME, timeNow)
                 .string(UPDATE_TYPE, updateType)
-                .number(EXPIRY_DATE, timeNow + timeToLive);
+                .number(EXPIRY_DATE, timeNow + timeToLive)
+                .string(TASK_ID, job.getTaskId());
     }
 
     public static Stream<CompactionJobStatus> streamJobStatuses(List<Map<String, AttributeValue>> items) {
@@ -117,6 +117,7 @@ public class DynamoDBCompactionJobStatusFormat {
                         .partitionId(getStringAttribute(item, PARTITION_ID))
                         .childPartitionIds(getChildPartitionIds(item))
                         .inputFilesCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))
+                        .taskId(getStringAttribute(item, TASK_ID))
                         .build()).expiryDate(jobId, getInstantAttribute(item, EXPIRY_DATE));
                 break;
             case UPDATE_TYPE_STARTED:

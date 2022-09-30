@@ -28,12 +28,14 @@ public class CompactionJobCreatedStatus {
     private final String partitionId;
     private final int inputFilesCount;
     private final List<String> childPartitionIds;
+    private final String taskId;
 
     private CompactionJobCreatedStatus(Builder builder) {
         updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
         partitionId = Objects.requireNonNull(builder.partitionId, "partitionId must not be null");
         inputFilesCount = builder.inputFilesCount;
         childPartitionIds = Objects.requireNonNull(builder.childPartitionIds, "childPartitionIds must not be null");
+        taskId = builder.taskId;
     }
 
     public static Builder builder() {
@@ -46,6 +48,7 @@ public class CompactionJobCreatedStatus {
                 .partitionId(job.getPartitionId())
                 .inputFilesCount(job.getInputFiles().size())
                 .childPartitionIds(job.getChildPartitions())
+                .taskId(job.getTaskId())
                 .build();
     }
 
@@ -65,11 +68,16 @@ public class CompactionJobCreatedStatus {
         return childPartitionIds;
     }
 
+    public String getTaskId() {
+        return taskId;
+    }
+
     public static final class Builder {
         private Instant updateTime;
         private String partitionId;
         private int inputFilesCount;
         private List<String> childPartitionIds;
+        private String taskId;
 
         private Builder() {
         }
@@ -97,6 +105,11 @@ public class CompactionJobCreatedStatus {
             return this;
         }
 
+        public Builder taskId(String taskId) {
+            this.taskId = taskId;
+            return this;
+        }
+
         public CompactionJobCreatedStatus build() {
             return new CompactionJobCreatedStatus(this);
         }
@@ -111,12 +124,16 @@ public class CompactionJobCreatedStatus {
             return false;
         }
         CompactionJobCreatedStatus that = (CompactionJobCreatedStatus) o;
-        return inputFilesCount == that.inputFilesCount && updateTime.equals(that.updateTime) && partitionId.equals(that.partitionId) && Objects.equals(childPartitionIds, that.childPartitionIds);
+        return inputFilesCount == that.inputFilesCount
+                && updateTime.equals(that.updateTime)
+                && partitionId.equals(that.partitionId)
+                && Objects.equals(childPartitionIds, that.childPartitionIds)
+                && Objects.equals(taskId, that.taskId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, partitionId, inputFilesCount, childPartitionIds);
+        return Objects.hash(updateTime, partitionId, inputFilesCount, childPartitionIds, taskId);
     }
 
     @Override
@@ -126,6 +143,7 @@ public class CompactionJobCreatedStatus {
                 ", partitionId='" + partitionId + '\'' +
                 ", inputFilesCount=" + inputFilesCount +
                 ", childPartitionIds=" + childPartitionIds +
+                ", taskId=" + taskId +
                 '}';
     }
 }
