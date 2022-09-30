@@ -40,6 +40,7 @@ public class CompactionJob {
     private int dimension; // Determines the row key to be used for splitting
     private String iteratorClassName;
     private String iteratorConfig;
+    private String taskId;
 
     private CompactionJob(Builder builder) {
         setTableName(builder.tableName);
@@ -54,6 +55,7 @@ public class CompactionJob {
         setDimension(builder.dimension);
         setIteratorClassName(builder.iteratorClassName);
         setIteratorConfig(builder.iteratorConfig);
+        setTaskId(builder.taskId);
     }
 
     public static Builder builder() {
@@ -171,6 +173,14 @@ public class CompactionJob {
         this.outputFiles = outputFiles;
     }
 
+    public String getTaskId() {
+        return taskId;
+    }
+
+    private void setTaskId(String taskId) {
+        this.taskId = taskId;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -190,7 +200,8 @@ public class CompactionJob {
                 Objects.equals(outputFiles, compactionJob.outputFiles) &&
                 Objects.equals(partitionId, compactionJob.partitionId) &&
                 Objects.equals(iteratorClassName, compactionJob.iteratorClassName) &&
-                Objects.equals(iteratorConfig, compactionJob.iteratorConfig);
+                Objects.equals(iteratorConfig, compactionJob.iteratorConfig) &&
+                Objects.equals(taskId, compactionJob.taskId);
     }
 
     @Override
@@ -205,13 +216,15 @@ public class CompactionJob {
                 outputFiles,
                 partitionId,
                 iteratorClassName,
-                iteratorConfig);
+                iteratorConfig,
+                taskId);
     }
 
     @Override
     public String toString() {
         return "CompactionJob{" +
                 "tableName='" + tableName + '\'' +
+                ", taskId=" + taskId +
                 ", jobId='" + jobId + '\'' +
                 ", inputFiles=" + inputFiles +
                 ", outputFile='" + outputFile + '\'' +
@@ -238,6 +251,7 @@ public class CompactionJob {
         private int dimension;
         private String iteratorClassName;
         private String iteratorConfig;
+        private String taskId;
 
         private Builder() {
         }
@@ -299,6 +313,11 @@ public class CompactionJob {
 
         public Builder iteratorConfig(String iteratorConfig) {
             this.iteratorConfig = iteratorConfig;
+            return this;
+        }
+
+        public Builder taskId(String taskId) {
+            this.taskId = taskId;
             return this;
         }
 

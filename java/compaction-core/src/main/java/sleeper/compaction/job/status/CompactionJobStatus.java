@@ -25,6 +25,7 @@ import java.util.Objects;
 public class CompactionJobStatus {
 
     private final String jobId;
+    private final String taskId;
     private final CompactionJobCreatedStatus createdStatus;
     private final CompactionJobStartedStatus startedStatus;
     private final CompactionJobFinishedStatus finishedStatus;
@@ -36,6 +37,7 @@ public class CompactionJobStatus {
         startedStatus = builder.startedStatus;
         finishedStatus = builder.finishedStatus;
         expiryDate = builder.expiryDate;
+        taskId = builder.taskId;
     }
 
     public static Builder builder() {
@@ -139,8 +141,13 @@ public class CompactionJobStatus {
         }
     }
 
+    public String getTaskId() {
+        return taskId;
+    }
+
     public static final class Builder {
         private String jobId;
+        private String taskId;
         private CompactionJobCreatedStatus createdStatus;
         private CompactionJobStartedStatus startedStatus;
         private CompactionJobFinishedStatus finishedStatus;
@@ -151,6 +158,11 @@ public class CompactionJobStatus {
 
         public Builder jobId(String jobId) {
             this.jobId = jobId;
+            return this;
+        }
+
+        public Builder taskId(String taskId) {
+            this.taskId = taskId;
             return this;
         }
 
@@ -200,6 +212,7 @@ public class CompactionJobStatus {
     public String toString() {
         return "CompactionJobStatus{" +
                 "jobId='" + jobId + '\'' +
+                "taskId='" + taskId + '\'' +
                 ", createdStatus=" + createdStatus +
                 ", startedStatus=" + startedStatus +
                 ", finishedStatus=" + finishedStatus +
