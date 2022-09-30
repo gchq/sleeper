@@ -95,6 +95,7 @@ public class CompactSortedFilesRunner {
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             CompactionJobStatusStore jobStatusStore,
+            String taskId,
             String sqsJobQueueUrl,
             AmazonSQS sqsClient,
             int maxMessageRetrieveAttempts,
@@ -105,7 +106,7 @@ public class CompactSortedFilesRunner {
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
         this.finishedJobs = new ArrayList<>();
-        this.compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
+        this.compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider, taskId);
         this.sqsJobQueueUrl = sqsJobQueueUrl;
         this.maxConnectionsToS3 = instanceProperties.getInt(MAXIMUM_CONNECTIONS_TO_S3);
         this.keepAliveFrequency = instanceProperties.getInt(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS);
@@ -120,9 +121,10 @@ public class CompactSortedFilesRunner {
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             CompactionJobStatusStore jobStatusStore,
+            String taskId,
             String sqsJobQueueUrl,
             AmazonSQS sqsClient) {
-        this(instanceProperties, objectFactory, tablePropertiesProvider, stateStoreProvider, jobStatusStore, sqsJobQueueUrl, sqsClient, 3, 20);
+        this(instanceProperties, objectFactory, tablePropertiesProvider, stateStoreProvider, jobStatusStore, taskId, sqsJobQueueUrl, sqsClient, 3, 20);
     }
 
     public void run() throws InterruptedException, IOException, ActionException {
@@ -234,6 +236,7 @@ public class CompactSortedFilesRunner {
                 tablePropertiesProvider,
                 stateStoreProvider,
                 jobStatusStore,
+                taskStatus.getTaskId(),
                 sqsJobQueueUrl,
                 sqsClient);
         runner.run();

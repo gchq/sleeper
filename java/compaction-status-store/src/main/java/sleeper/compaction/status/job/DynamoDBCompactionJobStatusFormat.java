@@ -59,6 +59,7 @@ public class DynamoDBCompactionJobStatusFormat {
     public static final String FINISH_TIME = "FinishTime";
     public static final String RECORDS_READ = "RecordsRead";
     public static final String RECORDS_WRITTEN = "RecordsWritten";
+    public static final String TASK_ID = "TaskId";
 
     public static final String UPDATE_TYPE_CREATED = "created";
     public static final String UPDATE_TYPE_STARTED = "started";
@@ -72,7 +73,8 @@ public class DynamoDBCompactionJobStatusFormat {
                     if (job.isSplittingJob()) {
                         builder.string(SPLIT_TO_PARTITION_IDS, String.join(", ", job.getChildPartitions()));
                     }
-                }).build();
+                })
+                .string(TASK_ID, job.getTaskId()).build();
     }
 
     public static Map<String, AttributeValue> createJobStartedRecord(CompactionJob job, Instant startTime, Long timeToLive) {
