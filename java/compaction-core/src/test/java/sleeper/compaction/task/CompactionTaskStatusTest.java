@@ -39,20 +39,20 @@ public class CompactionTaskStatusTest {
     @Test
     public void shouldCreateCompactionTaskStatus() {
         // Given
-        Instant taskCreationTime = Instant.parse("2022-09-22T12:00:14.000Z");
+        Instant taskStartedTime = Instant.parse("2022-09-22T12:00:14.000Z");
 
         // When
-        CompactionTaskStatus status = CompactionTaskStatus.started(taskCreationTime.toEpochMilli());
+        CompactionTaskStatus status = CompactionTaskStatus.started(taskStartedTime.toEpochMilli());
 
         // Then
-        assertThat(status).extracting("creationTime")
-                .isEqualTo(taskCreationTime);
+        assertThat(status).extracting("startedStatus.startTime")
+                .isEqualTo(taskStartedTime);
     }
 
     @Test
     public void shouldCreateCompactionTaskStatusFromFinishedStandardJobList() {
         //Given
-        Instant taskCreationTime = Instant.parse("2022-09-22T12:00:14.000Z");
+        Instant taskStartedTime = Instant.parse("2022-09-22T12:00:14.000Z");
         Instant jobFinishTime3 = Instant.parse("2022-09-22T16:00:14.000Z");
 
         Partition partition1 = dataHelper.singlePartition();
@@ -63,20 +63,20 @@ public class CompactionTaskStatusTest {
         CompactionJob job3 = dataHelper.singleFileCompaction(partition3);
 
         // When
-        CompactionTaskStatus status = CompactionTaskStatus.started(taskCreationTime.toEpochMilli());
+        CompactionTaskStatus status = CompactionTaskStatus.started(taskStartedTime.toEpochMilli());
         status.finished(createJobStatuses(job1, job2, job3), jobFinishTime3.toEpochMilli());
 
         // Then
-        assertThat(status).extracting("creationTime", "finishedStatus.completionTime",
+        assertThat(status).extracting("startedStatus.startTime", "finishedStatus.finishTime",
                         "finishedStatus.totalJobs", "finishedStatus.totalRuntime", "finishedStatus.totalReads",
                         "finishedStatus.totalWrites", "finishedStatus.recordsReadPerSecond", "finishedStatus.recordsWrittenPerSecond")
-                .containsExactly(taskCreationTime, jobFinishTime3, 3, 14400.0, 14400.0, 7200.0, 1.0, 0.5);
+                .containsExactly(taskStartedTime, jobFinishTime3, 3, 14400.0, 14400.0, 7200.0, 1.0, 0.5);
     }
 
     @Test
     public void shouldCreateCompactionTaskStatusFromFinishedSplittingJobList() {
         //Given
-        Instant taskCreationTime = Instant.parse("2022-09-22T12:00:14.000Z");
+        Instant taskStartedTime = Instant.parse("2022-09-22T12:00:14.000Z");
         Instant jobFinishTime3 = Instant.parse("2022-09-22T16:00:14.000Z");
 
         Partition partition1 = dataHelper.singlePartition();
@@ -87,14 +87,14 @@ public class CompactionTaskStatusTest {
         CompactionJob job3 = dataHelper.singleFileSplittingCompaction(partition3.getId(), "G", "H");
 
         // When
-        CompactionTaskStatus status = CompactionTaskStatus.started(taskCreationTime.toEpochMilli());
+        CompactionTaskStatus status = CompactionTaskStatus.started(taskStartedTime.toEpochMilli());
         status.finished(createJobStatuses(job1, job2, job3), jobFinishTime3.toEpochMilli());
 
         // Then
-        assertThat(status).extracting("creationTime", "finishedStatus.completionTime",
+        assertThat(status).extracting("startedStatus.startTime", "finishedStatus.finishTime",
                         "finishedStatus.totalJobs", "finishedStatus.totalRuntime", "finishedStatus.totalReads",
                         "finishedStatus.totalWrites", "finishedStatus.recordsReadPerSecond", "finishedStatus.recordsWrittenPerSecond")
-                .containsExactly(taskCreationTime, jobFinishTime3, 3, 14400.0, 14400.0, 7200.0, 1.0, 0.5);
+                .containsExactly(taskStartedTime, jobFinishTime3, 3, 14400.0, 14400.0, 7200.0, 1.0, 0.5);
     }
 
     private List<CompactionJobStatus> createJobStatuses(CompactionJob job1, CompactionJob job2, CompactionJob job3) {
