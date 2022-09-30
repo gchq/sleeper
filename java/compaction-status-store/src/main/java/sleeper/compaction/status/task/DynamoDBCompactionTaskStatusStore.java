@@ -105,7 +105,7 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
     public void setTimeToLive(Long timeToLive) {
         this.timeToLive = timeToLive;
     }
-    
+
     @Override
     public Long getTimeToLive() {
         return timeToLive;
