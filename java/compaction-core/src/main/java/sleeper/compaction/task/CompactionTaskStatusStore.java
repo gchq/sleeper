@@ -36,4 +36,11 @@ public interface CompactionTaskStatusStore {
     default CompactionTaskStatus getTask(String taskId) {
         throw new UnsupportedOperationException("Instance has no compaction task status store");
     }
+
+    default void setTimeToLive(Long timeToLive) {
+    }
+
+    default Long getTimeToLive() {
+        throw new UnsupportedOperationException("Instance has no compaction job status store");
+    }
 }

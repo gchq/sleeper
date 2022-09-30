@@ -27,11 +27,13 @@ public class CompactionTaskStatus {
     private final String taskId;
     private final CompactionTaskStartedStatus startedStatus;
     private CompactionTaskFinishedStatus finishedStatus;
+    private final Instant expiryDate;
 
     private CompactionTaskStatus(Builder builder) {
         taskId = builder.taskId;
         startedStatus = builder.startedStatus;
         finishedStatus = builder.finishedStatus;
+        expiryDate = builder.expiryDate;
     }
 
     public static CompactionTaskStatus started(long startTime) {
@@ -94,6 +96,7 @@ public class CompactionTaskStatus {
         private String taskId;
         private CompactionTaskStartedStatus startedStatus;
         private CompactionTaskFinishedStatus finishedStatus;
+        private Instant expiryDate;
 
         private Builder() {
         }
@@ -110,6 +113,11 @@ public class CompactionTaskStatus {
 
         public Builder finishedStatus(CompactionTaskFinishedStatus finishedStatus) {
             this.finishedStatus = finishedStatus;
+            return this;
+        }
+
+        public Builder expiryDate(Instant expiryDate) {
+            this.expiryDate = expiryDate;
             return this;
         }
 

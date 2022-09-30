@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.task;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,17 +26,24 @@ public class CompactionTaskStatusesBuilder {
 
     private final Map<String, CompactionTaskStartedStatus> startedById = new HashMap<>(); // Order by task ID for output
     private final Map<String, CompactionTaskFinishedStatus> finishedById = new HashMap<>();
+    private final Map<String, Instant> expiryDateById = new HashMap<>();
 
 
     public CompactionTaskStatusesBuilder jobStarted(
-            String jobId, CompactionTaskStartedStatus startedStatus) {
-        startedById.put(jobId, startedStatus);
+            String taskId, CompactionTaskStartedStatus startedStatus) {
+        startedById.put(taskId, startedStatus);
         return this;
     }
 
     public CompactionTaskStatusesBuilder jobFinished(
-            String jobId, CompactionTaskFinishedStatus finishedStatus) {
-        finishedById.put(jobId, finishedStatus);
+            String taskId, CompactionTaskFinishedStatus finishedStatus) {
+        finishedById.put(taskId, finishedStatus);
+        return this;
+    }
+
+    public CompactionTaskStatusesBuilder expiryDate(
+            String taskId, Instant expiryDate) {
+        expiryDateById.put(taskId, expiryDate);
         return this;
     }
 
@@ -48,10 +56,11 @@ public class CompactionTaskStatusesBuilder {
         return stream().collect(Collectors.toList());
     }
 
-    private CompactionTaskStatus fullStatus(String jobId, CompactionTaskStartedStatus startedStatus) {
-        return CompactionTaskStatus.builder().taskId(jobId)
+    private CompactionTaskStatus fullStatus(String taskId, CompactionTaskStartedStatus startedStatus) {
+        return CompactionTaskStatus.builder().taskId(taskId)
                 .startedStatus(startedStatus)
-                .finishedStatus(finishedById.get(jobId))
+                .finishedStatus(finishedById.get(taskId))
+                .expiryDate(expiryDateById.get(taskId))
                 .build();
     }
 }
