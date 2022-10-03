@@ -52,9 +52,6 @@ import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
@@ -80,7 +77,7 @@ public class CompactSortedFilesRunner {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
-    private final List<CompactionJobStatus> finishedJobs;
+    private final CompactionTaskStatus taskStatus;
     private final CompactionJobSerDe compactionJobSerDe;
     private final String sqsJobQueueUrl;
     private final AmazonSQS sqsClient;
@@ -95,6 +92,7 @@ public class CompactSortedFilesRunner {
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             CompactionJobStatusStore jobStatusStore,
+            CompactionTaskStatus taskStatus,
             String sqsJobQueueUrl,
             AmazonSQS sqsClient,
             int maxMessageRetrieveAttempts,
@@ -104,7 +102,7 @@ public class CompactSortedFilesRunner {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
-        this.finishedJobs = new ArrayList<>();
+        this.taskStatus = taskStatus;
         this.compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         this.sqsJobQueueUrl = sqsJobQueueUrl;
         this.maxConnectionsToS3 = instanceProperties.getInt(MAXIMUM_CONNECTIONS_TO_S3);
@@ -120,9 +118,10 @@ public class CompactSortedFilesRunner {
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             CompactionJobStatusStore jobStatusStore,
+            CompactionTaskStatus taskStatus,
             String sqsJobQueueUrl,
             AmazonSQS sqsClient) {
-        this(instanceProperties, objectFactory, tablePropertiesProvider, stateStoreProvider, jobStatusStore, sqsJobQueueUrl, sqsClient, 3, 20);
+        this(instanceProperties, objectFactory, tablePropertiesProvider, stateStoreProvider, jobStatusStore, taskStatus, sqsJobQueueUrl, sqsClient, 3, 20);
     }
 
     public void run() throws InterruptedException, IOException, ActionException {
@@ -143,7 +142,7 @@ public class CompactSortedFilesRunner {
                 CompactionJob compactionJob = compactionJobSerDe.deserialiseFromString(message.getBody());
                 LOGGER.info("CompactionJob is: {}", compactionJob);
                 try {
-                    finishedJobs.add(compact(compactionJob, message));
+                    taskStatus.addJobStatus(compact(compactionJob, message));
                 } catch (IOException | IteratorException e) {
                     LOGGER.error("Exception running compaction compactionJob", e);
                     return;
@@ -185,10 +184,6 @@ public class CompactSortedFilesRunner {
                 compactionJob.getId());
         keepAliveRunnable.stop();
         return jobStatusStore.getJob(compactionJob.getId());
-    }
-
-    public List<CompactionJobStatus> getJobStatusList() {
-        return Collections.unmodifiableList(finishedJobs);
     }
 
     public static void main(String[] args) throws InterruptedException, IOException, ObjectFactoryException, ActionException {
@@ -234,6 +229,7 @@ public class CompactSortedFilesRunner {
                 tablePropertiesProvider,
                 stateStoreProvider,
                 jobStatusStore,
+                taskStatus,
                 sqsJobQueueUrl,
                 sqsClient);
         runner.run();
@@ -249,7 +245,7 @@ public class CompactSortedFilesRunner {
         LOGGER.info("CompactSortedFilesRunner total run time = " + runTimeInSeconds);
 
         LOGGER.info("Saving task information");
-        taskStatus.finished(runner.getJobStatusList(), finishTime);
+        taskStatus.finished(finishTime);
         taskStatusStore.taskFinished(taskStatus, Instant.ofEpochMilli(finishTime));
         LOGGER.info("Task information saved");
     }

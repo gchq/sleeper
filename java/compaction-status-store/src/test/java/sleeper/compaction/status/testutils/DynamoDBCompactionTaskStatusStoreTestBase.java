@@ -108,7 +108,8 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
 
     protected static CompactionTaskStatus finishedTaskWithDefaults(List<CompactionJobStatus> jobStatusList) {
         CompactionTaskStatus taskStatus = startedTaskWithDefaults();
-        taskStatus.finished(jobStatusList, defaultFinishTime().toEpochMilli());
+        jobStatusList.forEach(taskStatus::addJobStatus);
+        taskStatus.finished(defaultFinishTime().toEpochMilli());
         return taskStatus;
     }
 

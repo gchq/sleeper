@@ -19,14 +19,13 @@ package sleeper.compaction.task;
 import sleeper.compaction.job.status.CompactionJobStatus;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
 public class CompactionTaskStatus {
     private final String taskId;
     private final CompactionTaskStartedStatus startedStatus;
-    private CompactionTaskFinishedStatus finishedStatus;
+    private final CompactionTaskFinishedStatus finishedStatus;
     private final Instant expiryDate;
 
     private CompactionTaskStatus(Builder builder) {
@@ -42,12 +41,16 @@ public class CompactionTaskStatus {
                                 .startTime(Instant.ofEpochMilli(startTime))
                                 .startUpdateTime(Instant.ofEpochMilli(startTime))
                                 .build())
+                .finishedStatus(CompactionTaskFinishedStatus.empty())
                 .build();
     }
 
-    public void finished(List<CompactionJobStatus> jobStatusList, long finishTime) {
-        this.finishedStatus = CompactionTaskFinishedStatus.fromJobList(jobStatusList,
-                Instant.ofEpochMilli(finishTime), (finishTime - startedStatus.getStartTime().toEpochMilli()) / 1000.0);
+    public void addJobStatus(CompactionJobStatus jobStatus) {
+        this.finishedStatus.addJobStatus(jobStatus);
+    }
+
+    public void finished(long finishTime) {
+        this.finishedStatus.finish(Instant.ofEpochMilli(finishTime), (finishTime - startedStatus.getStartTime().toEpochMilli()) / 1000.0);
     }
 
     public static Builder builder() {
