@@ -202,7 +202,7 @@ for maps. When Athena does add this support, we will be able to add support for 
 
 You might notice that you have a choice of two connectors by default:
 * The simple connector
-* The iterator applying onnector
+* The iterator applying connector
 
 You can choose at runtime which one you want to use:
 ```sql
