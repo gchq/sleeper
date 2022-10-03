@@ -244,7 +244,7 @@ non-persistent EMR approach. This controls the number of steps that can run conc
 
 The URL of the SQS queue to which messages should be sent is given by the instance property
 `sleeper.bulk.import.persistent.emr.job.queue.url`which can be found in the config
-object in the bucket named 'sleeper-<instance-id>-config'.
+object in the bucket named `sleeper-<instance-id>-config`.
 
 Note however that as there is one persistent EMR cluster deployed for the whole instance there are no per-table persistent
 EMR properties, and it does not make sense to change the cluster properties on a per-job basis.
