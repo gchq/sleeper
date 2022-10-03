@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.job.status;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ public class CompactionJobStatusesBuilder {
     private final Map<String, CompactionJobCreatedStatus> createdById = new TreeMap<>(); // Order by job ID for output
     private final Map<String, CompactionJobStartedStatus> startedById = new HashMap<>();
     private final Map<String, CompactionJobFinishedStatus> finishedById = new HashMap<>();
+    private final Map<String, Instant> expiryDateById = new HashMap<>();
 
     public CompactionJobStatusesBuilder jobCreated(
             String jobId, CompactionJobCreatedStatus statusUpdate) {
@@ -51,6 +53,12 @@ public class CompactionJobStatusesBuilder {
                 .map(entry -> fullStatus(entry.getKey(), entry.getValue()));
     }
 
+    public CompactionJobStatusesBuilder expiryDate(
+            String jobId, Instant expiryDate) {
+        expiryDateById.put(jobId, expiryDate);
+        return this;
+    }
+
     public List<CompactionJobStatus> build() {
         return stream().collect(Collectors.toList());
     }
@@ -60,6 +68,7 @@ public class CompactionJobStatusesBuilder {
                 .createdStatus(created)
                 .startedStatus(startedById.get(jobId))
                 .finishedStatus(finishedById.get(jobId))
+                .expiryDate(expiryDateById.get(jobId))
                 .build();
     }
 }

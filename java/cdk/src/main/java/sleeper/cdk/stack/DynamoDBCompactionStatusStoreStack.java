@@ -55,6 +55,7 @@ public class DynamoDBCompactionStatusStoreStack implements CompactionStatusStore
                         .name(DynamoDBCompactionJobStatusFormat.UPDATE_TIME)
                         .type(AttributeType.NUMBER)
                         .build())
+                .timeToLiveAttribute(DynamoDBCompactionJobStatusFormat.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
 

@@ -34,6 +34,7 @@ import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.CompactionStatusStoreException;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.time.Instant;
 import java.util.List;
@@ -52,10 +53,12 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
 
     private final AmazonDynamoDB dynamoDB;
     private final String statusTableName;
+    private Long timeToLive;
 
     private DynamoDBCompactionJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         this.dynamoDB = dynamoDB;
         this.statusTableName = jobStatusTableName(properties.get(ID));
+        this.timeToLive = properties.getLong(UserDefinedInstanceProperty.COMPACTION_JOB_STATUS_TTL_IN_SECONDS) * 1000;
     }
 
     public static CompactionJobStatusStore from(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
@@ -73,7 +76,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     @Override
     public void jobCreated(CompactionJob job) {
         try {
-            PutItemResult result = putItem(DynamoDBCompactionJobStatusFormat.createJobCreatedRecord(job));
+            PutItemResult result = putItem(DynamoDBCompactionJobStatusFormat.createJobCreatedRecord(job, timeToLive));
             LOGGER.debug("Put created event for job {} to table {}, capacity consumed = {}",
                     job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
@@ -84,7 +87,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     @Override
     public void jobStarted(CompactionJob job, Instant startTime) {
         try {
-            PutItemResult result = putItem(DynamoDBCompactionJobStatusFormat.createJobStartedRecord(job, startTime));
+            PutItemResult result = putItem(DynamoDBCompactionJobStatusFormat.createJobStartedRecord(job, startTime, timeToLive));
             LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
                     job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
@@ -95,7 +98,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     @Override
     public void jobFinished(CompactionJob job, CompactionJobSummary summary) {
         try {
-            PutItemResult result = putItem(DynamoDBCompactionJobStatusFormat.createJobFinishedRecord(job, summary));
+            PutItemResult result = putItem(DynamoDBCompactionJobStatusFormat.createJobFinishedRecord(job, summary, timeToLive));
             LOGGER.debug("Put finished event for job {} to table {}, capacity consumed = {}",
                     job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
@@ -144,5 +147,15 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                 .addScanFilterEntry(TABLE_NAME, new Condition()
                         .withAttributeValueList(createStringAttribute(tableName))
                         .withComparisonOperator(ComparisonOperator.EQ));
+    }
+
+    @Override
+    public void setTimeToLive(Long timeToLive) {
+        this.timeToLive = timeToLive;
+    }
+
+    @Override
+    public Long getTimeToLive() {
+        return timeToLive;
     }
 }
