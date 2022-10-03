@@ -287,6 +287,9 @@ sleeper.bulk.import.emr.spark.storage.level=MEMORY_AND_DISK_SER # Used to set sp
 sleeper.bulk.import.emr.spark.rdd.compress=true # Used to set spark.rdd.compress
 sleeper.bulk.import.emr.spark.shuffle.compress=true # Used to set spark.shuffle.compress
 sleeper.bulk.import.emr.spark.shuffle.spill.compress=true # Used to set spark.shuffle.spill.compress
+
+// spark.sql options
+sleeper.bulk.import.emr.spark.sql.shuffle.partitions=290 # Used to set spark.sql.shuffle.partitions
 ```
 
 #### Accessing YARN web interface and Spark application UI on EMR and persistent EMR clusters
