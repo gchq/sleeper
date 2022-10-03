@@ -25,7 +25,6 @@ import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.core.partition.Partition;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -55,12 +54,9 @@ public class CompactionTaskStatusTest {
         Instant taskStartedTime = Instant.parse("2022-09-22T12:00:14.000Z");
         Instant jobFinishTime3 = Instant.parse("2022-09-22T16:00:14.000Z");
 
-        Partition partition1 = dataHelper.singlePartition();
-        CompactionJob job1 = dataHelper.singleFileCompaction(partition1);
-        Partition partition2 = dataHelper.singlePartition();
-        CompactionJob job2 = dataHelper.singleFileCompaction(partition2);
-        Partition partition3 = dataHelper.singlePartition();
-        CompactionJob job3 = dataHelper.singleFileCompaction(partition3);
+        CompactionJob job1 = dataHelper.singleFileCompaction();
+        CompactionJob job2 = dataHelper.singleFileCompaction();
+        CompactionJob job3 = dataHelper.singleFileCompaction();
 
         // When
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.started(taskStartedTime.toEpochMilli());
@@ -81,12 +77,9 @@ public class CompactionTaskStatusTest {
         Instant taskStartedTime = Instant.parse("2022-09-22T12:00:14.000Z");
         Instant jobFinishTime3 = Instant.parse("2022-09-22T16:00:14.000Z");
 
-        Partition partition1 = dataHelper.singlePartition();
-        CompactionJob job1 = dataHelper.singleFileSplittingCompaction(partition1.getId(), "A", "B");
-        Partition partition2 = dataHelper.singlePartition();
-        CompactionJob job2 = dataHelper.singleFileSplittingCompaction(partition2.getId(), "D", "E");
-        Partition partition3 = dataHelper.singlePartition();
-        CompactionJob job3 = dataHelper.singleFileSplittingCompaction(partition3.getId(), "G", "H");
+        CompactionJob job1 = dataHelper.singleFileSplittingCompaction("C", "A", "B");
+        CompactionJob job2 = dataHelper.singleFileSplittingCompaction("F", "D", "E");
+        CompactionJob job3 = dataHelper.singleFileSplittingCompaction("I", "G", "H");
 
         // When
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.started(taskStartedTime.toEpochMilli());
