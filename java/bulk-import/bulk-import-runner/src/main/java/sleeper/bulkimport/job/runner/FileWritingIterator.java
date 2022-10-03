@@ -45,6 +45,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -71,6 +72,9 @@ public class FileWritingIterator implements Iterator<Row> {
         this.schema = tableProperties.getSchema();
         this.allSchemaFields = schema.getAllFields();
         this.conf = conf;
+        LOGGER.info("Initialised FileWritingIterator");
+        LOGGER.info("Schema is {}", schema);
+        LOGGER.info("Configuration is {}", conf);
     }
 
     @Override
@@ -185,18 +189,24 @@ public class FileWritingIterator implements Iterator<Row> {
 
     private ParquetWriter<Record> createWriter(String partitionId) throws IOException {
         numRecords = 0L;
-
-        this.path = instanceProperties.get(UserDefinedInstanceProperty.FILE_SYSTEM)
+        path = instanceProperties.get(UserDefinedInstanceProperty.FILE_SYSTEM)
                 + tableProperties.get(TableProperty.DATA_BUCKET) + "/partition_" + partitionId
                 + "/" + UUID.randomUUID().toString() + ".parquet";
 
+        int rowGroupSize = tableProperties.getInt(TableProperty.ROW_GROUP_SIZE);
+        int pageSize = tableProperties.getInt(TableProperty.PAGE_SIZE);
+        CompressionCodecName compressionCodec = CompressionCodecName.valueOf(
+                tableProperties.get(TableProperty.COMPRESSION_CODEC).toUpperCase(Locale.ROOT));
+
+        LOGGER.info("Creating writer for partition {} to path {} with row group size {}, page size {}, compression codec {}",
+                partitionId, path, rowGroupSize, pageSize, compressionCodec);
         return new ParquetRecordWriter.Builder(new Path(path),
                 SchemaConverter.getSchema(schema), schema)
-                .withCompressionCodec(CompressionCodecName
-                        .valueOf(tableProperties.get(TableProperty.COMPRESSION_CODEC).toUpperCase()))
-                .withRowGroupSize(tableProperties.getInt(TableProperty.ROW_GROUP_SIZE))
-                .withPageSize(tableProperties.getInt(TableProperty.PAGE_SIZE))
-                .withConf(this.conf).build();
+                .withCompressionCodec(compressionCodec)
+                .withRowGroupSize(rowGroupSize)
+                .withPageSize(pageSize)
+                .withConf(conf)
+                .build();
     }
 
     private String getPartitionId(Row row) {

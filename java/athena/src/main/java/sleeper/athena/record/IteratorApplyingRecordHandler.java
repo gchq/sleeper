@@ -79,7 +79,7 @@ import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONF
 public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(IteratorApplyingRecordHandler.class);
 
-    private final ExecutorService executorService;
+    private final ExecutorService executorService = Executors.newFixedThreadPool(10);
     private final ObjectFactory objectFactory;
 
     public IteratorApplyingRecordHandler() throws IOException {
@@ -89,19 +89,17 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
 
     public IteratorApplyingRecordHandler(AmazonS3 s3Client, String configBucket) throws IOException {
         super(s3Client, configBucket);
-        this.executorService = Executors.newFixedThreadPool(10);
-        try {
-            this.objectFactory = new ObjectFactory(getInstanceProperties(), s3Client, "/tmp");
-        } catch (ObjectFactoryException e) {
-            throw new RuntimeException("Failed to initialise Object Factory");
-        }
+        objectFactory = createObjectFactory(s3Client);
     }
 
     public IteratorApplyingRecordHandler(AmazonS3 s3Client, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) throws IOException {
         super(s3Client, configBucket, secretsManager, athena);
-        this.executorService = Executors.newFixedThreadPool(10);
+        objectFactory = createObjectFactory(s3Client);
+    }
+
+    private ObjectFactory createObjectFactory(AmazonS3 s3Client) {
         try {
-            this.objectFactory = new ObjectFactory(getInstanceProperties(), s3Client, "/tmp");
+            return new ObjectFactory(getInstanceProperties(), s3Client, "/tmp");
         } catch (ObjectFactoryException e) {
             throw new RuntimeException("Failed to initialise Object Factory");
         }

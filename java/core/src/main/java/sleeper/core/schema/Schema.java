@@ -39,10 +39,10 @@ public class Schema {
     private final List<Field> valueFields;
 
     private Schema(Builder builder) {
-        rowKeyFields = Collections.unmodifiableList(new ArrayList<>(builder.validRowKeyFields()));
-        sortKeyFields = Collections.unmodifiableList(new ArrayList<>(builder.validSortKeyFields()));
-        valueFields = Collections.unmodifiableList(new ArrayList<>(builder.validValueFields()));
-        validateNoDuplicates(streamAllFields());
+        rowKeyFields = validateRowKeys(builder.rowKeyFields);
+        sortKeyFields = validateSortKeys(builder.sortKeyFields);
+        valueFields = validateValueKeys(builder.valueFields);
+        validateNoDuplicates(streamAllFields(rowKeyFields, sortKeyFields, valueFields));
     }
 
     public static Builder builder() {
@@ -100,8 +100,7 @@ public class Schema {
     }
 
     public Stream<Field> streamAllFields() {
-        return Stream.concat(rowKeyFields.stream(),
-                Stream.concat(sortKeyFields.stream(), valueFields.stream()));
+        return streamAllFields(rowKeyFields, sortKeyFields, valueFields);
     }
 
     public Optional<Field> getField(String fieldName) {
@@ -173,26 +172,6 @@ public class Schema {
         public Schema build() {
             return new Schema(this);
         }
-
-        private List<Field> validRowKeyFields() {
-            return validateRowKeys(rowKeyFields);
-        }
-
-        private List<Field> validSortKeyFields() {
-            if (sortKeyFields == null) {
-                return Collections.emptyList();
-            } else {
-                return validateSortKeys(sortKeyFields);
-            }
-        }
-
-        private List<Field> validValueFields() {
-            if (valueFields == null) {
-                return Collections.emptyList();
-            } else {
-                return valueFields;
-            }
-        }
     }
 
     private static List<Field> validateRowKeys(List<Field> fields) {
@@ -202,14 +181,35 @@ public class Schema {
         if (fields.stream().anyMatch(field -> !(field.getType() instanceof PrimitiveType))) {
             throw new IllegalArgumentException("Row key fields must have a primitive type");
         }
-        return fields;
+        return makeImmutable(fields);
     }
 
     private static List<Field> validateSortKeys(List<Field> fields) {
+        if (fields == null) {
+            return Collections.emptyList();
+        }
         if (fields.stream().anyMatch(field -> !(field.getType() instanceof PrimitiveType))) {
             throw new IllegalArgumentException("Sort key fields must have a primitive type");
         }
-        return fields;
+        return makeImmutable(fields);
+    }
+
+    private static List<Field> validateValueKeys(List<Field> fields) {
+        if (fields == null) {
+            return Collections.emptyList();
+        }
+        return makeImmutable(fields);
+    }
+
+    private static List<Field> makeImmutable(List<Field> fields) {
+        return Collections.unmodifiableList(new ArrayList<>(fields));
+    }
+
+    private static Stream<Field> streamAllFields(
+            List<Field> rowKeyFields, List<Field> sortKeyFields, List<Field> valueFields) {
+
+        return Stream.of(rowKeyFields, sortKeyFields, valueFields)
+                .flatMap(List::stream);
     }
 
     private static void validateNoDuplicates(Stream<Field> fields) {

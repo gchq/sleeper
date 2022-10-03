@@ -18,7 +18,7 @@ package sleeper.compaction.strategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.strategy.impl.CompactionFactory;
+import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
@@ -45,7 +45,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
 
     protected final LeafPartitionCompactionStrategy leafStrategy;
     protected final ShouldCreateJobsStrategy shouldCreateJobsStrategy;
-    protected CompactionFactory factory;
+    protected CompactionJobFactory factory;
     protected Schema schema;
     protected int compactionFilesBatchSize;
 
@@ -62,7 +62,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
 
     @Override
     public void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        factory = new CompactionFactory(instanceProperties, tableProperties);
+        factory = new CompactionJobFactory(instanceProperties, tableProperties);
         leafStrategy.init(instanceProperties, tableProperties, factory);
         shouldCreateJobsStrategy.init(instanceProperties, tableProperties);
         schema = tableProperties.getSchema();

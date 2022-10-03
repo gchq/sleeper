@@ -108,27 +108,27 @@ class DynamoDBFileInfoFormat {
     }
 
     FileInfo getFileInfoFromAttributeValues(Map<String, AttributeValue> item) throws IOException {
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(rowKeyTypes);
-        fileInfo.setFileStatus(FileInfo.FileStatus.valueOf(item.get(STATUS).getS()));
-        fileInfo.setPartitionId(item.get(PARTITION).getS());
+        FileInfo.Builder fileInfoBuilder = FileInfo.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .fileStatus(FileInfo.FileStatus.valueOf(item.get(STATUS).getS()))
+                .partitionId(item.get(PARTITION).getS())
+                .filename(item.get(NAME).getS());
         if (null != item.get(NUMBER_LINES)) {
-            fileInfo.setNumberOfRecords(Long.parseLong(item.get(NUMBER_LINES).getN()));
+            fileInfoBuilder.numberOfRecords(Long.parseLong(item.get(NUMBER_LINES).getN()));
         }
         if (null != item.get(MIN_KEY)) {
-            fileInfo.setMinRowKey(keySerDe.deserialise(item.get(MIN_KEY).getB().array()));
+            fileInfoBuilder.minRowKey(keySerDe.deserialise(item.get(MIN_KEY).getB().array()));
         }
         if (null != item.get(MAX_KEY)) {
-            fileInfo.setMaxRowKey(keySerDe.deserialise(item.get(MAX_KEY).getB().array()));
+            fileInfoBuilder.maxRowKey(keySerDe.deserialise(item.get(MAX_KEY).getB().array()));
         }
-        fileInfo.setFilename(item.get(NAME).getS());
         if (null != item.get(JOB_ID)) {
-            fileInfo.setJobId(item.get(JOB_ID).getS());
+            fileInfoBuilder.jobId(item.get(JOB_ID).getS());
         }
         if (null != item.get(LAST_UPDATE_TIME)) {
-            fileInfo.setLastStateStoreUpdateTime(Long.parseLong(item.get(LAST_UPDATE_TIME).getN()));
+            fileInfoBuilder.lastStateStoreUpdateTime(Long.parseLong(item.get(LAST_UPDATE_TIME).getN()));
         }
-        return fileInfo;
+        return fileInfoBuilder.build();
     }
 
     private AttributeValue getAttributeValueFromRowKeys(Key rowKey) throws IOException {

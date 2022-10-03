@@ -5,6 +5,7 @@ on:
       - '.github/workflows/chunk-query.yaml'
       - '.github/workflows/chunk.yaml'
       - 'code-style/checkstyle*.xml'
+      - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
       - 'java/query/**'
       - 'java/ingest/**'

@@ -30,8 +30,8 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableLister;
-import sleeper.table.util.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
@@ -75,8 +75,8 @@ public class FindPartitionsToSplitLambda {
             TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
             return new FindPartitionsToSplit(tableName, tablePropertiesProvider, stateStore,
-                instanceProperties.getInt(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB),
-                sqsClient, instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL));
+                    instanceProperties.getInt(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB),
+                    sqsClient, instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL));
         }).forEach(partitionsFinder -> {
             try {
                 partitionsFinder.run();

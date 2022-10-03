@@ -33,6 +33,9 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
@@ -50,8 +53,8 @@ import sleeper.job.common.action.ActionException;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableCreator;
-import sleeper.table.util.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -150,44 +153,50 @@ public class CompactSortedFilesRunnerIT {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
+        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDB);
+        CompactionJobStatusStore jobStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDB, instanceProperties);
         //  - Create four files of sorted data
         String folderName = folder.newFolder().getAbsolutePath();
         String file1 = folderName + "/file1.parquet";
         String file2 = folderName + "/file2.parquet";
         String file3 = folderName + "/file3.parquet";
         String file4 = folderName + "/file4.parquet";
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new LongType());
-        fileInfo1.setFilename(file1);
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId("1");
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setMinRowKey(Key.create(0L));
-        fileInfo1.setMaxRowKey(Key.create(198L));
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new LongType());
-        fileInfo2.setFilename(file2);
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId("1");
-        fileInfo2.setNumberOfRecords(100L);
-        fileInfo2.setMinRowKey(Key.create(1L));
-        fileInfo2.setMaxRowKey(Key.create(199L));
-        FileInfo fileInfo3 = new FileInfo();
-        fileInfo3.setRowKeyTypes(new LongType());
-        fileInfo3.setFilename(file3);
-        fileInfo3.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo3.setPartitionId("1");
-        fileInfo3.setNumberOfRecords(100L);
-        fileInfo3.setMinRowKey(Key.create(0L));
-        fileInfo3.setMaxRowKey(Key.create(198L));
-        FileInfo fileInfo4 = new FileInfo();
-        fileInfo4.setRowKeyTypes(new LongType());
-        fileInfo4.setFilename(file4);
-        fileInfo4.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo4.setPartitionId("1");
-        fileInfo4.setNumberOfRecords(100L);
-        fileInfo4.setMinRowKey(Key.create(1L));
-        fileInfo4.setMaxRowKey(Key.create(199L));
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file1)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(0L))
+                .maxRowKey(Key.create(198L))
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file2)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(199L))
+                .build();
+        FileInfo fileInfo3 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file3)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(0L))
+                .maxRowKey(Key.create(198L))
+                .build();
+        FileInfo fileInfo4 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(file4)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(199L))
+                .build();
         ParquetRecordWriter writer1 = new ParquetRecordWriter(new Path(file1), SchemaConverter.getSchema(schema), schema);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
@@ -227,18 +236,22 @@ public class CompactSortedFilesRunnerIT {
         //  - Update Dynamo state store with details of files
         stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
         //  - Create two compaction jobs and put on queue
-        CompactionJob compactionJob1 = new CompactionJob(tableName, "job1");
-        compactionJob1.setPartitionId("root");
-        compactionJob1.setDimension(0);
-        compactionJob1.setInputFiles(Arrays.asList(file1, file2));
-        compactionJob1.setIsSplittingJob(false);
-        compactionJob1.setOutputFile(folderName + "/output1.parquet");
-        CompactionJob compactionJob2 = new CompactionJob(tableName, "job2");
-        compactionJob2.setPartitionId("root");
-        compactionJob2.setDimension(0);
-        compactionJob2.setInputFiles(Arrays.asList(file3, file4));
-        compactionJob2.setIsSplittingJob(false);
-        compactionJob2.setOutputFile(folderName + "/output2.parquet");
+        CompactionJob compactionJob1 = CompactionJob.builder()
+                .tableName(tableName)
+                .jobId("job1")
+                .partitionId("root")
+                .dimension(0)
+                .inputFiles(Arrays.asList(file1, file2))
+                .isSplittingJob(false)
+                .outputFile(folderName + "/output1.parquet").build();
+        CompactionJob compactionJob2 = CompactionJob.builder()
+                .tableName(tableName)
+                .jobId("job2")
+                .partitionId("root")
+                .dimension(0)
+                .inputFiles(Arrays.asList(file3, file4))
+                .isSplittingJob(false)
+                .outputFile(folderName + "/output2.parquet").build();
         CompactionJobSerDe jobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         String job1Json = jobSerDe.serialiseToString(compactionJob1);
         String job2Json = jobSerDe.serialiseToString(compactionJob2);
@@ -253,8 +266,9 @@ public class CompactSortedFilesRunnerIT {
 
         // When
         CompactSortedFilesRunner runner = new CompactSortedFilesRunner(
-                instanceProperties, new ObjectFactory(new InstanceProperties(), null, ""),
-                tablePropertiesProvider, stateStoreProvider, instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqsClient,
+                instanceProperties, ObjectFactory.noUserJars(),
+                tablePropertiesProvider, stateStoreProvider, jobStatusStore,
+                instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqsClient,
                 1, 5);
         runner.run();
 

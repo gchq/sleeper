@@ -29,6 +29,9 @@ import org.apache.parquet.schema.MessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobRecordsProcessed;
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
@@ -54,7 +57,7 @@ import sleeper.statestore.StateStoreException;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
-import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -78,6 +81,7 @@ public class CompactSortedFiles {
     private final MessageType messageType;
     private final CompactionJob compactionJob;
     private final StateStore stateStore;
+    private final CompactionJobStatusStore jobStatusStore;
     private final int rowGroupSize;
     private final int pageSize;
     private final String compressionCodec;
@@ -90,11 +94,10 @@ public class CompactSortedFiles {
                               MessageType messageType,
                               CompactionJob compactionJob,
                               StateStore stateStore,
+                              CompactionJobStatusStore jobStatusStore,
                               int rowGroupSize,
                               int pageSize,
-                              String compressionCodec,
-                              int maxConnectionsToS3,
-                              int keepAliveFrequency) {
+                              String compressionCodec) {
         this.instanceProperties = instanceProperties;
         this.objectFactory = objectFactory;
         this.schema = schema;
@@ -102,38 +105,38 @@ public class CompactSortedFiles {
         this.messageType = messageType;
         this.compactionJob = compactionJob;
         this.stateStore = stateStore;
+        this.jobStatusStore = jobStatusStore;
         this.rowGroupSize = rowGroupSize;
         this.pageSize = pageSize;
         this.compressionCodec = compressionCodec;
     }
 
     public CompactionJobSummary compact() throws IOException, IteratorException {
-        LocalDateTime startLDT = LocalDateTime.now();
+        Instant startTime = Instant.now();
         String id = compactionJob.getId();
-        LOGGER.info("Compaction job {}: compaction called at {}", id, startLDT);
+        LOGGER.info("Compaction job {}: compaction called at {}", id, startTime);
+        jobStatusStore.jobStarted(compactionJob, startTime);
 
-        CompactionJobSummary summary;
+        CompactionJobRecordsProcessed recordsProcessed;
         if (!compactionJob.isSplittingJob()) {
-            summary = compactNoSplitting();
+            recordsProcessed = compactNoSplitting();
         } else {
-            summary = compactSplitting();
+            recordsProcessed = compactSplitting();
         }
 
-        LocalDateTime finishLDT = LocalDateTime.now();
+        Instant finishTime = Instant.now();
         // Print summary
-        LOGGER.info("Compaction job {}: finished at {} with status {}", id, finishLDT,
-                summary instanceof FailedCompactionJobSummary ? "failed" : "successful");
+        LOGGER.info("Compaction job {}: finished at {}", id, finishTime);
 
-        double durationInSeconds = Duration.between(startLDT, finishLDT).toMillis() / 1000.0;
-        double recordsReadPerSecond = summary.getLinesRead() / durationInSeconds;
-        double recordsWrittenPerSecond = summary.getLinesWritten() / durationInSeconds;
-        METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", id, durationInSeconds);
-        METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", id, summary.getLinesRead(), String.format("%.1f", recordsReadPerSecond));
-        METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", id, summary.getLinesWritten(), String.format("%.1f", recordsWrittenPerSecond));
+        CompactionJobSummary summary = new CompactionJobSummary(recordsProcessed, startTime, finishTime);
+        METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", id, summary.getDurationInSeconds());
+        METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", id, summary.getLinesRead(), String.format("%.1f", summary.getRecordsReadPerSecond()));
+        METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", id, summary.getLinesWritten(), String.format("%.1f", summary.getRecordsWrittenPerSecond()));
+        jobStatusStore.jobFinished(compactionJob, summary);
         return summary;
     }
 
-    private CompactionJobSummary compactNoSplitting() throws IOException, IteratorException {
+    private CompactionJobRecordsProcessed compactNoSplitting() throws IOException, IteratorException {
         Configuration conf = getConfiguration();
 
         // Create a reader for each file
@@ -209,11 +212,10 @@ public class CompactSortedFiles {
                 schema.getRowKeyTypes());
         LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(), LocalDateTime.now());
 
-        CompactionJobSummary summary = new CompactionJobSummary(totalNumberOfLinesRead, linesWritten);
-        return summary;
+        return new CompactionJobRecordsProcessed(totalNumberOfLinesRead, linesWritten);
     }
 
-    private CompactionJobSummary compactSplitting() throws IOException, IteratorException {
+    private CompactionJobRecordsProcessed compactSplitting() throws IOException, IteratorException {
         Configuration conf = getConfiguration();
 
         // Create a reader for each file
@@ -323,8 +325,7 @@ public class CompactSortedFiles {
                 stateStore,
                 schema.getRowKeyTypes());
         LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(), LocalDateTime.now());
-        CompactionJobSummary summary = new CompactionJobSummary(totalNumberOfLinesRead, linesWrittenToLeftFile + linesWrittenToRightFile);
-        return summary;
+        return new CompactionJobRecordsProcessed(totalNumberOfLinesRead, linesWrittenToLeftFile + linesWrittenToRightFile);
     }
 
     private List<CloseableIterator<Record>> createInputIterators(Configuration conf) throws IOException {
@@ -372,28 +373,25 @@ public class CompactSortedFiles {
                                                    List<PrimitiveType> rowKeyTypes) {
         List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
         for (String file : inputFiles) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(rowKeyTypes);
-            fileInfo.setFilename(file);
-            fileInfo.setPartitionId(partitionId);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setLastStateStoreUpdateTime(finishTime);
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(rowKeyTypes)
+                    .filename(file)
+                    .partitionId(partitionId)
+                    .lastStateStoreUpdateTime(finishTime)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .build();
             filesToBeMarkedReadyForGC.add(fileInfo);
         }
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(rowKeyTypes);
-        fileInfo.setFilename(outputFile);
-        fileInfo.setPartitionId(partitionId);
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setNumberOfRecords(linesWritten);
-        if (linesWritten > 0) {
-            fileInfo.setMinRowKey(Key.create(minRowKey0));
-            fileInfo.setMaxRowKey(Key.create(maxRowKey0));
-        } else {
-            fileInfo.setMinRowKey(null);
-            fileInfo.setMaxRowKey(null);
-        }
-        fileInfo.setLastStateStoreUpdateTime(finishTime);
+        FileInfo fileInfo = FileInfo.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .filename(outputFile)
+                .partitionId(partitionId)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(linesWritten)
+                .minRowKey(linesWritten > 0 ? Key.create(minRowKey0) : null)
+                .maxRowKey(linesWritten > 0 ? Key.create(maxRowKey0) : null)
+                .lastStateStoreUpdateTime(finishTime)
+                .build();
         try {
             stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToBeMarkedReadyForGC, fileInfo);
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
@@ -416,42 +414,35 @@ public class CompactSortedFiles {
                                                    List<PrimitiveType> rowKeyTypes) {
         List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
         for (String file : inputFiles) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(rowKeyTypes);
-            fileInfo.setFilename(file);
-            fileInfo.setPartitionId(partition);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setLastStateStoreUpdateTime(finishTime);
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(rowKeyTypes)
+                    .filename(file)
+                    .partitionId(partition)
+                    .lastStateStoreUpdateTime(finishTime)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .build();
             filesToBeMarkedReadyForGC.add(fileInfo);
         }
-        FileInfo leftFileInfo = new FileInfo();
-        leftFileInfo.setRowKeyTypes(rowKeyTypes);
-        leftFileInfo.setFilename(outputFiles.getLeft());
-        leftFileInfo.setPartitionId(childPartitions.get(0));
-        leftFileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        leftFileInfo.setNumberOfRecords(linesWritten.getLeft());
-        if (linesWritten.getLeft() > 0) {
-            leftFileInfo.setMinRowKey(Key.create(minKeys.getLeft()));
-            leftFileInfo.setMaxRowKey(Key.create(maxKeys.getLeft()));
-        } else {
-            leftFileInfo.setMinRowKey(null);
-            leftFileInfo.setMaxRowKey(null);
-        }
-        leftFileInfo.setLastStateStoreUpdateTime(finishTime);
-        FileInfo rightFileInfo = new FileInfo();
-        rightFileInfo.setRowKeyTypes(rowKeyTypes);
-        rightFileInfo.setFilename(outputFiles.getRight());
-        rightFileInfo.setPartitionId(childPartitions.get(1));
-        rightFileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        rightFileInfo.setNumberOfRecords(linesWritten.getRight());
-        if (linesWritten.getRight() > 0) {
-            rightFileInfo.setMinRowKey(Key.create(minKeys.getRight()));
-            rightFileInfo.setMaxRowKey(Key.create(maxKeys.getRight()));
-        } else {
-            rightFileInfo.setMinRowKey(null);
-            rightFileInfo.setMaxRowKey(null);
-        }
-        rightFileInfo.setLastStateStoreUpdateTime(finishTime);
+        FileInfo leftFileInfo = FileInfo.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .filename(outputFiles.getLeft())
+                .partitionId(childPartitions.get(0))
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(linesWritten.getLeft())
+                .minRowKey(linesWritten.getLeft() > 0 ? Key.create(minKeys.getLeft()) : null)
+                .maxRowKey(linesWritten.getLeft() > 0 ? Key.create(maxKeys.getLeft()) : null)
+                .lastStateStoreUpdateTime(finishTime)
+                .build();
+        FileInfo rightFileInfo = FileInfo.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .filename(outputFiles.getRight())
+                .partitionId(childPartitions.get(1))
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(linesWritten.getRight())
+                .minRowKey(linesWritten.getRight() > 0 ? Key.create(minKeys.getRight()) : null)
+                .maxRowKey(linesWritten.getRight() > 0 ? Key.create(maxKeys.getRight()) : null)
+                .lastStateStoreUpdateTime(finishTime)
+                .build();
         try {
             stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, leftFileInfo, rightFileInfo);
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
@@ -459,31 +450,6 @@ public class CompactSortedFiles {
         } catch (StateStoreException e) {
             LOGGER.error("Exception updating DynamoDB while moving input files to ready for GC and creating new active file", e);
             return false;
-        }
-    }
-
-    public static class CompactionJobSummary {
-        private final long linesRead;
-        private final long linesWritten;
-
-        public CompactionJobSummary(long linesRead, long linesWritten) {
-            this.linesRead = linesRead;
-            this.linesWritten = linesWritten;
-        }
-
-        public long getLinesRead() {
-            return linesRead;
-        }
-
-        public long getLinesWritten() {
-            return linesWritten;
-        }
-    }
-
-    public static class FailedCompactionJobSummary extends CompactionJobSummary {
-
-        public FailedCompactionJobSummary(long linesRead, long linesWritten) {
-            super(linesRead, linesWritten);
         }
     }
 

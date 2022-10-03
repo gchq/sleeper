@@ -36,6 +36,7 @@ import sleeper.query.tracker.exception.QueryTrackerException;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -103,7 +104,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
 
     @Override
     protected void runQueries(TableProperties tableProperties) {
-        Scanner scanner = new Scanner(System.in);
+        Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.displayName());
         resultsPublisherConfig = new HashMap<>();
         while (true) {
             System.out.println("Send output to S3 results bucket (s) or SQS (q)?");

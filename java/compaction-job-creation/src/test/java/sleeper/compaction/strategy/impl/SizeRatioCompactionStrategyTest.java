@@ -62,18 +62,15 @@ public class SizeRatioCompactionStrategyTest {
         List<Partition> partitions = Collections.singletonList(partition);
         List<FileInfo> fileInfos = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setFilename("file-" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId(partition.getId());
-            if (i == 7) {
-                fileInfo.setNumberOfRecords(100L);
-            } else {
-                fileInfo.setNumberOfRecords(50L);
-            }
-            fileInfo.setRowKeyTypes(new IntType());
-            fileInfo.setMinRowKey(Key.create(1));
-            fileInfo.setMaxRowKey(Key.create(100));
+            FileInfo fileInfo = FileInfo.builder()
+                    .filename("file-" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId(partition.getId())
+                    .numberOfRecords(i == 7 ? 100L : 50L)
+                    .rowKeyTypes(new IntType())
+                    .minRowKey(Key.create(1))
+                    .maxRowKey(Key.create(100))
+                    .build();
             fileInfos.add(fileInfo);
         }
 
@@ -107,14 +104,15 @@ public class SizeRatioCompactionStrategyTest {
         List<Partition> partitions = Collections.singletonList(partition);
         List<FileInfo> fileInfos = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setFilename("file-" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId(partition.getId());
-            fileInfo.setNumberOfRecords((long) Math.pow(2, i + 1));
-            fileInfo.setRowKeyTypes(new IntType());
-            fileInfo.setMinRowKey(Key.create(1));
-            fileInfo.setMaxRowKey(Key.create(100));
+            FileInfo fileInfo = FileInfo.builder()
+                    .filename("file-" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId(partition.getId())
+                    .numberOfRecords((long) Math.pow(2, i + 1))
+                    .rowKeyTypes(new IntType())
+                    .minRowKey(Key.create(1))
+                    .maxRowKey(Key.create(100))
+                    .build();
             fileInfos.add(fileInfo);
         }
 
@@ -152,14 +150,15 @@ public class SizeRatioCompactionStrategyTest {
         List<Integer> sizes = Arrays.asList(9, 9, 9, 9, 10, 90, 90, 90, 90, 100);
         List<FileInfo> fileInfos = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setFilename("file-" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId(partition.getId());
-            fileInfo.setNumberOfRecords((long) sizes.get(i));
-            fileInfo.setRowKeyTypes(new IntType());
-            fileInfo.setMinRowKey(Key.create(1));
-            fileInfo.setMaxRowKey(Key.create(100));
+            FileInfo fileInfo = FileInfo.builder()
+                    .filename("file-" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId(partition.getId())
+                    .numberOfRecords((long) sizes.get(i))
+                    .rowKeyTypes(new IntType())
+                    .minRowKey(Key.create(1))
+                    .maxRowKey(Key.create(100))
+                    .build();
             fileInfos.add(fileInfo);
         }
         List<FileInfo> shuffledFileInfos = new ArrayList<>(fileInfos);
@@ -214,14 +213,15 @@ public class SizeRatioCompactionStrategyTest {
         List<Integer> sizes = Arrays.asList(9, 9, 9, 9, 10, 90, 90, 90, 90, 100, 200, 200, 200);
         List<FileInfo> fileInfos = new ArrayList<>();
         for (int i = 0; i < sizes.size(); i++) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setFilename("file-" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId(partition.getId());
-            fileInfo.setNumberOfRecords((long) sizes.get(i));
-            fileInfo.setRowKeyTypes(new IntType());
-            fileInfo.setMinRowKey(Key.create(1));
-            fileInfo.setMaxRowKey(Key.create(100));
+            FileInfo fileInfo = FileInfo.builder()
+                    .filename("file-" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId(partition.getId())
+                    .numberOfRecords((long) sizes.get(i))
+                    .rowKeyTypes(new IntType())
+                    .minRowKey(Key.create(1))
+                    .maxRowKey(Key.create(100))
+                    .build();
             fileInfos.add(fileInfo);
         }
         List<FileInfo> shuffledFileInfos = new ArrayList<>(fileInfos);
@@ -253,21 +253,23 @@ public class SizeRatioCompactionStrategyTest {
     }
 
     private void checkJob(CompactionJob job, List<String> files, String partitionId, String fs, String bucket) {
-        CompactionJob expectedCompactionJob = new CompactionJob("table", job.getId()); // Job id is a UUID so we don't know what it will be
-        expectedCompactionJob.setPartitionId(partitionId);
         List<String> filesForJob = new ArrayList<>();
         for (String file : files) {
             filesForJob.add(file);
         }
-        expectedCompactionJob.setInputFiles(filesForJob);
+        CompactionJob expectedCompactionJob = CompactionJob.builder()
+                .tableName("table")
+                .jobId(job.getId()) // Job id is a UUID so we don't know what it will be
+                .partitionId(partitionId)
+                .inputFiles(filesForJob)
+                .isSplittingJob(false)
+                .outputFile(fs + bucket + "/partition_" + partitionId + "/" + job.getId() + ".parquet")
+                .childPartitions(null)
+                .splitPoint(null)
+                .dimension(-1)
+                .iteratorClassName(null)
+                .iteratorConfig(null).build();
         job.getInputFiles().sort(Comparator.naturalOrder());
-        expectedCompactionJob.setIsSplittingJob(false);
-        expectedCompactionJob.setOutputFile(fs + bucket + "/partition_" + partitionId + "/" + job.getId() + ".parquet");
-        expectedCompactionJob.setChildPartitions(null);
-        expectedCompactionJob.setSplitPoint(null);
-        expectedCompactionJob.setDimension(-1);
-        expectedCompactionJob.setIteratorClassName(null);
-        expectedCompactionJob.setIteratorConfig(null);
         assertThat(job).isEqualTo(expectedCompactionJob);
     }
 }

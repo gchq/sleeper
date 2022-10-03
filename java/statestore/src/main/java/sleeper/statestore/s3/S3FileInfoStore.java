@@ -140,8 +140,10 @@ public class S3FileInfoStore implements FileInfoStore {
             List<FileInfo> filteredFiles = new ArrayList<>();
             for (FileInfo fileInfo : list) {
                 if (namesOfFilesToBeMarkedReadyForGC.contains(fileInfo.getFilename())) {
-                    fileInfo.setFileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
-                    fileInfo.setLastStateStoreUpdateTime(System.currentTimeMillis());
+                    fileInfo = fileInfo.toBuilder()
+                            .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                            .lastStateStoreUpdateTime(System.currentTimeMillis())
+                            .build();
                 }
                 filteredFiles.add(fileInfo);
             }
@@ -179,8 +181,10 @@ public class S3FileInfoStore implements FileInfoStore {
             List<FileInfo> filteredFiles = new ArrayList<>();
             for (FileInfo fileInfo : list) {
                 if (namesOfFilesToBeMarkedReadyForGC.contains(fileInfo.getFilename())) {
-                    fileInfo.setFileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
-                    fileInfo.setLastStateStoreUpdateTime(System.currentTimeMillis());
+                    fileInfo = fileInfo.toBuilder()
+                            .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                            .lastStateStoreUpdateTime(System.currentTimeMillis())
+                            .build();
                 }
                 filteredFiles.add(fileInfo);
             }
@@ -216,7 +220,7 @@ public class S3FileInfoStore implements FileInfoStore {
             List<FileInfo> filteredFiles = new ArrayList<>();
             for (FileInfo fileInfo : list) {
                 if (namesOfFiles.contains(fileInfo.getFilename())) {
-                    fileInfo.setJobId(jobId);
+                    fileInfo = fileInfo.toBuilder().jobId(jobId).build();
                 }
                 filteredFiles.add(fileInfo);
             }
@@ -464,22 +468,18 @@ public class S3FileInfoStore implements FileInfoStore {
     }
 
     private FileInfo getFileInfoFromRecord(Record record) throws IOException {
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setFilename((String) record.get("fileName"));
-        fileInfo.setFileStatus(FileInfo.FileStatus.valueOf((String) record.get("fileStatus")));
-        fileInfo.setPartitionId((String) record.get("partitionId"));
-        fileInfo.setLastStateStoreUpdateTime((long) record.get("lastStateStoreUpdateTime"));
-        fileInfo.setNumberOfRecords((long) record.get("numberOfRecords"));
         String jobId = (String) record.get("jobId");
-        if ("null".equals(jobId)) {
-            fileInfo.setJobId(null);
-        } else {
-            fileInfo.setJobId(jobId);
-        }
-        fileInfo.setMinRowKey(keySerDe.deserialise((byte[]) record.get("minRowKeys")));
-        fileInfo.setMaxRowKey(keySerDe.deserialise((byte[]) record.get("maxRowKeys")));
-        fileInfo.setRowKeyTypes(rowKeyTypes);
-        return fileInfo;
+        return FileInfo.builder()
+                .filename((String) record.get("fileName"))
+                .fileStatus(FileInfo.FileStatus.valueOf((String) record.get("fileStatus")))
+                .partitionId((String) record.get("partitionId"))
+                .lastStateStoreUpdateTime((Long) record.get("lastStateStoreUpdateTime"))
+                .numberOfRecords((Long) record.get("numberOfRecords"))
+                .jobId("null".equals(jobId) ? null : jobId)
+                .minRowKey(keySerDe.deserialise((byte[]) record.get("minRowKeys")))
+                .maxRowKey(keySerDe.deserialise((byte[]) record.get("maxRowKeys")))
+                .rowKeyTypes(rowKeyTypes)
+                .build();
     }
 
     private void writeFileInfosToParquet(List<FileInfo> fileInfos, String path) throws IOException {

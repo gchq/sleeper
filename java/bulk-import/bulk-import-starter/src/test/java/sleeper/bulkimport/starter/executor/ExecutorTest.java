@@ -31,11 +31,11 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
-import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 
 public class ExecutorTest {
@@ -68,7 +68,9 @@ public class ExecutorTest {
                 .files(Lists.newArrayList(bucketName + "/file1.parquet", bucketName + "/file2.parquet", bucketName + "/directory/file3.parquet"))
                 .build();
         TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA);
-        ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, s3);
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(BULK_IMPORT_BUCKET, bucketName);
+        ExecutorMock executorMock = new ExecutorMock(instanceProperties, tablePropertiesProvider, s3);
 
         // When
         executorMock.runJob(importJob);
@@ -90,7 +92,9 @@ public class ExecutorTest {
                 .files(Lists.newArrayList())
                 .build();
         TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA);
-        ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, s3);
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(BULK_IMPORT_BUCKET, bucketName);
+        ExecutorMock executorMock = new ExecutorMock(instanceProperties, tablePropertiesProvider, s3);
 
         // When
         assertThatThrownBy(() -> executorMock.runJob(importJob))
@@ -112,7 +116,9 @@ public class ExecutorTest {
                 .files(Lists.newArrayList(bucketName + "/directory", bucketName + "/directory/"))
                 .build();
         TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA);
-        ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, s3);
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(BULK_IMPORT_BUCKET, bucketName);
+        ExecutorMock executorMock = new ExecutorMock(instanceProperties, tablePropertiesProvider, s3);
 
         // When
         executorMock.runJob(importJob);
@@ -126,13 +132,17 @@ public class ExecutorTest {
     public void shouldFailIfJobPointsAtNonExistentTable() {
         // Given
         AmazonS3 s3 = createS3Client();
+        String bucketName = UUID.randomUUID().toString();
+        s3.createBucket(bucketName);
         BulkImportJob importJob = new BulkImportJob.Builder()
                 .tableName("table-that-does-not-exist")
                 .id("my-job")
                 .files(Lists.newArrayList("file1.parquet"))
                 .build();
         TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA);
-        ExecutorMock executorMock = new ExecutorMock(new InstanceProperties(), tablePropertiesProvider, s3);
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(BULK_IMPORT_BUCKET, bucketName);
+        ExecutorMock executorMock = new ExecutorMock(instanceProperties, tablePropertiesProvider, s3);
 
         // When / Then
         assertThatThrownBy(() -> executorMock.runJob(importJob))
@@ -225,12 +235,6 @@ public class ExecutorTest {
         @Override
         protected void runJobOnPlatform(BulkImportJob bulkImportJob) {
             runJobOnPlatformCalled = true;
-        }
-
-        @Override
-        protected Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec,
-                                                            TableProperties tableProperties, InstanceProperties instanceProperties) {
-            return null;
         }
 
         @Override

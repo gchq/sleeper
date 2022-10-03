@@ -25,16 +25,17 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.status.report.filestatus.CVSFileStatusReporter;
 import sleeper.status.report.filestatus.FileStatus;
 import sleeper.status.report.filestatus.FileStatusCollector;
 import sleeper.status.report.filestatus.FileStatusReporter;
 import sleeper.status.report.filestatus.JsonFileStatusReporter;
 import sleeper.status.report.filestatus.StandardFileStatusReporter;
-import sleeper.table.util.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -100,7 +101,7 @@ public class FilesStatusReport {
         }
 
         if (args.length >= 5) {
-            reporterType = args[4].toUpperCase();
+            reporterType = args[4].toUpperCase(Locale.ROOT);
         }
 
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();

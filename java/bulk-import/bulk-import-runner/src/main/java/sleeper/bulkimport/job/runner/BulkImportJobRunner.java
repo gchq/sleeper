@@ -50,7 +50,7 @@ import sleeper.core.schema.SchemaSerDe;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.table.util.StateStoreProvider;
+import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -60,6 +60,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 
 /**
@@ -167,14 +168,13 @@ public abstract class BulkImportJobRunner {
     }
 
     private FileInfo createFileInfo(Row row) {
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setFilename(row.getAs(FILENAME_FIELD_NAME));
-        fileInfo.setJobId(null);
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setPartitionId(row.getAs(PARTITION_FIELD_NAME));
-        fileInfo.setNumberOfRecords(row.getAs(NUM_RECORDS_FIELD_NAME));
-
-        return fileInfo;
+        return FileInfo.builder()
+                .filename(row.getAs(FILENAME_FIELD_NAME))
+                .jobId(null)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(row.getAs(PARTITION_FIELD_NAME))
+                .numberOfRecords(row.getAs(NUM_RECORDS_FIELD_NAME))
+                .build();
     }
 
     protected StructType createFileInfoSchema() {
@@ -196,18 +196,6 @@ public abstract class BulkImportJobRunner {
                     " the second with the config bucket");
         }
 
-        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
-        String jsonJob = s3.getObjectAsString(args[1], "bulk_import/" + args[0] + ".json");
-        LOGGER.info("Loaded bulk import job {}", jsonJob);
-        s3.shutdown();
-
-        BulkImportJob bulkImportJob;
-        try {
-            bulkImportJob = new BulkImportJobSerDe().fromJson(jsonJob);
-        } catch (JsonSyntaxException e) {
-            LOGGER.error("Json job was malformed: {}", args[0]);
-            bulkImportJob = null;
-        }
         InstanceProperties instanceProperties = new InstanceProperties();
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
 
@@ -231,6 +219,21 @@ public abstract class BulkImportJobRunner {
             GetCallerIdentityResult callerIdentity = sts.getCallerIdentity(new GetCallerIdentityRequest());
             LOGGER.info("Logged in as: {}", callerIdentity.getArn());
 
+            throw e;
+        }
+
+        String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
+        if (null == bulkImportBucket) {
+            throw new RuntimeException("sleeper.bulk.import.bucket was not set. Has one of the bulk import stacks been deployed?");
+        }
+        String jsonJobKey = "bulk_import/" + args[0] + ".json";
+        LOGGER.info("Loading bulk import job from key {} in bulk import bucket {}", bulkImportBucket, jsonJobKey);
+        String jsonJob = amazonS3.getObjectAsString(bulkImportBucket, jsonJobKey);
+        BulkImportJob bulkImportJob;
+        try {
+            bulkImportJob = new BulkImportJobSerDe().fromJson(jsonJob);
+        } catch (JsonSyntaxException e) {
+            LOGGER.error("Json job was malformed: {}", args[0]);
             throw e;
         }
 

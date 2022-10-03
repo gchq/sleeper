@@ -15,8 +15,10 @@
  */
 package sleeper.cdk.stack;
 
-import sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusFormat;
-import sleeper.compaction.dynamodb.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat;
+import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusFormat;
+import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.dynamodb.Attribute;
@@ -32,6 +34,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 public class DynamoDBCompactionStatusStoreStack implements CompactionStatusStoreStack {
 
     private final Table jobsTable;
+    private final Table tasksTable;
 
     public DynamoDBCompactionStatusStoreStack(
             Construct scope, InstanceProperties instanceProperties) {
@@ -52,6 +55,23 @@ public class DynamoDBCompactionStatusStoreStack implements CompactionStatusStore
                         .name(DynamoDBCompactionJobStatusFormat.UPDATE_TIME)
                         .type(AttributeType.NUMBER)
                         .build())
+                .timeToLiveAttribute(DynamoDBCompactionJobStatusFormat.EXPIRY_DATE)
+                .pointInTimeRecovery(false)
+                .build();
+
+        this.tasksTable = Table.Builder
+                .create(scope, "DynamoDBCompactionTaskStatusTable")
+                .tableName(DynamoDBCompactionTaskStatusStore.taskStatusTableName(instanceId))
+                .removalPolicy(removalPolicy)
+                .billingMode(BillingMode.PAY_PER_REQUEST)
+                .partitionKey(Attribute.builder()
+                        .name(DynamoDBCompactionTaskStatusFormat.TASK_ID)
+                        .type(AttributeType.STRING)
+                        .build())
+                .sortKey(Attribute.builder()
+                        .name(DynamoDBCompactionTaskStatusFormat.UPDATE_TIME)
+                        .type(AttributeType.NUMBER)
+                        .build())
                 .pointInTimeRecovery(false)
                 .build();
     }
@@ -59,5 +79,10 @@ public class DynamoDBCompactionStatusStoreStack implements CompactionStatusStore
     @Override
     public void grantWriteJobEvent(IGrantable grantee) {
         jobsTable.grantWriteData(grantee);
+    }
+
+    @Override
+    public void grantWriteTaskEvent(IGrantable grantee) {
+        tasksTable.grantWriteData(grantee);
     }
 }

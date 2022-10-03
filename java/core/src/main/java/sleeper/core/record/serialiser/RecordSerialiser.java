@@ -148,7 +148,7 @@ public class RecordSerialiser {
         if (primitiveType instanceof ByteArrayType) {
             int length = dis.readInt();
             byte[] byteArray = new byte[length];
-            dis.read(byteArray);
+            dis.readFully(byteArray);
             return byteArray;
         }
         throw new IOException("Unknown type " + primitiveType);

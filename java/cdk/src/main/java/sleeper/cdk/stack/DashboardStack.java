@@ -85,10 +85,14 @@ public class DashboardStack extends NestedStack {
         addCompactionWidgets();
 
         CfnOutput.Builder.create(this, "DashboardUrl")
-                .value("https://" + this.getRegion() + ".console.aws.amazon.com/cloudwatch/home#dashboards:name=" + instanceId + ";expand=true")
+                .value(constructUrl())
                 .build();
 
         Utils.addStackTagIfSet(this, instanceProperties);
+    }
+
+    private String constructUrl() {
+        return "https://" + this.getRegion() + ".console.aws.amazon.com/cloudwatch/home#dashboards:name=" + instanceId + ";expand=true";
     }
 
     private void addErrorMetrics() {
@@ -176,12 +180,7 @@ public class DashboardStack extends NestedStack {
                                                         .unit(Unit.COUNT)
                                                         .period(window)
                                                         .statistic("Sum")
-                                                        .dimensionsMap(new HashMap<String, String>() {
-                                                            {
-                                                                put("instanceId", instanceId);
-                                                                put("tableName", tableNames.get(i));
-                                                            }
-                                                        })
+                                                        .dimensionsMap(createDimensionMap(instanceId, tableNames.get(i)))
                                                         .build()))
                                                 .build())
                                         .collect(Collectors.toList())
@@ -190,6 +189,13 @@ public class DashboardStack extends NestedStack {
                         .width(6)
                         .build()
         );
+    }
+
+    private static Map<String, String> createDimensionMap(String instanceId, String tableName) {
+        Map<String, String> hashMap = new HashMap<>();
+        hashMap.put("instanceId", instanceId);
+        hashMap.put("tableName", tableName);
+        return hashMap;
     }
 
     private void addTableWidgets() {

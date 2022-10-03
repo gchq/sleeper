@@ -239,29 +239,35 @@ public class PartitionsFromSplitPoints {
         return (Comparable) obj;
     }
 
-    public static List<Region> leafRegionsFromSplitPoints(Schema schema, List<Object> splitPoints) {
-        RangeFactory rangeFactoryStatic = new RangeFactory(schema);
-        List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
+    private static List<Region> leafRegionsFromSplitPoints(Schema schema, List<Object> splitPoints) {
+        return leafRegionsFromDimensionSplitPoints(schema, 0, splitPoints);
+    }
+
+    public static List<Region> leafRegionsFromDimensionSplitPoints(Schema schema, int dimension, List<Object> splitPoints) {
+        RangeFactory rangeFactory = new RangeFactory(schema);
         List<Field> rowKeyFields = schema.getRowKeyFields();
         List<Object> partitionBoundaries = new ArrayList<>();
-        Type type = rowKeyTypes.get(0);
-        partitionBoundaries.add(getMinimum(type));
+        Field splitField = rowKeyFields.get(dimension);
+        partitionBoundaries.add(getMinimum(splitField.getType()));
         partitionBoundaries.addAll(splitPoints);
         partitionBoundaries.add(null);
 
         // Create ranges for the other dimensions
         List<Range> ranges = new ArrayList<>();
-        for (Field rowKeyField : rowKeyFields.subList(1, rowKeyFields.size())) {
-            Type rowKeyType = rowKeyField.getType();
-            Range range = rangeFactoryStatic.createRange(rowKeyField, getMinimum(rowKeyType), true, null, false);
+        for (int i = 0; i < rowKeyFields.size(); i++) {
+            if (i == dimension) {
+                continue;
+            }
+            Field rowKeyField = rowKeyFields.get(i);
+            Range range = rangeFactory.createRange(rowKeyField, getMinimum(rowKeyField.getType()), true, null, false);
             ranges.add(range);
         }
 
         List<Region> leafRegions = new ArrayList<>();
         for (int i = 0; i < partitionBoundaries.size() - 1; i++) {
             List<Range> rangesForThisRegion = new ArrayList<>();
-            Range rangeForDim0 = rangeFactoryStatic.createRange(rowKeyFields.get(0), partitionBoundaries.get(i), true, partitionBoundaries.get(i + 1), false);
-            rangesForThisRegion.add(rangeForDim0);
+            Range rangeForDim = rangeFactory.createRange(splitField, partitionBoundaries.get(i), true, partitionBoundaries.get(i + 1), false);
+            rangesForThisRegion.add(rangeForDim);
             rangesForThisRegion.addAll(ranges);
             Region region = new Region(rangesForThisRegion);
             leafRegions.add(region);

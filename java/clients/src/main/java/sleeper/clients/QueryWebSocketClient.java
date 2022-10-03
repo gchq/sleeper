@@ -88,7 +88,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         }
     }
 
-    private class Client extends WebSocketClient {
+    private static class Client extends WebSocketClient {
         private final Gson serde = new GsonBuilder().create();
         private final Set<String> outstandingQueries = new HashSet<>();
         private final Map<String, JsonArray> records = new HashMap<>();
@@ -102,6 +102,10 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
             this.query = query;
             this.querySerDe = querySerDe;
 
+            initialiseConnection(serverUri);
+        }
+
+        private void initialiseConnection(URI serverUri) throws InterruptedException {
             try {
                 Map<String, String> authHeaders = this.getAwsIamAuthHeaders(serverUri);
                 for (Entry<String, String> header : authHeaders.entrySet()) {
@@ -111,7 +115,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
                 System.err.println(e);
             }
             System.out.println("Connecting to WebSocket API at " + serverUri);
-            this.connectBlocking();
+            connectBlocking();
         }
 
         private Map<String, String> getAwsIamAuthHeaders(URI serverUri) throws URISyntaxException {

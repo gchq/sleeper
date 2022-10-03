@@ -30,6 +30,7 @@
         <module>clients</module>
         <module>statestore</module>
         <module>configuration</module>
+        <module>compaction-core</module>
         <module>compaction-job-creation</module>
         <module>compaction-job-execution</module>
         <module>compaction-status-store</module>
@@ -79,6 +80,7 @@
         <java-websocket.version>1.5.2</java-websocket.version>
         <arrow.version>8.0.0</arrow.version>
         <bouncycastle.version>1.71.1</bouncycastle.version>
+        <github-api.version>1.308</github-api.version>
         <!-- Testing -->
         <junit.version>4.13</junit.version>
         <mockito.version>3.3.3</mockito.version>
@@ -96,6 +98,7 @@
         <compiler.plugin.version>3.8.1</compiler.plugin.version>
         <enforcer.plugin.version>3.0.0</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
+        <spotbugs.plugin.version>4.7.2.0</spotbugs.plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -158,6 +161,12 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-reload4j</artifactId>
                 <version>${slf4j.version}</version>
+            </dependency>
+            <!-- Build -->
+            <dependency>
+                <groupId>org.kohsuke</groupId>
+                <artifactId>github-api</artifactId>
+                <version>${github-api.version}</version>
             </dependency>
             <!-- Cryptography -->
             <dependency>
@@ -259,6 +268,40 @@
                             <consoleOutput>true</consoleOutput>
                             <failsOnError>true</failsOnError>
                             <headerLocation>../code-style/licenseHeader.txt</headerLocation>
+                        </configuration>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${spotbugs.plugin.version}</version>
+                <configuration>
+                    <effort>Max</effort>
+                    <threshold>Low</threshold>
+                    <xmlOutput>true</xmlOutput>
+                    <spotbugsXmlOutputDirectory>
+                        ${project.build.directory}/spotbugs
+                    </spotbugsXmlOutputDirectory>
+                    <onlyAnalyze>sleeper.-</onlyAnalyze>
+                    <excludeFilterFile>
+                        ../code-style/spotbugs-exclude.xml
+                    </excludeFilterFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>validate</id>
+                        <phase>test</phase>
+                        <configuration>
+                            <effort>Max</effort>
+                            <threshold>Low</threshold>
+                            <xmlOutput>true</xmlOutput>
+                            <spotbugsXmlOutputDirectory>
+                                ${project.build.directory}/spotbugs
+                            </spotbugsXmlOutputDirectory>
                         </configuration>
                         <goals>
                             <goal>check</goal>
@@ -379,6 +422,17 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-checkstyle-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>validate</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
+                        <version>${spotbugs.plugin.version}</version>
                         <executions>
                             <execution>
                                 <id>validate</id>

@@ -18,6 +18,7 @@ package sleeper.status.report.filestatus;
 import sleeper.statestore.FileInfo;
 
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.function.Function;
 
@@ -156,7 +157,7 @@ public class FileStatus {
         this.totalRecordsInLeafPartitions = totalRecordsInLeafPartitions;
     }
 
-    public String verboseReportString(Function<PrintStream, FileStatusReporter> getReporter) {
+    public String verboseReportString(Function<PrintStream, FileStatusReporter> getReporter) throws UnsupportedEncodingException {
         return FileStatusReporter.asString(getReporter, this, true);
     }
 

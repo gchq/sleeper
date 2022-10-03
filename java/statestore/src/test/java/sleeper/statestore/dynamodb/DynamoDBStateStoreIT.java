@@ -131,14 +131,15 @@ public class DynamoDBStateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(new LongType());
-        fileInfo.setFilename("abc");
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setPartitionId("1");
-        fileInfo.setMinRowKey(Key.create(1L));
-        fileInfo.setMaxRowKey(Key.create(10L));
-        fileInfo.setLastStateStoreUpdateTime(1_000_000L);
+        FileInfo fileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("abc")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .build();
 
         // When
         dynamoDBStateStore.addFile(fileInfo);
@@ -160,14 +161,15 @@ public class DynamoDBStateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new ByteArrayType());
         StateStore dynamoDBStateStore = getStateStore(schema);
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(new ByteArrayType());
-        fileInfo.setFilename("abc");
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setPartitionId("1");
-        fileInfo.setMinRowKey(Key.create(new byte[]{1}));
-        fileInfo.setMaxRowKey(Key.create(new byte[]{10}));
-        fileInfo.setLastStateStoreUpdateTime(1_000_000L);
+        FileInfo fileInfo = FileInfo.builder()
+                .rowKeyTypes(new ByteArrayType())
+                .filename("abc")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .minRowKey(Key.create(new byte[]{1}))
+                .maxRowKey(Key.create(new byte[]{10}))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .build();
 
         // When
         dynamoDBStateStore.addFile(fileInfo);
@@ -191,14 +193,15 @@ public class DynamoDBStateStoreIT {
         // Given
         Schema schema = schemaWithTwoRowKeyTypes(new ByteArrayType(), new ByteArrayType());
         StateStore dynamoDBStateStore = getStateStore(schema);
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(new ByteArrayType(), new ByteArrayType());
-        fileInfo.setFilename("abc");
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setPartitionId("1");
-        fileInfo.setMinRowKey(Key.create(Arrays.asList(new byte[]{1}, new byte[]{2})));
-        fileInfo.setMaxRowKey(Key.create(Arrays.asList(new byte[]{10}, new byte[]{11})));
-        fileInfo.setLastStateStoreUpdateTime(1_000_000L);
+        FileInfo fileInfo = FileInfo.builder()
+                .rowKeyTypes(new ByteArrayType(), new ByteArrayType())
+                .filename("abc")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .minRowKey(Key.create(Arrays.asList(new byte[]{1}, new byte[]{2})))
+                .maxRowKey(Key.create(Arrays.asList(new byte[]{10}, new byte[]{11})))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .build();
 
         // When
         dynamoDBStateStore.addFile(fileInfo);
@@ -224,14 +227,15 @@ public class DynamoDBStateStoreIT {
         // Given
         Schema schema = schemaWithTwoRowKeyTypes(new LongType(), new StringType());
         StateStore dynamoDBStateStore = getStateStore(schema);
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(new LongType(), new StringType());
-        fileInfo.setFilename("abc");
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setPartitionId("1");
-        fileInfo.setMinRowKey(Key.create(Arrays.asList(1L, "Z")));
-        fileInfo.setMaxRowKey(Key.create(Arrays.asList(10L, "A")));
-        fileInfo.setLastStateStoreUpdateTime(1_000_000L);
+        FileInfo fileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType(), new StringType())
+                .filename("abc")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .minRowKey(Key.create(Arrays.asList(1L, "Z")))
+                .maxRowKey(Key.create(Arrays.asList(10L, "A")))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .build();
 
         // When
         dynamoDBStateStore.addFile(fileInfo);
@@ -255,14 +259,15 @@ public class DynamoDBStateStoreIT {
         StateStore dynamoDBStateStore = getStateStore(schema);
         Set<FileInfo> expected = new HashSet<>();
         for (int i = 0; i < 10000; i++) { // 10,000 figure chosen to ensure results returned from Dynamo are paged
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(new LongType());
-            fileInfo.setFilename("file-" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId("" + i);
-            fileInfo.setMinRowKey(Key.create(1L));
-            fileInfo.setMaxRowKey(Key.create(10L));
-            fileInfo.setLastStateStoreUpdateTime(1_000_000L);
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file-" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("" + i)
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(1_000_000L)
+                    .build();
             dynamoDBStateStore.addFile(fileInfo);
             expected.add(fileInfo);
         }
@@ -279,13 +284,14 @@ public class DynamoDBStateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(new LongType());
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setPartitionId("1");
-        fileInfo.setMinRowKey(Key.create(1L));
-        fileInfo.setMaxRowKey(Key.create(10L));
-        fileInfo.setLastStateStoreUpdateTime(1_000_000L);
+        FileInfo fileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .build();
 
         // When / Then
         assertThatThrownBy(() -> dynamoDBStateStore.addFile(fileInfo))
@@ -297,13 +303,14 @@ public class DynamoDBStateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(new LongType());
-        fileInfo.setFilename("abc");
-        fileInfo.setPartitionId("1");
-        fileInfo.setMinRowKey(Key.create(1L));
-        fileInfo.setMaxRowKey(Key.create(10L));
-        fileInfo.setLastStateStoreUpdateTime(1_000_000L);
+        FileInfo fileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("abc")
+                .partitionId("1")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .build();
 
         // When / Then
         assertThatThrownBy(() -> dynamoDBStateStore.addFile(fileInfo))
@@ -315,13 +322,14 @@ public class DynamoDBStateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(new LongType());
-        fileInfo.setFilename("abc");
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setMinRowKey(Key.create(1L));
-        fileInfo.setMaxRowKey(Key.create(10L));
-        fileInfo.setLastStateStoreUpdateTime(1_000_000L);
+        FileInfo fileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("abc")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .build();
 
         // When / Then
         assertThatThrownBy(() -> dynamoDBStateStore.addFile(fileInfo))
@@ -335,38 +343,41 @@ public class DynamoDBStateStoreIT {
         StateStore stateStore = getStateStore(schema, 5);
         Partition partition = stateStore.getAllPartitions().get(0);
         //  - A file which should be garbage collected immediately
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new IntType());
-        fileInfo1.setFilename("file1");
-        fileInfo1.setFileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
-        fileInfo1.setPartitionId(partition.getId());
-        fileInfo1.setMinRowKey(Key.create(1));
-        fileInfo1.setMaxRowKey(Key.create(100));
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setLastStateStoreUpdateTime(System.currentTimeMillis() - 8000);
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new IntType())
+                .filename("file1")
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .partitionId(partition.getId())
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(100))
+                .numberOfRecords(100L)
+                .lastStateStoreUpdateTime(System.currentTimeMillis() - 8000)
+                .build();
         stateStore.addFile(fileInfo1);
         //  - An active file which should not be garbage collected
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new IntType());
-        fileInfo2.setFilename("file2");
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId(partition.getId());
-        fileInfo2.setMinRowKey(Key.create(1));
-        fileInfo2.setMaxRowKey(Key.create(100));
-        fileInfo2.setNumberOfRecords(100L);
-        fileInfo2.setLastStateStoreUpdateTime(System.currentTimeMillis());
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new IntType())
+                .filename("file2")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId(partition.getId())
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(100))
+                .numberOfRecords(100L)
+                .lastStateStoreUpdateTime(System.currentTimeMillis())
+                .build();
         stateStore.addFile(fileInfo2);
         //  - A file which is ready for garbage collection but which should not be garbage collected now as it has only
         //      just been marked as ready for GC
-        FileInfo fileInfo3 = new FileInfo();
-        fileInfo3.setRowKeyTypes(new IntType());
-        fileInfo3.setFilename("file3");
-        fileInfo3.setFileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
-        fileInfo3.setPartitionId(partition.getId());
-        fileInfo3.setMinRowKey(Key.create(1));
-        fileInfo3.setMaxRowKey(Key.create(100));
-        fileInfo3.setNumberOfRecords(100L);
-        fileInfo3.setLastStateStoreUpdateTime(System.currentTimeMillis());
+        FileInfo fileInfo3 = FileInfo.builder()
+                .rowKeyTypes(new IntType())
+                .filename("file3")
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .partitionId(partition.getId())
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(100))
+                .numberOfRecords(100L)
+                .lastStateStoreUpdateTime(System.currentTimeMillis())
+                .build();
         stateStore.addFile(fileInfo3);
 
         // When / Then 1
@@ -382,33 +393,36 @@ public class DynamoDBStateStoreIT {
         // Given
         Schema schema = schemaWithKeyAndValueWithTypes(new LongType(), new StringType());
         StateStore dynamoDBStateStore = getStateStore(schema);
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new LongType());
-        fileInfo1.setFilename("file1");
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId("1");
-        fileInfo1.setMinRowKey(Key.create(1L));
-        fileInfo1.setMaxRowKey(Key.create(10L));
-        fileInfo1.setLastStateStoreUpdateTime(1_000_000L);
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file1")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("1")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .build();
         dynamoDBStateStore.addFile(fileInfo1);
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new LongType());
-        fileInfo2.setFilename("file2");
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId("2");
-        fileInfo2.setMinRowKey(Key.create(20L));
-        fileInfo2.setMaxRowKey(Key.create(29L));
-        fileInfo2.setLastStateStoreUpdateTime(2_000_000L);
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file2")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("2")
+                .minRowKey(Key.create(20L))
+                .maxRowKey(Key.create(29L))
+                .lastStateStoreUpdateTime(2_000_000L)
+                .build();
         dynamoDBStateStore.addFile(fileInfo2);
-        FileInfo fileInfo3 = new FileInfo();
-        fileInfo3.setRowKeyTypes(new LongType());
-        fileInfo3.setFilename("file3");
-        fileInfo3.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo3.setPartitionId("3");
-        fileInfo3.setJobId("job1");
-        fileInfo3.setMinRowKey(Key.create(100L));
-        fileInfo3.setMaxRowKey(Key.create(10000L));
-        fileInfo3.setLastStateStoreUpdateTime(3_000_000L);
+        FileInfo fileInfo3 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file3")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("3")
+                .jobId("job1")
+                .minRowKey(Key.create(100L))
+                .maxRowKey(Key.create(10000L))
+                .lastStateStoreUpdateTime(3_000_000L)
+                .build();
         dynamoDBStateStore.addFile(fileInfo3);
 
         // When
@@ -425,14 +439,15 @@ public class DynamoDBStateStoreIT {
         StateStore dynamoDBStateStore = getStateStore(schema);
         Set<FileInfo> expected = new HashSet<>();
         for (int i = 0; i < 10000; i++) { // 10,000 figure chosen to ensure results returned from Dyanmo are paged
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(new LongType());
-            fileInfo.setFilename("file-" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId("" + i);
-            fileInfo.setMinRowKey(Key.create((long) 2 * i));
-            fileInfo.setMaxRowKey(Key.create((long) 2 * i + 1));
-            fileInfo.setLastStateStoreUpdateTime((long) i * 1_000);
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file-" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("" + i)
+                    .minRowKey(Key.create((long) 2 * i))
+                    .maxRowKey(Key.create((long) 2 * i + 1))
+                    .lastStateStoreUpdateTime((long) i * 1_000)
+                    .build();
             dynamoDBStateStore.addFile(fileInfo);
             expected.add(fileInfo);
         }
@@ -449,23 +464,25 @@ public class DynamoDBStateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new LongType());
-        fileInfo1.setFilename("file1");
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId("4");
-        fileInfo1.setMinRowKey(Key.create(1L));
-        fileInfo1.setMaxRowKey(Key.create(10L));
-        fileInfo1.setLastStateStoreUpdateTime(1_000_000L);
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file1")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("4")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(1_000_000L)
+                .build();
         dynamoDBStateStore.addFile(fileInfo1);
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new LongType());
-        fileInfo2.setFilename("file2");
-        fileInfo2.setFileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
-        fileInfo2.setPartitionId("5");
-        fileInfo2.setMinRowKey(Key.create(1L));
-        fileInfo2.setMaxRowKey(Key.create(10L));
-        fileInfo2.setLastStateStoreUpdateTime(2_000_000L);
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file2")
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .partitionId("5")
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .lastStateStoreUpdateTime(2_000_000L)
+                .build();
         dynamoDBStateStore.addFile(fileInfo2);
 
         // When
@@ -483,23 +500,25 @@ public class DynamoDBStateStoreIT {
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(new LongType());
-            fileInfo.setFilename("file" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId("7");
-            fileInfo.setMinRowKey(Key.create(1L));
-            fileInfo.setMaxRowKey(Key.create(10L));
-            fileInfo.setLastStateStoreUpdateTime(i * 1_000_000L);
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("7")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(i * 1_000_000L)
+                    .build();
             filesToMoveToReadyForGC.add(fileInfo);
             dynamoDBStateStore.addFile(fileInfo);
         }
-        FileInfo newFileInfo = new FileInfo();
-        newFileInfo.setRowKeyTypes(new LongType());
-        newFileInfo.setFilename("file-new");
-        newFileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        newFileInfo.setPartitionId("7");
-        newFileInfo.setLastStateStoreUpdateTime(10_000_000L);
+        FileInfo newFileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file-new")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("7")
+                .lastStateStoreUpdateTime(10_000_000L)
+                .build();
 
         // When
         dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToMoveToReadyForGC, newFileInfo);
@@ -516,29 +535,32 @@ public class DynamoDBStateStoreIT {
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(new LongType());
-            fileInfo.setFilename("file" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId("7");
-            fileInfo.setMinRowKey(Key.create(1L));
-            fileInfo.setMaxRowKey(Key.create(10L));
-            fileInfo.setLastStateStoreUpdateTime(i * 1_000_000L);
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("7")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(i * 1_000_000L)
+                    .build();
             filesToMoveToReadyForGC.add(fileInfo);
             dynamoDBStateStore.addFile(fileInfo);
         }
-        FileInfo newLeftFileInfo = new FileInfo();
-        newLeftFileInfo.setRowKeyTypes(new LongType());
-        newLeftFileInfo.setFilename("file-left-new");
-        newLeftFileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        newLeftFileInfo.setPartitionId("7");
-        newLeftFileInfo.setLastStateStoreUpdateTime(10_000_000L);
-        FileInfo newRightFileInfo = new FileInfo();
-        newRightFileInfo.setRowKeyTypes(new LongType());
-        newRightFileInfo.setFilename("file-right-new");
-        newRightFileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        newRightFileInfo.setPartitionId("7");
-        newRightFileInfo.setLastStateStoreUpdateTime(10_000_000L);
+        FileInfo newLeftFileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file-left-new")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("7")
+                .lastStateStoreUpdateTime(10_000_000L)
+                .build();
+        FileInfo newRightFileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file-right-new")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("7")
+                .lastStateStoreUpdateTime(10_000_000L)
+                .build();
 
         // When
         dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo);
@@ -555,23 +577,28 @@ public class DynamoDBStateStoreIT {
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(new LongType());
-            fileInfo.setFilename("file" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId("7");
-            fileInfo.setMinRowKey(Key.create(1L));
-            fileInfo.setMaxRowKey(Key.create(10L));
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("7")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .build();
             filesToMoveToReadyForGC.add(fileInfo);
         }
         //  - One of the files is not active
-        filesToMoveToReadyForGC.get(3).setFileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
+        FileInfo updatedFileInfo = filesToMoveToReadyForGC.remove(3).toBuilder()
+                .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
+                .build();
+        filesToMoveToReadyForGC.add(3, updatedFileInfo);
         dynamoDBStateStore.addFiles(filesToMoveToReadyForGC);
-        FileInfo newFileInfo = new FileInfo();
-        newFileInfo.setRowKeyTypes(new LongType());
-        newFileInfo.setFilename("file-new");
-        newFileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        newFileInfo.setPartitionId("7");
+        FileInfo newFileInfo = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("file-new")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("7")
+                .build();
 
         // When / Then
         assertThatThrownBy(() ->
@@ -586,14 +613,15 @@ public class DynamoDBStateStoreIT {
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<FileInfo> files = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(new LongType());
-            fileInfo.setFilename("file" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId("8");
-            fileInfo.setMinRowKey(Key.create(1L));
-            fileInfo.setMaxRowKey(Key.create(10L));
-            fileInfo.setLastStateStoreUpdateTime(i * 1_000_000L);
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("8")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(i * 1_000_000L)
+                    .build();
             files.add(fileInfo);
             dynamoDBStateStore.addFile(fileInfo);
         }
@@ -617,15 +645,16 @@ public class DynamoDBStateStoreIT {
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<FileInfo> files = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(new LongType());
-            fileInfo.setFilename("file" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId("9");
-            fileInfo.setJobId("compactionJob");
-            fileInfo.setMinRowKey(Key.create(1L));
-            fileInfo.setMaxRowKey(Key.create(10L));
-            fileInfo.setLastStateStoreUpdateTime(i * 1_000_000L);
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("9")
+                    .jobId("compactionJob")
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(i * 1_000_000L)
+                    .build();
             files.add(fileInfo);
             dynamoDBStateStore.addFile(fileInfo);
         }
@@ -728,13 +757,14 @@ public class DynamoDBStateStoreIT {
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<FileInfo> files = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setRowKeyTypes(new LongType());
-            fileInfo.setFilename("file" + i);
-            fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-            fileInfo.setPartitionId("" + (i % 5));
-            fileInfo.setMinRowKey(Key.create((long) i % 5));
-            fileInfo.setMaxRowKey(Key.create((long) i % 5));
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("" + (i % 5))
+                    .minRowKey(Key.create((long) i % 5))
+                    .maxRowKey(Key.create((long) i % 5))
+                    .build();
             files.add(fileInfo);
             dynamoDBStateStore.addFile(fileInfo);
         }

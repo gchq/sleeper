@@ -43,6 +43,7 @@ import software.constructs.Construct;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -132,7 +133,7 @@ public class PartitionSplittingStack extends NestedStack {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "find-partitions-to-split"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "find-partitions-to-split"));
 
         Function findPartitionsToSplitLambda = Function.Builder
                 .create(this, "FindPartitionsToSplitLambda")
@@ -166,7 +167,7 @@ public class PartitionSplittingStack extends NestedStack {
         instanceProperties.set(PARTITION_SPLITTING_CLOUDWATCH_RULE, rule.getRuleName());
 
         functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "split-partition"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "split-partition"));
 
         // Lambda to split partitions (triggered by partition splitting job
         // arriving on partitionSplittingQueue)

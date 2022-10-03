@@ -28,14 +28,11 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 
 import java.util.UUID;
-
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  *
@@ -44,7 +41,7 @@ public class PersistentEmrExecutor extends AbstractEmrExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(PersistentEmrExecutor.class);
 
     private final AmazonElasticMapReduce emrClient;
-    private String clusterId;
+    private final String clusterId;
 
     public PersistentEmrExecutor(
             AmazonElasticMapReduce emrClient,
@@ -58,12 +55,6 @@ public class PersistentEmrExecutor extends AbstractEmrExecutor {
 
     @Override
     public void runJobOnPlatform(BulkImportJob bulkImportJob) {
-        String configBucket = instanceProperties.get(CONFIG_BUCKET);
-        String key = "bulk_import/" + bulkImportJob.getId() + ".json";
-        String bulkImportJobJSON = new BulkImportJobSerDe().toJson(bulkImportJob);
-        s3Client.putObject(configBucket, key, bulkImportJobJSON);
-        LOGGER.info("Put object for job {} to key {} in bucket {}", bulkImportJob.getId(), key, configBucket);
-
         StepConfig stepConfig = new StepConfig()
                 .withName("BulkLoad-" + UUID.randomUUID().toString().substring(0, 5))
                 .withActionOnFailure(ActionOnFailure.CONTINUE)

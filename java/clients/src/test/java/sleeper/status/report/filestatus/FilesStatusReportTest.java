@@ -23,6 +23,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.FileInfoFactory;
 
 import java.io.IOException;
 import java.net.URL;
@@ -73,9 +74,9 @@ public class FilesStatusReportTest {
 
         // Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .isEqualTo(example("reports/standard/oneActiveFilePerLeaf.txt"));
+                .isEqualTo(example("reports/filestatus/standard/oneActiveFilePerLeaf.txt"));
         assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
-                .isEqualTo(example("reports/json/oneActiveFilePerLeaf.json"));
+                .isEqualTo(example("reports/filestatus/json/oneActiveFilePerLeaf.json"));
     }
 
     @Test
@@ -103,9 +104,9 @@ public class FilesStatusReportTest {
 
         // Then
         assertThat(status.verboseReportString(StandardFileStatusReporter::new))
-                .isEqualTo(example("reports/standard/leafAndMiddleFile.txt"));
+                .isEqualTo(example("reports/filestatus/standard/leafAndMiddleFile.txt"));
         assertThatJson(status.verboseReportString(JsonFileStatusReporter::new))
-                .isEqualTo(example("reports/json/leafAndMiddleFile.json"));
+                .isEqualTo(example("reports/filestatus/json/leafAndMiddleFile.json"));
     }
 
     private static String example(String path) throws IOException {

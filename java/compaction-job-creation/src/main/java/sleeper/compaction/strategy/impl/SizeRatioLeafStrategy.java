@@ -18,6 +18,7 @@ package sleeper.compaction.strategy.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.strategy.LeafPartitionCompactionStrategy;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -38,10 +39,10 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
 
     private int ratio;
     private int compactionFilesBatchSize;
-    private CompactionFactory factory;
+    private CompactionJobFactory factory;
 
     @Override
-    public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionFactory factory) {
+    public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory) {
         ratio = tableProperties.getInt(SIZE_RATIO_COMPACTION_STRATEGY_RATIO);
         compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
         this.factory = factory;

@@ -17,97 +17,89 @@ package sleeper.build.status;
 
 import org.junit.Test;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Objects;
-import java.util.Properties;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ChunksStatusTest {
 
     @Test
     public void shouldReportAndPassWhenTwoChunksSuccessful() throws Exception {
-        Properties properties = exampleProperties("two-chunks-successful.properties");
-        ChunksStatus status = ChunksStatus.from(properties);
+        ChunksStatus status = ChunksStatus.chunksForHead(TestProperties.exampleHead(),
+                ChunkStatus.chunk("common").success(),
+                ChunkStatus.chunk("data").success());
 
-        assertThat(status).isEqualTo(
-                ChunksStatus.chunks(
-                        ChunkStatus.success("common"),
-                        ChunkStatus.success("data")));
         assertThat(status.isFailCheck()).isFalse();
-        assertThat(status.reportString()).isEqualTo("" +
-                "common: completed, success\n" +
-                "data: completed, success\n");
+        assertThat(status.reportLines()).containsExactly("",
+                "common: completed, success",
+                "",
+                "data: completed, success");
     }
 
     @Test
-    public void shouldReportAndPassWhenOneChunkSuccessfulOneInProgress() throws Exception {
-        Properties properties = exampleProperties("one-chunk-successful-one-in-progress.properties");
-        ChunksStatus status = ChunksStatus.from(properties);
+    public void shouldReportAndPassWhenOneChunkSuccessfulOneInProgressOnHeadSha() throws Exception {
+        GitHubHead head = TestProperties.exampleHead();
+        ChunksStatus status = ChunksStatus.chunksForHead(head,
+                ChunkStatus.chunk("common").success(),
+                ChunkStatus.chunk("data").commitSha(head.getSha()).inProgress());
 
-        assertThat(status).isEqualTo(
-                ChunksStatus.chunks(
-                        ChunkStatus.success("common"),
-                        ChunkStatus.inProgress("data")));
         assertThat(status.isFailCheck()).isFalse();
-        assertThat(status.reportString()).isEqualTo("" +
-                "common: completed, success\n" +
-                "data: in_progress\n");
+        assertThat(status.reportLines()).containsExactly("",
+                "common: completed, success",
+                "",
+                "data: in_progress",
+                "Build is for current commit");
+    }
+
+    @Test
+    public void shouldReportAndFailWhenOneChunkSuccessfulOneInProgressOnOldSha() throws Exception {
+        GitHubHead head = TestProperties.exampleHead();
+        ChunksStatus status = ChunksStatus.chunksForHead(head,
+                ChunkStatus.chunk("common").success(),
+                ChunkStatus.chunk("data").commitSha("old-sha").inProgress());
+
+        assertThat(status.isFailCheck()).isTrue();
+        assertThat(status.reportLines()).containsExactly("",
+                "common: completed, success",
+                "",
+                "data: in_progress",
+                "Commit: old-sha");
     }
 
     @Test
     public void shouldReportAndFailWhenOneChunkSuccessfulOneFailed() throws Exception {
-        Properties properties = exampleProperties("one-chunk-successful-one-failed.properties");
-        ChunksStatus status = ChunksStatus.from(properties);
+        ChunksStatus status = ChunksStatus.chunksForHead(TestProperties.exampleHead(),
+                ChunkStatus.chunk("common").success(),
+                ChunkStatus.chunk("data").failure());
 
-        assertThat(status).isEqualTo(
-                ChunksStatus.chunks(
-                        ChunkStatus.success("common"),
-                        ChunkStatus.failure("data")));
         assertThat(status.isFailCheck()).isTrue();
-        assertThat(status.reportString()).isEqualTo("" +
-                "common: completed, success\n" +
-                "data: completed, failure\n");
+        assertThat(status.reportLines()).containsExactly("",
+                "common: completed, success",
+                "",
+                "data: completed, failure");
     }
 
     @Test
     public void shouldReportAndFailWhenOneChunkSuccessfulOneCancelled() throws Exception {
-        Properties properties = exampleProperties("one-chunk-successful-one-cancelled.properties");
-        ChunksStatus status = ChunksStatus.from(properties);
+        ChunksStatus status = ChunksStatus.chunksForHead(TestProperties.exampleHead(),
+                ChunkStatus.chunk("common").success(),
+                ChunkStatus.chunk("data").cancelled());
 
-        assertThat(status).isEqualTo(
-                ChunksStatus.chunks(
-                        ChunkStatus.success("common"),
-                        ChunkStatus.cancelled("data")));
         assertThat(status.isFailCheck()).isTrue();
-        assertThat(status.reportString()).isEqualTo("" +
-                "common: completed, success\n" +
-                "data: completed, cancelled\n");
+        assertThat(status.reportLines()).containsExactly("",
+                "common: completed, success",
+                "",
+                "data: completed, cancelled");
     }
 
     @Test
     public void shouldReportAndPassWhenNoChunksHaveBuilds() throws Exception {
-        Properties properties = exampleProperties("two-chunks-missing.properties");
-        ChunksStatus status = ChunksStatus.from(properties);
+        ChunksStatus status = ChunksStatus.chunksForHead(TestProperties.exampleHead(),
+                ChunkStatus.chunk("common").noBuild(),
+                ChunkStatus.chunk("data").noBuild());
 
-        assertThat(status).isEqualTo(
-                ChunksStatus.chunks(
-                        ChunkStatus.noBuild("common"),
-                        ChunkStatus.noBuild("data")));
         assertThat(status.isFailCheck()).isFalse();
-        assertThat(status.reportString()).isEqualTo("" +
-                "common: null\n" +
-                "data: null\n");
-    }
-
-    private static Properties exampleProperties(String path) throws IOException {
-        URL resource = Objects.requireNonNull(ChunksStatusTest.class.getClassLoader().getResource(path));
-        try (InputStream is = resource.openStream()) {
-            Properties properties = new Properties();
-            properties.load(is);
-            return properties;
-        }
+        assertThat(status.reportLines()).containsExactly("",
+                "common: null",
+                "",
+                "data: null");
     }
 }

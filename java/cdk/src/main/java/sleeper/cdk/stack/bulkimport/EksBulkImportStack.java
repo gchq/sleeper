@@ -25,7 +25,6 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import software.amazon.awscdk.Duration;
-import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
 import software.amazon.awscdk.services.cloudwatch.CreateAlarmOptions;
 import software.amazon.awscdk.services.cloudwatch.MetricOptions;
@@ -70,6 +69,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
@@ -79,15 +79,18 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
  * resources needed to run Spark on Kubernetes. In addition to this, it creates
  * a statemachine which can run jobs on the cluster.
  */
-public class EksBulkImportStack extends NestedStack {
+public final class EksBulkImportStack extends AbstractBulkImportStack {
     private final StateMachine stateMachine;
     private final ServiceAccount sparkServiceAccount;
 
     public EksBulkImportStack(
-            Construct scope, String id, List<IBucket> dataBuckets,
-            List<StateStoreStack> stateStoreStacks, InstanceProperties instanceProperties,
+            Construct scope,
+            String id,
+            List<IBucket> dataBuckets,
+            List<StateStoreStack> stateStoreStacks,
+            InstanceProperties instanceProperties,
             ITopic errorsTopic) {
-        super(scope, id);
+        super(scope, id, instanceProperties);
 
         IBucket ingestBucket = null;
         String ingestBucketName = instanceProperties.get(UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET);
@@ -137,7 +140,7 @@ public class EksBulkImportStack extends NestedStack {
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(SystemDefinedInstanceProperty.CONFIG_BUCKET));
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceId.toLowerCase(), "eks-bulk-import-job-starter"));
+                instanceId.toLowerCase(Locale.ROOT), "eks-bulk-import-job-starter"));
 
         Function bulkImportJobStarter = Function.Builder.create(this, "BulkImportEKSJobStarter")
                 .code(code)
@@ -153,6 +156,10 @@ public class EksBulkImportStack extends NestedStack {
                 .build();
 
         configBucket.grantRead(bulkImportJobStarter);
+        if (null == importBucket) {
+            throw new RuntimeException("Import bucket should not be null; call create() first");
+        }
+        importBucket.grantReadWrite(bulkImportJobStarter);
         if (null != ingestBucket) {
             ingestBucket.grantRead(bulkImportJobStarter);
         }
@@ -163,7 +170,7 @@ public class EksBulkImportStack extends NestedStack {
         IVpc vpc = Vpc.fromLookup(this, "VPC", vpcLookupOptions);
 
         Cluster bulkImportCluster = new FargateCluster(this, "EksBulkImportCluster", FargateClusterProps.builder()
-                .clusterName(String.join("-", "sleeper", instanceId.toLowerCase(), "eksBulkImportCluster"))
+                .clusterName(String.join("-", "sleeper", instanceId.toLowerCase(Locale.ROOT), "eksBulkImportCluster"))
                 .version(KubernetesVersion.of("1.20"))
                 .vpc(vpc)
                 .vpcSubnets(Lists.newArrayList(SubnetSelection.builder().subnets(vpc.getPrivateSubnets()).build()))

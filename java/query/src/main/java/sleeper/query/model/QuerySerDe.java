@@ -195,11 +195,9 @@ public class QuerySerDe {
                 json.add(REGIONS, convertRegionsToJsonArray(schema, leafPartitionQuery.getRegions(), typeOfSrc, context));
 
                 json.addProperty(LEAF_PARTITION_ID, leafPartitionQuery.getLeafPartitionId());
-            } else if (query instanceof Query) {
+            } else {
                 json.addProperty(QUERY_TYPE, QUERY);
                 json.add(REGIONS, convertRegionsToJsonArray(schema, query.getRegions(), typeOfSrc, context));
-            } else {
-                throw new IllegalArgumentException("Unknown query type: " + query.getClass());
             }
 
             return json;

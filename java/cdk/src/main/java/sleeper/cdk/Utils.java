@@ -15,6 +15,7 @@
  */
 package sleeper.cdk;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
@@ -26,10 +27,11 @@ import software.amazon.awscdk.services.logs.RetentionDays;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -141,34 +143,30 @@ public class Utils {
     public static Stream<TableProperties> getAllTableProperties(InstanceProperties instanceProperties) {
         return instanceProperties.getList(UserDefinedInstanceProperty.TABLE_PROPERTIES).stream()
                 .map(File::new)
-                .flatMap(f -> {
-                    if (!f.exists()) {
-                        throw new RuntimeException("There was a problem with the table configuration. " +
-                                f.getAbsolutePath() + " doesn't exist");
-                    }
-                    if (f.isDirectory()) {
-                        return Arrays.stream(f.listFiles())
-                                .map(file -> {
-                                    try {
-                                        return new FileInputStream(file);
-                                    } catch (FileNotFoundException e) {
-                                        // This should never happen
-                                        throw new RuntimeException("Failed to open stream to file: " + file.getAbsolutePath());
-                                    }
-                                });
-                    }
-                    try {
-                        return Stream.of(new FileInputStream(f));
-                    } catch (FileNotFoundException e) {
-                        // this should never happen
-                        throw new RuntimeException("Failed to open stream to file: " + f.getAbsolutePath());
-                    }
-                })
-                .map(fis -> {
-                    TableProperties tableProperties = new TableProperties(instanceProperties);
-                    tableProperties.load(fis);
-                    return tableProperties;
-                });
+                .flatMap(Utils::processDirectory)
+                .map(f -> processFile(f, instanceProperties));
+    }
+
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
+    private static Stream<File> processDirectory(File f) {
+        if (!f.exists()) {
+            throw new RuntimeException("There was a problem with the table configuration. " +
+                    f.getAbsolutePath() + " doesn't exist");
+        }
+        if (f.isDirectory()) {
+            return Arrays.stream(Objects.requireNonNull(f.listFiles()));
+        }
+        return Stream.of(f);
+    }
+
+    private static TableProperties processFile(File file, InstanceProperties instanceProperties) {
+        try (FileInputStream fis = new FileInputStream(file)) {
+            TableProperties tableProperties = new TableProperties(instanceProperties);
+            tableProperties.load(fis);
+            return tableProperties;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to open stream to file: " + file.getAbsolutePath());
+        }
     }
 
     public static void addStackTagIfSet(Stack stack, InstanceProperties properties) {

@@ -15,34 +15,66 @@
  */
 package sleeper.build.status;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sleeper.build.status.github.GitHubProvider;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class CheckGitHubStatus {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CheckGitHubStatus.class);
 
-    private CheckGitHubStatus() {
+    private final GitHubHead head;
+    private final List<ProjectChunk> chunks;
+    private final long retrySeconds;
+    private final long maxRetries;
+    private final GitHubProvider gitHub;
+
+    public CheckGitHubStatus(ProjectConfiguration configuration, GitHubProvider gitHub) {
+        this.head = configuration.getHead();
+        this.chunks = configuration.getChunks();
+        this.retrySeconds = configuration.getRetrySeconds();
+        this.maxRetries = configuration.getMaxRetries();
+        this.gitHub = gitHub;
     }
 
-    public static void main(String[] args) throws IOException {
-        if (args.length != 1) {
-            throw new IllegalArgumentException("Usage: <properties file path>");
-        }
-        String propertiesFile = args[0];
-        ChunksStatus status = ChunksStatus.from(loadProperties(propertiesFile));
-        status.report(System.out);
-        if (status.isFailCheck()) {
-            System.exit(1);
-        }
+    public ChunksStatus checkStatus() {
+        return ChunksStatus.chunksForHead(head, listChunkStatusInOrder());
     }
 
-    private static Properties loadProperties(String path) throws IOException {
-        Properties properties = new Properties();
-        try (Reader reader = Files.newBufferedReader(Paths.get(path))) {
-            properties.load(reader);
+    private List<ChunkStatus> listChunkStatusInOrder() {
+        // Since checks are done in parallel, re-order them after they are complete
+        Map<String, ChunkStatus> statusByChunkId = retrieveStatusByChunkId();
+        return chunks.stream()
+                .map(chunk -> statusByChunkId.get(chunk.getId()))
+                .collect(Collectors.toList());
+    }
+
+    private Map<String, ChunkStatus> retrieveStatusByChunkId() {
+        return chunks.stream().parallel()
+                .map(this::retrieveStatusWaitingForOldBuilds)
+                .collect(Collectors.toMap(ChunkStatus::getChunkId, c -> c));
+    }
+
+    private ChunkStatus retrieveStatusWaitingForOldBuilds(ProjectChunk chunk) {
+        ChunkStatus status = gitHub.workflowStatus(head, chunk);
+        try {
+            for (int retries = 0;
+                 status.isWaitForOldBuildWithHead(head)
+                         && retries < maxRetries;
+                 retries++) {
+
+                LOGGER.info("Waiting for old build to finish, {} retries, chunk: {}", retries, chunk.getName());
+                LOGGER.info("Link to old build: {}", status.getRunUrl());
+
+                Thread.sleep(retrySeconds * 1000);
+                status = gitHub.recheckRun(head, status);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
-        return properties;
+        return status;
     }
 }
