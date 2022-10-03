@@ -65,7 +65,7 @@ You're now ready to build and deploy Sleeper.
 ### Deployment environment
 
 See [getting started](01-getting-started.md#deployment-environment) for information on setting up a VPC and EC2 instance
-to deploy Sleeper. You may want to follow the remaining instructions from within the EC2 instance.
+to deploy Sleeper. You may want to follow the remaining instructions here from within the EC2 instance.
 
 ## Building
 The first step is to build Sleeper. We have a section in our 

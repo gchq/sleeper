@@ -55,6 +55,9 @@ tail /var/log/cloud-init-output.log
 
 Once it's finished the instance might restart. The Sleeper Git repository will be checked out at `~/sleeper`.
 
+To deploy Sleeper or run the system tests from this instance, you'll need to add your own credentials for the AWS CLI.
+See the [AWS IAM guide for CLI access](https://docs.aws.amazon.com/singlesignon/latest/userguide/howtogetcredentials.html).
+
 #### Managing environments
 
 You can deploy either the VPC or the EC2 independently, and specify an instance ID when deploying multiple
