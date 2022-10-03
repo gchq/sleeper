@@ -42,7 +42,7 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
         CompactionTaskStatus taskStatus = startedTaskWithDefaults();
 
         //When
-        store.taskStarted(taskStatus, defaultStartTime());
+        store.taskStarted(taskStatus);
 
         //Then
         assertThat(store.getTask(taskStatus.getTaskId()))
@@ -61,8 +61,8 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
 
         //When
         CompactionTaskStatus taskStatus = finishedTaskWithDefaults(createJobStatus(job1));
-        store.taskStarted(taskStatus, defaultStartTime());
-        store.taskFinished(taskStatus, defaultFinishTime());
+        store.taskStarted(taskStatus);
+        store.taskFinished(taskStatus);
 
         //Then
         assertThat(store.getTask(taskStatus.getTaskId()))
@@ -77,8 +77,8 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
 
         //When
         CompactionTaskStatus taskStatus = finishedTaskWithDefaults(createJobStatus(job1));
-        store.taskStarted(taskStatus, defaultStartTime());
-        store.taskFinished(taskStatus, defaultFinishTime());
+        store.taskStarted(taskStatus);
+        store.taskFinished(taskStatus);
 
         //Then
         assertThat(store.getTask(taskStatus.getTaskId()))

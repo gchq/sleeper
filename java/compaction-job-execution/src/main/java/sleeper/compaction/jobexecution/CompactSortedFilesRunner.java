@@ -52,7 +52,6 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
-import java.time.Instant;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
@@ -214,7 +213,7 @@ public class CompactSortedFilesRunner {
 
         LOGGER.info("Saving task information");
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.started(startTime);
-        taskStatusStore.taskStarted(taskStatusBuilder.build(), Instant.ofEpochMilli(startTime));
+        taskStatusStore.taskStarted(taskStatusBuilder.build());
         LOGGER.info("Task information saved");
 
         String sqsJobQueueUrl;
@@ -250,7 +249,7 @@ public class CompactSortedFilesRunner {
 
         LOGGER.info("Saving task information");
         CompactionTaskStatus taskFinished = taskStatusBuilder.finished(taskFinishedBuilder, finishTime).build();
-        taskStatusStore.taskFinished(taskFinished, Instant.ofEpochMilli(finishTime));
+        taskStatusStore.taskFinished(taskFinished);
         LOGGER.info("Task information saved");
     }
 }
