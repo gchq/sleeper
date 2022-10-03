@@ -55,7 +55,7 @@ public class BuildEC2Stack extends Stack {
                 .orElse(inheritVpc);
         BuildEC2Image image = params.image();
 
-        String keyFile = getStackName() + ".pem";
+        String keyFile = props.getStackName() + ".pem";
         CfnKeyPair key = createSshKeyPair(keyFile);
         SecurityGroup allowSsh = createAllowSshSecurityGroup();
 
