@@ -46,7 +46,7 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
 
         //Then
         assertThat(store.getTask(taskStatus.getTaskId()))
-                .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
+                .usingRecursiveComparison(IGNORE_FINISHED_STATUS)
                 .isEqualTo(taskStatus);
     }
 

@@ -50,7 +50,8 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
 
     protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("startedStatus.startUpdateTime", "finishedStatus.updateTime", "expiryDate").build();
-
+    protected static final RecursiveComparisonConfiguration IGNORE_FINISHED_STATUS = RecursiveComparisonConfiguration.builder()
+            .withIgnoredFields("startedStatus.startUpdateTime", "expiryDate", "finishedStatus").build();
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final String jobStatusTableName = jobStatusTableName(instanceProperties.get(ID));
     private final Schema schema = createSchema();
