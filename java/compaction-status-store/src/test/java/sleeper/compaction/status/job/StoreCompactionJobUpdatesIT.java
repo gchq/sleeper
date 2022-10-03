@@ -17,10 +17,17 @@ package sleeper.compaction.status.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobRecordsProcessed;
+import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobFinishedStatus;
+import sleeper.compaction.job.status.CompactionJobStartedStatus;
+import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfoFactory;
 
+import java.time.Instant;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -64,6 +71,40 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(finishedStatusWithDefaults(job));
+    }
+
+    @Test
+    public void shouldReportLatestUpdatesWhenJobIsRunMultipleTimes() {
+        // Given
+        Partition partition = singlePartition();
+        FileInfoFactory fileFactory = fileFactory(partition);
+        CompactionJob job = jobFactory.createCompactionJob(
+                Collections.singletonList(fileFactory.leafFile(100L, "a", "z")),
+                partition.getId());
+        Instant startTime1 = Instant.parse("2022-10-03T15:19:01.001Z");
+        Instant finishTime1 = Instant.parse("2022-10-03T15:19:31.001Z");
+        Instant startTime2 = Instant.parse("2022-10-03T15:19:02.001Z");
+        Instant finishTime2 = Instant.parse("2022-10-03T15:19:32.001Z");
+        CompactionJobRecordsProcessed processed = new CompactionJobRecordsProcessed(100L, 100L);
+
+        // When
+        store.jobCreated(job);
+        store.jobStarted(job, startTime1);
+        store.jobStarted(job, startTime2);
+        store.jobFinished(job, new CompactionJobSummary(processed, startTime1, finishTime1));
+        store.jobFinished(job, new CompactionJobSummary(processed, startTime2, finishTime2));
+
+        // Then
+        assertThat(getAllJobStatuses())
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(CompactionJobStatus.builder().jobId(job.getId())
+                        .createdStatus(CompactionJobCreatedStatus.from(
+                                job, ignoredUpdateTime()))
+                        .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
+                                ignoredUpdateTime(), startTime2))
+                        .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(
+                                ignoredUpdateTime(), new CompactionJobSummary(processed, startTime2, finishTime2)))
+                        .build());
     }
 
 }
