@@ -102,7 +102,6 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
         return Instant.parse("2022-09-22T16:30:00.000Z");
     }
 
-
     protected static CompactionTaskStatus startedTaskWithDefaults() {
         return CompactionTaskStatus.started(defaultStartTime().toEpochMilli());
     }

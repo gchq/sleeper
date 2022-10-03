@@ -23,11 +23,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class CompactionTaskStatusesBuilder {
-
     private final Map<String, CompactionTaskStartedStatus> startedById = new HashMap<>(); // Order by task ID for output
     private final Map<String, CompactionTaskFinishedStatus> finishedById = new HashMap<>();
     private final Map<String, Instant> expiryDateById = new HashMap<>();
-
 
     public CompactionTaskStatusesBuilder jobStarted(
             String taskId, CompactionTaskStartedStatus startedStatus) {

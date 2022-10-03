@@ -106,7 +106,6 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
         CompactionJobSummary summary = new CompactionJobSummary(
                 new CompactionJobRecordsProcessed(4800L, 2400L), jobStartedUpdateTime, jobFinishTime);
 
-        // When
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job1.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job1, jobCreationTime))
                 .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
@@ -115,6 +114,5 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
                 .build();
 
         return Collections.singletonList(status);
-
     }
 }

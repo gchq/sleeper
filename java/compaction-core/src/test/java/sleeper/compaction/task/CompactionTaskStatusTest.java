@@ -39,6 +39,7 @@ public class CompactionTaskStatusTest {
     @Test
     public void shouldCreateCompactionTaskStatus() {
         // Given
+
         Instant taskStartedTime = Instant.parse("2022-09-22T12:00:14.000Z");
 
         // When
@@ -51,7 +52,7 @@ public class CompactionTaskStatusTest {
 
     @Test
     public void shouldCreateCompactionTaskStatusFromFinishedStandardJobList() {
-        //Given
+        // Given
         Instant taskStartedTime = Instant.parse("2022-09-22T12:00:14.000Z");
         Instant jobFinishTime3 = Instant.parse("2022-09-22T16:00:14.000Z");
 
@@ -75,7 +76,7 @@ public class CompactionTaskStatusTest {
 
     @Test
     public void shouldCreateCompactionTaskStatusFromFinishedSplittingJobList() {
-        //Given
+        // Given
         Instant taskStartedTime = Instant.parse("2022-09-22T12:00:14.000Z");
         Instant jobFinishTime3 = Instant.parse("2022-09-22T16:00:14.000Z");
 
@@ -119,8 +120,7 @@ public class CompactionTaskStatusTest {
                 new CompactionJobRecordsProcessed(4800L, 2400L), jobStartedUpdateTime2, jobFinishTime2);
         CompactionJobSummary summary3 = new CompactionJobSummary(
                 new CompactionJobRecordsProcessed(4800L, 2400L), jobStartedUpdateTime3, jobFinishTime3);
-
-        // When
+        
         CompactionJobStatus status1 = CompactionJobStatus.builder().jobId(job1.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job1, jobCreationTime1))
                 .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
