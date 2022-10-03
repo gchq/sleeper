@@ -111,7 +111,7 @@ public class ConfigurationUtils {
 
         // spark.sql properties
         sparkConf.put("spark.sql.shuffle.partitions", instanceProperties.get(BULK_IMPORT_EMR_SPARK_SQL_SHUFFLE_PARTITIONS));
-        
+
         return sparkConf;
     }
 
