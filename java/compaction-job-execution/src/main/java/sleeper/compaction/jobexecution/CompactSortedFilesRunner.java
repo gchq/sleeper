@@ -165,6 +165,7 @@ public class CompactSortedFilesRunner {
                         instanceProperties.getInt(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)),
                 keepAliveFrequency);
         keepAliveRunnable.start();
+        jobStatusStore.jobCreated(compactionJob);
         LOGGER.info("Compaction job {}: Created background thread to keep SQS messages alive (period is {} seconds)",
                 compactionJob.getId(), keepAliveFrequency);
 
