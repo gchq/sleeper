@@ -10,17 +10,17 @@ table.
 
 There are two ways of ingesting data: standard ingest and bulk import. The former refers to a process that runs in
 a container that reads data and partitions and sorts it locally before writing it to files in S3. Scalability is
-achieved by running many of these in parallel. Bulk import means using Apache Spark to run a MapReduce-like job to
-partition and sort a batch of data so that it can be ingested into a Sleeper table.
+achieved by running many of these in parallel. Bulk import means using [Apache Spark](https://spark.apache.org/)
+to run a MapReduce-like job to partition and sort a batch of data so that it can be ingested into a Sleeper table.
 
-The standard ingest process can be called from Java on any Iterable of Records. There is also an IngestStack which
+The standard ingest process can be called from Java on any `Iterable` of `Record`s. There is also an `IngestStack` which
 allows you to provide the data to be ingested as Parquet files. By sending a message to an SQS queue you can tell
 Sleeper to ingest this data. Sleeper will spin up ECS tasks to perform this ingest.
 
 Ingesting data using the bulk import approach requires the data to first be written to Parquet files. Then you
 tell Sleeper to ingest that data by sending a message to an SQS queue. This will use an EMR cluster to run the
-Spark job to perform the ingest. There are two stacks that can be used for this approach: the EmrBulkImportStack and
-the PersistentEmrBulkImportStack. The former creates an EMR cluster on demand to run the Spark job. The cluster is
+Spark job to perform the ingest. There are two stacks that can be used for this approach: the `EmrBulkImportStack` and
+the `PersistentEmrBulkImportStack`. The former creates an EMR cluster on demand to run the Spark job. The cluster is
 only used for that bulk import job. The latter creates an EMR cluster that is permanently running. By default it
 scales up and down so that if there are no bulk import jobs to run then minimal resources will be used. There is
 also an experimental option to run bulk import jobs using Spark running on an EKS cluster.
@@ -55,8 +55,8 @@ import jobs is better than a large number of small jobs.
 ## Standard Ingest
 
 Sleeper's standard ingest process is based around the class `sleeper.ingest.IngestRecords`. This contains a
-method that can be called on any Iterable of Records. This process reads a large batch of records from the
-Iterable and prepares it for writing into the Sleeper table. This involves: reading a batch of records
+method that can be called on any `Iterable` of `Record`s. This process reads a large batch of records from the
+`Iterable` and prepares it for writing into the Sleeper table. This involves: reading a batch of records
 into memory, sorting them by key and sort fields, and then writing that batch to a local file. This is
 repeated some number of times. At this point the data is only written locally and it is not inside
 the Sleeper table. These local files are read into a sorted iterable and the data is written to files in
@@ -97,21 +97,21 @@ to Sleeper's ingest queue telling it that the data should be ingested. This mess
 
 ```
 
-Here the items listed under 'files' can be either files or directories. If they are directories, then Sleeper
-will recursively look for files ending in '.parquet' within them.
+Here the items listed under `files` can be either files or directories. If they are directories, then Sleeper
+will recursively look for files ending in `.parquet` within them.
 
 It is up to you to spread the data you want to ingest over an appropriate number of jobs. As a general rule,
 aim for at least 10s of millions of records per job.
 
 The id field will be used in logging so that users can see the progress of particular ingest jobs by viewing the
 logs. The URL of the SQS queue that the message should be sent to can be found from the `sleeper.ingest.job.queue.url`
-property. This will be populated in the config object in the sleeper-<instance-id>-config S3 bucket. It can also
+property. This will be populated in the config object in the `sleeper-<instance-id>-config` S3 bucket. It can also
 be found using the [admininstration client](06-status.md#Sleeper Administration Client).
 
-You will need to ensure that the role with the ARN given by the IngestContainerRoleARN property has read access
+You will need to ensure that the role with the ARN given by the `IngestContainerRoleARN` property has read access
 to the files you wish to ingest. This ARN is exported as a named export from CloudFormation with name
-<sleeper-id>-IngestContainerRoleARN to help stacks that depend on Sleeper automatically grant read access to their
-data to Sleeper's ingest role. A simple way to do this is to use the sleeper.ingest.source.bucket instance property to
+`<sleeper-id>-IngestContainerRoleARN` to help stacks that depend on Sleeper automatically grant read access to their
+data to Sleeper's ingest role. A simple way to do this is to use the `sleeper.ingest.source.bucket` instance property to
 set the name of the bucket that the files are in. If this property is populated when the Sleeper instance is deployed then
 the ingest roles will be granted read access to it. (The bulk import methods described below will also be granted read access
 to it.)
@@ -127,7 +127,7 @@ take a batch of data then partition, sort and write it out so that the resulting
 The advantage of bulk import over the standard ingest process described above is that it reduces the number of writes to S3.
 For example, suppose there are currently 100 leaf partitions for a table, and suppose that we have 1000 files of data to ingest.
 With the standard approach, if we create one ingest job per file and send it to the SQS queue, then there will be 100,000 writes to S3.
-(In fact, there might be more if the files contain more records than the value of sleeper.ingest.max.local.records.) Using
+(In fact, there might be more if the files contain more records than the value of `sleeper.ingest.max.local.records`.) Using
 the bulk import method, there will only be 100 writes to S3 (assuming that the 1000 files are all imported in the same bulk
 import job).
 
@@ -135,16 +135,16 @@ Note that it is vital that a table is pre-split before data is bulk import ([see
 
 There are several stacks that allow data to be imported using the bulk import process:
 
-- EmrBulkImportStack - this causes an EMR cluster to be deployed each time a job is submitted to the EMR bulk import queue. Each
+- `EmrBulkImportStack` - this causes an EMR cluster to be deployed each time a job is submitted to the EMR bulk import queue. Each
 job is processed on a separate EMR cluster. The advantage of the cluster being used for one job and then destroyed is
 that there is no wasted compute if jobs are submitted infrequently. The downside is that there is a significant delay whilst
 the cluster is created and bootstrapped.
-- PersistentEmrBulkImportStack - this causes an EMR cluster to be created when the Sleeper instance is deployed. This
+- `PersistentEmrBulkImportStack` - this causes an EMR cluster to be created when the Sleeper instance is deployed. This
 cluster runs continually. By default, it uses managed scaling so that the number of servers running scales up and down
 as needed. The advantage of the persistent EMR approach is that if there is a continual stream of jobs coming there is no
 delay while a new cluster is created (this also means the cost of the servers during the cluster creation and bootstrapping
 process is amortised over multiple jobs). The downside is that if there are no jobs to perform then there is still a cost.
-- EksBulkImportStack - this uses Spark running on an EKS cluster to bulk import the data. Currently, the executors run
+- `EksBulkImportStack` - this uses Spark running on an EKS cluster to bulk import the data. Currently, the executors run
 as Fargate tasks. Future work will allow them to run on EC2 instances. This stack is experimental.
 
 These can all be deployed independently of each other. Each stack has its own queue from which it pulls jobs. The
@@ -171,7 +171,7 @@ This message needs to be sent to the queue with URL given by the value of the pr
 
 You can configure the instance type of the nodes, as well as the initial and maximum number of core nodes in your cluster.
 Default values of these can be specified in the instance properties. These can be overridden for each table by editing
-the table properties. Alternatively they can be specified on a per-job basis by editing the "platformSpec" part of the
+the table properties. Alternatively they can be specified on a per-job basis by editing the `platformSpec` part of the
 job specification:
 
 ```JSON
@@ -195,7 +195,7 @@ console to access your Spark UI and application master UI. These will allow you 
 Spark executors and driver. After your job finishes the cluster terminates.
 
 There are many configuration options that can be specified to control properties of the EMR cluster and the Spark configuration.
-The following properties are instance properties that can be overridden by table properties and by using the platformSpec
+The following properties are instance properties that can be overridden by table properties and by using the `platformSpec`
 part of the job specification:
 
 ```properties
@@ -308,7 +308,7 @@ This section describes how a large volume of records were bulk imported into Sle
 records was generated at random. These records conformed to the schema used for the system tests, i.e. a row key of type string, a sort key of
 type long, and a value of type string. The row key and the value are random strings of length 10 with characters from the lower case alphabet
 a to z. The sort key is a random long in the range 0 to 10,000,000,000. The records were stored in 10 Parquet files in an prefix in an S3 bucket
-(given as mybucket/data/ in the examples below).
+(given as `mybucket/data/` in the examples below).
 
 The table was pre-split into 256 partitions.
 
@@ -327,7 +327,7 @@ sleeper.bulk.import.persistent.emr.step.concurrency.level=2
 These are the default settings, with the exception of the managed scaling option.
 
 A bulk import job was triggered by sending the following JSON to the SQS queue for the persistent EMR bulk import stack. This queue will have
-the name instance-id-BulkImportPersistentEMRQ.
+the name `instance-id-BulkImportPersistentEMRQ`.
 
 ```JSON
 {
@@ -386,8 +386,8 @@ The instance property `sleeper.bulk.import.class.name` can be used to set the de
 
 #### Bulk import on EKS
 
-The EksBulkImportStack option requires the bulk import Docker image to be pushed to ECR - see the instructions in the [deployment guide](02-deployment-guide.md).
-
+The `EksBulkImportStack` option requires the bulk import Docker image to be pushed to ECR - see the instructions in the
+[deployment guide](02-deployment-guide.md).
 
 You can submit a job in a similar way to the methods above, e.g.
 
@@ -422,16 +422,16 @@ The Spark job will be run with a service account which has permissions to read f
 Sleeper tables in the instance so there should be no issues with permissions.
 
 The bulk import job will go through some initial validation, and if successful will be transformed and submitted to an AWS Step
-Functions StateMachine. If the job fails validation, or for some reason is unable to be submitted to the StateMachine, a CloudWatch
+Functions State Machine. If the job fails validation, or for some reason is unable to be submitted to the State Machine, a CloudWatch
 alarm will trigger and an email will be sent to the address specified in `sleeper.errors.email`.
 
-When the job makes it to the StateMachine, it will run the job synchronously and watch its status. If the job is successful, the
+When the job makes it to the State Machine, it will run the job synchronously and watch its status. If the job is successful, the
 job will be torn down automatically. If unsuccessful or the job doesn't submit, a notification will be sent to the errors email.
 
 ##### Debugging and UI access
 
-While a spark job is running you'll be able to monitor it with the Spark UI. To access this, you'll need to install kubectl, a command line
-utility for Kubernetes. Once you've done that, have a look at the outputs of the BulkImportStack. There should be one with a value like:
+While a Spark job is running you'll be able to monitor it with the Spark UI. To access this, you'll need to install `kubectl`, a command line
+utility for Kubernetes. Once you've done that, have a look at the outputs of the `EksBulkImportStack`. There should be one with a value like:
 `BulkImportStack.BulkImportClusterConfigCommandABCD1234 = aws eks update-kubeconfig --name ...`. Copy and paste this command into a terminal.
 This will give you access to your cluster. From there you'll be able to inspect logs, list pods and connect remotely to the Spark UI. The driver
 pods all use the job ID as it's name. If you don't set this manually, it will be a random UUID.

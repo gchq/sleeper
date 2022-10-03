@@ -2,7 +2,7 @@ Creating a schema
 ==================
 
 A schema describes the data in a table. A schema consists of several fields. A field has a
-name and a type, e.g. a field with name 'id' and type 'string'. A schema has 3 types of field:
+name and a type, e.g. a field with name 'id' and type 'string'. A schema has three types of field:
 row keys, sort keys and values. 
 
 See [a full example](../example/full/schema.json) for an example of a schema. 
@@ -57,8 +57,8 @@ If we wanted to sort the records for a particular field by a timestamp, we could
 
 This would cause records for a particular key to be stored (and retrieved) in increasing order of timestamps.
 
-The following types are permitted as row keys and sort keys: IntType, LongType, StringType, ByteArrayType. All
-of these types can be used for values. Additionally, value fields may be of type ListType or MapType. Here is an
+The following types are permitted as row keys and sort keys: `IntType`, `LongType`, `StringType`, `ByteArrayType`. All
+of these types can be used for values. Additionally, value fields may be of type `ListType` or `MapType`. Here is an
 example schema where there are several value fields:
 
 ```JSON
@@ -105,7 +105,7 @@ example schema where there are several value fields:
     }
 ```
 
-The field with name value3 is a list with integer elements. The field with name value4 is a map with integer keys and string values.
+The field with name `value3` is a list with integer elements. The field with name `value4` is a map with integer keys and string values.
 
 There may be multiple row key fields. In the following example two string fields are used as row keys:
 
@@ -136,4 +136,7 @@ There may be multiple row key fields. In the following example two string fields
     }
 ```
 
-Sleeper will store the records sorted by key1 and then key2. Thus retrieving all records where key1 and key2 have specified values will be quick. A range scan to retrieve all records where key1 has a certain value and key2 can take any value will also be quick. But a query for all records where key2 has a specified value but key1 can take any value will not be quick.
+Sleeper will store the records sorted by `key1` and then `key2`. Thus retrieving all records where `key1`
+and `key2` have specified values will be quick. A range scan to retrieve all records where `key1` has a certain
+value and `key2` can take any value will also be quick. But a query for all records where `key2` has a specified
+value but `key1` can take any value will not be quick.

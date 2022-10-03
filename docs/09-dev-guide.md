@@ -48,7 +48,7 @@ to be run on an x86 machine.
 The system tests use the schema in `./scripts/templates/schema.template`. You can
 change the instance and table properties that are used to deploy the system test 
 by editing the files in `./scripts/templates`. However, note that properties in
-these files with the value "changeme" will be overwritten by the script.
+these files with the value `changeme` will be overwritten by the script.
 
 You can also change any system test specific properties in the files
 `scripts/test/system-test-instance.properties` and `scripts/test/buildDeployTest.sh`.
@@ -71,7 +71,7 @@ Finally, when you are ready to tear down the instance, run:
 It is advisable to manually stop any tasks running in the compaction and system test
 clusters.
 
-Note you will still need the files in the /generated folder that are created
+Note you will still need the files in the `/generated` folder that are created
 by the `deploy.sh` script for this tear down script to work correctly.
 This will remove your deployment and then any ECR repos, S3 buckets and local
 files that have been generated.
@@ -90,9 +90,9 @@ See the [deployment guide](02-deployment-guide.md) for notes on how to deploy Sl
 version and then push to the repo.
 
 If you are storing versions of the code in an AWS account then upload the jars and push the Docker
-images. The following assumes that the environment variable SLEEPER_JARS contains the name of the
-bucket for the jars, that VERSION is the version of the code to upload, and that REPO_PREFIX is the
-prefix for the ECR repositories, e.g. 123456789.dkr.ecr.eu-west-2.amazonaws.com.
+images. The following assumes that the environment variable `SLEEPER_JARS` contains the name of the
+bucket for the jars, that `VERSION` is the version of the code to upload, and that `REPO_PREFIX` is the
+prefix for the ECR repositories, e.g. `123456789.dkr.ecr.eu-west-2.amazonaws.com`.
 
 3. Push jars to the S3 jars bucket.
    Copy the jars to the S3 bucket that is used to contain the Sleeper jar files:

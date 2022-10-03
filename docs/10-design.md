@@ -16,8 +16,8 @@ than a threshold.
 An instance of Sleeper is identified by a string id that should be globally unique across AWS. A Sleeper
 instance has a set of instance properties associated with it. Some of these properties are defined by the user
 when the instance is created, others are defined by the CDK deployment process. These properties are stored
-in a properties file, which is stored in a bucket in S3. The name of this S3 bucket is "sleeper-" followed by the 
-instance id followed by '-config', e.g. sleeper-mySleeperInstance-config.
+in a properties file, which is stored in a bucket in S3. The name of this S3 bucket is `sleeper-` followed by the
+instance id followed by `-config`, e.g. `sleeper-mySleeperInstance-config`.
 
 An instance of Sleeper can contain one or more tables. Each table contains records with fields matching a schema.
 Each table has its own S3 bucket for storing data and a state store for storing metadata about that table. 
@@ -29,8 +29,8 @@ these are optional, but in practice the compaction, garbage collection and parti
 ## Records
 
 Records are the fundamental unit of data in Sleeper. A record is simply a map from a field name to a value, i.e.
-Map<String, Object> where the Object should be one of the supported types. For example, we might have a record
-with 3 fields: id -> "abc", timestamp -> 1234567980, value -> "hello".
+`Map<String, Object>` where the object should be one of the supported types. For example, we might have a record
+with 3 fields: `id -> "abc"`, `timestamp -> 1234567980`, `value -> "hello"`.
 
 ## Schema
 
@@ -63,11 +63,11 @@ must be initialised.
 To achieve this, the table stack obtains a list of the table properties files from the instance properties. For
 each table properties file, it creates the data bucket for that table and creates the state store. The creation
 of the state store is delegated to either the DynamoDB state store stack or the S3 state store stack, as appropriate.
-A custom CDK resource is then used to call sleeper.cdk.custom.SleeperTableLambda. This lambda initialises the
+A custom CDK resource is then used to call `sleeper.cdk.custom.SleeperTableLambda`. This lambda initialises the
 statestore and updates the table properties file which is stored in the instance's config bucket.
 
-The name of the bucket containing a table's data is called sleeper-instanceid-table-tablename, e.g.
-sleeper-mySleeperInstance-table-table1.
+The name of the bucket containing a table's data is called `sleeper-<instance-id>-table-tablename`, e.g.
+`sleeper-mySleeperInstance-table-table1`.
 
 ## Sorted files
 
@@ -116,11 +116,11 @@ are read from S3, and merged together. Then the median is found and used as the 
 quicker than reading all the data in sorted order and stopping once half the data has been read.
 
 The partition splitting stack has two parts. The first consists of a Cloudwatch rule that periodically executes
-a lambda that runs sleeper.splitter.FindPartitionsToSplitLambda. For each table, this queries the state store
+a lambda that runs `sleeper.splitter.FindPartitionsToSplitLambda`. For each table, this queries the state store
 to find the leaf partitions and the active files. For each leaf partition it then calculates the number of records
 and if that is greater than a threshold it sends a message to an SQS queue saying that this partition should be
 split. The second part of the stack is the lambda that is triggered when a message arrives on the SQS queue. This
-lambda executes sleeper.splitter.SplitPartitionLambda. This splits the partition using the process described in
+lambda executes `sleeper.splitter.SplitPartitionLambda`. This splits the partition using the process described in
 the previous paragraph.
 
 Note that this partition splitting process happens independently of other parts of Sleeper. For example, the ingest
@@ -173,7 +173,7 @@ two ways to do this: standard ingest and bulk import.
 
 ### Standard ingest
 
-Standard ingest is performed by the sleeper.ingest.IngestRecords class. This performs ingest using the following steps:
+Standard ingest is performed by the `sleeper.ingest.IngestRecords` class. This performs ingest using the following steps:
 
 - A batch of records is read into memory.
 - This batch is sorted in memory and then flushed to a local file.
@@ -192,10 +192,10 @@ still receive data. The fact that some of those partitions may no longer be leaf
 that matters is that the ingest process writes files of data such that each file contains data for one and only
 one partition.
 
-Users can avoid the complexity of deploying and running multiple instances of the IngestRecords class by
+Users can avoid the complexity of deploying and running multiple instances of the `IngestRecords` class by
 writing the data that they wish to ingest into Parquet files and then sending a message to a queue telling Sleeper
 to ingest that data. This then causes ECS tasks to run to perform the ingest. These tasks are calling the
-IngestRecords class on an iterable of records that simply reads the Parquet files.
+`IngestRecords` class on an iterable of records that simply reads the Parquet files.
 
 The resources that provide this functionality are deployed by the ingest stack. The user sends a message to
 the SQS queue containing details of the files to be ingested. The ingest stack consists of the SQS queue to
@@ -241,7 +241,7 @@ job is a simple streaming merge that requires negligible amounts of memory. The 
 partition.
 
 There are two separate stages: the creation of compaction jobs, and the execution of those jobs. Compaction jobs
-are created by a lambda that runs the class sleeper.compaction.job.creation.CreateJobsLambda. This lambda is
+are created by a lambda that runs the class `sleeper.compaction.job.creation.CreateJobsLambda`. This lambda is
 triggered periodically by a Cloudwatch rule. The lambda iterates through each table. For each table, it queries
 the state store for information about the partitions and about the active files that do not have a job id (if a file
 has a job id it means that a compaction job has already been created for that file). It then uses a compaction
@@ -272,7 +272,7 @@ more than N minutes. These files are then deleted in batches.
 ## Queries
 
 A Sleeper query is a request for all records where the key is in a range (or in one of a list of ranges). Queries
-are executed by the QueryExecutor class. This contains a cache of the information required from the state store
+are executed by the `QueryExecutor` class. This contains a cache of the information required from the state store
 (namely the partition tree and the active files). This cache is refreshed periodically. When a query is received,
 the requested ranges are examined to see which leaf partitions overlap with the range. Then all partitions up
 the partition tree from the leaf partition to the root are found. Records that are relevant to the query may be
@@ -299,5 +299,5 @@ application of the iterators.
 An iterator is a function that is called either during a compaction job or during a query. It allows
 logic to be inserted into the compaction or query path. This logic could be used to age-off old data or to
 aggregate together values for the same key (e.g. to sum counts associated with the same key). Each iterator is a
-function that takes as input a CloseableIterator<Record> and returns a CloseableIterator<Record>. Examples of
-iterators can be found in sleeper.core.iterator.impl.
+function that takes as input a `CloseableIterator<Record>` and returns a `CloseableIterator<Record>`. Examples of
+iterators can be found in `sleeper.core.iterator.impl`.
