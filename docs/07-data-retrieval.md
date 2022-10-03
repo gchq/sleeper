@@ -11,7 +11,7 @@ how to execute them from Python.
 
 ## Running queries directly using the Java client
 
-The simplest way to retrieve data is to use the query.sh script. This simply calls the Java class sleeper.clients.QueryClient class. This
+The simplest way to retrieve data is to use the `query.sh` script. This simply calls the Java class `sleeper.clients.QueryClient` class. This
 class retrieves data directly from S3 to this machine. It can be run using:
 ```bash
 INSTANCE_ID=myInstanceId
@@ -26,7 +26,7 @@ large range, the query may take a long time to run and may transfer a large amou
 
 ## Submitting queries to be executed via lambda
 
-This is similar to the QueryClient class except that the query is sent to an SQS queue and then executed using AWS lambda. If
+This is similar to the `QueryClient` class except that the query is sent to an SQS queue and then executed using AWS lambda. If
 the query spans multiple leaf partitions then it will be executed in parallel by multiple lambda invocations. By default the results are
 written to files in an S3 bucket. Alternatively, the results can be sent to an SQS queue. Note that if you specify SQS as the output
 and query for a large range, a very significant amount of data could be sent to SQS which could cost a lot of money.
@@ -36,15 +36,15 @@ INSTANCE_ID=myInstanceId
 ./scripts/utility/lambdaQuery.sh ${INSTANCE_ID}
 ```
 This will first ask you to choose whether you want the results to be sent to an S3 bucket or an SQS queue. If you specify S3 then the
-results are written to the S3 bucket named sleeper-<instance-id>-query-results. (The instance property `sleeper.query.results.bucket` will
+results are written to the S3 bucket named `sleeper-<instance-id>-query-results`. (The instance property `sleeper.query.results.bucket` will
 be set to this value. Note that this is a system defined property, so it is set to a bucket that is created during the CDK deployment process.)
 
 This will again ask you to choose between an exact query and a range query. It will ask for the key or keys, and then send the appropriate
 message to the query SQS queue.
 
-If you chose the S3 option, then the results will be written to Parquet files in a directory called query-<query-id> in the bucket
-sleeper-<instance-id>-query-results. They can then manually be retrieved from there. If you specified SQS then the results are written
-to the SQS queue named <instance-id>--QueryResultsQ. To poll the results queue and print the results when they are available use:
+If you chose the S3 option, then the results will be written to Parquet files in a directory called `query-<query-id>` in the bucket
+`sleeper-<instance-id>-query-results`. They can then manually be retrieved from there. If you specified SQS then the results are written
+to the SQS queue named `<instance-id>--QueryResultsQ`. To poll the results queue and print the results when they are available use:
 ```bash
 java -cp clients/target/clients-*-utility.jar sleeper.clients.QueryResultsSQSQueuePoller ${INSTANCE_ID}
 ```
@@ -86,7 +86,7 @@ To execute a range query, use the following query:
 This will return all records in the table "myTable" where key1 is in the range 'goodbye' to 'hello'. If there are records in the
 table where key1 is 'goodbye' then these will be included in the results; records where key1 is 'hello' will not be included. This is
 clearly quite verbose, but it is not intended that users will construct queries directly in JSON. This query should be sent to
-the SQS queue with a URL given by the 'sleeper.query.queue.url' property in the instance  properties file. The results will appear in
+the SQS queue with a URL given by the `sleeper.query.queue.url` property in the instance properties file. The results will appear in
 the S3 query results bucket, as described above.
 
 If you want to find all records where the key is a certain value, construct your query in the following form:
@@ -172,12 +172,12 @@ To send the results to a particular SQS queue use:
 }
 ```
 
-You will need to give Sleeper's writing data IAM role (given by the CloudFormation export <instance-id>-QueryLambdaRoleArn)
+You will need to give Sleeper's writing data IAM role (given by the CloudFormation export `<instance-id>-QueryLambdaRoleArn`)
 permission to write to the above S3 bucket or SQS queue.
 
 ## Use the Java API directly
 
-You can also retrieve data using the Java class QueryExecutor.
+You can also retrieve data using the Java class `QueryExecutor`.
 
 ## Use Athena to perform SQL Analytics and Queries
 
@@ -201,8 +201,8 @@ for maps. When Athena does add this support, we will be able to add support for 
 ### The two different connectors
 
 You might notice that you have a choice of two connectors by default:
-* The Simple Connector
-* The Iterator Applying Connector
+* The simple connector
+* The iterator applying onnector
 
 You can choose at runtime which one you want to use:
 ```sql
@@ -219,13 +219,13 @@ The simple connector creates one Athena handler for each file. This means that a
 applying connector performs a query time compaction so that each Sleeper leaf partition is processed by a single Athena
 handler. The handler receives the data in sorted order and applies any iterators.
 
-#### Improving Query performance with the iterator applying connector
+#### Improving query performance with the iterator applying connector
 
 If you want to use the Sleeper iterators, it means we have to read a whole Sleeper partition in one Athena handler. If you've
-got multiple files in a leaf partition, that means reading all the files in one go, rather than federating out the reads to
+got multiple files in a leaf partition, that means reading all the files in one lambda, rather than federating out the reads to
 multiple handlers.
 
-#### Changing the Handlers
+#### Changing the handlers
 
 To alter the handlers that are deployed with your instance, you can change the `sleeper.athena.handler.classes` instance property:
 ```properties
