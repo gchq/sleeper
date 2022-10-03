@@ -6,7 +6,7 @@ a Sleeper instance with a simple schema, and writes some random data into a tabl
 scripts to see how much data is in the system, run some example queries, and view logs to help understand what the system is
 doing. It is best to do this from an EC2 instance as a significant amount of code needs to be uploaded to AWS.
 
-Before running this demo functionality, you will need the following intalled (see the [deployment guide](02-deployment-guide.md)
+Before running this demo functionality, you will need the following installed (see the [deployment guide](02-deployment-guide.md)
 for more information on getting set up correctly) and you will need your CLI to be logged into your AWS account:
 
 * [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html): Tested with v2.39.1
@@ -21,6 +21,64 @@ If CDK has not previously been bootstrapped in this account, then it needs boots
 cannot be run from the `sleeper` directory directly as the Java CDK classes are not yet compiled into the JAR named in 
 `cdk.json`.  See [this link](https://docs.aws.amazon.com/cdk/latest/guide/bootstrapping.html) for guidance on how to 
 bootstrap CDK in your account.
+
+### Deployment environment
+
+You can use the CDK to create an EC2 instance in a VPC that is suitable for deploying Sleeper. Once the CLI is logged in
+to your AWS, and the CDK has been bootstrapped, run these commands in the directory `java/cdk-environment` to build and
+deploy the environment:
+
+```bash
+mvn clean install
+cdk deploy --all
+```
+
+This will create an SSH key locally, and output a command to connect to the EC2 instance with that key. It should look
+like this:
+
+```bash
+ssh -i SleeperEnvironment-BuildEC2.pem ubuntu@[ec2-public-ip]
+```
+
+Immediately after it's deployed, commands will run on this instance to install development tools. Once you're connected,
+you can check the progress of those commands like this:
+
+```bash
+cloud-init status
+```
+
+You can check the output like this (add `-f` if you'd like to follow the progress):
+
+```bash
+tail /var/log/cloud-init-output.log
+```
+
+Once it has finished the instance might restart. The Sleeper Git repository will be checked out at `~/sleeper`.
+
+To deploy Sleeper or run the system tests from this instance, you'll need to add your own credentials for the AWS CLI.
+See the [AWS IAM guide for CLI access](https://docs.aws.amazon.com/singlesignon/latest/userguide/howtogetcredentials.html).
+
+#### Managing environments
+
+You can deploy either the VPC or the EC2 independently, and specify an instance ID when deploying multiple
+instances, or an existing VPC to deploy the EC2 to:
+
+```bash
+cdk deploy -c instanceId=MyEnvironment --all
+cdk deploy -c instanceId=EmptyEnvironment "*-Networking"
+cdk deploy -c instanceId=MyEnvironment -c vpcId=[vpc-id] "*-BuildEC2"
+```
+
+You can tear down the deployed environment with `cdk destroy`. If you used an `instanceId` or only deployed certain
+parts, you'll need to specify those. Here are some examples:
+
+```bash
+cdk destroy --all
+cdk destroy -c instanceId=MyEnvironment --all
+cdk destroy -c instanceId=EmptyEnvironment "*-Networking"
+```
+
+### System test
 
 To run the system test, set the environment variable `ID` to be a globally unique string. This is the instance id. It will
 be used as part of the name of various AWS resources, such as an S3 bucket, lambdas, etc., and therefore should conform to
