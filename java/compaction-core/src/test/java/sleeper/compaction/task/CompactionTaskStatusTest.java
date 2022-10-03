@@ -42,7 +42,7 @@ public class CompactionTaskStatusTest {
         Instant taskStartedTime = Instant.parse("2022-09-22T12:00:14.000Z");
 
         // When
-        CompactionTaskStatus status = CompactionTaskStatus.started(taskStartedTime.toEpochMilli());
+        CompactionTaskStatus status = CompactionTaskStatus.started(taskStartedTime.toEpochMilli()).build();
 
         // Then
         assertThat(status).extracting("startedStatus.startTime")
@@ -63,12 +63,13 @@ public class CompactionTaskStatusTest {
         CompactionJob job3 = dataHelper.singleFileCompaction(partition3);
 
         // When
-        CompactionTaskStatus taskStatus = CompactionTaskStatus.started(taskStartedTime.toEpochMilli());
-        createJobStatuses(job1, job2, job3).forEach(taskStatus::addJobStatus);
-        taskStatus.finished(jobFinishTime3.toEpochMilli());
+        CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.started(taskStartedTime.toEpochMilli());
+        CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
+        createJobStatuses(job1, job2, job3).forEach(taskFinishedBuilder::addJobStatus);
+        taskStatusBuilder.finished(taskFinishedBuilder, jobFinishTime3.toEpochMilli());
 
         // Then
-        assertThat(taskStatus).extracting("startedStatus.startTime", "finishedStatus.finishTime",
+        assertThat(taskStatusBuilder.build()).extracting("startedStatus.startTime", "finishedStatus.finishTime",
                         "finishedStatus.totalJobs", "finishedStatus.totalRuntime", "finishedStatus.totalRecordsRead",
                         "finishedStatus.totalRecordsWritten", "finishedStatus.recordsReadPerSecond", "finishedStatus.recordsWrittenPerSecond")
                 .containsExactly(taskStartedTime, jobFinishTime3, 3, 14400.0, 14400L, 7200L, 1.0, 0.5);
@@ -88,12 +89,13 @@ public class CompactionTaskStatusTest {
         CompactionJob job3 = dataHelper.singleFileSplittingCompaction(partition3.getId(), "G", "H");
 
         // When
-        CompactionTaskStatus taskStatus = CompactionTaskStatus.started(taskStartedTime.toEpochMilli());
-        createJobStatuses(job1, job2, job3).forEach(taskStatus::addJobStatus);
-        taskStatus.finished(jobFinishTime3.toEpochMilli());
+        CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.started(taskStartedTime.toEpochMilli());
+        CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
+        createJobStatuses(job1, job2, job3).forEach(taskFinishedBuilder::addJobStatus);
+        taskStatusBuilder.finished(taskFinishedBuilder, jobFinishTime3.toEpochMilli());
 
         // Then
-        assertThat(taskStatus).extracting("startedStatus.startTime", "finishedStatus.finishTime",
+        assertThat(taskStatusBuilder.build()).extracting("startedStatus.startTime", "finishedStatus.finishTime",
                         "finishedStatus.totalJobs", "finishedStatus.totalRuntime", "finishedStatus.totalRecordsRead",
                         "finishedStatus.totalRecordsWritten", "finishedStatus.recordsReadPerSecond", "finishedStatus.recordsWrittenPerSecond")
                 .containsExactly(taskStartedTime, jobFinishTime3, 3, 14400.0, 14400L, 7200L, 1.0, 0.5);

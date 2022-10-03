@@ -23,6 +23,7 @@ import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStoreCreator;
+import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
@@ -104,14 +105,18 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
     }
 
     protected static CompactionTaskStatus startedTaskWithDefaults() {
+        return startedTaskWithDefaultsBuilder().build();
+    }
+
+    protected static CompactionTaskStatus.Builder startedTaskWithDefaultsBuilder() {
         return CompactionTaskStatus.started(defaultStartTime().toEpochMilli());
     }
 
     protected static CompactionTaskStatus finishedTaskWithDefaults(List<CompactionJobStatus> jobStatusList) {
-        CompactionTaskStatus taskStatus = startedTaskWithDefaults();
-        jobStatusList.forEach(taskStatus::addJobStatus);
-        taskStatus.finished(defaultFinishTime().toEpochMilli());
-        return taskStatus;
+        CompactionTaskStatus.Builder taskStatusBuilder = startedTaskWithDefaultsBuilder();
+        CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
+        jobStatusList.forEach(taskFinishedBuilder::addJobStatus);
+        return taskStatusBuilder.finished(taskFinishedBuilder, defaultFinishTime().toEpochMilli()).build();
     }
 
     public static String jobStatusTableName(String instanceId) {

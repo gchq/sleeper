@@ -23,6 +23,15 @@ public class CompactionTaskStartedStatus {
     private final Instant startTime;
     private final Instant startUpdateTime;
 
+    private CompactionTaskStartedStatus(Builder builder) {
+        startTime = builder.startTime;
+        startUpdateTime = builder.startUpdateTime;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public Instant getStartTime() {
         return startTime;
     }
@@ -56,14 +65,6 @@ public class CompactionTaskStartedStatus {
                 '}';
     }
 
-    private CompactionTaskStartedStatus(Builder builder) {
-        startTime = builder.startTime;
-        startUpdateTime = builder.startUpdateTime;
-    }
-
-    public static Builder builder() {
-        return new Builder();
-    }
 
     public static final class Builder {
         private Instant startTime;

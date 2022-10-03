@@ -22,13 +22,27 @@ import java.time.Instant;
 import java.util.Objects;
 
 public class CompactionTaskFinishedStatus {
-    private Instant finishTime;
-    private int totalJobs;
-    private double totalRuntime;
-    private long totalRecordsRead;
-    private long totalRecordsWritten;
-    private double recordsReadPerSecond;
-    private double recordsWrittenPerSecond;
+    private final Instant finishTime;
+    private final int totalJobs;
+    private final double totalRuntime;
+    private final long totalRecordsRead;
+    private final long totalRecordsWritten;
+    private final double recordsReadPerSecond;
+    private final double recordsWrittenPerSecond;
+
+    private CompactionTaskFinishedStatus(Builder builder) {
+        finishTime = builder.finishTime;
+        totalJobs = builder.totalJobs;
+        totalRuntime = builder.totalRuntime;
+        totalRecordsRead = builder.totalRecordsRead;
+        totalRecordsWritten = builder.totalRecordsWritten;
+        recordsReadPerSecond = builder.recordsReadPerSecond;
+        recordsWrittenPerSecond = builder.recordsWrittenPerSecond;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
 
     public Instant getFinishTime() {
         return finishTime;
@@ -95,36 +109,6 @@ public class CompactionTaskFinishedStatus {
                 '}';
     }
 
-    private CompactionTaskFinishedStatus(Builder builder) {
-        finishTime = builder.finishTime;
-        totalJobs = builder.totalJobs;
-        totalRuntime = builder.totalRuntime;
-        totalRecordsRead = builder.totalRecordsRead;
-        totalRecordsWritten = builder.totalRecordsWritten;
-        recordsReadPerSecond = builder.recordsReadPerSecond;
-        recordsWrittenPerSecond = builder.recordsWrittenPerSecond;
-    }
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public static CompactionTaskFinishedStatus empty() {
-        return builder().build();
-    }
-
-    public void addJobStatus(CompactionJobStatus jobStatus) {
-        totalJobs++;
-        totalRecordsRead += jobStatus.getFinishedSummary().getLinesRead();
-        totalRecordsWritten += jobStatus.getFinishedSummary().getLinesWritten();
-    }
-
-    public void finish(Instant finishTime, double duration) {
-        recordsReadPerSecond = totalRecordsRead / duration;
-        recordsWrittenPerSecond = totalRecordsWritten / duration;
-        totalRuntime = duration;
-        this.finishTime = finishTime;
-    }
 
     public static final class Builder {
         private Instant finishTime;
@@ -171,6 +155,25 @@ public class CompactionTaskFinishedStatus {
         public Builder recordsWrittenPerSecond(double recordsWrittenPerSecond) {
             this.recordsWrittenPerSecond = recordsWrittenPerSecond;
             return this;
+        }
+
+        public Builder addJobStatus(CompactionJobStatus jobStatus) {
+            totalJobs++;
+            totalRecordsRead += jobStatus.getFinishedSummary().getLinesRead();
+            totalRecordsWritten += jobStatus.getFinishedSummary().getLinesWritten();
+            return this;
+        }
+
+        public Builder finish(Instant finishTime, double duration) {
+            recordsReadPerSecond = totalRecordsRead / duration;
+            recordsWrittenPerSecond = totalRecordsWritten / duration;
+            totalRuntime = duration;
+            this.finishTime = finishTime;
+            return this;
+        }
+
+        public CompactionTaskFinishedStatus empty() {
+            return builder().build();
         }
 
         public CompactionTaskFinishedStatus build() {

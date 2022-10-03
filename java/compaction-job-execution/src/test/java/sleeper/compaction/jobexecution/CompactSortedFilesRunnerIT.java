@@ -36,7 +36,7 @@ import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStoreCreator;
-import sleeper.compaction.task.CompactionTaskStatus;
+import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
@@ -58,7 +58,6 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableCreator;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -157,7 +156,7 @@ public class CompactSortedFilesRunnerIT {
         stateStore.initialise();
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDB);
         CompactionJobStatusStore jobStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDB, instanceProperties);
-        CompactionTaskStatus taskStatus = CompactionTaskStatus.started(Instant.now().toEpochMilli());
+        CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
         //  - Create four files of sorted data
         String folderName = folder.newFolder().getAbsolutePath();
         String file1 = folderName + "/file1.parquet";
@@ -270,7 +269,7 @@ public class CompactSortedFilesRunnerIT {
         // When
         CompactSortedFilesRunner runner = new CompactSortedFilesRunner(
                 instanceProperties, ObjectFactory.noUserJars(),
-                tablePropertiesProvider, stateStoreProvider, jobStatusStore, taskStatus,
+                tablePropertiesProvider, stateStoreProvider, jobStatusStore, taskFinishedBuilder,
                 instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqsClient,
                 1, 5);
         runner.run();

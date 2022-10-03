@@ -16,8 +16,6 @@
 
 package sleeper.compaction.task;
 
-import sleeper.compaction.job.status.CompactionJobStatus;
-
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
@@ -35,23 +33,15 @@ public class CompactionTaskStatus {
         expiryDate = builder.expiryDate;
     }
 
-    public static CompactionTaskStatus started(long startTime) {
+    public static CompactionTaskStatus.Builder started(long startTime) {
         return builder().taskId(UUID.randomUUID().toString()).startedStatus(
                         CompactionTaskStartedStatus.builder()
                                 .startTime(Instant.ofEpochMilli(startTime))
                                 .startUpdateTime(Instant.ofEpochMilli(startTime))
                                 .build())
-                .finishedStatus(CompactionTaskFinishedStatus.empty())
-                .build();
+                .finishedStatus(CompactionTaskFinishedStatus.builder().empty());
     }
 
-    public void addJobStatus(CompactionJobStatus jobStatus) {
-        this.finishedStatus.addJobStatus(jobStatus);
-    }
-
-    public void finished(long finishTime) {
-        this.finishedStatus.finish(Instant.ofEpochMilli(finishTime), (finishTime - startedStatus.getStartTime().toEpochMilli()) / 1000.0);
-    }
 
     public static Builder builder() {
         return new Builder();
@@ -122,6 +112,11 @@ public class CompactionTaskStatus {
 
         public Builder expiryDate(Instant expiryDate) {
             this.expiryDate = expiryDate;
+            return this;
+        }
+
+        public Builder finished(CompactionTaskFinishedStatus.Builder taskFinishedBuilder, long finishTime) {
+            this.finishedStatus = taskFinishedBuilder.finish(Instant.ofEpochMilli(finishTime), (finishTime - startedStatus.getStartTime().toEpochMilli()) / 1000.0).build();
             return this;
         }
 
