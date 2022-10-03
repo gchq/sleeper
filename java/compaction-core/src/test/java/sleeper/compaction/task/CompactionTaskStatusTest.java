@@ -39,7 +39,6 @@ public class CompactionTaskStatusTest {
     @Test
     public void shouldCreateCompactionTaskStatus() {
         // Given
-
         Instant taskStartedTime = Instant.parse("2022-09-22T12:00:14.000Z");
 
         // When
@@ -69,9 +68,9 @@ public class CompactionTaskStatusTest {
 
         // Then
         assertThat(status).extracting("startedStatus.startTime", "finishedStatus.finishTime",
-                        "finishedStatus.totalJobs", "finishedStatus.totalRuntime", "finishedStatus.totalReads",
-                        "finishedStatus.totalWrites", "finishedStatus.recordsReadPerSecond", "finishedStatus.recordsWrittenPerSecond")
-                .containsExactly(taskStartedTime, jobFinishTime3, 3, 14400.0, 14400.0, 7200.0, 1.0, 0.5);
+                        "finishedStatus.totalJobs", "finishedStatus.totalRuntime", "finishedStatus.totalRecordsRead",
+                        "finishedStatus.totalRecordsWritten", "finishedStatus.recordsReadPerSecond", "finishedStatus.recordsWrittenPerSecond")
+                .containsExactly(taskStartedTime, jobFinishTime3, 3, 14400.0, 14400L, 7200L, 1.0, 0.5);
     }
 
     @Test
@@ -93,9 +92,9 @@ public class CompactionTaskStatusTest {
 
         // Then
         assertThat(status).extracting("startedStatus.startTime", "finishedStatus.finishTime",
-                        "finishedStatus.totalJobs", "finishedStatus.totalRuntime", "finishedStatus.totalReads",
-                        "finishedStatus.totalWrites", "finishedStatus.recordsReadPerSecond", "finishedStatus.recordsWrittenPerSecond")
-                .containsExactly(taskStartedTime, jobFinishTime3, 3, 14400.0, 14400.0, 7200.0, 1.0, 0.5);
+                        "finishedStatus.totalJobs", "finishedStatus.totalRuntime", "finishedStatus.totalRecordsRead",
+                        "finishedStatus.totalRecordsWritten", "finishedStatus.recordsReadPerSecond", "finishedStatus.recordsWrittenPerSecond")
+                .containsExactly(taskStartedTime, jobFinishTime3, 3, 14400.0, 14400L, 7200L, 1.0, 0.5);
     }
 
     private List<CompactionJobStatus> createJobStatuses(CompactionJob job1, CompactionJob job2, CompactionJob job3) {
