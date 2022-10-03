@@ -6,7 +6,7 @@ number of records in a table, and for pausing, restarting and changing propertie
 in the system.
 
 Start by building the code (note that this build script copies
-the jars into the scripts/jars directory so that the scripts
+the jars into the `scripts/jars` directory so that the scripts
 can use them):
 ```bash
 ./scripts/build/build.sh
@@ -29,7 +29,7 @@ export INSTANCE_ID=mySleeper
 
 ## Status Reports
 
-All status reports can be run using the scripts in the scripts/utility
+All status reports can be run using the scripts in the `scripts/utility`
 directory. They require your Sleeper instance id. Some of the reports also
 require a table name. Some offer a standard option and a verbose option.
 
@@ -51,10 +51,10 @@ In addition to checking the dead letter queues, you can also send messages on th
 back to the original queue so that the processing is retried.
 
 The queue must be one of:
-* query
-* compaction
-* splittingcompaction
-* ingest
+* `query`
+* `compaction`
+* `splittingcompaction`
+* `ingest`
 
 Here's an example:
 ```bash
@@ -85,7 +85,7 @@ while. Note that the system can still be queried when it is paused.
 Reinitialising a table means deleting all its contents. This can sometimes be useful when you are experimenting
 with Sleeper or if you created a table with the wrong schema.
 
-You can reinitialise the table quickly by running the following script from the project root e.g. /sleeper:
+You can reinitialise the table quickly by running the following script from the project root:
 
 ```bash
 ./scripts/utility/reinitialiseTable.sh <Instance id> <Table Name> <OPTIONAL_delete_partitions_true_or_false> <OPTIONAL_split_points_file_location> <optional_split_points_file_base64_encoded_true_or_false>

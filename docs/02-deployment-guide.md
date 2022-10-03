@@ -100,14 +100,14 @@ from the root directory:
 ```bash
 ./scripts/deploy/buildAndDeploy.sh <sleeper-instance-unique-id> <vpc-id> <subnet-id> <table-name>
 ```
-Here vpc-id and subnet-id are the ids of the VPC and subnet that some components of Sleeper
+Here `vpc-id` and `subnet-id` are the ids of the VPC and subnet that some components of Sleeper
 will be deployed into.
 
 This script will build Sleeper and upload the necessary jars to a bucket in S3
 and push the Docker container images to respositories in ECR.
 
 The deployment scripts will create all of the required configuration files in a 
-folder called "generated" under the root directory. It is recommended you keep
+folder called `generated` under the root directory. It is recommended you keep
 this folder somewhere safe.
 
 ### Manual Deployment
@@ -195,11 +195,11 @@ cd ..
 
 Before we can use CDK to deploy Sleeper, we need to create some configuration files:
 
-* An instance.properties file - containing information about your Sleeper instance, as well as
+* An `instance.properties` file - containing information about your Sleeper instance, as well as
 default values used by tables if not specified.
-* A table.properties file which contains information about a table and a link to its schema file.
-* A schema.json file which describes the data stored in a Sleeper table.
-* A tags.properties file which lists the tags you want all of your Sleeper infrastructure to be tagged with.
+* A `table.properties` file which contains information about a table and a link to its schema file.
+* A `schema.json` file which describes the data stored in a Sleeper table.
+* A `tags.properties` file which lists the tags you want all of your Sleeper infrastructure to be tagged with.
 
 There's an example of a basic instance properties file [here](../example/basic/instance.properties)
 and an example of a full instance properties file [here](../example/full/instance.properties).
@@ -207,17 +207,17 @@ This latter file shows all the instance properties that you can set. Whichever o
 files you use as your starting point, you will need to set sensible values for the following
 properties:
 
-* sleeper.id
-* sleeper.table.properties - see below
-* sleeper.jars.bucket - if you followed the steps above for uploading the jars this needs to be set to
-sleeper-${INSTANCE_ID}-jars
-* sleeper.tags.file - see below
-* sleeper.account
-* sleeper.region
-* sleeper.version - set this to the value of ${VERSION}
-* sleeper.vpc
-* sleeper.subnet
-* sleeper.retain.infra.after.destroy - set to false to cause resources such as the S3
+* `sleeper.id`
+* `sleeper.table.properties` - see below
+* `sleeper.jars.bucket` - if you followed the steps above for uploading the jars this needs to be set to
+`sleeper-${INSTANCE_ID}-jars`
+* `sleeper.tags.file` - see below
+* `sleeper.account`
+* `sleeper.region`
+* `sleeper.version` - set this to the value of ${VERSION}
+* `sleeper.vpc`
+* `sleeper.subnet`
+* `sleeper.retain.infra.after.destroy` - set to false to cause resources such as the S3
 buckets and Dynamo tables to be destroyed after running CDK destroy.
 
 To include a table in your instance you need to set the `sleeper.table.properties`
@@ -233,7 +233,7 @@ the files in these directories are table properties.
 ```properties
 sleeper.table.properties=/sleeper/config/tables
 ```
-Note, if you do not set the property "sleeper.retain.infra.after.destroy" to false
+Note, if you do not set the property `sleeper.retain.infra.after.destroy` to false
 when deploying then however you choose to tear down Sleeper later on
 you will also need to destroy some further S3 buckets and DynamoDB tables manually.
 This is because by default they are kept.
@@ -247,7 +247,9 @@ You may optionally want to predefine your split points for a given table.
 You can do this by setting the `sleeper.table.splits.file` property in the
 table properties file. There's an example of this in the 
 [full example](../example/full/table.properties). If you decide not to set
-this, your statestore will be initialised with a single root partition.
+this, your statestore will be initialised with a single root partition. Note that
+pre-splitting a table is important for any large-scale use of Sleeper, and is essential
+for running bulk import jobs.
 
 To make sure you tag the Sleeper infrastructure correctly you will need set
 the following property in your instance.properties. An example tags.properties file
@@ -272,26 +274,26 @@ add "--require-approval never" to the command.
 By default all the stacks are deployed. However, if you don't 
 need them, you can customise which stacks are deployed. 
 
-The mandatory ones are the TableStack which deploys the statestore and 
-data bucket for each table you specify, the TopicStack which creates an 
+The mandatory ones are the `TableStack` which deploys the statestore and
+data bucket for each table you specify, the `TopicStack` which creates an
 SNS topic used by other stacks to send errors and finally the
-ConfigurationStack and PropertiesStack which writes the instance properties 
+`ConfigurationStack` and `PropertiesStack` which writes the instance properties
 to the configuration bucket.
 
 That leaves the following stacks as optional:
-* CompactionStack - for running compactions
-* GarbageCollectorStack - for running garbage collection
-* IngestStack - for ingesting files using the "standard" ingest method
-* PartitionSplittingStack - for splitting partitions when they get too large
-* QueryStack - for handling queries
-* EmrBulkImportStack - for running BulkImport jobs using Spark running on an EMR cluster that is created on demand
-* PersistentEmrBulkImportStack - for running BulkImport jobs using Spark running on a persistent EMR cluster, i.e. one that
+* `CompactionStack` - for running compactions (in practice this is essential)
+* `GarbageCollectorStack` - for running garbage collection (in practice this is essential)
+* `IngestStack` - for ingesting files using the "standard" ingest method
+* `PartitionSplittingStack` - for splitting partitions when they get too large
+* `QueryStack` - for handling queries
+* `EmrBulkImportStack` - for running BulkImport jobs using Spark running on an EMR cluster that is created on demand
+* `PersistentEmrBulkImportStack` - for running BulkImport jobs using Spark running on a persistent EMR cluster, i.e. one that
 is always running (and therefore always costing money). By default, this uses EMR's managed scaling to scale up and down on
 demand.
 
 The following stacks are optional and experimental:
-* AthenaStack - for running SQL analytics over the data
-* EksBulkImportStack - for running bulk import jobs using Spark running on EKS
+* `AthenaStack` - for running SQL analytics over the data
+* `EksBulkImportStack` - for running bulk import jobs using Spark running on EKS
 
 By default all the optional stacks are included but to customise
 it, set the `sleeper.optional.stacks` sleeper property to a
@@ -305,7 +307,7 @@ Once your finished with your Sleeper instance, you can delete it, i.e. remove al
 associated with it. 
 
 Again there are two options regarding teardown, the automatic and the manual options. The automatic option
-will only work if you deployed Sleeper automatically and you still have the "generated" folder
+will only work if you deployed Sleeper automatically and you still have the `generated` folder
 in the project root directory. If you do you can simply run:
 
 ```bash

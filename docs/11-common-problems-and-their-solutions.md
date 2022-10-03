@@ -15,7 +15,7 @@ Exception in thread "main" sleeper.statestore.StateStoreException: Exception que
 	
 When cdk deploy is used to deploy a table, the state store is initialised. This initialisation writes the initial partitions
 to the partitions part of the state store (if using the default DynamoDB state store then this will be a table named
-sleeper-<instance-id\>-table-<table-name\>-partitions). The partitions are specific to the schema of the table
+`sleeper-<instance-id>-table-<table-name>-partitions`). The partitions are specific to the schema of the table
 (specifically to the row keys specified). Therefore if you deploy a table with a certain schema, and then attempt
 to change the schema by updating the table properties file, any interactions with the partitions table will not be able
 to read the partitions.
@@ -29,7 +29,7 @@ then this is likely due to the tasks not being able to store the specified numbe
 ingest works by reading a certain number of records (given by `sleeper.ingest.memory.max.batch.size`) into memory. These
 are sorted and then written to a local file. This process is repeated a certain number of times until a certain number of
 records in total (given by `sleeper.ingest.max.local.records`) have been written to local disk. Sensible values for the
-parameters sleeper.ingest.memory.max.batch.size and sleeper.ingest.max.local.records obviously depend on the data - the more
+parameters `sleeper.ingest.memory.max.batch.size` and `sleeper.ingest.max.local.records` obviously depend on the data - the more
 fields the schema has and the bigger those fields are, the more space will be used and the fewer records will fit into memory / on disk.
 
 If you see an out of memory error, then try reducing `sleeper.ingest.memory.max.batch.size`. When reducing this parameter it is a good
@@ -57,10 +57,10 @@ e.g.
 Alternatively you can use a more manual approach. This may be better if you want to significantly change the table properties.
 
 For a table with a Dynamo DB state store:
-- Delete all the files partition*/* in the S3 bucket for the table (the bucket will be named
-sleeper-<instance-id\>-table-<table-name\>). This can be done either in the AWS console or using the CLI.
-- Delete all the entries in the DynamoDB state store tables: sleeper-<instance-id>-table-<table-name>-active-files,
-sleeper-<instance-id>-table-<table-name\>-gc-files, sleeper-<instance-id\>-table-<table-name\>-partitions.
+- Delete all the files `partition*/*` in the S3 bucket for the table (the bucket will be named
+`sleeper-<instance-id>-table-<table-name>`). This can be done either in the AWS console or using the CLI.
+- Delete all the entries in the DynamoDB state store tables: `sleeper-<instance-id>-table-<table-name>-active-files`,
+`sleeper-<instance-id>-table-<table-name>-gc-files`, `sleeper-<instance-id>-table-<table-name>-partitions`.
 - If you want to change the schema of the table, then edit the table properties file in the config bucket in S3.
 - Reinitialise the state store:
 ```java
@@ -68,10 +68,10 @@ java -cp java/statestore/target/statestore-*-utility.jar sleeper.statestore.Init
 ```
 
 For a table with an S3 state store:
-- Delete all the files partition*/* in the S3 bucket for the table (the bucket will be named
-sleeper-<instance-id\>-table-<table-name\>). This can be done either in the AWS console or using the CLI.
-- Delete all the files statestore/* in the same S3 bucket for the table.
-- Delete all the entries in the DynamoDB table: sleeper-<instance-id>-table-<table-name>-revisions,
+- Delete all the files `partition*/*` in the S3 bucket for the table (the bucket will be named
+`sleeper-<instance-id>-table-<table-name>`). This can be done either in the AWS console or using the CLI.
+- Delete all the files `statestore/*` in the same S3 bucket for the table.
+- Delete all the entries in the DynamoDB table: `sleeper-<instance-id>-table-<table-name>-revisions`,
 - If you want to change the schema of the table, then edit the table properties file in the config bucket in S3.
 - Reinitialise the state store:
 ```java
