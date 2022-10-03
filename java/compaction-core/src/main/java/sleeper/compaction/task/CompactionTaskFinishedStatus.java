@@ -26,8 +26,8 @@ public class CompactionTaskFinishedStatus {
     private final Instant finishTime;
     private final Integer totalJobs;
     private final double totalRuntime;
-    private final double totalReads;
-    private final double totalWrites;
+    private final long totalRecordsRead;
+    private final long totalRecordsWritten;
     private final double recordsReadPerSecond;
     private final double recordsWrittenPerSecond;
 
@@ -43,12 +43,12 @@ public class CompactionTaskFinishedStatus {
         return totalRuntime;
     }
 
-    public double getTotalReads() {
-        return totalReads;
+    public long getTotalRecordsRead() {
+        return totalRecordsRead;
     }
 
-    public double getTotalWrites() {
-        return totalWrites;
+    public long getTotalRecordsWritten() {
+        return totalRecordsWritten;
     }
 
     public double getRecordsReadPerSecond() {
@@ -69,8 +69,8 @@ public class CompactionTaskFinishedStatus {
         }
         CompactionTaskFinishedStatus that = (CompactionTaskFinishedStatus) o;
         return Double.compare(that.totalRuntime, totalRuntime) == 0
-                && Double.compare(that.totalReads, totalReads) == 0
-                && Double.compare(that.totalWrites, totalWrites) == 0
+                && Double.compare(that.totalRecordsRead, totalRecordsRead) == 0
+                && Double.compare(that.totalRecordsWritten, totalRecordsWritten) == 0
                 && Double.compare(that.recordsReadPerSecond, recordsReadPerSecond) == 0
                 && Double.compare(that.recordsWrittenPerSecond, recordsWrittenPerSecond) == 0
                 && Objects.equals(finishTime, that.finishTime)
@@ -80,7 +80,7 @@ public class CompactionTaskFinishedStatus {
     @Override
     public int hashCode() {
         return Objects.hash(finishTime, totalJobs, totalRuntime,
-                totalReads, totalWrites, recordsReadPerSecond, recordsWrittenPerSecond);
+                totalRecordsRead, totalRecordsWritten, recordsReadPerSecond, recordsWrittenPerSecond);
     }
 
     @Override
@@ -89,8 +89,8 @@ public class CompactionTaskFinishedStatus {
                 "finishTime=" + finishTime +
                 ", totalJobs=" + totalJobs +
                 ", totalRuntime=" + totalRuntime +
-                ", totalReads=" + totalReads +
-                ", totalWrites=" + totalWrites +
+                ", totalRecordsRead=" + totalRecordsRead +
+                ", totalRecordsWritten=" + totalRecordsWritten +
                 ", recordsReadPerSecond=" + recordsReadPerSecond +
                 ", recordsWrittenPerSecond=" + recordsWrittenPerSecond +
                 '}';
@@ -100,8 +100,8 @@ public class CompactionTaskFinishedStatus {
         finishTime = builder.finishTime;
         totalJobs = builder.totalJobs;
         totalRuntime = builder.totalRuntime;
-        totalReads = builder.totalReads;
-        totalWrites = builder.totalWrites;
+        totalRecordsRead = builder.totalRecordsRead;
+        totalRecordsWritten = builder.totalRecordsWritten;
         recordsReadPerSecond = builder.recordsReadPerSecond;
         recordsWrittenPerSecond = builder.recordsWrittenPerSecond;
     }
@@ -114,14 +114,14 @@ public class CompactionTaskFinishedStatus {
         if (jobStatusList.stream().anyMatch(job -> !job.isFinished())) {
             throw new IllegalArgumentException("Some jobs are not finished in provided list");
         }
-        double totalLinesRead = jobStatusList.stream().mapToDouble(job -> job.getFinishedSummary().getLinesRead()).sum();
-        double totalLinesWritten = jobStatusList.stream().mapToDouble(job -> job.getFinishedSummary().getLinesWritten()).sum();
+        long totalLinesRead = jobStatusList.stream().mapToLong(job -> job.getFinishedSummary().getLinesRead()).sum();
+        long totalLinesWritten = jobStatusList.stream().mapToLong(job -> job.getFinishedSummary().getLinesWritten()).sum();
         return new Builder()
                 .finishTime(finishTime)
                 .totalJobs(jobStatusList.size())
                 .totalRuntime(duration)
-                .totalReads(totalLinesRead)
-                .totalWrites(totalLinesWritten)
+                .totalRecordsRead(totalLinesRead)
+                .totalRecordsWritten(totalLinesWritten)
                 .recordsReadPerSecond(totalLinesRead / duration)
                 .recordsWrittenPerSecond(totalLinesWritten / duration)
                 .build();
@@ -131,8 +131,8 @@ public class CompactionTaskFinishedStatus {
         private Instant finishTime;
         private Integer totalJobs;
         private double totalRuntime;
-        private double totalReads;
-        private double totalWrites;
+        private long totalRecordsRead;
+        private long totalRecordsWritten;
         private double recordsReadPerSecond;
         private double recordsWrittenPerSecond;
 
@@ -154,13 +154,13 @@ public class CompactionTaskFinishedStatus {
             return this;
         }
 
-        public Builder totalReads(double totalReads) {
-            this.totalReads = totalReads;
+        public Builder totalRecordsRead(long totalRecordsRead) {
+            this.totalRecordsRead = totalRecordsRead;
             return this;
         }
 
-        public Builder totalWrites(double totalWrites) {
-            this.totalWrites = totalWrites;
+        public Builder totalRecordsWritten(long totalRecordsWritten) {
+            this.totalRecordsWritten = totalRecordsWritten;
             return this;
         }
 
