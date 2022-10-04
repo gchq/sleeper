@@ -22,25 +22,34 @@ jobs:
         with:
           java-version: '8'
           distribution: 'adopt'
-          cache: 'maven'
+      - name: Cache Dependencies
+        uses: actions/cache@v3
+        with:
+          path: java/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - name: Resolve Dependencies
+        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=.m2/repository
+        working-directory: ./java
       - name: Compile
-        run: mvn --batch-mode clean install -am -pl ${{ inputs.moduleList }} -Pquick,skipShade
+        run: mvn --batch-mode clean install -am -pl ${{ inputs.moduleList }} -Pquick,skipShade -Dmaven.repo.local=.m2/repository
         working-directory: ./java
       - name: Test
-        run: mvn --batch-mode --fail-at-end verify -pl ${{ inputs.moduleList }}
+        run: mvn --batch-mode --fail-at-end verify -pl ${{ inputs.moduleList }} -Dmaven.repo.local=.m2/repository
         working-directory: ./java
       - name: Publish Test Report
         if: ${{ always() && inputs.publishTestReport }}
         uses: scacap/action-surefire-report@v1
         with:
-          check_name: Tests for chunk ${{ inputs.chunkName }}
+          check_name: Tests for ${{ inputs.chunkName }}
       - name: Publish Checkstyle Report
         if: ${{ always() }}
         uses: jwgmeligmeyling/checkstyle-github-action@v1.2
         with:
           path: '**/checkstyle-result.xml'
           name: Checkstyle for ${{ inputs.chunkName }}
-      - name: Publish Findbugs Report
+      - name: Publish Spotbugs Report
         if: ${{ always() }}
         uses: jwgmeligmeyling/spotbugs-github-action@v1.2
         with:
