@@ -49,15 +49,6 @@ public class CompactionJobStatus {
                 .build();
     }
 
-    public static CompactionJobStatus finished(CompactionJob job, Instant creationTime, CompactionJobSummary summary) {
-        return builder()
-                .jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(summary.getStartTime(), summary.getStartTime()))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(summary.getFinishTime(), summary))
-                .build();
-    }
-
     public Instant getCreateUpdateTime() {
         return createdStatus.getUpdateTime();
     }
