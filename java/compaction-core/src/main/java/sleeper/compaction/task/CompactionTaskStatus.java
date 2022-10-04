@@ -24,11 +24,11 @@ public class CompactionTaskStatus {
     private final String taskId;
     private final CompactionTaskStartedStatus startedStatus;
     private final CompactionTaskFinishedStatus finishedStatus;
-    private final Instant expiryDate;
+    private final Instant expiryDate; // Set by database (null before status is saved)
 
     private CompactionTaskStatus(Builder builder) {
-        taskId = builder.taskId;
-        startedStatus = builder.startedStatus;
+        taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
+        startedStatus = Objects.requireNonNull(builder.startedStatus, "taskId must not be null");
         finishedStatus = builder.finishedStatus;
         expiryDate = builder.expiryDate;
     }
