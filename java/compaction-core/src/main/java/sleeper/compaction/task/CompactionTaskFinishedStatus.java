@@ -31,7 +31,7 @@ public class CompactionTaskFinishedStatus {
     private final double recordsWrittenPerSecond;
 
     private CompactionTaskFinishedStatus(Builder builder) {
-        finishTime = builder.finishTime;
+        finishTime = Objects.requireNonNull(builder.finishTime, "finishTime must not be null");
         totalJobs = builder.totalJobs;
         totalRuntime = builder.totalRuntime;
         totalRecordsRead = builder.totalRecordsRead;
