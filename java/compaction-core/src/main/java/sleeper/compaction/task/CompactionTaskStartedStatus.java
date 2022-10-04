@@ -24,8 +24,8 @@ public class CompactionTaskStartedStatus {
     private final Instant startUpdateTime;
 
     private CompactionTaskStartedStatus(Builder builder) {
-        startTime = builder.startTime;
-        startUpdateTime = builder.startUpdateTime;
+        startTime = Objects.requireNonNull(builder.startTime, "startTime must not be null");
+        startUpdateTime = Objects.requireNonNull(builder.startUpdateTime, "startUpdateTime must not be null");
     }
 
     public static Builder builder() {
