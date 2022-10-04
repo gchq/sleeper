@@ -79,6 +79,7 @@ public class DynamoDBCompactionJobStatusFormat {
     public static Map<String, AttributeValue> createJobStartedRecord(CompactionJob job, Instant startTime, Long timeToLive) {
         return createJobRecord(job, UPDATE_TYPE_STARTED, timeToLive)
                 .number(START_TIME, startTime.toEpochMilli())
+                //TODO save taskId
                 .build();
     }
 
@@ -93,16 +94,12 @@ public class DynamoDBCompactionJobStatusFormat {
 
     private static DynamoDBRecordBuilder createJobRecord(CompactionJob job, String updateType, Long timeToLive) {
         Long timeNow = Instant.now().toEpochMilli();
-        DynamoDBRecordBuilder builder = new DynamoDBRecordBuilder()
+        return new DynamoDBRecordBuilder()
                 .string(JOB_ID, job.getId())
                 .string(TABLE_NAME, job.getTableName())
                 .number(UPDATE_TIME, timeNow)
                 .string(UPDATE_TYPE, updateType)
                 .number(EXPIRY_DATE, timeNow + timeToLive);
-        if (null != job.getTaskId()) {
-            builder.string(TASK_ID, job.getTaskId());
-        }
-        return builder;
     }
 
     public static Stream<CompactionJobStatus> streamJobStatuses(List<Map<String, AttributeValue>> items) {

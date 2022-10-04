@@ -32,22 +32,15 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Serialised a {@link CompactionJob} to and from a JSON {@link String}.
  */
 public class CompactionJobSerDe {
     private final TablePropertiesProvider tablePropertiesProvider;
-    private final String taskId;
-
-    public CompactionJobSerDe(TablePropertiesProvider tablePropertiesProvider, String taskId) {
-        this.tablePropertiesProvider = tablePropertiesProvider;
-        this.taskId = taskId;
-    }
 
     public CompactionJobSerDe(TablePropertiesProvider tablePropertiesProvider) {
-        this(tablePropertiesProvider, UUID.randomUUID().toString());
+        this.tablePropertiesProvider = tablePropertiesProvider;
     }
 
     public String serialiseToString(CompactionJob compactionJob) throws IOException {
@@ -156,9 +149,6 @@ public class CompactionJobSerDe {
             compactionJobBuilder.outputFile(dis.readUTF());
         }
         dis.close();
-
-        compactionJobBuilder.taskId(taskId);
-
         return compactionJobBuilder.build();
     }
 }

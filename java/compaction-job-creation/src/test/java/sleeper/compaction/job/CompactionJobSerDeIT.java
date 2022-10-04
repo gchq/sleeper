@@ -49,7 +49,6 @@ import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FI
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class CompactionJobSerDeIT {
-    private static final String TASK_ID = "task-id";
     @ClassRule
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
             LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB
@@ -114,13 +113,12 @@ public class CompactionJobSerDeIT {
                 .inputFiles(Arrays.asList("file1", "file2"))
                 .outputFile("outputfile")
                 .partitionId("partition1")
-                .isSplittingJob(false)
-                .taskId(TASK_ID).build();
+                .isSplittingJob(false).build();
         Schema schema = schemaWithStringKey();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider, TASK_ID);
+        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
 
         // When
         CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));
@@ -147,13 +145,12 @@ public class CompactionJobSerDeIT {
                 .isSplittingJob(false)
                 .iteratorClassName("Iterator.class")
                 .iteratorConfig("config1")
-                .taskId(TASK_ID)
                 .build();
         Schema schema = schemaWithStringKey();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider, TASK_ID);
+        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
 
         // When
         CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));
@@ -181,13 +178,12 @@ public class CompactionJobSerDeIT {
                 .splitPoint("G")
                 .dimension(2)
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
-                .taskId(TASK_ID)
                 .build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new StringType());
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider, TASK_ID);
+        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
 
         // When
         CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));
@@ -215,13 +211,12 @@ public class CompactionJobSerDeIT {
                 .iteratorConfig("config1")
                 .dimension(2)
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
-                .taskId(TASK_ID)
                 .build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new IntType());
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider, TASK_ID);
+        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
 
         // When
         CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));
@@ -249,13 +244,12 @@ public class CompactionJobSerDeIT {
                 .iteratorConfig("config1")
                 .dimension(2)
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
-                .taskId(TASK_ID)
                 .build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new LongType());
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider, TASK_ID);
+        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
 
         // When
         CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));
@@ -283,13 +277,12 @@ public class CompactionJobSerDeIT {
                 .iteratorConfig("config1")
                 .dimension(2)
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
-                .taskId(TASK_ID)
                 .build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new StringType());
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider, TASK_ID);
+        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
 
         // When
         CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));
@@ -319,13 +312,12 @@ public class CompactionJobSerDeIT {
                 .iteratorConfig("config1")
                 .dimension(2)
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
-                .taskId(TASK_ID)
                 .build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new ByteArrayType());
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider, TASK_ID);
+        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
 
         // When
         CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));

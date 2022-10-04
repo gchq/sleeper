@@ -93,8 +93,7 @@ public class CompactionJobFactory {
 
     public CompactionJob createCompactionJobWithTask(
             List<FileInfo> files, String partition, String taskId) {
-        CompactionJob job = createCompactionJobBuilder(files, partition)
-                .taskId(taskId).build();
+        CompactionJob job = createCompactionJobBuilder(files, partition).build();
 
         LOGGER.info("Created compaction job of id {} to compact and split {} files in partition {} to output file {}",
                 job.getId(), files.size(), partition, job.getOutputFile());

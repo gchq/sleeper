@@ -40,7 +40,6 @@ public class CompactionJob {
     private int dimension; // Determines the row key to be used for splitting
     private String iteratorClassName;
     private String iteratorConfig;
-    private String taskId;
 
     private CompactionJob(Builder builder) {
         setTableName(builder.tableName);
@@ -55,7 +54,6 @@ public class CompactionJob {
         setDimension(builder.dimension);
         setIteratorClassName(builder.iteratorClassName);
         setIteratorConfig(builder.iteratorConfig);
-        setTaskId(builder.taskId);
     }
 
     public static Builder builder() {
@@ -173,14 +171,6 @@ public class CompactionJob {
         this.outputFiles = outputFiles;
     }
 
-    public String getTaskId() {
-        return taskId;
-    }
-
-    private void setTaskId(String taskId) {
-        this.taskId = taskId;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -194,14 +184,12 @@ public class CompactionJob {
                 Objects.equals(splitPoint, compactionJob.splitPoint) &&
                 Objects.equals(dimension, compactionJob.dimension) &&
                 Objects.equals(tableName, compactionJob.tableName) &&
-                Objects.equals(jobId, compactionJob.jobId) &&
                 Objects.equals(inputFiles, compactionJob.inputFiles) &&
                 Objects.equals(outputFile, compactionJob.outputFile) &&
                 Objects.equals(outputFiles, compactionJob.outputFiles) &&
                 Objects.equals(partitionId, compactionJob.partitionId) &&
                 Objects.equals(iteratorClassName, compactionJob.iteratorClassName) &&
-                Objects.equals(iteratorConfig, compactionJob.iteratorConfig) &&
-                Objects.equals(taskId, compactionJob.taskId);
+                Objects.equals(iteratorConfig, compactionJob.iteratorConfig);
     }
 
     @Override
@@ -210,22 +198,18 @@ public class CompactionJob {
                 splitPoint,
                 dimension,
                 tableName,
-                jobId,
                 inputFiles,
                 outputFile,
                 outputFiles,
                 partitionId,
                 iteratorClassName,
-                iteratorConfig,
-                taskId);
+                iteratorConfig);
     }
 
     @Override
     public String toString() {
         return "CompactionJob{" +
                 "tableName='" + tableName + '\'' +
-                ", taskId=" + taskId +
-                ", jobId='" + jobId + '\'' +
                 ", inputFiles=" + inputFiles +
                 ", outputFile='" + outputFile + '\'' +
                 ", outputFiles=" + outputFiles +
@@ -251,7 +235,6 @@ public class CompactionJob {
         private int dimension;
         private String iteratorClassName;
         private String iteratorConfig;
-        private String taskId;
 
         private Builder() {
         }
@@ -313,11 +296,6 @@ public class CompactionJob {
 
         public Builder iteratorConfig(String iteratorConfig) {
             this.iteratorConfig = iteratorConfig;
-            return this;
-        }
-
-        public Builder taskId(String taskId) {
-            this.taskId = taskId;
             return this;
         }
 
