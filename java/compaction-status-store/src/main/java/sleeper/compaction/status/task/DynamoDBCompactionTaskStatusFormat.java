@@ -67,7 +67,7 @@ public class DynamoDBCompactionTaskStatusFormat {
         return createTaskRecord(taskStatus, FINISHED, timeToLive)
                 .number(START_TIME, taskStatus.getStartedStatus().getStartTime().toEpochMilli())
                 .number(FINISH_TIME, finishTime.toEpochMilli())
-                .number(DURATION, taskStatus.getFinishedStatus().getTotalRuntime())
+                .number(DURATION, taskStatus.getFinishedStatus().getTotalRuntimeInSeconds())
                 .number(NUMBER_OF_JOBS, taskStatus.getFinishedStatus().getTotalJobs())
                 .number(LINES_READ, taskStatus.getFinishedStatus().getTotalRecordsRead())
                 .number(LINES_WRITTEN, taskStatus.getFinishedStatus().getTotalRecordsWritten())
@@ -103,7 +103,7 @@ public class DynamoDBCompactionTaskStatusFormat {
             case FINISHED:
                 builder.jobFinished(jobId, CompactionTaskFinishedStatus.builder()
                                 .finishTime(getInstantAttribute(item, FINISH_TIME))
-                                .totalRuntime(getLongAttribute(item, DURATION, 0))
+                                .totalRuntimeInSeconds(getLongAttribute(item, DURATION, 0))
                                 .totalJobs(getIntAttribute(item, NUMBER_OF_JOBS, 0))
                                 .totalRecordsRead(getLongAttribute(item, LINES_READ, 0))
                                 .totalRecordsWritten(getLongAttribute(item, LINES_WRITTEN, 0))

@@ -24,7 +24,7 @@ import java.util.Objects;
 public class CompactionTaskFinishedStatus {
     private final Instant finishTime;
     private final int totalJobs;
-    private final double totalRuntime;
+    private final double totalRuntimeInSeconds;
     private final long totalRecordsRead;
     private final long totalRecordsWritten;
     private final double recordsReadPerSecond;
@@ -33,7 +33,7 @@ public class CompactionTaskFinishedStatus {
     private CompactionTaskFinishedStatus(Builder builder) {
         finishTime = Objects.requireNonNull(builder.finishTime, "finishTime must not be null");
         totalJobs = builder.totalJobs;
-        totalRuntime = builder.totalRuntime;
+        totalRuntimeInSeconds = builder.totalRuntimeInSeconds;
         totalRecordsRead = builder.totalRecordsRead;
         totalRecordsWritten = builder.totalRecordsWritten;
         recordsReadPerSecond = builder.recordsReadPerSecond;
@@ -52,8 +52,8 @@ public class CompactionTaskFinishedStatus {
         return totalJobs;
     }
 
-    public double getTotalRuntime() {
-        return totalRuntime;
+    public double getTotalRuntimeInSeconds() {
+        return totalRuntimeInSeconds;
     }
 
     public long getTotalRecordsRead() {
@@ -81,7 +81,7 @@ public class CompactionTaskFinishedStatus {
             return false;
         }
         CompactionTaskFinishedStatus that = (CompactionTaskFinishedStatus) o;
-        return Double.compare(that.totalRuntime, totalRuntime) == 0
+        return Double.compare(that.totalRuntimeInSeconds, totalRuntimeInSeconds) == 0
                 && Double.compare(that.totalRecordsRead, totalRecordsRead) == 0
                 && Double.compare(that.totalRecordsWritten, totalRecordsWritten) == 0
                 && Double.compare(that.recordsReadPerSecond, recordsReadPerSecond) == 0
@@ -92,7 +92,7 @@ public class CompactionTaskFinishedStatus {
 
     @Override
     public int hashCode() {
-        return Objects.hash(finishTime, totalJobs, totalRuntime,
+        return Objects.hash(finishTime, totalJobs, totalRuntimeInSeconds,
                 totalRecordsRead, totalRecordsWritten, recordsReadPerSecond, recordsWrittenPerSecond);
     }
 
@@ -101,7 +101,7 @@ public class CompactionTaskFinishedStatus {
         return "CompactionTaskFinishedStatus{" +
                 "finishTime=" + finishTime +
                 ", totalJobs=" + totalJobs +
-                ", totalRuntime=" + totalRuntime +
+                ", totalRuntimeInSeconds=" + totalRuntimeInSeconds +
                 ", totalRecordsRead=" + totalRecordsRead +
                 ", totalRecordsWritten=" + totalRecordsWritten +
                 ", recordsReadPerSecond=" + recordsReadPerSecond +
@@ -113,7 +113,7 @@ public class CompactionTaskFinishedStatus {
     public static final class Builder {
         private Instant finishTime;
         private int totalJobs;
-        private double totalRuntime;
+        private double totalRuntimeInSeconds;
         private long totalRecordsRead;
         private long totalRecordsWritten;
         private double recordsReadPerSecond;
@@ -132,8 +132,8 @@ public class CompactionTaskFinishedStatus {
             return this;
         }
 
-        public Builder totalRuntime(double totalRuntime) {
-            this.totalRuntime = totalRuntime;
+        public Builder totalRuntimeInSeconds(double totalRuntimeInSeconds) {
+            this.totalRuntimeInSeconds = totalRuntimeInSeconds;
             return this;
         }
 
@@ -164,10 +164,10 @@ public class CompactionTaskFinishedStatus {
             return this;
         }
 
-        public Builder finish(Instant finishTime, double duration) {
-            recordsReadPerSecond = totalRecordsRead / duration;
-            recordsWrittenPerSecond = totalRecordsWritten / duration;
-            totalRuntime = duration;
+        public Builder finish(Instant finishTime, double durationInSeconds) {
+            recordsReadPerSecond = totalRecordsRead / durationInSeconds;
+            recordsWrittenPerSecond = totalRecordsWritten / durationInSeconds;
+            totalRuntimeInSeconds = durationInSeconds;
             this.finishTime = finishTime;
             return this;
         }
