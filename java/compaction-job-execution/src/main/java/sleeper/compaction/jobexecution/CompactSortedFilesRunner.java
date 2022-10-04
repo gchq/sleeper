@@ -209,10 +209,8 @@ public class CompactSortedFilesRunner {
         CompactionTaskStatusStore taskStatusStore = DynamoDBCompactionTaskStatusStore.from(dynamoDBClient, instanceProperties);
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
 
-        LOGGER.info("Saving task information");
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.started(startTime);
         taskStatusStore.taskStarted(taskStatusBuilder.build());
-        LOGGER.info("Task information saved");
 
         String sqsJobQueueUrl;
         String type = args[1];
@@ -245,9 +243,7 @@ public class CompactSortedFilesRunner {
         double runTimeInSeconds = (finishTime - startTime) / 1000.0;
         LOGGER.info("CompactSortedFilesRunner total run time = " + runTimeInSeconds);
 
-        LOGGER.info("Saving task information");
         CompactionTaskStatus taskFinished = taskStatusBuilder.finished(taskFinishedBuilder, finishTime).build();
         taskStatusStore.taskFinished(taskFinished);
-        LOGGER.info("Task information saved");
     }
 }
