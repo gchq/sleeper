@@ -55,7 +55,7 @@ public class CompactionTaskStatusTest {
 
         // Then
         assertThat(taskStatusBuilder.build()).extracting("startedStatus.startTime", "finishedStatus.finishTime",
-                        "finishedStatus.totalJobs", "finishedStatus.totalRuntime", "finishedStatus.totalRecordsRead",
+                        "finishedStatus.totalJobs", "finishedStatus.totalRuntimeInSeconds", "finishedStatus.totalRecordsRead",
                         "finishedStatus.totalRecordsWritten", "finishedStatus.recordsReadPerSecond", "finishedStatus.recordsWrittenPerSecond")
                 .containsExactly(taskStartedTime, jobFinishTime3, 3, 14400.0, 14400L, 7200L, 1.0, 0.5);
     }
@@ -74,7 +74,7 @@ public class CompactionTaskStatusTest {
 
         // Then
         assertThat(taskStatusBuilder.build()).extracting("startedStatus.startTime", "finishedStatus.finishTime",
-                        "finishedStatus.totalJobs", "finishedStatus.totalRuntime", "finishedStatus.totalRecordsRead",
+                        "finishedStatus.totalJobs", "finishedStatus.totalRuntimeInSeconds", "finishedStatus.totalRecordsRead",
                         "finishedStatus.totalRecordsWritten", "finishedStatus.recordsReadPerSecond", "finishedStatus.recordsWrittenPerSecond")
                 .containsExactly(taskStartedTime, jobFinishTime3, 3, 14400.0, 14400L, 7200L, 1.0, 0.5);
     }
