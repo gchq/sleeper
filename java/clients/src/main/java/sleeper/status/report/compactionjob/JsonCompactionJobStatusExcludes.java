@@ -17,12 +17,14 @@ package sleeper.status.report.compactionjob;
 
 import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
+import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 
 public class JsonCompactionJobStatusExcludes implements ExclusionStrategy {
     @Override
     public boolean shouldSkipField(FieldAttributes f) {
-        if (CompactionJobStartedStatus.class == f.getDeclaringClass() && "taskId".equals(f.getName())) {
+        if ((CompactionJobStartedStatus.class == f.getDeclaringClass() || CompactionJobFinishedStatus.class == f.getDeclaringClass())
+                && "taskId".equals(f.getName())) {
             return true;
         }
         return false;

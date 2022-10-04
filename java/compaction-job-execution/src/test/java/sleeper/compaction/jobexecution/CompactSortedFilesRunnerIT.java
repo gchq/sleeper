@@ -269,7 +269,7 @@ public class CompactSortedFilesRunnerIT {
         CompactSortedFilesRunner runner = new CompactSortedFilesRunner(
                 instanceProperties, ObjectFactory.noUserJars(),
                 tablePropertiesProvider, stateStoreProvider, jobStatusStore, CompactionTaskFinishedStatus.builder(),
-                instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqsClient,
+                "task-id", instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqsClient,
                 1, 5);
         runner.run();
 

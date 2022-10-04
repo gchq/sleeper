@@ -60,6 +60,7 @@ public class CompactSortedFilesReportingTest extends CompactSortedFilesTestBase 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(
                 dataHelper.allFileInfos(), dataHelper.singlePartition().getId());
         dataHelper.addFilesToStateStoreForJob(compactionJob);
+        String taskId = "task-id";
 
         // When
         CompactionJobSummary summary =
@@ -67,8 +68,8 @@ public class CompactSortedFilesReportingTest extends CompactSortedFilesTestBase 
 
         // Then
         InOrder order = Mockito.inOrder(jobStatusStore);
-        order.verify(jobStatusStore).jobStarted(eq(compactionJob), any(Instant.class));
-        order.verify(jobStatusStore).jobFinished(compactionJob, summary);
+        order.verify(jobStatusStore).jobStarted(eq(compactionJob), any(Instant.class), eq(taskId));
+        order.verify(jobStatusStore).jobFinished(compactionJob, summary, taskId);
         order.verifyNoMoreInteractions();
 
         assertThat(summary.getStartTime()).isNotNull();

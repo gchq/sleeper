@@ -30,10 +30,10 @@ public interface CompactionJobStatusStore {
     default void jobCreated(CompactionJob job) {
     }
 
-    default void jobStarted(CompactionJob job, Instant startTime) {
+    default void jobStarted(CompactionJob job, Instant startTime, String taskId) {
     }
 
-    default void jobFinished(CompactionJob compactionJob, CompactionJobSummary summary) {
+    default void jobFinished(CompactionJob compactionJob, CompactionJobSummary summary, String taskId) {
     }
 
     default List<CompactionJobStatus> getJobsInTimePeriod(String tableName, Instant startTime, Instant endTime) {

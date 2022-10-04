@@ -67,8 +67,8 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         // When
         store.jobCreated(job1);
         store.jobCreated(job2);
-        store.jobStarted(job2, defaultStartTime());
-        store.jobFinished(job2, defaultSummary());
+        store.jobStarted(job2, defaultStartTime(), TASK_ID);
+        store.jobFinished(job2, defaultSummary(), TASK_ID);
 
         // Then
         assertThat(store.getUnfinishedJobs(tableName))

@@ -85,6 +85,7 @@ public class CompactSortedFiles {
     private final int rowGroupSize;
     private final int pageSize;
     private final String compressionCodec;
+    private final String taskId;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFiles.class);
 
@@ -97,7 +98,8 @@ public class CompactSortedFiles {
                               CompactionJobStatusStore jobStatusStore,
                               int rowGroupSize,
                               int pageSize,
-                              String compressionCodec) {
+                              String compressionCodec,
+                              String taskId) {
         this.instanceProperties = instanceProperties;
         this.objectFactory = objectFactory;
         this.schema = schema;
@@ -109,13 +111,14 @@ public class CompactSortedFiles {
         this.rowGroupSize = rowGroupSize;
         this.pageSize = pageSize;
         this.compressionCodec = compressionCodec;
+        this.taskId = taskId;
     }
 
     public CompactionJobSummary compact() throws IOException, IteratorException {
         Instant startTime = Instant.now();
         String id = compactionJob.getId();
         LOGGER.info("Compaction job {}: compaction called at {}", id, startTime);
-        jobStatusStore.jobStarted(compactionJob, startTime);
+        jobStatusStore.jobStarted(compactionJob, startTime, taskId);
 
         CompactionJobRecordsProcessed recordsProcessed;
         if (!compactionJob.isSplittingJob()) {
@@ -132,7 +135,7 @@ public class CompactSortedFiles {
         METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", id, summary.getDurationInSeconds());
         METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", id, summary.getLinesRead(), String.format("%.1f", summary.getRecordsReadPerSecond()));
         METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", id, summary.getLinesWritten(), String.format("%.1f", summary.getRecordsWrittenPerSecond()));
-        jobStatusStore.jobFinished(compactionJob, summary);
+        jobStatusStore.jobFinished(compactionJob, summary, taskId);
         return summary;
     }
 

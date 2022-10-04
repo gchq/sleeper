@@ -110,11 +110,11 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         // When
         Instant periodStart = Instant.now().minus(Period.ofDays(1));
         store.jobCreated(job);
-        store.jobStarted(job, defaultStartTime());
+        store.jobStarted(job, defaultStartTime(), TASK_ID);
         Thread.sleep(1);
         Instant periodEnd = Instant.now();
         Thread.sleep(1);
-        store.jobFinished(job, defaultSummary());
+        store.jobFinished(job, defaultSummary(), TASK_ID);
 
         // Then
         assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd))
@@ -136,8 +136,8 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         Thread.sleep(1);
         Instant periodStart = Instant.now();
         Thread.sleep(1);
-        store.jobStarted(job, defaultStartTime());
-        store.jobFinished(job, defaultSummary());
+        store.jobStarted(job, defaultStartTime(), TASK_ID);
+        store.jobFinished(job, defaultSummary(), TASK_ID);
         Instant periodEnd = periodStart.plus(Period.ofDays(1));
 
         // Then

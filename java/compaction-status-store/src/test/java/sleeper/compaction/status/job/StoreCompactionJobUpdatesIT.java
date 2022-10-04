@@ -45,7 +45,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
 
         // When
         store.jobCreated(job);
-        store.jobStarted(job, defaultStartTime());
+        store.jobStarted(job, defaultStartTime(), TASK_ID);
 
         // Then
         assertThat(getAllJobStatuses())
@@ -64,8 +64,8 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
 
         // When
         store.jobCreated(job);
-        store.jobStarted(job, defaultStartTime());
-        store.jobFinished(job, defaultSummary());
+        store.jobStarted(job, defaultStartTime(), TASK_ID);
+        store.jobFinished(job, defaultSummary(), TASK_ID);
 
         // Then
         assertThat(getAllJobStatuses())
@@ -89,10 +89,10 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
 
         // When
         store.jobCreated(job);
-        store.jobStarted(job, startTime1);
-        store.jobStarted(job, startTime2);
-        store.jobFinished(job, new CompactionJobSummary(processed, startTime1, finishTime1));
-        store.jobFinished(job, new CompactionJobSummary(processed, startTime2, finishTime2));
+        store.jobStarted(job, startTime1, TASK_ID);
+        store.jobStarted(job, startTime2, TASK_ID);
+        store.jobFinished(job, new CompactionJobSummary(processed, startTime1, finishTime1), TASK_ID);
+        store.jobFinished(job, new CompactionJobSummary(processed, startTime2, finishTime2), TASK_ID);
 
         // Then
         assertThat(getAllJobStatuses())
