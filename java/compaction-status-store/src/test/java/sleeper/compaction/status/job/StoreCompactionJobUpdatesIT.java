@@ -49,7 +49,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
 
         // Then
         assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES_AND_TASK_ID)
                 .containsExactly(startedStatusWithDefaults(job));
     }
 
@@ -69,7 +69,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
 
         // Then
         assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES_AND_TASK_ID)
                 .containsExactly(finishedStatusWithDefaults(job));
     }
 
@@ -96,7 +96,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
 
         // Then
         assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES_AND_TASK_ID)
                 .containsExactly(CompactionJobStatus.builder().jobId(job.getId())
                         .createdStatus(CompactionJobCreatedStatus.from(
                                 job, ignoredUpdateTime()))

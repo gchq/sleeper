@@ -17,6 +17,8 @@ package sleeper.compaction.status.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
@@ -34,23 +36,26 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobSta
         String searchingTaskId = "test-task";
         Partition partition = singlePartition();
         FileInfoFactory fileFactory = fileFactory(partition);
-        CompactionJob job1 = jobFactory.createCompactionJobWithTask(
+        CompactionJob job1 = jobFactory.createCompactionJob(
                 Collections.singletonList(fileFactory.leafFile("file1", 123L, "a", "c")),
-                partition.getId(),
-                searchingTaskId);
-        CompactionJob job2 = jobFactory.createCompactionJobWithTask(
+                partition.getId());
+        CompactionJob job2 = jobFactory.createCompactionJob(
                 Collections.singletonList(fileFactory.leafFile("file2", 456L, "d", "f")),
-                partition.getId(),
-                "another-task");
+                partition.getId());
 
         // When
         store.jobCreated(job1);
         store.jobCreated(job2);
+        store.jobStarted(job1, defaultStartTime(), searchingTaskId);
+        store.jobStarted(job2, defaultStartTime(), "another-task");
 
         // Then
         assertThat(store.getJobsByTaskId(tableName, searchingTaskId))
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(CompactionJobStatus.created(job1, ignoredUpdateTime()));
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES_AND_TASK_ID)
+                .containsExactly(CompactionJobStatus.builder().jobId(job1.getId())
+                        .createdStatus(CompactionJobCreatedStatus.from(job1, ignoredUpdateTime()))
+                        .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(ignoredUpdateTime(), defaultStartTime(), searchingTaskId))
+                        .build());
     }
 
     @Test

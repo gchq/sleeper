@@ -50,7 +50,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         Instant epochStart = Instant.ofEpochMilli(0);
         Instant farFuture = epochStart.plus(Period.ofDays(999999999));
         assertThat(store.getJobsInTimePeriod(tableName, epochStart, farFuture))
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES_AND_TASK_ID)
                 .containsExactlyInAnyOrder(
                         CompactionJobStatus.created(job1, ignoredUpdateTime()),
                         CompactionJobStatus.created(job2, ignoredUpdateTime()));
@@ -94,7 +94,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         Instant epochStart = Instant.ofEpochMilli(0);
         Instant farFuture = epochStart.plus(Period.ofDays(999999999));
         assertThat(store.getJobsInTimePeriod(tableName, epochStart, farFuture))
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES_AND_TASK_ID)
                 .containsExactly(CompactionJobStatus.created(job1, ignoredUpdateTime()));
     }
 
@@ -118,7 +118,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
 
         // Then
         assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd))
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES_AND_TASK_ID)
                 .containsExactly(finishedStatusWithDefaults(job));
     }
 
@@ -142,7 +142,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
 
         // Then
         assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd))
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES_AND_TASK_ID)
                 .containsExactly(finishedStatusWithDefaults(job));
     }
 }

@@ -52,8 +52,9 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
 
-    protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
-            .withIgnoredFields("createdStatus.updateTime", "startedStatus.updateTime", "finishedStatus.updateTime", "expiryDate").build();
+    protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES_AND_TASK_ID = RecursiveComparisonConfiguration.builder()
+            .withIgnoredFields("createdStatus.updateTime", "startedStatus.updateTime",
+                    "finishedStatus.updateTime", "expiryDate", "startedStatus.taskId", "finishedStatus.taskId").build();
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final String jobStatusTableName = jobStatusTableName(instanceProperties.get(ID));

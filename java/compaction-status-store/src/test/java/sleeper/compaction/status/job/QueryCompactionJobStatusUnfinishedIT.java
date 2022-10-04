@@ -46,7 +46,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
 
         // Then
         assertThat(store.getUnfinishedJobs(tableName))
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES_AND_TASK_ID)
                 .containsExactlyInAnyOrder(
                         CompactionJobStatus.created(job1, ignoredUpdateTime()),
                         CompactionJobStatus.created(job2, ignoredUpdateTime()));
@@ -72,7 +72,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
 
         // Then
         assertThat(store.getUnfinishedJobs(tableName))
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES_AND_TASK_ID)
                 .containsExactly(CompactionJobStatus.created(job1, ignoredUpdateTime()));
     }
 
@@ -94,7 +94,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
 
         // Then
         assertThat(store.getUnfinishedJobs(tableName))
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES_AND_TASK_ID)
                 .containsExactly(CompactionJobStatus.created(job1, ignoredUpdateTime()));
     }
 }
