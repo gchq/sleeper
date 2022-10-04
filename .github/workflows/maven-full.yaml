@@ -6,6 +6,7 @@ on:
       - 'java/**'
       - '!java/cdk-environment/**'
 
+# Test caching
 jobs:
   build:
     runs-on: ubuntu-latest
