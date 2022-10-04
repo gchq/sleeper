@@ -6,7 +6,6 @@ on:
       - 'java/**'
       - '!java/cdk-environment/**'
 
-# Test Maven cache
 jobs:
   build:
     runs-on: ubuntu-latest
