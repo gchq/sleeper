@@ -58,7 +58,6 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableCreator;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;

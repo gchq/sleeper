@@ -121,7 +121,7 @@ public class CompactSortedFilesRunner {
             CompactionTaskFinishedStatus.Builder taskFinishedBuilder,
             String sqsJobQueueUrl,
             AmazonSQS sqsClient) {
-        this(instanceProperties, objectFactory, tablePropertiesProvider, stateStoreProvider, jobStatusStore,taskFinishedBuilder, sqsJobQueueUrl, sqsClient, 3, 20);
+        this(instanceProperties, objectFactory, tablePropertiesProvider, stateStoreProvider, jobStatusStore, taskFinishedBuilder, sqsJobQueueUrl, sqsClient, 3, 20);
     }
 
     public void run() throws InterruptedException, IOException, ActionException {
