@@ -6,7 +6,6 @@ on:
       - 'java/**'
       - '!java/cdk-environment/**'
 
-# Test caching
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,7 +19,7 @@ jobs:
       - name: Cache Dependencies
         uses: actions/cache@v3
         with:
-          path: .m2/repository
+          path: java/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
