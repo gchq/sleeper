@@ -48,6 +48,10 @@ public interface CompactionJobStatusStore {
         throw new UnsupportedOperationException("Instance has no compaction job status store");
     }
 
+    default List<CompactionJobStatus> getJobsByTaskId(String tableName, String taskId) {
+        throw new UnsupportedOperationException("Instance has no compaction job status store");
+    }
+
     default void setTimeToLive(Long timeToLive) {
     }
 

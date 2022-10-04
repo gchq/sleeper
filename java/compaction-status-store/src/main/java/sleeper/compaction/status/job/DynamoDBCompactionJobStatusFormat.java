@@ -59,6 +59,7 @@ public class DynamoDBCompactionJobStatusFormat {
     public static final String FINISH_TIME = "FinishTime";
     public static final String RECORDS_READ = "RecordsRead";
     public static final String RECORDS_WRITTEN = "RecordsWritten";
+    public static final String TASK_ID = "TaskId";
 
     public static final String UPDATE_TYPE_CREATED = "created";
     public static final String UPDATE_TYPE_STARTED = "started";
@@ -92,12 +93,16 @@ public class DynamoDBCompactionJobStatusFormat {
 
     private static DynamoDBRecordBuilder createJobRecord(CompactionJob job, String updateType, Long timeToLive) {
         Long timeNow = Instant.now().toEpochMilli();
-        return new DynamoDBRecordBuilder()
+        DynamoDBRecordBuilder builder = new DynamoDBRecordBuilder()
                 .string(JOB_ID, job.getId())
                 .string(TABLE_NAME, job.getTableName())
                 .number(UPDATE_TIME, timeNow)
                 .string(UPDATE_TYPE, updateType)
                 .number(EXPIRY_DATE, timeNow + timeToLive);
+        if (null != job.getTaskId()) {
+            builder.string(TASK_ID, job.getTaskId());
+        }
+        return builder;
     }
 
     public static Stream<CompactionJobStatus> streamJobStatuses(List<Map<String, AttributeValue>> items) {
@@ -115,6 +120,7 @@ public class DynamoDBCompactionJobStatusFormat {
                         .partitionId(getStringAttribute(item, PARTITION_ID))
                         .childPartitionIds(getChildPartitionIds(item))
                         .inputFilesCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))
+                        .taskId(getStringAttribute(item, TASK_ID))
                         .build()).expiryDate(jobId, getInstantAttribute(item, EXPIRY_DATE));
                 break;
             case UPDATE_TYPE_STARTED:
