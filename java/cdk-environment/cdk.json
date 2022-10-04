@@ -1,0 +1,5 @@
+{
+  "app": "mvn -e -q exec:java -Dexec.mainClass=\"sleeper.environment.cdk.SleeperEnvironmentCdkApp\"",
+  "context": {
+  }
+}
