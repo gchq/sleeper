@@ -81,6 +81,10 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     // Bulk Import - properties that are applicable to all bulk import platforms
     BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE("sleeper.bulk.import.min.partitions.coalesce", "100"),
     BULK_IMPORT_CLASS_NAME("sleeper.bulk.import.class.name", "sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeRunner"),
+    BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC("sleeper.bulk.import.emr.spark.shuffle.mapStatus.compression.codec", "lz4"), // Stops "Decompression error: Version not supported" errors - only a value of "lz4" has been tested. This is used to set the value of spark.shuffle.mapStatus.compression.codec on the Spark configuration.
+    BULK_IMPORT_SPARK_SPECULATION("sleeper.bulk.import.emr.spark.speculation", "false", Utils::isTrueOrFalse),
+    // This is used to set the value of spark.speculation on the Spark configuration.
+    BULK_IMPORT_SPARK_SPECULATION_QUANTILE("sleeper.bulk.import.spark.speculation.quantile", "0.75"), // This is used to set the value of spark.speculation.quantile on the Spark configuration.
 
     // Bulk import using EMR - these properties are used by both the persistent
     // and non-persistent EMR stacks
@@ -110,6 +114,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     BULK_IMPORT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD("sleeper.bulk.import.emr.spark.yarn.executor.memory.overhead", "2g"),
     BULK_IMPORT_EMR_SPARK_YARN_DRIVER_MEMORY_OVERHEAD("sleeper.bulk.import.emr.spark.yarn.driver.memory.overhead", BULK_IMPORT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD.getDefaultValue()),
     BULK_IMPORT_EMR_SPARK_DEFAULT_PARALLELISM("sleeper.bulk.import.emr.spark.default.parallelism", "290"),
+    BULK_IMPORT_EMR_SPARK_SQL_SHUFFLE_PARTITIONS("sleeper.bulk.import.emr.spark.sql.shuffle.partitions", BULK_IMPORT_EMR_SPARK_DEFAULT_PARALLELISM.getDefaultValue()),
     //  - Properties that are independent of the instance type and number of instances:
     BULK_IMPORT_EMR_SPARK_EXECUTOR_CORES("sleeper.bulk.import.emr.spark.executor.cores", "5"),
     BULK_IMPORT_EMR_SPARK_DRIVER_CORES("sleeper.bulk.import.emr.spark.driver.cores", BULK_IMPORT_EMR_SPARK_EXECUTOR_CORES.getDefaultValue()),
@@ -148,12 +153,6 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
 
     // Bulk import using EKS
     BULK_IMPORT_REPO("sleeper.bulk.import.eks.repo"),
-
-    // Bulk import common properties
-    BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC("sleeper.bulk.import.emr.spark.shuffle.mapStatus.compression.codec", "lz4"), // Stops "Decompression error: Version not supported" errors - only a value of "lz4" has been tested. This is used to set the value of spark.shuffle.mapStatus.compression.codec on the Spark configuration.
-    BULK_IMPORT_SPARK_SPECULATION("sleeper.bulk.import.emr.spark.speculation", "false", Utils::isTrueOrFalse),
-    // This is used to set the value of spark.speculation on the Spark configuration.
-    BULK_IMPORT_SPARK_SPECULATION_QUANTILE("sleeper.bulk.import.spark.speculation.quantile", "0.75"), // This is used to set the value of spark.speculation.quantile on the Spark configuration.
 
     // Partition splitting
     PARTITION_SPLITTING_PERIOD_IN_MINUTES("sleeper.partition.splitting.period.minutes", "2"),

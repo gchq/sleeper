@@ -1,4 +1,4 @@
-Sleeper is mainly written in Java and this is  built using maven. This process will automatically
+Sleeper is mainly written in Java and this is built using maven. This process will automatically
 pull in dependencies. We list Sleeper's dependencies, and their licenses below.
 
 AWS Athena SDK (com.amazonaws:aws-athena-federation-sdk:2021.21.1):
@@ -93,17 +93,25 @@ Reload4j (ch.qos.reload4j:reload4j:1.2.20):
 
 - Apache License, Version 2.0
 
+Bouncy Castle (org.bouncycastle:bcpkix-jdk18on:1.71.1):
+
+- Bouncy Castle License
+
 Testcontainers (org.testcontainers:localstack:1.16.2, org.testcontainers:testcontainers:1.16.2):
 
 - MIT License
 
-AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.24.1, software.amazon.awscdk:apigatewayv2-alpha:2.24.1-alpha.0):
+AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.35.0, software.amazon.awscdk:apigatewayv2-alpha:2.35.0-alpha.0):
 
 - Apache License, Version 2.0
 
-AWS Constructs (software.constructs:constructs:10.1.10):
+AWS Constructs (software.constructs:constructs:10.1.69):
 
 - Apache License, Version 2.0
+
+CloudFormation Custom Types for Terraform (io.github.cdklabs.cdk_cloudformation:tf-aws-keypair:1.0.0-alpha.5):
+
+- MIT License
 
 AWS Lambda Powertools (software.amazon.lambda:powertools-metrics:1.10.2):
 
