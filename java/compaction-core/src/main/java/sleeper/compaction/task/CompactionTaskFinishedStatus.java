@@ -48,7 +48,7 @@ public class CompactionTaskFinishedStatus {
         return finishTime;
     }
 
-    public Integer getTotalJobs() {
+    public int getTotalJobs() {
         return totalJobs;
     }
 
