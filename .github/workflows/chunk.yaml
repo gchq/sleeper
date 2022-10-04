@@ -23,6 +23,9 @@ jobs:
           java-version: '8'
           distribution: 'adopt'
           cache: 'maven'
+      - name: Resolve Dependencies
+        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
+        working-directory: ./java
       - name: Compile
         run: mvn --batch-mode clean install -am -pl ${{ inputs.moduleList }} -Pquick,skipShade
         working-directory: ./java
