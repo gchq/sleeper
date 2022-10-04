@@ -121,7 +121,10 @@ public class CompactionJobStatus {
     }
 
     public String getTaskId() {
-        return createdStatus.getTaskId();
+        if (isStarted()) {
+            return startedStatus.getTaskId();
+        }
+        return null;
     }
 
     public boolean isInPeriod(Instant startTime, Instant endTime) {

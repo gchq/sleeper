@@ -120,13 +120,13 @@ public class DynamoDBCompactionJobStatusFormat {
                         .partitionId(getStringAttribute(item, PARTITION_ID))
                         .childPartitionIds(getChildPartitionIds(item))
                         .inputFilesCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))
-                        .taskId(getStringAttribute(item, TASK_ID))
                         .build()).expiryDate(jobId, getInstantAttribute(item, EXPIRY_DATE));
                 break;
             case UPDATE_TYPE_STARTED:
-                builder.jobStarted(jobId, CompactionJobStartedStatus.updateAndStartTime(
+                builder.jobStarted(jobId, CompactionJobStartedStatus.updateAndStartTimeWithTaskId(
                                 getInstantAttribute(item, UPDATE_TIME),
-                                getInstantAttribute(item, START_TIME)))
+                                getInstantAttribute(item, START_TIME),
+                                getStringAttribute(item, TASK_ID)))
                         .expiryDate(jobId, getInstantAttribute(item, EXPIRY_DATE));
                 break;
             case UPDATE_TYPE_FINISHED:
