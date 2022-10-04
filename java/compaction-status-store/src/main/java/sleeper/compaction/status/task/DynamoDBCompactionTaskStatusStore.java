@@ -55,10 +55,10 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
     public void taskStarted(CompactionTaskStatus taskStatus) {
         try {
             PutItemResult result = putItem(DynamoDBCompactionTaskStatusFormat.createTaskStartedRecord(taskStatus, taskStatus.getStartedStatus().getStartTime(), timeToLive));
-            LOGGER.debug("Put created event for task {} to table {}, capacity consumed = {}",
+            LOGGER.debug("Put started event for task {} to table {}, capacity consumed = {}",
                     taskStatus.getTaskId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed putItem in taskCreated", e);
+            throw new CompactionStatusStoreException("Failed putItem in taskStarted", e);
         }
     }
 
@@ -66,10 +66,10 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
     public void taskFinished(CompactionTaskStatus taskStatus) {
         try {
             PutItemResult result = putItem(DynamoDBCompactionTaskStatusFormat.createTaskFinishedRecord(taskStatus, taskStatus.getFinishedStatus().getFinishTime(), timeToLive));
-            LOGGER.debug("Put created event for task {} to table {}, capacity consumed = {}",
+            LOGGER.debug("Put finished event for task {} to table {}, capacity consumed = {}",
                     taskStatus.getTaskId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed putItem in taskCreated", e);
+            throw new CompactionStatusStoreException("Failed putItem in taskFinished", e);
         }
     }
 

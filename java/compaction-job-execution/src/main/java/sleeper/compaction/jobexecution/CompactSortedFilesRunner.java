@@ -144,7 +144,7 @@ public class CompactSortedFilesRunner {
                 try {
                     taskFinishedBuilder.addJobSummary(compact(compactionJob, message));
                 } catch (IOException | IteratorException e) {
-                    LOGGER.error("Exception running compaction compactionJob", e);
+                    LOGGER.error("Exception running compactionJob", e);
                     return;
                 }
                 totalNumberOfMessagesProcessed++;
