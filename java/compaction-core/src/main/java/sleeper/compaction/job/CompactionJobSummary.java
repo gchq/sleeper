@@ -82,4 +82,16 @@ public class CompactionJobSummary {
     public int hashCode() {
         return Objects.hash(recordsProcessed, startTime, finishTime);
     }
+
+    @Override
+    public String toString() {
+        return "CompactionJobSummary{" +
+                "recordsProcessed=" + recordsProcessed +
+                ", startTime=" + startTime +
+                ", finishTime=" + finishTime +
+                ", durationInSeconds=" + durationInSeconds +
+                ", recordsReadPerSecond=" + recordsReadPerSecond +
+                ", recordsWrittenPerSecond=" + recordsWrittenPerSecond +
+                '}';
+    }
 }

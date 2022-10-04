@@ -50,4 +50,12 @@ public class CompactionJobRecordsProcessed {
     public int hashCode() {
         return Objects.hash(linesRead, linesWritten);
     }
+
+    @Override
+    public String toString() {
+        return "CompactionJobRecordsProcessed{" +
+                "linesRead=" + linesRead +
+                ", linesWritten=" + linesWritten +
+                '}';
+    }
 }
