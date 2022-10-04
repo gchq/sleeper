@@ -35,11 +35,10 @@ public class CompactionTaskStatus {
 
     public static CompactionTaskStatus.Builder started(long startTime) {
         return builder().taskId(UUID.randomUUID().toString()).startedStatus(
-                        CompactionTaskStartedStatus.builder()
-                                .startTime(Instant.ofEpochMilli(startTime))
-                                .startUpdateTime(Instant.ofEpochMilli(startTime))
-                                .build())
-                .finishedStatus(CompactionTaskFinishedStatus.builder().empty());
+                CompactionTaskStartedStatus.builder()
+                        .startTime(Instant.ofEpochMilli(startTime))
+                        .startUpdateTime(Instant.ofEpochMilli(startTime))
+                        .build());
     }
 
 

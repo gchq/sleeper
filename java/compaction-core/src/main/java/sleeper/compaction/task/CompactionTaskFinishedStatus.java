@@ -172,10 +172,6 @@ public class CompactionTaskFinishedStatus {
             return this;
         }
 
-        public CompactionTaskFinishedStatus empty() {
-            return builder().build();
-        }
-
         public CompactionTaskFinishedStatus build() {
             return new CompactionTaskFinishedStatus(this);
         }
