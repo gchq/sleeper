@@ -17,10 +17,8 @@
 package sleeper.compaction.task;
 
 import org.junit.Test;
-import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobRecordsProcessed;
 import sleeper.compaction.job.CompactionJobSummary;
-import sleeper.compaction.job.CompactionJobTestDataHelper;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -29,7 +27,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class CompactionTaskStatusTest {
-    private final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
 
     @Test
     public void shouldCreateCompactionTaskStatus() {
@@ -50,10 +47,6 @@ public class CompactionTaskStatusTest {
         Instant taskStartedTime = Instant.parse("2022-09-22T12:00:14.000Z");
         Instant jobFinishTime3 = Instant.parse("2022-09-22T16:00:14.000Z");
 
-        CompactionJob job1 = dataHelper.singleFileCompaction();
-        CompactionJob job2 = dataHelper.singleFileCompaction();
-        CompactionJob job3 = dataHelper.singleFileCompaction();
-
         // When
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.started(taskStartedTime.toEpochMilli());
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
@@ -72,10 +65,6 @@ public class CompactionTaskStatusTest {
         // Given
         Instant taskStartedTime = Instant.parse("2022-09-22T12:00:14.000Z");
         Instant jobFinishTime3 = Instant.parse("2022-09-22T16:00:14.000Z");
-
-        CompactionJob job1 = dataHelper.singleFileSplittingCompaction("C", "A", "B");
-        CompactionJob job2 = dataHelper.singleFileSplittingCompaction("F", "D", "E");
-        CompactionJob job3 = dataHelper.singleFileSplittingCompaction("I", "G", "H");
 
         // When
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.started(taskStartedTime.toEpochMilli());
