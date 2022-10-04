@@ -156,7 +156,6 @@ public class CompactSortedFilesRunnerIT {
         stateStore.initialise();
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDB);
         CompactionJobStatusStore jobStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDB, instanceProperties);
-        CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
         //  - Create four files of sorted data
         String folderName = folder.newFolder().getAbsolutePath();
         String file1 = folderName + "/file1.parquet";
@@ -269,7 +268,7 @@ public class CompactSortedFilesRunnerIT {
         // When
         CompactSortedFilesRunner runner = new CompactSortedFilesRunner(
                 instanceProperties, ObjectFactory.noUserJars(),
-                tablePropertiesProvider, stateStoreProvider, jobStatusStore, taskFinishedBuilder,
+                tablePropertiesProvider, stateStoreProvider, jobStatusStore, CompactionTaskFinishedStatus.builder(),
                 instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqsClient,
                 1, 5);
         runner.run();
