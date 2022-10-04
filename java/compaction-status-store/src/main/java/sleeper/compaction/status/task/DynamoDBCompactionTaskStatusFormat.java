@@ -85,7 +85,7 @@ public class DynamoDBCompactionTaskStatusFormat {
                 .number(EXPIRY_DATE, timeNow + timeToLive);
     }
 
-    public static Stream<CompactionTaskStatus> streamJobStatuses(List<Map<String, AttributeValue>> items) {
+    public static Stream<CompactionTaskStatus> streamTaskStatuses(List<Map<String, AttributeValue>> items) {
         CompactionTaskStatusesBuilder builder = new CompactionTaskStatusesBuilder();
         items.forEach(item -> addStatusUpdate(item, builder));
         return builder.stream();

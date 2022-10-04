@@ -43,7 +43,7 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskStatusStore.class);
     private final AmazonDynamoDB dynamoDB;
     private final String statusTableName;
-    private Long timeToLive;
+    private final Long timeToLive;
 
     private DynamoDBCompactionTaskStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         this.dynamoDB = dynamoDB;
@@ -55,7 +55,7 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
     public void taskStarted(CompactionTaskStatus taskStatus) {
         try {
             PutItemResult result = putItem(DynamoDBCompactionTaskStatusFormat.createTaskStartedRecord(taskStatus, taskStatus.getStartedStatus().getStartTime(), timeToLive));
-            LOGGER.debug("Put created event for job {} to table {}, capacity consumed = {}",
+            LOGGER.debug("Put created event for task {} to table {}, capacity consumed = {}",
                     taskStatus.getTaskId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
             throw new CompactionStatusStoreException("Failed putItem in taskCreated", e);
@@ -66,7 +66,7 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
     public void taskFinished(CompactionTaskStatus taskStatus) {
         try {
             PutItemResult result = putItem(DynamoDBCompactionTaskStatusFormat.createTaskFinishedRecord(taskStatus, taskStatus.getFinishedStatus().getFinishTime(), timeToLive));
-            LOGGER.debug("Put created event for job {} to table {}, capacity consumed = {}",
+            LOGGER.debug("Put created event for task {} to table {}, capacity consumed = {}",
                     taskStatus.getTaskId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
             throw new CompactionStatusStoreException("Failed putItem in taskCreated", e);
@@ -80,7 +80,7 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
                 .addKeyConditionsEntry(TASK_ID, new Condition()
                         .withAttributeValueList(createStringAttribute(taskId))
                         .withComparisonOperator(ComparisonOperator.EQ)));
-        return DynamoDBCompactionTaskStatusFormat.streamJobStatuses(result.getItems())
+        return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(result.getItems())
                 .findFirst().orElse(null);
     }
 
