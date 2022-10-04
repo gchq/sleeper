@@ -31,7 +31,6 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionJobSummary;
-import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
@@ -53,7 +52,6 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
-import java.time.Instant;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
@@ -144,7 +142,7 @@ public class CompactSortedFilesRunner {
                 CompactionJob compactionJob = compactionJobSerDe.deserialiseFromString(message.getBody());
                 LOGGER.info("CompactionJob is: {}", compactionJob);
                 try {
-                    taskFinishedBuilder.addJobStatus(compact(compactionJob, message));
+                    taskFinishedBuilder.addJobSummary(compact(compactionJob, message));
                 } catch (IOException | IteratorException e) {
                     LOGGER.error("Exception running compaction compactionJob", e);
                     return;
@@ -158,7 +156,7 @@ public class CompactSortedFilesRunner {
         LOGGER.info("Total number of messages processed = " + totalNumberOfMessagesProcessed);
     }
 
-    private CompactionJobStatus compact(CompactionJob compactionJob, Message message) throws IOException, IteratorException, ActionException {
+    private CompactionJobSummary compact(CompactionJob compactionJob, Message message) throws IOException, IteratorException, ActionException {
         MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl,
                 "Compaction job " + compactionJob.getId(), message.getReceiptHandle());
         // Create background thread to keep messages alive
@@ -167,7 +165,6 @@ public class CompactSortedFilesRunner {
                         instanceProperties.getInt(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)),
                 keepAliveFrequency);
         keepAliveRunnable.start();
-        Instant creationTime = Instant.now();
         LOGGER.info("Compaction job {}: Created background thread to keep SQS messages alive (period is {} seconds)",
                 compactionJob.getId(), keepAliveFrequency);
 
@@ -186,7 +183,7 @@ public class CompactSortedFilesRunner {
         LOGGER.info("Compaction job {}: Stopping background thread to keep SQS messages alive",
                 compactionJob.getId());
         keepAliveRunnable.stop();
-        return CompactionJobStatus.finished(compactionJob, creationTime, summary);
+        return summary;
     }
 
     public static void main(String[] args) throws InterruptedException, IOException, ObjectFactoryException, ActionException {

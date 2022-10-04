@@ -20,7 +20,7 @@ import org.junit.After;
 import org.junit.Before;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
-import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStoreCreator;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
@@ -112,10 +112,10 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
         return CompactionTaskStatus.started(defaultStartTime().toEpochMilli());
     }
 
-    protected static CompactionTaskStatus finishedTaskWithDefaults(List<CompactionJobStatus> jobStatusList) {
+    protected static CompactionTaskStatus finishedTaskWithDefaults(List<CompactionJobSummary> jobSummaryList) {
         CompactionTaskStatus.Builder taskStatusBuilder = startedTaskWithDefaultsBuilder();
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
-        jobStatusList.forEach(taskFinishedBuilder::addJobStatus);
+        jobSummaryList.forEach(taskFinishedBuilder::addJobSummary);
         return taskStatusBuilder.finished(taskFinishedBuilder, defaultFinishTime().toEpochMilli()).build();
     }
 

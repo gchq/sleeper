@@ -16,7 +16,7 @@
 
 package sleeper.compaction.task;
 
-import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.CompactionJobSummary;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -157,10 +157,10 @@ public class CompactionTaskFinishedStatus {
             return this;
         }
 
-        public Builder addJobStatus(CompactionJobStatus jobStatus) {
+        public Builder addJobSummary(CompactionJobSummary jobSummary) {
             totalJobs++;
-            totalRecordsRead += jobStatus.getFinishedSummary().getLinesRead();
-            totalRecordsWritten += jobStatus.getFinishedSummary().getLinesWritten();
+            totalRecordsRead += jobSummary.getLinesRead();
+            totalRecordsWritten += jobSummary.getLinesWritten();
             return this;
         }
 

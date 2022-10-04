@@ -20,10 +20,6 @@ import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobRecordsProcessed;
 import sleeper.compaction.job.CompactionJobSummary;
-import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
-import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.testutils.DynamoDBCompactionTaskStatusStoreTestBase;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.core.partition.Partition;
@@ -60,7 +56,7 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
                 partition.getId());
 
         //When
-        CompactionTaskStatus taskStatus = finishedTaskWithDefaults(createJobStatus(job1));
+        CompactionTaskStatus taskStatus = finishedTaskWithDefaults(createJobSummary());
         store.taskStarted(taskStatus);
         store.taskFinished(taskStatus);
 
@@ -76,7 +72,7 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
         CompactionJob job1 = singleFileSplittingCompaction("C", "A", "B");
 
         //When
-        CompactionTaskStatus taskStatus = finishedTaskWithDefaults(createJobStatus(job1));
+        CompactionTaskStatus taskStatus = finishedTaskWithDefaults(createJobSummary());
         store.taskStarted(taskStatus);
         store.taskFinished(taskStatus);
 
@@ -97,22 +93,13 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
                 .isNull();
     }
 
-    private List<CompactionJobStatus> createJobStatus(CompactionJob job1) {
-        Instant jobCreationTime = Instant.parse("2022-09-22T14:00:00.000Z");
-        Instant jobStartedTime = Instant.parse("2022-09-22T14:00:02.000Z");
+    private List<CompactionJobSummary> createJobSummary() {
         Instant jobStartedUpdateTime = Instant.parse("2022-09-22T14:00:04.000Z");
         Instant jobFinishTime = Instant.parse("2022-09-22T14:00:14.000Z");
 
         CompactionJobSummary summary = new CompactionJobSummary(
                 new CompactionJobRecordsProcessed(4800L, 2400L), jobStartedUpdateTime, jobFinishTime);
 
-        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job1.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job1, jobCreationTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
-                        jobStartedUpdateTime, jobStartedTime))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(jobStartedUpdateTime, summary))
-                .build();
-
-        return Collections.singletonList(status);
+        return Collections.singletonList(summary);
     }
 }

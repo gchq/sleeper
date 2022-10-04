@@ -21,10 +21,6 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobRecordsProcessed;
 import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
-import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
-import sleeper.compaction.job.status.CompactionJobStatus;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -61,7 +57,7 @@ public class CompactionTaskStatusTest {
         // When
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.started(taskStartedTime.toEpochMilli());
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
-        createJobStatuses(job1, job2, job3).forEach(taskFinishedBuilder::addJobStatus);
+        createJobSummaries().forEach(taskFinishedBuilder::addJobSummary);
         taskStatusBuilder.finished(taskFinishedBuilder, jobFinishTime3.toEpochMilli());
 
         // Then
@@ -84,7 +80,7 @@ public class CompactionTaskStatusTest {
         // When
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.started(taskStartedTime.toEpochMilli());
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
-        createJobStatuses(job1, job2, job3).forEach(taskFinishedBuilder::addJobStatus);
+        createJobSummaries().forEach(taskFinishedBuilder::addJobSummary);
         taskStatusBuilder.finished(taskFinishedBuilder, jobFinishTime3.toEpochMilli());
 
         // Then
@@ -94,19 +90,13 @@ public class CompactionTaskStatusTest {
                 .containsExactly(taskStartedTime, jobFinishTime3, 3, 14400.0, 14400L, 7200L, 1.0, 0.5);
     }
 
-    private List<CompactionJobStatus> createJobStatuses(CompactionJob job1, CompactionJob job2, CompactionJob job3) {
-        Instant jobCreationTime1 = Instant.parse("2022-09-22T14:00:00.000Z");
-        Instant jobStartedTime1 = Instant.parse("2022-09-22T14:00:02.000Z");
+    private List<CompactionJobSummary> createJobSummaries() {
         Instant jobStartedUpdateTime1 = Instant.parse("2022-09-22T14:00:04.000Z");
         Instant jobFinishTime1 = Instant.parse("2022-09-22T14:00:14.000Z");
 
-        Instant jobCreationTime2 = Instant.parse("2022-09-22T15:00:00.000Z");
-        Instant jobStartedTime2 = Instant.parse("2022-09-22T15:00:02.000Z");
         Instant jobStartedUpdateTime2 = Instant.parse("2022-09-22T15:00:04.000Z");
         Instant jobFinishTime2 = Instant.parse("2022-09-22T15:00:14.000Z");
 
-        Instant jobCreationTime3 = Instant.parse("2022-09-22T16:00:00.000Z");
-        Instant jobStartedTime3 = Instant.parse("2022-09-22T16:00:02.000Z");
         Instant jobStartedUpdateTime3 = Instant.parse("2022-09-22T16:00:04.000Z");
         Instant jobFinishTime3 = Instant.parse("2022-09-22T16:00:14.000Z");
 
@@ -117,24 +107,6 @@ public class CompactionTaskStatusTest {
         CompactionJobSummary summary3 = new CompactionJobSummary(
                 new CompactionJobRecordsProcessed(4800L, 2400L), jobStartedUpdateTime3, jobFinishTime3);
 
-        CompactionJobStatus status1 = CompactionJobStatus.builder().jobId(job1.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job1, jobCreationTime1))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
-                        jobStartedUpdateTime1, jobStartedTime1))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(jobStartedUpdateTime1, summary1))
-                .build();
-        CompactionJobStatus status2 = CompactionJobStatus.builder().jobId(job2.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job2, jobCreationTime2))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
-                        jobStartedUpdateTime2, jobStartedTime2))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(jobStartedUpdateTime2, summary2))
-                .build();
-        CompactionJobStatus status3 = CompactionJobStatus.builder().jobId(job3.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job3, jobCreationTime3))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
-                        jobStartedUpdateTime3, jobStartedTime3))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(jobStartedUpdateTime3, summary3))
-                .build();
-        return Arrays.asList(status1, status2, status3);
+        return Arrays.asList(summary1, summary2, summary3);
     }
 }
