@@ -51,9 +51,9 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         Instant farFuture = epochStart.plus(Period.ofDays(999999999));
         assertThat(store.getJobsInTimePeriod(tableName, epochStart, farFuture))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactlyInAnyOrder(
-                        CompactionJobStatus.created(job1, ignoredUpdateTime()),
-                        CompactionJobStatus.created(job2, ignoredUpdateTime()));
+                .containsExactly(
+                        CompactionJobStatus.created(job2, ignoredUpdateTime()),
+                        CompactionJobStatus.created(job1, ignoredUpdateTime()));
     }
 
     @Test
