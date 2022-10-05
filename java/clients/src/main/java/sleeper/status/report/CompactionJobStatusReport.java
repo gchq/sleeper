@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Scanner;
 
 public class CompactionJobStatusReport {
+    private final CompactionJobStatusReportArguments arguments;
     private final CompactionJobStatusReporter compactionJobStatusReporter;
     private final CompactionJobStatusCollector compactionJobStatusCollector;
     private final SimpleDateFormat dateInputFormat = new SimpleDateFormat("yyyyMMddhhmmss");
@@ -49,15 +50,22 @@ public class CompactionJobStatusReport {
     private static final Instant DEFAULT_RANGE_END = Instant.now();
 
     public CompactionJobStatusReport(
-            AmazonDynamoDB dynamoDB,
-            InstanceProperties instanceProperties,
+            CompactionJobStatusStore compactionJobStatusStore,
             CompactionJobStatusReportArguments arguments) {
-        CompactionJobStatusStore compactionJobStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDB, instanceProperties);
-        compactionJobStatusCollector = new CompactionJobStatusCollector(compactionJobStatusStore, arguments.getTableName());
-        compactionJobStatusReporter = arguments.getReporter();
+        this.arguments = arguments;
+        this.compactionJobStatusCollector = new CompactionJobStatusCollector(compactionJobStatusStore, arguments.getTableName());
+        this.compactionJobStatusReporter = arguments.getReporter();
     }
 
     public void run() {
+        if (arguments.getQueryType() == null) {
+            runWithPrompts();
+        } else {
+            runWithQuery(arguments.getQueryType(), arguments.getQueryParameters());
+        }
+    }
+
+    private void runWithPrompts() {
         Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.displayName());
         while (true) {
             System.out.print("All (a), Detailed (d), range (r), or unfinished (u) query? ");
@@ -65,23 +73,19 @@ public class CompactionJobStatusReport {
             if ("".equals(type)) {
                 break;
             }
-            if (!type.equalsIgnoreCase("d") && !type.equalsIgnoreCase("r")
-                    && !type.equalsIgnoreCase("u") && !type.equalsIgnoreCase("a")) {
-                continue;
-            }
             if (type.equalsIgnoreCase("a")) {
                 handleAllQuery();
             } else if (type.equalsIgnoreCase("d")) {
                 handleDetailedQuery(scanner);
             } else if (type.equalsIgnoreCase("r")) {
                 handleRangeQuery(scanner);
-            } else {
+            } else if (type.equalsIgnoreCase("u")) {
                 handleUnfinishedQuery();
             }
         }
     }
 
-    public void parseQueryParameters(QueryType queryType, String queryParameters) {
+    private void runWithQuery(QueryType queryType, String queryParameters) {
         if (queryType.equals(QueryType.UNFINISHED)) {
             handleUnfinishedQuery();
         } else if (queryType.equals(QueryType.DETAILED)) {
@@ -205,11 +209,7 @@ public class CompactionJobStatusReport {
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, arguments.getInstanceId());
 
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        CompactionJobStatusReport statusReport = new CompactionJobStatusReport(dynamoDBClient, instanceProperties, arguments);
-        if (null != arguments.getQueryType()) {
-            statusReport.parseQueryParameters(arguments.getQueryType(), arguments.getQueryParameters());
-        } else {
-            statusReport.run();
-        }
+        CompactionJobStatusStore statusStore = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
+        new CompactionJobStatusReport(statusStore, arguments).run();
     }
 }
