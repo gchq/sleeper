@@ -197,7 +197,7 @@ public class CompactionJobStatusReport {
     public static void main(String[] args) throws IOException {
         CompactionJobStatusReportArguments arguments;
         try {
-            arguments = new CompactionJobStatusReportArguments(args);
+            arguments = CompactionJobStatusReportArguments.from(args);
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());
             CompactionJobStatusReportArguments.printUsage(System.out);

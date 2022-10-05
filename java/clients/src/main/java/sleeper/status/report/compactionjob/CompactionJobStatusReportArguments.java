@@ -21,6 +21,7 @@ import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import static sleeper.status.report.ArgumentUtils.optionalArgument;
 
@@ -48,15 +49,12 @@ public class CompactionJobStatusReportArguments {
     private final QueryType queryType;
     private final String queryParameters;
 
-    public CompactionJobStatusReportArguments(String[] args) {
-        if (args.length < 2 || args.length > 5) {
-            throw new IllegalArgumentException("Wrong number of arguments");
-        }
-        this.instanceId = args[0];
-        this.tableName = args[1];
-        this.reporter = getReporter(args, 2);
-        this.queryType = getQueryType(args, 3);
-        this.queryParameters = optionalArgument(args, 4).orElse(null);
+    private CompactionJobStatusReportArguments(Builder builder) {
+        instanceId = Objects.requireNonNull(builder.instanceId, "instanceId must not be null");
+        tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
+        reporter = Objects.requireNonNull(builder.reporter, "reporter must not be null");
+        queryType = Objects.requireNonNull(builder.queryType, "queryType must not be null");
+        queryParameters = builder.queryParameters;
         if (this.queryParameters == null && isParametersRequired(this.queryType)) {
             throw new IllegalArgumentException("No parameters provided for query type " + this.queryType);
         }
@@ -69,6 +67,23 @@ public class CompactionJobStatusReportArguments {
                 "-d (Detailed, provide a jobId)\n" +
                 "-r (Provide startRange and endRange separated by commas in format yyyyMMddhhmmss)\n" +
                 "-u (Unfinished jobs)");
+    }
+
+    public static CompactionJobStatusReportArguments from(String[] args) {
+        if (args.length < 2 || args.length > 5) {
+            throw new IllegalArgumentException("Wrong number of arguments");
+        }
+        return builder()
+                .instanceId(args[0])
+                .tableName(args[1])
+                .reporter(getReporter(args, 2))
+                .queryType(getQueryType(args, 3))
+                .queryParameters(optionalArgument(args, 4).orElse(null))
+                .build();
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public String getInstanceId() {
@@ -118,4 +133,43 @@ public class CompactionJobStatusReportArguments {
         return queryType != null && !(queryType.equals(QueryType.UNFINISHED) || queryType.equals(QueryType.ALL));
     }
 
+    public static final class Builder {
+        private String instanceId;
+        private String tableName;
+        private CompactionJobStatusReporter reporter;
+        private QueryType queryType;
+        private String queryParameters;
+
+        private Builder() {
+        }
+
+        public Builder instanceId(String instanceId) {
+            this.instanceId = instanceId;
+            return this;
+        }
+
+        public Builder tableName(String tableName) {
+            this.tableName = tableName;
+            return this;
+        }
+
+        public Builder reporter(CompactionJobStatusReporter reporter) {
+            this.reporter = reporter;
+            return this;
+        }
+
+        public Builder queryType(QueryType queryType) {
+            this.queryType = queryType;
+            return this;
+        }
+
+        public Builder queryParameters(String queryParameters) {
+            this.queryParameters = queryParameters;
+            return this;
+        }
+
+        public CompactionJobStatusReportArguments build() {
+            return new CompactionJobStatusReportArguments(this);
+        }
+    }
 }
