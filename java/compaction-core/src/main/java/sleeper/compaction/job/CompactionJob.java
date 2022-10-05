@@ -184,6 +184,7 @@ public class CompactionJob {
                 Objects.equals(splitPoint, compactionJob.splitPoint) &&
                 Objects.equals(dimension, compactionJob.dimension) &&
                 Objects.equals(tableName, compactionJob.tableName) &&
+                Objects.equals(jobId, compactionJob.jobId) &&
                 Objects.equals(inputFiles, compactionJob.inputFiles) &&
                 Objects.equals(outputFile, compactionJob.outputFile) &&
                 Objects.equals(outputFiles, compactionJob.outputFiles) &&
@@ -198,6 +199,7 @@ public class CompactionJob {
                 splitPoint,
                 dimension,
                 tableName,
+                jobId,
                 inputFiles,
                 outputFile,
                 outputFiles,
@@ -210,6 +212,7 @@ public class CompactionJob {
     public String toString() {
         return "CompactionJob{" +
                 "tableName='" + tableName + '\'' +
+                ", jobId='" + jobId + '\'' +
                 ", inputFiles=" + inputFiles +
                 ", outputFile='" + outputFile + '\'' +
                 ", outputFiles=" + outputFiles +
