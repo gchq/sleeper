@@ -75,7 +75,7 @@ public class DynamoDBCompactionJobStatusStoreTimeToLiveIT extends DynamoDBCompac
 
         Instant startedTime = Instant.now();
         Instant startedExpiryDate = startedTime.plus(Duration.ofMillis(store.getTimeToLive()));
-        store.jobStarted(job, startedTime, TASK_ID);
+        store.jobStarted(job, startedTime, DEFAULT_TASK_ID);
 
         // Then
         assertThat(store.getJob(job.getId()).getExpiryDate()).isAfterOrEqualTo(startedExpiryDate);
@@ -93,13 +93,13 @@ public class DynamoDBCompactionJobStatusStoreTimeToLiveIT extends DynamoDBCompac
         Thread.sleep(2000L);
 
         Instant startedTime = Instant.now();
-        store.jobStarted(job, startedTime, TASK_ID);
+        store.jobStarted(job, startedTime, DEFAULT_TASK_ID);
         Thread.sleep(2000L);
 
         Instant finishedTime = Instant.now();
         Instant finishedExpiryDate = finishedTime.plus(Duration.ofMillis(store.getTimeToLive()));
         store.jobFinished(job, new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(60L, 60L), startedTime, finishedTime), TASK_ID);
+                new CompactionJobRecordsProcessed(60L, 60L), startedTime, finishedTime), DEFAULT_TASK_ID);
 
         // Then
         assertThat(store.getJob(job.getId()).getExpiryDate()).isAfterOrEqualTo(finishedExpiryDate);

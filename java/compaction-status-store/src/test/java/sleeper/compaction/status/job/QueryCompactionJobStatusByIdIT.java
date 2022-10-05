@@ -46,7 +46,7 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusS
 
         // Then
         assertThat(store.getJob(job1.getId()))
-                .usingRecursiveComparison(IGNORE_UPDATE_TIMES_AND_TASK_ID)
+                .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
                 .isEqualTo(CompactionJobStatus.created(job1, ignoredUpdateTime()));
     }
 

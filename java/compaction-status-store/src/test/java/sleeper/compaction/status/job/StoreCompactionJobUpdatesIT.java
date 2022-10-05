@@ -45,11 +45,11 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
 
         // When
         store.jobCreated(job);
-        store.jobStarted(job, defaultStartTime(), TASK_ID);
+        store.jobStarted(job, defaultStartTime(), DEFAULT_TASK_ID);
 
         // Then
         assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES_AND_TASK_ID)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(startedStatusWithDefaults(job));
     }
 
@@ -64,12 +64,12 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
 
         // When
         store.jobCreated(job);
-        store.jobStarted(job, defaultStartTime(), TASK_ID);
-        store.jobFinished(job, defaultSummary(), TASK_ID);
+        store.jobStarted(job, defaultStartTime(), DEFAULT_TASK_ID);
+        store.jobFinished(job, defaultSummary(), DEFAULT_TASK_ID);
 
         // Then
         assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES_AND_TASK_ID)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(finishedStatusWithDefaults(job));
     }
 
@@ -89,19 +89,19 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
 
         // When
         store.jobCreated(job);
-        store.jobStarted(job, startTime1, TASK_ID);
-        store.jobStarted(job, startTime2, TASK_ID);
-        store.jobFinished(job, new CompactionJobSummary(processed, startTime1, finishTime1), TASK_ID);
-        store.jobFinished(job, new CompactionJobSummary(processed, startTime2, finishTime2), TASK_ID);
+        store.jobStarted(job, startTime1, DEFAULT_TASK_ID);
+        store.jobStarted(job, startTime2, DEFAULT_TASK_ID);
+        store.jobFinished(job, new CompactionJobSummary(processed, startTime1, finishTime1), DEFAULT_TASK_ID);
+        store.jobFinished(job, new CompactionJobSummary(processed, startTime2, finishTime2), DEFAULT_TASK_ID);
 
         // Then
         assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES_AND_TASK_ID)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(CompactionJobStatus.builder().jobId(job.getId())
                         .createdStatus(CompactionJobCreatedStatus.from(
                                 job, ignoredUpdateTime()))
-                        .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
-                                ignoredUpdateTime(), startTime2))
+                        .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(
+                                ignoredUpdateTime(), startTime2, DEFAULT_TASK_ID))
                         .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(
                                 ignoredUpdateTime(), new CompactionJobSummary(processed, startTime2, finishTime2)))
                         .build());

@@ -52,10 +52,10 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
 
-    protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES_AND_TASK_ID = RecursiveComparisonConfiguration.builder()
+    protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("createdStatus.updateTime", "startedStatus.updateTime",
-                    "finishedStatus.updateTime", "expiryDate", "startedStatus.taskId", "finishedStatus.taskId").build();
-
+                    "finishedStatus.updateTime", "expiryDate").build();
+    public static final String DEFAULT_TASK_ID = "task-id";
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final String jobStatusTableName = jobStatusTableName(instanceProperties.get(ID));
     private final Schema schema = createSchema();
@@ -64,7 +64,6 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     protected final String tableName = tableProperties.get(TABLE_NAME);
     protected final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
     protected final CompactionJobStatusStore store = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
-    protected static final String TASK_ID = "task-id";
 
     @Before
     public void setUp() {
@@ -118,8 +117,8 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(
                         job, ignoredUpdateTime()))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
-                        ignoredUpdateTime(), defaultStartTime()))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(
+                        ignoredUpdateTime(), defaultStartTime(), DEFAULT_TASK_ID))
                 .build();
     }
 
@@ -127,8 +126,8 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(
                         job, ignoredUpdateTime()))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
-                        ignoredUpdateTime(), defaultStartTime()))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(
+                        ignoredUpdateTime(), defaultStartTime(), DEFAULT_TASK_ID))
                 .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(
                         ignoredUpdateTime(), defaultSummary()))
                 .build();

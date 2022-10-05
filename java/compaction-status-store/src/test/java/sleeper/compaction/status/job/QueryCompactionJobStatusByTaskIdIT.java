@@ -51,7 +51,7 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobSta
 
         // Then
         assertThat(store.getJobsByTaskId(tableName, searchingTaskId))
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES_AND_TASK_ID)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(CompactionJobStatus.builder().jobId(job1.getId())
                         .createdStatus(CompactionJobCreatedStatus.from(job1, ignoredUpdateTime()))
                         .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(ignoredUpdateTime(), defaultStartTime(), searchingTaskId))

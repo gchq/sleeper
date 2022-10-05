@@ -17,7 +17,6 @@ package sleeper.compaction.job.status;
 
 import java.time.Instant;
 import java.util.Objects;
-import java.util.UUID;
 
 public class CompactionJobStartedStatus {
 
@@ -33,10 +32,6 @@ public class CompactionJobStartedStatus {
 
     public static CompactionJobStartedStatus updateAndStartTimeWithTaskId(Instant updateTime, Instant startTime, String taskId) {
         return new CompactionJobStartedStatus(updateTime, startTime, taskId);
-    }
-
-    public static CompactionJobStartedStatus updateAndStartTime(Instant updateTime, Instant startTime) {
-        return new CompactionJobStartedStatus(updateTime, startTime, UUID.randomUUID().toString());
     }
 
     public Instant getUpdateTime() {

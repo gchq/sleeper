@@ -43,7 +43,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
 
         // Then
         assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES_AND_TASK_ID)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(CompactionJobStatus.created(job, ignoredUpdateTime()));
     }
 
@@ -66,7 +66,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
 
         // Then
         assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES_AND_TASK_ID)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(CompactionJobStatus.created(job, ignoredUpdateTime()));
     }
 
@@ -86,7 +86,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
 
         // Then
         assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES_AND_TASK_ID)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(CompactionJobStatus.created(job, ignoredUpdateTime()));
     }
 
@@ -109,7 +109,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
 
         // Then
         assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES_AND_TASK_ID)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactlyInAnyOrder(
                         CompactionJobStatus.created(job1, ignoredUpdateTime()),
                         CompactionJobStatus.created(job2, ignoredUpdateTime()));
@@ -135,7 +135,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
 
         // Then
         assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES_AND_TASK_ID)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactlyInAnyOrder(
                         CompactionJobStatus.created(job1, ignoredUpdateTime()),
                         CompactionJobStatus.created(job2, ignoredUpdateTime()));

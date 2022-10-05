@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobTestDataHelper.DEFAULT_TASK_ID;
 
 public class CompactionJobStatusTest {
 
@@ -85,7 +86,7 @@ public class CompactionJobStatusTest {
         // When
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, Instant.parse("2022-09-22T13:33:12.001Z")))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(updateTime, startTime))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(updateTime, startTime, DEFAULT_TASK_ID))
                 .build();
 
         // Then
@@ -120,8 +121,8 @@ public class CompactionJobStatusTest {
         // When
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, Instant.parse("2022-09-22T13:33:00.001Z")))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
-                        Instant.parse("2022-09-22T13:33:09.001Z"), startTime))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(
+                        Instant.parse("2022-09-22T13:33:09.001Z"), startTime, DEFAULT_TASK_ID))
                 .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary))
                 .build();
 
