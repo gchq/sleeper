@@ -128,6 +128,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("%-36s|", "JOB_ID");
         out.printf("%-36s|", "PARTITION_ID");
         out.printf("%-20s|", "CHILD_IDS");
+        out.printf("%-36s|", "TASK_ID");
         out.printf("%-24s|", "START_TIME");
         out.printf("%-24s|", "START_UPDATE_TIME");
         out.printf("%-24s|", "FINISH_TIME");
@@ -145,6 +146,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("%-36s|", status.getPartitionId());
         out.printf("%-20s|", status.getChildPartitionIds());
 
+        out.printf("%-36s|", status.isStarted() ? status.getTaskId() : "");
         out.printf("%-24s|", status.isStarted() ? status.getStartTime() : "");
         out.printf("%-24s|", status.isStarted() ? status.getStartUpdateTime() : "");
 
