@@ -35,6 +35,7 @@ public class CompactionJobStatusReportArguments {
     private static final Map<String, QueryType> QUERY_TYPES = new HashMap<>();
 
     static {
+        QUERY_TYPES.put("-a", QueryType.ALL);
         QUERY_TYPES.put("-d", QueryType.DETAILED);
         QUERY_TYPES.put("-r", QueryType.RANGE);
         QUERY_TYPES.put("-u", QueryType.UNFINISHED);
