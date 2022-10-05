@@ -29,10 +29,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.EXPIRY_DATE;
-
 public class DynamoDBUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBUtils.class);
+    public static final String EXPIRY_DATE = "ExpiryDate";
 
     private DynamoDBUtils() {
     }

@@ -39,6 +39,7 @@ import static sleeper.compaction.status.DynamoDBAttributes.getInstantAttribute;
 import static sleeper.compaction.status.DynamoDBAttributes.getIntAttribute;
 import static sleeper.compaction.status.DynamoDBAttributes.getLongAttribute;
 import static sleeper.compaction.status.DynamoDBAttributes.getStringAttribute;
+import static sleeper.compaction.status.DynamoDBUtils.EXPIRY_DATE;
 
 public class DynamoDBCompactionJobStatusFormat {
 
@@ -62,7 +63,6 @@ public class DynamoDBCompactionJobStatusFormat {
     public static final String UPDATE_TYPE_CREATED = "created";
     public static final String UPDATE_TYPE_STARTED = "started";
     public static final String UPDATE_TYPE_FINISHED = "finished";
-    public static final String EXPIRY_DATE = "ExpiryDate";
 
     public static Map<String, AttributeValue> createJobCreatedRecord(CompactionJob job, Long timeToLive) {
         return createJobRecord(job, UPDATE_TYPE_CREATED, timeToLive)

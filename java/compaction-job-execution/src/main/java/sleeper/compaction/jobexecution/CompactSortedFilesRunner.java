@@ -30,7 +30,12 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore;
+import sleeper.compaction.task.CompactionTaskFinishedStatus;
+import sleeper.compaction.task.CompactionTaskStatus;
+import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
@@ -72,6 +77,7 @@ public class CompactSortedFilesRunner {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
+    private final CompactionTaskFinishedStatus.Builder taskFinishedBuilder;
     private final CompactionJobSerDe compactionJobSerDe;
     private final String sqsJobQueueUrl;
     private final AmazonSQS sqsClient;
@@ -86,6 +92,7 @@ public class CompactSortedFilesRunner {
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             CompactionJobStatusStore jobStatusStore,
+            CompactionTaskFinishedStatus.Builder taskFinishedBuilder,
             String sqsJobQueueUrl,
             AmazonSQS sqsClient,
             int maxMessageRetrieveAttempts,
@@ -95,6 +102,7 @@ public class CompactSortedFilesRunner {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
+        this.taskFinishedBuilder = taskFinishedBuilder;
         this.compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         this.sqsJobQueueUrl = sqsJobQueueUrl;
         this.maxConnectionsToS3 = instanceProperties.getInt(MAXIMUM_CONNECTIONS_TO_S3);
@@ -110,9 +118,10 @@ public class CompactSortedFilesRunner {
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             CompactionJobStatusStore jobStatusStore,
+            CompactionTaskFinishedStatus.Builder taskFinishedBuilder,
             String sqsJobQueueUrl,
             AmazonSQS sqsClient) {
-        this(instanceProperties, objectFactory, tablePropertiesProvider, stateStoreProvider, jobStatusStore, sqsJobQueueUrl, sqsClient, 3, 20);
+        this(instanceProperties, objectFactory, tablePropertiesProvider, stateStoreProvider, jobStatusStore, taskFinishedBuilder, sqsJobQueueUrl, sqsClient, 3, 20);
     }
 
     public void run() throws InterruptedException, IOException, ActionException {
@@ -133,9 +142,9 @@ public class CompactSortedFilesRunner {
                 CompactionJob compactionJob = compactionJobSerDe.deserialiseFromString(message.getBody());
                 LOGGER.info("CompactionJob is: {}", compactionJob);
                 try {
-                    compact(compactionJob, message);
+                    taskFinishedBuilder.addJobSummary(compact(compactionJob, message));
                 } catch (IOException | IteratorException e) {
-                    LOGGER.error("Exception running compaction compactionJob", e);
+                    LOGGER.error("Exception running compactionJob", e);
                     return;
                 }
                 totalNumberOfMessagesProcessed++;
@@ -147,7 +156,7 @@ public class CompactSortedFilesRunner {
         LOGGER.info("Total number of messages processed = " + totalNumberOfMessagesProcessed);
     }
 
-    private void compact(CompactionJob compactionJob, Message message) throws IOException, IteratorException, ActionException {
+    private CompactionJobSummary compact(CompactionJob compactionJob, Message message) throws IOException, IteratorException, ActionException {
         MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl,
                 "Compaction job " + compactionJob.getId(), message.getReceiptHandle());
         // Create background thread to keep messages alive
@@ -165,7 +174,7 @@ public class CompactSortedFilesRunner {
                 tableProperties.getSchema(), SchemaConverter.getSchema(tableProperties.getSchema()), compactionJob,
                 stateStore, jobStatusStore, tableProperties.getInt(ROW_GROUP_SIZE), tableProperties.getInt(PAGE_SIZE),
                 tableProperties.get(COMPRESSION_CODEC));
-        compactSortedFiles.compact();
+        CompactionJobSummary summary = compactSortedFiles.compact();
 
         // Delete message from queue
         DeleteMessageAction deleteAction = messageReference.deleteAction();
@@ -174,6 +183,7 @@ public class CompactSortedFilesRunner {
         LOGGER.info("Compaction job {}: Stopping background thread to keep SQS messages alive",
                 compactionJob.getId());
         keepAliveRunnable.stop();
+        return summary;
     }
 
     public static void main(String[] args) throws InterruptedException, IOException, ObjectFactoryException, ActionException {
@@ -196,6 +206,11 @@ public class CompactSortedFilesRunner {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
         CompactionJobStatusStore jobStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
+        CompactionTaskStatusStore taskStatusStore = DynamoDBCompactionTaskStatusStore.from(dynamoDBClient, instanceProperties);
+        CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
+
+        CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.started(startTime);
+        taskStatusStore.taskStarted(taskStatusBuilder.build());
 
         String sqsJobQueueUrl;
         String type = args[1];
@@ -213,6 +228,7 @@ public class CompactSortedFilesRunner {
                 tablePropertiesProvider,
                 stateStoreProvider,
                 jobStatusStore,
+                taskFinishedBuilder,
                 sqsJobQueueUrl,
                 sqsClient);
         runner.run();
@@ -226,5 +242,8 @@ public class CompactSortedFilesRunner {
         long finishTime = System.currentTimeMillis();
         double runTimeInSeconds = (finishTime - startTime) / 1000.0;
         LOGGER.info("CompactSortedFilesRunner total run time = " + runTimeInSeconds);
+
+        CompactionTaskStatus taskFinished = taskStatusBuilder.finished(taskFinishedBuilder, finishTime).build();
+        taskStatusStore.taskFinished(taskFinished);
     }
 }

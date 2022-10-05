@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack;
 
+import sleeper.compaction.status.DynamoDBUtils;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusFormat;
@@ -55,7 +56,7 @@ public class DynamoDBCompactionStatusStoreStack implements CompactionStatusStore
                         .name(DynamoDBCompactionJobStatusFormat.UPDATE_TIME)
                         .type(AttributeType.NUMBER)
                         .build())
-                .timeToLiveAttribute(DynamoDBCompactionJobStatusFormat.EXPIRY_DATE)
+                .timeToLiveAttribute(DynamoDBUtils.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
 
@@ -72,6 +73,7 @@ public class DynamoDBCompactionStatusStoreStack implements CompactionStatusStore
                         .name(DynamoDBCompactionTaskStatusFormat.UPDATE_TIME)
                         .type(AttributeType.NUMBER)
                         .build())
+                .timeToLiveAttribute(DynamoDBUtils.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
     }
