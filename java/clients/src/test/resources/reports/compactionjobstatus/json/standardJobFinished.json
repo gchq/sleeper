@@ -18,7 +18,8 @@
       "startTime": {
         "seconds": 1663853652,
         "nanos": 1000000
-      }
+      },
+      "taskId": "task-id"
     },
     "finishedStatus": {
       "updateTime": {
@@ -41,7 +42,8 @@
         "durationInSeconds": 60.0,
         "recordsReadPerSecond": 10.0,
         "recordsWrittenPerSecond": 5.0
-      }
+      },
+      "taskId": "task-id"
     }
   }
 ]
