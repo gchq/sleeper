@@ -65,7 +65,7 @@ public class StatusReporterDetailedQueryTest extends StatusReporterTest {
         Instant startedUpdateTime = Instant.parse("2022-09-22T13:39:12.001Z");
 
         // When
-        CompactionJobStatus status = jobStarted(job, creationTime, startedTime, startedUpdateTime);
+        CompactionJobStatus status = jobStarted(job, DEFAULT_TASK_ID, creationTime, startedTime, startedUpdateTime);
 
         // Then
         List<CompactionJobStatus> statusList = Collections.singletonList(status);
@@ -88,7 +88,7 @@ public class StatusReporterDetailedQueryTest extends StatusReporterTest {
         Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
 
         // When
-        CompactionJobStatus status = jobFinished(job, creationTime, startedTime, startedUpdateTime, finishedTime);
+        CompactionJobStatus status = jobFinished(job, DEFAULT_TASK_ID, creationTime, startedTime, startedUpdateTime, finishedTime);
 
         // Then
         List<CompactionJobStatus> statusList = Collections.singletonList(status);
@@ -117,8 +117,8 @@ public class StatusReporterDetailedQueryTest extends StatusReporterTest {
 
         // When
         CompactionJobStatus status1 = jobCreated(job1, creationTime1);
-        CompactionJobStatus status2 = jobStarted(job2, creationTime2, startedTime2, startedUpdateTime2);
-        CompactionJobStatus status3 = jobFinished(job3, creationTime3, startedTime3, startedUpdateTime3, finishedTime3);
+        CompactionJobStatus status2 = jobStarted(job2, DEFAULT_TASK_ID, creationTime2, startedTime2, startedUpdateTime2);
+        CompactionJobStatus status3 = jobFinished(job3, DEFAULT_TASK_ID, creationTime3, startedTime3, startedUpdateTime3, finishedTime3);
 
         // Then
         List<CompactionJobStatus> statusList = Arrays.asList(status1, status2, status3);

@@ -22,7 +22,7 @@ import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.core.CommonTestConstants;
 
 public class CompactSortedFilesTestBase {
-
+    public static final String DEFAULT_TASK_ID = "task-id";
     @Rule
     public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
     protected String folderName;

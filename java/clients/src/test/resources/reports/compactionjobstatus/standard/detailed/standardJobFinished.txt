@@ -7,6 +7,7 @@ Creation Time: 2022-09-22T13:33:12.001Z
 Partition ID: root
 Child partition IDs: []
 
+Task ID: task-id
 Start Time: 2022-09-22T13:34:12.001Z
 Start Update Time: 2022-09-22T13:39:12.001Z
 

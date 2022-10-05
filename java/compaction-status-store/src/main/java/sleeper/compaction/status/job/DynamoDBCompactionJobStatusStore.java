@@ -85,9 +85,9 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public void jobStarted(CompactionJob job, Instant startTime) {
+    public void jobStarted(CompactionJob job, Instant startTime, String taskId) {
         try {
-            PutItemResult result = putItem(DynamoDBCompactionJobStatusFormat.createJobStartedRecord(job, startTime, timeToLive));
+            PutItemResult result = putItem(DynamoDBCompactionJobStatusFormat.createJobStartedRecord(job, startTime, taskId, timeToLive));
             LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
                     job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
@@ -96,9 +96,9 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public void jobFinished(CompactionJob job, CompactionJobSummary summary) {
+    public void jobFinished(CompactionJob job, CompactionJobSummary summary, String taskId) {
         try {
-            PutItemResult result = putItem(DynamoDBCompactionJobStatusFormat.createJobFinishedRecord(job, summary, timeToLive));
+            PutItemResult result = putItem(DynamoDBCompactionJobStatusFormat.createJobFinishedRecord(job, summary, taskId, timeToLive));
             LOGGER.debug("Put finished event for job {} to table {}, capacity consumed = {}",
                     job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
@@ -123,6 +123,14 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                         .withComparisonOperator(ComparisonOperator.EQ)));
         return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems())
                 .findFirst().orElse(null);
+    }
+
+    @Override
+    public List<CompactionJobStatus> getJobsByTaskId(String tableName, String taskId) {
+        ScanResult result = dynamoDB.scan(createScanRequestByTable(tableName));
+        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems())
+                .filter(job -> job.getTaskId().equals(taskId))
+                .collect(Collectors.toList());
     }
 
     @Override

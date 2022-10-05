@@ -120,6 +120,13 @@ public class CompactionJobStatus {
         return jobId;
     }
 
+    public String getTaskId() {
+        if (isStarted()) {
+            return startedStatus.getTaskId();
+        }
+        return null;
+    }
+
     public boolean isInPeriod(Instant startTime, Instant endTime) {
         return startTime.isBefore(lastTime())
                 && endTime.isAfter(firstTime());

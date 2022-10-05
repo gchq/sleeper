@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobTestDataHelper.DEFAULT_TASK_ID;
 
 public class CompactionJobStatusesBuilderTest {
 
@@ -38,27 +39,31 @@ public class CompactionJobStatusesBuilderTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started1 = CompactionJobStartedStatus.updateAndStartTime(
+        CompactionJobStartedStatus started1 = CompactionJobStartedStatus.updateAndStartTimeWithTaskId(
                 Instant.parse("2022-09-23T09:23:30.012Z"),
-                Instant.parse("2022-09-23T09:23:30.001Z"));
-        CompactionJobFinishedStatus finished1 = CompactionJobFinishedStatus.updateTimeAndSummary(
+                Instant.parse("2022-09-23T09:23:30.001Z"),
+                DEFAULT_TASK_ID);
+        CompactionJobFinishedStatus finished1 = CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(
                 Instant.parse("2022-09-23T09:24:00.012Z"),
                 new CompactionJobSummary(new CompactionJobRecordsProcessed(200L, 100L),
                         Instant.parse("2022-09-23T09:23:30.001Z"),
-                        Instant.parse("2022-09-23T09:24:00.001Z")));
+                        Instant.parse("2022-09-23T09:24:00.001Z")),
+                DEFAULT_TASK_ID);
         CompactionJobCreatedStatus created2 = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-24T09:23:00.012Z"))
                 .partitionId("partition2").childPartitionIds(Arrays.asList("A", "B"))
                 .inputFilesCount(12)
                 .build();
-        CompactionJobStartedStatus started2 = CompactionJobStartedStatus.updateAndStartTime(
+        CompactionJobStartedStatus started2 = CompactionJobStartedStatus.updateAndStartTimeWithTaskId(
                 Instant.parse("2022-09-24T09:23:30.012Z"),
-                Instant.parse("2022-09-24T09:23:30.001Z"));
-        CompactionJobFinishedStatus finished2 = CompactionJobFinishedStatus.updateTimeAndSummary(
+                Instant.parse("2022-09-24T09:23:30.001Z"),
+                DEFAULT_TASK_ID);
+        CompactionJobFinishedStatus finished2 = CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(
                 Instant.parse("2022-09-24T09:24:00.012Z"),
                 new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-24T09:23:30.001Z"),
-                        Instant.parse("2022-09-24T09:24:00.001Z")));
+                        Instant.parse("2022-09-24T09:24:00.001Z")),
+                DEFAULT_TASK_ID);
 
         // When
         List<CompactionJobStatus> statuses = new CompactionJobStatusesBuilder()

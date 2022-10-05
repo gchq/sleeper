@@ -77,6 +77,7 @@ public class CompactSortedFilesRunner {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
+    private final String taskId;
     private final CompactionTaskFinishedStatus.Builder taskFinishedBuilder;
     private final CompactionJobSerDe compactionJobSerDe;
     private final String sqsJobQueueUrl;
@@ -93,6 +94,7 @@ public class CompactSortedFilesRunner {
             StateStoreProvider stateStoreProvider,
             CompactionJobStatusStore jobStatusStore,
             CompactionTaskFinishedStatus.Builder taskFinishedBuilder,
+            String taskId,
             String sqsJobQueueUrl,
             AmazonSQS sqsClient,
             int maxMessageRetrieveAttempts,
@@ -103,6 +105,7 @@ public class CompactSortedFilesRunner {
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
         this.taskFinishedBuilder = taskFinishedBuilder;
+        this.taskId = taskId;
         this.compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         this.sqsJobQueueUrl = sqsJobQueueUrl;
         this.maxConnectionsToS3 = instanceProperties.getInt(MAXIMUM_CONNECTIONS_TO_S3);
@@ -119,9 +122,10 @@ public class CompactSortedFilesRunner {
             StateStoreProvider stateStoreProvider,
             CompactionJobStatusStore jobStatusStore,
             CompactionTaskFinishedStatus.Builder taskFinishedBuilder,
+            String taskId,
             String sqsJobQueueUrl,
             AmazonSQS sqsClient) {
-        this(instanceProperties, objectFactory, tablePropertiesProvider, stateStoreProvider, jobStatusStore, taskFinishedBuilder, sqsJobQueueUrl, sqsClient, 3, 20);
+        this(instanceProperties, objectFactory, tablePropertiesProvider, stateStoreProvider, jobStatusStore, taskFinishedBuilder, taskId, sqsJobQueueUrl, sqsClient, 3, 20);
     }
 
     public void run() throws InterruptedException, IOException, ActionException {
@@ -173,7 +177,7 @@ public class CompactSortedFilesRunner {
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, objectFactory,
                 tableProperties.getSchema(), SchemaConverter.getSchema(tableProperties.getSchema()), compactionJob,
                 stateStore, jobStatusStore, tableProperties.getInt(ROW_GROUP_SIZE), tableProperties.getInt(PAGE_SIZE),
-                tableProperties.get(COMPRESSION_CODEC));
+                tableProperties.get(COMPRESSION_CODEC), taskId);
         CompactionJobSummary summary = compactSortedFiles.compact();
 
         // Delete message from queue
@@ -229,6 +233,7 @@ public class CompactSortedFilesRunner {
                 stateStoreProvider,
                 jobStatusStore,
                 taskFinishedBuilder,
+                taskStatusBuilder.getTaskId(),
                 sqsJobQueueUrl,
                 sqsClient);
         runner.run();

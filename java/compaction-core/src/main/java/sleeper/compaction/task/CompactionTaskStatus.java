@@ -119,6 +119,10 @@ public class CompactionTaskStatus {
             return this;
         }
 
+        public String getTaskId() {
+            return this.taskId;
+        }
+
         public CompactionTaskStatus build() {
             return new CompactionTaskStatus(this);
         }

@@ -83,6 +83,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("Child partition IDs: %s%n", jobStatus.getChildPartitionIds().toString());
         if (jobStatus.isStarted()) {
             out.println();
+            out.printf("Task ID: %s%n", jobStatus.getTaskId());
             out.printf("Start Time: %s%n", jobStatus.getStartTime());
             out.printf("Start Update Time: %s%n", jobStatus.getStartUpdateTime());
         }
@@ -128,6 +129,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("%-36s|", "JOB_ID");
         out.printf("%-36s|", "PARTITION_ID");
         out.printf("%-20s|", "CHILD_IDS");
+        out.printf("%-36s|", "TASK_ID");
         out.printf("%-24s|", "START_TIME");
         out.printf("%-24s|", "START_UPDATE_TIME");
         out.printf("%-24s|", "FINISH_TIME");
@@ -145,6 +147,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("%-36s|", status.getPartitionId());
         out.printf("%-20s|", status.getChildPartitionIds());
 
+        out.printf("%-36s|", status.isStarted() ? status.getTaskId() : "");
         out.printf("%-24s|", status.isStarted() ? status.getStartTime() : "");
         out.printf("%-24s|", status.isStarted() ? status.getStartUpdateTime() : "");
 

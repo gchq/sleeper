@@ -37,6 +37,7 @@ public class CompactionJobTestDataHelper {
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
     private final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+    public static final String DEFAULT_TASK_ID = "task-id";
 
     public Partition singlePartition() {
         return new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct().get(0);

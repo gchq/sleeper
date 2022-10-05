@@ -149,7 +149,6 @@ public class CompactionJobSerDe {
             compactionJobBuilder.outputFile(dis.readUTF());
         }
         dis.close();
-
         return compactionJobBuilder.build();
     }
 }

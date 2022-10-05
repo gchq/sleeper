@@ -144,7 +144,8 @@ public class CompactionJobSerDeIT {
                 .partitionId("partition1")
                 .isSplittingJob(false)
                 .iteratorClassName("Iterator.class")
-                .iteratorConfig("config1").build();
+                .iteratorConfig("config1")
+                .build();
         Schema schema = schemaWithStringKey();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
@@ -176,7 +177,8 @@ public class CompactionJobSerDeIT {
                 .isSplittingJob(true)
                 .splitPoint("G")
                 .dimension(2)
-                .childPartitions(Arrays.asList("childPartition1", "childPartition2")).build();
+                .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
+                .build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new StringType());
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
@@ -208,7 +210,8 @@ public class CompactionJobSerDeIT {
                 .iteratorClassName("Iterator.class")
                 .iteratorConfig("config1")
                 .dimension(2)
-                .childPartitions(Arrays.asList("childPartition1", "childPartition2")).build();
+                .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
+                .build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new IntType());
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
@@ -240,7 +243,8 @@ public class CompactionJobSerDeIT {
                 .iteratorClassName("Iterator.class")
                 .iteratorConfig("config1")
                 .dimension(2)
-                .childPartitions(Arrays.asList("childPartition1", "childPartition2")).build();
+                .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
+                .build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new LongType());
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
@@ -272,7 +276,8 @@ public class CompactionJobSerDeIT {
                 .iteratorClassName("Iterator.class")
                 .iteratorConfig("config1")
                 .dimension(2)
-                .childPartitions(Arrays.asList("childPartition1", "childPartition2")).build();
+                .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
+                .build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new StringType());
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
@@ -306,7 +311,8 @@ public class CompactionJobSerDeIT {
                 .iteratorClassName("Iterator.class")
                 .iteratorConfig("config1")
                 .dimension(2)
-                .childPartitions(Arrays.asList("childPartition1", "childPartition2")).build();
+                .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
+                .build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new ByteArrayType());
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
