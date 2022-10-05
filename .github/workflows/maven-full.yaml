@@ -16,7 +16,16 @@ jobs:
         with:
           java-version: '8'
           distribution: 'adopt'
-          cache: 'maven'
+      - name: Cache Dependencies
+        uses: actions/cache@v3
+        with:
+          path: java/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - name: Resolve Dependencies
+        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=.m2/repository
+        working-directory: ./java
       - name: Build with Maven
-        run: mvn --batch-mode verify -Pquick
+        run: mvn --batch-mode verify -Pquick -Dmaven.repo.local=.m2/repository
         working-directory: ./java

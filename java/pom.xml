@@ -99,6 +99,7 @@
         <enforcer.plugin.version>3.0.0</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
         <spotbugs.plugin.version>4.7.2.0</spotbugs.plugin.version>
+        <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -197,12 +198,6 @@
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.assertj</groupId>
-                <artifactId>assertj-core</artifactId>
-                <version>${assertj.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -373,6 +368,11 @@
                         </bannedDependencies>
                     </rules>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>de.qaware.maven</groupId>
+                <artifactId>go-offline-maven-plugin</artifactId>
+                <version>${go-offline.plugin.version}</version>
             </plugin>
         </plugins>
         <pluginManagement>

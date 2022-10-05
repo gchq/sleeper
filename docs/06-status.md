@@ -1,6 +1,20 @@
 Checking the status of the system
 =================================
 
+There are two main ways to check the status of the system: use the metrics in the CloudWatch console,
+or use the provided scripts to get a textual summary of various aspects of the system.
+
+## CloudWatch metrics
+
+To view the CloudWatch metrics the `DashboardStack` must be enabled. This can be achieved by ensuring
+the `sleeper.optional.stacks` property contains the option `DashboardStack` when the instance is deployed.
+To view the metrics, go to the CloudWatch service in the console, click on the "All metrics" option on the
+left-hand side, select "Sleeper" under "Custom namespaces" then select "instanceId, tableName" and then
+search for your instance id in the search box. Select the metrics you are interested in and then some
+graphs will appear.
+
+## Status reports
+
 We provide utility classes for various administrative tasks, such as seeing the
 number of records in a table, and for pausing, restarting and changing properties
 in the system.
@@ -26,8 +40,6 @@ in the INSTANCE_ID environment variable:
 ```bash
 export INSTANCE_ID=mySleeper
 ```
-
-## Status Reports
 
 All status reports can be run using the scripts in the `scripts/utility`
 directory. They require your Sleeper instance id. Some of the reports also
