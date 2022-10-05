@@ -143,7 +143,7 @@ public class CompactionJobStatusInPeriodTest {
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
                 .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(beforeTime, beforeTime, DEFAULT_TASK_ID))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary))
+                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(updateTime, summary, DEFAULT_TASK_ID))
                 .build();
 
         // When / Then
@@ -160,7 +160,7 @@ public class CompactionJobStatusInPeriodTest {
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
                 .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(beforeTime, beforeTime, DEFAULT_TASK_ID))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary))
+                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(updateTime, summary, DEFAULT_TASK_ID))
                 .build();
 
         // When / Then
@@ -177,7 +177,7 @@ public class CompactionJobStatusInPeriodTest {
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
                 .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(beforeTime, beforeTime, DEFAULT_TASK_ID))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary))
+                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(updateTime, summary, DEFAULT_TASK_ID))
                 .build();
 
         // When / Then
@@ -194,7 +194,7 @@ public class CompactionJobStatusInPeriodTest {
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, afterTime))
                 .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(afterTime, afterTime, DEFAULT_TASK_ID))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary))
+                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(updateTime, summary, DEFAULT_TASK_ID))
                 .build();
 
         // When / Then

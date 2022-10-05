@@ -128,8 +128,8 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
                         job, ignoredUpdateTime()))
                 .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(
                         ignoredUpdateTime(), defaultStartTime(), DEFAULT_TASK_ID))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(
-                        ignoredUpdateTime(), defaultSummary()))
+                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(
+                        ignoredUpdateTime(), defaultSummary(), DEFAULT_TASK_ID))
                 .build();
     }
 

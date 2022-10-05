@@ -42,6 +42,7 @@ import java.util.function.Function;
 
 public abstract class StatusReporterTest {
     protected CompactionJobTestDataHelper dataHelper;
+    public static final String DEFAULT_TASK_ID = "task-id";
 
     @Before
     public void setup() {
@@ -57,20 +58,20 @@ public abstract class StatusReporterTest {
         return CompactionJobStatus.created(job, creationTime);
     }
 
-    protected static CompactionJobStatus jobStarted(CompactionJob job, Instant creationTime, Instant startTime, Instant startUpdateTime) {
+    protected static CompactionJobStatus jobStarted(CompactionJob job, String taskId, Instant creationTime, Instant startTime, Instant startUpdateTime) {
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(startUpdateTime, startTime))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(startUpdateTime, startTime, taskId))
                 .build();
     }
 
-    protected static CompactionJobStatus jobFinished(CompactionJob job, Instant creationTime, Instant startTime, Instant startUpdateTime, Instant finishedTime) {
+    protected static CompactionJobStatus jobFinished(CompactionJob job, String taskId, Instant creationTime, Instant startTime, Instant startUpdateTime, Instant finishedTime) {
         CompactionJobSummary summary = new CompactionJobSummary(
                 new CompactionJobRecordsProcessed(600L, 300L), startUpdateTime, finishedTime);
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(startUpdateTime, startTime))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(finishedTime, summary))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(startUpdateTime, startTime, taskId))
+                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(finishedTime, summary, taskId))
                 .build();
     }
 

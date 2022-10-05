@@ -19,7 +19,6 @@ import sleeper.compaction.job.CompactionJobSummary;
 
 import java.time.Instant;
 import java.util.Objects;
-import java.util.UUID;
 
 public class CompactionJobFinishedStatus {
 
@@ -31,10 +30,6 @@ public class CompactionJobFinishedStatus {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
         this.summary = Objects.requireNonNull(summary, "summary must not be null");
         this.taskId = Objects.requireNonNull(taskId, "taskId must not be null");
-    }
-
-    public static CompactionJobFinishedStatus updateTimeAndSummary(Instant updateTime, CompactionJobSummary summary) {
-        return new CompactionJobFinishedStatus(updateTime, summary, UUID.randomUUID().toString());
     }
 
     public static CompactionJobFinishedStatus updateTimeAndSummaryWithTaskId(Instant updateTime, CompactionJobSummary summary, String taskId) {

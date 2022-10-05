@@ -45,7 +45,7 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
         Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
 
         // When
-        CompactionJobStatus status = jobFinished(job, creationTime, startedTime, startedUpdateTime, finishedTime);
+        CompactionJobStatus status = jobFinished(job, DEFAULT_TASK_ID, creationTime, startedTime, startedUpdateTime, finishedTime);
         Instant startRange = Instant.parse("2022-09-22T00:00:00.001Z");
         Instant endRange = Instant.parse("2022-09-22T23:59:59.001Z");
 
@@ -71,7 +71,7 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
         Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
 
         // When
-        CompactionJobStatus status = jobFinished(job, creationTime, startedTime, startedUpdateTime, finishedTime);
+        CompactionJobStatus status = jobFinished(job, DEFAULT_TASK_ID, creationTime, startedTime, startedUpdateTime, finishedTime);
         Instant startRange = Instant.parse("2022-09-22T00:00:00.001Z");
         Instant endRange = Instant.parse("2022-09-22T23:59:59.001Z");
 
@@ -98,7 +98,7 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
         Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
 
         // When
-        CompactionJobStatus status = jobFinished(job, creationTime, startedTime, startedUpdateTime, finishedTime);
+        CompactionJobStatus status = jobFinished(job, DEFAULT_TASK_ID, creationTime, startedTime, startedUpdateTime, finishedTime);
         Instant startRange = Instant.parse("2022-09-25T00:00:00.001Z");
         Instant endRange = Instant.parse("2022-09-25T23:59:59.001Z");
 
@@ -122,7 +122,7 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
         Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
 
         // When
-        CompactionJobStatus status = jobFinished(job, creationTime, startedTime, startedUpdateTime, finishedTime);
+        CompactionJobStatus status = jobFinished(job, DEFAULT_TASK_ID, creationTime, startedTime, startedUpdateTime, finishedTime);
         Instant startRange = Instant.parse("2022-09-25T00:00:00.001Z");
         Instant endRange = Instant.parse("2022-09-25T23:59:59.001Z");
 
@@ -147,7 +147,7 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
         Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
 
         // When
-        CompactionJobStatus status = jobFinished(job, creationTime, startedTime, startedUpdateTime, finishedTime);
+        CompactionJobStatus status = jobFinished(job, DEFAULT_TASK_ID, creationTime, startedTime, startedUpdateTime, finishedTime);
         Instant startRange = Instant.parse("2022-09-20T00:00:00.001Z");
         Instant endRange = Instant.parse("2022-09-20T23:59:59.001Z");
 
@@ -171,7 +171,7 @@ public class StatusReporterRangeQueryTest extends StatusReporterTest {
         Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
 
         // When
-        CompactionJobStatus status = jobFinished(job, creationTime, startedTime, startedUpdateTime, finishedTime);
+        CompactionJobStatus status = jobFinished(job, DEFAULT_TASK_ID, creationTime, startedTime, startedUpdateTime, finishedTime);
         Instant startRange = Instant.parse("2022-09-20T00:00:00.001Z");
         Instant endRange = Instant.parse("2022-09-20T23:59:59.001Z");
 

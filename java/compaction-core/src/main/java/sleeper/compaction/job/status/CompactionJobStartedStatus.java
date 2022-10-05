@@ -68,7 +68,7 @@ public class CompactionJobStartedStatus {
         return "CompactionJobStartedStatus{" +
                 "updateTime=" + updateTime +
                 ", startTime=" + startTime +
-                ", taskId='" + taskId + "'" +
+                ", taskId='" + taskId + '\'' +
                 '}';
     }
 }

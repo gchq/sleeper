@@ -102,8 +102,8 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
                                 job, ignoredUpdateTime()))
                         .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(
                                 ignoredUpdateTime(), startTime2, DEFAULT_TASK_ID))
-                        .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(
-                                ignoredUpdateTime(), new CompactionJobSummary(processed, startTime2, finishTime2)))
+                        .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(
+                                ignoredUpdateTime(), new CompactionJobSummary(processed, startTime2, finishTime2), DEFAULT_TASK_ID))
                         .build());
     }
 

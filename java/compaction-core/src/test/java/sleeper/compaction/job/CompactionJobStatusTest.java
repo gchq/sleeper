@@ -123,7 +123,7 @@ public class CompactionJobStatusTest {
                 .createdStatus(CompactionJobCreatedStatus.from(job, Instant.parse("2022-09-22T13:33:00.001Z")))
                 .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(
                         Instant.parse("2022-09-22T13:33:09.001Z"), startTime, DEFAULT_TASK_ID))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary))
+                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(updateTime, summary, DEFAULT_TASK_ID))
                 .build();
 
         // Then
