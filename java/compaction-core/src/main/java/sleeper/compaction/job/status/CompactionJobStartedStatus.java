@@ -28,7 +28,7 @@ public class CompactionJobStartedStatus {
     private CompactionJobStartedStatus(Instant updateTime, Instant startTime, String taskId) {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime may not be null");
         this.startTime = Objects.requireNonNull(startTime, "startTime may not be null");
-        this.taskId = taskId;
+        this.taskId = Objects.requireNonNull(taskId, "taskId must not be null");
     }
 
     public static CompactionJobStartedStatus updateAndStartTimeWithTaskId(Instant updateTime, Instant startTime, String taskId) {

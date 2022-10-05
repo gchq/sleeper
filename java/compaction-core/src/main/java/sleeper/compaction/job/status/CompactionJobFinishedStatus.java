@@ -30,7 +30,7 @@ public class CompactionJobFinishedStatus {
     private CompactionJobFinishedStatus(Instant updateTime, CompactionJobSummary summary, String taskId) {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
         this.summary = Objects.requireNonNull(summary, "summary must not be null");
-        this.taskId = taskId;
+        this.taskId = Objects.requireNonNull(taskId, "taskId must not be null");
     }
 
     public static CompactionJobFinishedStatus updateTimeAndSummary(Instant updateTime, CompactionJobSummary summary) {
