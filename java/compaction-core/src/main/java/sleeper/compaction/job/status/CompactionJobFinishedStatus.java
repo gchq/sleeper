@@ -53,12 +53,12 @@ public class CompactionJobFinishedStatus {
             return false;
         }
         CompactionJobFinishedStatus that = (CompactionJobFinishedStatus) o;
-        return updateTime.equals(that.updateTime) && summary.equals(that.summary);
+        return updateTime.equals(that.updateTime) && summary.equals(that.summary) && taskId.equals(that.taskId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, summary);
+        return Objects.hash(updateTime, summary, taskId);
     }
 
     @Override
@@ -66,7 +66,7 @@ public class CompactionJobFinishedStatus {
         return "CompactionJobFinishedStatus{" +
                 "updateTime=" + updateTime +
                 ", summary=" + summary +
-                ", taskId=\"" + taskId + "\"" +
+                ", taskId='" + taskId + '\'' +
                 '}';
     }
 }
