@@ -215,12 +215,13 @@ public class CompactionJobStatusReport {
      */
     public static void main(String[] args) throws IOException {
         if (!(args.length >= 1 && args.length <= 4)) {
-            throw new IllegalArgumentException("Usage: <instance id> <report_type_standard_or_json> <optional_query_type> <optional_query_parameters> \n" +
+            System.out.println("Usage: <instance id> <report_type_standard_or_json> <optional_query_type> <optional_query_parameters> \n" +
                     "Query types are:\n" +
                     "-a (Return all jobs)\n" +
                     "-d (Detailed, provide a jobId)\n" +
                     "-r (Provide startRange and endRange separated by commas in format yyyyMMddhhmmss)\n" +
                     "-u (Unfinished jobs)");
+            System.exit(1);
         }
         String instanceId = args[0];
         String reporterType = DEFAULT_STATUS_REPORTER;
