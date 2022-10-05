@@ -71,7 +71,7 @@ public class StatusReport {
         new CompactionQueueStatusReport(instanceProperties, sqsClient).run();
 
         // Tasks
-        new ECSTasksStatusReport(instanceProperties, ecsClient).run();
+        new CompactionECSTaskStatusReport(instanceProperties, ecsClient).run();
 
         // Dead letters
         new DeadLettersStatusReport(sqsClient, instanceProperties, tablePropertiesProvider).run();
