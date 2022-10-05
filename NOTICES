@@ -121,6 +121,10 @@ GitHub API for Java (org.kohsuke:github-api:1.308):
 
 - MIT License (https://github-api.kohsuke.org/licenses.html)
 
+Go Offline Maven Plugin (de.qaware.maven:go-offline-maven-plugin:1.2.8):
+
+- Apache License, Version 2.0
+
 
 The file java/sketches/src/main/java/sleeper/sketches/SketchSerialiser.java contains code that is heavily based
 on ArrayOfStringsSerDe from the Apache DataSketches library, licensed under the Apache License, Version 2.0.

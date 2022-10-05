@@ -290,6 +290,7 @@ That leaves the following stacks as optional:
 * `PersistentEmrBulkImportStack` - for running BulkImport jobs using Spark running on a persistent EMR cluster, i.e. one that
 is always running (and therefore always costing money). By default, this uses EMR's managed scaling to scale up and down on
 demand.
+* `DashboardStack` - for creating Cloudwatch metrics showing statistics such as the number of records in a table over time
 
 The following stacks are optional and experimental:
 * `AthenaStack` - for running SQL analytics over the data

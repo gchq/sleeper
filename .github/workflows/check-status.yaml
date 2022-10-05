@@ -11,7 +11,16 @@ jobs:
         with:
           java-version: '8'
           distribution: 'adopt'
-          cache: 'maven'
+      - name: Cache Dependencies
+        uses: actions/cache@v3
+        with:
+          path: java/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - name: Resolve Dependencies
+        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=.m2/repository
+        working-directory: ./java
       - name: Query GitHub
         working-directory: ./java/build
         run: |
@@ -40,4 +49,4 @@ jobs:
           echo "chunk.query.workflow=chunk-query.yaml" >> status.properties
           echo "chunk.statestore.name=State Store" >> status.properties
           echo "chunk.statestore.workflow=chunk-statestore.yaml" >> status.properties
-          mvn compile exec:java -q -Dexec.mainClass=sleeper.build.status.CheckGitHubStatusMain -Dexec.args=status.properties
+          mvn compile exec:java -q -Dexec.mainClass=sleeper.build.status.CheckGitHubStatusMain -Dexec.args=status.properties -Dmaven.repo.local=../.m2/repository
