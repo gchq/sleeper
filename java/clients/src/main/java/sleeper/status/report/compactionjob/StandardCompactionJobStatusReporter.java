@@ -83,6 +83,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("Child partition IDs: %s%n", jobStatus.getChildPartitionIds().toString());
         if (jobStatus.isStarted()) {
             out.println();
+            out.printf("Task ID: %s%n", jobStatus.getTaskId());
             out.printf("Start Time: %s%n", jobStatus.getStartTime());
             out.printf("Start Update Time: %s%n", jobStatus.getStartUpdateTime());
         }
