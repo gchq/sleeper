@@ -68,7 +68,7 @@ public class StatusReport {
         new FilesStatusReport(stateStore, 1000, verbose).run();
 
         // Jobs
-        new JobsStatusReport(instanceProperties, sqsClient).run();
+        new CompactionQueueStatusReport(instanceProperties, sqsClient).run();
 
         // Tasks
         new ECSTasksStatusReport(instanceProperties, ecsClient).run();

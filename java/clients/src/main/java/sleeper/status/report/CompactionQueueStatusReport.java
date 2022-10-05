@@ -33,12 +33,12 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
  * A utility class to report information about the number of jobs on the compaction
  * queues.
  */
-public class JobsStatusReport {
+public class CompactionQueueStatusReport {
     private final InstanceProperties instanceProperties;
     private final AmazonSQS sqsClient;
 
-    public JobsStatusReport(InstanceProperties instanceProperties,
-                            AmazonSQS sqsClient) {
+    public CompactionQueueStatusReport(InstanceProperties instanceProperties,
+                                       AmazonSQS sqsClient) {
         this.instanceProperties = instanceProperties;
         this.sqsClient = sqsClient;
     }
@@ -61,7 +61,7 @@ public class JobsStatusReport {
         amazonS3.shutdown();
 
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        JobsStatusReport statusReport = new JobsStatusReport(instanceProperties, sqsClient);
+        CompactionQueueStatusReport statusReport = new CompactionQueueStatusReport(instanceProperties, sqsClient);
         statusReport.run();
 
         sqsClient.shutdown();
