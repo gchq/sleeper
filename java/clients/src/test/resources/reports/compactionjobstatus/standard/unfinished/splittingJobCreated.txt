@@ -5,6 +5,6 @@ Total unfinished jobs: 1
 Total unfinished jobs in progress: 0
 Total unfinished jobs not started: 1
 --------------------------
-STATE      |CREATE_TIME             |JOB_ID                              |PARTITION_ID                        |CHILD_IDS           |START_TIME              |START_UPDATE_TIME       |FINISH_TIME             |DURATION (s)        |LINES_READ          |LINES_WRITTEN       |READ_RATE (read/s)  |WRITE_RATE (write/s)
-PENDING    |2022-09-22T13:33:12.001Z|$(jobId)|C                                   |[A, B]              |                        |                        |                        |                    |                    |                    |                    |                    
+STATE      |CREATE_TIME             |JOB_ID                              |PARTITION_ID                        |CHILD_IDS           |TASK_ID                             |START_TIME              |START_UPDATE_TIME       |FINISH_TIME             |DURATION (s)        |LINES_READ          |LINES_WRITTEN       |READ_RATE (read/s)  |WRITE_RATE (write/s)
+PENDING    |2022-09-22T13:33:12.001Z|$(jobId)|C                                   |[A, B]              |                                    |                        |                        |                        |                    |                    |                    |                    |                    
 --------------------------
