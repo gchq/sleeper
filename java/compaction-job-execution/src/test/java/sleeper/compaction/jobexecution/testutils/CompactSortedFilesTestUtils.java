@@ -92,15 +92,15 @@ public class CompactSortedFilesTestUtils {
     }
 
     public static CompactSortedFiles createCompactSortedFiles(
-            Schema schema, CompactionJob compactionJob, StateStore stateStore) {
-        return createCompactSortedFiles(schema, compactionJob, stateStore, CompactionJobStatusStore.none());
+            Schema schema, CompactionJob compactionJob, StateStore stateStore, String taskId) {
+        return createCompactSortedFiles(schema, compactionJob, stateStore, CompactionJobStatusStore.none(), taskId);
     }
 
     public static CompactSortedFiles createCompactSortedFiles(
-            Schema schema, CompactionJob compactionJob, StateStore stateStore, CompactionJobStatusStore jobStatusStore) {
+            Schema schema, CompactionJob compactionJob, StateStore stateStore, CompactionJobStatusStore jobStatusStore, String taskId) {
         return new CompactSortedFiles(new InstanceProperties(), ObjectFactory.noUserJars(),
                 schema, SchemaConverter.getSchema(schema), compactionJob, stateStore, jobStatusStore,
-                ParquetWriter.DEFAULT_BLOCK_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE, "zstd", "task-id");
+                ParquetWriter.DEFAULT_BLOCK_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE, "zstd", taskId);
     }
 
     public static void assertReadyForGC(StateStore dynamoStateStore, FileInfo... files) {
