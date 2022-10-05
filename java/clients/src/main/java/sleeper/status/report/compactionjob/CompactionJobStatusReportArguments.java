@@ -17,6 +17,7 @@ package sleeper.status.report.compactionjob;
 
 import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
 
+import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -59,8 +60,8 @@ public class CompactionJobStatusReportArguments {
         }
     }
 
-    public static void printUsage() {
-        System.out.println("Usage: <instance id> <table name> <report_type_standard_or_json> <optional_query_type> <optional_query_parameters> \n" +
+    public static void printUsage(PrintStream out) {
+        out.println("Usage: <instance id> <table name> <report_type_standard_or_json> <optional_query_type> <optional_query_parameters> \n" +
                 "Query types are:\n" +
                 "-a (Return all jobs)\n" +
                 "-d (Detailed, provide a jobId)\n" +
