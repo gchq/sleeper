@@ -21,7 +21,8 @@ import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
+
+import static sleeper.status.report.ArgumentUtils.optionalArgument;
 
 public class CompactionJobStatusReportArguments {
     private static final String DEFAULT_REPORTER = "STANDARD";
@@ -115,14 +116,6 @@ public class CompactionJobStatusReportArguments {
 
     private static boolean isParametersRequired(QueryType queryType) {
         return queryType != null && !(queryType.equals(QueryType.UNFINISHED) || queryType.equals(QueryType.ALL));
-    }
-
-    private static Optional<String> optionalArgument(String[] args, int index) {
-        if (args.length > index) {
-            return Optional.of(args[index]);
-        } else {
-            return Optional.empty();
-        }
     }
 
 }

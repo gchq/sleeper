@@ -33,6 +33,8 @@ import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 
+import static sleeper.status.report.ArgumentUtils.optionalArgument;
+
 /**
  * A utility class to report information about the partitions, the files, the
  * jobs, and the compaction tasks in the system.
@@ -92,12 +94,10 @@ public class StatusReport {
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
         StateStore stateStore = stateStoreProvider.getStateStore(args[1], tablePropertiesProvider);
 
-        StatusReport statusReport;
-        if (2 == args.length || !Boolean.parseBoolean(args[2])) {
-            statusReport = new StatusReport(instanceProperties, false, stateStore, sqsClient, ecsClient, tablePropertiesProvider);
-        } else {
-            statusReport = new StatusReport(instanceProperties, true, stateStore, sqsClient, ecsClient, tablePropertiesProvider);
-        }
+        boolean verbose = optionalArgument(args, 2)
+                .map(Boolean::parseBoolean)
+                .orElse(false);
+        StatusReport statusReport = new StatusReport(instanceProperties, verbose, stateStore, sqsClient, ecsClient, tablePropertiesProvider);
         amazonS3.shutdown();
         statusReport.run();
         ecsClient.shutdown();
