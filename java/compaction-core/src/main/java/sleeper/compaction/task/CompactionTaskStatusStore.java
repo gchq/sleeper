@@ -41,4 +41,8 @@ public interface CompactionTaskStatusStore {
     default List<CompactionTaskStatus> getTasksInTimePeriod(Instant startTime, Instant endTime) {
         throw new UnsupportedOperationException("Instance has no compaction task status store");
     }
+
+    default List<CompactionTaskStatus> getTasksInProgress() {
+        throw new UnsupportedOperationException("Instance has no compaction task status store");
+    }
 }

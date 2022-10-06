@@ -92,10 +92,18 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
 
     @Override
     public List<CompactionTaskStatus> getTasksInTimePeriod(Instant startTime, Instant endTime) {
-        ScanResult result = dynamoDB.scan(new ScanRequest()
-                .withTableName(statusTableName));
+        ScanResult result = dynamoDB.scan(new ScanRequest().withTableName(statusTableName));
         return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(result.getItems())
                 .filter(task -> task.isInPeriod(startTime, endTime))
+                .sorted(Comparator.comparing(CompactionTaskStatus::getStartTime).reversed())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CompactionTaskStatus> getTasksInProgress() {
+        ScanResult result = dynamoDB.scan(new ScanRequest().withTableName(statusTableName));
+        return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(result.getItems())
+                .filter(task -> !task.isFinished())
                 .sorted(Comparator.comparing(CompactionTaskStatus::getStartTime).reversed())
                 .collect(Collectors.toList());
     }
