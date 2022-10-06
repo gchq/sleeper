@@ -25,14 +25,14 @@ import java.util.List;
 
 public class StandardCompactionTaskStatusReporter implements CompactionTaskStatusReporter {
 
-    private static final TableWriterFactory.Builder tableFactoryBuilder = TableWriterFactory.builder();
+    private static final TableWriterFactory.Builder TABLE_FACTORY_BUILDER = TableWriterFactory.builder();
 
-    private static final TableField STATE = tableFactoryBuilder.addField("STATE");
-    private static final TableField START_TIME = tableFactoryBuilder.addField("START_TIME");
-    private static final TableField FINISH_TIME = tableFactoryBuilder.addField("FINISH_TIME");
-    private static final TableField TASK_ID = tableFactoryBuilder.addField("TASK_ID");
+    private static final TableField STATE = TABLE_FACTORY_BUILDER.addField("STATE");
+    private static final TableField START_TIME = TABLE_FACTORY_BUILDER.addField("START_TIME");
+    private static final TableField FINISH_TIME = TABLE_FACTORY_BUILDER.addField("FINISH_TIME");
+    private static final TableField TASK_ID = TABLE_FACTORY_BUILDER.addField("TASK_ID");
 
-    private static final TableWriterFactory tableFactory = tableFactoryBuilder.build();
+    private static final TableWriterFactory TABLE_FACTORY = TABLE_FACTORY_BUILDER.build();
 
     private final PrintStream out;
 
@@ -53,7 +53,7 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
             out.printf("Total finished tasks: %s%n", tasks.stream().filter(CompactionTaskStatus::isFinished).count());
         }
 
-        tableFactory.tableBuilder()
+        TABLE_FACTORY.tableBuilder()
                 .showField(FINISH_TIME, query != CompactionTaskQuery.UNFINISHED)
                 .itemsAndWriter(tasks, this::writeRow)
                 .build().write(out);
