@@ -92,4 +92,46 @@ public class TableWriterTest {
         // Then
         assertThat(output).hasToString(example("reports/table/twoFields.txt"));
     }
+
+    @Test
+    public void canHideFirstField() throws Exception {
+        // Given
+        TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder();
+        TableField field1 = factoryBuilder.addField("First");
+        TableField field2 = factoryBuilder.addField("Field");
+        TableWriterFactory factory = factoryBuilder.build();
+        ToStringPrintStream output = new ToStringPrintStream();
+
+        // When
+        factory.tableBuilder()
+                .row(row -> row
+                        .value(field1, "First")
+                        .value(field2, "Value"))
+                .showField(field1, false)
+                .build().write(output.getPrintStream());
+
+        // Then
+        assertThat(output).hasToString(example("reports/table/singleField.txt"));
+    }
+
+    @Test
+    public void canHideSecondField() throws Exception {
+        // Given
+        TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder();
+        TableField field1 = factoryBuilder.addField("Field");
+        TableField field2 = factoryBuilder.addField("Other");
+        TableWriterFactory factory = factoryBuilder.build();
+        ToStringPrintStream output = new ToStringPrintStream();
+
+        // When
+        factory.tableBuilder()
+                .row(row -> row
+                        .value(field1, "Value")
+                        .value(field2, "Other"))
+                .showField(field2, false)
+                .build().write(output.getPrintStream());
+
+        // Then
+        assertThat(output).hasToString(example("reports/table/singleField.txt"));
+    }
 }

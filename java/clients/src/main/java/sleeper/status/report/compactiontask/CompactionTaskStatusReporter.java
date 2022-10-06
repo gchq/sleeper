@@ -22,5 +22,5 @@ import java.util.List;
 @FunctionalInterface
 public interface CompactionTaskStatusReporter {
 
-    void report(List<CompactionTaskStatus> tasks);
+    void report(CompactionTaskQuery query, List<CompactionTaskStatus> tasks);
 }

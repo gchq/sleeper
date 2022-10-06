@@ -17,15 +17,20 @@ package sleeper.status.report.compactiontask;
 
 import org.junit.Test;
 import sleeper.ToStringPrintStream;
+import sleeper.compaction.job.CompactionJobRecordsProcessed;
+import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.status.report.CompactionTaskStatusReport;
 
 import java.io.UnsupportedEncodingException;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.ClientTestUtils.example;
@@ -45,6 +50,28 @@ public class CompactionTaskStatusReportTest {
         // When / Then
         assertThat(getStandardReport(CompactionTaskQuery.UNFINISHED)).hasToString(
                 example("reports/compactiontaskstatus/standard/singleTaskUnfinished.txt"));
+    }
+
+    @Test
+    public void shouldReportCompactionTaskUnfinishedAndFinished() throws Exception {
+        // Given
+        CompactionTaskStatus unfinishedTask = CompactionTaskStatus
+                .started(Instant.parse("2022-10-06T12:17:00.001Z"))
+                .taskId("unfinished-task").build();
+        CompactionTaskStatus finishedTask = CompactionTaskStatus
+                .started(Instant.parse("2022-10-06T12:20:00.001Z"))
+                .taskId("finished-task")
+                .finished(CompactionTaskFinishedStatus.builder()
+                                .addJobSummary(new CompactionJobSummary(
+                                        new CompactionJobRecordsProcessed(200L, 100L),
+                                        Instant.parse("2022-10-06T12:20:00.001Z"),
+                                        Instant.parse("2022-10-06T12:20:30.001Z"))),
+                        Instant.parse("2022-10-06T12:20:30.001Z")).build();
+        when(store.getTasksInTimePeriod(any(), any())).thenReturn(Arrays.asList(unfinishedTask, finishedTask));
+
+        // When / Then
+        assertThat(getStandardReport(CompactionTaskQuery.ALL)).hasToString(
+                example("reports/compactiontaskstatus/standard/unfinishedAndFinished.txt"));
     }
 
     private String getStandardReport(CompactionTaskQuery query)

@@ -29,6 +29,7 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
 
     private static final TableField STATE = tableFactoryBuilder.addField("STATE");
     private static final TableField START_TIME = tableFactoryBuilder.addField("START_TIME");
+    private static final TableField FINISH_TIME = tableFactoryBuilder.addField("FINISH_TIME");
     private static final TableField TASK_ID = tableFactoryBuilder.addField("TASK_ID");
 
     private static final TableWriterFactory tableFactory = tableFactoryBuilder.build();
@@ -40,13 +41,20 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
     }
 
     @Override
-    public void report(List<CompactionTaskStatus> tasks) {
+    public void report(CompactionTaskQuery query, List<CompactionTaskStatus> tasks) {
         out.println();
         out.println("Compaction Task Status Report");
         out.println("-----------------------------");
-        out.printf("Total unfinished tasks: %s%n", tasks.size());
+        if (query == CompactionTaskQuery.UNFINISHED) {
+            out.printf("Total unfinished tasks: %s%n", tasks.size());
+        } else {
+            out.printf("Total tasks: %s%n", tasks.size());
+            out.printf("Total unfinished tasks: %s%n", tasks.stream().filter(task -> !task.isFinished()).count());
+            out.printf("Total finished tasks: %s%n", tasks.stream().filter(CompactionTaskStatus::isFinished).count());
+        }
 
         tableFactory.tableBuilder()
+                .showField(FINISH_TIME, query != CompactionTaskQuery.UNFINISHED)
                 .itemsAndWriter(tasks, this::writeRow)
                 .build().write(out);
     }
@@ -54,6 +62,7 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
     private void writeRow(CompactionTaskStatus task, TableRow.Builder builder) {
         builder.value(STATE, task.isFinished() ? "FINISHED" : "RUNNING")
                 .value(START_TIME, task.getStartTime())
+                .value(FINISH_TIME, task.getFinishTime())
                 .value(TASK_ID, task.getTaskId());
     }
 }

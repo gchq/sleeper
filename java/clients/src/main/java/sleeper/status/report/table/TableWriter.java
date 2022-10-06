@@ -18,7 +18,9 @@ package sleeper.status.report.table;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
@@ -28,21 +30,23 @@ public class TableWriter {
     private final TableStructure structure;
     private final List<TableField> fields;
     private final List<TableRow> rows;
+    private final Set<Integer> hideFieldIndexes;
 
     private TableWriter(Builder builder) {
         this.structure = builder.structure;
         this.fields = builder.fields;
         this.rows = builder.rows;
+        this.hideFieldIndexes = builder.hideFieldIndexes;
     }
 
     public void write(PrintStream out) {
         int[] maxValueLengthByField = maxValueLengthByField();
         int totalMaxValueLength = Arrays.stream(maxValueLengthByField).sum();
-        int maxRowLength = totalMaxValueLength + structure.paddingLengthForFields(fields.size());
+        int maxRowLength = totalMaxValueLength + structure.paddingLengthForFields(fields.size() - hideFieldIndexes.size());
         out.println(structure.horizontalBorder(maxRowLength));
-        out.println(structure.headerRow(fields, maxValueLengthByField));
+        out.println(structure.headerRow(fields, maxValueLengthByField, hideFieldIndexes));
         for (TableRow row : rows) {
-            out.println(structure.row(row, maxValueLengthByField));
+            out.println(structure.row(row, maxValueLengthByField, hideFieldIndexes));
         }
         out.println(structure.horizontalBorder(maxRowLength));
     }
@@ -54,6 +58,9 @@ public class TableWriter {
     }
 
     private int maxValueLengthByFieldAtIndex(int index) {
+        if (hideFieldIndexes.contains(index)) {
+            return 0;
+        }
         int headerLength = fields.get(index).getHeader().length();
         return Math.max(headerLength, rows.stream()
                 .mapToInt(row -> row.getValueLength(index))
@@ -64,6 +71,7 @@ public class TableWriter {
         private final TableStructure structure;
         private final List<TableField> fields;
         private final List<TableRow> rows = new ArrayList<>();
+        private final Set<Integer> hideFieldIndexes = new HashSet<>();
 
         Builder(TableStructure structure, List<TableField> fields) {
             this.structure = structure;
@@ -83,6 +91,15 @@ public class TableWriter {
             TableRow.Builder recordBuilder = new TableRow.Builder(fields.size());
             config.accept(recordBuilder);
             rows.add(recordBuilder.build());
+            return this;
+        }
+
+        public Builder showField(TableField field, boolean showField) {
+            if (showField) {
+                hideFieldIndexes.remove(field.getIndex());
+            } else {
+                hideFieldIndexes.add(field.getIndex());
+            }
             return this;
         }
 

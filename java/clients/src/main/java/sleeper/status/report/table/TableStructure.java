@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -56,17 +57,18 @@ public class TableStructure {
         return StringUtils.repeat(horizontalBorderCharacter, length);
     }
 
-    String headerRow(List<TableField> fields, int[] maxValueLengthByField) {
-        return paddedLine(index -> fields.get(index).getHeader(), maxValueLengthByField);
+    String headerRow(List<TableField> fields, int[] maxValueLengthByField, Set<Integer> hideFieldIndexes) {
+        return paddedLine(index -> fields.get(index).getHeader(), maxValueLengthByField, hideFieldIndexes);
     }
 
-    String row(TableRow row, int[] maxValueLengthByField) {
-        return paddedLine(row::getValue, maxValueLengthByField);
+    String row(TableRow row, int[] maxValueLengthByField, Set<Integer> hideFieldIndexes) {
+        return paddedLine(row::getValue, maxValueLengthByField, hideFieldIndexes);
     }
 
-    private String paddedLine(IntFunction<String> getValue, int[] maxValueLengthByField) {
+    private String paddedLine(IntFunction<String> getValue, int[] maxValueLengthByField, Set<Integer> hideFieldIndexes) {
         return paddingBeforeRow
                 + IntStream.range(0, maxValueLengthByField.length)
+                .filter(index -> !hideFieldIndexes.contains(index))
                 .mapToObj(index -> paddedValue(getValue.apply(index), maxValueLengthByField[index]))
                 .collect(Collectors.joining(paddingBetweenRows))
                 + paddingAfterRow;

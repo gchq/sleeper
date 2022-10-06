@@ -35,6 +35,6 @@ public class CompactionTaskStatusReport {
     }
 
     public void run() {
-        reporter.report(query.run(store));
+        reporter.report(query, query.run(store));
     }
 }

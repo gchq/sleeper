@@ -15,18 +15,14 @@
  */
 package sleeper.status.report.table;
 
-import java.util.Arrays;
+import java.util.Objects;
 
 public class TableRow {
 
     private final String[] values;
-    private final int totalValueLength;
 
     private TableRow(Builder builder) {
         this.values = copyWithNoNulls(builder.values);
-        this.totalValueLength = Arrays.stream(values)
-                .mapToInt(String::length)
-                .sum();
     }
 
     int getValueLength(int index) {
@@ -57,7 +53,7 @@ public class TableRow {
         }
 
         public Builder value(TableField field, Object value) {
-            values[field.getIndex()] = value.toString();
+            values[field.getIndex()] = Objects.toString(value, "");
             return this;
         }
 

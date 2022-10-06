@@ -18,11 +18,14 @@ package sleeper.status.report.compactiontask;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 
+import java.time.Instant;
 import java.util.List;
 
 @FunctionalInterface
 public interface CompactionTaskQuery {
     CompactionTaskQuery UNFINISHED = CompactionTaskStatusStore::getTasksInProgress;
+    CompactionTaskQuery ALL = store -> store.getTasksInTimePeriod(
+            Instant.ofEpochMilli(0), Instant.ofEpochSecond(999999999));
 
     List<CompactionTaskStatus> run(CompactionTaskStatusStore store);
 }

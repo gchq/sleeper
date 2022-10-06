@@ -68,6 +68,14 @@ public class CompactionTaskStatus {
         return startedStatus.getStartTime();
     }
 
+    public Instant getFinishTime() {
+        if (isFinished()) {
+            return finishedStatus.getFinishTime();
+        } else {
+            return null;
+        }
+    }
+
     public Instant getLastTime() {
         if (isFinished()) {
             return finishedStatus.getFinishTime();
