@@ -44,7 +44,7 @@ public class CompactionJobStatusesBuilder {
             startedStatusMap.put(jobId, new HashMap<>());
         }
         if (startedStatusMap.get(jobId).containsKey(taskId)) {
-            jobRunsById.get(jobId).add(CompactionJobRun.started(taskId, startedStatusMap.get(jobId).get(taskId)));
+            jobRunsById.get(jobId).add(CompactionJobRun.started(taskId, startedStatusMap.get(jobId).remove(taskId)));
         }
         startedStatusMap.get(jobId).put(taskId, statusUpdate);
         return this;
@@ -74,6 +74,11 @@ public class CompactionJobStatusesBuilder {
     }
 
     private CompactionJobStatus fullStatus(String jobId, CompactionJobCreatedStatus created) {
+        if (startedStatusMap.containsKey(jobId)) {
+            startedStatusMap.get(jobId).keySet().forEach((taskId) -> {
+                jobRunsById.get(jobId).add(CompactionJobRun.started(taskId, startedStatusMap.get(jobId).get(taskId)));
+            });
+        }
         return CompactionJobStatus.builder().jobId(jobId)
                 .createdStatus(created)
                 .jobRuns(jobRunsById.get(jobId))
