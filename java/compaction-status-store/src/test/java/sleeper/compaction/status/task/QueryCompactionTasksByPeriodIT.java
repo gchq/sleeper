@@ -74,17 +74,12 @@ public class QueryCompactionTasksByPeriodIT extends DynamoDBCompactionTaskStatus
         CompactionTaskStatus task2 = taskWithStartAndFinishTime(
                 Instant.parse("2022-10-06T11:19:10.001Z"),
                 Instant.parse("2022-10-06T11:19:29.001Z"));
-        CompactionTaskStatus task3 = taskWithStartAndFinishTime(
-                Instant.parse("2022-10-06T11:20:10.001Z"),
-                Instant.parse("2022-10-06T11:20:30.001Z"));
 
         // When
         store.taskStarted(task1);
         store.taskFinished(task1);
         store.taskStarted(task2);
         store.taskFinished(task2);
-        store.taskStarted(task3);
-        store.taskFinished(task3);
 
         // Then
         assertThat(store.getTasksInTimePeriod(
