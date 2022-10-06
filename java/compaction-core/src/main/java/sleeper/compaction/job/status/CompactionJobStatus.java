@@ -19,6 +19,8 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSummary;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -26,15 +28,13 @@ public class CompactionJobStatus {
 
     private final String jobId;
     private final CompactionJobCreatedStatus createdStatus;
-    private final CompactionJobStartedStatus startedStatus;
-    private final CompactionJobFinishedStatus finishedStatus;
+    private final List<CompactionJobRun> jobRunList;
     private final Instant expiryDate;
 
     private CompactionJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         createdStatus = Objects.requireNonNull(builder.createdStatus, "createdStatus must not be null");
-        startedStatus = builder.startedStatus;
-        finishedStatus = builder.finishedStatus;
+        jobRunList = builder.jobRunList;
         expiryDate = builder.expiryDate;
     }
 
@@ -70,44 +70,44 @@ public class CompactionJobStatus {
     }
 
     public boolean isStarted() {
-        return startedStatus != null;
+        return !jobRunList.isEmpty();
     }
 
     public Instant getStartUpdateTime() {
         if (isStarted()) {
-            return startedStatus.getUpdateTime();
+            return getLatestStartedStatus().getUpdateTime();
         }
         return null;
     }
 
     public Instant getStartTime() {
         if (isStarted()) {
-            return startedStatus.getStartTime();
+            return getLatestStartedStatus().getStartTime();
         }
         return null;
     }
 
     public boolean isFinished() {
-        return finishedStatus != null;
+        return jobRunList.stream().anyMatch(CompactionJobRun::isFinished);
     }
 
     public Instant getFinishUpdateTime() {
         if (isFinished()) {
-            return finishedStatus.getUpdateTime();
+            return getLatestFinishedStatus().getUpdateTime();
         }
         return null;
     }
 
     public Instant getFinishTime() {
         if (isFinished()) {
-            return finishedStatus.getSummary().getFinishTime();
+            return getLatestFinishedStatus().getSummary().getFinishTime();
         }
         return null;
     }
 
     public CompactionJobSummary getFinishedSummary() {
         if (isFinished()) {
-            return finishedStatus.getSummary();
+            return getLatestFinishedStatus().getSummary();
         }
         return null;
     }
@@ -122,7 +122,7 @@ public class CompactionJobStatus {
 
     public String getTaskId() {
         if (isStarted()) {
-            return startedStatus.getTaskId();
+            return getLatestJobRun().getTaskId();
         }
         return null;
     }
@@ -138,22 +138,47 @@ public class CompactionJobStatus {
 
     public Instant lastTime() {
         if (isFinished()) {
-            return finishedStatus.getUpdateTime();
+            return getLatestFinishedStatus().getUpdateTime();
         } else if (isStarted()) {
-            return startedStatus.getUpdateTime();
+            return getLatestStartedStatus().getUpdateTime();
         } else {
             return createdStatus.getUpdateTime();
         }
     }
 
+    public CompactionJobStartedStatus getLatestStartedStatus() {
+        return jobRunList.stream()
+                .map(CompactionJobRun::getStartedStatus)
+                .max(Comparator.comparing(CompactionJobStartedStatus::getUpdateTime))
+                .orElse(null);
+    }
+
+    public CompactionJobFinishedStatus getLatestFinishedStatus() {
+        return jobRunList.stream()
+                .map(CompactionJobRun::getFinishedStatus)
+                .max(Comparator.comparing(CompactionJobFinishedStatus::getUpdateTime))
+                .orElse(null);
+    }
+
+    public CompactionJobRun getLatestJobRun() {
+        return jobRunList.stream()
+                .max(Comparator.comparing(CompactionJobRun::getLatestUpdateTime))
+                .orElse(null);
+    }
+
+
+    public List<CompactionJobRun> getJobRuns() {
+        return jobRunList;
+    }
+
     public static final class Builder {
         private String jobId;
         private CompactionJobCreatedStatus createdStatus;
-        private CompactionJobStartedStatus startedStatus;
-        private CompactionJobFinishedStatus finishedStatus;
+        private List<CompactionJobRun> jobRunList;
         private Instant expiryDate;
 
         private Builder() {
+            jobRunList = new ArrayList<>();
         }
 
         public Builder jobId(String jobId) {
@@ -166,13 +191,13 @@ public class CompactionJobStatus {
             return this;
         }
 
-        public Builder startedStatus(CompactionJobStartedStatus startedStatus) {
-            this.startedStatus = startedStatus;
+        public Builder jobRun(CompactionJobRun jobRun) {
+            this.jobRunList.add(jobRun);
             return this;
         }
 
-        public Builder finishedStatus(CompactionJobFinishedStatus finishedStatus) {
-            this.finishedStatus = finishedStatus;
+        public Builder jobRuns(List<CompactionJobRun> jobRunList) {
+            this.jobRunList = jobRunList;
             return this;
         }
 
@@ -195,12 +220,12 @@ public class CompactionJobStatus {
             return false;
         }
         CompactionJobStatus status = (CompactionJobStatus) o;
-        return jobId.equals(status.jobId) && createdStatus.equals(status.createdStatus) && Objects.equals(startedStatus, status.startedStatus) && Objects.equals(finishedStatus, status.finishedStatus);
+        return jobId.equals(status.jobId) && createdStatus.equals(status.createdStatus) && Objects.equals(jobRunList, status.jobRunList);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, createdStatus, startedStatus, finishedStatus);
+        return Objects.hash(jobId, createdStatus, jobRunList);
     }
 
     @Override
@@ -208,8 +233,7 @@ public class CompactionJobStatus {
         return "CompactionJobStatus{" +
                 "jobId='" + jobId + '\'' +
                 ", createdStatus=" + createdStatus +
-                ", startedStatus=" + startedStatus +
-                ", finishedStatus=" + finishedStatus +
+                ", jobRunList=" + jobRunList +
                 ", expiryDate=" + expiryDate +
                 '}';
     }
