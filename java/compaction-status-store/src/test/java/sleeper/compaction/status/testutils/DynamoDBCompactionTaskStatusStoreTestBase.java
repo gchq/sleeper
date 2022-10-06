@@ -18,6 +18,7 @@ package sleeper.compaction.status.testutils;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.After;
 import org.junit.Before;
+import sleeper.compaction.job.CompactionJobRecordsProcessed;
 import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStoreCreator;
@@ -27,7 +28,6 @@ import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.time.Instant;
-import java.util.List;
 
 import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore.taskStatusTableName;
 import static sleeper.compaction.status.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
@@ -67,11 +67,19 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
         return CompactionTaskStatus.started(defaultStartTime().toEpochMilli());
     }
 
-    protected static CompactionTaskStatus finishedTaskWithDefaults(List<CompactionJobSummary> jobSummaryList) {
-        CompactionTaskStatus.Builder taskStatusBuilder = startedTaskWithDefaultsBuilder();
-        CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
-        jobSummaryList.forEach(taskFinishedBuilder::addJobSummary);
-        return taskStatusBuilder.finished(taskFinishedBuilder, defaultFinishTime().toEpochMilli()).build();
+    protected static CompactionTaskStatus finishedTaskWithDefaults() {
+        return startedTaskWithDefaultsBuilder().finished(
+                CompactionTaskFinishedStatus.builder()
+                        .addJobSummary(defaultJobSummary()),
+                defaultFinishTime().toEpochMilli()).build();
+    }
+
+    private static CompactionJobSummary defaultJobSummary() {
+        Instant jobStartedUpdateTime = Instant.parse("2022-09-22T14:00:04.000Z");
+        Instant jobFinishTime = Instant.parse("2022-09-22T14:00:14.000Z");
+        return new CompactionJobSummary(
+                new CompactionJobRecordsProcessed(4800L, 2400L),
+                jobStartedUpdateTime, jobFinishTime);
     }
 
 }

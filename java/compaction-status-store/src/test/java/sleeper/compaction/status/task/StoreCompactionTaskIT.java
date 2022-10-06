@@ -17,14 +17,8 @@
 package sleeper.compaction.status.task;
 
 import org.junit.Test;
-import sleeper.compaction.job.CompactionJobRecordsProcessed;
-import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.status.testutils.DynamoDBCompactionTaskStatusStoreTestBase;
 import sleeper.compaction.task.CompactionTaskStatus;
-
-import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -46,7 +40,7 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
     @Test
     public void shouldReportCompactionTaskFinished() {
         // Given
-        CompactionTaskStatus taskStatus = finishedTaskWithDefaults(createJobSummary());
+        CompactionTaskStatus taskStatus = finishedTaskWithDefaults();
 
         // When
         store.taskStarted(taskStatus);
@@ -69,13 +63,4 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
                 .isNull();
     }
 
-    private List<CompactionJobSummary> createJobSummary() {
-        Instant jobStartedUpdateTime = Instant.parse("2022-09-22T14:00:04.000Z");
-        Instant jobFinishTime = Instant.parse("2022-09-22T14:00:14.000Z");
-
-        CompactionJobSummary summary = new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(4800L, 2400L), jobStartedUpdateTime, jobFinishTime);
-
-        return Collections.singletonList(summary);
-    }
 }
