@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.status.report.compactionjobstatus;
+package sleeper.status.report.compactionjob;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
@@ -26,7 +26,6 @@ import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.status.report.compactionjob.CompactionJobStatusReporter;
 import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
 import sleeper.status.report.filestatus.FilesStatusReportTest;
 

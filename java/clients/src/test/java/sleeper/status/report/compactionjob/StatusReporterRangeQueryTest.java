@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-package sleeper.status.report.compactionjobstatus;
+package sleeper.status.report.compactionjob;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.partition.Partition;
-import sleeper.status.report.compactionjob.CompactionJobStatusReporter;
-import sleeper.status.report.compactionjob.JsonCompactionJobStatusReporter;
-import sleeper.status.report.compactionjob.StandardCompactionJobStatusReporter;
 
 import java.time.Instant;
 import java.util.List;
