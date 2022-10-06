@@ -57,4 +57,39 @@ public class TableWriterTest {
         // Then
         assertThat(output).hasToString(example("reports/table/emptyField.txt"));
     }
+
+    @Test
+    public void shouldOutputTwoRowsWithDifferentLengths() throws Exception {
+        // Given
+        TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder();
+        TableField field = factoryBuilder.addField("Field");
+        TableWriterFactory factory = factoryBuilder.build();
+        ToStringPrintStream output = new ToStringPrintStream();
+
+        // When
+        factory.tableBuilder()
+                .row(row -> row.value(field, "Tiny"))
+                .row(row -> row.value(field, "Very very long"))
+                .build().write(output.getPrintStream());
+
+        // Then
+        assertThat(output).hasToString(example("reports/table/twoRows.txt"));
+    }
+
+    @Test
+    public void shouldOutputTwoFieldsWithDifferentLengths() throws Exception {
+        // Given
+        TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder();
+        factoryBuilder.addField("Tiny");
+        factoryBuilder.addField("Very very long");
+        TableWriterFactory factory = factoryBuilder.build();
+        ToStringPrintStream output = new ToStringPrintStream();
+
+        // When
+        factory.tableBuilder()
+                .build().write(output.getPrintStream());
+
+        // Then
+        assertThat(output).hasToString(example("reports/table/twoFields.txt"));
+    }
 }
