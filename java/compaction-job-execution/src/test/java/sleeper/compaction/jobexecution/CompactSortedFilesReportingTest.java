@@ -63,12 +63,12 @@ public class CompactSortedFilesReportingTest extends CompactSortedFilesTestBase 
 
         // When
         CompactionJobSummary summary =
-                createCompactSortedFiles(schema, compactionJob, stateStore, jobStatusStore).compact();
+                createCompactSortedFiles(schema, compactionJob, stateStore, jobStatusStore, DEFAULT_TASK_ID).compact();
 
         // Then
         InOrder order = Mockito.inOrder(jobStatusStore);
-        order.verify(jobStatusStore).jobStarted(eq(compactionJob), any(Instant.class));
-        order.verify(jobStatusStore).jobFinished(compactionJob, summary);
+        order.verify(jobStatusStore).jobStarted(eq(compactionJob), any(Instant.class), eq(DEFAULT_TASK_ID));
+        order.verify(jobStatusStore).jobFinished(compactionJob, summary, DEFAULT_TASK_ID);
         order.verifyNoMoreInteractions();
 
         assertThat(summary.getStartTime()).isNotNull();

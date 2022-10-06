@@ -39,6 +39,7 @@ import static sleeper.compaction.status.DynamoDBAttributes.getInstantAttribute;
 import static sleeper.compaction.status.DynamoDBAttributes.getIntAttribute;
 import static sleeper.compaction.status.DynamoDBAttributes.getLongAttribute;
 import static sleeper.compaction.status.DynamoDBAttributes.getStringAttribute;
+import static sleeper.compaction.status.DynamoDBUtils.EXPIRY_DATE;
 
 public class DynamoDBCompactionJobStatusFormat {
 
@@ -58,11 +59,11 @@ public class DynamoDBCompactionJobStatusFormat {
     public static final String FINISH_TIME = "FinishTime";
     public static final String RECORDS_READ = "RecordsRead";
     public static final String RECORDS_WRITTEN = "RecordsWritten";
+    public static final String TASK_ID = "TaskId";
 
     public static final String UPDATE_TYPE_CREATED = "created";
     public static final String UPDATE_TYPE_STARTED = "started";
     public static final String UPDATE_TYPE_FINISHED = "finished";
-    public static final String EXPIRY_DATE = "ExpiryDate";
 
     public static Map<String, AttributeValue> createJobCreatedRecord(CompactionJob job, Long timeToLive) {
         return createJobRecord(job, UPDATE_TYPE_CREATED, timeToLive)
@@ -75,15 +76,17 @@ public class DynamoDBCompactionJobStatusFormat {
                 }).build();
     }
 
-    public static Map<String, AttributeValue> createJobStartedRecord(CompactionJob job, Instant startTime, Long timeToLive) {
+    public static Map<String, AttributeValue> createJobStartedRecord(CompactionJob job, Instant startTime, String taskId, Long timeToLive) {
         return createJobRecord(job, UPDATE_TYPE_STARTED, timeToLive)
                 .number(START_TIME, startTime.toEpochMilli())
+                .string(TASK_ID, taskId)
                 .build();
     }
 
-    public static Map<String, AttributeValue> createJobFinishedRecord(CompactionJob job, CompactionJobSummary summary, Long timeToLive) {
+    public static Map<String, AttributeValue> createJobFinishedRecord(CompactionJob job, CompactionJobSummary summary, String taskId, Long timeToLive) {
         return createJobRecord(job, UPDATE_TYPE_FINISHED, timeToLive)
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
+                .string(TASK_ID, taskId)
                 .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
                 .number(RECORDS_READ, summary.getLinesRead())
                 .number(RECORDS_WRITTEN, summary.getLinesWritten())
@@ -118,19 +121,21 @@ public class DynamoDBCompactionJobStatusFormat {
                         .build()).expiryDate(jobId, getInstantAttribute(item, EXPIRY_DATE));
                 break;
             case UPDATE_TYPE_STARTED:
-                builder.jobStarted(jobId, CompactionJobStartedStatus.updateAndStartTime(
+                builder.jobStarted(jobId, CompactionJobStartedStatus.updateAndStartTimeWithTaskId(
                                 getInstantAttribute(item, UPDATE_TIME),
-                                getInstantAttribute(item, START_TIME)))
+                                getInstantAttribute(item, START_TIME),
+                                getStringAttribute(item, TASK_ID)))
                         .expiryDate(jobId, getInstantAttribute(item, EXPIRY_DATE));
                 break;
             case UPDATE_TYPE_FINISHED:
-                builder.jobFinished(jobId, CompactionJobFinishedStatus.updateTimeAndSummary(
+                builder.jobFinished(jobId, CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(
                                 getInstantAttribute(item, UPDATE_TIME),
                                 new CompactionJobSummary(new CompactionJobRecordsProcessed(
                                         getLongAttribute(item, RECORDS_READ, 0),
                                         getLongAttribute(item, RECORDS_WRITTEN, 0)),
                                         getInstantAttribute(item, START_TIME),
-                                        getInstantAttribute(item, FINISH_TIME))))
+                                        getInstantAttribute(item, FINISH_TIME)),
+                                getStringAttribute(item, TASK_ID)))
                         .expiryDate(jobId, getInstantAttribute(item, EXPIRY_DATE));
                 break;
             default:

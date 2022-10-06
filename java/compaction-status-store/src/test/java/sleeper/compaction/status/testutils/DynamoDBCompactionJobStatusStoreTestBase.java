@@ -53,8 +53,9 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
 
     protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
-            .withIgnoredFields("createdStatus.updateTime", "startedStatus.updateTime", "finishedStatus.updateTime", "expiryDate").build();
-
+            .withIgnoredFields("createdStatus.updateTime", "startedStatus.updateTime",
+                    "finishedStatus.updateTime", "expiryDate").build();
+    public static final String DEFAULT_TASK_ID = "task-id";
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final String jobStatusTableName = jobStatusTableName(instanceProperties.get(ID));
     private final Schema schema = createSchema();
@@ -116,8 +117,8 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(
                         job, ignoredUpdateTime()))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
-                        ignoredUpdateTime(), defaultStartTime()))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(
+                        ignoredUpdateTime(), defaultStartTime(), DEFAULT_TASK_ID))
                 .build();
     }
 
@@ -125,10 +126,10 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(
                         job, ignoredUpdateTime()))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(
-                        ignoredUpdateTime(), defaultStartTime()))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(
-                        ignoredUpdateTime(), defaultSummary()))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(
+                        ignoredUpdateTime(), defaultStartTime(), DEFAULT_TASK_ID))
+                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(
+                        ignoredUpdateTime(), defaultSummary(), DEFAULT_TASK_ID))
                 .build();
     }
 

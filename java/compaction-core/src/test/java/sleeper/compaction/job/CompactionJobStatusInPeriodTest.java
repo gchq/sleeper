@@ -24,6 +24,7 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobTestDataHelper.DEFAULT_TASK_ID;
 
 public class CompactionJobStatusInPeriodTest {
 
@@ -77,7 +78,7 @@ public class CompactionJobStatusInPeriodTest {
         Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(updateTime, beforeTime))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(updateTime, beforeTime, DEFAULT_TASK_ID))
                 .build();
 
         // When / Then
@@ -93,7 +94,7 @@ public class CompactionJobStatusInPeriodTest {
         Instant updateTime = Instant.parse("2022-09-23T11:44:02.000Z");
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(updateTime, beforeTime))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(updateTime, beforeTime, DEFAULT_TASK_ID))
                 .build();
 
         // When / Then
@@ -109,7 +110,7 @@ public class CompactionJobStatusInPeriodTest {
         Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(updateTime, beforeTime))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(updateTime, beforeTime, DEFAULT_TASK_ID))
                 .build();
 
         // When / Then
@@ -125,7 +126,7 @@ public class CompactionJobStatusInPeriodTest {
         Instant updateTime = Instant.parse("2022-09-23T11:44:03.000Z");
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, afterTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(updateTime, afterTime))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(updateTime, afterTime, DEFAULT_TASK_ID))
                 .build();
 
         // When / Then
@@ -141,8 +142,8 @@ public class CompactionJobStatusInPeriodTest {
         Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(beforeTime, beforeTime))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(beforeTime, beforeTime, DEFAULT_TASK_ID))
+                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(updateTime, summary, DEFAULT_TASK_ID))
                 .build();
 
         // When / Then
@@ -158,8 +159,8 @@ public class CompactionJobStatusInPeriodTest {
         Instant updateTime = Instant.parse("2022-09-23T11:44:02.000Z");
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(beforeTime, beforeTime))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(beforeTime, beforeTime, DEFAULT_TASK_ID))
+                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(updateTime, summary, DEFAULT_TASK_ID))
                 .build();
 
         // When / Then
@@ -175,8 +176,8 @@ public class CompactionJobStatusInPeriodTest {
         Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(beforeTime, beforeTime))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(beforeTime, beforeTime, DEFAULT_TASK_ID))
+                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(updateTime, summary, DEFAULT_TASK_ID))
                 .build();
 
         // When / Then
@@ -192,8 +193,8 @@ public class CompactionJobStatusInPeriodTest {
         Instant updateTime = Instant.parse("2022-09-23T11:44:03.000Z");
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, afterTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTime(afterTime, afterTime))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary))
+                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(afterTime, afterTime, DEFAULT_TASK_ID))
+                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(updateTime, summary, DEFAULT_TASK_ID))
                 .build();
 
         // When / Then

@@ -13,6 +13,7 @@ Creation Time: 2022-09-23T13:33:12.001Z
 Partition ID: F
 Child partition IDs: [D, E]
 
+Task ID: task-id
 Start Time: 2022-09-23T13:34:00.001Z
 Start Update Time: 2022-09-23T13:36:00.001Z
 --------------------------
@@ -22,6 +23,7 @@ Creation Time: 2022-09-24T13:33:12.001Z
 Partition ID: I
 Child partition IDs: [G, H]
 
+Task ID: task-id
 Start Time: 2022-09-24T13:34:12.001Z
 Start Update Time: 2022-09-24T13:39:12.001Z
 

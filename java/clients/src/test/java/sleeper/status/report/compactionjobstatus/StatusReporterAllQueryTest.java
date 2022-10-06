@@ -53,8 +53,8 @@ public class StatusReporterAllQueryTest extends StatusReporterTest {
 
         // When
         CompactionJobStatus status1 = jobCreated(job1, creationTime1);
-        CompactionJobStatus status2 = jobStarted(job2, creationTime2, startedTime2, startedUpdateTime2);
-        CompactionJobStatus status3 = jobFinished(job3, creationTime3, startedTime3, startedUpdateTime3, finishedTime3);
+        CompactionJobStatus status2 = jobStarted(job2, DEFAULT_TASK_ID, creationTime2, startedTime2, startedUpdateTime2);
+        CompactionJobStatus status3 = jobFinished(job3, DEFAULT_TASK_ID, creationTime3, startedTime3, startedUpdateTime3, finishedTime3);
 
         // Then
         List<CompactionJobStatus> statusList = Arrays.asList(status1, status2, status3);
@@ -88,8 +88,8 @@ public class StatusReporterAllQueryTest extends StatusReporterTest {
 
         // When
         CompactionJobStatus status1 = jobCreated(job1, creationTime1);
-        CompactionJobStatus status2 = jobStarted(job2, creationTime2, startedTime2, startedUpdateTime2);
-        CompactionJobStatus status3 = jobFinished(job3, creationTime3, startedTime3, startedUpdateTime3, finishedTime3);
+        CompactionJobStatus status2 = jobStarted(job2, DEFAULT_TASK_ID, creationTime2, startedTime2, startedUpdateTime2);
+        CompactionJobStatus status3 = jobFinished(job3, DEFAULT_TASK_ID, creationTime3, startedTime3, startedUpdateTime3, finishedTime3);
 
         // Then
         List<CompactionJobStatus> statusList = Arrays.asList(status1, status2, status3);
@@ -137,11 +137,11 @@ public class StatusReporterAllQueryTest extends StatusReporterTest {
 
         // When
         CompactionJobStatus status1 = jobCreated(job1, creationTime1);
-        CompactionJobStatus status2 = jobStarted(job2, creationTime2, startedTime2, startedUpdateTime2);
-        CompactionJobStatus status3 = jobFinished(job3, creationTime3, startedTime3, startedUpdateTime3, finishedTime3);
+        CompactionJobStatus status2 = jobStarted(job2, DEFAULT_TASK_ID, creationTime2, startedTime2, startedUpdateTime2);
+        CompactionJobStatus status3 = jobFinished(job3, DEFAULT_TASK_ID, creationTime3, startedTime3, startedUpdateTime3, finishedTime3);
         CompactionJobStatus status4 = jobCreated(job4, creationTime4);
-        CompactionJobStatus status5 = jobStarted(job5, creationTime5, startedTime5, startedUpdateTime5);
-        CompactionJobStatus status6 = jobFinished(job6, creationTime6, startedTime6, startedUpdateTime6, finishedTime6);
+        CompactionJobStatus status5 = jobStarted(job5, DEFAULT_TASK_ID, creationTime5, startedTime5, startedUpdateTime5);
+        CompactionJobStatus status6 = jobFinished(job6, DEFAULT_TASK_ID, creationTime6, startedTime6, startedUpdateTime6, finishedTime6);
 
         // Then
         List<CompactionJobStatus> statusList = Arrays.asList(status1, status2, status3, status4, status5, status6);

@@ -24,14 +24,16 @@ public class CompactionJobFinishedStatus {
 
     private final Instant updateTime;
     private final CompactionJobSummary summary;
+    private final String taskId;
 
-    private CompactionJobFinishedStatus(Instant updateTime, CompactionJobSummary summary) {
+    private CompactionJobFinishedStatus(Instant updateTime, CompactionJobSummary summary, String taskId) {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
         this.summary = Objects.requireNonNull(summary, "summary must not be null");
+        this.taskId = Objects.requireNonNull(taskId, "taskId must not be null");
     }
 
-    public static CompactionJobFinishedStatus updateTimeAndSummary(Instant updateTime, CompactionJobSummary summary) {
-        return new CompactionJobFinishedStatus(updateTime, summary);
+    public static CompactionJobFinishedStatus updateTimeAndSummaryWithTaskId(Instant updateTime, CompactionJobSummary summary, String taskId) {
+        return new CompactionJobFinishedStatus(updateTime, summary, taskId);
     }
 
     public Instant getUpdateTime() {
@@ -51,12 +53,12 @@ public class CompactionJobFinishedStatus {
             return false;
         }
         CompactionJobFinishedStatus that = (CompactionJobFinishedStatus) o;
-        return updateTime.equals(that.updateTime) && summary.equals(that.summary);
+        return updateTime.equals(that.updateTime) && summary.equals(that.summary) && taskId.equals(that.taskId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, summary);
+        return Objects.hash(updateTime, summary, taskId);
     }
 
     @Override
@@ -64,6 +66,7 @@ public class CompactionJobFinishedStatus {
         return "CompactionJobFinishedStatus{" +
                 "updateTime=" + updateTime +
                 ", summary=" + summary +
+                ", taskId='" + taskId + '\'' +
                 '}';
     }
 }

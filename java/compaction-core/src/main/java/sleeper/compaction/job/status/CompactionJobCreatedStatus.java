@@ -111,7 +111,10 @@ public class CompactionJobCreatedStatus {
             return false;
         }
         CompactionJobCreatedStatus that = (CompactionJobCreatedStatus) o;
-        return inputFilesCount == that.inputFilesCount && updateTime.equals(that.updateTime) && partitionId.equals(that.partitionId) && Objects.equals(childPartitionIds, that.childPartitionIds);
+        return inputFilesCount == that.inputFilesCount
+                && updateTime.equals(that.updateTime)
+                && partitionId.equals(that.partitionId)
+                && Objects.equals(childPartitionIds, that.childPartitionIds);
     }
 
     @Override

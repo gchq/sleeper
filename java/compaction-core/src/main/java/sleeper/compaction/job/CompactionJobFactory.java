@@ -93,6 +93,15 @@ public class CompactionJobFactory {
 
     public CompactionJob createCompactionJob(
             List<FileInfo> files, String partition) {
+        CompactionJob job = createCompactionJobBuilder(files, partition).build();
+
+        LOGGER.info("Created compaction job of id {} to compact and split {} files in partition {} to output file {}",
+                job.getId(), files.size(), partition, job.getOutputFile());
+
+        return job;
+    }
+
+    private CompactionJob.Builder createCompactionJobBuilder(List<FileInfo> files, String partition) {
         for (FileInfo fileInfo : files) {
             if (!partition.equals(fileInfo.getPartitionId())) {
                 throw new IllegalArgumentException("Found file with partition which is different to the provided partition (partition = "
@@ -105,7 +114,7 @@ public class CompactionJobFactory {
         List<String> jobFiles = files.stream()
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
-        CompactionJob compactionJob = CompactionJob.builder()
+        return CompactionJob.builder()
                 .tableName(tableName)
                 .jobId(jobId)
                 .isSplittingJob(false)
@@ -114,12 +123,7 @@ public class CompactionJobFactory {
                 .outputFile(outputFile)
                 .partitionId(partition)
                 .iteratorClassName(iteratorClassName)
-                .iteratorConfig(iteratorConfig).build();
-
-        LOGGER.info("Created compaction job of id {} to compact and split {} files in partition {} to output file {}",
-                jobId, files.size(), partition, outputFile);
-
-        return compactionJob;
+                .iteratorConfig(iteratorConfig);
     }
 
     private String outputFileForPartitionAndJob(String partitionId, String jobId) {

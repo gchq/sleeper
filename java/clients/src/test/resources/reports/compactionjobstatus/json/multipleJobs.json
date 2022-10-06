@@ -24,7 +24,8 @@
     },
     "startedStatus": {
       "updateTime": "2022-09-23T13:36:00.001Z",
-      "startTime": "2022-09-23T13:34:00.001Z"
+      "startTime": "2022-09-23T13:34:00.001Z",
+      "taskId": "task-id"
     }
   },
   {
@@ -40,7 +41,8 @@
     },
     "startedStatus": {
       "updateTime": "2022-09-24T13:39:12.001Z",
-      "startTime": "2022-09-24T13:34:12.001Z"
+      "startTime": "2022-09-24T13:34:12.001Z",
+      "taskId": "task-id"
     },
     "finishedStatus": {
       "updateTime": "2022-09-24T13:40:12.001Z",
@@ -54,7 +56,8 @@
         "durationInSeconds": 60.0,
         "recordsReadPerSecond": 10.0,
         "recordsWrittenPerSecond": 5.0
-      }
+      },
+      "taskId": "task-id"
     }
   }
 ]

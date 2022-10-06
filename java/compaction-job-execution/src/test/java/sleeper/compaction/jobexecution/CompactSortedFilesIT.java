@@ -105,7 +105,7 @@ public class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
         // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, jobStatusStore);
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, jobStatusStore, DEFAULT_TASK_ID);
         CompactionJobSummary summary = compactSortedFiles.compact();
 
         // Then
@@ -145,7 +145,7 @@ public class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
         // When
-        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, jobStatusStore);
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, jobStatusStore, DEFAULT_TASK_ID);
         CompactionJobSummary summary = compactSortedFiles.compact();
 
         // Then

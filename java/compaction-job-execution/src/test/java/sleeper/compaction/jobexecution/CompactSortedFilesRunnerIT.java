@@ -36,6 +36,7 @@ import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStoreCreator;
+import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
@@ -267,8 +268,8 @@ public class CompactSortedFilesRunnerIT {
         // When
         CompactSortedFilesRunner runner = new CompactSortedFilesRunner(
                 instanceProperties, ObjectFactory.noUserJars(),
-                tablePropertiesProvider, stateStoreProvider, jobStatusStore,
-                instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqsClient,
+                tablePropertiesProvider, stateStoreProvider, jobStatusStore, CompactionTaskFinishedStatus.builder(),
+                "task-id", instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqsClient,
                 1, 5);
         runner.run();
 
