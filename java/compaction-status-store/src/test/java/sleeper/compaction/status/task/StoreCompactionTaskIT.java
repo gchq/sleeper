@@ -17,13 +17,10 @@
 package sleeper.compaction.status.task;
 
 import org.junit.Test;
-import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobRecordsProcessed;
 import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.status.testutils.DynamoDBCompactionTaskStatusStoreTestBase;
 import sleeper.compaction.task.CompactionTaskStatus;
-import sleeper.core.partition.Partition;
-import sleeper.statestore.FileInfoFactory;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -34,13 +31,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTestBase {
     @Test
     public void shouldReportCompactionTaskStarted() {
-        //Given
+        // Given
         CompactionTaskStatus taskStatus = startedTaskWithDefaults();
 
-        //When
+        // When
         store.taskStarted(taskStatus);
 
-        //Then
+        // Then
         assertThat(store.getTask(taskStatus.getTaskId()))
                 .usingRecursiveComparison(IGNORE_FINISHED_STATUS)
                 .isEqualTo(taskStatus);
@@ -48,19 +45,14 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
 
     @Test
     public void shouldReportCompactionTaskFinished() {
-        //Given
-        Partition partition = singlePartition();
-        FileInfoFactory fileFactory = fileFactory(partition);
-        CompactionJob job1 = jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile(100L, "a", "z")),
-                partition.getId());
-
-        //When
+        // Given
         CompactionTaskStatus taskStatus = finishedTaskWithDefaults(createJobSummary());
+
+        // When
         store.taskStarted(taskStatus);
         store.taskFinished(taskStatus);
 
-        //Then
+        // Then
         assertThat(store.getTask(taskStatus.getTaskId()))
                 .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
                 .isEqualTo(taskStatus);
@@ -68,15 +60,14 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
 
     @Test
     public void shouldReportSplittingCompactionTaskFinished() {
-        //Given
-        CompactionJob job1 = singleFileSplittingCompaction("C", "A", "B");
-
-        //When
+        // Given
         CompactionTaskStatus taskStatus = finishedTaskWithDefaults(createJobSummary());
+
+        // When
         store.taskStarted(taskStatus);
         store.taskFinished(taskStatus);
 
-        //Then
+        // Then
         assertThat(store.getTask(taskStatus.getTaskId()))
                 .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
                 .isEqualTo(taskStatus);
@@ -84,7 +75,7 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
 
     @Test
     public void shouldReportNoCompactionTaskExistsInStore() {
-        //Given
+        // Given
         CompactionTaskStatus taskStatus = startedTaskWithDefaults();
 
         // When/Then
