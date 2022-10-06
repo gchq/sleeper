@@ -39,27 +39,12 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
 
         // Then
         assertThat(store.getTask(taskStatus.getTaskId()))
-                .usingRecursiveComparison(IGNORE_FINISHED_STATUS)
-                .isEqualTo(taskStatus);
-    }
-
-    @Test
-    public void shouldReportCompactionTaskFinished() {
-        // Given
-        CompactionTaskStatus taskStatus = finishedTaskWithDefaults(createJobSummary());
-
-        // When
-        store.taskStarted(taskStatus);
-        store.taskFinished(taskStatus);
-
-        // Then
-        assertThat(store.getTask(taskStatus.getTaskId()))
                 .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
                 .isEqualTo(taskStatus);
     }
 
     @Test
-    public void shouldReportSplittingCompactionTaskFinished() {
+    public void shouldReportCompactionTaskFinished() {
         // Given
         CompactionTaskStatus taskStatus = finishedTaskWithDefaults(createJobSummary());
 
