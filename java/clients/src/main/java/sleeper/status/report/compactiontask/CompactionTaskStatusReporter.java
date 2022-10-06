@@ -17,10 +17,23 @@ package sleeper.status.report.compactiontask;
 
 import sleeper.compaction.task.CompactionTaskStatus;
 
+import java.io.PrintStream;
 import java.util.List;
+import java.util.Locale;
 
 @FunctionalInterface
 public interface CompactionTaskStatusReporter {
 
     void report(CompactionTaskQuery query, List<CompactionTaskStatus> tasks);
+
+    static CompactionTaskStatusReporter from(String type, PrintStream out) {
+        switch (type.toLowerCase(Locale.ROOT)) {
+            case "standard":
+                return new StandardCompactionTaskStatusReporter(out);
+            case "json":
+                return new JsonCompactionTaskStatusReporter(out);
+            default:
+                throw new IllegalArgumentException("Unrecognised reporter type: " + type);
+        }
+    }
 }

@@ -183,17 +183,6 @@ public class CompactionJobStatusReport {
         compactionJobStatusReporter.report(statusList, QueryType.ALL);
     }
 
-    /**
-     * Command line interface to retrieve compaction job statistics.
-     * Can define query type and parameters or interactive if no query type provided
-     * Range example
-     * java CompactionJobStatusReport "test-instance" "standard" -r 20220927120000,20220927184500
-     * Interactive example
-     * java CompactionJobStatusReport "test-instance" "standard"
-     *
-     * @param args -
-     * @throws IOException -
-     */
     public static void main(String[] args) throws IOException {
         CompactionJobStatusReportArguments arguments;
         try {

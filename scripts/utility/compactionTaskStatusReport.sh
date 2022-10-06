@@ -15,16 +15,6 @@
 
 set -e
 
-#####################
-# Initial variables #
-#####################
-
-if [[ -z $1 ]]; then
-	echo "Usage: $0 <instance-id>"
-	exit 1
-fi
-
-INSTANCE_ID=$1
 BASE_DIR=$(cd $(dirname $0) && cd "../../" && pwd)
 
-java -cp ${BASE_DIR}/scripts/jars/clients-*-utility.jar sleeper.status.report.CompactionECSTaskStatusReport ${INSTANCE_ID}
+java -cp ${BASE_DIR}/scripts/jars/clients-*-utility.jar sleeper.status.report.CompactionTaskStatusReport "$@"

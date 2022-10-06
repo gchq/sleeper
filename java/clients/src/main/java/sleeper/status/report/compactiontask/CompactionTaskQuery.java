@@ -28,4 +28,15 @@ public interface CompactionTaskQuery {
             Instant.ofEpochMilli(0), Instant.ofEpochSecond(999999999));
 
     List<CompactionTaskStatus> run(CompactionTaskStatusStore store);
+
+    static CompactionTaskQuery from(String type) {
+        switch (type) {
+            case "-a":
+                return ALL;
+            case "-u":
+                return UNFINISHED;
+            default:
+                throw new IllegalArgumentException("Unrecognised query type: " + type);
+        }
+    }
 }
