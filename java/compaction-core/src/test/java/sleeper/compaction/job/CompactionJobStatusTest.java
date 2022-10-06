@@ -18,6 +18,7 @@ package sleeper.compaction.job;
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
+import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.partition.Partition;
@@ -86,7 +87,10 @@ public class CompactionJobStatusTest {
         // When
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, Instant.parse("2022-09-22T13:33:12.001Z")))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(updateTime, startTime, DEFAULT_TASK_ID))
+                .jobRun(CompactionJobRun.finished(
+                        DEFAULT_TASK_ID,
+                        CompactionJobStartedStatus.updateAndStartTime(updateTime, startTime),
+                        null))
                 .build();
 
         // Then
@@ -121,9 +125,10 @@ public class CompactionJobStatusTest {
         // When
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, Instant.parse("2022-09-22T13:33:00.001Z")))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(
-                        Instant.parse("2022-09-22T13:33:09.001Z"), startTime, DEFAULT_TASK_ID))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(updateTime, summary, DEFAULT_TASK_ID))
+                .jobRun(CompactionJobRun.finished(DEFAULT_TASK_ID,
+                        CompactionJobStartedStatus.updateAndStartTime(
+                                Instant.parse("2022-09-22T13:33:09.001Z"), startTime),
+                        CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary)))
                 .build();
 
         // Then
