@@ -71,8 +71,8 @@ public abstract class StatusReporterTest {
                 new CompactionJobRecordsProcessed(600L, 300L), startUpdateTime, finishedTime);
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
-                .jobRun(CompactionJobRun.finished(taskId, CompactionJobStartedStatus.updateAndStartTime(startUpdateTime, startTime)
-                        , CompactionJobFinishedStatus.updateTimeAndSummary(finishedTime, summary)))
+                .jobRun(CompactionJobRun.finished(taskId, CompactionJobStartedStatus.updateAndStartTime(startUpdateTime, startTime),
+                        CompactionJobFinishedStatus.updateTimeAndSummary(finishedTime, summary)))
                 .build();
     }
 
