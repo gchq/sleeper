@@ -9,7 +9,8 @@
       "partitionId": "root",
       "inputFilesCount": 1,
       "childPartitionIds": []
-    }
+    },
+    "jobRunList": []
   },
   {
     "jobId": "$(jobId2)",
@@ -22,17 +23,21 @@
       "inputFilesCount": 1,
       "childPartitionIds": []
     },
-    "startedStatus": {
-      "updateTime": {
-        "seconds": 1663508352,
-        "nanos": 1000000
-      },
-      "startTime": {
-        "seconds": 1663508052,
-        "nanos": 1000000
-      },
-      "taskId": "task-id"
-    }
+    "jobRunList": [
+      {
+        "taskId": "task-id",
+        "startedStatus": {
+          "updateTime": {
+            "seconds": 1663508352,
+            "nanos": 1000000
+          },
+          "startTime": {
+            "seconds": 1663508052,
+            "nanos": 1000000
+          }
+        }
+      }
+    ]
   },
   {
     "jobId": "$(jobId3)",
@@ -45,41 +50,44 @@
       "inputFilesCount": 1,
       "childPartitionIds": []
     },
-    "startedStatus": {
-      "updateTime": {
-        "seconds": 1663594752,
-        "nanos": 1000000
-      },
-      "startTime": {
-        "seconds": 1663594452,
-        "nanos": 1000000
-      },
-      "taskId": "task-id"
-    },
-    "finishedStatus": {
-      "updateTime": {
-        "seconds": 1663594812,
-        "nanos": 1000000
-      },
-      "summary": {
-        "recordsProcessed": {
-          "linesRead": 600,
-          "linesWritten": 300
+    "jobRunList": [
+      {
+        "taskId": "task-id",
+        "startedStatus": {
+          "updateTime": {
+            "seconds": 1663594752,
+            "nanos": 1000000
+          },
+          "startTime": {
+            "seconds": 1663594452,
+            "nanos": 1000000
+          }
         },
-        "startTime": {
-          "seconds": 1663594752,
-          "nanos": 1000000
-        },
-        "finishTime": {
-          "seconds": 1663594812,
-          "nanos": 1000000
-        },
-        "durationInSeconds": 60.0,
-        "recordsReadPerSecond": 10.0,
-        "recordsWrittenPerSecond": 5.0
-      },
-      "taskId": "task-id"
-    }
+        "finishedStatus": {
+          "updateTime": {
+            "seconds": 1663594812,
+            "nanos": 1000000
+          },
+          "summary": {
+            "recordsProcessed": {
+              "linesRead": 600,
+              "linesWritten": 300
+            },
+            "startTime": {
+              "seconds": 1663594752,
+              "nanos": 1000000
+            },
+            "finishTime": {
+              "seconds": 1663594812,
+              "nanos": 1000000
+            },
+            "durationInSeconds": 60.0,
+            "recordsReadPerSecond": 10.0,
+            "recordsWrittenPerSecond": 5.0
+          }
+        }
+      }
+    ]
   },
   {
     "jobId": "$(jobId4)",
@@ -94,7 +102,8 @@
         "A",
         "B"
       ]
-    }
+    },
+    "jobRunList": []
   },
   {
     "jobId": "$(jobId5)",
@@ -110,17 +119,21 @@
         "E"
       ]
     },
-    "startedStatus": {
-      "updateTime": {
-        "seconds": 1663767552,
-        "nanos": 1000000
-      },
-      "startTime": {
-        "seconds": 1663767252,
-        "nanos": 1000000
-      },
-      "taskId": "task-id"
-    }
+    "jobRunList": [
+      {
+        "taskId": "task-id",
+        "startedStatus": {
+          "updateTime": {
+            "seconds": 1663767552,
+            "nanos": 1000000
+          },
+          "startTime": {
+            "seconds": 1663767252,
+            "nanos": 1000000
+          }
+        }
+      }
+    ]
   },
   {
     "jobId": "$(jobId6)",
@@ -136,40 +149,43 @@
         "H"
       ]
     },
-    "startedStatus": {
-      "updateTime": {
-        "seconds": 1663853952,
-        "nanos": 1000000
-      },
-      "startTime": {
-        "seconds": 1663853652,
-        "nanos": 1000000
-      },
-      "taskId": "task-id"
-    },
-    "finishedStatus": {
-      "updateTime": {
-        "seconds": 1663854012,
-        "nanos": 1000000
-      },
-      "summary": {
-        "recordsProcessed": {
-          "linesRead": 600,
-          "linesWritten": 300
+    "jobRunList": [
+      {
+        "taskId": "task-id",
+        "startedStatus": {
+          "updateTime": {
+            "seconds": 1663853952,
+            "nanos": 1000000
+          },
+          "startTime": {
+            "seconds": 1663853652,
+            "nanos": 1000000
+          }
         },
-        "startTime": {
-          "seconds": 1663853952,
-          "nanos": 1000000
-        },
-        "finishTime": {
-          "seconds": 1663854012,
-          "nanos": 1000000
-        },
-        "durationInSeconds": 60.0,
-        "recordsReadPerSecond": 10.0,
-        "recordsWrittenPerSecond": 5.0
-      },
-      "taskId": "task-id"
-    }
+        "finishedStatus": {
+          "updateTime": {
+            "seconds": 1663854012,
+            "nanos": 1000000
+          },
+          "summary": {
+            "recordsProcessed": {
+              "linesRead": 600,
+              "linesWritten": 300
+            },
+            "startTime": {
+              "seconds": 1663853952,
+              "nanos": 1000000
+            },
+            "finishTime": {
+              "seconds": 1663854012,
+              "nanos": 1000000
+            },
+            "durationInSeconds": 60.0,
+            "recordsReadPerSecond": 10.0,
+            "recordsWrittenPerSecond": 5.0
+          }
+        }
+      }
+    ]
   }
 ]

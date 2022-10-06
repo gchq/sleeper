@@ -12,7 +12,8 @@
         "A",
         "B"
       ]
-    }
+    },
+    "jobRunList": []
   },
   {
     "jobId": "$(jobId2)",
@@ -28,17 +29,21 @@
         "E"
       ]
     },
-    "startedStatus": {
-      "updateTime": {
-        "seconds": 1663940160,
-        "nanos": 1000000
-      },
-      "startTime": {
-        "seconds": 1663940040,
-        "nanos": 1000000
-      },
-      "taskId": "task-id"
-    }
+    "jobRunList": [
+      {
+        "taskId": "task-id",
+        "startedStatus": {
+          "updateTime": {
+            "seconds": 1663940160,
+            "nanos": 1000000
+          },
+          "startTime": {
+            "seconds": 1663940040,
+            "nanos": 1000000
+          }
+        }
+      }
+    ]
   },
   {
     "jobId": "$(jobId3)",
@@ -54,40 +59,43 @@
         "H"
       ]
     },
-    "startedStatus": {
-      "updateTime": {
-        "seconds": 1664026752,
-        "nanos": 1000000
-      },
-      "startTime": {
-        "seconds": 1664026452,
-        "nanos": 1000000
-      },
-      "taskId": "task-id"
-    },
-    "finishedStatus": {
-      "updateTime": {
-        "seconds": 1664026812,
-        "nanos": 1000000
-      },
-      "summary": {
-        "recordsProcessed": {
-          "linesRead": 600,
-          "linesWritten": 300
+    "jobRunList": [
+      {
+        "taskId": "task-id",
+        "startedStatus": {
+          "updateTime": {
+            "seconds": 1664026752,
+            "nanos": 1000000
+          },
+          "startTime": {
+            "seconds": 1664026452,
+            "nanos": 1000000
+          }
         },
-        "startTime": {
-          "seconds": 1664026752,
-          "nanos": 1000000
-        },
-        "finishTime": {
-          "seconds": 1664026812,
-          "nanos": 1000000
-        },
-        "durationInSeconds": 60.0,
-        "recordsReadPerSecond": 10.0,
-        "recordsWrittenPerSecond": 5.0
-      },
-      "taskId": "task-id"
-    }
+        "finishedStatus": {
+          "updateTime": {
+            "seconds": 1664026812,
+            "nanos": 1000000
+          },
+          "summary": {
+            "recordsProcessed": {
+              "linesRead": 600,
+              "linesWritten": 300
+            },
+            "startTime": {
+              "seconds": 1664026752,
+              "nanos": 1000000
+            },
+            "finishTime": {
+              "seconds": 1664026812,
+              "nanos": 1000000
+            },
+            "durationInSeconds": 60.0,
+            "recordsReadPerSecond": 10.0,
+            "recordsWrittenPerSecond": 5.0
+          }
+        }
+      }
+    ]
   }
 ]

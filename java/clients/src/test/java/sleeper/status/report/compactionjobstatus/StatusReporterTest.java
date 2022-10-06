@@ -24,6 +24,7 @@ import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
+import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.status.report.compactionjob.CompactionJobStatusReporter;
@@ -61,7 +62,7 @@ public abstract class StatusReporterTest {
     protected static CompactionJobStatus jobStarted(CompactionJob job, String taskId, Instant creationTime, Instant startTime, Instant startUpdateTime) {
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(startUpdateTime, startTime, taskId))
+                .jobRun(CompactionJobRun.started(taskId, CompactionJobStartedStatus.updateAndStartTime(startUpdateTime, startTime)))
                 .build();
     }
 
@@ -70,8 +71,8 @@ public abstract class StatusReporterTest {
                 new CompactionJobRecordsProcessed(600L, 300L), startUpdateTime, finishedTime);
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(startUpdateTime, startTime, taskId))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(finishedTime, summary, taskId))
+                .jobRun(CompactionJobRun.finished(taskId, CompactionJobStartedStatus.updateAndStartTime(startUpdateTime, startTime)
+                        , CompactionJobFinishedStatus.updateTimeAndSummary(finishedTime, summary)))
                 .build();
     }
 

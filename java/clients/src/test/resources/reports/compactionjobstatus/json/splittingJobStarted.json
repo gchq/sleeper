@@ -13,16 +13,20 @@
         "B"
       ]
     },
-    "startedStatus": {
-      "updateTime": {
-        "seconds": 1663853952,
-        "nanos": 1000000
-      },
-      "startTime": {
-        "seconds": 1663853652,
-        "nanos": 1000000
-      },
-      "taskId": "task-id"
-    }
+    "jobRunList": [
+      {
+        "taskId": "task-id",
+        "startedStatus": {
+          "updateTime": {
+            "seconds": 1663853952,
+            "nanos": 1000000
+          },
+          "startTime": {
+            "seconds": 1663853652,
+            "nanos": 1000000
+          }
+        }
+      }
+    ]
   }
 ]
