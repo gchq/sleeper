@@ -18,13 +18,18 @@ package sleeper.status.report.compactionjob;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializer;
 import sleeper.compaction.job.status.CompactionJobStatus;
 
 import java.io.PrintStream;
+import java.time.Instant;
 import java.util.List;
 
 public class JsonCompactionJobStatusReporter implements CompactionJobStatusReporter {
-    private final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
+    private final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues()
+            .registerTypeAdapter(Instant.class, instantJsonSerializer())
+            .create();
     private final PrintStream out;
 
     public JsonCompactionJobStatusReporter() {
@@ -38,5 +43,9 @@ public class JsonCompactionJobStatusReporter implements CompactionJobStatusRepor
     @Override
     public void report(List<CompactionJobStatus> statusList, QueryType queryType) {
         out.println(gson.toJson(statusList));
+    }
+
+    private static JsonSerializer<Instant> instantJsonSerializer() {
+        return (instant, type, context) -> new JsonPrimitive(instant.toString());
     }
 }

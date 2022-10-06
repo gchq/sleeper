@@ -19,6 +19,9 @@ import java.util.Optional;
 
 public class ArgumentUtils {
 
+    private ArgumentUtils() {
+    }
+
     public static Optional<String> optionalArgument(String[] args, int index) {
         if (args.length > index) {
             return Optional.of(args[index]);
