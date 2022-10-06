@@ -24,10 +24,12 @@ import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.status.report.CompactionTaskStatusReport;
 
+import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -49,7 +51,9 @@ public class CompactionTaskStatusReportTest {
 
         // When / Then
         assertThat(getStandardReport(CompactionTaskQuery.UNFINISHED)).hasToString(
-                example("reports/compactiontaskstatus/standard/singleTaskUnfinished.txt"));
+                example("reports/compactiontaskstatus/singleTaskUnfinished.txt"));
+        assertThat(getJsonReport(CompactionTaskQuery.UNFINISHED)).hasToString(
+                example("reports/compactiontaskstatus/singleTaskUnfinished.json"));
     }
 
     @Test
@@ -71,14 +75,26 @@ public class CompactionTaskStatusReportTest {
 
         // When / Then
         assertThat(getStandardReport(CompactionTaskQuery.ALL)).hasToString(
-                example("reports/compactiontaskstatus/standard/unfinishedAndFinished.txt"));
+                example("reports/compactiontaskstatus/unfinishedAndFinished.txt"));
+        assertThat(getJsonReport(CompactionTaskQuery.ALL)).hasToString(
+                example("reports/compactiontaskstatus/unfinishedAndFinished.json"));
     }
 
     private String getStandardReport(CompactionTaskQuery query)
             throws UnsupportedEncodingException {
+        return getReport(query, StandardCompactionTaskStatusReporter::new);
+    }
+
+    private String getJsonReport(CompactionTaskQuery query)
+            throws UnsupportedEncodingException {
+        return getReport(query, JsonCompactionTaskStatusReporter::new);
+    }
+
+    private String getReport(CompactionTaskQuery query, Function<PrintStream, CompactionTaskStatusReporter> getReporter)
+            throws UnsupportedEncodingException {
         ToStringPrintStream output = new ToStringPrintStream();
         new CompactionTaskStatusReport(store,
-                new StandardCompactionTaskStatusReporter(output.getPrintStream()),
+                getReporter.apply(output.getPrintStream()),
                 query).run();
         return output.toString();
     }
