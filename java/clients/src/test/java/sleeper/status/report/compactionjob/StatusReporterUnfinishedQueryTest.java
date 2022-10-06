@@ -17,6 +17,7 @@
 package sleeper.status.report.compactionjob;
 
 import org.junit.Test;
+import sleeper.ClientTestUtils;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.partition.Partition;
@@ -30,7 +31,7 @@ import java.util.stream.Stream;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class StatusReporterUnfinishedQueryTest extends StatusReporterTest {
+public class StatusReporterUnfinishedQueryTest extends StatusReporterTestBase {
 
     @Test
     public void shouldReportCompactionJobStatusWithCreatedJobs() throws Exception {
@@ -45,10 +46,10 @@ public class StatusReporterUnfinishedQueryTest extends StatusReporterTest {
         // Then
         List<CompactionJobStatus> statusList = Stream.of(status).filter(s -> !s.isFinished()).collect(Collectors.toList());
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/standardJobCreated.txt")
+                .isEqualTo(ClientTestUtils.example("reports/compactionjobstatus/standard/unfinished/standardJobCreated.txt")
                         .replace("$(jobId)", job.getId()));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/json/standardJobCreated.json")
+                .isEqualTo(ClientTestUtils.example("reports/compactionjobstatus/json/standardJobCreated.json")
                         .replace("$(jobId)", job.getId()));
     }
 
@@ -64,10 +65,10 @@ public class StatusReporterUnfinishedQueryTest extends StatusReporterTest {
         // Then
         List<CompactionJobStatus> statusList = Stream.of(status).filter(s -> !s.isFinished()).collect(Collectors.toList());
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/splittingJobCreated.txt")
+                .isEqualTo(ClientTestUtils.example("reports/compactionjobstatus/standard/unfinished/splittingJobCreated.txt")
                         .replace("$(jobId)", job.getId()));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/json/splittingJobCreated.json")
+                .isEqualTo(ClientTestUtils.example("reports/compactionjobstatus/json/splittingJobCreated.json")
                         .replace("$(jobId)", job.getId()));
     }
 
@@ -86,10 +87,10 @@ public class StatusReporterUnfinishedQueryTest extends StatusReporterTest {
         // Then
         List<CompactionJobStatus> statusList = Stream.of(status).filter(s -> !s.isFinished()).collect(Collectors.toList());
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/standardJobStarted.txt")
+                .isEqualTo(ClientTestUtils.example("reports/compactionjobstatus/standard/unfinished/standardJobStarted.txt")
                         .replace("$(jobId)", job.getId()));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/json/standardJobStarted.json")
+                .isEqualTo(ClientTestUtils.example("reports/compactionjobstatus/json/standardJobStarted.json")
                         .replace("$(jobId)", job.getId()));
     }
 
@@ -108,10 +109,10 @@ public class StatusReporterUnfinishedQueryTest extends StatusReporterTest {
         // Then
         List<CompactionJobStatus> statusList = Stream.of(status).filter(s -> !s.isFinished()).collect(Collectors.toList());
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/splittingJobStarted.txt")
+                .isEqualTo(ClientTestUtils.example("reports/compactionjobstatus/standard/unfinished/splittingJobStarted.txt")
                         .replace("$(jobId)", job.getId()));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/json/splittingJobStarted.json")
+                .isEqualTo(ClientTestUtils.example("reports/compactionjobstatus/json/splittingJobStarted.json")
                         .replace("$(jobId)", job.getId()));
     }
 
@@ -131,9 +132,9 @@ public class StatusReporterUnfinishedQueryTest extends StatusReporterTest {
         // Then
         List<CompactionJobStatus> statusList = Stream.of(status).filter(s -> !s.isFinished()).collect(Collectors.toList());
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/standardJobFinished.txt"));
+                .isEqualTo(ClientTestUtils.example("reports/compactionjobstatus/standard/unfinished/standardJobFinished.txt"));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/json/noJobs.json")
+                .isEqualTo(ClientTestUtils.example("reports/compactionjobstatus/json/noJobs.json")
                         .replace("$(jobId)", job.getId()));
     }
 
@@ -152,10 +153,10 @@ public class StatusReporterUnfinishedQueryTest extends StatusReporterTest {
         // Then
         List<CompactionJobStatus> statusList = Stream.of(status).filter(s -> !s.isFinished()).collect(Collectors.toList());
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/splittingJobFinished.txt")
+                .isEqualTo(ClientTestUtils.example("reports/compactionjobstatus/standard/unfinished/splittingJobFinished.txt")
                         .replace("$(jobId)", job.getId()));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/json/noJobs.json")
+                .isEqualTo(ClientTestUtils.example("reports/compactionjobstatus/json/noJobs.json")
                         .replace("$(jobId)", job.getId()));
     }
 }

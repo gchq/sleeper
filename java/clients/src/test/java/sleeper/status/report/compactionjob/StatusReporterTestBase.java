@@ -16,7 +16,6 @@
 
 package sleeper.status.report.compactionjob;
 
-import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobRecordsProcessed;
@@ -27,30 +26,20 @@ import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
-import sleeper.status.report.filestatus.FilesStatusReportTest;
 
-import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 
-public abstract class StatusReporterTest {
+public abstract class StatusReporterTestBase {
     protected CompactionJobTestDataHelper dataHelper;
     public static final String DEFAULT_TASK_ID = "task-id";
 
     @Before
     public void setup() {
         dataHelper = new CompactionJobTestDataHelper();
-    }
-
-    protected static String example(String path) throws IOException {
-        URL url = FilesStatusReportTest.class.getClassLoader().getResource(path);
-        return IOUtils.toString(Objects.requireNonNull(url), Charset.defaultCharset());
     }
 
     protected static CompactionJobStatus jobCreated(CompactionJob job, Instant creationTime) {

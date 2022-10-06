@@ -13,20 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.status.report;
+package sleeper.status.report.table;
 
-import java.util.Optional;
+public class TableField {
 
-public class ArgumentUtils {
+    private final String header;
+    private final int index;
 
-    private ArgumentUtils() {
+    TableField(String header, int index) {
+        this.header = header;
+        this.index = index;
     }
 
-    public static Optional<String> optionalArgument(String[] args, int index) {
-        if (args.length > index) {
-            return Optional.of(args[index]);
-        } else {
-            return Optional.empty();
-        }
+    public String getHeader() {
+        return header;
+    }
+
+    public int getIndex() {
+        return index;
     }
 }

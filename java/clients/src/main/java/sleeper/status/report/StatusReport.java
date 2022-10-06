@@ -39,9 +39,9 @@ import sleeper.status.report.compactionjob.StandardCompactionJobStatusReporter;
 
 import java.io.IOException;
 
+import static sleeper.ClientUtils.optionalArgument;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.status.report.ArgumentUtils.optionalArgument;
 
 /**
  * A utility class to report information about the partitions, the files, the
