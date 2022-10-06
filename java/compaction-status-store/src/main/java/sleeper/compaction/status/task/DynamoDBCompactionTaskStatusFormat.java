@@ -57,16 +57,16 @@ public class DynamoDBCompactionTaskStatusFormat {
     public static final String STARTED = "started";
     public static final String FINISHED = "finished";
 
-    public static Map<String, AttributeValue> createTaskStartedRecord(CompactionTaskStatus taskStatus, Instant startTime, Long timeToLive) {
+    public static Map<String, AttributeValue> createTaskStartedRecord(CompactionTaskStatus taskStatus, Long timeToLive) {
         return createTaskRecord(taskStatus, STARTED, timeToLive)
-                .number(START_TIME, startTime.toEpochMilli())
+                .number(START_TIME, taskStatus.getStartedStatus().getStartTime().toEpochMilli())
                 .build();
     }
 
-    public static Map<String, AttributeValue> createTaskFinishedRecord(CompactionTaskStatus taskStatus, Instant finishTime, Long timeToLive) {
+    public static Map<String, AttributeValue> createTaskFinishedRecord(CompactionTaskStatus taskStatus, Long timeToLive) {
         return createTaskRecord(taskStatus, FINISHED, timeToLive)
                 .number(START_TIME, taskStatus.getStartedStatus().getStartTime().toEpochMilli())
-                .number(FINISH_TIME, finishTime.toEpochMilli())
+                .number(FINISH_TIME, taskStatus.getFinishedStatus().getFinishTime().toEpochMilli())
                 .number(DURATION, taskStatus.getFinishedStatus().getTotalRuntimeInSeconds())
                 .number(NUMBER_OF_JOBS, taskStatus.getFinishedStatus().getTotalJobs())
                 .number(LINES_READ, taskStatus.getFinishedStatus().getTotalRecordsRead())
