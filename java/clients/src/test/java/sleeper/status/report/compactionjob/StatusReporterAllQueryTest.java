@@ -17,7 +17,6 @@
 package sleeper.status.report.compactionjob;
 
 import org.junit.Test;
-import sleeper.ClientTestUtils;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.partition.Partition;
@@ -29,6 +28,7 @@ import java.util.List;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ClientTestUtils.example;
 
 public class StatusReporterAllQueryTest extends StatusReporterTestBase {
     @Test
@@ -57,12 +57,12 @@ public class StatusReporterAllQueryTest extends StatusReporterTestBase {
         // Then
         List<CompactionJobStatus> statusList = Arrays.asList(status1, status2, status3);
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
-                .isEqualTo(ClientTestUtils.example("reports/compactionjobstatus/standard/all/allStandardJobs.txt")
+                .isEqualTo(example("reports/compactionjobstatus/standard/all/allStandardJobs.txt")
                         .replace("$(jobId1)", job1.getId())
                         .replace("$(jobId2)", job2.getId())
                         .replace("$(jobId3)", job3.getId()));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
-                .isEqualTo(ClientTestUtils.example("reports/compactionjobstatus/json/allStandardJobs.json")
+                .isEqualTo(example("reports/compactionjobstatus/json/allStandardJobs.json")
                         .replace("$(jobId1)", job1.getId())
                         .replace("$(jobId2)", job2.getId())
                         .replace("$(jobId3)", job3.getId()));
@@ -92,12 +92,12 @@ public class StatusReporterAllQueryTest extends StatusReporterTestBase {
         // Then
         List<CompactionJobStatus> statusList = Arrays.asList(status1, status2, status3);
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
-                .isEqualTo(ClientTestUtils.example("reports/compactionjobstatus/standard/all/allSplittingJobs.txt")
+                .isEqualTo(example("reports/compactionjobstatus/standard/all/allSplittingJobs.txt")
                         .replace("$(jobId1)", job1.getId())
                         .replace("$(jobId2)", job2.getId())
                         .replace("$(jobId3)", job3.getId()));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
-                .isEqualTo(ClientTestUtils.example("reports/compactionjobstatus/json/allSplittingJobs.json")
+                .isEqualTo(example("reports/compactionjobstatus/json/allSplittingJobs.json")
                         .replace("$(jobId1)", job1.getId())
                         .replace("$(jobId2)", job2.getId())
                         .replace("$(jobId3)", job3.getId()));
@@ -144,7 +144,7 @@ public class StatusReporterAllQueryTest extends StatusReporterTestBase {
         // Then
         List<CompactionJobStatus> statusList = Arrays.asList(status1, status2, status3, status4, status5, status6);
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
-                .isEqualTo(ClientTestUtils.example("reports/compactionjobstatus/standard/all/mixedJobs.txt")
+                .isEqualTo(example("reports/compactionjobstatus/standard/all/mixedJobs.txt")
                         .replace("$(jobId1)", job1.getId())
                         .replace("$(jobId2)", job2.getId())
                         .replace("$(jobId3)", job3.getId())
@@ -152,7 +152,7 @@ public class StatusReporterAllQueryTest extends StatusReporterTestBase {
                         .replace("$(jobId5)", job5.getId())
                         .replace("$(jobId6)", job6.getId()));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
-                .isEqualTo(ClientTestUtils.example("reports/compactionjobstatus/json/mixedJobs.json")
+                .isEqualTo(example("reports/compactionjobstatus/json/mixedJobs.json")
                         .replace("$(jobId1)", job1.getId())
                         .replace("$(jobId2)", job2.getId())
                         .replace("$(jobId3)", job3.getId())
@@ -168,9 +168,9 @@ public class StatusReporterAllQueryTest extends StatusReporterTestBase {
 
         //Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
-                .isEqualTo(ClientTestUtils.example("reports/compactionjobstatus/standard/all/noJobs.txt"));
+                .isEqualTo(example("reports/compactionjobstatus/standard/all/noJobs.txt"));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
-                .isEqualTo(ClientTestUtils.example("reports/compactionjobstatus/json/noJobs.json"));
+                .isEqualTo(example("reports/compactionjobstatus/json/noJobs.json"));
     }
 
 }
