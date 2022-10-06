@@ -97,7 +97,7 @@ public class DynamoDBCompactionTaskStatusFormat {
             case STARTED:
                 builder.jobStarted(jobId, CompactionTaskStartedStatus.builder()
                                 .startTime(getInstantAttribute(item, START_TIME))
-                                .startUpdateTime(getInstantAttribute(item, UPDATE_TIME)).build())
+                                .build())
                         .expiryDate(jobId, getInstantAttribute(item, EXPIRY_DATE));
                 break;
             case FINISHED:
