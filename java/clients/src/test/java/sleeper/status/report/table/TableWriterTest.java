@@ -94,7 +94,7 @@ public class TableWriterTest {
     }
 
     @Test
-    public void canHideFirstField() throws Exception {
+    public void shouldHideFirstField() throws Exception {
         // Given
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder();
         TableField field1 = factoryBuilder.addField("First");
@@ -115,7 +115,7 @@ public class TableWriterTest {
     }
 
     @Test
-    public void canHideSecondField() throws Exception {
+    public void shouldHideSecondField() throws Exception {
         // Given
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder();
         TableField field1 = factoryBuilder.addField("Field");
