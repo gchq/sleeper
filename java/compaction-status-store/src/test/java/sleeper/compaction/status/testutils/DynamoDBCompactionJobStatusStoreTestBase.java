@@ -25,6 +25,7 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
+import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
@@ -117,8 +118,8 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(
                         job, ignoredUpdateTime()))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(
-                        ignoredUpdateTime(), defaultStartTime(), DEFAULT_TASK_ID))
+                .jobRun(CompactionJobRun.started(DEFAULT_TASK_ID, CompactionJobStartedStatus.updateAndStartTime(
+                        ignoredUpdateTime(), defaultStartTime())))
                 .build();
     }
 
@@ -126,10 +127,10 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(
                         job, ignoredUpdateTime()))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(
-                        ignoredUpdateTime(), defaultStartTime(), DEFAULT_TASK_ID))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(
-                        ignoredUpdateTime(), defaultSummary(), DEFAULT_TASK_ID))
+                .jobRun(CompactionJobRun.finished(DEFAULT_TASK_ID, CompactionJobStartedStatus.updateAndStartTime(
+                                ignoredUpdateTime(), defaultStartTime()),
+                        CompactionJobFinishedStatus.updateTimeAndSummary(
+                                ignoredUpdateTime(), defaultSummary())))
                 .build();
     }
 

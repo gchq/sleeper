@@ -40,6 +40,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.compaction.status.DynamoDBAttributes.createStringAttribute;
 import static sleeper.compaction.status.DynamoDBUtils.instanceTableName;
@@ -116,13 +117,16 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
 
     @Override
     public CompactionJobStatus getJob(String jobId) {
+        return getJobStream(jobId).findFirst().orElse(null);
+    }
+
+    private Stream<CompactionJobStatus> getJobStream(String jobId) {
         QueryResult result = dynamoDB.query(new QueryRequest()
                 .withTableName(statusTableName)
                 .addKeyConditionsEntry(JOB_ID, new Condition()
                         .withAttributeValueList(createStringAttribute(jobId))
                         .withComparisonOperator(ComparisonOperator.EQ)));
-        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems())
-                .findFirst().orElse(null);
+        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems());
     }
 
     @Override
