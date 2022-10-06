@@ -29,6 +29,7 @@ import java.util.List;
 public class JsonCompactionJobStatusReporter implements CompactionJobStatusReporter {
     private final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues()
             .registerTypeAdapter(Instant.class, instantJsonSerializer())
+            .setPrettyPrinting()
             .create();
     private final PrintStream out;
 
