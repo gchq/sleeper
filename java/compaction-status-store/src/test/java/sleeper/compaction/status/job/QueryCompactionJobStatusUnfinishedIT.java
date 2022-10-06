@@ -47,9 +47,9 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         // Then
         assertThat(store.getUnfinishedJobs(tableName))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactlyInAnyOrder(
-                        CompactionJobStatus.created(job1, ignoredUpdateTime()),
-                        CompactionJobStatus.created(job2, ignoredUpdateTime()));
+                .containsExactly(
+                        CompactionJobStatus.created(job2, ignoredUpdateTime()),
+                        CompactionJobStatus.created(job1, ignoredUpdateTime()));
     }
 
     @Test
