@@ -2,10 +2,7 @@
   {
     "jobId": "$(jobId1)",
     "createdStatus": {
-      "updateTime": {
-        "seconds": 1663853592,
-        "nanos": 1000000
-      },
+      "updateTime": "2022-09-22T13:33:12.001Z",
       "partitionId": "C",
       "inputFilesCount": 1,
       "childPartitionIds": [
@@ -17,10 +14,7 @@
   {
     "jobId": "$(jobId2)",
     "createdStatus": {
-      "updateTime": {
-        "seconds": 1663939992,
-        "nanos": 1000000
-      },
+      "updateTime": "2022-09-23T13:33:12.001Z",
       "partitionId": "F",
       "inputFilesCount": 1,
       "childPartitionIds": [
@@ -29,24 +23,15 @@
       ]
     },
     "startedStatus": {
-      "updateTime": {
-        "seconds": 1663940160,
-        "nanos": 1000000
-      },
-      "startTime": {
-        "seconds": 1663940040,
-        "nanos": 1000000
-      },
+      "updateTime": "2022-09-23T13:36:00.001Z",
+      "startTime": "2022-09-23T13:34:00.001Z",
       "taskId": "task-id"
     }
   },
   {
     "jobId": "$(jobId3)",
     "createdStatus": {
-      "updateTime": {
-        "seconds": 1664026392,
-        "nanos": 1000000
-      },
+      "updateTime": "2022-09-24T13:33:12.001Z",
       "partitionId": "I",
       "inputFilesCount": 1,
       "childPartitionIds": [
@@ -55,34 +40,19 @@
       ]
     },
     "startedStatus": {
-      "updateTime": {
-        "seconds": 1664026752,
-        "nanos": 1000000
-      },
-      "startTime": {
-        "seconds": 1664026452,
-        "nanos": 1000000
-      },
+      "updateTime": "2022-09-24T13:39:12.001Z",
+      "startTime": "2022-09-24T13:34:12.001Z",
       "taskId": "task-id"
     },
     "finishedStatus": {
-      "updateTime": {
-        "seconds": 1664026812,
-        "nanos": 1000000
-      },
+      "updateTime": "2022-09-24T13:40:12.001Z",
       "summary": {
         "recordsProcessed": {
           "linesRead": 600,
           "linesWritten": 300
         },
-        "startTime": {
-          "seconds": 1664026752,
-          "nanos": 1000000
-        },
-        "finishTime": {
-          "seconds": 1664026812,
-          "nanos": 1000000
-        },
+        "startTime": "2022-09-24T13:39:12.001Z",
+        "finishTime": "2022-09-24T13:40:12.001Z",
         "durationInSeconds": 60.0,
         "recordsReadPerSecond": 10.0,
         "recordsWrittenPerSecond": 5.0

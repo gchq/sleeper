@@ -37,6 +37,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -138,6 +139,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
         ScanResult result = dynamoDB.scan(createScanRequestByTable(tableName));
         return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems())
                 .filter(job -> !job.isFinished())
+                .sorted(Comparator.comparing(CompactionJobStatus::getCreateUpdateTime).reversed())
                 .collect(Collectors.toList());
     }
 
@@ -146,6 +148,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
         ScanResult result = dynamoDB.scan(createScanRequestByTable(tableName));
         return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems())
                 .filter(job -> job.isInPeriod(startTime, endTime))
+                .sorted(Comparator.comparing(CompactionJobStatus::getCreateUpdateTime).reversed())
                 .collect(Collectors.toList());
     }
 

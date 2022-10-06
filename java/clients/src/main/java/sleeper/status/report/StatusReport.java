@@ -25,13 +25,23 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import sleeper.ClientUtils;
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.status.report.compactionjob.CompactionJobStatusReportArguments;
+import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
+import sleeper.status.report.compactionjob.StandardCompactionJobStatusReporter;
 
 import java.io.IOException;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.status.report.ArgumentUtils.optionalArgument;
 
 /**
  * A utility class to report information about the partitions, the files, the
@@ -39,21 +49,27 @@ import java.io.IOException;
  */
 public class StatusReport {
     private final InstanceProperties instanceProperties;
+    private final TableProperties tableProperties;
     private final boolean verbose;
     private final StateStore stateStore;
+    private final CompactionJobStatusStore compactionStatusStore;
     private final AmazonSQS sqsClient;
     private final AmazonECS ecsClient;
     private final TablePropertiesProvider tablePropertiesProvider;
 
     public StatusReport(InstanceProperties instanceProperties,
+                        TableProperties tableProperties,
                         boolean verbose,
                         StateStore stateStore,
+                        CompactionJobStatusStore compactionStatusStore,
                         AmazonSQS sqsClient,
                         AmazonECS ecsClient,
                         TablePropertiesProvider tablePropertiesProvider) {
         this.instanceProperties = instanceProperties;
+        this.tableProperties = tableProperties;
         this.verbose = verbose;
         this.stateStore = stateStore;
+        this.compactionStatusStore = compactionStatusStore;
         this.sqsClient = sqsClient;
         this.ecsClient = ecsClient;
         this.tablePropertiesProvider = tablePropertiesProvider;
@@ -68,10 +84,15 @@ public class StatusReport {
         new FilesStatusReport(stateStore, 1000, verbose).run();
 
         // Jobs
-        new JobsStatusReport(instanceProperties, sqsClient).run();
+        new CompactionJobStatusReport(compactionStatusStore, CompactionJobStatusReportArguments.builder()
+                .instanceId(instanceProperties.get(ID))
+                .tableName(tableProperties.get(TABLE_NAME))
+                .reporter(new StandardCompactionJobStatusReporter())
+                .queryType(QueryType.UNFINISHED)
+                .build()).run();
 
         // Tasks
-        new ECSTasksStatusReport(instanceProperties, ecsClient).run();
+        new CompactionECSTaskStatusReport(instanceProperties, ecsClient).run();
 
         // Dead letters
         new DeadLettersStatusReport(sqsClient, instanceProperties, tablePropertiesProvider).run();
@@ -89,15 +110,17 @@ public class StatusReport {
         AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
 
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(amazonS3, instanceProperties);
+        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(args[1]);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
-        StateStore stateStore = stateStoreProvider.getStateStore(args[1], tablePropertiesProvider);
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        CompactionJobStatusStore compactionStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
 
-        StatusReport statusReport;
-        if (2 == args.length || !Boolean.parseBoolean(args[2])) {
-            statusReport = new StatusReport(instanceProperties, false, stateStore, sqsClient, ecsClient, tablePropertiesProvider);
-        } else {
-            statusReport = new StatusReport(instanceProperties, true, stateStore, sqsClient, ecsClient, tablePropertiesProvider);
-        }
+        boolean verbose = optionalArgument(args, 2)
+                .map(Boolean::parseBoolean)
+                .orElse(false);
+        StatusReport statusReport = new StatusReport(
+                instanceProperties, tableProperties, verbose, stateStore, compactionStatusStore,
+                sqsClient, ecsClient, tablePropertiesProvider);
         amazonS3.shutdown();
         statusReport.run();
         ecsClient.shutdown();

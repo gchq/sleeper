@@ -32,12 +32,12 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
 /**
  * A utility class to report the number of compaction tasks in progress.
  */
-public class ECSTasksStatusReport {
+public class CompactionECSTaskStatusReport {
     private final InstanceProperties instanceProperties;
     private final AmazonECS ecsClient;
 
-    public ECSTasksStatusReport(InstanceProperties instanceProperties,
-                                AmazonECS ecsClient) {
+    public CompactionECSTaskStatusReport(InstanceProperties instanceProperties,
+                                         AmazonECS ecsClient) {
         this.instanceProperties = instanceProperties;
         this.ecsClient = ecsClient;
     }
@@ -64,7 +64,7 @@ public class ECSTasksStatusReport {
         amazonS3.shutdown();
 
         AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
-        ECSTasksStatusReport statusReport = new ECSTasksStatusReport(instanceProperties, ecsClient);
+        CompactionECSTaskStatusReport statusReport = new CompactionECSTaskStatusReport(instanceProperties, ecsClient);
         statusReport.run();
 
         ecsClient.shutdown();
