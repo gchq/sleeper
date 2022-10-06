@@ -34,8 +34,12 @@ public class CompactionTaskStatus {
     }
 
     public static CompactionTaskStatus.Builder started(long startTime) {
+        return started(Instant.ofEpochMilli(startTime));
+    }
+
+    public static CompactionTaskStatus.Builder started(Instant startTime) {
         return builder().taskId(UUID.randomUUID().toString())
-                .started(Instant.ofEpochMilli(startTime));
+                .started(startTime);
     }
 
 
@@ -55,6 +59,27 @@ public class CompactionTaskStatus {
         return finishedStatus;
     }
 
+    public boolean isInPeriod(Instant startTime, Instant endTime) {
+        return startTime.isBefore(getLastTime())
+                && endTime.isAfter(getStartTime());
+    }
+
+    public Instant getStartTime() {
+        return startedStatus.getStartTime();
+    }
+
+    public Instant getLastTime() {
+        if (isFinished()) {
+            return finishedStatus.getFinishTime();
+        } else {
+            return startedStatus.getStartTime();
+        }
+    }
+
+    public boolean isFinished() {
+        return finishedStatus != null;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -64,12 +89,15 @@ public class CompactionTaskStatus {
             return false;
         }
         CompactionTaskStatus that = (CompactionTaskStatus) o;
-        return Objects.equals(taskId, that.taskId) && Objects.equals(startedStatus, that.startedStatus) && Objects.equals(finishedStatus, that.finishedStatus);
+        return Objects.equals(taskId, that.taskId)
+                && Objects.equals(startedStatus, that.startedStatus)
+                && Objects.equals(finishedStatus, that.finishedStatus)
+                && Objects.equals(expiryDate, that.expiryDate);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(taskId, startedStatus, finishedStatus);
+        return Objects.hash(taskId, startedStatus, finishedStatus, expiryDate);
     }
 
     @Override
@@ -118,8 +146,13 @@ public class CompactionTaskStatus {
         }
 
         public Builder finished(CompactionTaskFinishedStatus.Builder taskFinishedBuilder, long finishTime) {
-            this.finishedStatus = taskFinishedBuilder.finish(Instant.ofEpochMilli(finishTime), (finishTime - startedStatus.getStartTime().toEpochMilli()) / 1000.0).build();
-            return this;
+            return finished(taskFinishedBuilder, Instant.ofEpochMilli(finishTime));
+        }
+
+        public Builder finished(CompactionTaskFinishedStatus.Builder taskFinishedBuilder, Instant finishTime) {
+            return finishedStatus(taskFinishedBuilder.finish(
+                            startedStatus.getStartTime(), finishTime)
+                    .build());
         }
 
         public String getTaskId() {

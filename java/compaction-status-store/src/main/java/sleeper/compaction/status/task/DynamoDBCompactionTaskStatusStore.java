@@ -24,6 +24,8 @@ import com.amazonaws.services.dynamodbv2.model.PutItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.status.CompactionStatusStoreException;
@@ -32,7 +34,11 @@ import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
+import java.time.Instant;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static sleeper.compaction.status.DynamoDBAttributes.createStringAttribute;
 import static sleeper.compaction.status.DynamoDBUtils.instanceTableName;
@@ -82,6 +88,16 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
                         .withComparisonOperator(ComparisonOperator.EQ)));
         return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(result.getItems())
                 .findFirst().orElse(null);
+    }
+
+    @Override
+    public List<CompactionTaskStatus> getTasksInTimePeriod(Instant startTime, Instant endTime) {
+        ScanResult result = dynamoDB.scan(new ScanRequest()
+                .withTableName(statusTableName));
+        return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(result.getItems())
+                .filter(task -> task.isInPeriod(startTime, endTime))
+                .sorted(Comparator.comparing(CompactionTaskStatus::getStartTime).reversed())
+                .collect(Collectors.toList());
     }
 
     private PutItemResult putItem(Map<String, AttributeValue> item) {

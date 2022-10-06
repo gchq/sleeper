@@ -33,7 +33,7 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
 
         // Then
         assertThat(store.getTask(taskStatus.getTaskId()))
-                .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
+                .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
                 .isEqualTo(taskStatus);
     }
 
@@ -48,7 +48,7 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
 
         // Then
         assertThat(store.getTask(taskStatus.getTaskId()))
-                .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
+                .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
                 .isEqualTo(taskStatus);
     }
 
@@ -59,7 +59,7 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
 
         // When/Then
         assertThat(store.getTask(taskStatus.getTaskId()))
-                .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
+                .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
                 .isNull();
     }
 

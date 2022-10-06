@@ -35,8 +35,8 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase {
 
-    protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
-            .withIgnoredFields("startedStatus.startUpdateTime", "finishedStatus.updateTime", "expiryDate").build();
+    protected static final RecursiveComparisonConfiguration IGNORE_EXPIRY_DATE = RecursiveComparisonConfiguration.builder()
+            .withIgnoredFields("expiryDate").build();
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final String taskStatusTableName = taskStatusTableName(instanceProperties.get(ID));
     protected final CompactionTaskStatusStore store = DynamoDBCompactionTaskStatusStore.from(dynamoDBClient, instanceProperties);

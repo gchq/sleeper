@@ -18,6 +18,9 @@ package sleeper.compaction.task;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 
+import java.time.Instant;
+import java.util.List;
+
 public interface CompactionTaskStatusStore {
 
     static CompactionJobStatusStore none() {
@@ -32,6 +35,10 @@ public interface CompactionTaskStatusStore {
     }
 
     default CompactionTaskStatus getTask(String taskId) {
+        throw new UnsupportedOperationException("Instance has no compaction task status store");
+    }
+
+    default List<CompactionTaskStatus> getTasksInTimePeriod(Instant startTime, Instant endTime) {
         throw new UnsupportedOperationException("Instance has no compaction task status store");
     }
 }
