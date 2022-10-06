@@ -91,21 +91,26 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         // When
         store.jobCreated(job);
         store.jobStarted(job, startTime1, DEFAULT_TASK_ID);
-        store.jobStarted(job, startTime2, DEFAULT_TASK_ID);
+        store.jobStarted(job, startTime2, DEFAULT_TASK_ID_2);
         store.jobFinished(job, new CompactionJobSummary(processed, startTime1, finishTime1), DEFAULT_TASK_ID);
-        store.jobFinished(job, new CompactionJobSummary(processed, startTime2, finishTime2), DEFAULT_TASK_ID);
+        store.jobFinished(job, new CompactionJobSummary(processed, startTime2, finishTime2), DEFAULT_TASK_ID_2);
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(CompactionJobStatus.builder().jobId(job.getId())
-                        .createdStatus(CompactionJobCreatedStatus.from(
-                                job, ignoredUpdateTime()))
-                        .jobRun(CompactionJobRun.finished(DEFAULT_TASK_ID, CompactionJobStartedStatus.updateAndStartTime(
-                                        ignoredUpdateTime(), startTime2),
-                                CompactionJobFinishedStatus.updateTimeAndSummary(
-                                        ignoredUpdateTime(), new CompactionJobSummary(processed, startTime2, finishTime2))))
-                        .build());
+                .containsExactly(
+                        CompactionJobStatus.builder().jobId(job.getId())
+                                .createdStatus(CompactionJobCreatedStatus.from(
+                                        job, ignoredUpdateTime()))
+                                .jobRun(CompactionJobRun.finished(DEFAULT_TASK_ID, CompactionJobStartedStatus.updateAndStartTime(
+                                                ignoredUpdateTime(), startTime1),
+                                        CompactionJobFinishedStatus.updateTimeAndSummary(
+                                                ignoredUpdateTime(), new CompactionJobSummary(processed, startTime1, finishTime1))))
+                                .jobRun(CompactionJobRun.finished(DEFAULT_TASK_ID_2, CompactionJobStartedStatus.updateAndStartTime(
+                                                ignoredUpdateTime(), startTime2),
+                                        CompactionJobFinishedStatus.updateTimeAndSummary(
+                                                ignoredUpdateTime(), new CompactionJobSummary(processed, startTime2, finishTime2))))
+                                .build());
     }
 
 }

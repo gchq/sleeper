@@ -155,6 +155,7 @@ public class CompactionJobStatus {
 
     public CompactionJobFinishedStatus getLatestFinishedStatus() {
         return jobRunList.stream()
+                .filter(CompactionJobRun::isFinished)
                 .map(CompactionJobRun::getFinishedStatus)
                 .max(Comparator.comparing(CompactionJobFinishedStatus::getUpdateTime))
                 .orElse(null);

@@ -57,6 +57,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
             .withIgnoredFields("createdStatus.updateTime", "expiryDate")
             .withIgnoredFieldsMatchingRegexes("jobRun.+updateTime").build();
     public static final String DEFAULT_TASK_ID = "task-id";
+    public static final String DEFAULT_TASK_ID_2 = "task-id-2";
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final String jobStatusTableName = jobStatusTableName(instanceProperties.get(ID));
     private final Schema schema = createSchema();
