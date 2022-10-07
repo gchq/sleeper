@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-package sleeper.status.report.compactionjobstatus;
+package sleeper.status.report.compactionjob;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.partition.Partition;
-import sleeper.status.report.compactionjob.CompactionJobStatusReporter;
-import sleeper.status.report.compactionjob.JsonCompactionJobStatusReporter;
-import sleeper.status.report.compactionjob.StandardCompactionJobStatusReporter;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -31,8 +28,9 @@ import java.util.List;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ClientTestUtils.example;
 
-public class StatusReporterAllQueryTest extends StatusReporterTest {
+public class StatusReporterAllQueryTest extends StatusReporterTestBase {
     @Test
     public void shouldReportCompactionJobStatusStandardJobsOnly() throws Exception {
         // Given

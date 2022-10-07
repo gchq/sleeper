@@ -23,7 +23,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
-import static sleeper.status.report.ArgumentUtils.optionalArgument;
+import static sleeper.ClientUtils.optionalArgument;
 
 public class CompactionJobStatusReportArguments {
     private static final String DEFAULT_REPORTER = "STANDARD";

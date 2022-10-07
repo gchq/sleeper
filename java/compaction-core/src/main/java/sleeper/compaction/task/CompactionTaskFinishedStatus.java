@@ -164,7 +164,8 @@ public class CompactionTaskFinishedStatus {
             return this;
         }
 
-        public Builder finish(Instant finishTime, double durationInSeconds) {
+        public Builder finish(Instant startTime, Instant finishTime) {
+            double durationInSeconds = (finishTime.toEpochMilli() - startTime.toEpochMilli()) / 1000.0;
             recordsReadPerSecond = totalRecordsRead / durationInSeconds;
             recordsWrittenPerSecond = totalRecordsWritten / durationInSeconds;
             totalRuntimeInSeconds = durationInSeconds;

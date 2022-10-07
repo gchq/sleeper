@@ -21,11 +21,9 @@ import java.util.Objects;
 
 public class CompactionTaskStartedStatus {
     private final Instant startTime;
-    private final Instant startUpdateTime;
 
     private CompactionTaskStartedStatus(Builder builder) {
         startTime = Objects.requireNonNull(builder.startTime, "startTime must not be null");
-        startUpdateTime = Objects.requireNonNull(builder.startUpdateTime, "startUpdateTime must not be null");
     }
 
     public static Builder builder() {
@@ -34,10 +32,6 @@ public class CompactionTaskStartedStatus {
 
     public Instant getStartTime() {
         return startTime;
-    }
-
-    public Instant getStartUpdateTime() {
-        return startUpdateTime;
     }
 
     @Override
@@ -49,37 +43,30 @@ public class CompactionTaskStartedStatus {
             return false;
         }
         CompactionTaskStartedStatus that = (CompactionTaskStartedStatus) o;
-        return Objects.equals(startTime, that.startTime) && Objects.equals(startUpdateTime, that.startUpdateTime);
+        return Objects.equals(startTime, that.startTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(startTime, startUpdateTime);
+        return Objects.hash(startTime);
     }
 
     @Override
     public String toString() {
         return "CompactionTaskStartedStatus{" +
                 "startTime=" + startTime +
-                ", startUpdateTime=" + startUpdateTime +
                 '}';
     }
 
 
     public static final class Builder {
         private Instant startTime;
-        private Instant startUpdateTime;
 
         private Builder() {
         }
 
         public Builder startTime(Instant startTime) {
             this.startTime = startTime;
-            return this;
-        }
-
-        public Builder startUpdateTime(Instant startUpdateTime) {
-            this.startUpdateTime = startUpdateTime;
             return this;
         }
 

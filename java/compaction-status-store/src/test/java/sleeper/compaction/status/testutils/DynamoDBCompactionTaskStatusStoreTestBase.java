@@ -18,8 +18,7 @@ package sleeper.compaction.status.testutils;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.After;
 import org.junit.Before;
-import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobFactory;
+import sleeper.compaction.job.CompactionJobRecordsProcessed;
 import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStoreCreator;
@@ -27,39 +26,19 @@ import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.partition.PartitionsFromSplitPoints;
-import sleeper.core.schema.Schema;
-import sleeper.statestore.FileInfoFactory;
 
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.function.Consumer;
 
-import static sleeper.compaction.status.DynamoDBUtils.instanceTableName;
+import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore.taskStatusTableName;
 import static sleeper.compaction.status.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
-import static sleeper.compaction.status.testutils.CompactionStatusStoreTestUtils.createSchema;
-import static sleeper.compaction.status.testutils.CompactionStatusStoreTestUtils.createTableProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase {
 
-    protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
-            .withIgnoredFields("startedStatus.startUpdateTime", "finishedStatus.updateTime", "expiryDate").build();
-    protected static final RecursiveComparisonConfiguration IGNORE_FINISHED_STATUS = RecursiveComparisonConfiguration.builder()
-            .withIgnoredFields("startedStatus.startUpdateTime", "expiryDate", "finishedStatus").build();
+    protected static final RecursiveComparisonConfiguration IGNORE_EXPIRY_DATE = RecursiveComparisonConfiguration.builder()
+            .withIgnoredFields("expiryDate").build();
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final String jobStatusTableName = jobStatusTableName(instanceProperties.get(ID));
-    private final Schema schema = createSchema();
-    private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
-
-    protected final String tableName = tableProperties.get(TABLE_NAME);
-    protected final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+    private final String taskStatusTableName = taskStatusTableName(instanceProperties.get(ID));
     protected final CompactionTaskStatusStore store = DynamoDBCompactionTaskStatusStore.from(dynamoDBClient, instanceProperties);
 
     @Before
@@ -69,31 +48,7 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
 
     @After
     public void tearDown() {
-        dynamoDBClient.deleteTable(jobStatusTableName);
-    }
-
-    protected Partition singlePartition() {
-        return new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct().get(0);
-    }
-
-    protected FileInfoFactory fileFactory(Partition singlePartition) {
-        return fileFactory(Collections.singletonList(singlePartition));
-    }
-
-    protected FileInfoFactory fileFactoryWithPartitions(Consumer<PartitionsBuilder> partitionConfig) {
-        PartitionsBuilder builder = new PartitionsBuilder(schema);
-        partitionConfig.accept(builder);
-        return fileFactory(builder.buildList());
-    }
-
-    private FileInfoFactory fileFactory(List<Partition> partitions) {
-        return new FileInfoFactory(schema, partitions, Instant.now());
-    }
-
-    protected CompactionJobFactory jobFactoryForTable(String tableName) {
-        TableProperties tableProperties = createTableProperties(schema, instanceProperties);
-        tableProperties.set(TABLE_NAME, tableName);
-        return new CompactionJobFactory(instanceProperties, tableProperties);
+        dynamoDBClient.deleteTable(taskStatusTableName);
     }
 
     protected static Instant defaultStartTime() {
@@ -112,26 +67,19 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
         return CompactionTaskStatus.started(defaultStartTime().toEpochMilli());
     }
 
-    protected static CompactionTaskStatus finishedTaskWithDefaults(List<CompactionJobSummary> jobSummaryList) {
-        CompactionTaskStatus.Builder taskStatusBuilder = startedTaskWithDefaultsBuilder();
-        CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
-        jobSummaryList.forEach(taskFinishedBuilder::addJobSummary);
-        return taskStatusBuilder.finished(taskFinishedBuilder, defaultFinishTime().toEpochMilli()).build();
+    protected static CompactionTaskStatus finishedTaskWithDefaults() {
+        return startedTaskWithDefaultsBuilder().finished(
+                CompactionTaskFinishedStatus.builder()
+                        .addJobSummary(defaultJobSummary()),
+                defaultFinishTime().toEpochMilli()).build();
     }
 
-    public static String jobStatusTableName(String instanceId) {
-        return instanceTableName(instanceId, "compaction-task-status");
-    }
-
-    public CompactionJob singleFileSplittingCompaction(String rootPartitionId, String leftPartitionId, String rightPartitionId) {
-        List<Partition> partitions = new PartitionsBuilder(schema)
-                .leavesWithSplits(Arrays.asList(leftPartitionId, rightPartitionId), Collections.singletonList("p"))
-                .parentJoining(rootPartitionId, leftPartitionId, rightPartitionId)
-                .buildList();
-        FileInfoFactory fileFactory = new FileInfoFactory(schema, partitions);
-        return jobFactory.createSplittingCompactionJob(
-                Collections.singletonList(fileFactory.rootFile(100L, "a", "z")),
-                rootPartitionId, leftPartitionId, rightPartitionId, "p", 0);
+    private static CompactionJobSummary defaultJobSummary() {
+        Instant jobStartedUpdateTime = Instant.parse("2022-09-22T14:00:04.000Z");
+        Instant jobFinishTime = Instant.parse("2022-09-22T14:00:14.000Z");
+        return new CompactionJobSummary(
+                new CompactionJobRecordsProcessed(4800L, 2400L),
+                jobStartedUpdateTime, jobFinishTime);
     }
 
 }
