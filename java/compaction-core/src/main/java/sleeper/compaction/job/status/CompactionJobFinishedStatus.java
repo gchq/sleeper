@@ -35,8 +35,8 @@ public class CompactionJobFinishedStatus implements CompactionJobStatusUpdate {
     }
 
     @Override
-    public void addToBuilder(CompactionJobStatusesBuilder builder, String jobId) {
-        builder.jobFinished(jobId, this);
+    public void addToBuilder(CompactionJobStatusesBuilder builder, String jobId, String taskId) {
+        builder.jobFinished(jobId, this, taskId);
     }
 
     public Instant getUpdateTime() {

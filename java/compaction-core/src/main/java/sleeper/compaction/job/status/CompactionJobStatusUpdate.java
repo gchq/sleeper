@@ -17,5 +17,5 @@ package sleeper.compaction.job.status;
 
 public interface CompactionJobStatusUpdate {
 
-    void addToBuilder(CompactionJobStatusesBuilder builder, String jobId);
+    void addToBuilder(CompactionJobStatusesBuilder builder, String jobId, String taskId);
 }

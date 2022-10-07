@@ -28,9 +28,9 @@ public class TestCompactionJobStatusUpdateRecords {
 
     private final List<CompactionJobStatusUpdateRecord> records = new ArrayList<>();
 
-    public TestCompactionJobStatusUpdateRecords recordsForJob(
-            String jobId, CompactionJobStatusUpdate... statusUpdates) {
-        return forJob(jobId, records -> records.records(statusUpdates));
+    public TestCompactionJobStatusUpdateRecords updatesForJobWithTask(
+            String jobId, String taskId, CompactionJobStatusUpdate... statusUpdates) {
+        return forJob(jobId, records -> records.updatesWithTask(taskId, statusUpdates));
     }
 
     public TestCompactionJobStatusUpdateRecords forJob(String jobId, Consumer<WithJob> config) {
@@ -44,15 +44,15 @@ public class TestCompactionJobStatusUpdateRecords {
 
     public class WithJob {
         private final String jobId;
-        private final Instant expiryDate = Instant.now();
+        private final Instant expiryDate = Instant.ofEpochSecond(999999999);
 
         private WithJob(String jobId) {
             this.jobId = jobId;
         }
 
-        public WithJob records(CompactionJobStatusUpdate... statusUpdates) {
+        public WithJob updatesWithTask(String taskId, CompactionJobStatusUpdate... statusUpdates) {
             Arrays.stream(statusUpdates)
-                    .map(update -> new CompactionJobStatusUpdateRecord(jobId, expiryDate, update))
+                    .map(update -> new CompactionJobStatusUpdateRecord(jobId, expiryDate, update, taskId))
                     .forEach(records::add);
             return this;
         }

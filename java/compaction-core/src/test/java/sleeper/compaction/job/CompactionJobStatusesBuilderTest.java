@@ -63,20 +63,13 @@ public class CompactionJobStatusesBuilderTest {
                         Instant.parse("2022-09-24T09:23:30.001Z"),
                         Instant.parse("2022-09-24T09:24:00.001Z")));
 
-        List<CompactionJobStatusUpdateRecord> records = new TestCompactionJobStatusUpdateRecords()
-                .recordsForJob("job1", created1, started1, finished1)
-                .recordsForJob("job2", created2, started2, finished2)
+        List<CompactionJobStatusUpdateRecord> updates = new TestCompactionJobStatusUpdateRecords()
+                .updatesForJobWithTask("job1", DEFAULT_TASK_ID, created1, started1, finished1)
+                .updatesForJobWithTask("job2", DEFAULT_TASK_ID, created2, started2, finished2)
                 .list();
 
         // When
-        List<CompactionJobStatus> statuses = new CompactionJobStatusesBuilder()
-                .jobCreated("job1", created1)
-                .jobStarted("job1", started1, DEFAULT_TASK_ID)
-                .jobFinished("job1", finished1, DEFAULT_TASK_ID)
-                .jobCreated("job2", created2)
-                .jobStarted("job2", started2, DEFAULT_TASK_ID)
-                .jobFinished("job2", finished2, DEFAULT_TASK_ID)
-                .build();
+        List<CompactionJobStatus> statuses = new CompactionJobStatusesBuilder().jobUpdates(updates).build();
 
         // Then
         assertThat(statuses).containsExactly(

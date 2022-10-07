@@ -50,7 +50,7 @@ public class CompactionJobCreatedStatus implements CompactionJobStatusUpdate {
     }
 
     @Override
-    public void addToBuilder(CompactionJobStatusesBuilder builder, String jobId) {
+    public void addToBuilder(CompactionJobStatusesBuilder builder, String jobId, String taskId) {
         builder.jobCreated(jobId, this);
     }
 
