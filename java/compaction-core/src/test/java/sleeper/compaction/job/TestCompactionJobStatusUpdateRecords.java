@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class TestCompactionJobStatusUpdateRecords {
 
@@ -29,13 +30,31 @@ public class TestCompactionJobStatusUpdateRecords {
 
     public TestCompactionJobStatusUpdateRecords recordsForJob(
             String jobId, CompactionJobStatusUpdate... statusUpdates) {
-        Arrays.stream(statusUpdates)
-                .map(update -> new CompactionJobStatusUpdateRecord(jobId, Instant.now(), update))
-                .forEach(records::add);
+        return forJob(jobId, records -> records.records(statusUpdates));
+    }
+
+    public TestCompactionJobStatusUpdateRecords forJob(String jobId, Consumer<WithJob> config) {
+        config.accept(new WithJob(jobId));
         return this;
     }
 
     public List<CompactionJobStatusUpdateRecord> list() {
         return records;
+    }
+
+    public class WithJob {
+        private final String jobId;
+        private final Instant expiryDate = Instant.now();
+
+        private WithJob(String jobId) {
+            this.jobId = jobId;
+        }
+
+        public WithJob records(CompactionJobStatusUpdate... statusUpdates) {
+            Arrays.stream(statusUpdates)
+                    .map(update -> new CompactionJobStatusUpdateRecord(jobId, expiryDate, update))
+                    .forEach(records::add);
+            return this;
+        }
     }
 }
