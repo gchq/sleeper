@@ -20,7 +20,7 @@ import sleeper.compaction.job.CompactionJobSummary;
 import java.time.Instant;
 import java.util.Objects;
 
-public class CompactionJobFinishedStatus {
+public class CompactionJobFinishedStatus implements CompactionJobStatusUpdate {
 
     private final Instant updateTime;
     private final CompactionJobSummary summary;
@@ -34,6 +34,11 @@ public class CompactionJobFinishedStatus {
 
     public static CompactionJobFinishedStatus updateTimeAndSummaryWithTaskId(Instant updateTime, CompactionJobSummary summary, String taskId) {
         return new CompactionJobFinishedStatus(updateTime, summary, taskId);
+    }
+
+    @Override
+    public void addToBuilder(CompactionJobStatusesBuilder builder, String jobId) {
+        builder.jobFinished(jobId, this);
     }
 
     public Instant getUpdateTime() {
