@@ -20,6 +20,7 @@ import sleeper.compaction.job.CompactionJobSummary;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -34,7 +35,7 @@ public class CompactionJobStatus {
     private CompactionJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         createdStatus = Objects.requireNonNull(builder.createdStatus, "createdStatus must not be null");
-        jobRunList = builder.jobRunList;
+        jobRunList = Collections.unmodifiableList(Objects.requireNonNull(builder.jobRunList, "jobRunList must not be null"));
         expiryDate = builder.expiryDate;
     }
 
@@ -149,7 +150,7 @@ public class CompactionJobStatus {
     public CompactionJobStartedStatus getLatestStartedStatus() {
         return jobRunList.stream()
                 .map(CompactionJobRun::getStartedStatus)
-                .max(Comparator.comparing(CompactionJobStartedStatus::getUpdateTime))
+                .findFirst()
                 .orElse(null);
     }
 
@@ -157,14 +158,12 @@ public class CompactionJobStatus {
         return jobRunList.stream()
                 .filter(CompactionJobRun::isFinished)
                 .map(CompactionJobRun::getFinishedStatus)
-                .max(Comparator.comparing(CompactionJobFinishedStatus::getUpdateTime))
+                .findFirst()
                 .orElse(null);
     }
 
     public CompactionJobRun getLatestJobRun() {
-        return jobRunList.stream()
-                .max(Comparator.comparing(CompactionJobRun::getLatestUpdateTime))
-                .orElse(null);
+        return jobRunList.get(0);
     }
 
 
@@ -208,6 +207,7 @@ public class CompactionJobStatus {
         }
 
         public CompactionJobStatus build() {
+            jobRunList.sort(Comparator.comparing(CompactionJobRun::getLatestUpdateTime).reversed());
             return new CompactionJobStatus(this);
         }
     }
