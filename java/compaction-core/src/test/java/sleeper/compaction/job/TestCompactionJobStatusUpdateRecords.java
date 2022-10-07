@@ -15,8 +15,11 @@
  */
 package sleeper.compaction.job;
 
+import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusUpdate;
 import sleeper.compaction.job.status.CompactionJobStatusUpdateRecord;
+import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -26,11 +29,16 @@ import java.util.function.Consumer;
 
 public class TestCompactionJobStatusUpdateRecords {
 
-    private final List<CompactionJobStatusUpdateRecord> records = new ArrayList<>();
+    private final List<CompactionJobStatusUpdateRecord> updates = new ArrayList<>();
 
     public TestCompactionJobStatusUpdateRecords updatesForJobWithTask(
             String jobId, String taskId, CompactionJobStatusUpdate... statusUpdates) {
         return forJob(jobId, records -> records.updatesWithTask(taskId, statusUpdates));
+    }
+
+    public TestCompactionJobStatusUpdateRecords jobCreated(
+            String jobId, CompactionJobCreatedStatus created) {
+        return updatesForJobWithTask(jobId, null, created);
     }
 
     public TestCompactionJobStatusUpdateRecords forJob(String jobId, Consumer<WithJob> config) {
@@ -39,7 +47,13 @@ public class TestCompactionJobStatusUpdateRecords {
     }
 
     public List<CompactionJobStatusUpdateRecord> list() {
-        return records;
+        return updates;
+    }
+
+    public CompactionJobStatus buildSingleStatus() {
+        return new CompactionJobStatusesBuilder().jobUpdates(updates)
+                .stream().findFirst()
+                .orElseThrow(() -> new IllegalStateException("Expected single status"));
     }
 
     public class WithJob {
@@ -53,7 +67,7 @@ public class TestCompactionJobStatusUpdateRecords {
         public WithJob updatesWithTask(String taskId, CompactionJobStatusUpdate... statusUpdates) {
             Arrays.stream(statusUpdates)
                     .map(update -> new CompactionJobStatusUpdateRecord(jobId, expiryDate, update, taskId))
-                    .forEach(records::add);
+                    .forEach(updates::add);
             return this;
         }
     }

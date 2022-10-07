@@ -22,7 +22,6 @@ import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
 
 import java.time.Instant;
 
@@ -40,10 +39,11 @@ public class CompactionJobRunTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
+
         // When
-        CompactionJobStatus status = new CompactionJobStatusesBuilder()
+        CompactionJobStatus status = new TestCompactionJobStatusUpdateRecords()
                 .jobCreated("job1", created)
-                .build().get(0);
+                .buildSingleStatus();
 
         // Then
         assertThat(status.getJobRuns())
@@ -63,10 +63,9 @@ public class CompactionJobRunTest {
                 Instant.parse("2022-09-23T09:23:30.001Z"));
 
         // When
-        CompactionJobStatus status = new CompactionJobStatusesBuilder()
-                .jobCreated("job1", created)
-                .jobStarted("job1", started, DEFAULT_TASK_ID_1)
-                .build().get(0);
+        CompactionJobStatus status = new TestCompactionJobStatusUpdateRecords()
+                .updatesForJobWithTask("job1", DEFAULT_TASK_ID_1, created, started)
+                .buildSingleStatus();
 
         // Then
         CompactionJobRun jobRun = status.getLatestJobRun();
@@ -94,11 +93,9 @@ public class CompactionJobRunTest {
                         Instant.parse("2022-09-24T09:24:00.001Z")));
 
         // When
-        CompactionJobStatus status = new CompactionJobStatusesBuilder()
-                .jobCreated("job1", created)
-                .jobStarted("job1", started, DEFAULT_TASK_ID_1)
-                .jobFinished("job1", finished, DEFAULT_TASK_ID_1)
-                .build().get(0);
+        CompactionJobStatus status = new TestCompactionJobStatusUpdateRecords()
+                .updatesForJobWithTask("job1", DEFAULT_TASK_ID_1, created, started, finished)
+                .buildSingleStatus();
 
         // Then
         CompactionJobRun jobRun1 = status.getLatestJobRun();
@@ -135,13 +132,10 @@ public class CompactionJobRunTest {
                         Instant.parse("2022-09-24T09:24:00.001Z")));
 
         // When
-        CompactionJobStatus status = new CompactionJobStatusesBuilder()
-                .jobCreated("job1", created)
-                .jobStarted("job1", started1, DEFAULT_TASK_ID_1)
-                .jobFinished("job1", finished1, DEFAULT_TASK_ID_1)
-                .jobStarted("job1", started2, DEFAULT_TASK_ID_1)
-                .jobFinished("job1", finished2, DEFAULT_TASK_ID_1)
-                .build().get(0);
+        CompactionJobStatus status = new TestCompactionJobStatusUpdateRecords()
+                .updatesForJobWithTask("job1", DEFAULT_TASK_ID_1, created,
+                        started1, finished1, started2, finished2)
+                .buildSingleStatus();
 
         // Then
         assertThat(status.getJobRuns())
@@ -176,13 +170,11 @@ public class CompactionJobRunTest {
                         Instant.parse("2022-09-24T09:24:00.001Z")));
 
         // When
-        CompactionJobStatus status = new CompactionJobStatusesBuilder()
+        CompactionJobStatus status = new TestCompactionJobStatusUpdateRecords()
                 .jobCreated("job1", created)
-                .jobStarted("job1", started1, DEFAULT_TASK_ID_1)
-                .jobFinished("job1", finished1, DEFAULT_TASK_ID_1)
-                .jobStarted("job1", started2, DEFAULT_TASK_ID_2)
-                .jobFinished("job1", finished2, DEFAULT_TASK_ID_2)
-                .build().get(0);
+                .updatesForJobWithTask("job1", DEFAULT_TASK_ID_1, started1, finished1)
+                .updatesForJobWithTask("job1", DEFAULT_TASK_ID_2, started2, finished2)
+                .buildSingleStatus();
 
         // Then
         assertThat(status.getJobRuns())
