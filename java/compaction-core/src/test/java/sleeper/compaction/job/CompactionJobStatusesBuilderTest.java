@@ -21,6 +21,7 @@ import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.status.CompactionJobStatusUpdateRecord;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
 
 import java.time.Instant;
@@ -61,6 +62,11 @@ public class CompactionJobStatusesBuilderTest {
                 new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-24T09:23:30.001Z"),
                         Instant.parse("2022-09-24T09:24:00.001Z")));
+
+        List<CompactionJobStatusUpdateRecord> records = new TestCompactionJobStatusUpdateRecords()
+                .recordsForJob("job1", created1, started1, finished1)
+                .recordsForJob("job2", created2, started2, finished2)
+                .list();
 
         // When
         List<CompactionJobStatus> statuses = new CompactionJobStatusesBuilder()

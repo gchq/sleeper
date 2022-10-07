@@ -25,6 +25,8 @@ import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.status.CompactionJobStatusUpdate;
+import sleeper.compaction.job.status.CompactionJobStatusUpdateRecord;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
 import sleeper.compaction.status.DynamoDBRecordBuilder;
 
@@ -105,41 +107,43 @@ public class DynamoDBCompactionJobStatusFormat {
 
     public static Stream<CompactionJobStatus> streamJobStatuses(List<Map<String, AttributeValue>> items) {
         CompactionJobStatusesBuilder builder = new CompactionJobStatusesBuilder();
-        items.forEach(item -> addStatusUpdate(item, builder));
+        items.stream()
+                .map(DynamoDBCompactionJobStatusFormat::getStatusUpdateRecord)
+                .forEach(result -> result.addToBuilder(builder));
         return builder.stream();
     }
 
-    private static void addStatusUpdate(Map<String, AttributeValue> item, CompactionJobStatusesBuilder builder) {
-        String jobId = getStringAttribute(item, JOB_ID);
+    private static CompactionJobStatusUpdateRecord getStatusUpdateRecord(Map<String, AttributeValue> item) {
+        return new CompactionJobStatusUpdateRecord(
+                getStringAttribute(item, JOB_ID),
+                getInstantAttribute(item, EXPIRY_DATE),
+                getStatusUpdate(item));
+    }
+
+    private static CompactionJobStatusUpdate getStatusUpdate(Map<String, AttributeValue> item) {
         switch (getStringAttribute(item, UPDATE_TYPE)) {
             case UPDATE_TYPE_CREATED:
-                builder.jobCreated(jobId, CompactionJobCreatedStatus.builder()
+                return CompactionJobCreatedStatus.builder()
                         .updateTime(getInstantAttribute(item, UPDATE_TIME))
                         .partitionId(getStringAttribute(item, PARTITION_ID))
                         .childPartitionIds(getChildPartitionIds(item))
                         .inputFilesCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))
-                        .build()).expiryDate(jobId, getInstantAttribute(item, EXPIRY_DATE));
-                break;
+                        .build();
             case UPDATE_TYPE_STARTED:
-                builder.jobStarted(jobId, CompactionJobStartedStatus.updateAndStartTime(
+                return CompactionJobStartedStatus.updateAndStartTime(
                                         getInstantAttribute(item, UPDATE_TIME),
-                                        getInstantAttribute(item, START_TIME)),
-                                getStringAttribute(item, TASK_ID))
-                        .expiryDate(jobId, getInstantAttribute(item, EXPIRY_DATE));
-                break;
+                                        getInstantAttribute(item, START_TIME));
             case UPDATE_TYPE_FINISHED:
-                builder.jobFinished(jobId, CompactionJobFinishedStatus.updateTimeAndSummary(
+                return CompactionJobFinishedStatus.updateTimeAndSummary(
                                         getInstantAttribute(item, UPDATE_TIME),
                                         new CompactionJobSummary(new CompactionJobRecordsProcessed(
                                                 getLongAttribute(item, RECORDS_READ, 0),
                                                 getLongAttribute(item, RECORDS_WRITTEN, 0)),
                                                 getInstantAttribute(item, START_TIME),
-                                                getInstantAttribute(item, FINISH_TIME))),
-                                getStringAttribute(item, TASK_ID))
-                        .expiryDate(jobId, getInstantAttribute(item, EXPIRY_DATE));
-                break;
+                                                getInstantAttribute(item, FINISH_TIME)));
             default:
                 LOGGER.warn("Found record with unrecognised update type: {}", item);
+                throw new IllegalArgumentException("Found record with unrecognised update type");
         }
     }
 

@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public class CompactionJobCreatedStatus {
+public class CompactionJobCreatedStatus implements CompactionJobStatusUpdate {
 
     private final Instant updateTime;
     private final String partitionId;
@@ -47,6 +47,11 @@ public class CompactionJobCreatedStatus {
                 .inputFilesCount(job.getInputFiles().size())
                 .childPartitionIds(job.getChildPartitions())
                 .build();
+    }
+
+    @Override
+    public void addToBuilder(CompactionJobStatusesBuilder builder, String jobId) {
+        builder.jobCreated(jobId, this);
     }
 
     public Instant getUpdateTime() {
