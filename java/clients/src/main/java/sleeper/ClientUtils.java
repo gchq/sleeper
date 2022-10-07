@@ -20,6 +20,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.io.IOException;
+import java.util.Optional;
 
 /**
  *
@@ -37,5 +38,13 @@ public class ClientUtils {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(amazonS3, instanceId);
         return instanceProperties;
+    }
+
+    public static Optional<String> optionalArgument(String[] args, int index) {
+        if (args.length > index) {
+            return Optional.of(args[index]);
+        } else {
+            return Optional.empty();
+        }
     }
 }
