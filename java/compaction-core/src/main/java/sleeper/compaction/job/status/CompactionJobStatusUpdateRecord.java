@@ -22,18 +22,34 @@ public class CompactionJobStatusUpdateRecord {
 
     private final String jobId;
     private final Instant expiryDate;
-    private final CompactionJobStatusUpdate update;
+    private final CompactionJobStatusUpdate statusUpdate;
     private final String taskId;
 
-    public CompactionJobStatusUpdateRecord(String jobId, Instant expiryDate, CompactionJobStatusUpdate update, String taskId) {
+    public CompactionJobStatusUpdateRecord(String jobId, Instant expiryDate, CompactionJobStatusUpdate statusUpdate, String taskId) {
         this.jobId = Objects.requireNonNull(jobId, "jobId must not be null");
         this.expiryDate = Objects.requireNonNull(expiryDate, "expiryDate must not be null");
-        this.update = Objects.requireNonNull(update, "update must not be null");
+        this.statusUpdate = Objects.requireNonNull(statusUpdate, "statusUpdate must not be null");
         this.taskId = taskId;
     }
 
     public void addToBuilder(CompactionJobStatusesBuilder builder) {
-        update.addToBuilder(builder, jobId, taskId);
+        statusUpdate.addToBuilder(builder, jobId, taskId);
         builder.expiryDate(jobId, expiryDate);
+    }
+
+    public String getJobId() {
+        return jobId;
+    }
+
+    public Instant getExpiryDate() {
+        return expiryDate;
+    }
+
+    public CompactionJobStatusUpdate getStatusUpdate() {
+        return statusUpdate;
+    }
+
+    public String getTaskId() {
+        return taskId;
     }
 }
