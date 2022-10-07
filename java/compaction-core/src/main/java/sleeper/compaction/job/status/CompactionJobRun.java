@@ -26,7 +26,7 @@ public class CompactionJobRun {
 
     private CompactionJobRun(Builder builder) {
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
-        startedStatus = Objects.requireNonNull(builder.startedStatus);
+        startedStatus = Objects.requireNonNull(builder.startedStatus, "startedStatus must not be null");
         finishedStatus = builder.finishedStatus;
     }
 
