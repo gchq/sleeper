@@ -20,6 +20,7 @@ import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.status.CompactionJobStatusUpdateRecord;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
 
 import java.time.Instant;
@@ -65,15 +66,13 @@ public class CompactionJobStatusesBuilderTest {
                         Instant.parse("2022-09-24T09:24:00.001Z")),
                 DEFAULT_TASK_ID);
 
+        List<CompactionJobStatusUpdateRecord> records = new TestCompactionJobStatusUpdateRecords()
+                .recordsForJob("job1", created1, started1, finished1)
+                .recordsForJob("job2", created2, started2, finished2)
+                .list();
+
         // When
-        List<CompactionJobStatus> statuses = new CompactionJobStatusesBuilder()
-                .jobCreated("job1", created1)
-                .jobStarted("job1", started1)
-                .jobFinished("job1", finished1)
-                .jobCreated("job2", created2)
-                .jobStarted("job2", started2)
-                .jobFinished("job2", finished2)
-                .build();
+        List<CompactionJobStatus> statuses = new CompactionJobStatusesBuilder().jobUpdates(records).build();
 
         // Then
         assertThat(statuses).containsExactly(

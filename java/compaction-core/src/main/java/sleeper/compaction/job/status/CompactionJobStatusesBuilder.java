@@ -30,6 +30,11 @@ public class CompactionJobStatusesBuilder {
     private final Map<String, CompactionJobFinishedStatus> finishedById = new HashMap<>();
     private final Map<String, Instant> expiryDateById = new HashMap<>();
 
+    public CompactionJobStatusesBuilder jobUpdates(List<CompactionJobStatusUpdateRecord> jobUpdates) {
+        jobUpdates.forEach(update -> update.addToBuilder(this));
+        return this;
+    }
+
     public CompactionJobStatusesBuilder jobCreated(
             String jobId, CompactionJobCreatedStatus statusUpdate) {
         createdById.put(jobId, statusUpdate);
