@@ -109,7 +109,7 @@ public class DynamoDBCompactionJobStatusFormat {
         CompactionJobStatusesBuilder builder = new CompactionJobStatusesBuilder();
         items.stream()
                 .map(DynamoDBCompactionJobStatusFormat::getStatusUpdateRecord)
-                .forEach(result -> result.addToBuilder(builder));
+                .forEach(builder::jobUpdate);
         return builder.stream();
     }
 
