@@ -58,10 +58,35 @@ public class CompactionJobStatusReport {
     }
 
     public void run() {
-        if (arguments.getQueryType() == null) {
-            runWithPrompts();
-        } else {
-            runWithQuery(arguments.getQueryType(), arguments.getQueryParameters());
+        switch (arguments.getQueryType()) {
+            case PROMPT:
+                runWithPrompts();
+                break;
+            case UNFINISHED:
+                handleUnfinishedQuery();
+                break;
+            case DETAILED:
+                List<String> jobIds = Collections.singletonList(arguments.getQueryParameters());
+                handleDetailedQuery(jobIds);
+                break;
+            case RANGE:
+                Instant startRange;
+                Instant endRange;
+                try {
+                    Date startRangeDate = dateInputFormat.parse(arguments.getQueryParameters().split(",")[0]);
+                    startRange = startRangeDate.toInstant();
+                    Date endRangeDate = dateInputFormat.parse(arguments.getQueryParameters().split(",")[1]);
+                    endRange = endRangeDate.toInstant();
+                } catch (ParseException e) {
+                    System.out.println("Error while parsing input string, using system defaults (past 4 hours)");
+                    startRange = DEFAULT_RANGE_START;
+                    endRange = DEFAULT_RANGE_END;
+                }
+                handleRangeQuery(startRange, endRange);
+                break;
+            case ALL:
+                handleAllQuery();
+                break;
         }
     }
 
@@ -82,31 +107,6 @@ public class CompactionJobStatusReport {
             } else if (type.equalsIgnoreCase("u")) {
                 handleUnfinishedQuery();
             }
-        }
-    }
-
-    private void runWithQuery(QueryType queryType, String queryParameters) {
-        if (queryType.equals(QueryType.UNFINISHED)) {
-            handleUnfinishedQuery();
-        } else if (queryType.equals(QueryType.DETAILED)) {
-            List<String> jobIds = Collections.singletonList(queryParameters);
-            handleDetailedQuery(jobIds);
-        } else if (queryType.equals(QueryType.RANGE)) {
-            Instant startRange;
-            Instant endRange;
-            try {
-                Date startRangeDate = dateInputFormat.parse(queryParameters.split(",")[0]);
-                startRange = startRangeDate.toInstant();
-                Date endRangeDate = dateInputFormat.parse(queryParameters.split(",")[1]);
-                endRange = endRangeDate.toInstant();
-            } catch (ParseException e) {
-                System.out.println("Error while parsing input string, using system defaults (past 4 hours)");
-                startRange = DEFAULT_RANGE_START;
-                endRange = DEFAULT_RANGE_END;
-            }
-            handleRangeQuery(startRange, endRange);
-        } else if (queryType.equals(QueryType.ALL)) {
-            handleAllQuery();
         }
     }
 
