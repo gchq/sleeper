@@ -87,6 +87,8 @@ public class CompactionJobStatusReport {
             case ALL:
                 handleAllQuery();
                 break;
+            default:
+                throw new IllegalArgumentException("Unexpected query type: " + arguments.getQueryType());
         }
     }
 
