@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -45,7 +46,7 @@ public class CompactionJobStatusesBuilder {
     }
 
     public Stream<CompactionJobStatus> stream() {
-        return createdUpdateByJobId.entrySet().stream()
+        return createUpdatesOrderedByUpdateTime().entrySet().stream()
                 .map(entry -> fullStatus(entry.getKey(), entry.getValue()));
     }
 
@@ -91,6 +92,12 @@ public class CompactionJobStatusesBuilder {
             jobRuns.add(runBuilder.build());
         }
         return jobRuns;
+    }
+
+    private Map<String, CompactionJobStatusUpdateRecord> createUpdatesOrderedByUpdateTime() {
+        return createdUpdateByJobId.entrySet()
+                .stream().sorted(Comparator.comparing(update -> update.getValue().getStatusUpdate().getUpdateTime()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue, TreeMap::new));
     }
 
     private List<CompactionJobStatusUpdateRecord> runUpdatesOrderedByUpdateTime(String jobId) {
