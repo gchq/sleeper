@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.job.status;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -23,18 +22,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class CompactionJobStatusesBuilder {
-
-    private final Map<String, CompactionJobCreatedStatus> createdById = new TreeMap<>(); // Order by job ID for output
     private final Map<String, CompactionJobStatusUpdateRecord> createdUpdateByJobId = new HashMap<>();
     private final Map<String, List<CompactionJobStatusUpdateRecord>> runUpdatesByJobId = new HashMap<>();
-    private final Map<String, List<CompactionJobRun>> jobRunsById = new HashMap<>();
-    private final Map<String, Instant> expiryDateById = new HashMap<>();
-    private final Map<String, Map<String, CompactionJobStartedStatus>> startedStatusMap = new HashMap<>();
 
     public CompactionJobStatusesBuilder jobUpdates(List<CompactionJobStatusUpdateRecord> jobUpdates) {
         jobUpdates.forEach(this::jobUpdate);
@@ -51,42 +44,9 @@ public class CompactionJobStatusesBuilder {
         return this;
     }
 
-    public CompactionJobStatusesBuilder jobCreated(
-            String jobId, CompactionJobCreatedStatus statusUpdate) {
-        createdById.put(jobId, statusUpdate);
-        jobRunsById.put(jobId, new ArrayList<>());
-        return this;
-    }
-
-    public CompactionJobStatusesBuilder jobStarted(
-            String jobId, CompactionJobStartedStatus statusUpdate, String taskId) {
-        if (!startedStatusMap.containsKey(jobId)) {
-            startedStatusMap.put(jobId, new HashMap<>());
-        }
-        if (startedStatusMap.get(jobId).containsKey(taskId)) {
-            jobRunsById.get(jobId).add(CompactionJobRun.started(taskId, startedStatusMap.get(jobId).remove(taskId)));
-        }
-        startedStatusMap.get(jobId).put(taskId, statusUpdate);
-        return this;
-    }
-
-    public CompactionJobStatusesBuilder jobFinished(
-            String jobId, CompactionJobFinishedStatus statusUpdate, String taskId) {
-        if (startedStatusMap.containsKey(jobId) && startedStatusMap.get(jobId).containsKey(taskId)) {
-            jobRunsById.get(jobId).add(CompactionJobRun.finished(taskId, startedStatusMap.get(jobId).remove(taskId), statusUpdate));
-        }
-        return this;
-    }
-
     public Stream<CompactionJobStatus> stream() {
         return createdUpdateByJobId.entrySet().stream()
                 .map(entry -> fullStatus(entry.getKey(), entry.getValue()));
-    }
-
-    public CompactionJobStatusesBuilder expiryDate(
-            String jobId, Instant expiryDate) {
-        expiryDateById.put(jobId, expiryDate);
-        return this;
     }
 
     public List<CompactionJobStatus> build() {

@@ -32,11 +32,6 @@ public class CompactionJobStartedStatus implements CompactionJobStatusUpdate {
         return new CompactionJobStartedStatus(updateTime, startTime);
     }
 
-    @Override
-    public void addToBuilder(CompactionJobStatusesBuilder builder, String jobId, String taskId) {
-        builder.jobStarted(jobId, this, taskId);
-    }
-
     public Instant getUpdateTime() {
         return updateTime;
     }

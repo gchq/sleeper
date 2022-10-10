@@ -32,11 +32,6 @@ public class CompactionJobStatusUpdateRecord {
         this.taskId = taskId;
     }
 
-    public void addToBuilder(CompactionJobStatusesBuilder builder) {
-        statusUpdate.addToBuilder(builder, jobId, taskId);
-        builder.expiryDate(jobId, expiryDate);
-    }
-
     public String getJobId() {
         return jobId;
     }

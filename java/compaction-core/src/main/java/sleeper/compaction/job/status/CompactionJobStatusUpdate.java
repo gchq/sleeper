@@ -20,6 +20,4 @@ import java.time.Instant;
 public interface CompactionJobStatusUpdate {
 
     Instant getUpdateTime();
-
-    void addToBuilder(CompactionJobStatusesBuilder builder, String jobId, String taskId);
 }
