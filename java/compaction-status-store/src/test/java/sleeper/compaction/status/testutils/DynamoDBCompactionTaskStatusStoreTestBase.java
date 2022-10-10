@@ -28,6 +28,7 @@ import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore.taskStatusTableName;
 import static sleeper.compaction.status.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
@@ -64,7 +65,7 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
     }
 
     protected static CompactionTaskStatus.Builder startedTaskWithDefaultsBuilder() {
-        return CompactionTaskStatus.builder().taskId("test-task-id").started(defaultStartTime());
+        return CompactionTaskStatus.builder().taskId(UUID.randomUUID().toString()).started(defaultStartTime());
     }
 
     protected static CompactionTaskStatus finishedTaskWithDefaults() {

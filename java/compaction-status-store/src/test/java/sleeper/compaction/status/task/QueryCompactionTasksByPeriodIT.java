@@ -24,6 +24,7 @@ import sleeper.compaction.task.CompactionTaskStatus;
 
 import java.time.Instant;
 import java.time.Period;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -90,7 +91,7 @@ public class QueryCompactionTasksByPeriodIT extends DynamoDBCompactionTaskStatus
     }
 
     private CompactionTaskStatus taskWithStartAndFinishTime(Instant startTime, Instant finishTime) {
-        return CompactionTaskStatus.builder().taskId("test-task-id").started(startTime)
+        return CompactionTaskStatus.builder().taskId(UUID.randomUUID().toString()).started(startTime)
                 .finished(CompactionTaskFinishedStatus.builder()
                         .addJobSummary(new CompactionJobSummary(
                                 new CompactionJobRecordsProcessed(200, 100),
