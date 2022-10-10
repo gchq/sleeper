@@ -68,29 +68,25 @@ public class CompactionJobStatusesBuilder {
     }
 
     public List<CompactionJobRun> buildJobRunList(List<CompactionJobStatusUpdateRecord> recordList) {
-        boolean previousStarted = false;
+        Map<String, CompactionJobRun.Builder> taskBuilders = new HashMap<>();
         List<CompactionJobRun> jobRuns = new ArrayList<>();
-        CompactionJobRun.Builder runBuilder = CompactionJobRun.builder();
         for (CompactionJobStatusUpdateRecord record : recordList) {
+            String taskId = record.getTaskId();
             CompactionJobStatusUpdate statusUpdate = record.getStatusUpdate();
             if (statusUpdate instanceof CompactionJobStartedStatus) {
-                if (previousStarted) {
-                    jobRuns.add(runBuilder.build());
-                    runBuilder = CompactionJobRun.builder();
+                if (taskBuilders.containsKey(taskId)) {
+                    jobRuns.add(taskBuilders.remove(taskId).build());
                 }
-                runBuilder.startedStatus((CompactionJobStartedStatus) statusUpdate)
-                        .taskId(record.getTaskId());
-                previousStarted = true;
+                taskBuilders.computeIfAbsent(taskId, id -> CompactionJobRun.builder())
+                        .startedStatus((CompactionJobStartedStatus) statusUpdate)
+                        .taskId(taskId);
             } else {
-                jobRuns.add(runBuilder.finishedStatus((CompactionJobFinishedStatus) statusUpdate)
-                        .taskId(record.getTaskId()).build());
-                runBuilder = CompactionJobRun.builder();
-                previousStarted = false;
+                jobRuns.add(taskBuilders.remove(taskId)
+                        .finishedStatus((CompactionJobFinishedStatus) statusUpdate)
+                        .taskId(taskId).build());
             }
         }
-        if (previousStarted) {
-            jobRuns.add(runBuilder.build());
-        }
+        taskBuilders.values().stream().map(CompactionJobRun.Builder::build).forEach(jobRuns::add);
         return jobRuns;
     }
 
