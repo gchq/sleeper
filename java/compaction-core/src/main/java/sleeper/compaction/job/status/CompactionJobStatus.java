@@ -196,7 +196,7 @@ public class CompactionJobStatus {
             return this;
         }
 
-        public Builder jobRuns(List<CompactionJobRun> jobRunList) {
+        public Builder jobRunsLatestFirst(List<CompactionJobRun> jobRunList) {
             this.jobRunList = jobRunList;
             return this;
         }

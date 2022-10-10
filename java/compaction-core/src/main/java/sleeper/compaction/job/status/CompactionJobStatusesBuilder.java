@@ -60,7 +60,7 @@ public class CompactionJobStatusesBuilder {
 
         return CompactionJobStatus.builder().jobId(jobId)
                 .createdStatus(createdStatus)
-                .jobRuns(buildJobRunList(runUpdates))
+                .jobRunsLatestFirst(buildJobRunList(runUpdates))
                 .expiryDate(last(runUpdates)
                         .map(CompactionJobStatusUpdateRecord::getExpiryDate)
                         .orElseGet(createdUpdate::getExpiryDate))
