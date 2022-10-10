@@ -52,6 +52,8 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.util.UUID;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
@@ -77,8 +79,8 @@ public class CompactSortedFilesRunner {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
+    private final CompactionTaskStatusStore taskStatusStore;
     private final String taskId;
-    private final CompactionTaskFinishedStatus.Builder taskFinishedBuilder;
     private final CompactionJobSerDe compactionJobSerDe;
     private final String sqsJobQueueUrl;
     private final AmazonSQS sqsClient;
@@ -93,7 +95,7 @@ public class CompactSortedFilesRunner {
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             CompactionJobStatusStore jobStatusStore,
-            CompactionTaskFinishedStatus.Builder taskFinishedBuilder,
+            CompactionTaskStatusStore taskStatusStore,
             String taskId,
             String sqsJobQueueUrl,
             AmazonSQS sqsClient,
@@ -104,7 +106,7 @@ public class CompactSortedFilesRunner {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
-        this.taskFinishedBuilder = taskFinishedBuilder;
+        this.taskStatusStore = taskStatusStore;
         this.taskId = taskId;
         this.compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         this.sqsJobQueueUrl = sqsJobQueueUrl;
@@ -121,14 +123,21 @@ public class CompactSortedFilesRunner {
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             CompactionJobStatusStore jobStatusStore,
-            CompactionTaskFinishedStatus.Builder taskFinishedBuilder,
+            CompactionTaskStatusStore taskStatusStore,
             String taskId,
             String sqsJobQueueUrl,
             AmazonSQS sqsClient) {
-        this(instanceProperties, objectFactory, tablePropertiesProvider, stateStoreProvider, jobStatusStore, taskFinishedBuilder, taskId, sqsJobQueueUrl, sqsClient, 3, 20);
+        this(instanceProperties, objectFactory, tablePropertiesProvider, stateStoreProvider, jobStatusStore, taskStatusStore, taskId, sqsJobQueueUrl, sqsClient, 3, 20);
     }
 
     public void run() throws InterruptedException, IOException, ActionException {
+
+        Instant startTime = Instant.now();
+        CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus
+                .builder().taskId(taskId).started(startTime);
+        LOGGER.info("Starting task {}", taskId);
+        taskStatusStore.taskStarted(taskStatusBuilder.build());
+        CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
         long totalNumberOfMessagesProcessed = 0L;
         int numConsecutiveTimesNoMessages = 0;
         while (numConsecutiveTimesNoMessages < maxMessageRetrieveAttempts) {
@@ -157,7 +166,14 @@ public class CompactSortedFilesRunner {
         }
         LOGGER.info("Returning from run() method in CompactSortedFilesRunner as no messages received in {} seconds",
                 (numConsecutiveTimesNoMessages * 30));
-        LOGGER.info("Total number of messages processed = " + totalNumberOfMessagesProcessed);
+        LOGGER.info("Total number of messages processed = {}", totalNumberOfMessagesProcessed);
+
+        Instant finishTime = Instant.now();
+        double runTimeInSeconds = (finishTime.toEpochMilli() - startTime.toEpochMilli()) / 1000.0;
+        LOGGER.info("CompactSortedFilesRunner total run time = {}", runTimeInSeconds);
+
+        CompactionTaskStatus taskFinished = taskStatusBuilder.finished(taskFinishedBuilder, finishTime).build();
+        taskStatusStore.taskFinished(taskFinished);
     }
 
     private CompactionJobSummary compact(CompactionJob compactionJob, Message message) throws IOException, IteratorException, ActionException {
@@ -198,7 +214,6 @@ public class CompactSortedFilesRunner {
             System.exit(1);
         }
 
-        long startTime = System.currentTimeMillis();
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
@@ -211,10 +226,6 @@ public class CompactSortedFilesRunner {
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
         CompactionJobStatusStore jobStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
         CompactionTaskStatusStore taskStatusStore = DynamoDBCompactionTaskStatusStore.from(dynamoDBClient, instanceProperties);
-        CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
-
-        CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.started(startTime);
-        taskStatusStore.taskStarted(taskStatusBuilder.build());
 
         String sqsJobQueueUrl;
         String type = args[1];
@@ -232,8 +243,8 @@ public class CompactSortedFilesRunner {
                 tablePropertiesProvider,
                 stateStoreProvider,
                 jobStatusStore,
-                taskFinishedBuilder,
-                taskStatusBuilder.getTaskId(),
+                taskStatusStore,
+                UUID.randomUUID().toString(),
                 sqsJobQueueUrl,
                 sqsClient);
         runner.run();
@@ -244,11 +255,5 @@ public class CompactSortedFilesRunner {
         LOGGER.info("Shut down dynamoDBClient");
         s3Client.shutdown();
         LOGGER.info("Shut down s3Client");
-        long finishTime = System.currentTimeMillis();
-        double runTimeInSeconds = (finishTime - startTime) / 1000.0;
-        LOGGER.info("CompactSortedFilesRunner total run time = " + runTimeInSeconds);
-
-        CompactionTaskStatus taskFinished = taskStatusBuilder.finished(taskFinishedBuilder, finishTime).build();
-        taskStatusStore.taskFinished(taskFinished);
     }
 }

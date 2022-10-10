@@ -90,7 +90,7 @@ public class QueryCompactionTasksByPeriodIT extends DynamoDBCompactionTaskStatus
     }
 
     private CompactionTaskStatus taskWithStartAndFinishTime(Instant startTime, Instant finishTime) {
-        return CompactionTaskStatus.started(startTime)
+        return CompactionTaskStatus.builder().taskId("test-task-id").started(startTime)
                 .finished(CompactionTaskFinishedStatus.builder()
                         .addJobSummary(new CompactionJobSummary(
                                 new CompactionJobRecordsProcessed(200, 100),

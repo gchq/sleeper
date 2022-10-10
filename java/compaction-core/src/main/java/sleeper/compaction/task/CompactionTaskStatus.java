@@ -18,7 +18,6 @@ package sleeper.compaction.task;
 
 import java.time.Instant;
 import java.util.Objects;
-import java.util.UUID;
 
 public class CompactionTaskStatus {
     private final String taskId;
@@ -32,16 +31,6 @@ public class CompactionTaskStatus {
         finishedStatus = builder.finishedStatus;
         expiryDate = builder.expiryDate;
     }
-
-    public static CompactionTaskStatus.Builder started(long startTime) {
-        return started(Instant.ofEpochMilli(startTime));
-    }
-
-    public static CompactionTaskStatus.Builder started(Instant startTime) {
-        return builder().taskId(UUID.randomUUID().toString())
-                .started(startTime);
-    }
-
 
     public static Builder builder() {
         return new Builder();

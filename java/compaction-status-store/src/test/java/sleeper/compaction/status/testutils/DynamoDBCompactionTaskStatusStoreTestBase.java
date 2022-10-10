@@ -64,7 +64,7 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
     }
 
     protected static CompactionTaskStatus.Builder startedTaskWithDefaultsBuilder() {
-        return CompactionTaskStatus.started(defaultStartTime().toEpochMilli());
+        return CompactionTaskStatus.builder().taskId("test-task-id").started(defaultStartTime());
     }
 
     protected static CompactionTaskStatus finishedTaskWithDefaults() {
