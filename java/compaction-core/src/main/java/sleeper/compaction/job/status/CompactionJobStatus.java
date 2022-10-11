@@ -136,7 +136,7 @@ public class CompactionJobStatus {
         return createdStatus.getUpdateTime();
     }
 
-    public Instant lastTime() {
+    private Instant lastTime() {
         if (isFinished()) {
             return getLatestFinishedStatus().getUpdateTime();
         } else if (isStarted()) {
@@ -146,14 +146,14 @@ public class CompactionJobStatus {
         }
     }
 
-    public CompactionJobStartedStatus getLatestStartedStatus() {
+    private CompactionJobStartedStatus getLatestStartedStatus() {
         return jobRunList.stream()
                 .map(CompactionJobRun::getStartedStatus)
                 .findFirst()
                 .orElse(null);
     }
 
-    public CompactionJobFinishedStatus getLatestFinishedStatus() {
+    private CompactionJobFinishedStatus getLatestFinishedStatus() {
         return jobRunList.stream()
                 .filter(CompactionJobRun::isFinished)
                 .map(CompactionJobRun::getFinishedStatus)
@@ -161,7 +161,7 @@ public class CompactionJobStatus {
                 .orElse(null);
     }
 
-    public CompactionJobRun getLatestJobRun() {
+    private CompactionJobRun getLatestJobRun() {
         return jobRunList.get(0);
     }
 
