@@ -51,9 +51,11 @@ public class TestCompactionJobStatusUpdateRecords {
     }
 
     public CompactionJobStatus buildSingleStatus() {
-        return new CompactionJobStatusesBuilder().jobUpdates(updates)
-                .stream().findFirst()
-                .orElseThrow(() -> new IllegalStateException("Expected single status"));
+        List<CompactionJobStatus> built = new CompactionJobStatusesBuilder().jobUpdates(updates).build();
+        if (built.size() != 1) {
+            throw new IllegalStateException("Expected single status");
+        }
+        return built.get(0);
     }
 
     public class WithJob {

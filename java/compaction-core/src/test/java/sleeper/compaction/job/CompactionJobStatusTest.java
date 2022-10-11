@@ -87,10 +87,8 @@ public class CompactionJobStatusTest {
         // When
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, Instant.parse("2022-09-22T13:33:12.001Z")))
-                .singleJobRun(CompactionJobRun.finished(
-                        DEFAULT_TASK_ID,
-                        CompactionJobStartedStatus.updateAndStartTime(updateTime, startTime),
-                        null))
+                .singleJobRun(CompactionJobRun.started(DEFAULT_TASK_ID,
+                        CompactionJobStartedStatus.updateAndStartTime(updateTime, startTime)))
                 .build();
 
         // Then
