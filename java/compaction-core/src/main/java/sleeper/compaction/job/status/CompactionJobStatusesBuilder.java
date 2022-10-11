@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -46,7 +45,8 @@ public class CompactionJobStatusesBuilder {
     }
 
     public Stream<CompactionJobStatus> stream() {
-        return createUpdatesOrderedByUpdateTime().entrySet().stream()
+        return createdUpdateByJobId.entrySet().stream()
+                .sorted(Comparator.comparing(update -> update.getValue().getStatusUpdate().getUpdateTime()))
                 .map(entry -> fullStatus(entry.getKey(), entry.getValue()));
     }
 
@@ -69,31 +69,27 @@ public class CompactionJobStatusesBuilder {
 
     public List<CompactionJobRun> buildJobRunList(List<CompactionJobStatusUpdateRecord> recordList) {
         Map<String, CompactionJobRun.Builder> taskBuilders = new HashMap<>();
-        List<CompactionJobRun> jobRuns = new ArrayList<>();
+        List<CompactionJobRun.Builder> orderedBuilders = new ArrayList<>();
         for (CompactionJobStatusUpdateRecord record : recordList) {
             String taskId = record.getTaskId();
             CompactionJobStatusUpdate statusUpdate = record.getStatusUpdate();
             if (statusUpdate instanceof CompactionJobStartedStatus) {
-                if (taskBuilders.containsKey(taskId)) {
-                    jobRuns.add(taskBuilders.remove(taskId).build());
-                }
-                taskBuilders.computeIfAbsent(taskId, id -> CompactionJobRun.builder())
+                CompactionJobRun.Builder builder = CompactionJobRun.builder()
                         .startedStatus((CompactionJobStartedStatus) statusUpdate)
                         .taskId(taskId);
+                taskBuilders.put(taskId, builder);
+                orderedBuilders.add(builder);
             } else {
-                jobRuns.add(taskBuilders.remove(taskId)
+                taskBuilders.remove(taskId)
                         .finishedStatus((CompactionJobFinishedStatus) statusUpdate)
-                        .taskId(taskId).build());
+                        .taskId(taskId);
             }
         }
-        taskBuilders.values().stream().map(CompactionJobRun.Builder::build).forEach(jobRuns::add);
+        List<CompactionJobRun> jobRuns = orderedBuilders.stream()
+                .map(CompactionJobRun.Builder::build)
+                .collect(Collectors.toList());
+        Collections.reverse(jobRuns);
         return jobRuns;
-    }
-
-    private Map<String, CompactionJobStatusUpdateRecord> createUpdatesOrderedByUpdateTime() {
-        return createdUpdateByJobId.entrySet()
-                .stream().sorted(Comparator.comparing(update -> update.getValue().getStatusUpdate().getUpdateTime()))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue, TreeMap::new));
     }
 
     private List<CompactionJobStatusUpdateRecord> runUpdatesOrderedByUpdateTime(String jobId) {

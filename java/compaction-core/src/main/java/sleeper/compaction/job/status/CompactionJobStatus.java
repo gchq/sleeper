@@ -19,9 +19,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSummary;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -47,6 +45,7 @@ public class CompactionJobStatus {
         return builder()
                 .jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, updateTime))
+                .jobRunsLatestFirst(Collections.emptyList())
                 .build();
     }
 
@@ -178,7 +177,6 @@ public class CompactionJobStatus {
         private Instant expiryDate;
 
         private Builder() {
-            jobRunList = new ArrayList<>();
         }
 
         public Builder jobId(String jobId) {
@@ -192,7 +190,7 @@ public class CompactionJobStatus {
         }
 
         public Builder jobRun(CompactionJobRun jobRun) {
-            this.jobRunList.add(jobRun);
+            this.jobRunList = Collections.singletonList(jobRun);
             return this;
         }
 
@@ -207,7 +205,6 @@ public class CompactionJobStatus {
         }
 
         public CompactionJobStatus build() {
-            jobRunList.sort(Comparator.comparing(CompactionJobRun::getLatestUpdateTime).reversed());
             return new CompactionJobStatus(this);
         }
     }

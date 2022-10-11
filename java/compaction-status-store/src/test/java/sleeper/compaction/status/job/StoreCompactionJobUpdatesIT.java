@@ -29,6 +29,7 @@ import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfoFactory;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -102,14 +103,15 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
                         CompactionJobStatus.builder().jobId(job.getId())
                                 .createdStatus(CompactionJobCreatedStatus.from(
                                         job, ignoredUpdateTime()))
-                                .jobRun(CompactionJobRun.finished(DEFAULT_TASK_ID_2, CompactionJobStartedStatus.updateAndStartTime(
-                                                ignoredUpdateTime(), startTime2),
-                                        CompactionJobFinishedStatus.updateTimeAndSummary(
-                                                ignoredUpdateTime(), new CompactionJobSummary(processed, startTime2, finishTime2))))
-                                .jobRun(CompactionJobRun.finished(DEFAULT_TASK_ID, CompactionJobStartedStatus.updateAndStartTime(
-                                                ignoredUpdateTime(), startTime1),
-                                        CompactionJobFinishedStatus.updateTimeAndSummary(
-                                                ignoredUpdateTime(), new CompactionJobSummary(processed, startTime1, finishTime1))))
+                                .jobRunsLatestFirst(Arrays.asList(
+                                        CompactionJobRun.finished(DEFAULT_TASK_ID_2, CompactionJobStartedStatus.updateAndStartTime(
+                                                        ignoredUpdateTime(), startTime2),
+                                                CompactionJobFinishedStatus.updateTimeAndSummary(
+                                                        ignoredUpdateTime(), new CompactionJobSummary(processed, startTime2, finishTime2))),
+                                        CompactionJobRun.finished(DEFAULT_TASK_ID, CompactionJobStartedStatus.updateAndStartTime(
+                                                        ignoredUpdateTime(), startTime1),
+                                                CompactionJobFinishedStatus.updateTimeAndSummary(
+                                                        ignoredUpdateTime(), new CompactionJobSummary(processed, startTime1, finishTime1)))))
                                 .build());
     }
 

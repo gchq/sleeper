@@ -385,4 +385,44 @@ public class CompactionJobRunTest {
                         tuple(DEFAULT_TASK_ID_2, started2, finished2),
                         tuple(DEFAULT_TASK_ID_1, started1, finished1));
     }
+
+    @Test
+    public void shouldBuildCompactionJobRunsWhenJobRunStartedAndFinshedDuringAnotherRunDifferentTasks() {
+        // Given
+        CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
+                .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
+                .partitionId("partition1").childPartitionIds(null)
+                .inputFilesCount(11)
+                .build();
+        CompactionJobStartedStatus started1 = CompactionJobStartedStatus.updateAndStartTime(
+                Instant.parse("2022-09-23T09:23:30.012Z"),
+                Instant.parse("2022-09-23T09:23:30.001Z"));
+        CompactionJobStartedStatus started2 = CompactionJobStartedStatus.updateAndStartTime(
+                Instant.parse("2022-09-24T09:23:30.012Z"),
+                Instant.parse("2022-09-24T09:23:30.001Z"));
+        CompactionJobFinishedStatus finished2 = CompactionJobFinishedStatus.updateTimeAndSummary(
+                Instant.parse("2022-09-25T09:24:00.012Z"),
+                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                        Instant.parse("2022-09-25T09:23:30.001Z"),
+                        Instant.parse("2022-09-25T09:24:00.001Z")));
+        CompactionJobFinishedStatus finished1 = CompactionJobFinishedStatus.updateTimeAndSummary(
+                Instant.parse("2022-09-26T09:24:00.012Z"),
+                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                        Instant.parse("2022-09-26T09:23:30.001Z"),
+                        Instant.parse("2022-09-26T09:24:00.001Z")));
+
+        // When
+        CompactionJobStatus status = new TestCompactionJobStatusUpdateRecords()
+                .updatesForJobWithTask("job1", DEFAULT_TASK_ID_1, created,
+                        started1, finished1)
+                .updatesForJobWithTask("job1", DEFAULT_TASK_ID_2, started2, finished2)
+                .buildSingleStatus();
+
+        // Then
+        assertThat(status.getJobRuns())
+                .extracting(CompactionJobRun::getTaskId, CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .containsExactly(
+                        tuple(DEFAULT_TASK_ID_2, started2, finished2),
+                        tuple(DEFAULT_TASK_ID_1, started1, finished1));
+    }
 }
