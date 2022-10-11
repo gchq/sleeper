@@ -46,7 +46,9 @@ public class CompactionJobStatusesBuilder {
 
     public Stream<CompactionJobStatus> stream() {
         return createdUpdateByJobId.entrySet().stream()
-                .sorted(Comparator.comparing(update -> update.getValue().getStatusUpdate().getUpdateTime()))
+                .sorted(Comparator.comparing(
+                        (Map.Entry<String, CompactionJobStatusUpdateRecord> update) ->
+                                update.getValue().getStatusUpdate().getUpdateTime()).reversed())
                 .map(entry -> fullStatus(entry.getKey(), entry.getValue()));
     }
 
