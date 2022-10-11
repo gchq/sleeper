@@ -18,52 +18,140 @@ package sleeper.compaction.job;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.range.Range;
 import sleeper.core.schema.Schema;
+import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfoFactory;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
+import static sleeper.compaction.job.CompactionJobTestUtils.KEY_FIELD;
 import static sleeper.compaction.job.CompactionJobTestUtils.createInstanceProperties;
 import static sleeper.compaction.job.CompactionJobTestUtils.createSchema;
 import static sleeper.compaction.job.CompactionJobTestUtils.createTableProperties;
 
 public class CompactionJobTestDataHelper {
 
+    public static final String DEFAULT_TASK_ID = "task-id";
+
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
     private final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-    public static final String DEFAULT_TASK_ID = "task-id";
+    private List<Partition> partitions;
+    private PartitionTree partitionTree;
+    private FileInfoFactory fileFactory;
 
     public Partition singlePartition() {
-        return new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct().get(0);
+        return singlePartitionTree().getRootPartition();
+    }
+
+    public void partitionTree(Consumer<PartitionsBuilder> config) {
+        if (isPartitionsSpecified()) {
+            throw new IllegalStateException("Partition tree already initialised");
+        }
+        setPartitions(createPartitions(config));
     }
 
     public CompactionJob singleFileCompaction() {
         return singleFileCompaction(singlePartition());
     }
 
+    public CompactionJob singleFileCompaction(String partitionId) {
+        return singleFileCompaction(partitionTree.getPartition(partitionId));
+    }
+
     public CompactionJob singleFileCompaction(Partition partition) {
-        FileInfoFactory fileFactory = new FileInfoFactory(schema, Collections.singletonList(partition));
+        validatePartitionSpecified(partition);
         return jobFactory.createCompactionJob(
-                Collections.singletonList(fileFactory.leafFile(100L, "a", "z")),
+                Collections.singletonList(fileInPartition(partition)),
                 partition.getId());
     }
 
-    public CompactionJob singleFileSplittingCompaction(String rootPartitionId, String leftPartitionId, String rightPartitionId) {
-        List<Partition> partitions = new PartitionsBuilder(schema)
-                .leavesWithSplits(Arrays.asList(leftPartitionId, rightPartitionId), Collections.singletonList("p"))
-                .parentJoining(rootPartitionId, leftPartitionId, rightPartitionId)
-                .buildList();
-        FileInfoFactory fileFactory = new FileInfoFactory(schema, partitions);
+    public CompactionJob singleFileSplittingCompaction(String parentPartitionId, String leftPartitionId, String rightPartitionId) {
+        Object splitPoint;
+        if (!isPartitionsSpecified()) {
+            splitPoint = "p";
+            setPartitions(createPartitions(builder -> builder
+                    .leavesWithSplits(Arrays.asList(leftPartitionId, rightPartitionId), Collections.singletonList(splitPoint))
+                    .parentJoining(parentPartitionId, leftPartitionId, rightPartitionId)));
+        } else {
+            Partition left = partitionTree.getPartition(leftPartitionId);
+            Partition right = partitionTree.getPartition(rightPartitionId);
+            splitPoint = getValidSplitPoint(parentPartitionId, left, right);
+        }
         return jobFactory.createSplittingCompactionJob(
-                Collections.singletonList(fileFactory.rootFile(100L, "a", "z")),
-                rootPartitionId, leftPartitionId, rightPartitionId, "p", 0);
+                Collections.singletonList(fileInPartition(partitionTree.getPartition(parentPartitionId))),
+                parentPartitionId, leftPartitionId, rightPartitionId, splitPoint, 0);
     }
 
+    private FileInfo fileInPartition(Partition partition) {
+        Range range = singleFieldRange(partition);
+        String min = range.getMin() + "a";
+        String max = range.getMin() + "b";
+        return fileFactory.partitionFile(partition, 100L, min, max);
+    }
+
+    private PartitionTree singlePartitionTree() {
+        if (!isPartitionsSpecified()) {
+            setPartitions(createSinglePartition());
+        } else if (!partitionTree.getRootPartition().isLeafPartition()) {
+            throw new IllegalStateException(
+                    "Partition tree already initialised with multiple partitions when single partition expected");
+        }
+        return partitionTree;
+    }
+
+    private void setPartitions(List<Partition> partitions) {
+        this.partitions = partitions;
+        partitionTree = new PartitionTree(schema, partitions);
+        fileFactory = FileInfoFactory.builder().schema(schema).partitionTree(partitionTree).build();
+    }
+
+    private boolean isPartitionsSpecified() {
+        return partitionTree != null;
+    }
+
+    private List<Partition> createSinglePartition() {
+        return new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct();
+    }
+
+    private List<Partition> createPartitions(Consumer<PartitionsBuilder> config) {
+        PartitionsBuilder builder = new PartitionsBuilder(schema);
+        config.accept(builder);
+        return builder.buildList();
+    }
+
+    private void validatePartitionSpecified(Partition checkPartition) {
+        for (Partition partition : partitions) {
+            if (partition == checkPartition) {
+                return;
+            }
+        }
+        throw new IllegalArgumentException("Partition should be specified with helper: " + checkPartition);
+    }
+
+    private Object getValidSplitPoint(String parentId, Partition left, Partition right) {
+        if (!left.getParentPartitionId().equals(parentId)
+                || !right.getParentPartitionId().equals(parentId)) {
+            throw new IllegalStateException("Parent partition does not match");
+        }
+        Object splitPoint = singleFieldRange(left).getMax();
+        if (!splitPoint.equals(singleFieldRange(right).getMin())) {
+            throw new IllegalStateException(
+                    "Left and right partition are mismatched (expected split point " + splitPoint + ")");
+        }
+        return splitPoint;
+    }
+
+    private Range singleFieldRange(Partition partition) {
+        return partition.getRegion().getRange(KEY_FIELD);
+    }
 
 }

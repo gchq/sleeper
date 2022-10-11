@@ -3,7 +3,7 @@
     "jobId": "$(jobId1)",
     "createdStatus": {
       "updateTime": "2022-09-17T13:33:12.001Z",
-      "partitionId": "root",
+      "partitionId": "partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA",
       "inputFilesCount": 1,
       "childPartitionIds": []
     },
@@ -13,13 +13,13 @@
     "jobId": "$(jobId2)",
     "createdStatus": {
       "updateTime": "2022-09-18T13:33:12.001Z",
-      "partitionId": "root",
+      "partitionId": "partnBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB",
       "inputFilesCount": 1,
       "childPartitionIds": []
     },
     "jobRunList": [
       {
-        "taskId": "task-id",
+        "taskId": "task1111-1111-1111-1111-111111111111",
         "startedStatus": {
           "updateTime": "2022-09-18T13:39:12.001Z",
           "startTime": "2022-09-18T13:34:12.001Z"
@@ -31,13 +31,13 @@
     "jobId": "$(jobId3)",
     "createdStatus": {
       "updateTime": "2022-09-19T13:33:12.001Z",
-      "partitionId": "root",
+      "partitionId": "partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC",
       "inputFilesCount": 1,
       "childPartitionIds": []
     },
     "jobRunList": [
       {
-        "taskId": "task-id",
+        "taskId": "task1111-1111-1111-1111-111111111111",
         "startedStatus": {
           "updateTime": "2022-09-19T13:39:12.001Z",
           "startTime": "2022-09-19T13:34:12.001Z"
@@ -63,11 +63,11 @@
     "jobId": "$(jobId4)",
     "createdStatus": {
       "updateTime": "2022-09-20T13:33:12.001Z",
-      "partitionId": "C",
+      "partitionId": "partnEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE",
       "inputFilesCount": 1,
       "childPartitionIds": [
-        "A",
-        "B"
+        "partnAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA",
+        "partnBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB"
       ]
     },
     "jobRunList": []
@@ -76,16 +76,16 @@
     "jobId": "$(jobId5)",
     "createdStatus": {
       "updateTime": "2022-09-21T13:33:12.001Z",
-      "partitionId": "F",
+      "partitionId": "partnFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF",
       "inputFilesCount": 1,
       "childPartitionIds": [
-        "D",
-        "E"
+        "partnEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE",
+        "partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC"
       ]
     },
     "jobRunList": [
       {
-        "taskId": "task-id",
+        "taskId": "task2222-2222-2222-2222-222222222222",
         "startedStatus": {
           "updateTime": "2022-09-21T13:39:12.001Z",
           "startTime": "2022-09-21T13:34:12.001Z"
@@ -97,16 +97,16 @@
     "jobId": "$(jobId6)",
     "createdStatus": {
       "updateTime": "2022-09-22T13:33:12.001Z",
-      "partitionId": "I",
+      "partitionId": "partnGGG-GGGG-GGGG-GGGG-GGGGGGGGGGGG",
       "inputFilesCount": 1,
       "childPartitionIds": [
-        "G",
-        "H"
+        "partnFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF",
+        "partnDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD"
       ]
     },
     "jobRunList": [
       {
-        "taskId": "task-id",
+        "taskId": "task2222-2222-2222-2222-222222222222",
         "startedStatus": {
           "updateTime": "2022-09-22T13:39:12.001Z",
           "startTime": "2022-09-22T13:34:12.001Z"

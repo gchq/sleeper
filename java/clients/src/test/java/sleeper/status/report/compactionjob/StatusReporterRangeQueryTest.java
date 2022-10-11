@@ -17,14 +17,10 @@
 package sleeper.status.report.compactionjob;
 
 import org.junit.Test;
-import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.core.partition.Partition;
 
-import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,157 +29,27 @@ import static sleeper.ClientTestUtils.example;
 public class StatusReporterRangeQueryTest extends StatusReporterTestBase {
 
     @Test
-    public void shouldReportCompactionJobStatusFinishedInRange() throws Exception {
+    public void shouldReportCompactionJobStatusForStandardAndSplittingCompactionsInRange() throws Exception {
         // Given
-        Partition partition = dataHelper.singlePartition();
-        CompactionJob job = dataHelper.singleFileCompaction(partition);
-        Instant creationTime = Instant.parse("2022-09-22T13:33:12.001Z");
-        Instant startedTime = Instant.parse("2022-09-22T13:34:12.001Z");
-        Instant startedUpdateTime = Instant.parse("2022-09-22T13:39:12.001Z");
-        Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
-
-        // When
-        CompactionJobStatus status = jobFinished(job, DEFAULT_TASK_ID, creationTime, startedTime, startedUpdateTime, finishedTime);
-        Instant startRange = Instant.parse("2022-09-22T00:00:00.001Z");
-        Instant endRange = Instant.parse("2022-09-22T23:59:59.001Z");
+        List<CompactionJobStatus> statusList = mixedJobStatuses();
 
         // Then
-        List<CompactionJobStatus> statusList = Stream.of(status)
-                .filter(j -> j.isInPeriod(startRange, endRange))
-                .collect(Collectors.toList());
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(example("reports/compactionjobstatus/standard/range/standardJobFinishedInRange.txt")
-                        .replace("$(jobId)", job.getId()));
+                .isEqualTo(replaceStandardJobIds(statusList, example("reports/compactionjobstatus/standard/range/mixedJobs.txt")));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(example("reports/compactionjobstatus/json/standardJobFinished.json")
-                        .replace("$(jobId)", job.getId()));
+                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/json/mixedJobs.json")));
     }
 
     @Test
-    public void shouldReportSplittingCompactionJobStatusFinishedInRange() throws Exception {
-        // Given
-        CompactionJob job = dataHelper.singleFileSplittingCompaction("C", "A", "B");
-        Instant creationTime = Instant.parse("2022-09-22T13:33:12.001Z");
-        Instant startedTime = Instant.parse("2022-09-22T13:34:12.001Z");
-        Instant startedUpdateTime = Instant.parse("2022-09-22T13:39:12.001Z");
-        Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
+    public void shouldReportNoCompactionJobStatusIfNoJobsInRange() throws Exception {
+        // Given/When
+        List<CompactionJobStatus> statusList = Collections.emptyList();
 
-        // When
-        CompactionJobStatus status = jobFinished(job, DEFAULT_TASK_ID, creationTime, startedTime, startedUpdateTime, finishedTime);
-        Instant startRange = Instant.parse("2022-09-22T00:00:00.001Z");
-        Instant endRange = Instant.parse("2022-09-22T23:59:59.001Z");
-
-        // Then
-        List<CompactionJobStatus> statusList = Stream.of(status)
-                .filter(j -> j.isInPeriod(startRange, endRange))
-                .collect(Collectors.toList());
+        //Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(example("reports/compactionjobstatus/standard/range/splittingJobFinishedInRange.txt")
-                        .replace("$(jobId)", job.getId()));
-        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(example("reports/compactionjobstatus/json/splittingJobFinished.json")
-                        .replace("$(jobId)", job.getId()));
-    }
-
-    @Test
-    public void shouldNotReportCompactionJobStatusFinishedBeforeRange() throws Exception {
-        // Given
-        Partition partition = dataHelper.singlePartition();
-        CompactionJob job = dataHelper.singleFileCompaction(partition);
-        Instant creationTime = Instant.parse("2022-09-22T13:33:12.001Z");
-        Instant startedTime = Instant.parse("2022-09-22T13:34:12.001Z");
-        Instant startedUpdateTime = Instant.parse("2022-09-22T13:39:12.001Z");
-        Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
-
-        // When
-        CompactionJobStatus status = jobFinished(job, DEFAULT_TASK_ID, creationTime, startedTime, startedUpdateTime, finishedTime);
-        Instant startRange = Instant.parse("2022-09-25T00:00:00.001Z");
-        Instant endRange = Instant.parse("2022-09-25T23:59:59.001Z");
-
-        // Then
-        List<CompactionJobStatus> statusList = Stream.of(status)
-                .filter(j -> j.isInPeriod(startRange, endRange))
-                .collect(Collectors.toList());
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt"));
+                .isEqualTo(example("reports/compactionjobstatus/standard/range/noJobs.txt"));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
                 .isEqualTo(example("reports/compactionjobstatus/json/noJobs.json"));
     }
 
-    @Test
-    public void shouldNotReportSplittingCompactionJobStatusFinishedBeforeRange() throws Exception {
-        // Given
-        CompactionJob job = dataHelper.singleFileSplittingCompaction("C", "A", "B");
-        Instant creationTime = Instant.parse("2022-09-22T13:33:12.001Z");
-        Instant startedTime = Instant.parse("2022-09-22T13:34:12.001Z");
-        Instant startedUpdateTime = Instant.parse("2022-09-22T13:39:12.001Z");
-        Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
-
-        // When
-        CompactionJobStatus status = jobFinished(job, DEFAULT_TASK_ID, creationTime, startedTime, startedUpdateTime, finishedTime);
-        Instant startRange = Instant.parse("2022-09-25T00:00:00.001Z");
-        Instant endRange = Instant.parse("2022-09-25T23:59:59.001Z");
-
-        // Then
-        List<CompactionJobStatus> statusList = Stream.of(status)
-                .filter(j -> j.isInPeriod(startRange, endRange))
-                .collect(Collectors.toList());
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt"));
-        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(example("reports/compactionjobstatus/json/noJobs.json"));
-    }
-
-    @Test
-    public void shouldNotReportCompactionJobStatusFinishedAfterRange() throws Exception {
-        // Given
-        Partition partition = dataHelper.singlePartition();
-        CompactionJob job = dataHelper.singleFileCompaction(partition);
-        Instant creationTime = Instant.parse("2022-09-22T13:33:12.001Z");
-        Instant startedTime = Instant.parse("2022-09-22T13:34:12.001Z");
-        Instant startedUpdateTime = Instant.parse("2022-09-22T13:39:12.001Z");
-        Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
-
-        // When
-        CompactionJobStatus status = jobFinished(job, DEFAULT_TASK_ID, creationTime, startedTime, startedUpdateTime, finishedTime);
-        Instant startRange = Instant.parse("2022-09-20T00:00:00.001Z");
-        Instant endRange = Instant.parse("2022-09-20T23:59:59.001Z");
-
-        // Then
-        List<CompactionJobStatus> statusList = Stream.of(status)
-                .filter(j -> j.isInPeriod(startRange, endRange))
-                .collect(Collectors.toList());
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt"));
-        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(example("reports/compactionjobstatus/json/noJobs.json"));
-    }
-
-    @Test
-    public void shouldNotReportSplittingCompactionJobStatusFinishedAfterRange() throws Exception {
-        // Given
-        CompactionJob job = dataHelper.singleFileSplittingCompaction("C", "A", "B");
-        Instant creationTime = Instant.parse("2022-09-22T13:33:12.001Z");
-        Instant startedTime = Instant.parse("2022-09-22T13:34:12.001Z");
-        Instant startedUpdateTime = Instant.parse("2022-09-22T13:39:12.001Z");
-        Instant finishedTime = Instant.parse("2022-09-22T13:40:12.001Z");
-
-        // When
-        CompactionJobStatus status = jobFinished(job, DEFAULT_TASK_ID, creationTime, startedTime, startedUpdateTime, finishedTime);
-        Instant startRange = Instant.parse("2022-09-20T00:00:00.001Z");
-        Instant endRange = Instant.parse("2022-09-20T23:59:59.001Z");
-
-        // Then
-        List<CompactionJobStatus> statusList = Stream.of(status)
-                .filter(j -> j.isInPeriod(startRange, endRange))
-                .collect(Collectors.toList());
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(example("reports/compactionjobstatus/standard/range/jobFinishedOutsideRange.txt"));
-        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(example("reports/compactionjobstatus/json/noJobs.json"));
-    }
-
-    private boolean isFinishedInRange(CompactionJobStatus jobStatus, Instant startRange, Instant endRange) {
-        return jobStatus.getFinishTime().isAfter(startRange) && jobStatus.getFinishTime().isBefore(endRange);
-    }
 }

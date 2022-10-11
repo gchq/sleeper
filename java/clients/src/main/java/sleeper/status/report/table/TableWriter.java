@@ -103,6 +103,13 @@ public class TableWriter {
             return this;
         }
 
+        public Builder showFields(boolean showField, TableField... fields) {
+            for (TableField field : fields) {
+                showField(field, showField);
+            }
+            return this;
+        }
+
         public TableWriter build() {
             return new TableWriter(this);
         }

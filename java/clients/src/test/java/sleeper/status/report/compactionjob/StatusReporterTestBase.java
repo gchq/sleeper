@@ -16,7 +16,6 @@
 
 package sleeper.status.report.compactionjob;
 
-import org.junit.Before;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobRecordsProcessed;
 import sleeper.compaction.job.CompactionJobSummary;
@@ -31,16 +30,92 @@ import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static sleeper.ClientTestUtils.exampleUUID;
 
 public abstract class StatusReporterTestBase {
-    protected CompactionJobTestDataHelper dataHelper;
-    public static final String DEFAULT_TASK_ID = "task-id";
 
-    @Before
-    public void setup() {
-        dataHelper = new CompactionJobTestDataHelper();
+    protected static String job(int number) {
+        return exampleUUID("job", number);
+    }
+
+    protected static String partition(String letter) {
+        return exampleUUID("partn", letter);
+    }
+
+    protected static String task(int number) {
+        return exampleUUID("task", number);
+    }
+
+    protected static List<CompactionJobStatus> mixedJobStatuses() {
+        CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
+        dataHelper.partitionTree(builder -> builder
+                .leavesWithSplits(
+                        Arrays.asList(partition("A"), partition("B"), partition("C"), partition("D")),
+                        Arrays.asList("ddd", "ggg", "kkk"))
+                .parentJoining(partition("E"), partition("A"), partition("B"))
+                .parentJoining(partition("F"), partition("E"), partition("C"))
+                .parentJoining(partition("G"), partition("F"), partition("D")));
+
+        CompactionJob job1 = dataHelper.singleFileCompaction(partition("A"));
+        Instant creationTime1 = Instant.parse("2022-09-17T13:33:12.001Z");
+        CompactionJob job2 = dataHelper.singleFileCompaction(partition("B"));
+        Instant creationTime2 = Instant.parse("2022-09-18T13:33:12.001Z");
+        Instant startedTime2 = Instant.parse("2022-09-18T13:34:12.001Z");
+        Instant startedUpdateTime2 = Instant.parse("2022-09-18T13:39:12.001Z");
+        CompactionJob job3 = dataHelper.singleFileCompaction(partition("C"));
+        Instant creationTime3 = Instant.parse("2022-09-19T13:33:12.001Z");
+        Instant startedTime3 = Instant.parse("2022-09-19T13:34:12.001Z");
+        Instant startedUpdateTime3 = Instant.parse("2022-09-19T13:39:12.001Z");
+        Instant finishedTime3 = Instant.parse("2022-09-19T13:40:12.001Z");
+
+        CompactionJob job4 = dataHelper.singleFileSplittingCompaction(partition("E"), partition("A"), partition("B"));
+        Instant creationTime4 = Instant.parse("2022-09-20T13:33:12.001Z");
+        CompactionJob job5 = dataHelper.singleFileSplittingCompaction(partition("F"), partition("E"), partition("C"));
+        Instant creationTime5 = Instant.parse("2022-09-21T13:33:12.001Z");
+        Instant startedTime5 = Instant.parse("2022-09-21T13:34:12.001Z");
+        Instant startedUpdateTime5 = Instant.parse("2022-09-21T13:39:12.001Z");
+        CompactionJob job6 = dataHelper.singleFileSplittingCompaction(partition("G"), partition("F"), partition("D"));
+        Instant creationTime6 = Instant.parse("2022-09-22T13:33:12.001Z");
+        Instant startedTime6 = Instant.parse("2022-09-22T13:34:12.001Z");
+        Instant startedUpdateTime6 = Instant.parse("2022-09-22T13:39:12.001Z");
+        Instant finishedTime6 = Instant.parse("2022-09-22T13:40:12.001Z");
+
+        // When
+        CompactionJobStatus status1 = jobCreated(job1, creationTime1);
+        CompactionJobStatus status2 = jobStarted(job2, task(1), creationTime2, startedTime2, startedUpdateTime2);
+        CompactionJobStatus status3 = jobFinished(job3, task(1), creationTime3, startedTime3, startedUpdateTime3, finishedTime3);
+        CompactionJobStatus status4 = jobCreated(job4, creationTime4);
+        CompactionJobStatus status5 = jobStarted(job5, task(2), creationTime5, startedTime5, startedUpdateTime5);
+        CompactionJobStatus status6 = jobFinished(job6, task(2), creationTime6, startedTime6, startedUpdateTime6, finishedTime6);
+        return Arrays.asList(status1, status2, status3, status4, status5, status6);
+    }
+
+    protected static List<CompactionJobStatus> mixedUnfinishedJobStatuses() {
+        return mixedJobStatuses().stream()
+                .filter(job -> !job.isFinished())
+                .collect(Collectors.toList());
+    }
+
+    protected static String replaceStandardJobIds(List<CompactionJobStatus> jobs, String example) {
+        return replaceJobIds(jobs, StatusReporterTestBase::job, example);
+    }
+
+    protected static String replaceBracketedJobIds(List<CompactionJobStatus> jobs, String example) {
+        return replaceJobIds(jobs, number -> "$(jobId" + number + ")", example);
+    }
+
+    protected static String replaceJobIds(
+            List<CompactionJobStatus> jobs, Function<Integer, String> getTemplateId, String example) {
+        String replaced = example;
+        for (int i = 0; i < jobs.size(); i++) {
+            replaced = replaced.replace(getTemplateId.apply(i + 1), jobs.get(i).getJobId());
+        }
+        return replaced;
     }
 
     protected static CompactionJobStatus jobCreated(CompactionJob job, Instant creationTime) {
