@@ -74,8 +74,8 @@ public class CompactionJobStatusesBuilderTest {
         // Then
         assertThat(statuses).containsExactly(
                 CompactionJobStatus.builder().jobId("job1").createdStatus(created1)
-                        .jobRun(CompactionJobRun.finished(DEFAULT_TASK_ID, started1, finished1)).build(),
+                        .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID, started1, finished1)).build(),
                 CompactionJobStatus.builder().jobId("job2").createdStatus(created2)
-                        .jobRun(CompactionJobRun.finished(DEFAULT_TASK_ID, started2, finished2)).build());
+                        .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID, started2, finished2)).build());
     }
 }

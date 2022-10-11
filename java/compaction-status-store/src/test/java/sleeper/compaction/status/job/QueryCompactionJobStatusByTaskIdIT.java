@@ -55,7 +55,7 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobSta
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(CompactionJobStatus.builder().jobId(job1.getId())
                         .createdStatus(CompactionJobCreatedStatus.from(job1, ignoredUpdateTime()))
-                        .jobRun(CompactionJobRun.started(searchingTaskId,
+                        .singleJobRun(CompactionJobRun.started(searchingTaskId,
                                 CompactionJobStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())))
                         .build());
     }

@@ -189,7 +189,7 @@ public class CompactionJobStatus {
             return this;
         }
 
-        public Builder jobRun(CompactionJobRun jobRun) {
+        public Builder singleJobRun(CompactionJobRun jobRun) {
             this.jobRunList = Collections.singletonList(jobRun);
             return this;
         }
