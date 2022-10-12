@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.status.DynamoDBRecordBuilder;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
-import sleeper.compaction.task.CompactionTaskStartedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusesBuilder;
 
@@ -95,13 +94,11 @@ public class DynamoDBCompactionTaskStatusFormat {
         String jobId = getStringAttribute(item, TASK_ID);
         switch (getStringAttribute(item, UPDATE_TYPE)) {
             case STARTED:
-                builder.jobStarted(jobId, CompactionTaskStartedStatus.builder()
-                                .startTime(getInstantAttribute(item, START_TIME))
-                                .build())
+                builder.taskStarted(jobId, getInstantAttribute(item, START_TIME))
                         .expiryDate(jobId, getInstantAttribute(item, EXPIRY_DATE));
                 break;
             case FINISHED:
-                builder.jobFinished(jobId, CompactionTaskFinishedStatus.builder()
+                builder.taskFinished(jobId, CompactionTaskFinishedStatus.builder()
                                 .finishTime(getInstantAttribute(item, FINISH_TIME))
                                 .totalRuntimeInSeconds(getLongAttribute(item, DURATION, 0))
                                 .totalJobs(getIntAttribute(item, NUMBER_OF_JOBS, 0))

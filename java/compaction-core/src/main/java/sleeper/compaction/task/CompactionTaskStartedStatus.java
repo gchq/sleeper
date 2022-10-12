@@ -22,12 +22,8 @@ import java.util.Objects;
 public class CompactionTaskStartedStatus {
     private final Instant startTime;
 
-    private CompactionTaskStartedStatus(Builder builder) {
-        startTime = Objects.requireNonNull(builder.startTime, "startTime must not be null");
-    }
-
-    public static Builder builder() {
-        return new Builder();
+    public CompactionTaskStartedStatus(Instant startTime) {
+        this.startTime = Objects.requireNonNull(startTime, "startTime must not be null");
     }
 
     public Instant getStartTime() {
@@ -58,20 +54,4 @@ public class CompactionTaskStartedStatus {
                 '}';
     }
 
-
-    public static final class Builder {
-        private Instant startTime;
-
-        private Builder() {
-        }
-
-        public Builder startTime(Instant startTime) {
-            this.startTime = startTime;
-            return this;
-        }
-
-        public CompactionTaskStartedStatus build() {
-            return new CompactionTaskStartedStatus(this);
-        }
-    }
 }
