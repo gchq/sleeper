@@ -29,7 +29,7 @@ to your AWS, and the CDK has been bootstrapped, run these commands in the direct
 deploy the environment:
 
 ```bash
-mvn clean install
+mvn clean install -Pquick
 cdk deploy --all
 ```
 
