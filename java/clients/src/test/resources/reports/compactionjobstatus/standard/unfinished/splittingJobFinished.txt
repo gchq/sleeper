@@ -1,9 +1,0 @@
-
-Compaction Job Status Report:
---------------------------
-Total unfinished jobs: 0
-Total unfinished jobs in progress: 0
-Total unfinished jobs not started: 0
---------------------------
-STATE      |CREATE_TIME             |JOB_ID                              |PARTITION_ID                        |CHILD_IDS           |TASK_ID                             |START_TIME              |START_UPDATE_TIME       |FINISH_TIME             |DURATION (s)        |LINES_READ          |LINES_WRITTEN       |READ_RATE (read/s)  |WRITE_RATE (write/s)
---------------------------

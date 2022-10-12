@@ -36,8 +36,10 @@ public class CompactionJobTestUtils {
     private CompactionJobTestUtils() {
     }
 
+    public static final String KEY_FIELD = "key";
+
     public static Schema createSchema() {
-        return Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+        return Schema.builder().rowKeyFields(new Field(KEY_FIELD, new StringType())).build();
     }
 
     public static Partition singlePartition(Schema schema) {

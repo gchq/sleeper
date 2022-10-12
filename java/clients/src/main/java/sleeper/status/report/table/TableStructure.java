@@ -28,20 +28,27 @@ public class TableStructure {
 
     public static final TableStructure DEFAULT = TableStructure.builder()
             .paddingBeforeRow("| ")
-            .paddingBetweenRows(" | ")
+            .paddingBetweenColumns(" | ")
             .paddingAfterRow(" |")
+            .horizontalBorderCharacter('-')
+            .build();
+
+    public static final TableStructure COMPACT = TableStructure.builder()
+            .paddingBeforeRow("|")
+            .paddingBetweenColumns("|")
+            .paddingAfterRow("|")
             .horizontalBorderCharacter('-')
             .build();
 
     private final String paddingBeforeRow;
     private final String paddingAfterRow;
-    private final String paddingBetweenRows;
+    private final String paddingBetweenColumns;
     private final char horizontalBorderCharacter;
 
     private TableStructure(Builder builder) {
         paddingBeforeRow = Objects.requireNonNull(builder.paddingBeforeRow, "paddingBeforeRow must not be null");
         paddingAfterRow = Objects.requireNonNull(builder.paddingAfterRow, "paddingAfterRow must not be null");
-        paddingBetweenRows = Objects.requireNonNull(builder.paddingBetweenRows, "paddingBetweenRows must not be null");
+        paddingBetweenColumns = Objects.requireNonNull(builder.paddingBetweenColumns, "paddingBetweenColumns must not be null");
         horizontalBorderCharacter = builder.horizontalBorderCharacter;
     }
 
@@ -50,7 +57,7 @@ public class TableStructure {
     }
 
     private int internalPaddingLengthForFields(int fields) {
-        return Math.max(0, fields - 1) * paddingBetweenRows.length();
+        return Math.max(0, fields - 1) * paddingBetweenColumns.length();
     }
 
     String horizontalBorder(int length) {
@@ -70,7 +77,7 @@ public class TableStructure {
                 + IntStream.range(0, maxValueLengthByField.length)
                 .filter(index -> !hideFieldIndexes.contains(index))
                 .mapToObj(index -> paddedValue(getValue.apply(index), maxValueLengthByField[index]))
-                .collect(Collectors.joining(paddingBetweenRows))
+                .collect(Collectors.joining(paddingBetweenColumns))
                 + paddingAfterRow;
     }
 
@@ -89,7 +96,7 @@ public class TableStructure {
     public static final class Builder {
         private String paddingBeforeRow;
         private String paddingAfterRow;
-        private String paddingBetweenRows;
+        private String paddingBetweenColumns;
         private char horizontalBorderCharacter;
 
         private Builder() {
@@ -105,8 +112,8 @@ public class TableStructure {
             return this;
         }
 
-        public Builder paddingBetweenRows(String paddingBetweenRows) {
-            this.paddingBetweenRows = paddingBetweenRows;
+        public Builder paddingBetweenColumns(String paddingBetweenColumns) {
+            this.paddingBetweenColumns = paddingBetweenColumns;
             return this;
         }
 

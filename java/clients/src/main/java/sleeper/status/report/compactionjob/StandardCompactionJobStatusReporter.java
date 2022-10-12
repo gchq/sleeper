@@ -16,13 +16,39 @@
 
 package sleeper.status.report.compactionjob;
 
+import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.status.report.table.TableField;
+import sleeper.status.report.table.TableRow;
+import sleeper.status.report.table.TableStructure;
+import sleeper.status.report.table.TableWriterFactory;
 
 import java.io.PrintStream;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class StandardCompactionJobStatusReporter implements CompactionJobStatusReporter {
+
+    private static final TableWriterFactory.Builder TABLE_FACTORY_BUILDER = TableWriterFactory.builder()
+            .structure(TableStructure.COMPACT);
+
+    private static final TableField STATE = TABLE_FACTORY_BUILDER.addField("STATE ");
+    private static final TableField CREATE_TIME = TABLE_FACTORY_BUILDER.addField("CREATE_TIME ");
+    private static final TableField JOB_ID = TABLE_FACTORY_BUILDER.addField("JOB_ID ");
+    private static final TableField PARTITION_ID = TABLE_FACTORY_BUILDER.addField("PARTITION_ID ");
+    private static final TableField CHILD_IDS = TABLE_FACTORY_BUILDER.addField("CHILD_IDS ");
+    private static final TableField TASK_ID = TABLE_FACTORY_BUILDER.addField("TASK_ID ");
+    private static final TableField START_TIME = TABLE_FACTORY_BUILDER.addField("START_TIME ");
+    private static final TableField FINISH_TIME = TABLE_FACTORY_BUILDER.addField("FINISH_TIME ");
+    private static final TableField DURATION = TABLE_FACTORY_BUILDER.addField("DURATION (s) ");
+    private static final TableField LINES_READ = TABLE_FACTORY_BUILDER.addField("LINES_READ ");
+    private static final TableField LINES_WRITTEN = TABLE_FACTORY_BUILDER.addField("LINES_WRITTEN ");
+    private static final TableField READ_RATE = TABLE_FACTORY_BUILDER.addField("READ_RATE (read/s) ");
+    private static final TableField WRITE_RATE = TABLE_FACTORY_BUILDER.addField("WRITE_RATE (write/s) ");
+
+    private static final TableWriterFactory TABLE_FACTORY = TABLE_FACTORY_BUILDER.build();
+
     private final PrintStream out;
 
     public StandardCompactionJobStatusReporter() {
@@ -34,15 +60,16 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     }
 
     public void report(List<CompactionJobStatus> jobStatusList, QueryType queryType) {
-        out.println("\nCompaction Job Status Report:");
-        out.println("--------------------------");
+        out.println();
+        out.println("Compaction Job Status Report");
+        out.println("----------------------------");
         printSummary(jobStatusList, queryType);
         if (!queryType.equals(QueryType.DETAILED)) {
-            out.println("--------------------------");
-            printHeaders();
-            out.println();
-            jobStatusList.forEach(this::printJobRow);
-            out.printf("--------------------------%n");
+            TABLE_FACTORY.tableBuilder()
+                    .showFields(queryType != QueryType.UNFINISHED,
+                            FINISH_TIME, DURATION, LINES_READ, LINES_WRITTEN, READ_RATE, WRITE_RATE)
+                    .itemsAndWriter(jobStatusList, this::writeRow)
+                    .build().write(out);
         }
     }
 
@@ -62,7 +89,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     }
 
     private void printRangeSummary(List<CompactionJobStatus> jobStatusList) {
-        out.printf("Total jobs finished between defined range: %d%n",
+        out.printf("Total jobs in defined range: %d%n",
                 jobStatusList.size());
     }
 
@@ -113,53 +140,33 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("Total jobs: %d%n", jobStatusList.size());
         out.println();
         out.printf("Total standard jobs: %d%n", standardJobs.size());
-        out.printf("Total standard jobs pending: %d%n", standardJobs.stream().filter(job -> getState(job).equals("PENDING")).count());
-        out.printf("Total standard jobs in progress: %d%n", standardJobs.stream().filter(job -> getState(job).equals("IN PROGRESS")).count());
-        out.printf("Total standard jobs finished: %d%n", standardJobs.stream().filter(job -> getState(job).equals("FINISHED")).count());
+        out.printf("Total standard jobs pending: %d%n", standardJobs.stream().filter(job -> !job.isStarted()).count());
+        out.printf("Total standard jobs in progress: %d%n", standardJobs.stream().filter(job -> job.isStarted() && !job.isFinished()).count());
+        out.printf("Total standard jobs finished: %d%n", standardJobs.stream().filter(CompactionJobStatus::isFinished).count());
         out.println();
         out.printf("Total splitting jobs: %d%n", splittingJobs.size());
-        out.printf("Total splitting jobs pending: %d%n", splittingJobs.stream().filter(job -> getState(job).equals("PENDING")).count());
-        out.printf("Total splitting jobs in progress: %d%n", splittingJobs.stream().filter(job -> getState(job).equals("IN PROGRESS")).count());
-        out.printf("Total splitting jobs finished: %d%n", splittingJobs.stream().filter(job -> getState(job).equals("FINISHED")).count());
+        out.printf("Total splitting jobs pending: %d%n", splittingJobs.stream().filter(job -> !job.isStarted()).count());
+        out.printf("Total splitting jobs in progress: %d%n", splittingJobs.stream().filter(job -> job.isStarted() && !job.isFinished()).count());
+        out.printf("Total splitting jobs finished: %d%n", splittingJobs.stream().filter(CompactionJobStatus::isFinished).count());
     }
 
-    private void printHeaders() {
-        out.printf("%-11s|", "STATE");
-        out.printf("%-24s|", "CREATE_TIME");
-        out.printf("%-36s|", "JOB_ID");
-        out.printf("%-36s|", "PARTITION_ID");
-        out.printf("%-20s|", "CHILD_IDS");
-        out.printf("%-36s|", "TASK_ID");
-        out.printf("%-24s|", "START_TIME");
-        out.printf("%-24s|", "START_UPDATE_TIME");
-        out.printf("%-24s|", "FINISH_TIME");
-        out.printf("%-20s|", "DURATION (s)");
-        out.printf("%-20s|", "LINES_READ");
-        out.printf("%-20s|", "LINES_WRITTEN");
-        out.printf("%-20s|", "READ_RATE (read/s)");
-        out.printf("%-20s", "WRITE_RATE (write/s)");
+    private void writeRow(CompactionJobStatus job, TableRow.Builder builder) {
+        builder.value(STATE, getState(job))
+                .value(CREATE_TIME, job.getCreateUpdateTime())
+                .value(JOB_ID, job.getJobId())
+                .value(PARTITION_ID, job.getPartitionId())
+                .value(CHILD_IDS, job.getChildPartitionIds())
+                .value(TASK_ID, job.getTaskId())
+                .value(START_TIME, job.getStartTime())
+                .value(FINISH_TIME, job.getFinishTime())
+                .value(DURATION, getOrNull(job.getFinishedSummary(), CompactionJobSummary::getDurationInSeconds))
+                .value(LINES_READ, getOrNull(job.getFinishedSummary(), CompactionJobSummary::getLinesRead))
+                .value(LINES_WRITTEN, getOrNull(job.getFinishedSummary(), CompactionJobSummary::getLinesWritten))
+                .value(READ_RATE, getOrNull(job.getFinishedSummary(), CompactionJobSummary::getRecordsReadPerSecond))
+                .value(WRITE_RATE, getOrNull(job.getFinishedSummary(), CompactionJobSummary::getRecordsWrittenPerSecond));
     }
 
-    public void printJobRow(CompactionJobStatus status) {
-        out.printf("%-11s|", getState(status));
-        out.printf("%-24s|", status.getCreateUpdateTime().toString());
-        out.printf("%-36s|", status.getJobId());
-        out.printf("%-36s|", status.getPartitionId());
-        out.printf("%-20s|", status.getChildPartitionIds());
-
-        out.printf("%-36s|", status.isStarted() ? status.getTaskId() : "");
-        out.printf("%-24s|", status.isStarted() ? status.getStartTime() : "");
-        out.printf("%-24s|", status.isStarted() ? status.getStartUpdateTime() : "");
-
-        out.printf("%-24s|", status.isFinished() ? status.getFinishTime() : "");
-        out.printf("%-20s|", status.isFinished() ? status.getFinishedSummary().getDurationInSeconds() : "");
-        out.printf("%-20s|", status.isFinished() ? status.getFinishedSummary().getLinesRead() : "");
-        out.printf("%-20s|", status.isFinished() ? status.getFinishedSummary().getLinesWritten() : "");
-        out.printf("%-20s|", status.isFinished() ? status.getFinishedSummary().getRecordsReadPerSecond() : "");
-        out.printf("%-20s%n", status.isFinished() ? status.getFinishedSummary().getRecordsWrittenPerSecond() : "");
-    }
-
-    public static String getState(CompactionJobStatus status) {
+    private static String getState(CompactionJobStatus status) {
         if (status.isFinished()) {
             return "FINISHED";
         }
@@ -167,5 +174,12 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
             return "IN PROGRESS";
         }
         return "PENDING";
+    }
+
+    private static <T> Object getOrNull(T object, Function<T, Object> getter) {
+        if (object == null) {
+            return null;
+        }
+        return getter.apply(object);
     }
 }

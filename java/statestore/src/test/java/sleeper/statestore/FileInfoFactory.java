@@ -71,6 +71,16 @@ public class FileInfoFactory {
         return fileForPartition(partitionTree.getPartition(partitionId), filename, records, min, max);
     }
 
+    public FileInfo partitionFile(Partition partition, long records, Object min, Object max) {
+        if (!partition.isRowKeyInPartition(schema, rowKey(min))) {
+            throw new IllegalArgumentException("Min value not in partition: " + min + ", region: " + partition.getRegion());
+        }
+        if (!partition.isRowKeyInPartition(schema, rowKey(max))) {
+            throw new IllegalArgumentException("Max value not in partition: " + min + ", region: " + partition.getRegion());
+        }
+        return fileForPartition(partition, records, min, max);
+    }
+
     private Partition leafPartition(Object min, Object max) {
         if (min == null && max == null) {
             Partition partition = partitionTree.getRootPartition();
