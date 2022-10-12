@@ -28,10 +28,15 @@ import java.util.function.Function;
 public interface CompactionJobStatusReporter {
 
     enum QueryType {
+        PROMPT,
         ALL,
         DETAILED,
         RANGE,
-        UNFINISHED
+        UNFINISHED;
+
+        boolean isParametersRequired() {
+            return this == DETAILED || this == RANGE;
+        }
     }
 
     void report(List<CompactionJobStatus> jobStatusList, QueryType queryType);
