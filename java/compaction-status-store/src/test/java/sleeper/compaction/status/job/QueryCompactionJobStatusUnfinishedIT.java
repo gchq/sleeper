@@ -17,11 +17,16 @@ package sleeper.compaction.status.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobFinishedStatus;
+import sleeper.compaction.job.status.CompactionJobRun;
+import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfoFactory;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -96,5 +101,35 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         assertThat(store.getUnfinishedJobs(tableName))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(CompactionJobStatus.created(job1, ignoredUpdateTime()));
+    }
+
+    @Test
+    public void shouldIncludeUnfinishedCompactionJobWithOneFinishedRun() {
+        // Given
+        Partition partition = singlePartition();
+        FileInfoFactory fileFactory = fileFactory(partition);
+        CompactionJob job = jobFactory.createCompactionJob(
+                Collections.singletonList(fileFactory.leafFile("file1", 123L, "a", "c")),
+                partition.getId());
+
+        // When
+        store.jobCreated(job);
+        store.jobCreated(job);
+        store.jobStarted(job, defaultStartTime(), DEFAULT_TASK_ID);
+        store.jobFinished(job, defaultSummary(), DEFAULT_TASK_ID);
+        store.jobStarted(job, defaultStartTime(), DEFAULT_TASK_ID);
+
+        // Then
+        assertThat(store.getUnfinishedJobs(tableName))
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(CompactionJobStatus.builder().jobId(job.getId())
+                        .createdStatus(CompactionJobCreatedStatus.from(job, ignoredUpdateTime()))
+                        .jobRunsLatestFirst(Arrays.asList(
+                                CompactionJobRun.started(DEFAULT_TASK_ID,
+                                        CompactionJobStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())),
+                                CompactionJobRun.finished(DEFAULT_TASK_ID,
+                                        CompactionJobStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime()),
+                                        CompactionJobFinishedStatus.updateTimeAndSummary(ignoredUpdateTime(), defaultSummary()))
+                        )).build());
     }
 }
