@@ -55,10 +55,10 @@ public class QueryCompactionTasksInProgressIT extends DynamoDBCompactionTaskStat
     @Test
     public void shouldSortByStartTimeMostRecentFirst() {
         // Given
-        CompactionTaskStatus task1 = CompactionTaskStatus.started(
-                Instant.parse("2022-10-06T11:19:00.001Z")).build();
-        CompactionTaskStatus task2 = CompactionTaskStatus.started(
-                Instant.parse("2022-10-06T11:19:10.001Z")).build();
+        CompactionTaskStatus task1 = startedTaskWithDefaultsBuilder()
+                .started(Instant.parse("2022-10-06T11:19:00.001Z")).build();
+        CompactionTaskStatus task2 = startedTaskWithDefaultsBuilder()
+                .started(Instant.parse("2022-10-06T11:19:10.001Z")).build();
 
         // When
         store.taskStarted(task1);

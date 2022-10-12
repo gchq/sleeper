@@ -44,7 +44,7 @@ public class CompactionTaskStatusReportTest {
     @Test
     public void shouldReportCompactionTaskUnfinished() throws Exception {
         // Given
-        CompactionTaskStatus task = CompactionTaskStatus
+        CompactionTaskStatus task = CompactionTaskStatus.builder()
                 .started(Instant.parse("2022-10-06T12:17:00.001Z"))
                 .taskId("A").build();
         when(store.getTasksInProgress()).thenReturn(Collections.singletonList(task));
@@ -59,10 +59,10 @@ public class CompactionTaskStatusReportTest {
     @Test
     public void shouldReportCompactionTaskUnfinishedAndFinished() throws Exception {
         // Given
-        CompactionTaskStatus unfinishedTask = CompactionTaskStatus
+        CompactionTaskStatus unfinishedTask = CompactionTaskStatus.builder()
                 .started(Instant.parse("2022-10-06T12:17:00.001Z"))
                 .taskId("unfinished-task").build();
-        CompactionTaskStatus finishedTask = CompactionTaskStatus
+        CompactionTaskStatus finishedTask = CompactionTaskStatus.builder()
                 .started(Instant.parse("2022-10-06T12:20:00.001Z"))
                 .taskId("finished-task")
                 .finished(CompactionTaskFinishedStatus.builder()
@@ -97,5 +97,9 @@ public class CompactionTaskStatusReportTest {
                 getReporter.apply(output.getPrintStream()),
                 query).run();
         return output.toString();
+    }
+
+    private static CompactionTaskStatus.Builder startedStatusBuilder(Instant startTime) {
+        return CompactionTaskStatus.builder().taskId("test-task-id").started(startTime);
     }
 }

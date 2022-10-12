@@ -55,13 +55,25 @@ echo "${QUERY_BUCKET}" > ${GENERATED_DIR}/queryResultsBucket.txt
 echo "Reading properties from S3"
 INSTANCE_PROPERTIES=${GENERATED_DIR}/instance.properties
 TABLE_PROPERTIES=${GENERATED_DIR}/table.properties
+TAGS=${GENERATED_DIR}/tags.properties
+SCHEMA=${GENERATED_DIR}/schema.json
 aws s3api get-object --bucket ${CONFIG_BUCKET} --key config ${INSTANCE_PROPERTIES}
 aws s3api get-object --bucket ${CONFIG_BUCKET} --key tables/${TABLE_NAME} ${TABLE_PROPERTIES}
 
 # Tags
 grep "^sleeper.tags=" ${INSTANCE_PROPERTIES} | cut -d'=' -f2 | sed 's/\([^,]\{1,\}\),\([^,]\{1,\}\),\{0,1\}/\1=\2\n/g' \
-  > ${GENERATED_DIR}/tags.properties
+  > ${TAGS}
 
 # Schema
 grep "^sleeper.table.schema=" ${TABLE_PROPERTIES} | cut -d'=' -f2 | sed 's/\\:/:/g' \
-  > ${GENERATED_DIR}/schema.json
+  > ${SCHEMA}
+
+# Overwrite references to local files
+source "${BASE_DIR}/scripts/utility/sedInPlace.sh"
+sed_in_place \
+	-e "s|^sleeper.tags.file=.*|sleeper.tags.file=${TAGS}|" \
+	-e "s|^sleeper.table.properties=.*|sleeper.table.properties=${TABLE_PROPERTIES}|" \
+	${INSTANCE_PROPERTIES}
+sed_in_place \
+	-e "s|^sleeper.table.schema.file=.*|sleeper.table.schema.file=${SCHEMA}|" \
+	${TABLE_PROPERTIES}
