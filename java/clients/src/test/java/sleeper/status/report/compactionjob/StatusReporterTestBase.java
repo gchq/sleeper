@@ -108,9 +108,9 @@ public abstract class StatusReporterTestBase {
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, Instant.parse("2022-10-12T10:00:00.001Z")))
                 .jobRunsLatestFirst(Arrays.asList(
-                        jobRunFinishedInTask(1, "2022-10-12T10:02:00", "2022-10-12T10:02:30"),
+                        jobRunFinishedInTask(1, "2022-10-12T10:02:00", "2022-10-12T10:02:40"),
                         jobRunFinishedInTask(2, "2022-10-12T10:01:15", "2022-10-12T10:01:45"),
-                        jobRunFinishedInTask(1, "2022-10-12T10:01:00", "2022-10-12T10:01:30")))
+                        jobRunFinishedInTask(1, "2022-10-12T10:01:00", "2022-10-12T10:01:20")))
                 .build();
         return Collections.singletonList(status);
     }
