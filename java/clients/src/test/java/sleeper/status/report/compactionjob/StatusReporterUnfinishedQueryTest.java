@@ -34,7 +34,7 @@ public class StatusReporterUnfinishedQueryTest extends StatusReporterTestBase {
         // Given
         List<CompactionJobStatus> statusList = mixedUnfinishedJobStatuses();
 
-        // Then
+        // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
                 .isEqualTo(replaceStandardJobIds(statusList, example("reports/compactionjobstatus/standard/unfinished/mixedUnfinishedJobs.txt")));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
@@ -43,10 +43,10 @@ public class StatusReporterUnfinishedQueryTest extends StatusReporterTestBase {
 
     @Test
     public void shouldReportNoCompactionJobStatusIfNoJobsUnfinished() throws Exception {
-        // Given/When
+        // Given
         List<CompactionJobStatus> statusList = Collections.emptyList();
 
-        //Then
+        // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
                 .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/noJobs.txt"));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))

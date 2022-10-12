@@ -33,7 +33,7 @@ public class StatusReporterAllQueryTest extends StatusReporterTestBase {
         // Given
         List<CompactionJobStatus> statusList = mixedJobStatuses();
 
-        // Then
+        // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
                 .isEqualTo(replaceStandardJobIds(statusList, example("reports/compactionjobstatus/standard/all/mixedJobs.txt")));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
@@ -42,10 +42,10 @@ public class StatusReporterAllQueryTest extends StatusReporterTestBase {
 
     @Test
     public void shouldReportNoCompactionJobStatusIfNoJobsExist() throws Exception {
-        // Given/When
+        // Given
         List<CompactionJobStatus> statusList = Collections.emptyList();
 
-        //Then
+        // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
                 .isEqualTo(example("reports/compactionjobstatus/standard/all/noJobs.txt"));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))

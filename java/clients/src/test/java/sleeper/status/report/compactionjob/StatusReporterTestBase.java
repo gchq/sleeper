@@ -85,7 +85,6 @@ public abstract class StatusReporterTestBase {
         Instant startedUpdateTime6 = Instant.parse("2022-09-22T13:39:12.001Z");
         Instant finishedTime6 = Instant.parse("2022-09-22T13:40:12.001Z");
 
-        // When
         CompactionJobStatus status1 = jobCreated(job1, creationTime1);
         CompactionJobStatus status2 = jobStarted(job2, task(1), creationTime2, startedTime2, startedUpdateTime2);
         CompactionJobStatus status3 = jobFinished(job3, task(1), creationTime3, startedTime3, startedUpdateTime3, finishedTime3);
