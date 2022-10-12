@@ -110,20 +110,20 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("Creation Time: %s%n", jobStatus.getCreateUpdateTime().toString());
         out.printf("Partition ID: %s%n", jobStatus.getPartitionId());
         out.printf("Child partition IDs: %s%n", jobStatus.getChildPartitionIds().toString());
-        if (jobStatus.isStarted()) {
+        for (CompactionJobRun run : jobStatus.getJobRuns()) {
             out.println();
-            out.printf("Task ID: %s%n", jobStatus.getTaskId());
-            out.printf("Start Time: %s%n", jobStatus.getStartTime());
-            out.printf("Start Update Time: %s%n", jobStatus.getStartUpdateTime());
-        }
-        if (jobStatus.isFinished()) {
-            out.println();
-            out.printf("Finish Time: %s%n", jobStatus.getFinishTime());
-            out.printf("Duration: %.1fs%n", jobStatus.getFinishedSummary().getDurationInSeconds());
-            out.printf("Lines Read: %d%n", jobStatus.getFinishedSummary().getLinesRead());
-            out.printf("Lines Written: %d%n", jobStatus.getFinishedSummary().getLinesWritten());
-            out.printf("Read Rate (reads per second): %.1f%n", jobStatus.getFinishedSummary().getRecordsReadPerSecond());
-            out.printf("Write Rate (writes per second): %.1f%n", jobStatus.getFinishedSummary().getRecordsWrittenPerSecond());
+            out.printf("Run on task %s%n", run.getTaskId());
+            out.printf("Start Time: %s%n", run.getStartTime());
+            out.printf("Start Update Time: %s%n", run.getStartUpdateTime());
+            if (run.isFinished()) {
+                out.printf("Finish Time: %s%n", run.getFinishTime());
+                out.printf("Finish Update Time: %s%n", run.getFinishUpdateTime());
+                out.printf("Duration: %.1fs%n", run.getFinishedSummary().getDurationInSeconds());
+                out.printf("Lines Read: %d%n", run.getFinishedSummary().getLinesRead());
+                out.printf("Lines Written: %d%n", run.getFinishedSummary().getLinesWritten());
+                out.printf("Read Rate (reads per second): %.1f%n", run.getFinishedSummary().getRecordsReadPerSecond());
+                out.printf("Write Rate (writes per second): %.1f%n", run.getFinishedSummary().getRecordsWrittenPerSecond());
+            }
         }
         out.println("--------------------------");
     }
