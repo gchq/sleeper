@@ -49,6 +49,7 @@ public class CompactionJobRunTest {
         // Then
         assertThat(status.getJobRuns())
                 .isEmpty();
+        assertThat(status.isFinished()).isFalse();
     }
 
     @Test
@@ -73,6 +74,7 @@ public class CompactionJobRunTest {
                 .extracting(CompactionJobRun::getTaskId, CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_1, started, null));
+        assertThat(status.isFinished()).isFalse();
     }
 
     @Test
@@ -102,6 +104,7 @@ public class CompactionJobRunTest {
                 .extracting(CompactionJobRun::getTaskId, CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_1, started, finished));
+        assertThat(status.isFinished()).isTrue();
     }
 
     @Test
@@ -130,6 +133,7 @@ public class CompactionJobRunTest {
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_1, started2, null),
                         tuple(DEFAULT_TASK_ID_1, started1, null));
+        assertThat(status.isFinished()).isFalse();
     }
 
     @Test
@@ -169,6 +173,7 @@ public class CompactionJobRunTest {
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_1, started2, finished2),
                         tuple(DEFAULT_TASK_ID_1, started1, finished1));
+        assertThat(status.isFinished()).isTrue();
     }
 
     @Test
@@ -207,6 +212,7 @@ public class CompactionJobRunTest {
                         tuple(DEFAULT_TASK_ID_1, started3, null),
                         tuple(DEFAULT_TASK_ID_2, started2, null),
                         tuple(DEFAULT_TASK_ID_1, started1, null));
+        assertThat(status.isFinished()).isFalse();
     }
 
     @Test
@@ -247,6 +253,7 @@ public class CompactionJobRunTest {
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_2, started2, finished2),
                         tuple(DEFAULT_TASK_ID_1, started1, finished1));
+        assertThat(status.isFinished()).isTrue();
     }
 
     @Test
@@ -276,6 +283,7 @@ public class CompactionJobRunTest {
                 .extracting(CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
                 .containsExactly(
                         tuple(started, finished));
+        assertThat(status.isFinished()).isTrue();
     }
 
     @Test
@@ -308,6 +316,7 @@ public class CompactionJobRunTest {
                         tuple(started3, null),
                         tuple(started2, null),
                         tuple(started1, null));
+        assertThat(status.isFinished()).isFalse();
     }
 
     @Test
@@ -345,6 +354,7 @@ public class CompactionJobRunTest {
                         tuple(started3, finished),
                         tuple(started2, null),
                         tuple(started1, null));
+        assertThat(status.isFinished()).isFalse();
     }
 
     @Test
@@ -384,6 +394,7 @@ public class CompactionJobRunTest {
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_2, started2, finished2),
                         tuple(DEFAULT_TASK_ID_1, started1, finished1));
+        assertThat(status.isFinished()).isTrue();
     }
 
     @Test
@@ -424,5 +435,6 @@ public class CompactionJobRunTest {
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_2, started2, finished2),
                         tuple(DEFAULT_TASK_ID_1, started1, finished1));
+        assertThat(status.isFinished()).isTrue();
     }
 }

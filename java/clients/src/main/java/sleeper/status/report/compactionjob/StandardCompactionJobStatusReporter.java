@@ -51,6 +51,10 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
 
     private static final TableWriterFactory TABLE_FACTORY = TABLE_FACTORY_BUILDER.build();
 
+    private static final String STATE_PENDING = "PENDING";
+    private static final String STATE_IN_PROGRESS = "IN PROGRESS";
+    private static final String STATE_FINISHED = "FINISHED";
+
     private final PrintStream out;
 
     public StandardCompactionJobStatusReporter() {
@@ -156,7 +160,10 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
 
     private void writeJob(CompactionJobStatus job, TableWriter.Builder table) {
         if (job.getJobRuns().isEmpty()) {
-            table.row(row -> writeJobFields(job, row));
+            table.row(row -> {
+                row.value(STATE, STATE_PENDING);
+                writeJobFields(job, row);
+            });
         } else {
             job.getJobRuns().forEach(run -> table.row(row -> {
                 writeJobFields(job, row);
@@ -166,15 +173,15 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     }
 
     private void writeJobFields(CompactionJobStatus job, TableRow.Builder builder) {
-        builder.value(STATE, getState(job))
-                .value(CREATE_TIME, job.getCreateUpdateTime())
+        builder.value(CREATE_TIME, job.getCreateUpdateTime())
                 .value(JOB_ID, job.getJobId())
                 .value(PARTITION_ID, job.getPartitionId())
                 .value(CHILD_IDS, job.getChildPartitionIds());
     }
 
     private void writeRunFields(CompactionJobRun run, TableRow.Builder builder) {
-        builder.value(TASK_ID, run.getTaskId())
+        builder.value(STATE, getState(run))
+                .value(TASK_ID, run.getTaskId())
                 .value(START_TIME, run.getStartTime())
                 .value(FINISH_TIME, run.getFinishTime())
                 .value(DURATION, getOrNull(run.getFinishedSummary(), CompactionJobSummary::getDurationInSeconds))
@@ -184,14 +191,20 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
                 .value(WRITE_RATE, getOrNull(run.getFinishedSummary(), CompactionJobSummary::getRecordsWrittenPerSecond));
     }
 
-    private static String getState(CompactionJobStatus status) {
-        if (status.isFinished()) {
-            return "FINISHED";
+    private static String getState(CompactionJobRun run) {
+        if (run.isFinished()) {
+            return STATE_FINISHED;
         }
-        if (status.isStarted()) {
-            return "IN PROGRESS";
+        return STATE_IN_PROGRESS;
+    }
+
+    private static String getState(CompactionJobStatus job) {
+        if (job.isFinished()) {
+            return STATE_FINISHED;
+        } else if (job.isStarted()) {
+            return STATE_IN_PROGRESS;
         }
-        return "PENDING";
+        return STATE_PENDING;
     }
 
     private static <T> Object getOrNull(T object, Function<T, Object> getter) {

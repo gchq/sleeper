@@ -88,7 +88,7 @@ public class CompactionJobStatus {
     }
 
     public boolean isFinished() {
-        return jobRunList.stream().anyMatch(CompactionJobRun::isFinished);
+        return !jobRunList.isEmpty() && jobRunList.stream().allMatch(CompactionJobRun::isFinished);
     }
 
     public Instant getFinishUpdateTime() {
