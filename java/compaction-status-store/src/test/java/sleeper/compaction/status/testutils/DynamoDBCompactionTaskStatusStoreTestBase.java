@@ -60,6 +60,10 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
         return Instant.parse("2022-09-22T16:30:00.000Z");
     }
 
+    protected static Instant defaultFinishTimeWithDurationInSecondsNotAWholeNumber() {
+        return Instant.parse("2022-09-22T16:30:00.500Z");
+    }
+
     protected static CompactionTaskStatus startedTaskWithDefaults() {
         return startedTaskWithDefaultsBuilder().build();
     }
@@ -75,12 +79,28 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
                 defaultFinishTime().toEpochMilli()).build();
     }
 
+    protected static CompactionTaskStatus finishedTaskWithDefaultsAndDurationInSecondsNotAWholeNumber() {
+        return startedTaskWithDefaultsBuilder().finished(
+                CompactionTaskFinishedStatus.builder()
+                        .addJobSummary(defaultJobSummaryWithDurationInSecondsNotAWholeNumber()),
+                defaultFinishTimeWithDurationInSecondsNotAWholeNumber().toEpochMilli()).build();
+    }
+
     private static CompactionJobSummary defaultJobSummary() {
         Instant jobStartedUpdateTime = Instant.parse("2022-09-22T14:00:04.000Z");
         Instant jobFinishTime = Instant.parse("2022-09-22T14:00:14.000Z");
+        return createJobSummary(jobStartedUpdateTime, jobFinishTime);
+    }
+
+    private static CompactionJobSummary defaultJobSummaryWithDurationInSecondsNotAWholeNumber() {
+        Instant jobStartedUpdateTime = Instant.parse("2022-09-22T14:00:04.000Z");
+        Instant jobFinishTime = Instant.parse("2022-09-22T14:00:14.500Z");
+        return createJobSummary(jobStartedUpdateTime, jobFinishTime);
+    }
+
+    private static CompactionJobSummary createJobSummary(Instant jobStartedUpdateTime, Instant jobFinishTime) {
         return new CompactionJobSummary(
                 new CompactionJobRecordsProcessed(4800L, 2400L),
                 jobStartedUpdateTime, jobFinishTime);
     }
-
 }
