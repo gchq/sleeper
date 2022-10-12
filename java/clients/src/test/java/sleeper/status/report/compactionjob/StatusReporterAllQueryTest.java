@@ -41,6 +41,18 @@ public class StatusReporterAllQueryTest extends StatusReporterTestBase {
     }
 
     @Test
+    public void shouldReportCompactionJobStatusForMultipleRunsOfSameJob() throws Exception {
+        // Given
+        List<CompactionJobStatus> statusList = jobWithMultipleRuns();
+
+        // When / Then
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
+                .isEqualTo(replaceStandardJobIds(statusList, example("reports/compactionjobstatus/standard/all/jobWithMultipleRuns.txt")));
+        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
+                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/json/jobWithMultipleRuns.json")));
+    }
+
+    @Test
     public void shouldReportNoCompactionJobStatusIfNoJobsExist() throws Exception {
         // Given
         List<CompactionJobStatus> statusList = Collections.emptyList();

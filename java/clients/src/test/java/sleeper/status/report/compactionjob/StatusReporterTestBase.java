@@ -31,6 +31,7 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -100,6 +101,33 @@ public abstract class StatusReporterTestBase {
                 .collect(Collectors.toList());
     }
 
+    protected static List<CompactionJobStatus> jobWithMultipleRuns() {
+        CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
+
+        CompactionJob job = dataHelper.singleFileCompaction();
+        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
+                .createdStatus(CompactionJobCreatedStatus.from(job, Instant.parse("2022-10-12T10:00:00.001Z")))
+                .jobRunsLatestFirst(Arrays.asList(
+                        jobRunFinishedInTask(1, "2022-10-12T10:02:00", "2022-10-12T10:02:30"),
+                        jobRunFinishedInTask(2, "2022-10-12T10:01:15", "2022-10-12T10:01:45"),
+                        jobRunFinishedInTask(1, "2022-10-12T10:01:00", "2022-10-12T10:01:30")))
+                .build();
+        return Collections.singletonList(status);
+    }
+
+    private static CompactionJobRun jobRunFinishedInTask(int taskNumber, String startTimeNoMillis, String endTimeNoMillis) {
+        return CompactionJobRun.finished(task(taskNumber),
+                CompactionJobStartedStatus.updateAndStartTime(
+                        Instant.parse(startTimeNoMillis + ".123Z"),
+                        Instant.parse(startTimeNoMillis + ".001Z")),
+                CompactionJobFinishedStatus.updateTimeAndSummary(
+                        Instant.parse(endTimeNoMillis + ".123Z"),
+                        new CompactionJobSummary(
+                                new CompactionJobRecordsProcessed(300L, 200L),
+                                Instant.parse(startTimeNoMillis + ".001Z"),
+                                Instant.parse(endTimeNoMillis + ".001Z"))));
+    }
+
     protected static String replaceStandardJobIds(List<CompactionJobStatus> jobs, String example) {
         return replaceJobIds(jobs, StatusReporterTestBase::job, example);
     }
@@ -136,6 +164,10 @@ public abstract class StatusReporterTestBase {
                 .singleJobRun(CompactionJobRun.finished(taskId, CompactionJobStartedStatus.updateAndStartTime(startUpdateTime, startTime),
                         CompactionJobFinishedStatus.updateTimeAndSummary(finishedTime, summary)))
                 .build();
+    }
+
+    protected static CompactionJobStatus jobCreatedBuilder(CompactionJob job, Instant creationTime) {
+        return CompactionJobStatus.created(job, creationTime);
     }
 
     public String verboseReportString(Function<PrintStream, CompactionJobStatusReporter> getReporter, List<CompactionJobStatus> statusList,
