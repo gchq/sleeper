@@ -87,6 +87,11 @@ public class TableWriter {
             return row(builder -> converter.accept(item, builder));
         }
 
+        public <T> Builder itemsAndSplittingWriter(List<T> items, BiConsumer<T, Builder> writer) {
+            items.forEach(item -> writer.accept(item, this));
+            return this;
+        }
+
         public Builder row(Consumer<TableRow.Builder> config) {
             TableRow.Builder recordBuilder = new TableRow.Builder(fields.size());
             config.accept(recordBuilder);

@@ -73,8 +73,8 @@ public class CompactionJobStatusTest {
         CompactionJobStatus status = CompactionJobStatus.created(job, updateTime);
 
         // Then
-        assertThat(status).extracting("started", "startUpdateTime", "startTime")
-                .containsExactly(false, null, null);
+        assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isFinished)
+                .containsExactly(false, false);
     }
 
     @Test
@@ -92,22 +92,8 @@ public class CompactionJobStatusTest {
                 .build();
 
         // Then
-        assertThat(status).extracting("started", "startUpdateTime", "startTime")
-                .containsExactly(true, updateTime, startTime);
-    }
-
-    @Test
-    public void shouldReportCompactionJobNotFinished() {
-        // Given
-        CompactionJob job = dataHelper.singleFileCompaction();
-        Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
-
-        // When
-        CompactionJobStatus status = CompactionJobStatus.created(job, updateTime);
-
-        // Then
-        assertThat(status).extracting("finished", "finishUpdateTime", "startTime", "finishTime", "finishedSummary")
-                .containsExactly(false, null, null, null, null);
+        assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isFinished)
+                .containsExactly(true, false);
     }
 
     @Test
@@ -130,7 +116,7 @@ public class CompactionJobStatusTest {
                 .build();
 
         // Then
-        assertThat(status).extracting("finished", "finishUpdateTime", "startTime", "finishTime", "finishedSummary")
-                .containsExactly(true, updateTime, startTime, finishTime, summary);
+        assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isFinished)
+                .containsExactly(true, true);
     }
 }

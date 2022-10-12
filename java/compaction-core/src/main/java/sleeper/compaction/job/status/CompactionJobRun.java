@@ -16,6 +16,8 @@
 
 package sleeper.compaction.job.status;
 
+import sleeper.compaction.job.CompactionJobSummary;
+
 import java.time.Instant;
 import java.util.Objects;
 
@@ -63,11 +65,36 @@ public class CompactionJobRun {
         return finishedStatus != null;
     }
 
-    public Instant getLatestUpdateTime() {
+    public Instant getStartTime() {
+        return getStartedStatus().getStartTime();
+    }
+
+    public Instant getStartUpdateTime() {
+        return getStartedStatus().getUpdateTime();
+    }
+
+    public Instant getFinishTime() {
         if (isFinished()) {
-            return finishedStatus.getUpdateTime();
+            return getFinishedStatus().getSummary().getFinishTime();
+        } else {
+            return null;
         }
-        return startedStatus.getUpdateTime();
+    }
+
+    public Instant getFinishUpdateTime() {
+        if (isFinished()) {
+            return getFinishedStatus().getUpdateTime();
+        } else {
+            return null;
+        }
+    }
+
+    public CompactionJobSummary getFinishedSummary() {
+        if (isFinished()) {
+            return getFinishedStatus().getSummary();
+        } else {
+            return null;
+        }
     }
 
     @Override
