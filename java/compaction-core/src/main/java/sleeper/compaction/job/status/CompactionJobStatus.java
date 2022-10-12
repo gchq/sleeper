@@ -16,7 +16,6 @@
 package sleeper.compaction.job.status;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobSummary;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -73,43 +72,8 @@ public class CompactionJobStatus {
         return !jobRunList.isEmpty();
     }
 
-    public Instant getStartUpdateTime() {
-        if (isStarted()) {
-            return getLatestStartedStatus().getUpdateTime();
-        }
-        return null;
-    }
-
-    public Instant getStartTime() {
-        if (isStarted()) {
-            return getLatestStartedStatus().getStartTime();
-        }
-        return null;
-    }
-
     public boolean isFinished() {
         return !jobRunList.isEmpty() && jobRunList.stream().allMatch(CompactionJobRun::isFinished);
-    }
-
-    public Instant getFinishUpdateTime() {
-        if (isFinished()) {
-            return getLatestFinishedStatus().getUpdateTime();
-        }
-        return null;
-    }
-
-    public Instant getFinishTime() {
-        if (isFinished()) {
-            return getLatestFinishedStatus().getSummary().getFinishTime();
-        }
-        return null;
-    }
-
-    public CompactionJobSummary getFinishedSummary() {
-        if (isFinished()) {
-            return getLatestFinishedStatus().getSummary();
-        }
-        return null;
     }
 
     public Instant getExpiryDate() {
@@ -164,7 +128,6 @@ public class CompactionJobStatus {
     private CompactionJobRun getLatestJobRun() {
         return jobRunList.get(0);
     }
-
 
     public List<CompactionJobRun> getJobRuns() {
         return jobRunList;
