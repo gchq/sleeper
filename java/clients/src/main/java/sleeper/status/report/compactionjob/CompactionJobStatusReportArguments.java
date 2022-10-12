@@ -55,7 +55,7 @@ public class CompactionJobStatusReportArguments {
         reporter = Objects.requireNonNull(builder.reporter, "reporter must not be null");
         queryType = Objects.requireNonNull(builder.queryType, "queryType must not be null");
         queryParameters = builder.queryParameters;
-        if (this.queryParameters == null && isParametersRequired(this.queryType)) {
+        if (this.queryParameters == null && queryType.isParametersRequired()) {
             throw new IllegalArgumentException("No parameters provided for query type " + this.queryType);
         }
     }
@@ -69,7 +69,7 @@ public class CompactionJobStatusReportArguments {
                 "-u (Unfinished jobs)");
     }
 
-    public static CompactionJobStatusReportArguments from(String[] args) {
+    public static CompactionJobStatusReportArguments from(String... args) {
         if (args.length < 2 || args.length > 5) {
             throw new IllegalArgumentException("Wrong number of arguments");
         }
@@ -119,7 +119,7 @@ public class CompactionJobStatusReportArguments {
     private static QueryType getQueryType(String[] args, int index) {
         return optionalArgument(args, index)
                 .map(CompactionJobStatusReportArguments::readQueryType)
-                .orElse(null);
+                .orElse(QueryType.PROMPT);
     }
 
     private static QueryType readQueryType(String queryTypeStr) {
@@ -127,10 +127,6 @@ public class CompactionJobStatusReportArguments {
             throw new IllegalArgumentException("Invalid query type " + queryTypeStr + ". Valid query types are -d (Detailed), -r (Range), -u (Unfinished)");
         }
         return QUERY_TYPES.get(queryTypeStr);
-    }
-
-    private static boolean isParametersRequired(QueryType queryType) {
-        return queryType != null && !(queryType.equals(QueryType.UNFINISHED) || queryType.equals(QueryType.ALL));
     }
 
     public static final class Builder {

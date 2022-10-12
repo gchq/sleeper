@@ -30,7 +30,7 @@ import static sleeper.ClientTestUtils.example;
 public class StatusReporterUnfinishedQueryTest extends StatusReporterTestBase {
 
     @Test
-    public void shouldReportCompactionJobStatusForStandardAndSplittingCompactionsInRange() throws Exception {
+    public void shouldReportCompactionJobStatusForUnfinishedStandardAndSplittingCompactions() throws Exception {
         // Given
         List<CompactionJobStatus> statusList = mixedUnfinishedJobStatuses();
 
