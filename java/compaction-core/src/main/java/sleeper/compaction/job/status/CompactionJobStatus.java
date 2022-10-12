@@ -84,11 +84,8 @@ public class CompactionJobStatus {
         return jobId;
     }
 
-    public String getTaskId() {
-        if (isStarted()) {
-            return getLatestJobRun().getTaskId();
-        }
-        return null;
+    public boolean isTaskIdAssigned(String taskId) {
+        return jobRunList.stream().anyMatch(run -> run.getTaskId().equals(taskId));
     }
 
     public boolean isInPeriod(Instant startTime, Instant endTime) {

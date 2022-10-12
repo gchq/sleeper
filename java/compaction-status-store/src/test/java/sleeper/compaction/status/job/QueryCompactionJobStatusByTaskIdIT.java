@@ -25,6 +25,7 @@ import sleeper.compaction.status.testutils.DynamoDBCompactionJobStatusStoreTestB
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfoFactory;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,6 +59,39 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobSta
                         .singleJobRun(CompactionJobRun.started(searchingTaskId,
                                 CompactionJobStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())))
                         .build());
+    }
+
+    @Test
+    public void shouldReturnCompactionJobByTaskIdInOneRun() {
+        // Given
+        String taskId1 = "task-id-1";
+        String searchingTaskId = "test-task";
+        String taskId3 = "task-id-3";
+        Partition partition = singlePartition();
+        FileInfoFactory fileFactory = fileFactory(partition);
+        CompactionJob job = jobFactory.createCompactionJob(
+                Collections.singletonList(fileFactory.leafFile("file1", 123L, "a", "c")),
+                partition.getId());
+
+        // When
+        store.jobCreated(job);
+        store.jobStarted(job, defaultStartTime(), taskId1);
+        store.jobStarted(job, defaultStartTime(), searchingTaskId);
+        store.jobStarted(job, defaultStartTime(), taskId3);
+
+        // Then
+        assertThat(store.getJobsByTaskId(tableName, searchingTaskId))
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(CompactionJobStatus.builder().jobId(job.getId())
+                        .createdStatus(CompactionJobCreatedStatus.from(job, ignoredUpdateTime()))
+                        .jobRunsLatestFirst(Arrays.asList(
+                                CompactionJobRun.started(taskId3,
+                                        CompactionJobStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())),
+                                CompactionJobRun.started(searchingTaskId,
+                                        CompactionJobStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())),
+                                CompactionJobRun.started(taskId1,
+                                        CompactionJobStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime()))
+                        )).build());
     }
 
     @Test
