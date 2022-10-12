@@ -31,8 +31,8 @@ public class CompactionTaskStatusInPeriodTest {
     @Test
     public void shouldBeInPeriodWithStartTimeOnly() {
         // Given
-        CompactionTaskStatus task = CompactionTaskStatus.started(
-                Instant.parse("2022-10-06T11:19:00.001Z")).build();
+        CompactionTaskStatus task = taskWithStartTime(
+                Instant.parse("2022-10-06T11:19:00.001Z"));
 
         // When / Then
         assertThat(task.isInPeriod(EPOCH_START, FAR_FUTURE)).isTrue();
@@ -42,7 +42,7 @@ public class CompactionTaskStatusInPeriodTest {
     public void shouldNotBeInPeriodWithStartTimeOnlyWhenEndIsStartTime() {
         // Given
         Instant startTime = Instant.parse("2022-10-06T11:19:00.001Z");
-        CompactionTaskStatus task = CompactionTaskStatus.started(startTime).build();
+        CompactionTaskStatus task = taskWithStartTime(startTime);
 
         // When / Then
         assertThat(task.isInPeriod(EPOCH_START, startTime)).isFalse();
@@ -52,7 +52,7 @@ public class CompactionTaskStatusInPeriodTest {
     public void shouldNotBeInPeriodWithStartTimeOnlyWhenStartIsStartTime() {
         // Given
         Instant startTime = Instant.parse("2022-10-06T11:19:00.001Z");
-        CompactionTaskStatus task = CompactionTaskStatus.started(startTime).build();
+        CompactionTaskStatus task = taskWithStartTime(startTime);
 
         // When / Then
         assertThat(task.isInPeriod(startTime, FAR_FUTURE)).isFalse();
@@ -113,13 +113,21 @@ public class CompactionTaskStatusInPeriodTest {
         assertThat(task.isInPeriod(startTime, FAR_FUTURE)).isTrue();
     }
 
+    private static CompactionTaskStatus taskWithStartTime(Instant startTime) {
+        return taskBuilder(startTime).build();
+    }
+
     private static CompactionTaskStatus taskWithStartAndFinishTime(Instant startTime, Instant finishTime) {
-        return CompactionTaskStatus.started(startTime)
+        return taskBuilder(startTime)
                 .finished(CompactionTaskFinishedStatus.builder()
                         .addJobSummary(new CompactionJobSummary(
                                 new CompactionJobRecordsProcessed(200, 100),
                                 startTime, finishTime
                         )), finishTime)
                 .build();
+    }
+
+    private static CompactionTaskStatus.Builder taskBuilder(Instant startTime) {
+        return CompactionTaskStatus.builder().taskId("test-task-id").started(startTime);
     }
 }

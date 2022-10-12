@@ -34,7 +34,7 @@ public class CompactionTaskStatusTest {
         Instant taskStartedTime = Instant.parse("2022-09-22T12:00:14.000Z");
 
         // When
-        CompactionTaskStatus status = CompactionTaskStatus.started(taskStartedTime.toEpochMilli()).build();
+        CompactionTaskStatus status = startedStatusBuilder(taskStartedTime).build();
 
         // Then
         assertThat(status).extracting("startedStatus.startTime")
@@ -48,7 +48,7 @@ public class CompactionTaskStatusTest {
         Instant jobFinishTime3 = Instant.parse("2022-09-22T16:00:14.000Z");
 
         // When
-        CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.started(taskStartedTime.toEpochMilli());
+        CompactionTaskStatus.Builder taskStatusBuilder = startedStatusBuilder(taskStartedTime);
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
         createJobSummaries().forEach(taskFinishedBuilder::addJobSummary);
         taskStatusBuilder.finished(taskFinishedBuilder, jobFinishTime3.toEpochMilli());
@@ -67,7 +67,7 @@ public class CompactionTaskStatusTest {
         Instant jobFinishTime3 = Instant.parse("2022-09-22T16:00:14.000Z");
 
         // When
-        CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.started(taskStartedTime.toEpochMilli());
+        CompactionTaskStatus.Builder taskStatusBuilder = startedStatusBuilder(taskStartedTime);
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
         createJobSummaries().forEach(taskFinishedBuilder::addJobSummary);
         taskStatusBuilder.finished(taskFinishedBuilder, jobFinishTime3.toEpochMilli());
@@ -79,7 +79,11 @@ public class CompactionTaskStatusTest {
                 .containsExactly(taskStartedTime, jobFinishTime3, 3, 14400.0, 14400L, 7200L, 1.0, 0.5);
     }
 
-    private List<CompactionJobSummary> createJobSummaries() {
+    private static CompactionTaskStatus.Builder startedStatusBuilder(Instant startTime) {
+        return CompactionTaskStatus.builder().taskId("test-task-id").started(startTime);
+    }
+
+    private static List<CompactionJobSummary> createJobSummaries() {
         Instant jobStartedUpdateTime1 = Instant.parse("2022-09-22T14:00:04.000Z");
         Instant jobFinishTime1 = Instant.parse("2022-09-22T14:00:14.000Z");
 
