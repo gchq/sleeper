@@ -40,6 +40,10 @@ public interface CompactionJobStatusStore {
         throw new UnsupportedOperationException("Instance has no compaction job status store");
     }
 
+    default List<CompactionJobStatus> getAllJobs(String tableName) {
+        throw new UnsupportedOperationException("Instance has no compaction job status store");
+    }
+
     default List<CompactionJobStatus> getUnfinishedJobs(String tableName) {
         throw new UnsupportedOperationException("Instance has no compaction job status store");
     }
