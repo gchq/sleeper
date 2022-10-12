@@ -23,6 +23,7 @@ import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 
 import java.time.Instant;
+import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.CompactionJobTestDataHelper.DEFAULT_TASK_ID;
@@ -205,5 +206,31 @@ public class CompactionJobStatusInPeriodTest {
 
         // When / Then
         assertThat(status.isInPeriod(startTime, endTime)).isFalse();
+    }
+
+    @Test
+    public void shouldBeInPeriodWhenLastUpdateStartedAfterLastFinishTime() {
+        // Given
+        Instant createTime = Instant.parse("2022-09-23T11:44:00.000Z");
+        Instant run1StartTime = Instant.parse("2022-09-23T11:45:00.000Z");
+        Instant run1FinishTime = Instant.parse("2022-09-23T11:45:30.000Z");
+        Instant periodStart = Instant.parse("2022-09-23T11:45:45.000Z");
+        Instant run2StartTime = Instant.parse("2022-09-23T11:46:00.000Z");
+        Instant periodEnd = Instant.parse("2022-09-23T12:00:00.000Z");
+        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
+                .createdStatus(CompactionJobCreatedStatus.from(job, createTime))
+                .jobRunsLatestFirst(Arrays.asList(
+                        CompactionJobRun.started(DEFAULT_TASK_ID,
+                                CompactionJobStartedStatus.updateAndStartTime(run2StartTime, run2StartTime)),
+                        CompactionJobRun.finished(DEFAULT_TASK_ID,
+                                CompactionJobStartedStatus.updateAndStartTime(run1StartTime, run1StartTime),
+                                CompactionJobFinishedStatus.updateTimeAndSummary(run1FinishTime,
+                                        new CompactionJobSummary(
+                                                new CompactionJobRecordsProcessed(300L, 200L),
+                                                run1StartTime, run1FinishTime)))))
+                .build();
+
+        // When / Then
+        assertThat(status.isInPeriod(periodStart, periodEnd)).isTrue();
     }
 }

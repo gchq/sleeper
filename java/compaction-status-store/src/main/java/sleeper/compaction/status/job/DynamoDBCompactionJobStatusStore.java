@@ -133,7 +133,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     public List<CompactionJobStatus> getJobsByTaskId(String tableName, String taskId) {
         ScanResult result = dynamoDB.scan(createScanRequestByTable(tableName));
         return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems())
-                .filter(job -> job.getTaskId().equals(taskId))
+                .filter(job -> job.isTaskIdAssigned(taskId))
                 .collect(Collectors.toList());
     }
 

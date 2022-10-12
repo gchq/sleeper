@@ -89,6 +89,14 @@ public class CompactionJobRun {
         }
     }
 
+    public Instant getLatestUpdateTime() {
+        if (isFinished()) {
+            return getFinishedStatus().getUpdateTime();
+        } else {
+            return getStartUpdateTime();
+        }
+    }
+
     public CompactionJobSummary getFinishedSummary() {
         if (isFinished()) {
             return getFinishedStatus().getSummary();
