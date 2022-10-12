@@ -53,7 +53,7 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
     }
 
     @Test
-    public void shouldReportCompactionTaskFinishedWithDurationNotAWholeNumber() {
+    public void shouldReportCompactionTaskFinishedWithDurationInSecondsNotAWholeNumber() {
         // Given
         CompactionTaskStatus taskStatus = finishedTaskWithDefaultsAndDurationInSecondsNotAWholeNumber();
 
