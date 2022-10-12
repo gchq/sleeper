@@ -18,20 +18,18 @@ package sleeper.compaction.job.status;
 import java.time.Instant;
 import java.util.Objects;
 
-public class CompactionJobStartedStatus {
+public class CompactionJobStartedStatus implements CompactionJobStatusUpdate {
 
     private final Instant updateTime;
     private final Instant startTime;
-    private final String taskId;
 
-    private CompactionJobStartedStatus(Instant updateTime, Instant startTime, String taskId) {
+    private CompactionJobStartedStatus(Instant updateTime, Instant startTime) {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime may not be null");
         this.startTime = Objects.requireNonNull(startTime, "startTime may not be null");
-        this.taskId = Objects.requireNonNull(taskId, "taskId must not be null");
     }
 
-    public static CompactionJobStartedStatus updateAndStartTimeWithTaskId(Instant updateTime, Instant startTime, String taskId) {
-        return new CompactionJobStartedStatus(updateTime, startTime, taskId);
+    public static CompactionJobStartedStatus updateAndStartTime(Instant updateTime, Instant startTime) {
+        return new CompactionJobStartedStatus(updateTime, startTime);
     }
 
     public Instant getUpdateTime() {
@@ -42,9 +40,6 @@ public class CompactionJobStartedStatus {
         return startTime;
     }
 
-    public String getTaskId() {
-        return taskId;
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -55,12 +50,12 @@ public class CompactionJobStartedStatus {
             return false;
         }
         CompactionJobStartedStatus that = (CompactionJobStartedStatus) o;
-        return updateTime.equals(that.updateTime) && startTime.equals(that.startTime) && taskId.equals(that.taskId);
+        return updateTime.equals(that.updateTime) && startTime.equals(that.startTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, startTime, taskId);
+        return Objects.hash(updateTime, startTime);
     }
 
     @Override
@@ -68,7 +63,6 @@ public class CompactionJobStartedStatus {
         return "CompactionJobStartedStatus{" +
                 "updateTime=" + updateTime +
                 ", startTime=" + startTime +
-                ", taskId='" + taskId + '\'' +
                 '}';
     }
 }

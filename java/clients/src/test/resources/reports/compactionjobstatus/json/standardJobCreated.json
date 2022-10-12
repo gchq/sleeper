@@ -6,6 +6,7 @@
       "partitionId": "root",
       "inputFilesCount": 1,
       "childPartitionIds": []
-    }
+    },
+    "jobRunList": []
   }
 ]

@@ -18,8 +18,10 @@ package sleeper.compaction.job;
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
+import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.status.CompactionJobStatusUpdateRecord;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
 
 import java.time.Instant;
@@ -39,47 +41,41 @@ public class CompactionJobStatusesBuilderTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started1 = CompactionJobStartedStatus.updateAndStartTimeWithTaskId(
+        CompactionJobStartedStatus started1 = CompactionJobStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-23T09:23:30.012Z"),
-                Instant.parse("2022-09-23T09:23:30.001Z"),
-                DEFAULT_TASK_ID);
-        CompactionJobFinishedStatus finished1 = CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(
+                Instant.parse("2022-09-23T09:23:30.001Z"));
+        CompactionJobFinishedStatus finished1 = CompactionJobFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-23T09:24:00.012Z"),
                 new CompactionJobSummary(new CompactionJobRecordsProcessed(200L, 100L),
                         Instant.parse("2022-09-23T09:23:30.001Z"),
-                        Instant.parse("2022-09-23T09:24:00.001Z")),
-                DEFAULT_TASK_ID);
+                        Instant.parse("2022-09-23T09:24:00.001Z")));
         CompactionJobCreatedStatus created2 = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-24T09:23:00.012Z"))
                 .partitionId("partition2").childPartitionIds(Arrays.asList("A", "B"))
                 .inputFilesCount(12)
                 .build();
-        CompactionJobStartedStatus started2 = CompactionJobStartedStatus.updateAndStartTimeWithTaskId(
+        CompactionJobStartedStatus started2 = CompactionJobStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-24T09:23:30.012Z"),
-                Instant.parse("2022-09-24T09:23:30.001Z"),
-                DEFAULT_TASK_ID);
-        CompactionJobFinishedStatus finished2 = CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(
+                Instant.parse("2022-09-24T09:23:30.001Z"));
+        CompactionJobFinishedStatus finished2 = CompactionJobFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-24T09:24:00.012Z"),
                 new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-24T09:23:30.001Z"),
-                        Instant.parse("2022-09-24T09:24:00.001Z")),
-                DEFAULT_TASK_ID);
+                        Instant.parse("2022-09-24T09:24:00.001Z")));
+
+        List<CompactionJobStatusUpdateRecord> updates = new TestCompactionJobStatusUpdateRecords()
+                .updatesForJobWithTask("job1", DEFAULT_TASK_ID, created1, started1, finished1)
+                .updatesForJobWithTask("job2", DEFAULT_TASK_ID, created2, started2, finished2)
+                .list();
 
         // When
-        List<CompactionJobStatus> statuses = new CompactionJobStatusesBuilder()
-                .jobCreated("job1", created1)
-                .jobStarted("job1", started1)
-                .jobFinished("job1", finished1)
-                .jobCreated("job2", created2)
-                .jobStarted("job2", started2)
-                .jobFinished("job2", finished2)
-                .build();
+        List<CompactionJobStatus> statuses = new CompactionJobStatusesBuilder().jobUpdates(updates).build();
 
         // Then
         assertThat(statuses).containsExactly(
-                CompactionJobStatus.builder().jobId("job1").createdStatus(created1)
-                        .startedStatus(started1).finishedStatus(finished1).build(),
                 CompactionJobStatus.builder().jobId("job2").createdStatus(created2)
-                        .startedStatus(started2).finishedStatus(finished2).build());
+                        .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID, started2, finished2)).build(),
+                CompactionJobStatus.builder().jobId("job1").createdStatus(created1)
+                        .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID, started1, finished1)).build());
     }
 }

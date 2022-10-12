@@ -7,10 +7,14 @@
       "inputFilesCount": 1,
       "childPartitionIds": []
     },
-    "startedStatus": {
-      "updateTime": "2022-09-22T13:39:12.001Z",
-      "startTime": "2022-09-22T13:34:12.001Z",
-      "taskId": "task-id"
-    }
+    "jobRunList": [
+      {
+        "taskId": "task-id",
+        "startedStatus": {
+          "updateTime": "2022-09-22T13:39:12.001Z",
+          "startTime": "2022-09-22T13:34:12.001Z"
+        }
+      }
+    ]
   }
 ]

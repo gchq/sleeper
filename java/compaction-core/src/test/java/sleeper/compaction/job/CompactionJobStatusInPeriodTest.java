@@ -18,6 +18,7 @@ package sleeper.compaction.job;
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
+import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 
@@ -78,7 +79,8 @@ public class CompactionJobStatusInPeriodTest {
         Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(updateTime, beforeTime, DEFAULT_TASK_ID))
+                .singleJobRun(CompactionJobRun.started(DEFAULT_TASK_ID,
+                        CompactionJobStartedStatus.updateAndStartTime(updateTime, beforeTime)))
                 .build();
 
         // When / Then
@@ -94,7 +96,7 @@ public class CompactionJobStatusInPeriodTest {
         Instant updateTime = Instant.parse("2022-09-23T11:44:02.000Z");
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(updateTime, beforeTime, DEFAULT_TASK_ID))
+                .singleJobRun(CompactionJobRun.started(DEFAULT_TASK_ID, CompactionJobStartedStatus.updateAndStartTime(updateTime, beforeTime)))
                 .build();
 
         // When / Then
@@ -110,7 +112,7 @@ public class CompactionJobStatusInPeriodTest {
         Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(updateTime, beforeTime, DEFAULT_TASK_ID))
+                .singleJobRun(CompactionJobRun.started(DEFAULT_TASK_ID, CompactionJobStartedStatus.updateAndStartTime(updateTime, beforeTime)))
                 .build();
 
         // When / Then
@@ -126,7 +128,7 @@ public class CompactionJobStatusInPeriodTest {
         Instant updateTime = Instant.parse("2022-09-23T11:44:03.000Z");
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, afterTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(updateTime, afterTime, DEFAULT_TASK_ID))
+                .singleJobRun(CompactionJobRun.started(DEFAULT_TASK_ID, CompactionJobStartedStatus.updateAndStartTime(updateTime, afterTime)))
                 .build();
 
         // When / Then
@@ -142,8 +144,9 @@ public class CompactionJobStatusInPeriodTest {
         Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(beforeTime, beforeTime, DEFAULT_TASK_ID))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(updateTime, summary, DEFAULT_TASK_ID))
+                .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID,
+                        CompactionJobStartedStatus.updateAndStartTime(beforeTime, beforeTime),
+                        CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary)))
                 .build();
 
         // When / Then
@@ -159,8 +162,9 @@ public class CompactionJobStatusInPeriodTest {
         Instant updateTime = Instant.parse("2022-09-23T11:44:02.000Z");
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(beforeTime, beforeTime, DEFAULT_TASK_ID))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(updateTime, summary, DEFAULT_TASK_ID))
+                .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID,
+                        CompactionJobStartedStatus.updateAndStartTime(beforeTime, beforeTime),
+                        CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary)))
                 .build();
 
         // When / Then
@@ -176,8 +180,9 @@ public class CompactionJobStatusInPeriodTest {
         Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(beforeTime, beforeTime, DEFAULT_TASK_ID))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(updateTime, summary, DEFAULT_TASK_ID))
+                .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID,
+                        CompactionJobStartedStatus.updateAndStartTime(beforeTime, beforeTime),
+                        CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary)))
                 .build();
 
         // When / Then
@@ -193,8 +198,9 @@ public class CompactionJobStatusInPeriodTest {
         Instant updateTime = Instant.parse("2022-09-23T11:44:03.000Z");
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, afterTime))
-                .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(afterTime, afterTime, DEFAULT_TASK_ID))
-                .finishedStatus(CompactionJobFinishedStatus.updateTimeAndSummaryWithTaskId(updateTime, summary, DEFAULT_TASK_ID))
+                .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID,
+                        CompactionJobStartedStatus.updateAndStartTime(afterTime, afterTime),
+                        CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary)))
                 .build();
 
         // When / Then

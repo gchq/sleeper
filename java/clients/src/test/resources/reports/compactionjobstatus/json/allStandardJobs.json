@@ -6,7 +6,8 @@
       "partitionId": "root",
       "inputFilesCount": 1,
       "childPartitionIds": []
-    }
+    },
+    "jobRunList": []
   },
   {
     "jobId": "$(jobId2)",
@@ -16,11 +17,15 @@
       "inputFilesCount": 1,
       "childPartitionIds": []
     },
-    "startedStatus": {
-      "updateTime": "2022-09-18T13:39:12.001Z",
-      "startTime": "2022-09-18T13:34:12.001Z",
-      "taskId": "task-id"
-    }
+    "jobRunList": [
+      {
+        "taskId": "task-id",
+        "startedStatus": {
+          "updateTime": "2022-09-18T13:39:12.001Z",
+          "startTime": "2022-09-18T13:34:12.001Z"
+        }
+      }
+    ]
   },
   {
     "jobId": "$(jobId3)",
@@ -30,25 +35,28 @@
       "inputFilesCount": 1,
       "childPartitionIds": []
     },
-    "startedStatus": {
-      "updateTime": "2022-09-19T13:39:12.001Z",
-      "startTime": "2022-09-19T13:34:12.001Z",
-      "taskId": "task-id"
-    },
-    "finishedStatus": {
-      "updateTime": "2022-09-19T13:40:12.001Z",
-      "summary": {
-        "recordsProcessed": {
-          "linesRead": 600,
-          "linesWritten": 300
+    "jobRunList": [
+      {
+        "taskId": "task-id",
+        "startedStatus": {
+          "updateTime": "2022-09-19T13:39:12.001Z",
+          "startTime": "2022-09-19T13:34:12.001Z"
         },
-        "startTime": "2022-09-19T13:39:12.001Z",
-        "finishTime": "2022-09-19T13:40:12.001Z",
-        "durationInSeconds": 60.0,
-        "recordsReadPerSecond": 10.0,
-        "recordsWrittenPerSecond": 5.0
-      },
-      "taskId": "task-id"
-    }
+        "finishedStatus": {
+          "updateTime": "2022-09-19T13:40:12.001Z",
+          "summary": {
+            "recordsProcessed": {
+              "linesRead": 600,
+              "linesWritten": 300
+            },
+            "startTime": "2022-09-19T13:39:12.001Z",
+            "finishTime": "2022-09-19T13:40:12.001Z",
+            "durationInSeconds": 60.0,
+            "recordsReadPerSecond": 10.0,
+            "recordsWrittenPerSecond": 5.0
+          }
+        }
+      }
+    ]
   }
 ]

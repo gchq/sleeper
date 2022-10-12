@@ -18,6 +18,7 @@ package sleeper.compaction.status.job;
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.testutils.DynamoDBCompactionJobStatusStoreTestBase;
@@ -54,7 +55,8 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobSta
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(CompactionJobStatus.builder().jobId(job1.getId())
                         .createdStatus(CompactionJobCreatedStatus.from(job1, ignoredUpdateTime()))
-                        .startedStatus(CompactionJobStartedStatus.updateAndStartTimeWithTaskId(ignoredUpdateTime(), defaultStartTime(), searchingTaskId))
+                        .singleJobRun(CompactionJobRun.started(searchingTaskId,
+                                CompactionJobStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())))
                         .build());
     }
 

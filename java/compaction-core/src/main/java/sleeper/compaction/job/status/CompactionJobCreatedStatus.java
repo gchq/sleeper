@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public class CompactionJobCreatedStatus {
+public class CompactionJobCreatedStatus implements CompactionJobStatusUpdate {
 
     private final Instant updateTime;
     private final String partitionId;

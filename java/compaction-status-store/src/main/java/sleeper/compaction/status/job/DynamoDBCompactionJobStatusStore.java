@@ -37,10 +37,10 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.compaction.status.DynamoDBAttributes.createStringAttribute;
 import static sleeper.compaction.status.DynamoDBUtils.instanceTableName;
@@ -117,13 +117,16 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
 
     @Override
     public CompactionJobStatus getJob(String jobId) {
+        return getJobStream(jobId).findFirst().orElse(null);
+    }
+
+    private Stream<CompactionJobStatus> getJobStream(String jobId) {
         QueryResult result = dynamoDB.query(new QueryRequest()
                 .withTableName(statusTableName)
                 .addKeyConditionsEntry(JOB_ID, new Condition()
                         .withAttributeValueList(createStringAttribute(jobId))
                         .withComparisonOperator(ComparisonOperator.EQ)));
-        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems())
-                .findFirst().orElse(null);
+        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems());
     }
 
     @Override
@@ -139,7 +142,6 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
         ScanResult result = dynamoDB.scan(createScanRequestByTable(tableName));
         return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems())
                 .filter(job -> !job.isFinished())
-                .sorted(Comparator.comparing(CompactionJobStatus::getCreateUpdateTime).reversed())
                 .collect(Collectors.toList());
     }
 
@@ -148,7 +150,6 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
         ScanResult result = dynamoDB.scan(createScanRequestByTable(tableName));
         return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems())
                 .filter(job -> job.isInPeriod(startTime, endTime))
-                .sorted(Comparator.comparing(CompactionJobStatus::getCreateUpdateTime).reversed())
                 .collect(Collectors.toList());
     }
 
