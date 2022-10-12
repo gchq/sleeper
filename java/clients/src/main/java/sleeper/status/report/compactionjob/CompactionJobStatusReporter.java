@@ -18,12 +18,7 @@ package sleeper.status.report.compactionjob;
 
 import sleeper.compaction.job.status.CompactionJobStatus;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.function.Function;
 
 public interface CompactionJobStatusReporter {
 
@@ -36,12 +31,4 @@ public interface CompactionJobStatusReporter {
 
     void report(List<CompactionJobStatus> jobStatusList, QueryType queryType);
 
-    static String asString(
-            Function<PrintStream, CompactionJobStatusReporter> getReporter, List<CompactionJobStatus> jobStatusList, QueryType queryType)
-            throws UnsupportedEncodingException {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        getReporter.apply(new PrintStream(os, false, StandardCharsets.UTF_8.displayName()))
-                .report(jobStatusList, queryType);
-        return os.toString(StandardCharsets.UTF_8.displayName());
-    }
 }

@@ -16,6 +16,7 @@ Child partition IDs: []
 Run on task task1111-1111-1111-1111-111111111111
 Start Time: 2022-09-18T13:34:12.001Z
 Start Update Time: 2022-09-18T13:39:12.001Z
+Not finished
 --------------------------
 Details for job $(jobId3):
 State: FINISHED
@@ -49,6 +50,7 @@ Child partition IDs: [partnEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE, partnCCC-CCCC-CCCC-C
 Run on task task2222-2222-2222-2222-222222222222
 Start Time: 2022-09-21T13:34:12.001Z
 Start Update Time: 2022-09-21T13:39:12.001Z
+Not finished
 --------------------------
 Details for job $(jobId6):
 State: FINISHED

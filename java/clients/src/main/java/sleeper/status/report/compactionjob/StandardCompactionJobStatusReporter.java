@@ -123,6 +123,8 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
                 out.printf("Lines Written: %d%n", run.getFinishedSummary().getLinesWritten());
                 out.printf("Read Rate (reads per second): %.1f%n", run.getFinishedSummary().getRecordsReadPerSecond());
                 out.printf("Write Rate (writes per second): %.1f%n", run.getFinishedSummary().getRecordsWrittenPerSecond());
+            } else {
+                out.println("Not finished");
             }
         }
         out.println("--------------------------");

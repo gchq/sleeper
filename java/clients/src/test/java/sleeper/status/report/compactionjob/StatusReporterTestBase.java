@@ -16,6 +16,7 @@
 
 package sleeper.status.report.compactionjob;
 
+import sleeper.ToStringPrintStream;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobRecordsProcessed;
 import sleeper.compaction.job.CompactionJobSummary;
@@ -108,24 +109,36 @@ public abstract class StatusReporterTestBase {
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, Instant.parse("2022-10-12T10:00:00.001Z")))
                 .jobRunsLatestFirst(Arrays.asList(
-                        jobRunFinishedInTask(1, "2022-10-12T10:02:00", "2022-10-12T10:02:40"),
+                        jobRunStartedInTask(1, "2022-10-12T10:02:00"),
                         jobRunFinishedInTask(2, "2022-10-12T10:01:15", "2022-10-12T10:01:45"),
                         jobRunFinishedInTask(1, "2022-10-12T10:01:00", "2022-10-12T10:01:20")))
                 .build();
         return Collections.singletonList(status);
     }
 
-    private static CompactionJobRun jobRunFinishedInTask(int taskNumber, String startTimeNoMillis, String endTimeNoMillis) {
+    private static CompactionJobRun jobRunStartedInTask(int taskNumber, String startTimeNoMillis) {
+        return CompactionJobRun.started(task(taskNumber), defaultStartedStatus(startTimeNoMillis));
+    }
+
+    private static CompactionJobRun jobRunFinishedInTask(int taskNumber, String startTimeNoMillis, String finishTimeNoMillis) {
         return CompactionJobRun.finished(task(taskNumber),
-                CompactionJobStartedStatus.updateAndStartTime(
-                        Instant.parse(startTimeNoMillis + ".123Z"),
-                        Instant.parse(startTimeNoMillis + ".001Z")),
-                CompactionJobFinishedStatus.updateTimeAndSummary(
-                        Instant.parse(endTimeNoMillis + ".123Z"),
-                        new CompactionJobSummary(
-                                new CompactionJobRecordsProcessed(300L, 200L),
-                                Instant.parse(startTimeNoMillis + ".001Z"),
-                                Instant.parse(endTimeNoMillis + ".001Z"))));
+                defaultStartedStatus(startTimeNoMillis),
+                defaultFinishedStatus(startTimeNoMillis, finishTimeNoMillis));
+    }
+
+    private static CompactionJobStartedStatus defaultStartedStatus(String startTimeNoMillis) {
+        return CompactionJobStartedStatus.updateAndStartTime(
+                Instant.parse(startTimeNoMillis + ".123Z"),
+                Instant.parse(startTimeNoMillis + ".001Z"));
+    }
+
+    private static CompactionJobFinishedStatus defaultFinishedStatus(String startTimeNoMillis, String finishTimeNoMillis) {
+        return CompactionJobFinishedStatus.updateTimeAndSummary(
+                Instant.parse(finishTimeNoMillis + ".123Z"),
+                new CompactionJobSummary(
+                        new CompactionJobRecordsProcessed(300L, 200L),
+                        Instant.parse(startTimeNoMillis + ".001Z"),
+                        Instant.parse(finishTimeNoMillis + ".001Z")));
     }
 
     protected static String replaceStandardJobIds(List<CompactionJobStatus> jobs, String example) {
@@ -166,12 +179,11 @@ public abstract class StatusReporterTestBase {
                 .build();
     }
 
-    protected static CompactionJobStatus jobCreatedBuilder(CompactionJob job, Instant creationTime) {
-        return CompactionJobStatus.created(job, creationTime);
-    }
-
     public String verboseReportString(Function<PrintStream, CompactionJobStatusReporter> getReporter, List<CompactionJobStatus> statusList,
                                       QueryType queryType) throws UnsupportedEncodingException {
-        return CompactionJobStatusReporter.asString(getReporter, statusList, queryType);
+        ToStringPrintStream out = new ToStringPrintStream();
+        getReporter.apply(out.getPrintStream())
+                .report(statusList, queryType);
+        return out.toString();
     }
 }
