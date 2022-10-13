@@ -40,7 +40,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private static final TableField CREATE_TIME = TABLE_FACTORY_BUILDER.addField("CREATE_TIME ");
     private static final TableField JOB_ID = TABLE_FACTORY_BUILDER.addField("JOB_ID ");
     private static final TableField PARTITION_ID = TABLE_FACTORY_BUILDER.addField("PARTITION_ID ");
-    private static final TableField CHILD_IDS = TABLE_FACTORY_BUILDER.addField("CHILD_IDS ");
+    private static final TableField TYPE = TABLE_FACTORY_BUILDER.addField("TYPE ");
     private static final TableField TASK_ID = TABLE_FACTORY_BUILDER.addField("TASK_ID ");
     private static final TableField START_TIME = TABLE_FACTORY_BUILDER.addField("START_TIME ");
     private static final TableField FINISH_TIME = TABLE_FACTORY_BUILDER.addField("FINISH_TIME ");
@@ -205,7 +205,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         builder.value(CREATE_TIME, job.getCreateUpdateTime())
                 .value(JOB_ID, job.getJobId())
                 .value(PARTITION_ID, job.getPartitionId())
-                .value(CHILD_IDS, job.getChildPartitionIds());
+                .value(TYPE, job.isSplittingCompaction() ? "SPLIT" : "COMPACT");
     }
 
     private void writeRunFields(CompactionJobRun run, TableRow.Builder builder) {
