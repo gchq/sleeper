@@ -40,14 +40,29 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
+import java.util.TimeZone;
 
 public class CompactionJobStatusReport {
     private final CompactionJobStatusReportArguments arguments;
     private final CompactionJobStatusReporter compactionJobStatusReporter;
     private final CompactionJobStatusCollector compactionJobStatusCollector;
-    private final SimpleDateFormat dateInputFormat = new SimpleDateFormat("yyyyMMddhhmmss");
+    private static final String DATE_FORMAT = "yyyyMMddhhmmss";
     private static final Instant DEFAULT_RANGE_START = Instant.now().minus(4L, ChronoUnit.HOURS);
     private static final Instant DEFAULT_RANGE_END = Instant.now();
+
+    private static SimpleDateFormat createDateInputFormat() {
+        SimpleDateFormat dateInputFormat = new SimpleDateFormat(DATE_FORMAT);
+        dateInputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return dateInputFormat;
+    }
+
+    public static Instant parseDate(String input) throws ParseException {
+        return createDateInputFormat().parse(input).toInstant();
+    }
+
+    public static String formatDate(Instant input) {
+        return createDateInputFormat().format(Date.from(input));
+    }
 
     public CompactionJobStatusReport(
             CompactionJobStatusStore compactionJobStatusStore,
@@ -73,10 +88,8 @@ public class CompactionJobStatusReport {
                 Instant startRange;
                 Instant endRange;
                 try {
-                    Date startRangeDate = dateInputFormat.parse(arguments.getQueryParameters().split(",")[0]);
-                    startRange = startRangeDate.toInstant();
-                    Date endRangeDate = dateInputFormat.parse(arguments.getQueryParameters().split(",")[1]);
-                    endRange = endRangeDate.toInstant();
+                    startRange = parseDate(arguments.getQueryParameters().split(",")[0]);
+                    endRange = parseDate(arguments.getQueryParameters().split(",")[1]);
                 } catch (ParseException e) {
                     System.out.println("Error while parsing input string, using system defaults (past 4 hours)");
                     startRange = DEFAULT_RANGE_START;
@@ -145,16 +158,15 @@ public class CompactionJobStatusReport {
         while (true) {
             System.out.printf("Enter %s range in format %s (default is %s):",
                     rangeName,
-                    dateInputFormat.toPattern(),
-                    dateInputFormat.format(Date.from(defaultRange)));
+                    DATE_FORMAT,
+                    formatDate(defaultRange));
             String time = scanner.nextLine();
             if ("".equals(time)) {
-                System.out.printf("Using default %s range %s%n", rangeName, dateInputFormat.format(Date.from(defaultRange)));
+                System.out.printf("Using default %s range %s%n", rangeName, formatDate(defaultRange));
                 break;
             }
             try {
-                Date date = dateInputFormat.parse(time);
-                return date.toInstant();
+                return parseDate(time);
             } catch (ParseException e) {
                 System.out.println("Error while parsing input string");
             }
