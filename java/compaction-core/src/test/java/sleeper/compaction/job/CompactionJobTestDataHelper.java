@@ -33,6 +33,7 @@ import sleeper.statestore.FileInfoFactory;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -111,6 +112,11 @@ public class CompactionJobTestDataHelper {
         return finishedCompactionStatus(singleFileCompaction(), createTime, runDuration, linesRead, linesWritten);
     }
 
+    public CompactionJobStatus compactionStatusWithJobRunsStartToFinish(
+            Instant createTime, Consumer<CompactionJobRunsBuilder> runs) {
+        return compactionStatusWithJobRunsStartToFinish(singleFileCompaction(), createTime, runs);
+    }
+
     public static CompactionJobStatus createdCompactionStatus(CompactionJob job, Instant createTime) {
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, createTime))
@@ -130,18 +136,52 @@ public class CompactionJobTestDataHelper {
 
     public static CompactionJobStatus finishedCompactionStatus(
             CompactionJob job, Instant createTime, Duration runDuration, long linesRead, long linesWritten) {
-        Instant startTime = createTime.plus(Duration.ofSeconds(10));
+        return compactionStatusWithJobRunsStartToFinish(job, createTime, runs -> runs
+                .finishedRun(runDuration, linesRead, linesWritten));
+    }
+
+    public static CompactionJobStatus compactionStatusWithJobRunsStartToFinish(
+            CompactionJob job, Instant createTime, Consumer<CompactionJobRunsBuilder> runs) {
+        CompactionJobRunsBuilder runsBuilder = new CompactionJobRunsBuilder(createTime);
+        runs.accept(runsBuilder);
+        return CompactionJobStatus.builder().jobId(job.getId())
+                .createdStatus(CompactionJobCreatedStatus.from(job, createTime))
+                .jobRunsLatestFirst(runsBuilder.latestFirst())
+                .build();
+    }
+
+    public static CompactionJobRun finishedJobRun(
+            Instant startTime, Duration runDuration, long linesRead, long linesWritten) {
         Instant startUpdateTime = startTime.plus(Duration.ofMillis(123));
         Instant finishTime = startTime.plus(runDuration);
         Instant finishUpdateTime = finishTime.plus(Duration.ofMillis(123));
         CompactionJobSummary summary = new CompactionJobSummary(
                 new CompactionJobRecordsProcessed(linesRead, linesWritten), startTime, finishTime);
-        return CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, createTime))
-                .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID,
-                        CompactionJobStartedStatus.updateAndStartTime(startUpdateTime, startTime),
-                        CompactionJobFinishedStatus.updateTimeAndSummary(finishUpdateTime, summary)))
-                .build();
+        return CompactionJobRun.finished(DEFAULT_TASK_ID,
+                CompactionJobStartedStatus.updateAndStartTime(startUpdateTime, startTime),
+                CompactionJobFinishedStatus.updateTimeAndSummary(finishUpdateTime, summary));
+    }
+
+    public static class CompactionJobRunsBuilder {
+
+        private final List<CompactionJobRun> runs = new ArrayList<>();
+        private Instant nextStartTime;
+
+        private CompactionJobRunsBuilder(Instant jobCreateTime) {
+            this.nextStartTime = jobCreateTime.plus(Duration.ofSeconds(10));
+        }
+
+        public CompactionJobRunsBuilder finishedRun(Duration runDuration, long linesRead, long linesWritten) {
+            CompactionJobRun run = finishedJobRun(nextStartTime, runDuration, linesRead, linesWritten);
+            nextStartTime = run.getFinishTime().plus(Duration.ofSeconds(10));
+            runs.add(run);
+            return this;
+        }
+
+        private List<CompactionJobRun> latestFirst() {
+            Collections.reverse(runs);
+            return runs;
+        }
     }
 
     private FileInfo fileInPartition(Partition partition) {

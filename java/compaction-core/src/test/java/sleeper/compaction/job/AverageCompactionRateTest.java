@@ -89,6 +89,25 @@ public class AverageCompactionRateTest {
     }
 
     @Test
+    public void shouldCalculateAverageOfTwoFinishedCompactionRunsWithDifferentDurations() {
+        // Given
+        List<CompactionJobStatus> jobs = Collections.singletonList(
+                dataHelper.compactionStatusWithJobRunsStartToFinish(
+                        Instant.parse("2022-10-13T10:18:00.000Z"),
+                        runs -> runs
+                                .finishedRun(Duration.ofSeconds(100), 1000L, 1000L) // compaction rate 10/s
+                                .finishedRun(Duration.ofSeconds(10), 50L, 50L))); // compaction rate 5/s
+
+        // When / Then
+        assertThat(AverageCompactionRate.of(jobs))
+                .extracting(
+                        AverageCompactionRate::getJobCount,
+                        AverageCompactionRate::getRecordsReadPerSecond,
+                        AverageCompactionRate::getRecordsWrittenPerSecond)
+                .containsExactly(2, 7.5, 7.5);
+    }
+
+    @Test
     public void shouldIgnoreUnstartedCompactionJob() {
         // Given
         List<CompactionJobStatus> jobs = Arrays.asList(
