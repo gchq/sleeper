@@ -32,7 +32,6 @@ import java.util.Collections;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.ClientTestUtils.example;
@@ -71,7 +70,7 @@ public class CompactionTaskStatusReportTest {
                                         Instant.parse("2022-10-06T12:20:00.001Z"),
                                         Instant.parse("2022-10-06T12:20:30.001Z"))),
                         Instant.parse("2022-10-06T12:20:30.001Z")).build();
-        when(store.getTasksInTimePeriod(any(), any())).thenReturn(Arrays.asList(unfinishedTask, finishedTask));
+        when(store.getAllTasks()).thenReturn(Arrays.asList(unfinishedTask, finishedTask));
 
         // When / Then
         assertThat(getStandardReport(CompactionTaskQuery.ALL)).hasToString(

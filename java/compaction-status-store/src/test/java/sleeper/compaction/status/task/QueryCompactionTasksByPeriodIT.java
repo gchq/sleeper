@@ -16,15 +16,10 @@
 package sleeper.compaction.status.task;
 
 import org.junit.Test;
-import sleeper.compaction.job.CompactionJobRecordsProcessed;
-import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.status.testutils.DynamoDBCompactionTaskStatusStoreTestBase;
-import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 
 import java.time.Instant;
-import java.time.Period;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,15 +31,15 @@ public class QueryCompactionTasksByPeriodIT extends DynamoDBCompactionTaskStatus
         CompactionTaskStatus task = taskWithStartAndFinishTime(
                 Instant.parse("2022-10-06T11:19:00.001Z"),
                 Instant.parse("2022-10-06T11:19:31.001Z"));
+        Instant periodStart = Instant.parse("2022-10-06T11:00:00.000Z");
+        Instant periodEnd = Instant.parse("2022-10-06T12:00:00.000Z");
 
         // When
         store.taskStarted(task);
         store.taskFinished(task);
 
         // Then
-        Instant epochStart = Instant.ofEpochMilli(0);
-        Instant farFuture = epochStart.plus(Period.ofDays(999999999));
-        assertThat(store.getTasksInTimePeriod(epochStart, farFuture))
+        assertThat(store.getTasksInTimePeriod(periodStart, periodEnd))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
                 .containsExactly(task);
     }
@@ -55,15 +50,15 @@ public class QueryCompactionTasksByPeriodIT extends DynamoDBCompactionTaskStatus
         CompactionTaskStatus task = taskWithStartAndFinishTime(
                 Instant.parse("2022-10-06T11:19:00.001Z"),
                 Instant.parse("2022-10-06T11:19:31.001Z"));
+        Instant periodStart = Instant.parse("2022-10-06T10:00:00.000Z");
+        Instant periodEnd = Instant.parse("2022-10-06T11:00:00.000Z");
 
         // When
         store.taskStarted(task);
         store.taskFinished(task);
 
         // Then
-        Instant epochStart = Instant.ofEpochMilli(0);
-        Instant earlyEpoch = epochStart.plus(Period.ofDays(1));
-        assertThat(store.getTasksInTimePeriod(epochStart, earlyEpoch)).isEmpty();
+        assertThat(store.getTasksInTimePeriod(periodStart, periodEnd)).isEmpty();
     }
 
     @Test
@@ -75,6 +70,8 @@ public class QueryCompactionTasksByPeriodIT extends DynamoDBCompactionTaskStatus
         CompactionTaskStatus task2 = taskWithStartAndFinishTime(
                 Instant.parse("2022-10-06T11:19:10.001Z"),
                 Instant.parse("2022-10-06T11:19:29.001Z"));
+        Instant periodStart = Instant.parse("2022-10-06T11:00:00.000Z");
+        Instant periodEnd = Instant.parse("2022-10-06T12:00:00.000Z");
 
         // When
         store.taskStarted(task1);
@@ -83,20 +80,8 @@ public class QueryCompactionTasksByPeriodIT extends DynamoDBCompactionTaskStatus
         store.taskFinished(task2);
 
         // Then
-        assertThat(store.getTasksInTimePeriod(
-                Instant.parse("2022-10-06T11:19:00.000Z"),
-                Instant.parse("2022-10-06T11:20:00.000Z")))
+        assertThat(store.getTasksInTimePeriod(periodStart, periodEnd))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
                 .containsExactly(task2, task1);
-    }
-
-    private CompactionTaskStatus taskWithStartAndFinishTime(Instant startTime, Instant finishTime) {
-        return CompactionTaskStatus.builder().taskId(UUID.randomUUID().toString()).started(startTime)
-                .finished(CompactionTaskFinishedStatus.builder()
-                        .addJobSummary(new CompactionJobSummary(
-                                new CompactionJobRecordsProcessed(200, 100),
-                                startTime, finishTime
-                        )), finishTime)
-                .build();
     }
 }

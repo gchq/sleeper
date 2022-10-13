@@ -83,4 +83,18 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
                 jobStartedUpdateTime, jobFinishTime);
     }
 
+    protected static CompactionTaskStatus taskWithStartTime(Instant startTime) {
+        return CompactionTaskStatus.builder().taskId(UUID.randomUUID().toString()).started(startTime).build();
+    }
+
+    protected static CompactionTaskStatus taskWithStartAndFinishTime(Instant startTime, Instant finishTime) {
+        return CompactionTaskStatus.builder().taskId(UUID.randomUUID().toString()).started(startTime)
+                .finished(CompactionTaskFinishedStatus.builder()
+                        .addJobSummary(new CompactionJobSummary(
+                                new CompactionJobRecordsProcessed(200, 100),
+                                startTime, finishTime
+                        )), finishTime)
+                .build();
+    }
+
 }
