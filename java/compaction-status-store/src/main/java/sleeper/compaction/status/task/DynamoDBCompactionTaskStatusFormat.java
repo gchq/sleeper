@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.status.DynamoDBRecordBuilder;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
-import sleeper.compaction.task.CompactionTaskStartedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusesBuilder;
 
@@ -92,16 +91,14 @@ public class DynamoDBCompactionTaskStatusFormat {
     }
 
     private static void addStatusUpdate(Map<String, AttributeValue> item, CompactionTaskStatusesBuilder builder) {
-        String jobId = getStringAttribute(item, TASK_ID);
+        String taskId = getStringAttribute(item, TASK_ID);
         switch (getStringAttribute(item, UPDATE_TYPE)) {
             case STARTED:
-                builder.jobStarted(jobId, CompactionTaskStartedStatus.builder()
-                                .startTime(getInstantAttribute(item, START_TIME))
-                                .build())
-                        .expiryDate(jobId, getInstantAttribute(item, EXPIRY_DATE));
+                builder.taskStarted(taskId, getInstantAttribute(item, START_TIME))
+                        .expiryDate(taskId, getInstantAttribute(item, EXPIRY_DATE));
                 break;
             case FINISHED:
-                builder.jobFinished(jobId, CompactionTaskFinishedStatus.builder()
+                builder.taskFinished(taskId, CompactionTaskFinishedStatus.builder()
                                 .finishTime(getInstantAttribute(item, FINISH_TIME))
                                 .totalRuntimeInSeconds(Double.parseDouble(getNumberAttribute(item, DURATION)))
                                 .totalJobs(getIntAttribute(item, NUMBER_OF_JOBS, 0))
@@ -110,7 +107,7 @@ public class DynamoDBCompactionTaskStatusFormat {
                                 .recordsReadPerSecond(Double.parseDouble(getNumberAttribute(item, READ_RATE)))
                                 .recordsWrittenPerSecond(Double.parseDouble(getNumberAttribute(item, WRITE_RATE)))
                                 .build())
-                        .expiryDate(jobId, getInstantAttribute(item, EXPIRY_DATE));
+                        .expiryDate(taskId, getInstantAttribute(item, EXPIRY_DATE));
                 break;
             default:
                 LOGGER.warn("Found record with unrecognised update type: {}", item);

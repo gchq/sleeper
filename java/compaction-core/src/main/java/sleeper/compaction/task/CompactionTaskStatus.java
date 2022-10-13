@@ -127,9 +127,7 @@ public class CompactionTaskStatus {
         }
 
         public Builder started(Instant startTime) {
-            return startedStatus(CompactionTaskStartedStatus.builder()
-                    .startTime(startTime)
-                    .build());
+            return startedStatus(new CompactionTaskStartedStatus(startTime));
         }
 
         public Builder finishedStatus(CompactionTaskFinishedStatus finishedStatus) {

@@ -16,6 +16,7 @@
 package sleeper.compaction.task;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,13 +28,13 @@ public class CompactionTaskStatusesBuilder {
     private final Map<String, CompactionTaskFinishedStatus> finishedById = new HashMap<>();
     private final Map<String, Instant> expiryDateById = new HashMap<>();
 
-    public CompactionTaskStatusesBuilder jobStarted(
-            String taskId, CompactionTaskStartedStatus startedStatus) {
-        startedById.put(taskId, startedStatus);
+    public CompactionTaskStatusesBuilder taskStarted(
+            String taskId, Instant startTime) {
+        startedById.put(taskId, new CompactionTaskStartedStatus(startTime));
         return this;
     }
 
-    public CompactionTaskStatusesBuilder jobFinished(
+    public CompactionTaskStatusesBuilder taskFinished(
             String taskId, CompactionTaskFinishedStatus finishedStatus) {
         finishedById.put(taskId, finishedStatus);
         return this;
@@ -47,7 +48,8 @@ public class CompactionTaskStatusesBuilder {
 
     public Stream<CompactionTaskStatus> stream() {
         return startedById.entrySet().stream()
-                .map(entry -> fullStatus(entry.getKey(), entry.getValue()));
+                .map(entry -> fullStatus(entry.getKey(), entry.getValue()))
+                .sorted(Comparator.comparing(CompactionTaskStatus::getStartTime).reversed());
     }
 
     public List<CompactionTaskStatus> build() {
