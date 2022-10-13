@@ -60,10 +60,6 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
         return Instant.parse("2022-09-22T16:30:00.000Z");
     }
 
-    protected static Instant defaultFinishTimeWithDurationInSecondsNotAWholeNumber() {
-        return Instant.parse("2022-09-22T16:30:00.500Z");
-    }
-
     protected static CompactionTaskStatus startedTaskWithDefaults() {
         return startedTaskWithDefaultsBuilder().build();
     }
@@ -80,22 +76,20 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
     }
 
     protected static CompactionTaskStatus finishedTaskWithDefaultsAndDurationInSecondsNotAWholeNumber() {
+        Instant finishTime = Instant.parse("2022-09-22T14:00:14.500Z");
         return startedTaskWithDefaultsBuilder().finished(
                 CompactionTaskFinishedStatus.builder()
-                        .addJobSummary(defaultJobSummaryWithDurationInSecondsNotAWholeNumber()),
-                defaultFinishTimeWithDurationInSecondsNotAWholeNumber().toEpochMilli()).build();
+                        .addJobSummary(jobSummary(finishTime)),
+                finishTime.toEpochMilli()).build();
     }
 
     private static CompactionJobSummary defaultJobSummary() {
-        Instant jobStartedUpdateTime = Instant.parse("2022-09-22T14:00:04.000Z");
-        Instant jobFinishTime = Instant.parse("2022-09-22T14:00:14.000Z");
-        return createJobSummary(jobStartedUpdateTime, jobFinishTime);
+        return jobSummary(defaultFinishTime());
     }
 
-    private static CompactionJobSummary defaultJobSummaryWithDurationInSecondsNotAWholeNumber() {
+    private static CompactionJobSummary jobSummary(Instant finishTime) {
         Instant jobStartedUpdateTime = Instant.parse("2022-09-22T14:00:04.000Z");
-        Instant jobFinishTime = Instant.parse("2022-09-22T14:00:14.500Z");
-        return createJobSummary(jobStartedUpdateTime, jobFinishTime);
+        return createJobSummary(jobStartedUpdateTime, finishTime);
     }
 
     private static CompactionJobSummary createJobSummary(Instant jobStartedUpdateTime, Instant jobFinishTime) {
