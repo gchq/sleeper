@@ -126,11 +126,11 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
             if (run.isFinished()) {
                 out.printf("Finish Time: %s%n", run.getFinishTime());
                 out.printf("Finish Update Time: %s%n", run.getFinishUpdateTime());
-                out.printf("Duration: %.1fs%n", run.getFinishedSummary().getDurationInSeconds());
+                out.printf("Duration: %ss%n", getDurationInSeconds(run));
                 out.printf("Lines Read: %d%n", run.getFinishedSummary().getLinesRead());
                 out.printf("Lines Written: %d%n", run.getFinishedSummary().getLinesWritten());
-                out.printf("Read Rate (reads per second): %.1f%n", run.getFinishedSummary().getRecordsReadPerSecond());
-                out.printf("Write Rate (writes per second): %.1f%n", run.getFinishedSummary().getRecordsWrittenPerSecond());
+                out.printf("Read Rate (reads per second): %s%n", getRecordsReadPerSecond(run));
+                out.printf("Write Rate (writes per second): %s%n", getRecordsWrittenPerSecond(run));
             } else {
                 out.println("Not finished");
             }
@@ -213,11 +213,11 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
                 .value(TASK_ID, run.getTaskId())
                 .value(START_TIME, run.getStartTime())
                 .value(FINISH_TIME, run.getFinishTime())
-                .value(DURATION, getOrNull(run.getFinishedSummary(), CompactionJobSummary::getDurationInSeconds))
+                .value(DURATION, getDurationInSeconds(run))
                 .value(LINES_READ, getOrNull(run.getFinishedSummary(), CompactionJobSummary::getLinesRead))
                 .value(LINES_WRITTEN, getOrNull(run.getFinishedSummary(), CompactionJobSummary::getLinesWritten))
-                .value(READ_RATE, getOrNull(run.getFinishedSummary(), CompactionJobSummary::getRecordsReadPerSecond))
-                .value(WRITE_RATE, getOrNull(run.getFinishedSummary(), CompactionJobSummary::getRecordsWrittenPerSecond));
+                .value(READ_RATE, getRecordsReadPerSecond(run))
+                .value(WRITE_RATE, getRecordsWrittenPerSecond(run));
     }
 
     private static String getState(CompactionJobRun run) {
@@ -236,7 +236,19 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         return STATE_PENDING;
     }
 
-    private static <T> Object getOrNull(T object, Function<T, Object> getter) {
+    private static String getDurationInSeconds(CompactionJobRun run) {
+        return getOrNull(run.getFinishedSummary(), summary -> String.format("%.2f", summary.getDurationInSeconds()));
+    }
+
+    private static String getRecordsReadPerSecond(CompactionJobRun run) {
+        return getOrNull(run.getFinishedSummary(), summary -> String.format("%.2f", summary.getRecordsReadPerSecond()));
+    }
+
+    private static String getRecordsWrittenPerSecond(CompactionJobRun run) {
+        return getOrNull(run.getFinishedSummary(), summary -> String.format("%.2f", summary.getRecordsWrittenPerSecond()));
+    }
+
+    private static <I, O> O getOrNull(I object, Function<I, O> getter) {
         if (object == null) {
             return null;
         }
