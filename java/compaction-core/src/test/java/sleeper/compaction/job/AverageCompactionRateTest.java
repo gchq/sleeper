@@ -17,10 +17,6 @@ package sleeper.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.AverageCompactionRate;
-import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.job.status.CompactionJobRun;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 
 import java.time.Duration;
@@ -33,14 +29,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class AverageCompactionRateTest {
 
-    private static final String DEFAULT_TASK_ID = "test-task-id";
     private final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
 
     @Test
     public void shouldCalculateAverageOfSingleFinishedCompactionJob() {
         // Given
         List<CompactionJobStatus> jobs = Collections.singletonList(
-                createFinishedCompaction(
+                dataHelper.finishedCompactionStatus(
                         Instant.parse("2022-10-13T10:18:00.000Z"),
                         Duration.ofSeconds(10), 100L, 100L));
 
@@ -57,10 +52,10 @@ public class AverageCompactionRateTest {
     public void shouldCalculateAverageOfTwoFinishedCompactionJobs() {
         // Given
         List<CompactionJobStatus> jobs = Arrays.asList(
-                createFinishedCompaction(
+                dataHelper.finishedCompactionStatus(
                         Instant.parse("2022-10-13T10:18:00.000Z"),
                         Duration.ofSeconds(10), 100L, 100L), // compaction rate 10/s
-                createFinishedCompaction(
+                dataHelper.finishedCompactionStatus(
                         Instant.parse("2022-10-13T10:19:00.000Z"),
                         Duration.ofSeconds(10), 50L, 50L)); // compaction rate 5/s
 
@@ -77,10 +72,10 @@ public class AverageCompactionRateTest {
     public void shouldCalculateAverageOfTwoFinishedCompactionJobsWithDifferentDurations() {
         // Given
         List<CompactionJobStatus> jobs = Arrays.asList(
-                createFinishedCompaction(
+                dataHelper.finishedCompactionStatus(
                         Instant.parse("2022-10-13T10:18:00.000Z"),
                         Duration.ofSeconds(100), 1000L, 1000L), // compaction rate 10/s
-                createFinishedCompaction(
+                dataHelper.finishedCompactionStatus(
                         Instant.parse("2022-10-13T10:19:00.000Z"),
                         Duration.ofSeconds(10), 50L, 50L)); // compaction rate 5/s
 
@@ -97,10 +92,10 @@ public class AverageCompactionRateTest {
     public void shouldIgnoreUnstartedCompactionJob() {
         // Given
         List<CompactionJobStatus> jobs = Arrays.asList(
-                createFinishedCompaction(
+                dataHelper.finishedCompactionStatus(
                         Instant.parse("2022-10-13T10:18:00.000Z"),
                         Duration.ofSeconds(10), 100L, 100L),
-                createUnstartedCompaction(
+                dataHelper.createdCompactionStatus(
                         Instant.parse("2022-10-13T10:19:00.000Z")));
 
         // When / Then
@@ -116,10 +111,10 @@ public class AverageCompactionRateTest {
     public void shouldIgnoreUnfinishedCompactionJob() {
         // Given
         List<CompactionJobStatus> jobs = Arrays.asList(
-                createFinishedCompaction(
+                dataHelper.finishedCompactionStatus(
                         Instant.parse("2022-10-13T10:18:00.000Z"),
                         Duration.ofSeconds(10), 100L, 100L),
-                createUnfinishedCompaction(
+                dataHelper.startedCompactionStatus(
                         Instant.parse("2022-10-13T10:19:00.000Z")));
 
         // When / Then
@@ -145,39 +140,4 @@ public class AverageCompactionRateTest {
                 .containsExactly(0, Double.NaN, Double.NaN);
     }
 
-    private CompactionJobStatus createFinishedCompaction(
-            Instant createTime, Duration runDuration, long linesRead, long linesWritten) {
-        CompactionJob job = dataHelper.singleFileCompaction();
-        Instant startTime = createTime.plus(Duration.ofSeconds(10));
-        Instant startUpdateTime = startTime.plus(Duration.ofMillis(123));
-        Instant finishTime = startTime.plus(runDuration);
-        Instant finishUpdateTime = finishTime.plus(Duration.ofMillis(123));
-        CompactionJobSummary summary = new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(linesRead, linesWritten), startTime, finishTime);
-        return CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, createTime))
-                .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID,
-                        CompactionJobStartedStatus.updateAndStartTime(startUpdateTime, startTime),
-                        CompactionJobFinishedStatus.updateTimeAndSummary(finishUpdateTime, summary)))
-                .build();
-    }
-
-    private CompactionJobStatus createUnstartedCompaction(Instant createTime) {
-        CompactionJob job = dataHelper.singleFileCompaction();
-        return CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, createTime))
-                .jobRunsLatestFirst(Collections.emptyList())
-                .build();
-    }
-
-    private CompactionJobStatus createUnfinishedCompaction(Instant createTime) {
-        CompactionJob job = dataHelper.singleFileCompaction();
-        Instant startTime = createTime.plus(Duration.ofSeconds(10));
-        Instant startUpdateTime = startTime.plus(Duration.ofMillis(123));
-        return CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, createTime))
-                .singleJobRun(CompactionJobRun.started(DEFAULT_TASK_ID,
-                        CompactionJobStartedStatus.updateAndStartTime(startUpdateTime, startTime)))
-                .build();
-    }
 }
