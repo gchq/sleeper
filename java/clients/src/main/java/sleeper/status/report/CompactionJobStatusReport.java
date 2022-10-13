@@ -40,14 +40,24 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
+import java.util.TimeZone;
 
 public class CompactionJobStatusReport {
     private final CompactionJobStatusReportArguments arguments;
     private final CompactionJobStatusReporter compactionJobStatusReporter;
     private final CompactionJobStatusCollector compactionJobStatusCollector;
-    private final SimpleDateFormat dateInputFormat = new SimpleDateFormat("yyyyMMddhhmmss");
+    private static final SimpleDateFormat dateInputFormat = new SimpleDateFormat("yyyyMMddhhmmss");
+
+    static {
+        dateInputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+    }
+
     private static final Instant DEFAULT_RANGE_START = Instant.now().minus(4L, ChronoUnit.HOURS);
     private static final Instant DEFAULT_RANGE_END = Instant.now();
+
+    public static Instant parseDate(String input) throws ParseException {
+        return dateInputFormat.parse(input).toInstant();
+    }
 
     public CompactionJobStatusReport(
             CompactionJobStatusStore compactionJobStatusStore,
@@ -73,10 +83,8 @@ public class CompactionJobStatusReport {
                 Instant startRange;
                 Instant endRange;
                 try {
-                    Date startRangeDate = dateInputFormat.parse(arguments.getQueryParameters().split(",")[0]);
-                    startRange = startRangeDate.toInstant();
-                    Date endRangeDate = dateInputFormat.parse(arguments.getQueryParameters().split(",")[1]);
-                    endRange = endRangeDate.toInstant();
+                    startRange = parseDate(arguments.getQueryParameters().split(",")[0]);
+                    endRange = parseDate(arguments.getQueryParameters().split(",")[1]);
                 } catch (ParseException e) {
                     System.out.println("Error while parsing input string, using system defaults (past 4 hours)");
                     startRange = DEFAULT_RANGE_START;
@@ -153,8 +161,7 @@ public class CompactionJobStatusReport {
                 break;
             }
             try {
-                Date date = dateInputFormat.parse(time);
-                return date.toInstant();
+                return parseDate(time);
             } catch (ParseException e) {
                 System.out.println("Error while parsing input string");
             }
