@@ -22,7 +22,6 @@ import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.status.report.table.TableField;
 import sleeper.status.report.table.TableRow;
-import sleeper.status.report.table.TableStructure;
 import sleeper.status.report.table.TableWriter;
 import sleeper.status.report.table.TableWriterFactory;
 
@@ -33,22 +32,21 @@ import java.util.stream.Collectors;
 
 public class StandardCompactionJobStatusReporter implements CompactionJobStatusReporter {
 
-    private static final TableWriterFactory.Builder TABLE_FACTORY_BUILDER = TableWriterFactory.builder()
-            .structure(TableStructure.COMPACT);
+    private static final TableWriterFactory.Builder TABLE_FACTORY_BUILDER = TableWriterFactory.builder();
 
-    private static final TableField STATE = TABLE_FACTORY_BUILDER.addField("STATE ");
-    private static final TableField CREATE_TIME = TABLE_FACTORY_BUILDER.addField("CREATE_TIME ");
-    private static final TableField JOB_ID = TABLE_FACTORY_BUILDER.addField("JOB_ID ");
-    private static final TableField PARTITION_ID = TABLE_FACTORY_BUILDER.addField("PARTITION_ID ");
-    private static final TableField TYPE = TABLE_FACTORY_BUILDER.addField("TYPE ");
-    private static final TableField TASK_ID = TABLE_FACTORY_BUILDER.addField("TASK_ID ");
-    private static final TableField START_TIME = TABLE_FACTORY_BUILDER.addField("START_TIME ");
-    private static final TableField FINISH_TIME = TABLE_FACTORY_BUILDER.addField("FINISH_TIME ");
-    private static final TableField DURATION = TABLE_FACTORY_BUILDER.fieldBuilder("DURATION (s) ").alignRight().build();
-    private static final TableField LINES_READ = TABLE_FACTORY_BUILDER.fieldBuilder("LINES_READ ").alignRight().build();
-    private static final TableField LINES_WRITTEN = TABLE_FACTORY_BUILDER.fieldBuilder("LINES_WRITTEN ").alignRight().build();
-    private static final TableField READ_RATE = TABLE_FACTORY_BUILDER.fieldBuilder("READ_RATE (read/s) ").alignRight().build();
-    private static final TableField WRITE_RATE = TABLE_FACTORY_BUILDER.fieldBuilder("WRITE_RATE (write/s) ").alignRight().build();
+    private static final TableField STATE = TABLE_FACTORY_BUILDER.addField("STATE");
+    private static final TableField CREATE_TIME = TABLE_FACTORY_BUILDER.addField("CREATE_TIME");
+    private static final TableField JOB_ID = TABLE_FACTORY_BUILDER.addField("JOB_ID");
+    private static final TableField PARTITION_ID = TABLE_FACTORY_BUILDER.addField("PARTITION_ID");
+    private static final TableField TYPE = TABLE_FACTORY_BUILDER.addField("TYPE");
+    private static final TableField TASK_ID = TABLE_FACTORY_BUILDER.addField("TASK_ID");
+    private static final TableField START_TIME = TABLE_FACTORY_BUILDER.addField("START_TIME");
+    private static final TableField FINISH_TIME = TABLE_FACTORY_BUILDER.addField("FINISH_TIME");
+    private static final TableField DURATION = TABLE_FACTORY_BUILDER.fieldBuilder("DURATION (s)").alignRight().build();
+    private static final TableField LINES_READ = TABLE_FACTORY_BUILDER.fieldBuilder("LINES_READ").alignRight().build();
+    private static final TableField LINES_WRITTEN = TABLE_FACTORY_BUILDER.fieldBuilder("LINES_WRITTEN").alignRight().build();
+    private static final TableField READ_RATE = TABLE_FACTORY_BUILDER.fieldBuilder("READ_RATE (s)").alignRight().build();
+    private static final TableField WRITE_RATE = TABLE_FACTORY_BUILDER.fieldBuilder("WRITE_RATE (s)").alignRight().build();
 
     private static final TableWriterFactory TABLE_FACTORY = TABLE_FACTORY_BUILDER.build();
 

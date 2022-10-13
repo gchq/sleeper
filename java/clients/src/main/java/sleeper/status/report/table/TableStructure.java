@@ -31,13 +31,6 @@ public class TableStructure {
             .horizontalBorderCharacter('-')
             .build();
 
-    public static final TableStructure COMPACT = TableStructure.builder()
-            .paddingBeforeRow("|")
-            .paddingBetweenColumns("|")
-            .paddingAfterRow("|")
-            .horizontalBorderCharacter('-')
-            .build();
-
     private final String paddingBeforeRow;
     private final String paddingAfterRow;
     private final String paddingBetweenColumns;
