@@ -35,7 +35,6 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -91,11 +90,17 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
     }
 
     @Override
+    public List<CompactionTaskStatus> getAllTasks() {
+        ScanResult result = dynamoDB.scan(new ScanRequest().withTableName(statusTableName));
+        return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(result.getItems())
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<CompactionTaskStatus> getTasksInTimePeriod(Instant startTime, Instant endTime) {
         ScanResult result = dynamoDB.scan(new ScanRequest().withTableName(statusTableName));
         return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(result.getItems())
                 .filter(task -> task.isInPeriod(startTime, endTime))
-                .sorted(Comparator.comparing(CompactionTaskStatus::getStartTime).reversed())
                 .collect(Collectors.toList());
     }
 
@@ -104,7 +109,6 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
         ScanResult result = dynamoDB.scan(new ScanRequest().withTableName(statusTableName));
         return DynamoDBCompactionTaskStatusFormat.streamTaskStatuses(result.getItems())
                 .filter(task -> !task.isFinished())
-                .sorted(Comparator.comparing(CompactionTaskStatus::getStartTime).reversed())
                 .collect(Collectors.toList());
     }
 

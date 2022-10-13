@@ -53,6 +53,22 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
     }
 
     @Test
+    public void shouldReportCompactionTaskFinishedWithDurationInSecondsNotAWholeNumber() {
+        // Given
+        CompactionTaskStatus taskStatus = finishedTaskWithDefaultsAndDurationInSecondsNotAWholeNumber();
+
+        // When
+        store.taskStarted(taskStatus);
+        store.taskFinished(taskStatus);
+
+        // Then
+        assertThat(store.getTask(taskStatus.getTaskId()))
+                .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
+                .isEqualTo(taskStatus);
+
+    }
+
+    @Test
     public void shouldReportNoCompactionTaskExistsInStore() {
         // Given
         CompactionTaskStatus taskStatus = startedTaskWithDefaults();
