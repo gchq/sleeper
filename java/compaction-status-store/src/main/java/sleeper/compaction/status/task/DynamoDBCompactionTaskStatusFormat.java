@@ -100,7 +100,7 @@ public class DynamoDBCompactionTaskStatusFormat {
             case FINISHED:
                 builder.taskFinished(taskId, CompactionTaskFinishedStatus.builder()
                                 .finishTime(getInstantAttribute(item, FINISH_TIME))
-                                .totalRuntimeInSeconds(getLongAttribute(item, DURATION, 0))
+                                .totalRuntimeInSeconds(Double.parseDouble(getNumberAttribute(item, DURATION)))
                                 .totalJobs(getIntAttribute(item, NUMBER_OF_JOBS, 0))
                                 .totalRecordsRead(getLongAttribute(item, LINES_READ, 0))
                                 .totalRecordsWritten(getLongAttribute(item, LINES_WRITTEN, 0))
