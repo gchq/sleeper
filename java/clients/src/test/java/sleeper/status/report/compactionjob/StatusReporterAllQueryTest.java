@@ -29,6 +29,7 @@ import java.util.List;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
+import static sleeper.compaction.job.CompactionJobTestDataHelper.finishedCompactionStatus;
 
 public class StatusReporterAllQueryTest extends StatusReporterTestBase {
 
@@ -60,13 +61,26 @@ public class StatusReporterAllQueryTest extends StatusReporterTestBase {
     public void shouldReportCompactionJobStatusWithLargeAndDecimalStatistics() throws Exception {
         // Given
         CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
+        dataHelper.partitionTree(builder -> builder
+                .leavesWithSplits(Arrays.asList(partition("A"), partition("B")), Collections.singletonList("ggg"))
+                .parentJoining(partition("C"), partition("A"), partition("B")));
         List<CompactionJobStatus> statusList = Arrays.asList(
-                dataHelper.finishedCompactionStatus(
+                finishedCompactionStatus(
+                        dataHelper.singleFileCompaction(partition("C")),
                         Instant.parse("2022-10-13T12:30:00.000Z"),
                         Duration.ofSeconds(60), 1000000, 500000),
-                dataHelper.finishedCompactionStatus(
+                finishedCompactionStatus(
+                        dataHelper.singleFileCompaction(partition("C")),
                         Instant.parse("2022-10-13T12:31:00.000Z"),
-                        Duration.ofMillis(123), 600, 300));
+                        Duration.ofMillis(123), 600, 300),
+                finishedCompactionStatus(
+                        dataHelper.singleFileSplittingCompaction(partition("C"), partition("A"), partition("B")),
+                        Instant.parse("2022-10-13T12:32:00.000Z"),
+                        Duration.ofSeconds(60), 1000600, 500300),
+                finishedCompactionStatus(
+                        dataHelper.singleFileSplittingCompaction(partition("C"), partition("A"), partition("B")),
+                        Instant.parse("2022-10-13T12:33:00.000Z"),
+                        Duration.ofMillis(123), 1234, 1234));
 
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
