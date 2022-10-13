@@ -30,6 +30,7 @@ import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType
 
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,6 +39,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static sleeper.ClientTestUtils.exampleUUID;
+import static sleeper.compaction.job.CompactionJobTestDataHelper.finishedCompactionStatus;
 
 public abstract class StatusReporterTestBase {
 
@@ -114,6 +116,30 @@ public abstract class StatusReporterTestBase {
                         jobRunFinishedInTask(1, "2022-10-12T10:01:00", "2022-10-12T10:01:20")))
                 .build();
         return Collections.singletonList(status);
+    }
+
+    protected static List<CompactionJobStatus> jobsWithLargeAndDecimalStatistics() {
+        CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
+        dataHelper.partitionTree(builder -> builder
+                .leavesWithSplits(Arrays.asList(partition("A"), partition("B")), Collections.singletonList("ggg"))
+                .parentJoining(partition("C"), partition("A"), partition("B")));
+        return Arrays.asList(
+                finishedCompactionStatus(
+                        dataHelper.singleFileCompaction(partition("C")),
+                        Instant.parse("2022-10-13T12:00:00.000Z"),
+                        Duration.ofMillis(123), 600, 300),
+                finishedCompactionStatus(
+                        dataHelper.singleFileCompaction(partition("C")),
+                        Instant.parse("2022-10-13T12:01:00.000Z"),
+                        Duration.ofHours(2), 1000600, 500300),
+                finishedCompactionStatus(
+                        dataHelper.singleFileSplittingCompaction(partition("C"), partition("A"), partition("B")),
+                        Instant.parse("2022-10-13T14:01:00.000Z"),
+                        Duration.ofSeconds(60), 1000600, 500300),
+                finishedCompactionStatus(
+                        dataHelper.singleFileSplittingCompaction(partition("C"), partition("A"), partition("B")),
+                        Instant.parse("2022-10-13T14:02:00.000Z"),
+                        Duration.ofMillis(123), 1234, 1234));
     }
 
     private static CompactionJobRun jobRunStartedInTask(int taskNumber, String startTimeNoMillis) {

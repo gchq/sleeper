@@ -18,8 +18,9 @@ package sleeper.status.report.filestatus;
 import sleeper.statestore.FileInfo;
 
 import java.io.PrintStream;
-import java.util.ArrayList;
 import java.util.List;
+
+import static sleeper.ClientUtils.abbreviatedRecordCount;
 
 /**
  * The standard implementation of {@link FileStatusReporter} that returns file
@@ -73,40 +74,6 @@ public class StandardFileStatusReporter implements FileStatusReporter {
     private void printFileInfoList(String type, List<FileInfo> strings) {
         out.println(type + ":");
         strings.forEach(out::println);
-    }
-
-    private static final long K_COUNT = 1_000;
-    private static final long M_COUNT = 1_000_000;
-    private static final long G_COUNT = 1_000_000_000;
-    private static final long T_COUNT = 1_000_000_000_000L;
-
-    private static String abbreviatedRecordCount(long records) {
-        if (records < K_COUNT) {
-            return "" + records;
-        } else if (records < M_COUNT) {
-            return Math.round((double) records / K_COUNT) + "K (" + full(records) + ")";
-        } else if (records < G_COUNT) {
-            return Math.round((double) records / M_COUNT) + "M (" + full(records) + ")";
-        } else if (records < T_COUNT) {
-            return Math.round((double) records / G_COUNT) + "G (" + full(records) + ")";
-        } else {
-            return full(Math.round((double) records / T_COUNT)) + "T (" + full(records) + ")";
-        }
-    }
-
-    private static String full(long records) {
-        String str = "" + records;
-        int length = str.length();
-        int firstPartEnd = length % 3;
-
-        List<String> parts = new ArrayList<>();
-        if (firstPartEnd != 0) {
-            parts.add(str.substring(0, firstPartEnd));
-        }
-        for (int i = firstPartEnd; i < length; i += 3) {
-            parts.add(str.substring(i, i + 3));
-        }
-        return String.join(",", parts);
     }
 
 }

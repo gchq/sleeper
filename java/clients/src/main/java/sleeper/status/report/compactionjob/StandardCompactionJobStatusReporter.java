@@ -16,7 +16,6 @@
 
 package sleeper.status.report.compactionjob;
 
-import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.job.status.AverageCompactionRate;
 import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
@@ -29,6 +28,9 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static sleeper.ClientUtils.countWithCommas;
+import static sleeper.ClientUtils.decimalWithCommas;
 
 public class StandardCompactionJobStatusReporter implements CompactionJobStatusReporter {
 
@@ -125,8 +127,8 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
                 out.printf("Finish Time: %s%n", run.getFinishTime());
                 out.printf("Finish Update Time: %s%n", run.getFinishUpdateTime());
                 out.printf("Duration: %ss%n", getDurationInSeconds(run));
-                out.printf("Lines Read: %d%n", run.getFinishedSummary().getLinesRead());
-                out.printf("Lines Written: %d%n", run.getFinishedSummary().getLinesWritten());
+                out.printf("Lines Read: %s%n", getLinesRead(run));
+                out.printf("Lines Written: %s%n", getLinesWritten(run));
                 out.printf("Read Rate (reads per second): %s%n", getRecordsReadPerSecond(run));
                 out.printf("Write Rate (writes per second): %s%n", getRecordsWrittenPerSecond(run));
             } else {
@@ -180,8 +182,9 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         if (average.getJobCount() < 1) {
             return;
         }
-        String rateString = String.format("%.2f read/s, %.2f write/s",
-                average.getRecordsReadPerSecond(), average.getRecordsWrittenPerSecond());
+        String rateString = String.format("%s read/s, %s write/s",
+                formatDecimal(average.getRecordsReadPerSecond()),
+                formatDecimal(average.getRecordsWrittenPerSecond()));
         out.printf(formatString, rateString);
     }
 
@@ -212,8 +215,8 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
                 .value(START_TIME, run.getStartTime())
                 .value(FINISH_TIME, run.getFinishTime())
                 .value(DURATION, getDurationInSeconds(run))
-                .value(LINES_READ, getOrNull(run.getFinishedSummary(), CompactionJobSummary::getLinesRead))
-                .value(LINES_WRITTEN, getOrNull(run.getFinishedSummary(), CompactionJobSummary::getLinesWritten))
+                .value(LINES_READ, getLinesRead(run))
+                .value(LINES_WRITTEN, getLinesWritten(run))
                 .value(READ_RATE, getRecordsReadPerSecond(run))
                 .value(WRITE_RATE, getRecordsWrittenPerSecond(run));
     }
@@ -235,15 +238,27 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     }
 
     private static String getDurationInSeconds(CompactionJobRun run) {
-        return getOrNull(run.getFinishedSummary(), summary -> String.format("%.2f", summary.getDurationInSeconds()));
+        return getOrNull(run.getFinishedSummary(), summary -> formatDecimal(summary.getDurationInSeconds()));
+    }
+
+    private static String getLinesRead(CompactionJobRun run) {
+        return getOrNull(run.getFinishedSummary(), summary -> countWithCommas(summary.getLinesRead()));
+    }
+
+    private static String getLinesWritten(CompactionJobRun run) {
+        return getOrNull(run.getFinishedSummary(), summary -> countWithCommas(summary.getLinesWritten()));
     }
 
     private static String getRecordsReadPerSecond(CompactionJobRun run) {
-        return getOrNull(run.getFinishedSummary(), summary -> String.format("%.2f", summary.getRecordsReadPerSecond()));
+        return getOrNull(run.getFinishedSummary(), summary -> formatDecimal(summary.getRecordsReadPerSecond()));
     }
 
     private static String getRecordsWrittenPerSecond(CompactionJobRun run) {
-        return getOrNull(run.getFinishedSummary(), summary -> String.format("%.2f", summary.getRecordsWrittenPerSecond()));
+        return getOrNull(run.getFinishedSummary(), summary -> formatDecimal(summary.getRecordsWrittenPerSecond()));
+    }
+
+    private static String formatDecimal(double value) {
+        return decimalWithCommas("%.2f", value);
     }
 
     private static <I, O> O getOrNull(I object, Function<I, O> getter) {
