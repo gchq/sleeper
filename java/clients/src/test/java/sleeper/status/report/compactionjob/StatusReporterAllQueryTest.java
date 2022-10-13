@@ -17,8 +17,12 @@
 package sleeper.status.report.compactionjob;
 
 import org.junit.Test;
+import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.status.CompactionJobStatus;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -50,6 +54,25 @@ public class StatusReporterAllQueryTest extends StatusReporterTestBase {
                 .isEqualTo(replaceStandardJobIds(statusList, example("reports/compactionjobstatus/standard/all/jobWithMultipleRuns.txt")));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
                 .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/json/jobWithMultipleRuns.json")));
+    }
+
+    @Test
+    public void shouldReportCompactionJobStatusWithUnusualStatistics() throws Exception {
+        // Given
+        CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
+        List<CompactionJobStatus> statusList = Arrays.asList(
+                dataHelper.finishedCompactionStatus(
+                        Instant.parse("2022-10-13T12:30:00.000Z"),
+                        Duration.ofSeconds(60), 1000000, 500000),
+                dataHelper.finishedCompactionStatus(
+                        Instant.parse("2022-10-13T12:31:00.000Z"),
+                        Duration.ofMillis(123), 600, 300));
+
+        // When / Then
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
+                .isEqualTo(replaceStandardJobIds(statusList, example("reports/compactionjobstatus/standard/all/jobsWithUnusualStatistics.txt")));
+        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
+                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/json/jobsWithUnusualStatistics.json")));
     }
 
     @Test
