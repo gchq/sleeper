@@ -45,7 +45,14 @@ public class TableWriterFactory {
         }
 
         public TableField addField(String header) {
-            TableField field = new TableField(header, fields.size());
+            return fieldBuilder().header(header).build();
+        }
+
+        public TableField.Builder fieldBuilder() {
+            return TableField.builder(this, fields.size()).alignLeft();
+        }
+
+        TableField addField(TableField field) {
             fields.add(field);
             return field;
         }
