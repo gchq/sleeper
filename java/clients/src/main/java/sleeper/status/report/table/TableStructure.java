@@ -19,10 +19,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class TableStructure {
 
@@ -30,13 +28,6 @@ public class TableStructure {
             .paddingBeforeRow("| ")
             .paddingBetweenColumns(" | ")
             .paddingAfterRow(" |")
-            .horizontalBorderCharacter('-')
-            .build();
-
-    public static final TableStructure COMPACT = TableStructure.builder()
-            .paddingBeforeRow("|")
-            .paddingBetweenColumns("|")
-            .paddingAfterRow("|")
             .horizontalBorderCharacter('-')
             .build();
 
@@ -64,28 +55,35 @@ public class TableStructure {
         return StringUtils.repeat(horizontalBorderCharacter, length);
     }
 
-    String headerRow(List<TableField> fields, int[] maxValueLengthByField, Set<Integer> hideFieldIndexes) {
-        return paddedLine(index -> fields.get(index).getHeader(), maxValueLengthByField, hideFieldIndexes);
+    String headerRow(List<TableField> fields, List<TableFieldSummary> fieldSummaries) {
+        return paddedLine(index -> fields.get(index).getHeader(), fieldSummaries);
     }
 
-    String row(TableRow row, int[] maxValueLengthByField, Set<Integer> hideFieldIndexes) {
-        return paddedLine(row::getValue, maxValueLengthByField, hideFieldIndexes);
+    String row(TableRow row, List<TableFieldSummary> fieldSummaries) {
+        return paddedLine(row::getValue, fieldSummaries);
     }
 
-    private String paddedLine(IntFunction<String> getValue, int[] maxValueLengthByField, Set<Integer> hideFieldIndexes) {
+    private String paddedLine(IntFunction<String> getValue, List<TableFieldSummary> fieldSummaries) {
         return paddingBeforeRow
-                + IntStream.range(0, maxValueLengthByField.length)
-                .filter(index -> !hideFieldIndexes.contains(index))
-                .mapToObj(index -> paddedValue(getValue.apply(index), maxValueLengthByField[index]))
+                + fieldSummaries.stream()
+                .filter(TableFieldSummary::isVisible)
+                .map(field -> paddedValue(getValue.apply(field.getIndex()), field))
                 .collect(Collectors.joining(paddingBetweenColumns))
                 + paddingAfterRow;
     }
 
-    private String paddedValue(String value, int maxValueLength) {
-        return value + trailingPadding(value, maxValueLength);
+    private String paddedValue(String value, TableFieldSummary fieldSummary) {
+        String padding = valuePadding(value, fieldSummary.getMaxValueLength());
+        switch (fieldSummary.getHorizontalAlignment()) {
+            case RIGHT:
+                return padding + value;
+            case LEFT:
+            default:
+                return value + padding;
+        }
     }
 
-    private String trailingPadding(String value, int maxValueLength) {
+    private String valuePadding(String value, int maxValueLength) {
         return StringUtils.repeat(' ', maxValueLength - value.length());
     }
 

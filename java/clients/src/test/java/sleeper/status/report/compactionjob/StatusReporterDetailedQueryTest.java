@@ -53,6 +53,18 @@ public class StatusReporterDetailedQueryTest extends StatusReporterTestBase {
     }
 
     @Test
+    public void shouldReportCompactionJobStatusWithLargeAndDecimalStatistics() throws Exception {
+        // Given
+        List<CompactionJobStatus> statusList = jobsWithLargeAndDecimalStatistics();
+
+        // When / Then
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.DETAILED))
+                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/standard/detailed/jobsWithLargeAndDecimalStatistics.txt")));
+        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.DETAILED))
+                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/json/jobsWithLargeAndDecimalStatistics.json")));
+    }
+
+    @Test
     public void shouldReportNoCompactionJobStatusIfNoMatchingId() throws Exception {
         // Given
         List<CompactionJobStatus> statusList = Collections.emptyList();

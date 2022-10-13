@@ -17,12 +17,12 @@ package sleeper.status.report.table;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class TableWriter {
@@ -40,31 +40,33 @@ public class TableWriter {
     }
 
     public void write(PrintStream out) {
-        int[] maxValueLengthByField = maxValueLengthByField();
-        int totalMaxValueLength = Arrays.stream(maxValueLengthByField).sum();
+        List<TableFieldSummary> fieldSummaries = fieldSummaries();
+        int totalMaxValueLength = fieldSummaries.stream().mapToInt(TableFieldSummary::getMaxValueLength).sum();
         int maxRowLength = totalMaxValueLength + structure.paddingLengthForFields(fields.size() - hideFieldIndexes.size());
         out.println(structure.horizontalBorder(maxRowLength));
-        out.println(structure.headerRow(fields, maxValueLengthByField, hideFieldIndexes));
+        out.println(structure.headerRow(fields, fieldSummaries));
         for (TableRow row : rows) {
-            out.println(structure.row(row, maxValueLengthByField, hideFieldIndexes));
+            out.println(structure.row(row, fieldSummaries));
         }
         out.println(structure.horizontalBorder(maxRowLength));
     }
 
-    private int[] maxValueLengthByField() {
+    private List<TableFieldSummary> fieldSummaries() {
         return IntStream.range(0, fields.size())
-                .map(this::maxValueLengthByFieldAtIndex)
-                .toArray();
+                .mapToObj(this::fieldSummaryAtIndex)
+                .collect(Collectors.toList());
     }
 
-    private int maxValueLengthByFieldAtIndex(int index) {
+    private TableFieldSummary fieldSummaryAtIndex(int index) {
+        TableField field = fields.get(index);
         if (hideFieldIndexes.contains(index)) {
-            return 0;
+            return TableFieldSummary.hidden(field);
         }
-        int headerLength = fields.get(index).getHeader().length();
-        return Math.max(headerLength, rows.stream()
+        int headerLength = field.getHeader().length();
+        int maxValueLength = Math.max(headerLength, rows.stream()
                 .mapToInt(row -> row.getValueLength(index))
                 .max().orElse(0));
+        return TableFieldSummary.visibleWithMaxValueLength(field, maxValueLength);
     }
 
     public static final class Builder {
