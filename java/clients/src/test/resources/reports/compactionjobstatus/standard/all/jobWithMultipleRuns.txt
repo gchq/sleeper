@@ -2,11 +2,13 @@
 Compaction Job Status Report
 ----------------------------
 Total jobs: 1
+Average compaction rate: 12.50 read/s, 8.33 write/s
 
 Total standard jobs: 1
 Total standard jobs pending: 0
 Total standard jobs in progress: 1
 Total standard jobs finished: 0
+Average standard compaction rate: 12.50 read/s, 8.33 write/s
 
 Total splitting jobs: 0
 Total splitting jobs pending: 0
