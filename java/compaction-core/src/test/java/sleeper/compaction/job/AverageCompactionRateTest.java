@@ -59,10 +59,30 @@ public class AverageCompactionRateTest {
         List<CompactionJobStatus> jobs = Arrays.asList(
                 createFinishedCompaction(
                         Instant.parse("2022-10-13T10:18:00.000Z"),
-                        Duration.ofSeconds(10), 100L, 100L),
+                        Duration.ofSeconds(10), 100L, 100L), // compaction rate 10/s
                 createFinishedCompaction(
                         Instant.parse("2022-10-13T10:19:00.000Z"),
-                        Duration.ofSeconds(10), 50L, 50L));
+                        Duration.ofSeconds(10), 50L, 50L)); // compaction rate 5/s
+
+        // When / Then
+        assertThat(AverageCompactionRate.of(jobs))
+                .extracting(
+                        AverageCompactionRate::getJobCount,
+                        AverageCompactionRate::getRecordsReadPerSecond,
+                        AverageCompactionRate::getRecordsWrittenPerSecond)
+                .containsExactly(2, 7.5, 7.5);
+    }
+
+    @Test
+    public void shouldCalculateAverageOfTwoFinishedCompactionJobsWithDifferentDurations() {
+        // Given
+        List<CompactionJobStatus> jobs = Arrays.asList(
+                createFinishedCompaction(
+                        Instant.parse("2022-10-13T10:18:00.000Z"),
+                        Duration.ofSeconds(100), 1000L, 1000L), // compaction rate 10/s
+                createFinishedCompaction(
+                        Instant.parse("2022-10-13T10:19:00.000Z"),
+                        Duration.ofSeconds(10), 50L, 50L)); // compaction rate 5/s
 
         // When / Then
         assertThat(AverageCompactionRate.of(jobs))

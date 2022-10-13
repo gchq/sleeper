@@ -27,8 +27,8 @@ public class AverageCompactionRate {
 
     private AverageCompactionRate(Builder builder) {
         jobCount = builder.jobCount;
-        recordsReadPerSecond = builder.totalRecordsRead / builder.totalDurationInSeconds;
-        recordsWrittenPerSecond = builder.totalRecordsWritten / builder.totalDurationInSeconds;
+        recordsReadPerSecond = builder.totalRecordsReadPerSecond / builder.jobCount;
+        recordsWrittenPerSecond = builder.totalRecordsWrittenPerSecond / builder.jobCount;
     }
 
     public static AverageCompactionRate of(List<CompactionJobStatus> jobs) {
@@ -49,9 +49,8 @@ public class AverageCompactionRate {
 
     public static final class Builder {
         private int jobCount;
-        private long totalRecordsRead;
-        private long totalRecordsWritten;
-        private double totalDurationInSeconds;
+        private double totalRecordsReadPerSecond;
+        private double totalRecordsWrittenPerSecond;
 
         private Builder() {
         }
@@ -66,9 +65,8 @@ public class AverageCompactionRate {
 
         private void jobSummary(CompactionJobSummary summary) {
             jobCount++;
-            totalRecordsRead += summary.getLinesRead();
-            totalRecordsWritten += summary.getLinesWritten();
-            totalDurationInSeconds += summary.getDurationInSeconds();
+            totalRecordsReadPerSecond += summary.getRecordsReadPerSecond();
+            totalRecordsWrittenPerSecond += summary.getRecordsWrittenPerSecond();
         }
 
         public AverageCompactionRate build() {
