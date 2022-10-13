@@ -27,8 +27,7 @@ public class TableWriterFieldAlignmentTest {
     public void shouldAlignFieldValuesToTheRight() throws Exception {
         // Given
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder();
-        TableField field = factoryBuilder.fieldBuilder()
-                .header("Field").alignRight().build();
+        TableField field = factoryBuilder.fieldBuilder("Field").alignRight().build();
         TableWriterFactory factory = factoryBuilder.build();
         ToStringPrintStream output = new ToStringPrintStream();
 

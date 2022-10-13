@@ -45,11 +45,12 @@ public class TableWriterFactory {
         }
 
         public TableField addField(String header) {
-            return fieldBuilder().header(header).build();
+            return fieldBuilder(header).build();
         }
 
-        public TableField.Builder fieldBuilder() {
-            return TableField.builder(this, fields.size()).alignLeft();
+        public TableField.Builder fieldBuilder(String header) {
+            return TableField.builder(this, fields.size())
+                    .header(header).alignLeft();
         }
 
         TableField addField(TableField field) {
