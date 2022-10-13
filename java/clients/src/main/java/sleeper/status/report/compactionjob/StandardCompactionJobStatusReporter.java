@@ -44,11 +44,11 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private static final TableField TASK_ID = TABLE_FACTORY_BUILDER.addField("TASK_ID ");
     private static final TableField START_TIME = TABLE_FACTORY_BUILDER.addField("START_TIME ");
     private static final TableField FINISH_TIME = TABLE_FACTORY_BUILDER.addField("FINISH_TIME ");
-    private static final TableField DURATION = TABLE_FACTORY_BUILDER.addField("DURATION (s) ");
-    private static final TableField LINES_READ = TABLE_FACTORY_BUILDER.addField("LINES_READ ");
-    private static final TableField LINES_WRITTEN = TABLE_FACTORY_BUILDER.addField("LINES_WRITTEN ");
-    private static final TableField READ_RATE = TABLE_FACTORY_BUILDER.addField("READ_RATE (read/s) ");
-    private static final TableField WRITE_RATE = TABLE_FACTORY_BUILDER.addField("WRITE_RATE (write/s) ");
+    private static final TableField DURATION = TABLE_FACTORY_BUILDER.fieldBuilder("DURATION (s) ").alignRight().build();
+    private static final TableField LINES_READ = TABLE_FACTORY_BUILDER.fieldBuilder("LINES_READ ").alignRight().build();
+    private static final TableField LINES_WRITTEN = TABLE_FACTORY_BUILDER.fieldBuilder("LINES_WRITTEN ").alignRight().build();
+    private static final TableField READ_RATE = TABLE_FACTORY_BUILDER.fieldBuilder("READ_RATE (read/s) ").alignRight().build();
+    private static final TableField WRITE_RATE = TABLE_FACTORY_BUILDER.fieldBuilder("WRITE_RATE (write/s) ").alignRight().build();
 
     private static final TableWriterFactory TABLE_FACTORY = TABLE_FACTORY_BUILDER.build();
 
