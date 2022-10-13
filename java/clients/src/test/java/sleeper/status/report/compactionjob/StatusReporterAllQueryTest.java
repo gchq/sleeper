@@ -57,7 +57,7 @@ public class StatusReporterAllQueryTest extends StatusReporterTestBase {
     }
 
     @Test
-    public void shouldReportCompactionJobStatusWithUnusualStatistics() throws Exception {
+    public void shouldReportCompactionJobStatusWithLargeAndDecimalStatistics() throws Exception {
         // Given
         CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
         List<CompactionJobStatus> statusList = Arrays.asList(
@@ -70,9 +70,9 @@ public class StatusReporterAllQueryTest extends StatusReporterTestBase {
 
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
-                .isEqualTo(replaceStandardJobIds(statusList, example("reports/compactionjobstatus/standard/all/jobsWithUnusualStatistics.txt")));
+                .isEqualTo(replaceStandardJobIds(statusList, example("reports/compactionjobstatus/standard/all/jobsWithLargeAndDecimalStatistics.txt")));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
-                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/json/jobsWithUnusualStatistics.json")));
+                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/json/jobsWithLargeAndDecimalStatistics.json")));
     }
 
     @Test
