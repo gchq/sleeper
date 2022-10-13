@@ -42,8 +42,8 @@ public class QueryAllCompactionTasksIT extends DynamoDBCompactionTaskStatusStore
         // When
         store.taskStarted(task1);
         store.taskStarted(task2);
-        store.taskFinished(task2);
         store.taskStarted(task3);
+        store.taskFinished(task2);
         store.taskStarted(task4);
         store.taskFinished(task4);
 
