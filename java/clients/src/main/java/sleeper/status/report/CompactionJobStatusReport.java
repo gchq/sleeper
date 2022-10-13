@@ -46,17 +46,17 @@ public class CompactionJobStatusReport {
     private final CompactionJobStatusReportArguments arguments;
     private final CompactionJobStatusReporter compactionJobStatusReporter;
     private final CompactionJobStatusCollector compactionJobStatusCollector;
-    private static final SimpleDateFormat dateInputFormat = new SimpleDateFormat("yyyyMMddhhmmss");
+    private static final SimpleDateFormat DATE_INPUT_FORMAT = new SimpleDateFormat("yyyyMMddhhmmss");
 
     static {
-        dateInputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        DATE_INPUT_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
     private static final Instant DEFAULT_RANGE_START = Instant.now().minus(4L, ChronoUnit.HOURS);
     private static final Instant DEFAULT_RANGE_END = Instant.now();
 
     public static Instant parseDate(String input) throws ParseException {
-        return dateInputFormat.parse(input).toInstant();
+        return DATE_INPUT_FORMAT.parse(input).toInstant();
     }
 
     public CompactionJobStatusReport(
@@ -153,11 +153,11 @@ public class CompactionJobStatusReport {
         while (true) {
             System.out.printf("Enter %s range in format %s (default is %s):",
                     rangeName,
-                    dateInputFormat.toPattern(),
-                    dateInputFormat.format(Date.from(defaultRange)));
+                    DATE_INPUT_FORMAT.toPattern(),
+                    DATE_INPUT_FORMAT.format(Date.from(defaultRange)));
             String time = scanner.nextLine();
             if ("".equals(time)) {
-                System.out.printf("Using default %s range %s%n", rangeName, dateInputFormat.format(Date.from(defaultRange)));
+                System.out.printf("Using default %s range %s%n", rangeName, DATE_INPUT_FORMAT.format(Date.from(defaultRange)));
                 break;
             }
             try {
