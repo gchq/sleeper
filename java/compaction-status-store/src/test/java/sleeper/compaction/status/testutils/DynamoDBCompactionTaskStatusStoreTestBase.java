@@ -52,12 +52,34 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
         dynamoDBClient.deleteTable(taskStatusTableName);
     }
 
-    protected static Instant defaultStartTime() {
+    private static Instant defaultTaskStartTime() {
         return Instant.parse("2022-09-22T12:30:00.000Z");
     }
 
-    protected static Instant defaultFinishTime() {
+    private static Instant defaultJobStartTime() {
+        return Instant.parse("2022-09-22T14:00:04.000Z");
+    }
+
+    private static Instant defaultJobFinishTime() {
         return Instant.parse("2022-09-22T16:30:00.000Z");
+    }
+
+    private static Instant defaultJobFinishTimeWithDurationInSecondsNotAWholeNumber() {
+        return Instant.parse("2022-09-22T14:00:14.500Z");
+    }
+
+    private static CompactionJobSummary defaultJobSummary() {
+        return jobSummary(defaultJobFinishTime());
+    }
+
+    private static CompactionJobSummary jobSummary(Instant finishTime) {
+        return createJobSummary(defaultJobStartTime(), finishTime);
+    }
+
+    private static CompactionJobSummary createJobSummary(Instant jobStartedTime, Instant jobFinishTime) {
+        return new CompactionJobSummary(
+                new CompactionJobRecordsProcessed(4800L, 2400L),
+                jobStartedTime, jobFinishTime);
     }
 
     protected static CompactionTaskStatus startedTaskWithDefaults() {
@@ -65,37 +87,21 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
     }
 
     protected static CompactionTaskStatus.Builder startedTaskWithDefaultsBuilder() {
-        return CompactionTaskStatus.builder().taskId(UUID.randomUUID().toString()).started(defaultStartTime());
+        return CompactionTaskStatus.builder().taskId(UUID.randomUUID().toString()).started(defaultTaskStartTime());
     }
 
     protected static CompactionTaskStatus finishedTaskWithDefaults() {
         return startedTaskWithDefaultsBuilder().finished(
                 CompactionTaskFinishedStatus.builder()
                         .addJobSummary(defaultJobSummary()),
-                defaultFinishTime().toEpochMilli()).build();
+                defaultJobFinishTime().toEpochMilli()).build();
     }
 
     protected static CompactionTaskStatus finishedTaskWithDefaultsAndDurationInSecondsNotAWholeNumber() {
-        Instant finishTime = Instant.parse("2022-09-22T14:00:14.500Z");
         return startedTaskWithDefaultsBuilder().finished(
                 CompactionTaskFinishedStatus.builder()
-                        .addJobSummary(jobSummary(finishTime)),
-                finishTime.toEpochMilli()).build();
-    }
-
-    private static CompactionJobSummary defaultJobSummary() {
-        return jobSummary(defaultFinishTime());
-    }
-
-    private static CompactionJobSummary jobSummary(Instant finishTime) {
-        Instant jobStartedUpdateTime = Instant.parse("2022-09-22T14:00:04.000Z");
-        return createJobSummary(jobStartedUpdateTime, finishTime);
-    }
-
-    private static CompactionJobSummary createJobSummary(Instant jobStartedUpdateTime, Instant jobFinishTime) {
-        return new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(4800L, 2400L),
-                jobStartedUpdateTime, jobFinishTime);
+                        .addJobSummary(jobSummary(defaultJobFinishTimeWithDurationInSecondsNotAWholeNumber())),
+                defaultJobFinishTimeWithDurationInSecondsNotAWholeNumber().toEpochMilli()).build();
     }
 
     protected static CompactionTaskStatus taskWithStartTime(Instant startTime) {
