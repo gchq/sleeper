@@ -17,9 +17,12 @@
 package sleeper.status.report.compactionjob;
 
 import org.junit.Test;
+import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.status.CompactionJobStatus;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -28,16 +31,16 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static sleeper.status.report.compactionjob.StatusReporterTestBase.jobWithMultipleRuns;
 
 public class CompactionJobStatusCollectorTest {
-    private static final String JOB_ID_FOUND = "job-id-exists";
     private static final String JOB_ID_NOT_FOUND = "job-id-not-found";
     private final CompactionJobStatusStore statusStore = mock(CompactionJobStatusStore.class);
     private final CompactionJobStatusCollector collector = new CompactionJobStatusCollector(statusStore, "table-test");
 
     private CompactionJobStatus getJob() {
-        return jobWithMultipleRuns().get(0);
+        CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
+        CompactionJob job = dataHelper.singleFileCompaction();
+        return CompactionJobStatus.created(job, Instant.now());
     }
 
     @Test
@@ -58,8 +61,8 @@ public class CompactionJobStatusCollectorTest {
     public void shouldReturnListOfJobStatusWithJobFound() {
         // Given
         CompactionJobStatus jobStatus = getJob();
-        List<String> jobIds = Collections.singletonList(JOB_ID_FOUND);
-        when(statusStore.getJob(JOB_ID_FOUND)).thenReturn(Optional.of(jobStatus));
+        List<String> jobIds = Collections.singletonList(jobStatus.getJobId());
+        when(statusStore.getJob(jobStatus.getJobId())).thenReturn(Optional.of(jobStatus));
 
         // When
         List<CompactionJobStatus> statusList = collector.runDetailedQuery(jobIds);
@@ -73,8 +76,8 @@ public class CompactionJobStatusCollectorTest {
     public void shouldReturnListOfJobStatusWithOneJobNotFound() {
         // Given
         CompactionJobStatus jobStatus = getJob();
-        List<String> jobIds = Arrays.asList(JOB_ID_NOT_FOUND, JOB_ID_FOUND);
-        when(statusStore.getJob(JOB_ID_FOUND)).thenReturn(Optional.of(jobStatus));
+        List<String> jobIds = Arrays.asList(JOB_ID_NOT_FOUND, jobStatus.getJobId());
+        when(statusStore.getJob(jobStatus.getJobId())).thenReturn(Optional.of(jobStatus));
         when(statusStore.getJob(JOB_ID_NOT_FOUND)).thenReturn(Optional.empty());
 
         // When
