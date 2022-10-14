@@ -56,6 +56,6 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusS
     @Test
     public void shouldReturnNoCompactionJobById() {
         // When / Then
-        assertThat(store.getJob("not-present")).isNull();
+        assertThat(store.getJob("not-present")).isNotPresent();
     }
 }
