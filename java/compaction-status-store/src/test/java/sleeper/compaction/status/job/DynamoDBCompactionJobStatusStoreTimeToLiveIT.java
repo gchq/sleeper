@@ -46,7 +46,7 @@ public class DynamoDBCompactionJobStatusStoreTimeToLiveIT extends DynamoDBCompac
         // Then
         Optional<CompactionJobStatus> status = store.getJob(job.getId());
         assertThat(status.isPresent()).isTrue();
-        assertThat(store.getJob(job.getId()).get().getExpiryDate()).isAfterOrEqualTo(createdTime);
+        assertThat(status.get().getExpiryDate()).isAfterOrEqualTo(createdTime);
         assertThat(store.getTimeToLive())
                 .isEqualTo(Long.parseLong(COMPACTION_JOB_STATUS_TTL_IN_SECONDS.getDefaultValue()) * 1000L);
     }
@@ -65,7 +65,7 @@ public class DynamoDBCompactionJobStatusStoreTimeToLiveIT extends DynamoDBCompac
         // Then
         Optional<CompactionJobStatus> status = store.getJob(job.getId());
         assertThat(status.isPresent()).isTrue();
-        assertThat(store.getJob(job.getId()).get().getExpiryDate()).isAfterOrEqualTo(createdTime);
+        assertThat(status.get().getExpiryDate()).isAfterOrEqualTo(createdTime);
         assertThat(store.getTimeToLive())
                 .isEqualTo(timeToLive);
     }
@@ -86,7 +86,7 @@ public class DynamoDBCompactionJobStatusStoreTimeToLiveIT extends DynamoDBCompac
         // Then
         Optional<CompactionJobStatus> status = store.getJob(job.getId());
         assertThat(status.isPresent()).isTrue();
-        assertThat(store.getJob(job.getId()).get().getExpiryDate()).isAfterOrEqualTo(startedExpiryDate);
+        assertThat(status.get().getExpiryDate()).isAfterOrEqualTo(startedExpiryDate);
         assertThat(store.getTimeToLive())
                 .isEqualTo(Long.parseLong(COMPACTION_JOB_STATUS_TTL_IN_SECONDS.getDefaultValue()) * 1000L);
     }
@@ -112,7 +112,7 @@ public class DynamoDBCompactionJobStatusStoreTimeToLiveIT extends DynamoDBCompac
         // Then
         Optional<CompactionJobStatus> status = store.getJob(job.getId());
         assertThat(status.isPresent()).isTrue();
-        assertThat(store.getJob(job.getId()).get().getExpiryDate()).isAfterOrEqualTo(finishedExpiryDate);
+        assertThat(status.get().getExpiryDate()).isAfterOrEqualTo(finishedExpiryDate);
         assertThat(store.getTimeToLive())
                 .isEqualTo(Long.parseLong(COMPACTION_JOB_STATUS_TTL_IN_SECONDS.getDefaultValue()) * 1000L);
     }
