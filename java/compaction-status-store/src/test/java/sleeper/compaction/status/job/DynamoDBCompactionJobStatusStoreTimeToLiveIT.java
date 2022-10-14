@@ -20,7 +20,6 @@ import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobRecordsProcessed;
 import sleeper.compaction.job.CompactionJobSummary;
-import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfoFactory;
@@ -28,7 +27,6 @@ import sleeper.statestore.FileInfoFactory;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_STATUS_TTL_IN_SECONDS;
@@ -37,16 +35,13 @@ public class DynamoDBCompactionJobStatusStoreTimeToLiveIT extends DynamoDBCompac
     @Test
     public void shouldSetExpiryDateForCompactionJobStatusWithDefaultTimeToLive() {
         // Given
+        Instant createdTime = Instant.now();
         CompactionJob job = createCompactionJob();
-
-        // When
-        Instant createdTime = Instant.now().plus(Duration.ofMillis(store.getTimeToLive()));
         store.jobCreated(job);
 
-        // Then
-        Optional<CompactionJobStatus> status = store.getJob(job.getId());
-        assertThat(status.isPresent()).isTrue();
-        assertThat(status.get().getExpiryDate()).isAfterOrEqualTo(createdTime);
+        // When/Then
+        assertThat(getJobStatus(job.getId()).getExpiryDate())
+                .isAfterOrEqualTo(createdTime.plus(Duration.ofMillis(store.getTimeToLive())));
         assertThat(store.getTimeToLive())
                 .isEqualTo(Long.parseLong(COMPACTION_JOB_STATUS_TTL_IN_SECONDS.getDefaultValue()) * 1000L);
     }
@@ -55,17 +50,14 @@ public class DynamoDBCompactionJobStatusStoreTimeToLiveIT extends DynamoDBCompac
     public void shouldSetExpiryDateForCompactionJobStatusWithCustomTimeToLive() {
         // Given
         long timeToLive = 10000L; // 10 seconds from creation time
+        Instant createdTime = Instant.now();
         CompactionJob job = createCompactionJob();
         store.setTimeToLive(timeToLive);
-
-        // When
-        Instant createdTime = Instant.now().plus(Duration.ofMillis(store.getTimeToLive()));
         store.jobCreated(job);
 
-        // Then
-        Optional<CompactionJobStatus> status = store.getJob(job.getId());
-        assertThat(status.isPresent()).isTrue();
-        assertThat(status.get().getExpiryDate()).isAfterOrEqualTo(createdTime);
+        // When/Then
+        assertThat(getJobStatus(job.getId()).getExpiryDate())
+                .isAfterOrEqualTo(createdTime.plus(Duration.ofMillis(store.getTimeToLive())));
         assertThat(store.getTimeToLive())
                 .isEqualTo(timeToLive);
     }
@@ -74,19 +66,17 @@ public class DynamoDBCompactionJobStatusStoreTimeToLiveIT extends DynamoDBCompac
     public void shouldUpdateExpiryDateForCompactionJobStatusStarted() throws Exception {
         // Given
         CompactionJob job = createCompactionJob();
+        store.jobCreated(job);
 
         // When
-        store.jobCreated(job);
         Thread.sleep(2000L);
 
         Instant startedTime = Instant.now();
-        Instant startedExpiryDate = startedTime.plus(Duration.ofMillis(store.getTimeToLive()));
         store.jobStarted(job, startedTime, DEFAULT_TASK_ID);
 
         // Then
-        Optional<CompactionJobStatus> status = store.getJob(job.getId());
-        assertThat(status.isPresent()).isTrue();
-        assertThat(status.get().getExpiryDate()).isAfterOrEqualTo(startedExpiryDate);
+        assertThat(getJobStatus(job.getId()).getExpiryDate())
+                .isAfterOrEqualTo(startedTime.plus(Duration.ofMillis(store.getTimeToLive())));
         assertThat(store.getTimeToLive())
                 .isEqualTo(Long.parseLong(COMPACTION_JOB_STATUS_TTL_IN_SECONDS.getDefaultValue()) * 1000L);
     }
@@ -95,9 +85,9 @@ public class DynamoDBCompactionJobStatusStoreTimeToLiveIT extends DynamoDBCompac
     public void shouldUpdateExpiryDateForCompactionJobStatusFinished() throws Exception {
         // Given
         CompactionJob job = createCompactionJob();
+        store.jobCreated(job);
 
         // When
-        store.jobCreated(job);
         Thread.sleep(2000L);
 
         Instant startedTime = Instant.now();
@@ -105,14 +95,12 @@ public class DynamoDBCompactionJobStatusStoreTimeToLiveIT extends DynamoDBCompac
         Thread.sleep(2000L);
 
         Instant finishedTime = Instant.now();
-        Instant finishedExpiryDate = finishedTime.plus(Duration.ofMillis(store.getTimeToLive()));
         store.jobFinished(job, new CompactionJobSummary(
                 new CompactionJobRecordsProcessed(60L, 60L), startedTime, finishedTime), DEFAULT_TASK_ID);
 
         // Then
-        Optional<CompactionJobStatus> status = store.getJob(job.getId());
-        assertThat(status.isPresent()).isTrue();
-        assertThat(status.get().getExpiryDate()).isAfterOrEqualTo(finishedExpiryDate);
+        assertThat(getJobStatus(job.getId()).getExpiryDate())
+                .isAfterOrEqualTo(finishedTime.plus(Duration.ofMillis(store.getTimeToLive())));
         assertThat(store.getTimeToLive())
                 .isEqualTo(Long.parseLong(COMPACTION_JOB_STATUS_TTL_IN_SECONDS.getDefaultValue()) * 1000L);
     }
