@@ -21,6 +21,7 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class CompactionJobStatusCollector {
@@ -41,7 +42,9 @@ public class CompactionJobStatusCollector {
     }
 
     public List<CompactionJobStatus> runDetailedQuery(List<String> jobIds) {
-        return jobIds.stream().map(compactionJobStatusStore::getJob).collect(Collectors.toList());
+        return jobIds.stream().map(compactionJobStatusStore::getJob)
+                .filter(Optional::isPresent).map(Optional::get)
+                .collect(Collectors.toList());
     }
 
     public List<CompactionJobStatus> runAllQuery() {

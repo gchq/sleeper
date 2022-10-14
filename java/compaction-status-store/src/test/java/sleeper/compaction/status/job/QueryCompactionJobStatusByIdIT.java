@@ -23,6 +23,7 @@ import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfoFactory;
 
 import java.util.Collections;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -45,7 +46,9 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusS
         store.jobCreated(job2);
 
         // Then
-        assertThat(store.getJob(job1.getId()))
+        Optional<CompactionJobStatus> status = store.getJob(job1.getId());
+        assertThat(status.isPresent()).isTrue();
+        assertThat(store.getJob(job1.getId()).get())
                 .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
                 .isEqualTo(CompactionJobStatus.created(job1, ignoredUpdateTime()));
     }
