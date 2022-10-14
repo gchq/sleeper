@@ -44,9 +44,9 @@ public class CompactionJobStatusCollectorTest {
     public void shouldReturnListOfJobStatusWithNoJobsFound() {
         // Given
         List<String> jobIds = Collections.singletonList(JOB_ID_NOT_FOUND);
+        when(statusStore.getJob(JOB_ID_NOT_FOUND)).thenReturn(Optional.empty());
 
         // When
-        when(statusStore.getJob(JOB_ID_NOT_FOUND)).thenReturn(Optional.empty());
         List<CompactionJobStatus> statusList = collector.runDetailedQuery(jobIds);
 
         // Then
@@ -59,9 +59,9 @@ public class CompactionJobStatusCollectorTest {
         // Given
         CompactionJobStatus jobStatus = getJob();
         List<String> jobIds = Collections.singletonList(JOB_ID_FOUND);
+        when(statusStore.getJob(JOB_ID_FOUND)).thenReturn(Optional.of(jobStatus));
 
         // When
-        when(statusStore.getJob(JOB_ID_FOUND)).thenReturn(Optional.of(jobStatus));
         List<CompactionJobStatus> statusList = collector.runDetailedQuery(jobIds);
 
         // Then
@@ -73,11 +73,11 @@ public class CompactionJobStatusCollectorTest {
     public void shouldReturnListOfJobStatusWithOneJobNotFound() {
         // Given
         CompactionJobStatus jobStatus = getJob();
-        List<String> jobIds = Arrays.asList(JOB_ID_FOUND, JOB_ID_NOT_FOUND);
-
-        // When
+        List<String> jobIds = Arrays.asList(JOB_ID_NOT_FOUND, JOB_ID_FOUND);
         when(statusStore.getJob(JOB_ID_FOUND)).thenReturn(Optional.of(jobStatus));
         when(statusStore.getJob(JOB_ID_NOT_FOUND)).thenReturn(Optional.empty());
+
+        // When
         List<CompactionJobStatus> statusList = collector.runDetailedQuery(jobIds);
 
         // Then
