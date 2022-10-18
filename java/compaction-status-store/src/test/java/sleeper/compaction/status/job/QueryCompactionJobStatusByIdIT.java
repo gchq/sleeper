@@ -45,7 +45,7 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusS
         store.jobCreated(job2);
 
         // Then
-        assertThat(store.getJob(job1.getId()))
+        assertThat(getJobStatus(job1.getId()))
                 .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
                 .isEqualTo(CompactionJobStatus.created(job1, ignoredUpdateTime()));
     }
@@ -53,6 +53,6 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusS
     @Test
     public void shouldReturnNoCompactionJobById() {
         // When / Then
-        assertThat(store.getJob("not-present")).isNull();
+        assertThat(store.getJob("not-present")).isNotPresent();
     }
 }

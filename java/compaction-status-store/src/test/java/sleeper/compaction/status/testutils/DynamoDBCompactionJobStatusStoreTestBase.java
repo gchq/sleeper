@@ -134,6 +134,9 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
                 .build();
     }
 
+    protected CompactionJobStatus getJobStatus(String jobId) {
+        return store.getJob(jobId).orElse(null);
+    }
 
     protected List<CompactionJobStatus> getAllJobStatuses() {
         return store.getAllJobs(tableName);
