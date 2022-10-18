@@ -19,6 +19,7 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 public interface CompactionJobStatusStore {
 
@@ -48,7 +49,7 @@ public interface CompactionJobStatusStore {
         throw new UnsupportedOperationException("Instance has no compaction job status store");
     }
 
-    default CompactionJobStatus getJob(String jobId) {
+    default Optional<CompactionJobStatus> getJob(String jobId) {
         throw new UnsupportedOperationException("Instance has no compaction job status store");
     }
 

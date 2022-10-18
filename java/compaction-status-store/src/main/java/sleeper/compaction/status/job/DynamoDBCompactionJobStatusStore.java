@@ -39,6 +39,7 @@ import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -116,8 +117,8 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public CompactionJobStatus getJob(String jobId) {
-        return getJobStream(jobId).findFirst().orElse(null);
+    public Optional<CompactionJobStatus> getJob(String jobId) {
+        return getJobStream(jobId).findFirst();
     }
 
     private Stream<CompactionJobStatus> getJobStream(String jobId) {
