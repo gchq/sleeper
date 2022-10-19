@@ -15,53 +15,6 @@
  */
 package sleeper.cdk.stack;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import sleeper.cdk.Utils;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.core.ContainerConstants;
-import software.amazon.awscdk.CfnOutput;
-import software.amazon.awscdk.CfnOutputProps;
-import software.amazon.awscdk.Duration;
-import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.cloudwatch.Alarm;
-import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
-import software.amazon.awscdk.services.cloudwatch.MetricOptions;
-import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
-import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
-import software.amazon.awscdk.services.ec2.IVpc;
-import software.amazon.awscdk.services.ec2.Vpc;
-import software.amazon.awscdk.services.ec2.VpcLookupOptions;
-import software.amazon.awscdk.services.ecr.IRepository;
-import software.amazon.awscdk.services.ecr.Repository;
-import software.amazon.awscdk.services.ecs.AwsLogDriver;
-import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
-import software.amazon.awscdk.services.ecs.Cluster;
-import software.amazon.awscdk.services.ecs.ContainerDefinitionOptions;
-import software.amazon.awscdk.services.ecs.ContainerImage;
-import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
-import software.amazon.awscdk.services.ecs.LogDriver;
-import software.amazon.awscdk.services.events.Rule;
-import software.amazon.awscdk.services.events.Schedule;
-import software.amazon.awscdk.services.events.targets.LambdaFunction;
-import software.amazon.awscdk.services.iam.IRole;
-import software.amazon.awscdk.services.iam.ManagedPolicy;
-import software.amazon.awscdk.services.iam.PolicyStatement;
-import software.amazon.awscdk.services.lambda.Code;
-import software.amazon.awscdk.services.lambda.Function;
-import software.amazon.awscdk.services.s3.Bucket;
-import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.Topic;
-import software.amazon.awscdk.services.sqs.DeadLetterQueue;
-import software.amazon.awscdk.services.sqs.Queue;
-import software.constructs.Construct;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
@@ -74,6 +27,12 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_IMAGE_SSM_PARAM;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_DESIRED;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_MAXIMUM;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_MINIMUM;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_ROOT_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
@@ -89,6 +48,67 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Stack;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import sleeper.cdk.Utils;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.core.ContainerConstants;
+import software.amazon.awscdk.CfnOutput;
+import software.amazon.awscdk.CfnOutputProps;
+import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.autoscaling.AutoScalingGroup;
+import software.amazon.awscdk.services.autoscaling.BlockDevice;
+import software.amazon.awscdk.services.autoscaling.BlockDeviceVolume;
+import software.amazon.awscdk.services.autoscaling.EbsDeviceOptions;
+import software.amazon.awscdk.services.autoscaling.EbsDeviceVolumeType;
+import software.amazon.awscdk.services.cloudwatch.Alarm;
+import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
+import software.amazon.awscdk.services.cloudwatch.MetricOptions;
+import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
+import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
+import software.amazon.awscdk.services.ec2.GenericSSMParameterImage;
+import software.amazon.awscdk.services.ec2.IVpc;
+import software.amazon.awscdk.services.ec2.InstanceClass;
+import software.amazon.awscdk.services.ec2.InstanceSize;
+import software.amazon.awscdk.services.ec2.InstanceType;
+import software.amazon.awscdk.services.ec2.OperatingSystemType;
+import software.amazon.awscdk.services.ec2.Vpc;
+import software.amazon.awscdk.services.ec2.VpcLookupOptions;
+import software.amazon.awscdk.services.ecr.IRepository;
+import software.amazon.awscdk.services.ecr.Repository;
+import software.amazon.awscdk.services.ecs.AddAutoScalingGroupCapacityOptions;
+import software.amazon.awscdk.services.ecs.AsgCapacityProvider;
+import software.amazon.awscdk.services.ecs.AwsLogDriver;
+import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
+import software.amazon.awscdk.services.ecs.Cluster;
+import software.amazon.awscdk.services.ecs.ContainerDefinitionOptions;
+import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
+import software.amazon.awscdk.services.ecs.LogDriver;
+import software.amazon.awscdk.services.ecs.MachineImageType;
+import software.amazon.awscdk.services.events.Rule;
+import software.amazon.awscdk.services.events.Schedule;
+import software.amazon.awscdk.services.events.targets.LambdaFunction;
+import software.amazon.awscdk.services.iam.IRole;
+import software.amazon.awscdk.services.iam.ManagedPolicy;
+import software.amazon.awscdk.services.iam.PolicyStatement;
+import software.amazon.awscdk.services.lambda.Code;
+import software.amazon.awscdk.services.lambda.Function;
+import software.amazon.awscdk.services.s3.Bucket;
+import software.amazon.awscdk.services.s3.IBucket;
+import software.amazon.awscdk.services.sns.Topic;
+import software.amazon.awscdk.services.sqs.DeadLetterQueue;
+import software.amazon.awscdk.services.sqs.Queue;
+import software.constructs.Construct;
 
 /**
  * A {@link Stack} to deploy the {@link Queue}s, ECS {@link Cluster}s,
@@ -388,6 +408,8 @@ public class CompactionStack extends NestedStack {
 
         compactionMergeJobsQueue.grantConsumeMessages(taskDefinition.getTaskRole());
 
+        addEC2CapacityProvider(cluster, "MergeCompaction", vpc);
+        
         CfnOutputProps compactionClusterProps = new CfnOutputProps.Builder()
                 .value(cluster.getClusterName())
                 .build();
@@ -395,7 +417,7 @@ public class CompactionStack extends NestedStack {
 
         return cluster;
     }
-
+    
     private Cluster ecsClusterForSplittingCompactionTasks(IBucket configBucket,
                                                           IBucket jarsBucket,
                                                           List<StateStoreStack> stateStoreStacks,
@@ -450,12 +472,59 @@ public class CompactionStack extends NestedStack {
 
         compactionSplittingMergeJobsQueue.grantConsumeMessages(taskDefinition.getTaskRole());
 
+        addEC2CapacityProvider(cluster, "SplittingMergeCompaction", vpc);
+        
         CfnOutputProps splittingCompactionClusterProps = new CfnOutputProps.Builder()
                 .value(cluster.getClusterName())
                 .build();
         new CfnOutput(this, SPLITTING_COMPACTION_CLUSTER_NAME, splittingCompactionClusterProps);
 
         return cluster;
+    }
+    
+    private void addEC2CapacityProvider(Cluster cluster, String clusterName, IVpc vpc) {
+		AutoScalingGroup ec2scalingGroup = AutoScalingGroup.Builder.create(this, clusterName + "ScalingGroup").vpc(vpc)
+				.allowAllOutbound(true).associatePublicIpAddress(false)
+				.blockDevices(Arrays.asList(BlockDevice.builder().deviceName("/dev/xvda") // root volume
+						.volume(BlockDeviceVolume.ebs(instanceProperties.getInt(COMPACTION_EC2_ROOT_SIZE),
+								EbsDeviceOptions.builder().deleteOnTermination(true).encrypted(true)
+										.volumeType(EbsDeviceVolumeType.GP2).build()))
+						.build()))
+				.minCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MINIMUM))
+				.desiredCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_DESIRED))
+				.maxCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MAXIMUM)).requireImdsv2(true)
+				.instanceType(lookupEC2InstanceType(instanceProperties.get(COMPACTION_EC2_TYPE)))
+				.keyName("test_delete_key_pair") // TODO remove this
+				.machineImage(new GenericSSMParameterImage(instanceProperties.get(COMPACTION_EC2_IMAGE_SSM_PARAM),
+						OperatingSystemType.LINUX))
+				.build();
+
+		AsgCapacityProvider ec2Provider = AsgCapacityProvider.Builder
+				.create(this, clusterName + "CapacityProvider").enableManagedScaling(false)
+				.enableManagedTerminationProtection(true).autoScalingGroup(ec2scalingGroup).spotInstanceDraining(true)
+				.canContainersAccessInstanceRole(false).machineImageType(MachineImageType.BOTTLEROCKET).build();
+
+		cluster.addAsgCapacityProvider(ec2Provider,
+				AddAutoScalingGroupCapacityOptions.builder().canContainersAccessInstanceRole(false)
+						.machineImageType(MachineImageType.BOTTLEROCKET).spotInstanceDraining(true).build());
+	}
+    
+    public static InstanceType lookupEC2InstanceType(String ec2InstanceType) {
+    	Objects.requireNonNull(ec2InstanceType,"instance type cannot be null");
+    	int pos = ec2InstanceType.indexOf('.');
+    	
+    	if (pos<0||ec2InstanceType.strip().isEmpty()) {
+    		throw new IllegalArgumentException("instance type is empty or invalid");
+    	}
+    	
+    	String family = ec2InstanceType.substring(0, pos).toUpperCase();
+    	String size = ec2InstanceType.substring(pos).toUpperCase();
+    	
+    	//now perform lookup of these against known types
+    	InstanceClass instanceClass = InstanceClass.valueOf(family);
+    	InstanceSize instanceSize = InstanceSize.valueOf(size);
+    	
+    	return InstanceType.of(instanceClass,instanceSize);
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")

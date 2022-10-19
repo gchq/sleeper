@@ -191,6 +191,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     COMPACTION_EC2_POOL_DESIRED("sleeper.compaction.ec2.pool.desired", "0", Utils::isNonNegativeInteger),
     COMPACTION_EC2_POOL_MAXIMUM("sleeper.compaction.ec2.pool.maximum", "3", Utils::isNonNegativeInteger),
     COMPACTION_EC2_ROOT_SIZE("sleeper.compaction.ec2.root.size", "50", Utils::isPositiveInteger),
+    COMPACTION_EC2_IMAGE_SSM_PARAM("sleeper.compaction.ec2.image.ssm.param", "/aws/service/bottlerocket/aws-ecs-1-nvidia/x86_64/latest/image_id", Utils::isNonNullNonEmptyString),
 
     // Query
     MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES("sleeper.query.s3.max-connections", "1024", Utils::isPositiveInteger),

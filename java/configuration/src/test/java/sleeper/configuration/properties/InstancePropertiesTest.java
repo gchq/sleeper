@@ -55,6 +55,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPA
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_DESIRED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_MAXIMUM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_ROOT_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_IMAGE_SSM_PARAM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
@@ -253,6 +254,7 @@ public class InstancePropertiesTest {
         instanceProperties.setNumber(COMPACTION_EC2_POOL_DESIRED, 1);
         instanceProperties.setNumber(COMPACTION_EC2_POOL_MAXIMUM, 2);
         instanceProperties.setNumber(COMPACTION_EC2_ROOT_SIZE, 50);
+        instanceProperties.set(COMPACTION_EC2_IMAGE_SSM_PARAM, "/aws/service/bottlerocket/aws-ecs-1-nvidia/x86_64/latest/image_id");
         instanceProperties.setNumber(TASK_RUNNER_LAMBDA_MEMORY_IN_MB, 2048);
         instanceProperties.setNumber(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS, 600);
         instanceProperties.setNumber(GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB, 2048);

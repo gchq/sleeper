@@ -144,7 +144,7 @@ sleeper.query.processor.results.batch.size=2000
 sleeper.fargate.version=1.4.0
 
 # The EC2 instance type to use for compaction tasks (when not using Fargate).
-sleeper.compaction.ec2.type = t3.micro
+sleeper.compaction.ec2.type=t3.micro
 
 # The minimum / initial desired / maximum number of instances for the cluster.
 sleeper.compaction.ec2.pool.minimum = 0
@@ -152,10 +152,13 @@ sleeper.compaction.ec2.pool.desired = 1
 sleeper.compaction.ec2.pool.maximum = 3
 
 # This shouldn't be needed beyond debugging. Remove it.
-sleeper.compaction.remove.keypair = test_delete_key_pair
+sleeper.compaction.remove.keypair=test_delete_key_pair
 
 # The size in GiB of the root EBS volume attached to the EC2 instances.
 sleeper.compaction.ec2.root.size = 50
+
+# The SSM parameter name to used to lookup the name of the AMI-ID for launching EC2 instances
+sleeper.compaction.ec2.image.ssm.param=/aws/service/bottlerocket/aws-ecs-1-nvidia/x86_64/latest/image_id
 
 # The frequency with which the WriteData class refreshes the list of partitions from the state store
 # (NB Refreshes only happen once a batch of data has been written so this is a lower bound
