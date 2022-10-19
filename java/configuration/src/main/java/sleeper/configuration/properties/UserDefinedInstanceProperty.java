@@ -187,9 +187,9 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO("sleeper.default.table.compaction.strategy.sizeratio.ratio", "3"),
     DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION("sleeper.default.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition", "" + Integer.MAX_VALUE),
     COMPACTION_EC2_TYPE("sleeper.compaction.ec2.type", "t3.large", Utils::isNonNullNonEmptyString),
-    COMPACTION_EC2_POOL_MINIMUM("sleeper.compaction.ec2.minimum", "0",Utils::isNonNegativeInteger),
-    COMPACTION_EC2_POOL_DESIRED("sleeper.compaction.ec2.desired", "0", Utils::isNonNegativeInteger),
-    COMPACTION_EC2_POOL_MAXIMUM("sleeper.compaction.ec2.maximum", "3", Utils::isNonNegativeInteger),
+    COMPACTION_EC2_POOL_MINIMUM("sleeper.compaction.ec2.pool.minimum", "0",Utils::isNonNegativeInteger),
+    COMPACTION_EC2_POOL_DESIRED("sleeper.compaction.ec2.pool.desired", "0", Utils::isNonNegativeInteger),
+    COMPACTION_EC2_POOL_MAXIMUM("sleeper.compaction.ec2.pool.maximum", "3", Utils::isNonNegativeInteger),
     COMPACTION_EC2_ROOT_SIZE("sleeper.compaction.ec2.root.size", "50", Utils::isPositiveInteger),
 
     // Query
