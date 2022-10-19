@@ -147,9 +147,9 @@ sleeper.fargate.version=1.4.0
 sleeper.compaction.ec2.type = t3.micro
 
 # The minimum / initial desired / maximum number of instances for the cluster.
-sleeper.compaction.ec2.minimum = 0
-sleeper.compaction.ec2.desired = 1
-sleeper.compaction.ec2.maximum = 3
+sleeper.compaction.ec2.pool.minimum = 0
+sleeper.compaction.ec2.pool.desired = 1
+sleeper.compaction.ec2.pool.maximum = 3
 
 # This shouldn't be needed beyond debugging. Remove it.
 sleeper.compaction.remove.keypair = test_delete_key_pair

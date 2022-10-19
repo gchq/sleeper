@@ -50,6 +50,11 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPA
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_MEMORY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_MINIMUM;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_DESIRED;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_MAXIMUM;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_ROOT_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
@@ -152,8 +157,8 @@ public class InstancePropertiesTest {
 
         // Then
         assertThat(pageSizeString).isEqualTo("100");
-        assertThat(pageSizeInt).isEqualTo(new Integer(100));
-        assertThat(pageSizeLong).isEqualTo(new Long(100));
+        assertThat(pageSizeInt).isEqualTo(Integer.valueOf(100));
+        assertThat(pageSizeLong).isEqualTo(Long.valueOf(100));
     }
 
     @Test
@@ -243,6 +248,11 @@ public class InstancePropertiesTest {
         instanceProperties.setNumber(INGEST_TASK_CREATION_PERIOD_IN_MINUTES, 7);
         instanceProperties.setNumber(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB, 1024);
         instanceProperties.setNumber(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, 600);
+        instanceProperties.set(COMPACTION_EC2_TYPE, "t3.medium");
+        instanceProperties.setNumber(COMPACTION_EC2_POOL_MINIMUM, 0);
+        instanceProperties.setNumber(COMPACTION_EC2_POOL_DESIRED, 1);
+        instanceProperties.setNumber(COMPACTION_EC2_POOL_MAXIMUM, 2);
+        instanceProperties.setNumber(COMPACTION_EC2_ROOT_SIZE, 50);
         instanceProperties.setNumber(TASK_RUNNER_LAMBDA_MEMORY_IN_MB, 2048);
         instanceProperties.setNumber(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS, 600);
         instanceProperties.setNumber(GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB, 2048);
