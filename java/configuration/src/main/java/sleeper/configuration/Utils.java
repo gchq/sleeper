@@ -38,6 +38,10 @@ public class Utils {
         return Integer.parseInt(integer) > 0;
     }
 
+    public static boolean isNonNegativeInteger(String integer) {
+        return Integer.parseInt(integer) >= 0;
+    }
+
     public static boolean isNonNullNonEmptyString(String string) {
         return null != string && !string.isEmpty();
     }
