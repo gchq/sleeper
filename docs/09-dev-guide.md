@@ -161,7 +161,7 @@ s.range_key_query("system-test", [region])
 ```
 Around 900 results should be returned.
 
-Once the above tests have been done, merge the pull request into main. Then checkout the main branch,
+11. Once the above tests have been done, merge the pull request into main. Then checkout the main branch,
 set the tag to `v${VERSION}` and push the tag using `git push --tags`.
 
 If you are storing versions of the code in an AWS account then upload the jars and push the Docker
@@ -169,7 +169,7 @@ images. The following assumes that the environment variable `SLEEPER_JARS` conta
 bucket for the jars, that `VERSION` is the version of the code to upload, and that `REPO_PREFIX` is the
 prefix for the ECR repositories, e.g. `123456789.dkr.ecr.eu-west-2.amazonaws.com`.
 
-11. Push jars to the S3 jars bucket.
+12. Push jars to the S3 jars bucket.
    Copy the jars to the S3 bucket that is used to contain the Sleeper jar files:
    ```bash
    git checkout v${VERSION}
@@ -179,7 +179,7 @@ prefix for the ECR repositories, e.g. `123456789.dkr.ecr.eu-west-2.amazonaws.com
    ./scripts/deploy/uploadJars.sh ${SLEEPER_JARS} eu-west-2 ${VERSION} ./java/distribution/target/distribution-${VERSION}-bin/scripts/jars
    ```
    
-12. Push the ingest Docker repo.
+13. Push the ingest Docker repo.
    ```bash
    aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin ${REPO_PREFIX}
    cp java/ingest/target/ingest-*-utility.jar java/ingest/docker/ingest.jar
@@ -187,14 +187,14 @@ prefix for the ECR repositories, e.g. `123456789.dkr.ecr.eu-west-2.amazonaws.com
    docker push ${REPO_PREFIX}/sleeper-ingest:${VERSION}
    ```
 
-13. Push the compaction Docker repo.
+14. Push the compaction Docker repo.
    ```bash
    cp java/compaction-job-execution/target/compaction-job-execution-*-utility.jar java/compaction-job-execution/docker/compaction-job-execution.jar
    docker build -t ${REPO_PREFIX}/sleeper-compaction:${VERSION} ./java/compaction-job-execution/docker
    docker push ${REPO_PREFIX}/sleeper-compaction:${VERSION}
    ```
 
-14. Push the bulk import Docker repo (if you do not intend to use the experimental EKS-based bulk import then this can
+15. Push the bulk import Docker repo (if you do not intend to use the experimental EKS-based bulk import then this can
 be ignored).
    ```bash
    cp java/bulk-import/bulk-import-runner/target/bulk-import-runner-*-utility.jar java/bulk-import/bulk-import-runner/docker/bulk-import-runner.jar
@@ -202,7 +202,7 @@ be ignored).
    docker push ${REPO_PREFIX}/sleeper-bulk-import:${VERSION}
    ```
 
-15. Build and copy zip archive to bucket.
+16. Build and copy zip archive to bucket.
    ```bash
    git checkout v${VERSION}
    cd java
