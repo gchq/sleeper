@@ -117,7 +117,8 @@ command to monitor the status of the compaction job:
 ```bash
 ./scripts/utility/compactionJobStatusReport.sh ${ID} system-test standard -a
 ```
-Record the compaction rate in the [performance figures](12-performance-test.md) documentation.
+Record the compaction rate in the [performance figures](12-performance-test.md) documentation. Commit these
+changes.
 
 The following tests can be used as a quick check that all is working correctly. They are not intended to
 fully test all aspects of the system. Any changes made by pull requests should be tested by doing a system
@@ -155,9 +156,13 @@ Then
 ```python
 from sleeper.sleeper import SleeperClient
 s = SleeperClient("instance-id")
-region = {"key": ["aaaaaaa", True, "aaaaazzz", False]}
+region = {"key": ["aaaaaa", True, "aaaazz", False]}
 s.range_key_query("system-test", [region])
 ```
+Around 900 results should be returned.
+
+Once the above tests have been done, merge the pull request into main. Then checkout the main branch,
+set the tag to `v${VERSION}` and push the tag using `git push --tags`.
 
 If you are storing versions of the code in an AWS account then upload the jars and push the Docker
 images. The following assumes that the environment variable `SLEEPER_JARS` contains the name of the
