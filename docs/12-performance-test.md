@@ -52,3 +52,4 @@ otherwise not have been noticed.
 | Version number | Test date  | Compaction rate (records/s) | Ingest S3 write rate (records/s)
 |----------------|------------|-----------------------------|---------------------------------
 | 0.11.0         | 13/06/2022 | 366000                      | 160000
+| 0.12.0         | 18/10/2022 | 378000                      | 146600
