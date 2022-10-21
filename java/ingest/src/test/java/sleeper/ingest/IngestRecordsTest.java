@@ -76,11 +76,11 @@ public class IngestRecordsTest {
     private final IngestRecordsTestDataHelper dataHelper = new IngestRecordsTestDataHelper();
     private final Schema schema = dataHelper.schemaWithRowKeys(field);
 
-    public static StateStore getStateStore(Schema schema) throws StateStoreException {
+    private static StateStore getStateStore(Schema schema) throws StateStoreException {
         return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct());
     }
 
-    public static StateStore getStateStore(Schema schema, List<Partition> initialPartitions) throws StateStoreException {
+    private static StateStore getStateStore(Schema schema, List<Partition> initialPartitions) throws StateStoreException {
         StateStore stateStore = new DelegatingStateStore(new InMemoryFileInfoStore(), new FixedPartitionStore(schema));
         stateStore.initialise(initialPartitions);
         return stateStore;
@@ -91,33 +91,13 @@ public class IngestRecordsTest {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
-        Partition rootPartition = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("root")
-                .region(rootRegion)
-                .leafPartition(false)
-                .parentPartitionId(null)
-                .build();
+        Partition rootPartition = dataHelper.createRootPartition(rootRegion, new LongType());
         Range range1 = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, 2L);
         Region region1 = new Region(range1);
-        Partition partition1 = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("partition1")
-                .region(region1)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition1 = dataHelper.createLeafPartition("partition1", region1, new LongType());
         Range range2 = new Range.RangeFactory(schema).createRange(field, 2L, null);
         Region region2 = new Region(range2);
-        Partition partition2 = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("partition2")
-                .region(region2)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition2 = dataHelper.createLeafPartition("partition2", region2, new LongType());
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         StateStore stateStore = getStateStore(schema,
                 Arrays.asList(rootPartition, partition1, partition2));
@@ -206,33 +186,13 @@ public class IngestRecordsTest {
         Schema schema = dataHelper.schemaWithRowKeys(field);
         Range rootRange = new Range.RangeFactory(schema).createRange(field, new byte[]{}, null);
         Region rootRegion = new Region(rootRange);
-        Partition rootPartition = Partition.builder()
-                .rowKeyTypes(new ByteArrayType())
-                .id("root")
-                .region(rootRegion)
-                .leafPartition(false)
-                .parentPartitionId(null)
-                .build();
+        Partition rootPartition = dataHelper.createRootPartition(rootRegion, new ByteArrayType());
         Range range1 = new Range.RangeFactory(schema).createRange(field, new byte[]{}, new byte[]{64, 64});
         Region region1 = new Region(range1);
-        Partition partition1 = Partition.builder()
-                .rowKeyTypes(new ByteArrayType())
-                .id("partition1")
-                .region(region1)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition1 = dataHelper.createLeafPartition("partition1", region1, new ByteArrayType());
         Range range2 = new Range.RangeFactory(schema).createRange(field, new byte[]{64, 64}, null);
         Region region2 = new Region(range2);
-        Partition partition2 = Partition.builder()
-                .rowKeyTypes(new ByteArrayType())
-                .id("partition2")
-                .region(region2)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition2 = dataHelper.createLeafPartition("partition2", region2, new ByteArrayType());
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         StateStore stateStore = getStateStore(schema,
                 Arrays.asList(rootPartition, partition1, partition2));
@@ -330,36 +290,15 @@ public class IngestRecordsTest {
         Range rootRange1 = new Range.RangeFactory(schema).createRange(field1, new byte[]{}, null);
         Range rootRange2 = new Range.RangeFactory(schema).createRange(field2, new byte[]{}, null);
         Region rootRegion = new Region(Arrays.asList(rootRange1, rootRange2));
-        Partition rootPartition = Partition.builder()
-                .rowKeyTypes(new ByteArrayType(), new ByteArrayType())
-                .id("root")
-                .region(rootRegion)
-                .leafPartition(false)
-                .parentPartitionId(null)
-                .dimension(1)
-                .build();
+        Partition rootPartition = dataHelper.createRootPartition(rootRegion, new ByteArrayType(), new ByteArrayType());
         Range range11 = new Range.RangeFactory(schema).createRange(field1, new byte[]{}, new byte[]{10});
         Range range12 = new Range.RangeFactory(schema).createRange(field2, new byte[]{}, null);
         Region region1 = new Region(Arrays.asList(range11, range12));
-        Partition partition1 = Partition.builder()
-                .rowKeyTypes(new ByteArrayType(), new ByteArrayType())
-                .id("id1")
-                .region(region1)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition1 = dataHelper.createLeafPartition("partition1", region1, new ByteArrayType(), new ByteArrayType());
         Range range21 = new Range.RangeFactory(schema).createRange(field1, new byte[]{10}, null);
         Range range22 = new Range.RangeFactory(schema).createRange(field2, new byte[]{}, null);
         Region region2 = new Region(Arrays.asList(range21, range22));
-        Partition partition2 = Partition.builder()
-                .rowKeyTypes(new ByteArrayType(), new ByteArrayType())
-                .id("id2")
-                .region(region2)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition2 = dataHelper.createLeafPartition("partition2", region2, new ByteArrayType(), new ByteArrayType());
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         StateStore stateStore = getStateStore(schema,
                 Arrays.asList(rootPartition, partition1, partition2));
@@ -484,38 +423,18 @@ public class IngestRecordsTest {
         Range rootRange1 = new Range.RangeFactory(schema).createRange(field1, Integer.MIN_VALUE, null);
         Range rootRange2 = new Range.RangeFactory(schema).createRange(field2, Long.MIN_VALUE, null);
         Region rootRegion = new Region(Arrays.asList(rootRange1, rootRange2));
-        Partition rootPartition = Partition.builder()
-                .rowKeyTypes(new IntType(), new LongType())
-                .id("root")
-                .region(rootRegion)
-                .leafPartition(false)
-                .parentPartitionId(null)
-                .dimension(1)
-                .build();
+        Partition rootPartition = dataHelper.createRootPartition(rootRegion, new IntType(), new LongType());
+        rootPartition.setDimension(1);
         Range partition1Range1 = new Range.RangeFactory(schema).createRange(field1, Integer.MIN_VALUE, null);
         Range partition1Range2 = new Range.RangeFactory(schema).createRange(field2, Long.MIN_VALUE, 10L);
         Region region1 = new Region(Arrays.asList(partition1Range1, partition1Range2));
-        Partition partition1 = Partition.builder()
-                .rowKeyTypes(new IntType(), new LongType())
-                .id("partition1")
-                .region(region1)
-                .leafPartition(true)
-                .parentPartitionId("root")
-                .childPartitionIds(new ArrayList<>())
-                .dimension(-1)
-                .build();
+        Partition partition1 = dataHelper.createLeafPartition("partition1", region1, new IntType(), new LongType());
+        partition1.setDimension(-1);
         Range partition2Range1 = new Range.RangeFactory(schema).createRange(field1, Integer.MIN_VALUE, null);
         Range partition2Range2 = new Range.RangeFactory(schema).createRange(field2, 10L, null);
         Region region2 = new Region(Arrays.asList(partition2Range1, partition2Range2));
-        Partition partition2 = Partition.builder()
-                .rowKeyTypes(new IntType(), new LongType())
-                .id("partition2")
-                .region(region2)
-                .leafPartition(true)
-                .parentPartitionId("root")
-                .childPartitionIds(new ArrayList<>())
-                .dimension(-1)
-                .build();
+        Partition partition2 = dataHelper.createLeafPartition("partition2", region2, new IntType(), new LongType());
+        partition2.setDimension(-1);
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         StateStore stateStore = getStateStore(schema,
                 Arrays.asList(rootPartition, partition1, partition2));
@@ -609,33 +528,13 @@ public class IngestRecordsTest {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
-        Partition rootPartition = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("root")
-                .region(rootRegion)
-                .leafPartition(false)
-                .parentPartitionId(null)
-                .build();
+        Partition rootPartition = dataHelper.createRootPartition(rootRegion, new LongType());
         Range range1 = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, 2L);
         Region region1 = new Region(range1);
-        Partition partition1 = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("partition1")
-                .region(region1)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition1 = dataHelper.createLeafPartition("partition1", region1, new LongType());
         Range range2 = new Range.RangeFactory(schema).createRange(field, 2L, null);
         Region region2 = new Region(range2);
-        Partition partition2 = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("partition2")
-                .region(region2)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition2 = dataHelper.createLeafPartition("partition2", region2, new LongType());
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         StateStore stateStore = getStateStore(schema,
                 Arrays.asList(rootPartition, partition1, partition2));
@@ -748,33 +647,13 @@ public class IngestRecordsTest {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
-        Partition rootPartition = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("root")
-                .region(rootRegion)
-                .leafPartition(false)
-                .parentPartitionId(null)
-                .build();
+        Partition rootPartition = dataHelper.createRootPartition(rootRegion, new LongType());
         Range range1 = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, 2L);
         Region region1 = new Region(range1);
-        Partition partition1 = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("partition1")
-                .region(region1)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition1 = dataHelper.createLeafPartition("partition1", region1, new LongType());
         Range range2 = new Range.RangeFactory(schema).createRange(field, 2L, null);
         Region region2 = new Region(range2);
-        Partition partition2 = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("partition2")
-                .region(region2)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition2 = dataHelper.createLeafPartition("partition2", region2, new LongType());
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         StateStore stateStore = getStateStore(schema,
                 Arrays.asList(rootPartition, partition1, partition2));
@@ -918,33 +797,13 @@ public class IngestRecordsTest {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
-        Partition rootPartition = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("root")
-                .region(rootRegion)
-                .leafPartition(false)
-                .parentPartitionId(null)
-                .build();
+        Partition rootPartition = dataHelper.createRootPartition(rootRegion, new LongType());
         Range range1 = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, 2L);
         Region region1 = new Region(range1);
-        Partition partition1 = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("partition1")
-                .region(region1)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition1 = dataHelper.createLeafPartition("partition1", region1, new LongType());
         Range range2 = new Range.RangeFactory(schema).createRange(field, 2L, null);
         Region region2 = new Region(range2);
-        Partition partition2 = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("partition2")
-                .region(region2)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition2 = dataHelper.createLeafPartition("partition2", region2, new LongType());
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         StateStore stateStore = getStateStore(schema,
                 Arrays.asList(rootPartition, partition1, partition2));

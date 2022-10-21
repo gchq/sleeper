@@ -20,14 +20,18 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.core.partition.Partition;
+import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.PrimitiveType;
 import sleeper.ingest.IngestProperties;
 import sleeper.statestore.StateStore;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class IngestRecordsTestDataHelper {
@@ -53,6 +57,27 @@ public class IngestRecordsTestDataHelper {
         return Schema.builder()
                 .rowKeyFields(fields)
                 .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
+    }
+
+    public Partition createRootPartition(Region region, PrimitiveType... rowKeyTypes) {
+        return Partition.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .id("root")
+                .region(region)
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .build();
+    }
+
+    public Partition createLeafPartition(String id, Region region, PrimitiveType... rowKeyTypes) {
+        return Partition.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .id(id)
+                .region(region)
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(Collections.emptyList())
                 .build();
     }
 
