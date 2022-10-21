@@ -35,10 +35,13 @@ import java.util.Collections;
 import java.util.List;
 
 public class IngestRecordsTestDataHelper {
-    public IngestProperties.Builder defaultPropertiesBuilder(StateStore stateStore,
-                                                             Schema sleeperSchema,
-                                                             String ingestLocalWorkingDirectory,
-                                                             String bucketName) throws ObjectFactoryException {
+    private IngestRecordsTestDataHelper() {
+    }
+
+    public static IngestProperties.Builder defaultPropertiesBuilder(StateStore stateStore,
+                                                                    Schema sleeperSchema,
+                                                                    String ingestLocalWorkingDirectory,
+                                                                    String bucketName) throws ObjectFactoryException {
         return IngestProperties.builder()
                 .objectFactory(new ObjectFactory(new InstanceProperties(), null, ""))
                 .localDir(ingestLocalWorkingDirectory)
@@ -53,14 +56,14 @@ public class IngestRecordsTestDataHelper {
                 .ingestPartitionRefreshFrequencyInSecond(120);
     }
 
-    public Schema schemaWithRowKeys(Field... fields) {
+    public static Schema schemaWithRowKeys(Field... fields) {
         return Schema.builder()
                 .rowKeyFields(fields)
                 .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
                 .build();
     }
 
-    public Partition createRootPartition(Region region, PrimitiveType... rowKeyTypes) {
+    public static Partition createRootPartition(Region region, PrimitiveType... rowKeyTypes) {
         return Partition.builder()
                 .rowKeyTypes(rowKeyTypes)
                 .id("root")
@@ -70,7 +73,7 @@ public class IngestRecordsTestDataHelper {
                 .build();
     }
 
-    public Partition createLeafPartition(String id, Region region, PrimitiveType... rowKeyTypes) {
+    public static Partition createLeafPartition(String id, Region region, PrimitiveType... rowKeyTypes) {
         return Partition.builder()
                 .rowKeyTypes(rowKeyTypes)
                 .id(id)
@@ -81,7 +84,7 @@ public class IngestRecordsTestDataHelper {
                 .build();
     }
 
-    public List<Record> getRecords() {
+    public static List<Record> getRecords() {
         List<Record> records = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key", 1L);
@@ -96,7 +99,7 @@ public class IngestRecordsTestDataHelper {
         return records;
     }
 
-    public List<Record> getLotsOfRecords() {
+    public static List<Record> getLotsOfRecords() {
         List<Record> records = new ArrayList<>();
         for (int i = 0; i < 200; i++) {
             Record record1 = new Record();
@@ -113,7 +116,7 @@ public class IngestRecordsTestDataHelper {
         return records;
     }
 
-    public List<Record> getRecordsInFirstPartitionOnly() {
+    public static List<Record> getRecordsInFirstPartitionOnly() {
         List<Record> records = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key", 1L);
@@ -128,7 +131,7 @@ public class IngestRecordsTestDataHelper {
         return records;
     }
 
-    public List<Record> getRecordsByteArrayKey() {
+    public static List<Record> getRecordsByteArrayKey() {
         List<Record> records = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key", new byte[]{1, 1});
@@ -148,7 +151,7 @@ public class IngestRecordsTestDataHelper {
         return records;
     }
 
-    public List<Record> getRecords2DimByteArrayKey() {
+    public static List<Record> getRecords2DimByteArrayKey() {
         List<Record> records = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key1", new byte[]{1, 1});
@@ -178,7 +181,7 @@ public class IngestRecordsTestDataHelper {
         return records;
     }
 
-    public List<Record> getUnsortedRecords() {
+    public static List<Record> getUnsortedRecords() {
         List<Record> records = new ArrayList<>();
         for (int i = 10; i > 0; i--) {
             Record record1 = new Record();
@@ -195,7 +198,7 @@ public class IngestRecordsTestDataHelper {
         return records;
     }
 
-    public List<Record> getRecordsForAggregationIteratorTest() {
+    public static List<Record> getRecordsForAggregationIteratorTest() {
         List<Record> records = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key", new byte[]{1, 1});
@@ -220,7 +223,7 @@ public class IngestRecordsTestDataHelper {
         return records;
     }
 
-    public List<Record> getRecordsOscillatingBetween2Partitions() {
+    public static List<Record> getRecordsOscillatingBetween2Partitions() {
         List<Record> records = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key1", 0);
