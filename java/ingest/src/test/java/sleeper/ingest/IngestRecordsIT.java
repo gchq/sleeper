@@ -44,6 +44,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
+import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
@@ -64,10 +65,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.testutils.IngestRecordsTestHelper.defaultPropertiesBuilder;
-import static sleeper.ingest.testutils.IngestRecordsTestHelper.getRecords;
-import static sleeper.ingest.testutils.IngestRecordsTestHelper.getRecordsForAggregationIteratorTest;
-import static sleeper.ingest.testutils.IngestRecordsTestHelper.schemaWithRowKeys;
 
 public class IngestRecordsIT {
     private static final int DYNAMO_PORT = 8000;
@@ -80,7 +77,8 @@ public class IngestRecordsIT {
     public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
 
     private final Field field = new Field("key", new LongType());
-    private final Schema schema = schemaWithRowKeys(field);
+    private final IngestRecordsTestDataHelper dataHelper = new IngestRecordsTestDataHelper();
+    private final Schema schema = dataHelper.schemaWithRowKeys(field);
 
     private static DynamoDBStateStore getStateStore(Schema schema) throws StateStoreException {
         return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct());
@@ -109,17 +107,17 @@ public class IngestRecordsIT {
         String localDir = folder.newFolder().getAbsolutePath();
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, localDir, folder.newFolder().getAbsolutePath()).build();
+        IngestProperties properties = dataHelper.defaultPropertiesBuilder(stateStore, schema, localDir, folder.newFolder().getAbsolutePath()).build();
         IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
-        for (Record record : getRecords()) {
+        for (Record record : dataHelper.getRecords()) {
             ingestRecords.write(record);
         }
         long numWritten = ingestRecords.close();
 
         // Then:
         //  - Check the correct number of records were written
-        assertThat(numWritten).isEqualTo(getRecords().size());
+        assertThat(numWritten).isEqualTo(dataHelper.getRecords().size());
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         assertThat(activeFiles).hasSize(1);
@@ -139,8 +137,8 @@ public class IngestRecordsIT {
         }
         reader.close();
         assertThat(readRecords).hasSize(2);
-        assertThat(readRecords.get(0)).isEqualTo(getRecords().get(0));
-        assertThat(readRecords.get(1)).isEqualTo(getRecords().get(1));
+        assertThat(readRecords.get(0)).isEqualTo(dataHelper.getRecords().get(0));
+        assertThat(readRecords.get(1)).isEqualTo(dataHelper.getRecords().get(1));
         //  - Local files should have been deleted
         assertThat(Files.walk(Paths.get(localDir)).filter(Files::isRegularFile).count()).isZero();
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
@@ -148,7 +146,7 @@ public class IngestRecordsIT {
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
         Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
         ItemsSketch<Long> expectedSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        getRecords().forEach(r -> expectedSketch.update((Long) r.get("key")));
+        dataHelper.getRecords().forEach(r -> expectedSketch.update((Long) r.get("key")));
         assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch.getMinValue());
         assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch.getMaxValue());
         for (double d = 0.0D; d < 1.0D; d += 0.1D) {
@@ -162,7 +160,7 @@ public class IngestRecordsIT {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        IngestProperties properties = dataHelper.defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
         IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         long numWritten = ingestRecords.close();
@@ -186,11 +184,11 @@ public class IngestRecordsIT {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath())
+        IngestProperties properties = dataHelper.defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath())
                 .iteratorClassName(AdditionIterator.class.getName()).build();
         IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
-        for (Record record : getRecordsForAggregationIteratorTest()) {
+        for (Record record : dataHelper.getRecordsForAggregationIteratorTest()) {
             ingestRecords.write(record);
         }
         long numWritten = ingestRecords.close();
@@ -236,7 +234,7 @@ public class IngestRecordsIT {
         ItemsSketch<ByteArray> expectedSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         AdditionIterator additionIterator = new AdditionIterator();
         additionIterator.init("", schema);
-        List<Record> sortedRecords = new ArrayList<>(getRecordsForAggregationIteratorTest());
+        List<Record> sortedRecords = new ArrayList<>(dataHelper.getRecordsForAggregationIteratorTest());
         sortedRecords.sort(Comparator.comparing(o -> ByteArray.wrap(((byte[]) o.get("key")))));
         CloseableIterator<Record> aggregatedRecords = additionIterator.apply(new WrappedIterator<>(sortedRecords.iterator()));
         while (aggregatedRecords.hasNext()) {

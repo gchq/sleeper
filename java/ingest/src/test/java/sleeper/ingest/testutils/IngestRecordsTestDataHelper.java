@@ -30,11 +30,11 @@ import sleeper.statestore.StateStore;
 import java.util.ArrayList;
 import java.util.List;
 
-public class IngestRecordsTestHelper {
-    public static IngestProperties.Builder defaultPropertiesBuilder(StateStore stateStore,
-                                                                    Schema sleeperSchema,
-                                                                    String ingestLocalWorkingDirectory,
-                                                                    String bucketName) throws ObjectFactoryException {
+public class IngestRecordsTestDataHelper {
+    public IngestProperties.Builder defaultPropertiesBuilder(StateStore stateStore,
+                                                             Schema sleeperSchema,
+                                                             String ingestLocalWorkingDirectory,
+                                                             String bucketName) throws ObjectFactoryException {
         return IngestProperties.builder()
                 .objectFactory(new ObjectFactory(new InstanceProperties(), null, ""))
                 .localDir(ingestLocalWorkingDirectory)
@@ -49,14 +49,14 @@ public class IngestRecordsTestHelper {
                 .ingestPartitionRefreshFrequencyInSecond(120);
     }
 
-    public static Schema schemaWithRowKeys(Field... fields) {
+    public Schema schemaWithRowKeys(Field... fields) {
         return Schema.builder()
                 .rowKeyFields(fields)
                 .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
                 .build();
     }
 
-    public static List<Record> getRecords() {
+    public List<Record> getRecords() {
         List<Record> records = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key", 1L);
@@ -71,7 +71,7 @@ public class IngestRecordsTestHelper {
         return records;
     }
 
-    public static List<Record> getLotsOfRecords() {
+    public List<Record> getLotsOfRecords() {
         List<Record> records = new ArrayList<>();
         for (int i = 0; i < 200; i++) {
             Record record1 = new Record();
@@ -88,7 +88,7 @@ public class IngestRecordsTestHelper {
         return records;
     }
 
-    public static List<Record> getRecordsInFirstPartitionOnly() {
+    public List<Record> getRecordsInFirstPartitionOnly() {
         List<Record> records = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key", 1L);
@@ -103,7 +103,7 @@ public class IngestRecordsTestHelper {
         return records;
     }
 
-    public static List<Record> getRecordsByteArrayKey() {
+    public List<Record> getRecordsByteArrayKey() {
         List<Record> records = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key", new byte[]{1, 1});
@@ -123,7 +123,7 @@ public class IngestRecordsTestHelper {
         return records;
     }
 
-    public static List<Record> getRecords2DimByteArrayKey() {
+    public List<Record> getRecords2DimByteArrayKey() {
         List<Record> records = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key1", new byte[]{1, 1});
@@ -153,7 +153,7 @@ public class IngestRecordsTestHelper {
         return records;
     }
 
-    public static List<Record> getUnsortedRecords() {
+    public List<Record> getUnsortedRecords() {
         List<Record> records = new ArrayList<>();
         for (int i = 10; i > 0; i--) {
             Record record1 = new Record();
@@ -170,7 +170,7 @@ public class IngestRecordsTestHelper {
         return records;
     }
 
-    public static List<Record> getRecordsForAggregationIteratorTest() {
+    public List<Record> getRecordsForAggregationIteratorTest() {
         List<Record> records = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key", new byte[]{1, 1});
@@ -195,7 +195,7 @@ public class IngestRecordsTestHelper {
         return records;
     }
 
-    public static List<Record> getRecordsOscillatingBetween2Partitions() {
+    public List<Record> getRecordsOscillatingBetween2Partitions() {
         List<Record> records = new ArrayList<>();
         Record record1 = new Record();
         record1.put("key1", 0);
