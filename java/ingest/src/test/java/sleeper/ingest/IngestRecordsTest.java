@@ -36,7 +36,6 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
-import sleeper.core.record.CloneRecord;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -78,6 +77,7 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsFor
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsInFirstPartitionOnly;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsOscillatingBetween2Partitions;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getUnsortedRecords;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
 
 public class IngestRecordsTest {
@@ -141,27 +141,12 @@ public class IngestRecordsTest {
         assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
         assertThat(fileInfo.getPartitionId()).isEqualTo(partition2.getId());
         //  - Read files and check they have the correct records
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(activeFiles.get(0).getFilename()), schema).build();
-        List<Record> readRecords = new ArrayList<>();
-        CloneRecord cloneRecord = new CloneRecord(schema);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
-        assertThat(readRecords).hasSize(1);
-        assertThat(readRecords.get(0)).isEqualTo(getRecords().get(0));
-        reader = new ParquetRecordReader.Builder(new Path(activeFiles.get(1).getFilename()), schema).build();
-        readRecords.clear();
-        record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
-        assertThat(readRecords).hasSize(1);
-        assertThat(readRecords.get(0)).isEqualTo(getRecords().get(1));
+        List<Record> readRecords1 = readRecordsFromParquetFile(activeFiles.get(0).getFilename(), schema);
+        assertThat(readRecords1).hasSize(1);
+        assertThat(readRecords1.get(0)).isEqualTo(getRecords().get(0));
+        List<Record> readRecords2 = readRecordsFromParquetFile(activeFiles.get(1).getFilename(), schema);
+        assertThat(readRecords2).hasSize(1);
+        assertThat(readRecords2.get(0)).isEqualTo(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
@@ -238,30 +223,13 @@ public class IngestRecordsTest {
         assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
         assertThat(fileInfo.getPartitionId()).isEqualTo(partition2.getId());
         //  - Read files and check they have the correct records
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(
-                new Path(activeFilesSortedByNumberOfLines.get(1).getFilename()), schema).build();
-        List<Record> readRecords = new ArrayList<>();
-        CloneRecord cloneRecord = new CloneRecord(schema);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
-        assertThat(readRecords).hasSize(2);
-        assertThat(readRecords.get(0)).isEqualTo(getRecordsByteArrayKey().get(0));
-        assertThat(readRecords.get(1)).isEqualTo(getRecordsByteArrayKey().get(1));
-        reader = new ParquetRecordReader.Builder(
-                new Path(activeFilesSortedByNumberOfLines.get(0).getFilename()), schema).build();
-        readRecords.clear();
-        record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
-        assertThat(readRecords).hasSize(1);
-        assertThat(readRecords.get(0)).isEqualTo(getRecordsByteArrayKey().get(2));
+        List<Record> readRecords1 = readRecordsFromParquetFile(activeFilesSortedByNumberOfLines.get(1).getFilename(), schema);
+        assertThat(readRecords1).hasSize(2);
+        assertThat(readRecords1.get(0)).isEqualTo(getRecordsByteArrayKey().get(0));
+        assertThat(readRecords1.get(1)).isEqualTo(getRecordsByteArrayKey().get(1));
+        List<Record> readRecords2 = readRecordsFromParquetFile(activeFilesSortedByNumberOfLines.get(0).getFilename(), schema);
+        assertThat(readRecords2).hasSize(1);
+        assertThat(readRecords2.get(0)).isEqualTo(getRecordsByteArrayKey().get(2));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFilesSortedByNumberOfLines.get(1).getFilename().replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
@@ -344,32 +312,15 @@ public class IngestRecordsTest {
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(3L);
         assertThat(fileInfo.getPartitionId()).isEqualTo(partition2.getId());
         //  - Read files and check they have the correct records
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(
-                new Path(activeFilesSortedByNumberOfLines.get(0).getFilename()), schema).build();
-        List<Record> readRecords = new ArrayList<>();
-        CloneRecord cloneRecord = new CloneRecord(schema);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
-        assertThat(readRecords).hasSize(2);
-        assertThat(readRecords.get(0)).isEqualTo(getRecords2DimByteArrayKey().get(0));
-        assertThat(readRecords.get(1)).isEqualTo(getRecords2DimByteArrayKey().get(4));
-        reader = new ParquetRecordReader.Builder(
-                new Path(activeFilesSortedByNumberOfLines.get(1).getFilename()), schema).build();
-        readRecords.clear();
-        record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
-        assertThat(readRecords).hasSize(3);
-        assertThat(readRecords.get(0)).isEqualTo(getRecords2DimByteArrayKey().get(1));
-        assertThat(readRecords.get(1)).isEqualTo(getRecords2DimByteArrayKey().get(2));
-        assertThat(readRecords.get(2)).isEqualTo(getRecords2DimByteArrayKey().get(3));
+        List<Record> readRecords1 = readRecordsFromParquetFile(activeFilesSortedByNumberOfLines.get(0).getFilename(), schema);
+        assertThat(readRecords1).hasSize(2);
+        assertThat(readRecords1.get(0)).isEqualTo(getRecords2DimByteArrayKey().get(0));
+        assertThat(readRecords1.get(1)).isEqualTo(getRecords2DimByteArrayKey().get(4));
+        List<Record> readRecords2 = readRecordsFromParquetFile(activeFilesSortedByNumberOfLines.get(1).getFilename(), schema);
+        assertThat(readRecords2).hasSize(3);
+        assertThat(readRecords2.get(0)).isEqualTo(getRecords2DimByteArrayKey().get(1));
+        assertThat(readRecords2.get(1)).isEqualTo(getRecords2DimByteArrayKey().get(2));
+        assertThat(readRecords2.get(2)).isEqualTo(getRecords2DimByteArrayKey().get(3));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFilesSortedByNumberOfLines.get(0).getFilename().replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
@@ -479,31 +430,14 @@ public class IngestRecordsTest {
         assertThat(fileInfo2.getMaxRowKey().get(0)).isEqualTo(100);
         assertThat(fileInfo2.getNumberOfRecords().longValue()).isEqualTo(2L);
         //  - Read files and check they have the correct records
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(
-                new Path(fileInfo1.getFilename()), schema).build();
-        List<Record> readRecords = new ArrayList<>();
-        CloneRecord cloneRecord = new CloneRecord(schema);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
-        assertThat(readRecords).hasSize(2);
-        assertThat(readRecords.get(0)).isEqualTo(getRecordsOscillatingBetween2Partitions().get(0));
-        assertThat(readRecords.get(1)).isEqualTo(getRecordsOscillatingBetween2Partitions().get(2));
-        reader = new ParquetRecordReader.Builder(
-                new Path(fileInfo2.getFilename()), schema).build();
-        readRecords.clear();
-        record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
-        assertThat(readRecords).hasSize(2);
-        assertThat(readRecords.get(0)).isEqualTo(getRecordsOscillatingBetween2Partitions().get(1));
-        assertThat(readRecords.get(1)).isEqualTo(getRecordsOscillatingBetween2Partitions().get(3));
+        List<Record> readRecords1 = readRecordsFromParquetFile(fileInfo1.getFilename(), schema);
+        assertThat(readRecords1).hasSize(2);
+        assertThat(readRecords1.get(0)).isEqualTo(getRecordsOscillatingBetween2Partitions().get(0));
+        assertThat(readRecords1.get(1)).isEqualTo(getRecordsOscillatingBetween2Partitions().get(2));
+        List<Record> readRecords2 = readRecordsFromParquetFile(fileInfo2.getFilename(), schema);
+        assertThat(readRecords2).hasSize(2);
+        assertThat(readRecords2.get(0)).isEqualTo(getRecordsOscillatingBetween2Partitions().get(1));
+        assertThat(readRecords2.get(1)).isEqualTo(getRecordsOscillatingBetween2Partitions().get(3));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = fileInfo1.getFilename().replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
@@ -570,18 +504,10 @@ public class IngestRecordsTest {
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
         assertThat(fileInfo.getPartitionId()).isEqualTo(partition1.getId());
         //  - Read files and check they have the correct records
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(activeFiles.get(0).getFilename()), schema).build();
-        List<Record> readRecords = new ArrayList<>();
-        CloneRecord cloneRecord = new CloneRecord(schema);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
-        assertThat(readRecords).hasSize(2);
-        assertThat(readRecords.get(0)).isEqualTo(getRecordsInFirstPartitionOnly().get(1));
-        assertThat(readRecords.get(1)).isEqualTo(getRecordsInFirstPartitionOnly().get(0));
+        List<Record> readRecords1 = readRecordsFromParquetFile(activeFiles.get(0).getFilename(), schema);
+        assertThat(readRecords1).hasSize(2);
+        assertThat(readRecords1.get(0)).isEqualTo(getRecordsInFirstPartitionOnly().get(1));
+        assertThat(readRecords1.get(1)).isEqualTo(getRecordsInFirstPartitionOnly().get(0));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = fileInfo.getFilename().replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
@@ -625,20 +551,12 @@ public class IngestRecordsTest {
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(4L);
         assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         //  - Read file and check it has correct records
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(fileInfo.getFilename()), schema).build();
-        List<Record> readRecords = new ArrayList<>();
-        CloneRecord cloneRecord = new CloneRecord(schema);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
-        assertThat(readRecords).hasSize(4);
-        assertThat(readRecords.get(0)).isEqualTo(getRecords().get(0));
-        assertThat(readRecords.get(1)).isEqualTo(getRecords().get(0));
-        assertThat(readRecords.get(2)).isEqualTo(getRecords().get(1));
-        assertThat(readRecords.get(3)).isEqualTo(getRecords().get(1));
+        List<Record> readRecords1 = readRecordsFromParquetFile(fileInfo.getFilename(), schema);
+        assertThat(readRecords1).hasSize(4);
+        assertThat(readRecords1.get(0)).isEqualTo(getRecords().get(0));
+        assertThat(readRecords1.get(1)).isEqualTo(getRecords().get(0));
+        assertThat(readRecords1.get(2)).isEqualTo(getRecords().get(1));
+        assertThat(readRecords1.get(3)).isEqualTo(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = fileInfo.getFilename().replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
@@ -743,38 +661,20 @@ public class IngestRecordsTest {
         assertThat(fileInfo.getPartitionId()).isEqualTo(partition2.getId());
 
         //  - Read files and check they have the correct records
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(activeFiles.get(0).getFilename()), schema).build();
-        List<Record> readRecords = new ArrayList<>();
-        CloneRecord cloneRecord = new CloneRecord(schema);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
-        assertThat(readRecords.size()).isEqualTo(recordsInLeftFile);
-
-        List<Record> expectedRecords = records.stream()
+        List<Record> readRecords1 = readRecordsFromParquetFile(activeFiles.get(0).getFilename(), schema);
+        assertThat(readRecords1.size()).isEqualTo(recordsInLeftFile);
+        List<Record> expectedRecords1 = records.stream()
                 .filter(r -> ((long) r.get("key")) < 2L)
                 .sorted(Comparator.comparing(r -> ((Long) r.get("key"))))
                 .collect(Collectors.toList());
-        assertThat(readRecords).isEqualTo(expectedRecords);
-        reader = new ParquetRecordReader.Builder(new Path(activeFiles.get(1).getFilename()), schema).build();
-        readRecords.clear();
-        record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
-        assertThat(readRecords.size()).isEqualTo(recordsInRightFile);
-
-        expectedRecords = records.stream()
+        assertThat(readRecords1).isEqualTo(expectedRecords1);
+        List<Record> readRecords2 = readRecordsFromParquetFile(activeFiles.get(1).getFilename(), schema);
+        assertThat(readRecords2.size()).isEqualTo(recordsInRightFile);
+        List<Record> expectedRecords2 = records.stream()
                 .filter(r -> ((long) r.get("key")) >= 2L)
                 .sorted(Comparator.comparing(r -> ((Long) r.get("key"))))
                 .collect(Collectors.toList());
-        assertThat(readRecords).isEqualTo(expectedRecords);
-
+        assertThat(readRecords2).isEqualTo(expectedRecords2);
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
@@ -934,15 +834,7 @@ public class IngestRecordsTest {
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(20L);
         assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         //  - Read file and check it has correct records
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(fileInfo.getFilename()), schema).build();
-        List<Record> readRecords = new ArrayList<>();
-        CloneRecord cloneRecord = new CloneRecord(schema);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
+        List<Record> readRecords = readRecordsFromParquetFile(fileInfo.getFilename(), schema);
         assertThat(readRecords.size()).isEqualTo(20L);
         List<Record> sortedRecords = new ArrayList<>(getUnsortedRecords());
         sortedRecords.sort(Comparator.comparing(o -> ((Long) o.get("key"))));
@@ -996,15 +888,7 @@ public class IngestRecordsTest {
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
         assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         //  - Read file and check it has correct records
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(fileInfo.getFilename()), schema).build();
-        List<Record> readRecords = new ArrayList<>();
-        CloneRecord cloneRecord = new CloneRecord(schema);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
+        List<Record> readRecords = readRecordsFromParquetFile(fileInfo.getFilename(), schema);
         assertThat(readRecords.size()).isEqualTo(2L);
 
         Record expectedRecord1 = new Record();

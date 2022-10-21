@@ -16,20 +16,25 @@
 
 package sleeper.ingest.testutils;
 
+import org.apache.hadoop.fs.Path;
+import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Region;
+import sleeper.core.record.CloneRecord;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.ingest.IngestProperties;
+import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.statestore.StateStore;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -250,5 +255,18 @@ public class IngestRecordsTestDataHelper {
         records.add(record3);
         records.add(record4);
         return records;
+    }
+
+    public static List<Record> readRecordsFromParquetFile(String filename, Schema schema) throws IOException {
+        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(filename), schema).build();
+        List<Record> readRecords = new ArrayList<>();
+        CloneRecord cloneRecord = new CloneRecord(schema);
+        Record record = reader.read();
+        while (null != record) {
+            readRecords.add(cloneRecord.clone(record));
+            record = reader.read();
+        }
+        reader.close();
+        return readRecords;
     }
 }

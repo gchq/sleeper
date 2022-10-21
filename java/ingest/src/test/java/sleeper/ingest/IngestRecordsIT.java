@@ -22,8 +22,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.parquet.hadoop.ParquetReader;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -32,12 +30,10 @@ import org.testcontainers.containers.GenericContainer;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
-import sleeper.core.record.CloneRecord;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.statestore.FileInfo;
@@ -50,7 +46,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -58,6 +53,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultPropertiesBuilder;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
 
 public class IngestRecordsIT {
@@ -116,15 +112,7 @@ public class IngestRecordsIT {
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
         assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         //  - Read file and check it has correct records
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(fileInfo.getFilename()), schema).build();
-        List<Record> readRecords = new ArrayList<>();
-        CloneRecord cloneRecord = new CloneRecord(schema);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
+        List<Record> readRecords = readRecordsFromParquetFile(fileInfo.getFilename(), schema);
         assertThat(readRecords).hasSize(2);
         assertThat(readRecords.get(0)).isEqualTo(getRecords().get(0));
         assertThat(readRecords.get(1)).isEqualTo(getRecords().get(1));
