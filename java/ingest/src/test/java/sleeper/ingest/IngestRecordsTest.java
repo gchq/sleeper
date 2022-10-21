@@ -795,7 +795,7 @@ public class IngestRecordsTest {
         //  - Check the correct number of records were written
         assertThat(numWritten).isEqualTo(records.size());
         //  - Check StateStore has correct information
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        List<FileInfo> activeFiles = new ArrayList<>(stateStore.getActiveFiles());
         assertThat(activeFiles).hasSize(2);
 
         //  - Make sure the first file in the list is the one that belongs to the
