@@ -32,8 +32,6 @@ import org.testcontainers.containers.GenericContainer;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
-import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.CloneRecord;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -54,7 +52,6 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -75,11 +72,7 @@ public class IngestRecordsIT {
     private final IngestRecordsTestDataHelper dataHelper = new IngestRecordsTestDataHelper();
     private final Schema schema = dataHelper.schemaWithRowKeys(field);
 
-    private static DynamoDBStateStore getStateStore(Schema schema) throws StateStoreException {
-        return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct());
-    }
-
-    private static DynamoDBStateStore getStateStore(Schema schema, List<Partition> initialPartitions)
+    private static DynamoDBStateStore getStateStore(Schema schema)
             throws StateStoreException {
         AwsClientBuilder.EndpointConfiguration endpointConfiguration =
                 new AwsClientBuilder.EndpointConfiguration("http://" + dynamoDb.getContainerIpAddress() + ":"
@@ -91,7 +84,7 @@ public class IngestRecordsIT {
         String tableNameStub = UUID.randomUUID().toString();
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(tableNameStub, schema, dynamoDBClient);
         DynamoDBStateStore stateStore = dynamoDBStateStoreCreator.create();
-        stateStore.initialise(initialPartitions);
+        stateStore.initialise();
         return stateStore;
     }
 
