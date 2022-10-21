@@ -14,13 +14,7 @@
 # limitations under the License.
 
 THIS_DIR=$(cd $(dirname $0) && pwd)
-source "${THIS_DIR}/arrayUtils.sh"
-
-A=("A")
-Z_A=("Z" "A")
-A_B_C=("A" "B" "C")
-D_E_F=("D" "E" "F")
-any_in_array A A_B_C || echo "A should be in A_B_C"
-any_in_array Z_A A_B_C || echo "Z_A should be in A_B_C"
-any_in_array A D_E_F && echo "A should not be in D_E_F"
-any_in_array A_B_C D_E_F && echo "A_B_C should not be in D_E_F"
+for file in ${THIS_DIR}/test*.sh; do
+  source $file
+  echo "Ran $(basename $file)"
+done

@@ -16,11 +16,15 @@
 THIS_DIR=$(cd $(dirname $0) && pwd)
 source "${THIS_DIR}/arrayUtils.sh"
 
-A=("A")
-Z_A=("Z" "A")
 A_B_C=("A" "B" "C")
-D_E_F=("D" "E" "F")
-any_in_array A A_B_C || echo "A should be in A_B_C"
-any_in_array Z_A A_B_C || echo "Z_A should be in A_B_C"
-any_in_array A D_E_F && echo "A should not be in D_E_F"
-any_in_array A_B_C D_E_F && echo "A_B_C should not be in D_E_F"
+C_D=("C" "D")
+C=("C")
+
+union_arrays A_B_C C_D found_ABC_CD
+array_equals C found_ABC_CD || echo "found_ABC_CD should be C, was ${found_A_B_C_D[@]}"
+
+union_arrays A_B_C A_B_C found_ABC_ABC
+array_equals A_B_C found_ABC_ABC || echo "found_ABC_ABC should be A_B_C, was ${found_ABC_ABC[@]}"
+
+union_arrays C_D C found_CD_C
+array_equals C found_CD_C || echo "found_CD_C should be C, was ${found_CD_C[@]}"

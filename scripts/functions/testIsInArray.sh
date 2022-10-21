@@ -28,12 +28,10 @@ is_in_array "B" AB_C && echo "B should not be in AB_C"
 is_in_array "A B" AB_C || echo "A B should be in AB_C"
 is_in_array "C" AB_C || echo "C should be in AB_C"
 
-if is_in_array "A" A_B_C; then
-  echo "If construction can return true"
+if ! is_in_array "A" A_B_C; then
+  echo "A should be in A_B_C in if statement"
 fi
 
-if ! is_in_array "Z" A_B_C; then
-  echo "If construction can return false"
+if is_in_array "Z" A_B_C; then
+  echo "Z should not be in A_B_C in if statement"
 fi
-
-echo "Tested is_in_array"

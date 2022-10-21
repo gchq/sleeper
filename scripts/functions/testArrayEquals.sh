@@ -14,5 +14,15 @@
 # limitations under the License.
 
 THIS_DIR=$(cd $(dirname $0) && pwd)
-source "${THIS_DIR}/testIsInArray.sh"
-source "${THIS_DIR}/testAnyInArray.sh"
+source "${THIS_DIR}/arrayUtils.sh"
+
+A_B=("A" "B")
+A_B_C=("A" "B" "C")
+C_D=("C" "D")
+EMPTY=()
+
+array_equals A_B C_D && echo "A_B should not equal C_D"
+array_equals A_B A_B_C && echo "A_B should not equal A_B_C"
+array_equals A_B A_B || echo "A_B should equal A_B"
+array_equals EMPTY EMPTY || echo "EMPTY should equal EMPTY"
+array_equals A_B EMPTY && echo "A_B should not equal EMPTY"
