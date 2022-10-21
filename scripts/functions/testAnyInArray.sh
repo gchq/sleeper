@@ -16,24 +16,10 @@
 THIS_DIR=$(cd $(dirname $0) && pwd)
 source "${THIS_DIR}/arrayUtils.sh"
 
+A=("A")
+Z_A=("Z" "A")
 A_B_C=("A" "B" "C")
-is_in_array "A" A_B_C || echo "A should be in A_B_C"
-is_in_array "B" A_B_C || echo "B should be in A_B_C"
-is_in_array "C" A_B_C || echo "C should be in A_B_C"
-is_in_array "Z" A_B_C && echo "Z should not be in A_B_C"
+any_in_array A A_B_C || echo "A should be in A_B_C"
+any_in_array Z_A A_B_C || echo "Z_A should be in A_B_C"
 
-AB_C=("A B" "C")
-is_in_array "A" AB_C && echo "A should not be in AB_C"
-is_in_array "B" AB_C && echo "B should not be in AB_C"
-is_in_array "A B" AB_C || echo "A B should be in AB_C"
-is_in_array "C" AB_C || echo "C should be in AB_C"
-
-if is_in_array "A" A_B_C; then
-  echo "If construction can return true"
-fi
-
-if ! is_in_array "Z" A_B_C; then
-  echo "If construction can return false"
-fi
-
-echo "Tested is_in_array"
+echo "Tested any_in_array"
