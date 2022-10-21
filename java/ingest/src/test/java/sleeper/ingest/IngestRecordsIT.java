@@ -20,7 +20,6 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -32,17 +31,13 @@ import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.GenericContainer;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.CommonTestConstants;
-import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
-import sleeper.core.iterator.WrappedIterator;
-import sleeper.core.iterator.impl.AdditionIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.CloneRecord;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -171,79 +166,5 @@ public class IngestRecordsIT {
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         assertThat(activeFiles).isEmpty();
-    }
-
-    @Test
-    public void shouldApplyIterator() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
-        // Given
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new ByteArrayType()))
-                .sortKeyFields(new Field("sort", new LongType()))
-                .valueFields(new Field("value", new LongType()))
-                .build();
-        DynamoDBStateStore stateStore = getStateStore(schema);
-
-        // When
-        IngestProperties properties = dataHelper.defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath())
-                .iteratorClassName(AdditionIterator.class.getName()).build();
-        IngestRecords ingestRecords = new IngestRecords(properties);
-        ingestRecords.init();
-        for (Record record : dataHelper.getRecordsForAggregationIteratorTest()) {
-            ingestRecords.write(record);
-        }
-        long numWritten = ingestRecords.close();
-
-        // Then:
-        //  - Check the correct number of records were written
-        assertThat(numWritten).isEqualTo(2L);
-        //  - Check StateStore has correct information
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles).hasSize(1);
-        FileInfo fileInfo = activeFiles.get(0);
-        assertThat((byte[]) fileInfo.getMinRowKey().get(0)).containsExactly(new byte[]{1, 1});
-        assertThat((byte[]) fileInfo.getMaxRowKey().get(0)).containsExactly(new byte[]{11, 2});
-        assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
-        assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
-        //  - Read file and check it has correct records
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(fileInfo.getFilename()), schema).build();
-        List<Record> readRecords = new ArrayList<>();
-        CloneRecord cloneRecord = new CloneRecord(schema);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
-        assertThat(readRecords.size()).isEqualTo(2L);
-
-        Record expectedRecord1 = new Record();
-        expectedRecord1.put("key", new byte[]{1, 1});
-        expectedRecord1.put("sort", 2L);
-        expectedRecord1.put("value", 7L);
-        assertThat(readRecords.get(0)).isEqualTo(expectedRecord1);
-        Record expectedRecord2 = new Record();
-        expectedRecord2.put("key", new byte[]{11, 2});
-        expectedRecord2.put("sort", 1L);
-        expectedRecord2.put("value", 4L);
-        assertThat(readRecords.get(1)).isEqualTo(expectedRecord2);
-
-        //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<ByteArray> expectedSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        AdditionIterator additionIterator = new AdditionIterator();
-        additionIterator.init("", schema);
-        List<Record> sortedRecords = new ArrayList<>(dataHelper.getRecordsForAggregationIteratorTest());
-        sortedRecords.sort(Comparator.comparing(o -> ByteArray.wrap(((byte[]) o.get("key")))));
-        CloseableIterator<Record> aggregatedRecords = additionIterator.apply(new WrappedIterator<>(sortedRecords.iterator()));
-        while (aggregatedRecords.hasNext()) {
-            expectedSketch.update(ByteArray.wrap((byte[]) aggregatedRecords.next().get("key")));
-        }
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch.getQuantile(d));
-        }
     }
 }
