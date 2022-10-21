@@ -502,6 +502,7 @@ public class CompactionStack extends NestedStack {
 						.cachedInContext(false)
 						.build()
 						)
+				)
 //				.machineImage(new GenericSSMParameterImage(instanceProperties.get(COMPACTION_EC2_IMAGE_SSM_PARAM),
 //						OperatingSystemType.LINUX))
 				.build();
