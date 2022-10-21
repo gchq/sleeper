@@ -86,12 +86,15 @@ import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.ecr.IRepository;
 import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecs.AddAutoScalingGroupCapacityOptions;
+import software.amazon.awscdk.services.ecs.AmiHardwareType;
 import software.amazon.awscdk.services.ecs.AsgCapacityProvider;
 import software.amazon.awscdk.services.ecs.AwsLogDriver;
 import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
 import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerDefinitionOptions;
 import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.ecs.EcsOptimizedImage;
+import software.amazon.awscdk.services.ecs.EcsOptimizedImageOptions;
 import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
 import software.amazon.awscdk.services.ecs.LogDriver;
 import software.amazon.awscdk.services.ecs.MachineImageType;
@@ -494,19 +497,24 @@ public class CompactionStack extends NestedStack {
 				.desiredCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_DESIRED))
 				.maxCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MAXIMUM)).requireImdsv2(true)
 				.instanceType(lookupEC2InstanceType(instanceProperties.get(COMPACTION_EC2_TYPE)))
-				.keyName("test_delete_key_pair") // TODO remove this
-				.machineImage(new GenericSSMParameterImage(instanceProperties.get(COMPACTION_EC2_IMAGE_SSM_PARAM),
-						OperatingSystemType.LINUX))
+				.keyName("test_pair") // TODO remove this
+				.machineImage(EcsOptimizedImage.amazonLinux2(AmiHardwareType.STANDARD, EcsOptimizedImageOptions.builder()
+						.cachedInContext(false)
+						.build()
+						)
+//				.machineImage(new GenericSSMParameterImage(instanceProperties.get(COMPACTION_EC2_IMAGE_SSM_PARAM),
+//						OperatingSystemType.LINUX))
 				.build();
 
 		AsgCapacityProvider ec2Provider = AsgCapacityProvider.Builder
 				.create(this, clusterName + "CapacityProvider").enableManagedScaling(false)
-				.enableManagedTerminationProtection(true).autoScalingGroup(ec2scalingGroup).spotInstanceDraining(true)
-				.canContainersAccessInstanceRole(false).machineImageType(MachineImageType.BOTTLEROCKET).build();
+				.enableManagedTerminationProtection(true)
+				.autoScalingGroup(ec2scalingGroup).spotInstanceDraining(true)
+				.canContainersAccessInstanceRole(false).machineImageType(MachineImageType.AMAZON_LINUX_2).build();
 
 		cluster.addAsgCapacityProvider(ec2Provider,
 				AddAutoScalingGroupCapacityOptions.builder().canContainersAccessInstanceRole(false)
-						.machineImageType(MachineImageType.BOTTLEROCKET).spotInstanceDraining(true).build());
+						.machineImageType(MachineImageType.AMAZON_LINUX_2).spotInstanceDraining(true).build());
 	}
     
     public static InstanceType lookupEC2InstanceType(String ec2InstanceType) {
@@ -518,8 +526,10 @@ public class CompactionStack extends NestedStack {
     	}
     	
     	String family = ec2InstanceType.substring(0, pos).toUpperCase();
-    	String size = ec2InstanceType.substring(pos).toUpperCase();
+    	String size = ec2InstanceType.substring(pos+1).toUpperCase();
     	
+    	System.out.println("HERE");
+    	System.out.println(family + " " + size);
     	//now perform lookup of these against known types
     	InstanceClass instanceClass = InstanceClass.valueOf(family);
     	InstanceSize instanceSize = InstanceSize.valueOf(size);
