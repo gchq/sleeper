@@ -140,7 +140,7 @@ public class RunTasks {
                     .withCluster(clusterName)
                     .withLaunchType(LaunchType.EC2) //TODO Support both types here 
                     .withTaskDefinition(taskDefinition)
-                    .withNetworkConfiguration(networkConfiguration)
+//                    .withNetworkConfiguration(networkConfiguration) //TODO this should only be enabled on FARGATE tasks
                     .withOverrides(override)
                     .withPropagateTags(PropagateTags.TASK_DEFINITION)
                     .withPlatformVersion(fargateVersion);

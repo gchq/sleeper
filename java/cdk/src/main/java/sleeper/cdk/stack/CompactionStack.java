@@ -101,6 +101,7 @@ import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
 import software.amazon.awscdk.services.ecs.ITaskDefinition;
 import software.amazon.awscdk.services.ecs.LogDriver;
 import software.amazon.awscdk.services.ecs.MachineImageType;
+import software.amazon.awscdk.services.ecs.NetworkMode;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
@@ -389,6 +390,7 @@ public class CompactionStack extends NestedStack {
         Ec2TaskDefinition ec2TaskDefinition = Ec2TaskDefinition.Builder
                .create(this, "MergeCompactionEC2TaskDefinition")
                .family(instanceProperties.get(ID) + "MergeCompactionEC2TaskFamily")
+               .networkMode(NetworkMode.BRIDGE)
                .build();
         
         IRepository repository = Repository.fromRepositoryName(this, "ECR1", instanceProperties.get(ECR_COMPACTION_REPO));
@@ -467,6 +469,7 @@ public class CompactionStack extends NestedStack {
         Ec2TaskDefinition ec2TaskDefinition = Ec2TaskDefinition.Builder
                .create(this, "SplittingMergeCompactionEC2TaskDefinition")
                .family(instanceProperties.get(ID) + "SplittingMergeCompactionEC2TaskFamily")
+               .networkMode(NetworkMode.BRIDGE)
                .build();
          
         IRepository repository = Repository.fromRepositoryName(this, "ECR2", instanceProperties.get(ECR_COMPACTION_REPO));
