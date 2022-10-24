@@ -488,7 +488,7 @@ public class CompactionStack extends NestedStack {
         fargateTaskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
         ec2TaskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
             
-        splittingCompactionFamily = fargateTaskDefinition.getFamily(); //TODO Make both family definitions available
+        splittingCompactionFamily = ec2TaskDefinition.getFamily(); //TODO Make both family definitions available
         instanceProperties.set(SPLITTING_COMPACTION_TASK_DEFINITION_FAMILY, splittingCompactionFamily);
 
         Consumer<ITaskDefinition> grantPermissions = (taskDef) -> {
