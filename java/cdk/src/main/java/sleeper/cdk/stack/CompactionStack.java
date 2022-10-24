@@ -56,6 +56,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Stack;
+import java.util.function.Consumer;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.cdk.Utils;
@@ -93,9 +94,11 @@ import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
 import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerDefinitionOptions;
 import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.ecs.Ec2TaskDefinition;
 import software.amazon.awscdk.services.ecs.EcsOptimizedImage;
 import software.amazon.awscdk.services.ecs.EcsOptimizedImageOptions;
 import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
+import software.amazon.awscdk.services.ecs.ITaskDefinition;
 import software.amazon.awscdk.services.ecs.LogDriver;
 import software.amazon.awscdk.services.ecs.MachineImageType;
 import software.amazon.awscdk.services.events.Rule;
@@ -376,15 +379,18 @@ public class CompactionStack extends NestedStack {
                 .build();
         instanceProperties.set(COMPACTION_CLUSTER, cluster.getClusterName());
 
-        FargateTaskDefinition taskDefinition = FargateTaskDefinition.Builder
-                .create(this, "MergeCompactionTaskDefinition")
-                .family(instanceProperties.get(ID) + "MergeCompactionTaskFamily")
+        FargateTaskDefinition fargateTaskDefinition = FargateTaskDefinition.Builder
+                .create(this, "MergeCompactionFGTaskDefinition")
+                .family(instanceProperties.get(ID) + "MergeCompactionFGTaskFamily")
                 .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
                 .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
                 .build();
-        this.compactionFamily = taskDefinition.getFamily();
-        instanceProperties.set(COMPACTION_TASK_DEFINITION_FAMILY, compactionFamily);
 
+        Ec2TaskDefinition ec2TaskDefinition = Ec2TaskDefinition.Builder
+               .create(this, "MergeCompactionEC2TaskDefinition")
+               .family(instanceProperties.get(ID) + "MergeCompactionEC2TaskFamily")
+               .build();
+        
         IRepository repository = Repository.fromRepositoryName(this, "ECR1", instanceProperties.get(ECR_COMPACTION_REPO));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
@@ -398,19 +404,30 @@ public class CompactionStack extends NestedStack {
                 .image(containerImage)
                 .logging(logDriver)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
+                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
                 .build();
-        taskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
-
-        configBucket.grantRead(taskDefinition.getTaskRole());
-        jarsBucket.grantRead(taskDefinition.getTaskRole());
-        dataBuckets.forEach(bucket -> bucket.grantReadWrite(taskDefinition.getTaskRole()));
-        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDefinition.getTaskRole()));
-        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(taskDefinition.getTaskRole()));
-        eventStore.grantWriteJobEvent(taskDefinition.getTaskRole());
-        eventStore.grantWriteTaskEvent(taskDefinition.getTaskRole());
-
-        compactionMergeJobsQueue.grantConsumeMessages(taskDefinition.getTaskRole());
-
+        fargateTaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
+        ec2TaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
+        
+        this.compactionFamily = ec2TaskDefinition.getFamily(); //TODO Make both family definitions available
+        instanceProperties.set(COMPACTION_TASK_DEFINITION_FAMILY, compactionFamily);
+        
+        Consumer<ITaskDefinition> grantPermissions = (taskDef) -> {
+            configBucket.grantRead(taskDef.getTaskRole());
+            jarsBucket.grantRead(taskDef.getTaskRole());
+            dataBuckets.forEach(bucket -> bucket.grantReadWrite(taskDef.getTaskRole()));
+            stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDef.getTaskRole()));
+            stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(taskDef.getTaskRole()));
+            eventStore.grantWriteJobEvent(taskDef.getTaskRole());
+            eventStore.grantWriteTaskEvent(taskDef.getTaskRole());
+    
+            compactionMergeJobsQueue.grantConsumeMessages(taskDef.getTaskRole());
+        };
+        
+        grantPermissions.accept(fargateTaskDefinition);
+        grantPermissions.accept(ec2TaskDefinition);
+        
         addEC2CapacityProvider(cluster, "MergeCompaction", vpc);
         
         CfnOutputProps compactionClusterProps = new CfnOutputProps.Builder()
@@ -440,15 +457,18 @@ public class CompactionStack extends NestedStack {
                 .build();
         instanceProperties.set(SPLITTING_COMPACTION_CLUSTER, cluster.getClusterName());
 
-        FargateTaskDefinition taskDefinition = FargateTaskDefinition.Builder
-                .create(this, "SplittingMergeCompactionTaskDefinition")
-                .family(instanceProperties.get(ID) + "SplittingMergeCompactionTaskFamily")
+        FargateTaskDefinition fargateTaskDefinition = FargateTaskDefinition.Builder
+                .create(this, "SplittingMergeCompactionFGTaskDefinition")
+                .family(instanceProperties.get(ID) + "SplittingMergeCompactionFGTaskFamily")
                 .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
                 .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
                 .build();
-        splittingCompactionFamily = taskDefinition.getFamily();
-        instanceProperties.set(SPLITTING_COMPACTION_TASK_DEFINITION_FAMILY, splittingCompactionFamily);
 
+        Ec2TaskDefinition ec2TaskDefinition = Ec2TaskDefinition.Builder
+               .create(this, "SplittingMergeCompactionEC2TaskDefinition")
+               .family(instanceProperties.get(ID) + "SplittingMergeCompactionEC2TaskFamily")
+               .build();
+         
         IRepository repository = Repository.fromRepositoryName(this, "ECR2", instanceProperties.get(ECR_COMPACTION_REPO));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
@@ -462,18 +482,29 @@ public class CompactionStack extends NestedStack {
                 .image(containerImage)
                 .logging(logDriver)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
+                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
                 .build();
-        taskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
+        fargateTaskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
+        ec2TaskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
+            
+        splittingCompactionFamily = fargateTaskDefinition.getFamily(); //TODO Make both family definitions available
+        instanceProperties.set(SPLITTING_COMPACTION_TASK_DEFINITION_FAMILY, splittingCompactionFamily);
 
-        configBucket.grantRead(taskDefinition.getTaskRole());
-        jarsBucket.grantRead(taskDefinition.getTaskRole());
-        dataBuckets.forEach(bucket -> bucket.grantReadWrite(taskDefinition.getTaskRole()));
-        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDefinition.getTaskRole()));
-        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(taskDefinition.getTaskRole()));
-        eventStore.grantWriteJobEvent(taskDefinition.getTaskRole());
-        eventStore.grantWriteTaskEvent(taskDefinition.getTaskRole());
-
-        compactionSplittingMergeJobsQueue.grantConsumeMessages(taskDefinition.getTaskRole());
+        Consumer<ITaskDefinition> grantPermissions = (taskDef) -> {
+            configBucket.grantRead(taskDef.getTaskRole());
+            jarsBucket.grantRead(taskDef.getTaskRole());
+            dataBuckets.forEach(bucket -> bucket.grantReadWrite(taskDef.getTaskRole()));
+            stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDef.getTaskRole()));
+            stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(taskDef.getTaskRole()));
+            eventStore.grantWriteJobEvent(taskDef.getTaskRole());
+            eventStore.grantWriteTaskEvent(taskDef.getTaskRole());
+    
+            compactionSplittingMergeJobsQueue.grantConsumeMessages(taskDef.getTaskRole());
+        };
+        
+        grantPermissions.accept(fargateTaskDefinition);
+        grantPermissions.accept(ec2TaskDefinition);
 
         addEC2CapacityProvider(cluster, "SplittingMergeCompaction", vpc);
         
@@ -497,7 +528,6 @@ public class CompactionStack extends NestedStack {
 				.desiredCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_DESIRED))
 				.maxCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MAXIMUM)).requireImdsv2(true)
 				.instanceType(lookupEC2InstanceType(instanceProperties.get(COMPACTION_EC2_TYPE)))
-				.keyName("test_pair") // TODO remove this
 				.machineImage(EcsOptimizedImage.amazonLinux2(AmiHardwareType.STANDARD, EcsOptimizedImageOptions.builder()
 						.cachedInContext(false)
 						.build()
@@ -528,9 +558,7 @@ public class CompactionStack extends NestedStack {
     	
     	String family = ec2InstanceType.substring(0, pos).toUpperCase();
     	String size = ec2InstanceType.substring(pos+1).toUpperCase();
-    	
-    	System.out.println("HERE");
-    	System.out.println(family + " " + size);
+
     	//now perform lookup of these against known types
     	InstanceClass instanceClass = InstanceClass.valueOf(family);
     	InstanceSize instanceSize = InstanceSize.valueOf(size);
