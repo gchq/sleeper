@@ -138,7 +138,7 @@ public class RunTasks {
 
             RunTaskRequest runTaskRequest = new RunTaskRequest()
                     .withCluster(clusterName)
-                    .withLaunchType(LaunchType.FARGATE)
+                    .withLaunchType(LaunchType.EC2) //TODO Support both types here 
                     .withTaskDefinition(taskDefinition)
                     .withNetworkConfiguration(networkConfiguration)
                     .withOverrides(override)
