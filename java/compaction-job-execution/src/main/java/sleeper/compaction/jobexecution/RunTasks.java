@@ -142,7 +142,7 @@ public class RunTasks {
                     .withTaskDefinition(taskDefinition)
 //                    .withNetworkConfiguration(networkConfiguration) //TODO this should only be enabled on FARGATE tasks
                     .withOverrides(override)
-                    .withPropagateTags(PropagateTags.TASK_DEFINITION)
+                    .withPropagateTags(PropagateTags.TASK_DEFINITION);
                     //.withPlatformVersion(fargateVersion);
 
             RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
