@@ -23,18 +23,14 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.assertj.core.util.Streams;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.MergingIterator;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.iterator.impl.AdditionIterator;
 import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
@@ -47,12 +43,9 @@ import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
-import sleeper.statestore.DelegatingStateStore;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.statestore.inmemory.FixedPartitionStore;
-import sleeper.statestore.inmemory.InMemoryFileInfoStore;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,7 +53,6 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -82,22 +74,7 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getUnsortedRe
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
 
-public class IngestRecordsTest {
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
-    private final Field field = new Field("key", new LongType());
-    private final Schema schema = schemaWithRowKeys(field);
-
-    private static StateStore getStateStore(Schema schema) throws StateStoreException {
-        return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct());
-    }
-
-    private static StateStore getStateStore(Schema schema, List<Partition> initialPartitions) throws StateStoreException {
-        StateStore stateStore = new DelegatingStateStore(new InMemoryFileInfoStore(), new FixedPartitionStore(schema));
-        stateStore.initialise(initialPartitions);
-        return stateStore;
-    }
-
+public class IngestRecordsTest extends IngestRecordsTestBase {
     @Test
     public void shouldWriteRecordsSplitByPartitionLongKey() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
