@@ -14,8 +14,7 @@
 
 is_in_array() {
   local FIND_VALUE=$1
-  local ARRAY_NAME=$2[@]
-  local ARRAY=("${!ARRAY_NAME}")
+  local -n ARRAY=$2
   for item in "${ARRAY[@]}"; do
     [[ "$FIND_VALUE" == "$item" ]] && return 0
   done
@@ -23,10 +22,8 @@ is_in_array() {
 }
 
 any_in_array() {
-  local FIND_NAME=$1[@]
-  local ARRAY_NAME=$2[@]
-  local FIND=("${!FIND_NAME}")
-  local ARRAY=("${!ARRAY_NAME}")
+  local -n FIND=$1
+  local -n ARRAY=$2
   for find_item in "${FIND[@]}"; do
     for array_item in "${ARRAY[@]}"; do
       [[ "$find_item" == "$array_item" ]] && return 0
@@ -36,11 +33,9 @@ any_in_array() {
 }
 
 union_arrays_to_variable() {
-  local NAME_1=$1[@]
-  local NAME_2=$2[@]
+  local -n ARRAY_1=$1
+  local -n ARRAY_2=$2
   local NAME_OUT=$3
-  local ARRAY_1=("${!NAME_1}")
-  local ARRAY_2=("${!NAME_2}")
   declare -ga ${NAME_OUT}
   add_to_array ${NAME_OUT} $(echo ${ARRAY_1[@]} ${ARRAY_2[@]} | tr ' ' '\n' | sort | uniq -d | tr '\n' ' ')
 }
@@ -53,10 +48,8 @@ add_to_array() {
 }
 
 array_equals() {
-  local NAME_1=$1[@]
-  local NAME_2=$2[@]
-  local ARRAY_1=("${!NAME_1}")
-  local ARRAY_2=("${!NAME_2}")
+  local -n ARRAY_1=$1
+  local -n ARRAY_2=$2
   local LENGTH_1=${#ARRAY_1[@]}
   local LENGTH_2=${#ARRAY_2[@]}
   if [ $LENGTH_1 != $LENGTH_2 ]; then
