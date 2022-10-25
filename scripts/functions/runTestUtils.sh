@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Copyright 2022 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,10 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-THIS_DIR=$(cd $(dirname $0) && pwd)
-source "${THIS_DIR}/runTestUtils.sh"
-for file in ${THIS_DIR}/test*.sh; do
-  source $file
-  echo "Ran $(basename $file)"
-done
-report_test_results
+fail_test() {
+  echo "$@"
+  ((TEST_FAILURES++))
+}
+
+start_tests() {
+  ((TESTS_NESTING++))
+}
+
+end_tests() {
+  ((TESTS_NESTING--))
+  if [[ $TESTS_NESTING -eq 0 ]]; then
+    report_test_results
+  fi
+}
+
+report_test_results() {
+  echo "$((TEST_FAILURES)) failures"
+  if [[ $TEST_FAILURES -gt 0 ]]; then
+    exit 1
+  fi
+}
+
+start_tests

@@ -15,23 +15,26 @@
 
 THIS_DIR=$(cd $(dirname $0) && pwd)
 source "${THIS_DIR}/arrayUtils.sh"
+source "${THIS_DIR}/runTestUtils.sh"
 
 A_B_C=("A" "B" "C")
-is_in_array "A" A_B_C || echo "A should be in A_B_C"
-is_in_array "B" A_B_C || echo "B should be in A_B_C"
-is_in_array "C" A_B_C || echo "C should be in A_B_C"
-is_in_array "Z" A_B_C && echo "Z should not be in A_B_C"
+is_in_array "A" A_B_C || fail_test "A should be in A_B_C"
+is_in_array "B" A_B_C || fail_test "B should be in A_B_C"
+is_in_array "C" A_B_C || fail_test "C should be in A_B_C"
+is_in_array "Z" A_B_C && fail_test "Z should not be in A_B_C"
 
 AB_C=("A B" "C")
-is_in_array "A" AB_C && echo "A should not be in AB_C"
-is_in_array "B" AB_C && echo "B should not be in AB_C"
-is_in_array "A B" AB_C || echo "A B should be in AB_C"
-is_in_array "C" AB_C || echo "C should be in AB_C"
+is_in_array "A" AB_C && fail_test "A should not be in AB_C"
+is_in_array "B" AB_C && fail_test "B should not be in AB_C"
+is_in_array "A B" AB_C || fail_test "A B should be in AB_C"
+is_in_array "C" AB_C || fail_test "C should be in AB_C"
 
 if ! is_in_array "A" A_B_C; then
-  echo "A should be in A_B_C in if statement"
+  fail_test "A should be in A_B_C in if statement"
 fi
 
 if is_in_array "Z" A_B_C; then
-  echo "Z should not be in A_B_C in if statement"
+  fail_test "Z should not be in A_B_C in if statement"
 fi
+
+end_tests

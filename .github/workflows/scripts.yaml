@@ -1,0 +1,15 @@
+name: Test Scripts
+on:
+  push:
+    paths:
+      - '.github/workflows/scripts.yaml'
+      - 'scripts/functions/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run tests
+        run: scripts/functions/runAllTests.sh
