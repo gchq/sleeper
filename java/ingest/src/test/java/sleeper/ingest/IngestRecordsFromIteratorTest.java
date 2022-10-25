@@ -22,6 +22,7 @@ import org.apache.datasketches.quantiles.ItemsUnion;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
+import org.assertj.core.util.Streams;
 import org.junit.Test;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.iterator.CloseableIterator;
@@ -32,7 +33,6 @@ import sleeper.core.iterator.impl.AdditionIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
-import sleeper.core.record.CloneRecord;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -58,6 +58,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.assertSketches;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createLeafPartition;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createRootPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultPropertiesBuilder;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getLotsOfRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
@@ -66,6 +69,7 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsByt
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsForAggregationIteratorTest;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsInFirstPartitionOnly;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getUnsortedRecords;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
 
 public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
@@ -75,34 +79,13 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
-        Partition rootPartition = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("root")
-                .region(rootRegion)
-                .leafPartition(false)
-                .parentPartitionId(null)
-                .build();
-
+        Partition rootPartition = createRootPartition(rootRegion, new LongType());
         Range range1 = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, 2L);
         Region region1 = new Region(range1);
-        Partition partition1 = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("partition1")
-                .region(region1)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition1 = createLeafPartition("partition1", region1, new LongType());
         Range range2 = new Range.RangeFactory(schema).createRange(field, 2L, null);
         Region region2 = new Region(range2);
-        Partition partition2 = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("partition2")
-                .region(region2)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition2 = createLeafPartition("partition2", region2, new LongType());
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         StateStore stateStore = getStateStore(schema,
                 Arrays.asList(rootPartition, partition1, partition2));
@@ -132,50 +115,19 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
         assertThat(fileInfo.getPartitionId()).isEqualTo(partition2.getId());
         //  - Read files and check they have the correct records
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(activeFiles.get(0).getFilename()), schema).build();
-        List<Record> readRecords = new ArrayList<>();
-        CloneRecord cloneRecord = new CloneRecord(schema);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record)); // TODO Is clone needed here?
-            record = reader.read();
-        }
-        reader.close();
+        List<Record> readRecords = readRecordsFromParquetFile(activeFiles.get(0).getFilename(), schema);
         assertThat(readRecords).containsExactly(getRecords().get(0));
-        reader = new ParquetRecordReader.Builder(new Path(activeFiles.get(1).getFilename()), schema).build();
-        readRecords.clear();
-        record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record)); // TODO Is clone needed here?
-            record = reader.read();
-        }
-        reader.close();
+        readRecords = readRecordsFromParquetFile(activeFiles.get(1).getFilename(), schema);
         assertThat(readRecords).containsExactly(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<Long> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        getRecords().stream()
-                .filter(r -> ((long) r.get("key")) < 2L)
-                .forEach(r -> expectedSketch0.update((Long) r.get("key")));
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch0.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
-        }
-        sketchFile = activeFiles.get(1).getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<Long> expectedSketch1 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        getRecords().stream()
-                .filter(r -> ((long) r.get("key")) >= 2L)
-                .forEach(r -> expectedSketch1.update((Long) r.get("key")));
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch1.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch1.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch1.getQuantile(d));
-        }
+        ItemsSketch<Long> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(getRecords().stream()
+                .map(r -> (Long) r.get("key"))
+                .filter(r -> r < 2L), schema, "key", blankSketch, activeFiles.get(0));
+        blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(getRecords().stream()
+                .map(r -> (Long) r.get("key"))
+                .filter(r -> r >= 2L), schema, "key", blankSketch, activeFiles.get(1));
     }
 
     @Test
@@ -185,33 +137,13 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         Schema schema = schemaWithRowKeys(field);
         Range rootRange = new Range.RangeFactory(schema).createRange(field, new byte[]{}, null);
         Region rootRegion = new Region(rootRange);
-        Partition rootPartition = Partition.builder()
-                .rowKeyTypes(schema.getRowKeyTypes())
-                .id("root")
-                .region(rootRegion)
-                .leafPartition(false)
-                .parentPartitionId(null)
-                .build();
+        Partition rootPartition = createRootPartition(rootRegion, new ByteArrayType());
         Range range1 = new Range.RangeFactory(schema).createRange(field, new byte[]{}, new byte[]{64, 64});
         Region region1 = new Region(range1);
-        Partition partition1 = Partition.builder()
-                .rowKeyTypes(new ByteArrayType())
-                .id("partition1")
-                .region(region1)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition1 = createLeafPartition("partition1", region1, new ByteArrayType());
         Range range2 = new Range.RangeFactory(schema).createRange(field, new byte[]{64, 64}, null);
         Region region2 = new Region(range2);
-        Partition partition2 = Partition.builder()
-                .rowKeyTypes(new ByteArrayType())
-                .id("partition2")
-                .region(region2)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition2 = createLeafPartition("partition2", region2, new ByteArrayType());
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         StateStore stateStore = getStateStore(schema,
                 Arrays.asList(rootPartition, partition1, partition2));
@@ -243,56 +175,23 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
         assertThat(fileInfo.getPartitionId()).isEqualTo(partition2.getId());
         //  - Read files and check they have the correct records
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(
-                new Path(activeFilesSortedByNumberOfLines.get(1).getFilename()), schema).build();
-        List<Record> readRecords = new ArrayList<>();
-        CloneRecord cloneRecord = new CloneRecord(schema);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
+        List<Record> readRecords = readRecordsFromParquetFile(activeFiles.get(1).getFilename(), schema);
         assertThat(readRecords).containsExactly(
                 getRecordsByteArrayKey().get(0),
                 getRecordsByteArrayKey().get(1));
-        reader = new ParquetRecordReader.Builder(
-                new Path(activeFilesSortedByNumberOfLines.get(0).getFilename()), schema).build();
-        readRecords.clear();
-        record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
+        readRecords = readRecordsFromParquetFile(activeFiles.get(0).getFilename(), schema);
         assertThat(readRecords).containsExactly(getRecordsByteArrayKey().get(2));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        String sketchFile = activeFilesSortedByNumberOfLines.get(1).getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<ByteArray> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        getRecordsByteArrayKey().stream()
-                .map(r -> ByteArray.wrap((byte[]) r.get("key")))
-                .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{64, 64})) < 0)
-                .forEach(expectedSketch0::update);
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch0.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
-        }
-        sketchFile = activeFilesSortedByNumberOfLines.get(0).getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<ByteArray> expectedSketch1 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        getRecordsByteArrayKey().stream()
-                .map(r -> ByteArray.wrap((byte[]) r.get("key")))
-                .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{64, 64})) >= 0)
-                .forEach(expectedSketch1::update);
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch1.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch1.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch1.getQuantile(d));
-        }
+        ItemsSketch<ByteArray> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(getRecordsByteArrayKey().stream()
+                        .map(r -> ByteArray.wrap((byte[]) r.get("key")))
+                        .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{64, 64})) < 0),
+                schema, "key", blankSketch, activeFiles.get(1));
+        blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(getRecordsByteArrayKey().stream()
+                        .map(r -> ByteArray.wrap((byte[]) r.get("key")))
+                        .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{64, 64})) >= 0),
+                schema, "key", blankSketch, activeFiles.get(0));
     }
 
     @Test
@@ -304,36 +203,15 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         Range rootRange1 = new Range.RangeFactory(schema).createRange(field1, new byte[]{}, null);
         Range rootRange2 = new Range.RangeFactory(schema).createRange(field2, new byte[]{}, null);
         Region rootRegion = new Region(Arrays.asList(rootRange1, rootRange2));
-        Partition rootPartition = Partition.builder()
-                .rowKeyTypes(new ByteArrayType(), new ByteArrayType())
-                .id("root")
-                .region(rootRegion)
-                .leafPartition(false)
-                .parentPartitionId(null)
-                .dimension(1)
-                .build();
+        Partition rootPartition = createRootPartition(rootRegion, new ByteArrayType(), new ByteArrayType());
         Range range11 = new Range.RangeFactory(schema).createRange(field1, new byte[]{}, new byte[]{10});
         Range range12 = new Range.RangeFactory(schema).createRange(field2, new byte[]{}, null);
         Region region1 = new Region(Arrays.asList(range11, range12));
-        Partition partition1 = Partition.builder()
-                .rowKeyTypes(new ByteArrayType(), new ByteArrayType())
-                .id("id1")
-                .region(region1)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition1 = createLeafPartition("id1", region1, new ByteArrayType(), new ByteArrayType());
         Range range21 = new Range.RangeFactory(schema).createRange(field1, new byte[]{10}, null);
         Range range22 = new Range.RangeFactory(schema).createRange(field2, new byte[]{}, null);
         Region region2 = new Region(Arrays.asList(range21, range22));
-        Partition partition2 = Partition.builder()
-                .rowKeyTypes(new ByteArrayType(), new ByteArrayType())
-                .id("id2")
-                .region(region2)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition2 = createLeafPartition("id2", region2, new ByteArrayType(), new ByteArrayType());
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         StateStore stateStore = getStateStore(schema,
                 Arrays.asList(rootPartition, partition1, partition2));
@@ -365,59 +243,27 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(3L);
         assertThat(fileInfo.getPartitionId()).isEqualTo(partition2.getId());
         //  - Read files and check they have the correct records
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(
-                new Path(activeFilesSortedByNumberOfLines.get(0).getFilename()), schema).build();
-        List<Record> readRecords = new ArrayList<>();
-        CloneRecord cloneRecord = new CloneRecord(schema);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
+
+        List<Record> readRecords = readRecordsFromParquetFile(activeFilesSortedByNumberOfLines.get(0).getFilename(), schema);
         assertThat(readRecords).containsExactly(
                 getRecords2DimByteArrayKey().get(0),
                 getRecords2DimByteArrayKey().get(4));
-        reader = new ParquetRecordReader.Builder(
-                new Path(activeFilesSortedByNumberOfLines.get(1).getFilename()), schema).build();
-        readRecords.clear();
-        record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
+        readRecords = readRecordsFromParquetFile(activeFilesSortedByNumberOfLines.get(1).getFilename(), schema);
         assertThat(readRecords).containsExactly(
                 getRecords2DimByteArrayKey().get(1),
                 getRecords2DimByteArrayKey().get(2),
                 getRecords2DimByteArrayKey().get(3));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        String sketchFile = activeFilesSortedByNumberOfLines.get(0).getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<ByteArray> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        getRecords2DimByteArrayKey().stream()
-                .map(r -> ByteArray.wrap((byte[]) r.get("key1")))
-                .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{10})) < 0)
-                .forEach(expectedSketch0::update);
-        assertThat(readSketches.getQuantilesSketch("key1").getMinValue()).isEqualTo(expectedSketch0.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key1").getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key1").getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
-        }
-        sketchFile = activeFilesSortedByNumberOfLines.get(1).getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<ByteArray> expectedSketch1 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        getRecords2DimByteArrayKey().stream()
-                .map(r -> ByteArray.wrap((byte[]) r.get("key1")))
-                .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{10})) >= 0)
-                .forEach(expectedSketch1::update);
-        assertThat(readSketches.getQuantilesSketch("key1").getMinValue()).isEqualTo(expectedSketch1.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key1").getMaxValue()).isEqualTo(expectedSketch1.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key1").getQuantile(d)).isEqualTo(expectedSketch1.getQuantile(d));
-        }
+        ItemsSketch<ByteArray> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(getRecords2DimByteArrayKey().stream()
+                        .map(r -> ByteArray.wrap((byte[]) r.get("key1")))
+                        .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{10})) < 0),
+                schema, "key1", blankSketch, activeFilesSortedByNumberOfLines.get(0));
+        blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(getRecords2DimByteArrayKey().stream()
+                        .map(r -> ByteArray.wrap((byte[]) r.get("key1")))
+                        .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{10})) >= 0),
+                schema, "key1", blankSketch, activeFilesSortedByNumberOfLines.get(1));
     }
 
     @Test
@@ -425,33 +271,13 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
-        Partition rootPartition = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("root")
-                .region(rootRegion)
-                .leafPartition(false)
-                .parentPartitionId(null)
-                .build();
+        Partition rootPartition = createRootPartition(rootRegion, new LongType());
         Range range1 = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, 2L);
         Region region1 = new Region(range1);
-        Partition partition1 = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("partition1")
-                .region(region1)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition1 = createLeafPartition("partition1", region1, new LongType());
         Range range2 = new Range.RangeFactory(schema).createRange(field, 2L, null);
         Region region2 = new Region(range2);
-        Partition partition2 = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("partition2")
-                .region(region2)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition2 = createLeafPartition("partition2", region2, new LongType());
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         StateStore stateStore = getStateStore(schema,
                 Arrays.asList(rootPartition, partition1, partition2));
@@ -473,31 +299,15 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
         assertThat(fileInfo.getPartitionId()).isEqualTo(partition1.getId());
         //  - Read files and check they have the correct records
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(activeFiles.get(0).getFilename()), schema).build();
-        List<Record> readRecords = new ArrayList<>();
-        CloneRecord cloneRecord = new CloneRecord(schema);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
+        List<Record> readRecords = readRecordsFromParquetFile(activeFiles.get(0).getFilename(), schema);
         assertThat(readRecords).containsExactly(
                 getRecordsInFirstPartitionOnly().get(1),
                 getRecordsInFirstPartitionOnly().get(0));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        String sketchFile = fileInfo.getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<Long> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        getRecordsInFirstPartitionOnly().stream()
-                .filter(r -> ((long) r.get("key")) < 2L)
-                .forEach(r -> expectedSketch0.update((Long) r.get("key")));
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch0.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
-        }
+        ItemsSketch<Long> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(getRecordsInFirstPartitionOnly().stream()
+                .map(r -> (Long) r.get("key"))
+                .filter(r -> r < 2L), schema, "key", blankSketch, fileInfo);
     }
 
     @Test
@@ -524,29 +334,14 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(4L);
         assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         //  - Read file and check it has correct records
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(fileInfo.getFilename()), schema).build();
-        List<Record> readRecords = new ArrayList<>();
-        CloneRecord cloneRecord = new CloneRecord(schema);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
+        List<Record> readRecords = readRecordsFromParquetFile(fileInfo.getFilename(), schema);
         assertThat(readRecords).containsExactly(
                 getRecords().get(0), getRecords().get(0),
                 getRecords().get(1), getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        String sketchFile = fileInfo.getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<Long> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        records.forEach(r -> expectedSketch0.update((Long) r.get("key")));
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch0.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
-        }
+        ItemsSketch<Long> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(records.stream().map(r -> ((Long) r.get("key"))),
+                schema, "key", blankSketch, fileInfo);
     }
 
     @Test
@@ -554,33 +349,13 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
-        Partition rootPartition = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("root")
-                .region(rootRegion)
-                .leafPartition(false)
-                .parentPartitionId(null)
-                .build();
+        Partition rootPartition = createRootPartition(rootRegion, new LongType());
         Range range1 = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, 2L);
         Region region1 = new Region(range1);
-        Partition partition1 = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("partition1")
-                .region(region1)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition1 = createLeafPartition("partition1", region1, new LongType());
         Range range2 = new Range.RangeFactory(schema).createRange(field, 2L, null);
         Region region2 = new Region(range2);
-        Partition partition2 = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("partition2")
-                .region(region2)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition2 = createLeafPartition("partition2", region2, new LongType());
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         StateStore stateStore = getStateStore(schema,
                 Arrays.asList(rootPartition, partition1, partition2));
@@ -656,15 +431,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         assertThat(fileInfo.getPartitionId()).isEqualTo(partition2.getId());
 
         //  - Read files and check they have the correct records
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(activeFiles.get(0).getFilename()), schema).build();
-        List<Record> readRecords = new ArrayList<>();
-        CloneRecord cloneRecord = new CloneRecord(schema);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
+        List<Record> readRecords = readRecordsFromParquetFile(activeFiles.get(0).getFilename(), schema);
         assertThat(readRecords.size()).isEqualTo(recordsInLeftFile);
 
         List<Record> expectedRecords = records.stream()
@@ -672,14 +439,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
                 .sorted(Comparator.comparing(r -> ((Long) r.get("key"))))
                 .collect(Collectors.toList());
         assertThat(readRecords).isEqualTo(expectedRecords);
-        reader = new ParquetRecordReader.Builder(new Path(activeFiles.get(1).getFilename()), schema).build();
-        readRecords.clear();
-        record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
+        readRecords = readRecordsFromParquetFile(activeFiles.get(1).getFilename(), schema);
         assertThat(readRecords.size()).isEqualTo(recordsInRightFile);
 
         expectedRecords = records.stream()
@@ -689,30 +449,14 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         assertThat(readRecords).isEqualTo(expectedRecords);
 
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<Long> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        records.stream()
-                .filter(r -> ((long) r.get("key")) < 2L)
-                .forEach(r -> expectedSketch0.update((Long) r.get("key")));
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch0.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
-        }
-        sketchFile = activeFiles.get(1).getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<Long> expectedSketch1 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        records.stream()
-                .filter(r -> ((long) r.get("key")) >= 2L)
-                .forEach(r -> expectedSketch1.update((Long) r.get("key")));
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch1.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch1.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch1.getQuantile(d));
-        }
+        ItemsSketch<Long> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(records.stream()
+                .map(r -> ((Long) r.get("key")))
+                .filter(r -> r < 2L), schema, "key", blankSketch, activeFiles.get(0));
+        blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(records.stream()
+                .map(r -> ((Long) r.get("key")))
+                .filter(r -> r >= 2L), schema, "key", blankSketch, activeFiles.get(1));
     }
 
     @Test
@@ -720,33 +464,13 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
-        Partition rootPartition = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("root")
-                .region(rootRegion)
-                .leafPartition(false)
-                .parentPartitionId(null)
-                .build();
+        Partition rootPartition = createRootPartition(rootRegion, new LongType());
         Range range1 = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, 2L);
         Region region1 = new Region(range1);
-        Partition partition1 = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("partition1")
-                .region(region1)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition1 = createLeafPartition("partition1", region1, new LongType());
         Range range2 = new Range.RangeFactory(schema).createRange(field, 2L, null);
         Region region2 = new Region(range2);
-        Partition partition2 = Partition.builder()
-                .rowKeyTypes(new LongType())
-                .id("partition2")
-                .region(region2)
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        Partition partition2 = createLeafPartition("partition2", region2, new LongType());
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         StateStore stateStore = getStateStore(schema,
                 Arrays.asList(rootPartition, partition1, partition2));
@@ -859,15 +583,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(20L);
         assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         //  - Read file and check it has correct records
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(fileInfo.getFilename()), schema).build();
-        List<Record> readRecords = new ArrayList<>();
-        CloneRecord cloneRecord = new CloneRecord(schema);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
+        List<Record> readRecords = readRecordsFromParquetFile(fileInfo.getFilename(), schema);
         assertThat(readRecords.size()).isEqualTo(20L);
         List<Record> sortedRecords = new ArrayList<>(getUnsortedRecords());
         sortedRecords.sort(Comparator.comparing(o -> ((Long) o.get("key"))));
@@ -877,16 +593,9 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
             i++;
         }
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<Long> expectedSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        getUnsortedRecords().forEach(r -> expectedSketch.update((Long) r.get("key")));
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch.getQuantile(d));
-        }
+        ItemsSketch<Long> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(getUnsortedRecords().stream().map(r -> (Long) r.get("key")),
+                schema, "key", blankSketch, activeFiles.get(0));
     }
 
     @Test
@@ -919,16 +628,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
         assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         //  - Read file and check it has correct records
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(fileInfo.getFilename()), schema).build();
-        List<Record> readRecords = new ArrayList<>();
-        CloneRecord cloneRecord = new CloneRecord(schema);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(cloneRecord.clone(record));
-            record = reader.read();
-        }
-        reader.close();
-
+        List<Record> readRecords = readRecordsFromParquetFile(fileInfo.getFilename(), schema);
         Record expectedRecord1 = new Record();
         expectedRecord1.put("key", new byte[]{1, 1});
         expectedRecord1.put("sort", 2L);
@@ -940,22 +640,13 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         assertThat(readRecords).containsExactly(expectedRecord1, expectedRecord2);
 
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<ByteArray> expectedSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        ItemsSketch<ByteArray> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         AdditionIterator additionIterator = new AdditionIterator();
         additionIterator.init("", schema);
         List<Record> sortedRecords = new ArrayList<>(getRecordsForAggregationIteratorTest());
         sortedRecords.sort(Comparator.comparing(o -> ByteArray.wrap(((byte[]) o.get("key")))));
         CloseableIterator<Record> aggregatedRecords = additionIterator.apply(new WrappedIterator<>(sortedRecords.iterator()));
-        while (aggregatedRecords.hasNext()) {
-            expectedSketch.update(ByteArray.wrap((byte[]) aggregatedRecords.next().get("key")));
-        }
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch.getQuantile(d));
-        }
+        assertSketches(Streams.stream(aggregatedRecords).map(r -> ByteArray.wrap((byte[]) r.get("key"))),
+                schema, "key", blankSketch, activeFiles.get(0));
     }
 }
