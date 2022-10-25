@@ -38,8 +38,11 @@ import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
 import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerDefinitionOptions;
 import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.ecs.CpuArchitecture;
 import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
 import software.amazon.awscdk.services.ecs.LogDriver;
+import software.amazon.awscdk.services.ecs.OperatingSystemFamily;
+import software.amazon.awscdk.services.ecs.RuntimePlatform;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
@@ -358,6 +361,10 @@ public class CompactionStack extends NestedStack {
                 .family(instanceProperties.get(ID) + "MergeCompactionTaskFamily")
                 .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
                 .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
+                .runtimePlatform(RuntimePlatform.builder()
+                        .cpuArchitecture(CpuArchitecture.ARM64)
+                        .operatingSystemFamily(OperatingSystemFamily.LINUX)
+                        .build())
                 .build();
         this.compactionFamily = taskDefinition.getFamily();
         instanceProperties.set(COMPACTION_TASK_DEFINITION_FAMILY, compactionFamily);
@@ -420,6 +427,10 @@ public class CompactionStack extends NestedStack {
                 .family(instanceProperties.get(ID) + "SplittingMergeCompactionTaskFamily")
                 .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
                 .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
+                .runtimePlatform(RuntimePlatform.builder()
+                        .cpuArchitecture(CpuArchitecture.ARM64)
+                        .operatingSystemFamily(OperatingSystemFamily.LINUX)
+                        .build())
                 .build();
         splittingCompactionFamily = taskDefinition.getFamily();
         instanceProperties.set(SPLITTING_COMPACTION_TASK_DEFINITION_FAMILY, splittingCompactionFamily);
