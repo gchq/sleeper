@@ -23,11 +23,8 @@ is_in_array() {
 
 any_in_array() {
   local -n FIND=$1
-  local -n ARRAY=$2
   for find_item in "${FIND[@]}"; do
-    for array_item in "${ARRAY[@]}"; do
-      [[ "$find_item" == "$array_item" ]] && return 0
-    done
+    is_in_array "$find_item" $2 && return 0
   done
   return 1
 }
@@ -38,12 +35,10 @@ union_arrays_to_variable() {
   local NAME_OUT=$3
   declare -ga ${NAME_OUT}
   local -n ARRAY_OUT=${NAME_OUT}
-  for item_1 in "${ARRAY_1[@]}"; do
-    for item_2 in "${ARRAY_2[@]}"; do
-      if [[ "$item_1" == "$item_2" ]]; then
-        ARRAY_OUT[${#ARRAY_OUT[@]}]=$item_1
-      fi
-    done
+  for item in "${ARRAY_1[@]}"; do
+    if is_in_array "$item" ARRAY_2; then
+      ARRAY_OUT[${#ARRAY_OUT[@]}]=$item
+    fi
   done
 }
 
@@ -55,10 +50,8 @@ array_equals() {
   if [ $LENGTH_1 != $LENGTH_2 ]; then
     return 1
   fi
-  for ((i=0;i<=$LENGTH_1;i++)); do
-    if [[ ${ARRAY_1[i]} != ${ARRAY_2[i]} ]]; then
-      return 1
-    fi
+  for ((i=0;i<=LENGTH_1;i++)); do
+    [[ "${ARRAY_1[i]}" != "${ARRAY_2[i]}" ]] && return 1
   done
   return 0
 }
