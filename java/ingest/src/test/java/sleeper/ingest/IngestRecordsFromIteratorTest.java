@@ -358,12 +358,12 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         assertThat((byte[]) fileInfo.getMinRowKey().get(0)).containsExactly(new byte[]{1, 1});
         assertThat((byte[]) fileInfo.getMaxRowKey().get(0)).containsExactly(new byte[]{5});
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
-        assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
+        assertThat(fileInfo.getPartitionId()).isEqualTo(partition1.getId());
         fileInfo = activeFilesSortedByNumberOfLines.get(1);
         assertThat((byte[]) fileInfo.getMinRowKey().get(0)).containsExactly(new byte[]{11, 2});
         assertThat((byte[]) fileInfo.getMaxRowKey().get(0)).containsExactly(new byte[]{64, 65});
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(3L);
-        assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(1).getId());
+        assertThat(fileInfo.getPartitionId()).isEqualTo(partition2.getId());
         //  - Read files and check they have the correct records
         ParquetReader<Record> reader = new ParquetRecordReader.Builder(
                 new Path(activeFilesSortedByNumberOfLines.get(0).getFilename()), schema).build();
