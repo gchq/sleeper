@@ -16,6 +16,8 @@
 
 package sleeper.ingest.testutils;
 
+import org.apache.datasketches.quantiles.ItemsSketch;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -32,12 +34,21 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.ingest.IngestProperties;
 import sleeper.io.parquet.record.ParquetRecordReader;
+import sleeper.sketches.Sketches;
+import sleeper.sketches.s3.SketchesSerDeToS3;
+import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class IngestRecordsTestDataHelper {
     private IngestRecordsTestDataHelper() {
@@ -268,5 +279,17 @@ public class IngestRecordsTestDataHelper {
         }
         reader.close();
         return readRecords;
+    }
+
+    public static <T> void assertSketches(Stream<T> valueStream, Schema schema, String keyToCompare, ItemsSketch<T> expectedSketch, FileInfo fileInfo) throws IOException {
+        String sketchFile = fileInfo.getFilename().replace(".parquet", ".sketches");
+        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
+        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
+        valueStream.forEach(expectedSketch::update);
+        assertThat(readSketches.getQuantilesSketch(keyToCompare).getMinValue()).isEqualTo(expectedSketch.getMinValue());
+        assertThat(readSketches.getQuantilesSketch(keyToCompare).getMaxValue()).isEqualTo(expectedSketch.getMaxValue());
+        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
+            assertThat(readSketches.getQuantilesSketch(keyToCompare).getQuantile(d)).isEqualTo(expectedSketch.getQuantile(d));
+        }
     }
 }

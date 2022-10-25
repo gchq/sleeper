@@ -22,6 +22,7 @@ import org.apache.datasketches.quantiles.ItemsUnion;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
+import org.assertj.core.util.Streams;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -66,6 +67,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.assertSketches;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createLeafPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createRootPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultPropertiesBuilder;
@@ -148,30 +150,12 @@ public class IngestRecordsTest {
         assertThat(readRecords2).hasSize(1);
         assertThat(readRecords2.get(0)).isEqualTo(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<Long> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        getRecords().stream()
-                .filter(r -> ((long) r.get("key")) < 2L)
-                .forEach(r -> expectedSketch0.update((Long) r.get("key")));
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch0.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
-        }
-        sketchFile = activeFiles.get(1).getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<Long> expectedSketch1 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        getRecords().stream()
-                .filter(r -> ((long) r.get("key")) >= 2L)
-                .forEach(r -> expectedSketch1.update((Long) r.get("key")));
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch1.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch1.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch1.getQuantile(d));
-        }
+        ItemsSketch<Long> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(getRecords().stream().map(r -> (Long) r.get("key")).filter(r -> r < 2L),
+                schema, "key", blankSketch, activeFiles.get(0));
+        blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(getRecords().stream().map(r -> (Long) r.get("key")).filter(r -> r >= 2L),
+                schema, "key", blankSketch, activeFiles.get(1));
     }
 
     @Test
@@ -233,30 +217,16 @@ public class IngestRecordsTest {
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         String sketchFile = activeFilesSortedByNumberOfLines.get(1).getFilename().replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<ByteArray> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        getRecordsByteArrayKey().stream()
-                .map(r -> ByteArray.wrap((byte[]) r.get("key")))
-                .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{64, 64})) < 0)
-                .forEach(expectedSketch0::update);
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch0.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
-        }
-        sketchFile = activeFilesSortedByNumberOfLines.get(0).getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<ByteArray> expectedSketch1 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        getRecordsByteArrayKey().stream()
-                .map(r -> ByteArray.wrap((byte[]) r.get("key")))
-                .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{64, 64})) >= 0)
-                .forEach(expectedSketch1::update);
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch1.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch1.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch1.getQuantile(d));
-        }
+        ItemsSketch<ByteArray> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(getRecordsByteArrayKey().stream()
+                        .map(r -> ByteArray.wrap((byte[]) r.get("key")))
+                        .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{64, 64})) < 0),
+                schema, "key", blankSketch, activeFilesSortedByNumberOfLines.get(1));
+        blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(getRecordsByteArrayKey().stream()
+                        .map(r -> ByteArray.wrap((byte[]) r.get("key")))
+                        .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{64, 64})) >= 0),
+                schema, "key", blankSketch, activeFilesSortedByNumberOfLines.get(0));
     }
 
     @Test
@@ -322,32 +292,16 @@ public class IngestRecordsTest {
         assertThat(readRecords2.get(1)).isEqualTo(getRecords2DimByteArrayKey().get(2));
         assertThat(readRecords2.get(2)).isEqualTo(getRecords2DimByteArrayKey().get(3));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        String sketchFile = activeFilesSortedByNumberOfLines.get(0).getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<ByteArray> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        getRecords2DimByteArrayKey().stream()
-                .map(r -> ByteArray.wrap((byte[]) r.get("key1")))
-                .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{10})) < 0)
-                .forEach(expectedSketch0::update);
-        assertThat(readSketches.getQuantilesSketch("key1").getMinValue()).isEqualTo(expectedSketch0.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key1").getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key1").getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
-        }
-        sketchFile = activeFilesSortedByNumberOfLines.get(1).getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<ByteArray> expectedSketch1 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        getRecords2DimByteArrayKey().stream()
-                .map(r -> ByteArray.wrap((byte[]) r.get("key1")))
-                .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{10})) >= 0)
-                .forEach(expectedSketch1::update);
-        assertThat(readSketches.getQuantilesSketch("key1").getMinValue()).isEqualTo(expectedSketch1.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key1").getMaxValue()).isEqualTo(expectedSketch1.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key1").getQuantile(d)).isEqualTo(expectedSketch1.getQuantile(d));
-        }
+        ItemsSketch<ByteArray> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(getRecords2DimByteArrayKey().stream()
+                        .map(r -> ByteArray.wrap((byte[]) r.get("key1")))
+                        .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{10})) < 0),
+                schema, "key1", blankSketch, activeFilesSortedByNumberOfLines.get(0));
+        blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(getRecords2DimByteArrayKey().stream()
+                        .map(r -> ByteArray.wrap((byte[]) r.get("key1")))
+                        .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{10})) >= 0),
+                schema, "key1", blankSketch, activeFilesSortedByNumberOfLines.get(1));
     }
 
     @Test
@@ -439,32 +393,14 @@ public class IngestRecordsTest {
         assertThat(readRecords2.get(0)).isEqualTo(getRecordsOscillatingBetween2Partitions().get(1));
         assertThat(readRecords2.get(1)).isEqualTo(getRecordsOscillatingBetween2Partitions().get(3));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        String sketchFile = fileInfo1.getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<Integer> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        getRecordsOscillatingBetween2Partitions().stream()
+        ItemsSketch<Integer> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(getRecordsOscillatingBetween2Partitions().stream()
                 .filter(r -> ((long) r.get("key2")) < 10L)
-                .map(r -> (int) r.get("key1"))
-                .forEach(expectedSketch0::update);
-        assertThat(readSketches.getQuantilesSketch("key1").getMinValue()).isEqualTo(expectedSketch0.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key1").getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key1").getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
-        }
-        sketchFile = fileInfo2.getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<Integer> expectedSketch1 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        getRecordsOscillatingBetween2Partitions().stream()
+                .map(r -> (int) r.get("key1")), schema, "key1", blankSketch, fileInfo1);
+        blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(getRecordsOscillatingBetween2Partitions().stream()
                 .filter(r -> ((long) r.get("key2")) >= 10L)
-                .map(r -> (int) r.get("key1"))
-                .forEach(expectedSketch1::update);
-        assertThat(readSketches.getQuantilesSketch("key1").getMinValue()).isEqualTo(expectedSketch1.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key1").getMaxValue()).isEqualTo(expectedSketch1.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key1").getQuantile(d)).isEqualTo(expectedSketch1.getQuantile(d));
-        }
+                .map(r -> (int) r.get("key1")), schema, "key1", blankSketch, fileInfo1);
     }
 
     @Test
@@ -509,18 +445,10 @@ public class IngestRecordsTest {
         assertThat(readRecords1.get(0)).isEqualTo(getRecordsInFirstPartitionOnly().get(1));
         assertThat(readRecords1.get(1)).isEqualTo(getRecordsInFirstPartitionOnly().get(0));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        String sketchFile = fileInfo.getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<Long> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        getRecordsInFirstPartitionOnly().stream()
-                .filter(r -> ((long) r.get("key")) < 2L)
-                .forEach(r -> expectedSketch0.update((Long) r.get("key")));
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch0.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
-        }
+        ItemsSketch<Long> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(getRecordsInFirstPartitionOnly().stream()
+                .map(r -> (Long) r.get("key"))
+                .filter(r -> r < 2L), schema, "key", blankSketch, fileInfo);
     }
 
     @Test
@@ -558,16 +486,9 @@ public class IngestRecordsTest {
         assertThat(readRecords1.get(2)).isEqualTo(getRecords().get(1));
         assertThat(readRecords1.get(3)).isEqualTo(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        String sketchFile = fileInfo.getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<Long> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        records.forEach(r -> expectedSketch0.update((Long) r.get("key")));
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch0.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
-        }
+        ItemsSketch<Long> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(records.stream().map(r -> (Long) r.get("key")),
+                schema, "key", blankSketch, fileInfo);
     }
 
     @Test
@@ -676,30 +597,15 @@ public class IngestRecordsTest {
                 .collect(Collectors.toList());
         assertThat(readRecords2).isEqualTo(expectedRecords2);
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<Long> expectedSketch0 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        records.stream()
-                .filter(r -> ((long) r.get("key")) < 2L)
-                .forEach(r -> expectedSketch0.update((Long) r.get("key")));
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch0.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch0.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch0.getQuantile(d));
-        }
-        sketchFile = activeFiles.get(1).getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<Long> expectedSketch1 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        records.stream()
-                .filter(r -> ((long) r.get("key")) >= 2L)
-                .forEach(r -> expectedSketch1.update((Long) r.get("key")));
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch1.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch1.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch1.getQuantile(d));
-        }
+        ItemsSketch<Long> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(records.stream()
+                .map(r -> (Long) r.get("key"))
+                .filter(r -> r < 2L), schema, "key", blankSketch, activeFiles.get(0));
+
+        blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(records.stream()
+                .map(r -> (Long) r.get("key"))
+                .filter(r -> r >= 2L), schema, "key", blankSketch, activeFiles.get(1));
     }
 
     @Test
@@ -844,16 +750,9 @@ public class IngestRecordsTest {
             i++;
         }
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<Long> expectedSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        getUnsortedRecords().forEach(r -> expectedSketch.update((Long) r.get("key")));
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch.getQuantile(d));
-        }
+        ItemsSketch<Long> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        assertSketches(getUnsortedRecords().stream().map(r -> (Long) r.get("key")),
+                schema, "key", blankSketch, fileInfo);
     }
 
     @Test
@@ -903,22 +802,13 @@ public class IngestRecordsTest {
         assertThat(readRecords.get(1)).isEqualTo(expectedRecord2);
 
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        String sketchFile = activeFiles.get(0).getFilename().replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        ItemsSketch<ByteArray> expectedSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
+        ItemsSketch<ByteArray> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         AdditionIterator additionIterator = new AdditionIterator();
         additionIterator.init("", schema);
         List<Record> sortedRecords = new ArrayList<>(getRecordsForAggregationIteratorTest());
         sortedRecords.sort(Comparator.comparing(o -> ByteArray.wrap(((byte[]) o.get("key")))));
         CloseableIterator<Record> aggregatedRecords = additionIterator.apply(new WrappedIterator<>(sortedRecords.iterator()));
-        while (aggregatedRecords.hasNext()) {
-            expectedSketch.update(ByteArray.wrap((byte[]) aggregatedRecords.next().get("key")));
-        }
-        assertThat(readSketches.getQuantilesSketch("key").getMinValue()).isEqualTo(expectedSketch.getMinValue());
-        assertThat(readSketches.getQuantilesSketch("key").getMaxValue()).isEqualTo(expectedSketch.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch("key").getQuantile(d)).isEqualTo(expectedSketch.getQuantile(d));
-        }
+        assertSketches(Streams.stream(aggregatedRecords).map(r -> ByteArray.wrap((byte[]) r.get("key"))),
+                schema, "key", blankSketch, activeFiles.get(0));
     }
 }
