@@ -18,6 +18,7 @@ package sleeper.compaction.jobexecution;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.AwsVpcConfiguration;
 import com.amazonaws.services.ecs.model.ContainerOverride;
+import com.amazonaws.services.ecs.model.Failure;
 import com.amazonaws.services.ecs.model.LaunchType;
 import com.amazonaws.services.ecs.model.NetworkConfiguration;
 import com.amazonaws.services.ecs.model.PropagateTags;
@@ -142,7 +143,8 @@ public class RunTasks {
                     .withTaskDefinition(taskDefinition)
 //                    .withNetworkConfiguration(networkConfiguration) //TODO this should only be enabled on FARGATE tasks
                     .withOverrides(override)
-                    .withPropagateTags(PropagateTags.TASK_DEFINITION);
+                    .withPropagateTags(PropagateTags.TASK_DEFINITION)
+                    .withPlatformVersion(null);
                     //.withPlatformVersion(fargateVersion);
 
             RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
@@ -150,6 +152,9 @@ public class RunTasks {
                     clusterName, containerName, taskDefinition);
             if (runTaskResult.getFailures().size() > 0) {
                 LOGGER.warn("Run task request has {} failures", runTaskResult.getFailures().size());
+                for (Failure f : runTaskResult.getFailures()) {
+                    LOGGER.error("Failure: ARN {} Reason {} Detail {}", f.getArn(), f.getReason(), f.getDetail());
+                }
                 return;
             }
             numTasksCreated++;
