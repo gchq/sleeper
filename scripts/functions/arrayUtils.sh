@@ -32,12 +32,11 @@ any_in_array() {
 union_arrays_to_variable() {
   local -n ARRAY_1=$1
   local -n ARRAY_2=$2
-  local NAME_OUT=$3
-  declare -ga ${NAME_OUT}
-  local -n ARRAY_OUT=${NAME_OUT}
+  local -n ARRAY_OUT=$3
+  ARRAY_OUT=()
   for item in "${ARRAY_1[@]}"; do
     if is_in_array "$item" ARRAY_2; then
-      ARRAY_OUT[${#ARRAY_OUT[@]}]=$item
+      ARRAY_OUT+=("$item")
     fi
   done
 }
