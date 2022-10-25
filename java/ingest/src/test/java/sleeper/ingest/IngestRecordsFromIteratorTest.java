@@ -175,23 +175,23 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
         assertThat(fileInfo.getPartitionId()).isEqualTo(partition2.getId());
         //  - Read files and check they have the correct records
-        List<Record> readRecords = readRecordsFromParquetFile(activeFiles.get(1).getFilename(), schema);
+        List<Record> readRecords = readRecordsFromParquetFile(activeFilesSortedByNumberOfLines.get(1).getFilename(), schema);
         assertThat(readRecords).containsExactly(
                 getRecordsByteArrayKey().get(0),
                 getRecordsByteArrayKey().get(1));
-        readRecords = readRecordsFromParquetFile(activeFiles.get(0).getFilename(), schema);
+        readRecords = readRecordsFromParquetFile(activeFilesSortedByNumberOfLines.get(0).getFilename(), schema);
         assertThat(readRecords).containsExactly(getRecordsByteArrayKey().get(2));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         ItemsSketch<ByteArray> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         assertSketches(getRecordsByteArrayKey().stream()
                         .map(r -> ByteArray.wrap((byte[]) r.get("key")))
                         .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{64, 64})) < 0),
-                schema, "key", blankSketch, activeFiles.get(1));
+                schema, "key", blankSketch, activeFilesSortedByNumberOfLines.get(1));
         blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         assertSketches(getRecordsByteArrayKey().stream()
                         .map(r -> ByteArray.wrap((byte[]) r.get("key")))
                         .filter(ba -> ba.compareTo(ByteArray.wrap(new byte[]{64, 64})) >= 0),
-                schema, "key", blankSketch, activeFiles.get(0));
+                schema, "key", blankSketch, activeFilesSortedByNumberOfLines.get(0));
     }
 
     @Test
