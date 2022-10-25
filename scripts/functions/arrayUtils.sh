@@ -35,7 +35,7 @@ any_in_array() {
   return 1
 }
 
-union_arrays() {
+union_arrays_to_variable() {
   local NAME_1=$1[@]
   local NAME_2=$2[@]
   local NAME_OUT=$3

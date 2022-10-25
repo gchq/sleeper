@@ -20,11 +20,11 @@ A_B_C=("A" "B" "C")
 C_D=("C" "D")
 C=("C")
 
-union_arrays A_B_C C_D found_ABC_CD
+union_arrays_to_variable A_B_C C_D found_ABC_CD
 array_equals C found_ABC_CD || echo "found_ABC_CD should be C, was ${found_A_B_C_D[@]}"
 
-union_arrays A_B_C A_B_C found_ABC_ABC
+union_arrays_to_variable A_B_C A_B_C found_ABC_ABC
 array_equals A_B_C found_ABC_ABC || echo "found_ABC_ABC should be A_B_C, was ${found_ABC_ABC[@]}"
 
-union_arrays C_D C found_CD_C
+union_arrays_to_variable C_D C found_CD_C
 array_equals C found_CD_C || echo "found_CD_C should be C, was ${found_CD_C[@]}"
