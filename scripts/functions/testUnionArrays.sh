@@ -17,6 +17,7 @@ THIS_DIR=$(cd $(dirname $0) && pwd)
 source "${THIS_DIR}/arrayUtils.sh"
 
 A_B_C=("A" "B" "C")
+AB_C=("A B" "C")
 C_D=("C" "D")
 C=("C")
 
@@ -28,3 +29,6 @@ array_equals A_B_C found_ABC_ABC || echo "found_ABC_ABC should be A_B_C, was ${f
 
 union_arrays_to_variable C_D C found_CD_C
 array_equals C found_CD_C || echo "found_CD_C should be C, was ${found_CD_C[@]}"
+
+union_arrays_to_variable AB_C A_B_C found_AB_C_ABC
+array_equals C found_AB_C_ABC || echo "found_AB_C_ABC should be C, was ${found_AB_C_ABC[@]}"

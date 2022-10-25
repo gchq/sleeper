@@ -37,13 +37,13 @@ union_arrays_to_variable() {
   local -n ARRAY_2=$2
   local NAME_OUT=$3
   declare -ga ${NAME_OUT}
-  add_to_array ${NAME_OUT} $(echo ${ARRAY_1[@]} ${ARRAY_2[@]} | tr ' ' '\n' | sort | uniq -d | tr '\n' ' ')
-}
-
-add_to_array() {
-  local -n ARRAY=$1
-  for item in ${@:2}; do
-    ARRAY[${#ARRAY[@]}]=$item
+  local -n ARRAY_OUT=${NAME_OUT}
+  for item_1 in "${ARRAY_1[@]}"; do
+    for item_2 in "${ARRAY_2[@]}"; do
+      if [[ "$item_1" == "$item_2" ]]; then
+        ARRAY_OUT[${#ARRAY_OUT[@]}]=$item_1
+      fi
+    done
   done
 }
 
