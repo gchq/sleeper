@@ -15,7 +15,6 @@
  */
 package sleeper.ingest;
 
-import org.apache.datasketches.quantiles.ItemsSketch;
 import org.junit.Test;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.iterator.IteratorException;
@@ -27,11 +26,12 @@ import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Comparator;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.assertSketches;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.assertSketchUsingDirectValues;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.calculateQuantiles;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultPropertiesBuilder;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
@@ -71,8 +71,8 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         //  - Local files should have been deleted
         assertThat(Files.walk(Paths.get(localDir)).filter(Files::isRegularFile).count()).isZero();
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        ItemsSketch<Long> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        assertSketches(getRecords().stream().map(r -> (Long) r.get("key")), schema, "key", blankSketch, fileInfo);
+        assertSketchUsingDirectValues(schema, "key", fileInfo.getFilename(),
+                1L, 3L, calculateQuantiles(Arrays.asList(1L, 3L)));
     }
 
     @Test

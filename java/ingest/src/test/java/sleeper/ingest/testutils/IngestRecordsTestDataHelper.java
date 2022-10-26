@@ -16,7 +16,6 @@
 
 package sleeper.ingest.testutils;
 
-import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
@@ -36,7 +35,6 @@ import sleeper.ingest.IngestProperties;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
-import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 
 import java.io.File;
@@ -46,13 +44,14 @@ import java.nio.file.LinkOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class IngestRecordsTestDataHelper {
     private IngestRecordsTestDataHelper() {
     }
+
+    private static final double[] QUANTILE_RANGE = new double[]{0.0D, 0.1D, 0.2D, 0.3D, 0.4D, 0.5D, 0.6D, 0.7D, 0.8D, 0.9D};
 
     public static IngestProperties.Builder defaultPropertiesBuilder(StateStore stateStore,
                                                                     Schema sleeperSchema,
@@ -281,15 +280,42 @@ public class IngestRecordsTestDataHelper {
         return readRecords;
     }
 
-    public static <T> void assertSketches(Stream<T> valueStream, Schema schema, String keyToCompare, ItemsSketch<T> expectedSketch, FileInfo fileInfo) throws IOException {
-        String sketchFile = fileInfo.getFilename().replace(".parquet", ".sketches");
+    public static <T> void assertSketchUsingDirectValues(Schema schema, String keyToCompare, String filename,
+                                                         T expectedMin, T expectedMax, List<T> expectedQuantiles) throws IOException {
+        String sketchFile = filename.replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
         Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
-        valueStream.forEach(expectedSketch::update);
-        assertThat(readSketches.getQuantilesSketch(keyToCompare).getMinValue()).isEqualTo(expectedSketch.getMinValue());
-        assertThat(readSketches.getQuantilesSketch(keyToCompare).getMaxValue()).isEqualTo(expectedSketch.getMaxValue());
-        for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-            assertThat(readSketches.getQuantilesSketch(keyToCompare).getQuantile(d)).isEqualTo(expectedSketch.getQuantile(d));
+        assertThat(readSketches.getQuantilesSketch(keyToCompare).getMinValue()).isEqualTo(expectedMin);
+        assertThat(readSketches.getQuantilesSketch(keyToCompare).getMaxValue()).isEqualTo(expectedMax);
+        Object[] quantiles = readSketches.getQuantilesSketch(keyToCompare).getQuantiles(QUANTILE_RANGE);
+        for (int i = 0; i < 10; i++) {
+            assertThat(quantiles[i]).isEqualTo(expectedQuantiles.get(i));
         }
+    }
+
+    public static <T> List<T> calculateQuantiles(T key) {
+        return Collections.nCopies(10, key);
+    }
+
+    public static <T> List<T> calculateQuantiles(List<T> keys) {
+        if (keys.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<T> quantiles = new ArrayList<>();
+        if (keys.size() > 10) {
+            int offset = keys.size() / 10;
+            for (int i = 0; i < keys.size(); i += offset) {
+                quantiles.add(keys.get(i));
+            }
+        } else {
+            int divisions = 10 / keys.size();
+            if (keys.size() % 2 != 0) {
+                quantiles.add(keys.get(0));
+            }
+            for (T key : keys) {
+                quantiles.addAll(Collections.nCopies(divisions, key));
+            }
+        }
+        return quantiles;
     }
 }
