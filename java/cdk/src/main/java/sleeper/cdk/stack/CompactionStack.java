@@ -400,13 +400,13 @@ public class CompactionStack extends NestedStack {
                 .build();
         LogDriver logDriver = AwsLogDriver.awsLogs(logDriverProps);
         
-        Map<String,String> environment=Utils.createDefaultEnvironment(instanceProperties);
-        environment.put("AWS_REGION", instanceProperties.get(REGION));
+        Map<String,String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
+        environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
         
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
                 .logging(logDriver)
-                .environment(environment)
+                .environment(environmentVariables)
                 .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
                 .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
                 .build();
@@ -481,14 +481,14 @@ public class CompactionStack extends NestedStack {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
         LogDriver logDriver = AwsLogDriver.awsLogs(logDriverProps);
-
-        Map<String,String> environment=Utils.createDefaultEnvironment(instanceProperties);
-        environment.put("AWS_REGION", instanceProperties.get(REGION));
+       
+        Map<String,String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
+        environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
         
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
                 .logging(logDriver)
-                .environment(environment)
+                .environment(environmentVariables)
                 .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
                 .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
                 .build();
@@ -540,8 +540,6 @@ public class CompactionStack extends NestedStack {
 						.build()
 						)
 				)
-//				.machineImage(new GenericSSMParameterImage(instanceProperties.get(COMPACTION_EC2_IMAGE_SSM_PARAM),
-//						OperatingSystemType.LINUX))
 				.build();
 
 		AsgCapacityProvider ec2Provider = AsgCapacityProvider.Builder
