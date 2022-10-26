@@ -39,6 +39,7 @@ import sleeper.statestore.StateStoreException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -229,5 +230,23 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         List<ByteArray> sortedKeyList = Streams.stream(aggregatedRecords).map(r -> wrap((byte[]) r.get("key"))).collect(Collectors.toList());
         assertSketchUsingDirectValues(schema, "key", activeFiles.get(0).getFilename(),
                 wrap(new byte[]{1, 1}), wrap(new byte[]{11, 2}), calculateQuantiles(sortedKeyList));
+    }
+
+    @Test
+    public void shouldWriteNoRecordsSuccessfully() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+        // Given
+        StateStore stateStore = getStateStore(schema);
+
+        // When
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
+                folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        long numWritten = new IngestRecordsFromIterator(properties, Collections.emptyIterator()).write();
+
+        // Then:
+        //  - Check the correct number of records were written
+        assertThat(numWritten).isZero();
+        //  - Check StateStore has correct information
+        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        assertThat(activeFiles).isEmpty();
     }
 }

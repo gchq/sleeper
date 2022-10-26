@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,24 +67,5 @@ public class IngestRecordsFromIteratorIT extends IngestRecordsITBase {
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         assertSketchUsingDirectValues(schema, "key", fileInfo.getFilename(),
                 1L, 3L, calculateQuantiles(Arrays.asList(1L, 3L)));
-    }
-
-
-    @Test
-    public void shouldWriteNoRecordsSuccessfully() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
-        // Given
-        DynamoDBStateStore stateStore = getStateStore(schema);
-
-        // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
-                folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
-        long numWritten = new IngestRecordsFromIterator(properties, Collections.emptyIterator()).write();
-
-        // Then:
-        //  - Check the correct number of records were written
-        assertThat(numWritten).isZero();
-        //  - Check StateStore has correct information
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertThat(activeFiles).isEmpty();
     }
 }
