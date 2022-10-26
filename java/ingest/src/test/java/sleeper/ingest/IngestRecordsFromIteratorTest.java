@@ -17,7 +17,6 @@
 package sleeper.ingest;
 
 import com.facebook.collections.ByteArray;
-import org.apache.datasketches.quantiles.ItemsSketch;
 import org.assertj.core.util.Streams;
 import org.junit.Test;
 import sleeper.configuration.jars.ObjectFactoryException;
@@ -44,8 +43,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.facebook.collections.ByteArray.wrap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.assertSketches;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.assertSketchUsingDirectValues;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.calculateQuantiles;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createLeafPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createRootPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultPropertiesBuilder;
@@ -102,14 +103,10 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         readRecords = readRecordsFromParquetFile(activeFiles.get(1).getFilename(), schema);
         assertThat(readRecords).containsExactly(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        ItemsSketch<Long> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        assertSketches(getRecords().stream()
-                .map(r -> (Long) r.get("key"))
-                .filter(r -> r < 2L), schema, "key", blankSketch, activeFiles.get(0));
-        blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        assertSketches(getRecords().stream()
-                .map(r -> (Long) r.get("key"))
-                .filter(r -> r >= 2L), schema, "key", blankSketch, activeFiles.get(1));
+        assertSketchUsingDirectValues(schema, "key", activeFiles.get(0).getFilename(),
+                1L, 1L, calculateQuantiles(1L));
+        assertSketchUsingDirectValues(schema, "key", activeFiles.get(1).getFilename(),
+                3L, 3L, calculateQuantiles(3L));
     }
 
     @Test
@@ -141,9 +138,8 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
                 getRecords().get(0), getRecords().get(0),
                 getRecords().get(1), getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        ItemsSketch<Long> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        assertSketches(records.stream().map(r -> ((Long) r.get("key"))),
-                schema, "key", blankSketch, fileInfo);
+        assertSketchUsingDirectValues(schema, "key", fileInfo.getFilename(),
+                1L, 3L, calculateQuantiles(Arrays.asList(1L, 3L)));
     }
 
     @Test
@@ -178,9 +174,9 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
             i++;
         }
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        ItemsSketch<Long> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
-        assertSketches(getUnsortedRecords().stream().map(r -> (Long) r.get("key")),
-                schema, "key", blankSketch, activeFiles.get(0));
+        List<Long> sortedKeyList = sortedRecords.stream().map(r -> (Long) r.get("key")).collect(Collectors.toList());
+        assertSketchUsingDirectValues(schema, "key", activeFiles.get(0).getFilename(),
+                1L, 10L, calculateQuantiles(sortedKeyList));
     }
 
     @Test
@@ -225,13 +221,13 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         assertThat(readRecords).containsExactly(expectedRecord1, expectedRecord2);
 
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        ItemsSketch<ByteArray> blankSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         AdditionIterator additionIterator = new AdditionIterator();
         additionIterator.init("", schema);
         List<Record> sortedRecords = new ArrayList<>(getRecordsForAggregationIteratorTest());
-        sortedRecords.sort(Comparator.comparing(o -> ByteArray.wrap(((byte[]) o.get("key")))));
+        sortedRecords.sort(Comparator.comparing(o -> wrap(((byte[]) o.get("key")))));
         CloseableIterator<Record> aggregatedRecords = additionIterator.apply(new WrappedIterator<>(sortedRecords.iterator()));
-        assertSketches(Streams.stream(aggregatedRecords).map(r -> ByteArray.wrap((byte[]) r.get("key"))),
-                schema, "key", blankSketch, activeFiles.get(0));
+        List<ByteArray> sortedKeyList = Streams.stream(aggregatedRecords).map(r -> wrap((byte[]) r.get("key"))).collect(Collectors.toList());
+        assertSketchUsingDirectValues(schema, "key", activeFiles.get(0).getFilename(),
+                wrap(new byte[]{1, 1}), wrap(new byte[]{11, 2}), calculateQuantiles(sortedKeyList));
     }
 }
