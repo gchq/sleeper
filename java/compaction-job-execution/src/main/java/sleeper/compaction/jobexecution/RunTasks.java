@@ -15,6 +15,25 @@
  */
 package sleeper.compaction.jobexecution;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
+import static sleeper.core.ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.AwsVpcConfiguration;
 import com.amazonaws.services.ecs.model.ContainerOverride;
@@ -28,26 +47,9 @@ import com.amazonaws.services.ecs.model.TaskOverride;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.QueueAttributeName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.job.common.CommonJobUtils;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
-import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
-import static sleeper.core.ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME;
 
 /**
  * Finds the number of messages on a queue, and starts up one Fargate task for
@@ -85,12 +87,12 @@ public class RunTasks {
             this.sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
             this.clusterName = instanceProperties.get(COMPACTION_CLUSTER);
             this.containerName = COMPACTION_CONTAINER_NAME;
-            this.taskDefinition = instanceProperties.get(COMPACTION_TASK_DEFINITION_FAMILY);
+            this.taskDefinition = instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
         } else if (type.equals("splittingcompaction")) {
             this.sqsJobQueueUrl = instanceProperties.get(SPLITTING_COMPACTION_JOB_QUEUE_URL);
             this.clusterName = instanceProperties.get(SPLITTING_COMPACTION_CLUSTER);
             this.containerName = SPLITTING_COMPACTION_CONTAINER_NAME;
-            this.taskDefinition = instanceProperties.get(SPLITTING_COMPACTION_TASK_DEFINITION_FAMILY);
+            this.taskDefinition = instanceProperties.get(SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
         } else {
             throw new RuntimeException("type should be 'compaction' or 'splittingcompaction'");
         }
@@ -139,13 +141,13 @@ public class RunTasks {
 
             RunTaskRequest runTaskRequest = new RunTaskRequest()
                     .withCluster(clusterName)
-                    .withLaunchType(LaunchType.EC2) //TODO Support both types here 
+                    .withLaunchType(LaunchType.FARGATE)
                     .withTaskDefinition(taskDefinition)
-//                    .withNetworkConfiguration(networkConfiguration) //TODO this should only be enabled on FARGATE tasks
+                    .withNetworkConfiguration(networkConfiguration) //Don't set this on EC2 tasks
                     .withOverrides(override)
                     .withPropagateTags(PropagateTags.TASK_DEFINITION)
-                    .withPlatformVersion(null);
-                    //.withPlatformVersion(fargateVersion);
+//                    .withPlatformVersion(null); //Set to null for EC2 tasks
+                    .withPlatformVersion(fargateVersion); //Don't set this on EC2 tasks
 
             RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
             LOGGER.info("Submitted RunTaskRequest (cluster = {}, container name = {}, task definition = {})",
