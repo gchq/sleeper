@@ -20,13 +20,15 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COM
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_DESIRED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_MAXIMUM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_MINIMUM;
@@ -140,8 +142,6 @@ public class CompactionStack extends NestedStack {
     public static final String COMPACTION_CLUSTER_NAME = "CompactionClusterName";
     public static final String SPLITTING_COMPACTION_CLUSTER_NAME = "SplittingCompactionClusterName";
 
-    private String compactionFamily;
-    private String splittingCompactionFamily;
     private Queue compactionJobQ;
     private Queue compactionDLQ;
     private Queue splittingJobQ;
@@ -384,12 +384,18 @@ public class CompactionStack extends NestedStack {
                 .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
                 .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
                 .build();
+        
+        String fargateTaskDefinitionFamily = fargateTaskDefinition.getFamily();
+        instanceProperties.set(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY, fargateTaskDefinitionFamily);
 
         Ec2TaskDefinition ec2TaskDefinition = Ec2TaskDefinition.Builder
                .create(this, "MergeCompactionEC2TaskDefinition")
                .family(instanceProperties.get(ID) + "MergeCompactionEC2TaskFamily")
                .networkMode(NetworkMode.BRIDGE)
                .build();
+        
+        String ec2TaskDefinitionFamily = ec2TaskDefinition.getFamily();
+        instanceProperties.set(COMPACTION_TASK_EC2_DEFINITION_FAMILY, ec2TaskDefinitionFamily);
         
         IRepository repository = Repository.fromRepositoryName(this, "ECR1", instanceProperties.get(ECR_COMPACTION_REPO));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
@@ -412,9 +418,6 @@ public class CompactionStack extends NestedStack {
                 .build();
         fargateTaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
         ec2TaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
-        
-        this.compactionFamily = ec2TaskDefinition.getFamily(); //TODO Make both family definitions available
-        instanceProperties.set(COMPACTION_TASK_DEFINITION_FAMILY, compactionFamily);
         
         Consumer<ITaskDefinition> grantPermissions = (taskDef) -> {
             configBucket.grantRead(taskDef.getTaskRole());
@@ -466,12 +469,18 @@ public class CompactionStack extends NestedStack {
                 .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
                 .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
                 .build();
+        
+        String fargateTaskDefinitionFamily = fargateTaskDefinition.getFamily();
+        instanceProperties.set(SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY, fargateTaskDefinitionFamily);
 
         Ec2TaskDefinition ec2TaskDefinition = Ec2TaskDefinition.Builder
                .create(this, "SplittingMergeCompactionEC2TaskDefinition")
                .family(instanceProperties.get(ID) + "SplittingMergeCompactionEC2TaskFamily")
                .networkMode(NetworkMode.BRIDGE)
                .build();
+        
+        String ec2TaskDefinitionFamily = ec2TaskDefinition.getFamily();
+        instanceProperties.set(SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY, ec2TaskDefinitionFamily);
          
         IRepository repository = Repository.fromRepositoryName(this, "ECR2", instanceProperties.get(ECR_COMPACTION_REPO));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
@@ -494,10 +503,7 @@ public class CompactionStack extends NestedStack {
                 .build();
         fargateTaskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
         ec2TaskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
-            
-        splittingCompactionFamily = ec2TaskDefinition.getFamily(); //TODO Make both family definitions available
-        instanceProperties.set(SPLITTING_COMPACTION_TASK_DEFINITION_FAMILY, splittingCompactionFamily);
-
+  
         Consumer<ITaskDefinition> grantPermissions = (taskDef) -> {
             configBucket.grantRead(taskDef.getTaskRole());
             jarsBucket.grantRead(taskDef.getTaskRole());
