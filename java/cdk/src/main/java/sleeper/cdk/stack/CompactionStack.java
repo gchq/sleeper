@@ -43,6 +43,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_C
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
@@ -75,12 +76,10 @@ import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
 import software.amazon.awscdk.services.cloudwatch.MetricOptions;
 import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
 import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
-import software.amazon.awscdk.services.ec2.GenericSSMParameterImage;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.InstanceClass;
 import software.amazon.awscdk.services.ec2.InstanceSize;
 import software.amazon.awscdk.services.ec2.InstanceType;
-import software.amazon.awscdk.services.ec2.OperatingSystemType;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.ecr.IRepository;
@@ -400,11 +399,14 @@ public class CompactionStack extends NestedStack {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
         LogDriver logDriver = AwsLogDriver.awsLogs(logDriverProps);
-
+        
+        Map<String,String> environment=Utils.createDefaultEnvironment(instanceProperties);
+        environment.put("AWS_REGION", instanceProperties.get(REGION));
+        
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
                 .logging(logDriver)
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .environment(environment)
                 .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
                 .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
                 .build();
@@ -480,10 +482,13 @@ public class CompactionStack extends NestedStack {
                 .build();
         LogDriver logDriver = AwsLogDriver.awsLogs(logDriverProps);
 
+        Map<String,String> environment=Utils.createDefaultEnvironment(instanceProperties);
+        environment.put("AWS_REGION", instanceProperties.get(REGION));
+        
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
                 .logging(logDriver)
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .environment(environment)
                 .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
                 .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
                 .build();
