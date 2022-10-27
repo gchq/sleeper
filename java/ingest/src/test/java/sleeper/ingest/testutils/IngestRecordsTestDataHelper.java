@@ -278,7 +278,7 @@ public class IngestRecordsTestDataHelper {
 
     public static <T> void assertSketchUsingDirectValuesAllQuantiles(Schema schema, String keyToCompare, String filename,
                                                                      T expectedMin, T expectedMax, List<T> expectedQuantiles) throws IOException {
-        Sketches readSketches = getSketch(schema, filename);
+        Sketches readSketches = getSketches(schema, filename);
         assertThat(readSketches.getQuantilesSketch(keyToCompare).getMinValue()).isEqualTo(expectedMin);
         assertThat(readSketches.getQuantilesSketch(keyToCompare).getMaxValue()).isEqualTo(expectedMax);
         Object[] quantiles = readSketches.getQuantilesSketch(keyToCompare).getQuantiles(QUANTILE_RANGE);
@@ -287,7 +287,7 @@ public class IngestRecordsTestDataHelper {
         }
     }
 
-    public static Sketches getSketch(Schema schema, String filename) throws IOException {
+    public static Sketches getSketches(Schema schema, String filename) throws IOException {
         String sketchFile = filename.replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
         return new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());

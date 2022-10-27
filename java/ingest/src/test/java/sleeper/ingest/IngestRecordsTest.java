@@ -68,7 +68,7 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsByt
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsForAggregationIteratorTest;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsInFirstPartitionOnly;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsOscillatingBetween2Partitions;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketch;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getUnsortedRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
@@ -126,9 +126,9 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         assertThat(readRecords2).hasSize(1);
         assertThat(readRecords2.get(0)).isEqualTo(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketch(schema, activeFiles.get(0).getFilename()), "key")
+        AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()), "key")
                 .min(1L).max(1L).quantile(0.4, 1L).quantile(0.6, 1L).verify();
-        AssertQuantiles.forSketch(getSketch(schema, activeFiles.get(1).getFilename()), "key")
+        AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(1).getFilename()), "key")
                 .min(3L).max(3L).quantile(0.4, 3L).quantile(0.6, 3L).verify();
     }
 
