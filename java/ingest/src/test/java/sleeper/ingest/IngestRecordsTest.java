@@ -24,7 +24,6 @@ import org.apache.parquet.hadoop.ParquetReader;
 import org.junit.Test;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.MergingIterator;
-import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.iterator.impl.AdditionIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
@@ -774,11 +773,6 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         assertThat(readRecords.get(1)).isEqualTo(expectedRecord2);
 
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AdditionIterator additionIterator = new AdditionIterator();
-        additionIterator.init("", schema);
-        List<Record> sortedRecords = new ArrayList<>(getRecordsForAggregationIteratorTest());
-        sortedRecords.sort(Comparator.comparing(o -> wrap(((byte[]) o.get("key")))));
-        CloseableIterator<Record> aggregatedRecords = additionIterator.apply(new WrappedIterator<>(sortedRecords.iterator()));
         AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
                 .min(wrap(new byte[]{1, 1})).max(wrap(new byte[]{11, 2}))
                 .quantile(0.4, wrap(new byte[]{1, 1})).quantile(0.6, wrap(new byte[]{11, 2})).verify();
