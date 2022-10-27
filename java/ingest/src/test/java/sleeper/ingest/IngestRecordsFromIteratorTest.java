@@ -39,7 +39,6 @@ import java.util.stream.Collectors;
 
 import static com.facebook.collections.ByteArray.wrap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.calculateAllQuantiles;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createLeafPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createRootPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
@@ -167,10 +166,13 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
             i++;
         }
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        List<Long> sortedKeyList = sortedRecords.stream().map(r -> (Long) r.get("key")).collect(Collectors.toList());
         AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
                 .min(1L).max(10L)
-                .quantiles(calculateAllQuantiles(sortedKeyList)).verify();
+                .quantile(0.0, 1L).quantile(0.1, 3L)
+                .quantile(0.2, 5L).quantile(0.3, 5L)
+                .quantile(0.4, 5L).quantile(0.5, 5L)
+                .quantile(0.6, 5L).quantile(0.7, 5L)
+                .quantile(0.8, 7L).quantile(0.9, 9L).verify();
     }
 
     @Test
