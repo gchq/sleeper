@@ -52,7 +52,7 @@ public class Utils {
     /**Region environment variable for setting in EC2 based ECS containers.
      */
     public static final String AWS_REGION = "AWS_REGION";
-    
+
     private Utils() {
         // Prevents instantiation
     }

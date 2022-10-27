@@ -15,51 +15,6 @@
  */
 package sleeper.cdk.stack;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_DESIRED;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_MAXIMUM;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_MINIMUM;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_ROOT_SIZE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_TYPE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_MEMORY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Stack;
-import java.util.function.Consumer;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
@@ -116,6 +71,51 @@ import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Consumer;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_DESIRED;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_MAXIMUM;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_MINIMUM;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_ROOT_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_MEMORY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+
 
 /**
  * A {@link Stack} to deploy the {@link Queue}s, ECS {@link Cluster}s,
@@ -384,7 +384,7 @@ public class CompactionStack extends NestedStack {
                 .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
                 .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
                 .build();
-        
+
         String fargateTaskDefinitionFamily = fargateTaskDefinition.getFamily();
         instanceProperties.set(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY, fargateTaskDefinitionFamily);
 
@@ -393,10 +393,10 @@ public class CompactionStack extends NestedStack {
                .family(instanceProperties.get(ID) + "MergeCompactionEC2TaskFamily")
                .networkMode(NetworkMode.BRIDGE)
                .build();
-        
+
         String ec2TaskDefinitionFamily = ec2TaskDefinition.getFamily();
         instanceProperties.set(COMPACTION_TASK_EC2_DEFINITION_FAMILY, ec2TaskDefinitionFamily);
-        
+
         IRepository repository = Repository.fromRepositoryName(this, "ECR1", instanceProperties.get(ECR_COMPACTION_REPO));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
@@ -405,10 +405,10 @@ public class CompactionStack extends NestedStack {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
         LogDriver logDriver = AwsLogDriver.awsLogs(logDriverProps);
-        
-        Map<String,String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
+
+        Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
-        
+
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
                 .logging(logDriver)
@@ -418,7 +418,7 @@ public class CompactionStack extends NestedStack {
                 .build();
         fargateTaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
         ec2TaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
-        
+
         Consumer<ITaskDefinition> grantPermissions = (taskDef) -> {
             configBucket.grantRead(taskDef.getTaskRole());
             jarsBucket.grantRead(taskDef.getTaskRole());
@@ -427,15 +427,15 @@ public class CompactionStack extends NestedStack {
             stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(taskDef.getTaskRole()));
             eventStore.grantWriteJobEvent(taskDef.getTaskRole());
             eventStore.grantWriteTaskEvent(taskDef.getTaskRole());
-    
+
             compactionMergeJobsQueue.grantConsumeMessages(taskDef.getTaskRole());
         };
-        
+
         grantPermissions.accept(fargateTaskDefinition);
         grantPermissions.accept(ec2TaskDefinition);
-        
+
         addEC2CapacityProvider(cluster, "MergeCompaction", vpc);
-        
+
         CfnOutputProps compactionClusterProps = new CfnOutputProps.Builder()
                 .value(cluster.getClusterName())
                 .build();
@@ -443,7 +443,7 @@ public class CompactionStack extends NestedStack {
 
         return cluster;
     }
-    
+
     private Cluster ecsClusterForSplittingCompactionTasks(IBucket configBucket,
                                                           IBucket jarsBucket,
                                                           List<StateStoreStack> stateStoreStacks,
@@ -469,7 +469,7 @@ public class CompactionStack extends NestedStack {
                 .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
                 .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
                 .build();
-        
+
         String fargateTaskDefinitionFamily = fargateTaskDefinition.getFamily();
         instanceProperties.set(SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY, fargateTaskDefinitionFamily);
 
@@ -478,10 +478,10 @@ public class CompactionStack extends NestedStack {
                .family(instanceProperties.get(ID) + "SplittingMergeCompactionEC2TaskFamily")
                .networkMode(NetworkMode.BRIDGE)
                .build();
-        
+
         String ec2TaskDefinitionFamily = ec2TaskDefinition.getFamily();
         instanceProperties.set(SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY, ec2TaskDefinitionFamily);
-         
+
         IRepository repository = Repository.fromRepositoryName(this, "ECR2", instanceProperties.get(ECR_COMPACTION_REPO));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
@@ -490,10 +490,10 @@ public class CompactionStack extends NestedStack {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
         LogDriver logDriver = AwsLogDriver.awsLogs(logDriverProps);
-       
-        Map<String,String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
+
+        Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
-        
+
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
                 .logging(logDriver)
@@ -503,7 +503,7 @@ public class CompactionStack extends NestedStack {
                 .build();
         fargateTaskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
         ec2TaskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
-  
+
         Consumer<ITaskDefinition> grantPermissions = (taskDef) -> {
             configBucket.grantRead(taskDef.getTaskRole());
             jarsBucket.grantRead(taskDef.getTaskRole());
@@ -512,15 +512,15 @@ public class CompactionStack extends NestedStack {
             stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(taskDef.getTaskRole()));
             eventStore.grantWriteJobEvent(taskDef.getTaskRole());
             eventStore.grantWriteTaskEvent(taskDef.getTaskRole());
-    
+
             compactionSplittingMergeJobsQueue.grantConsumeMessages(taskDef.getTaskRole());
         };
-        
+
         grantPermissions.accept(fargateTaskDefinition);
         grantPermissions.accept(ec2TaskDefinition);
 
         addEC2CapacityProvider(cluster, "SplittingMergeCompaction", vpc);
-        
+
         CfnOutputProps splittingCompactionClusterProps = new CfnOutputProps.Builder()
                 .value(cluster.getClusterName())
                 .build();
@@ -528,53 +528,53 @@ public class CompactionStack extends NestedStack {
 
         return cluster;
     }
-    
+
     private void addEC2CapacityProvider(Cluster cluster, String clusterName, IVpc vpc) {
-		AutoScalingGroup ec2scalingGroup = AutoScalingGroup.Builder.create(this, clusterName + "ScalingGroup").vpc(vpc)
-				.allowAllOutbound(true).associatePublicIpAddress(false)
-				.blockDevices(Arrays.asList(BlockDevice.builder().deviceName("/dev/xvda") // root volume
-						.volume(BlockDeviceVolume.ebs(instanceProperties.getInt(COMPACTION_EC2_ROOT_SIZE),
-								EbsDeviceOptions.builder().deleteOnTermination(true).encrypted(true)
-										.volumeType(EbsDeviceVolumeType.GP2).build()))
-						.build()))
-				.minCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MINIMUM))
-				.desiredCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_DESIRED))
-				.maxCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MAXIMUM)).requireImdsv2(true)
-				.instanceType(lookupEC2InstanceType(instanceProperties.get(COMPACTION_EC2_TYPE)))
-				.machineImage(EcsOptimizedImage.amazonLinux2(AmiHardwareType.STANDARD, EcsOptimizedImageOptions.builder()
-						.cachedInContext(false)
-						.build()
-						)
-				)
-				.build();
+        AutoScalingGroup ec2scalingGroup = AutoScalingGroup.Builder.create(this, clusterName + "ScalingGroup").vpc(vpc)
+                .allowAllOutbound(true).associatePublicIpAddress(false)
+                .blockDevices(Arrays.asList(BlockDevice.builder().deviceName("/dev/xvda") // root volume
+                        .volume(BlockDeviceVolume.ebs(instanceProperties.getInt(COMPACTION_EC2_ROOT_SIZE),
+                                EbsDeviceOptions.builder().deleteOnTermination(true).encrypted(true)
+                                        .volumeType(EbsDeviceVolumeType.GP2).build()))
+                        .build()))
+                .minCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MINIMUM))
+                .desiredCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_DESIRED))
+                .maxCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MAXIMUM)).requireImdsv2(true)
+                .instanceType(lookupEC2InstanceType(instanceProperties.get(COMPACTION_EC2_TYPE)))
+                .machineImage(EcsOptimizedImage.amazonLinux2(AmiHardwareType.STANDARD, EcsOptimizedImageOptions.builder()
+                        .cachedInContext(false)
+                        .build()
+                        )
+                )
+                .build();
 
-		AsgCapacityProvider ec2Provider = AsgCapacityProvider.Builder
-				.create(this, clusterName + "CapacityProvider").enableManagedScaling(false)
-				.enableManagedTerminationProtection(true)
-				.autoScalingGroup(ec2scalingGroup).spotInstanceDraining(true)
-				.canContainersAccessInstanceRole(false).machineImageType(MachineImageType.AMAZON_LINUX_2).build();
+        AsgCapacityProvider ec2Provider = AsgCapacityProvider.Builder
+                .create(this, clusterName + "CapacityProvider").enableManagedScaling(false)
+                .enableManagedTerminationProtection(true)
+                .autoScalingGroup(ec2scalingGroup).spotInstanceDraining(true)
+                .canContainersAccessInstanceRole(false).machineImageType(MachineImageType.AMAZON_LINUX_2).build();
 
-		cluster.addAsgCapacityProvider(ec2Provider,
-				AddAutoScalingGroupCapacityOptions.builder().canContainersAccessInstanceRole(false)
-						.machineImageType(MachineImageType.AMAZON_LINUX_2).spotInstanceDraining(true).build());
-	}
-    
+        cluster.addAsgCapacityProvider(ec2Provider,
+                AddAutoScalingGroupCapacityOptions.builder().canContainersAccessInstanceRole(false)
+                        .machineImageType(MachineImageType.AMAZON_LINUX_2).spotInstanceDraining(true).build());
+    }
+
     public static InstanceType lookupEC2InstanceType(String ec2InstanceType) {
-    	Objects.requireNonNull(ec2InstanceType,"instance type cannot be null");
-    	int pos = ec2InstanceType.indexOf('.');
-    	
-    	if (pos<0||ec2InstanceType.trim().isEmpty()) {
-    		throw new IllegalArgumentException("instance type is empty or invalid");
-    	}
-    	
-    	String family = ec2InstanceType.substring(0, pos).toUpperCase();
-    	String size = ec2InstanceType.substring(pos+1).toUpperCase();
+        Objects.requireNonNull(ec2InstanceType, "instance type cannot be null");
+        int pos = ec2InstanceType.indexOf('.');
 
-    	//now perform lookup of these against known types
-    	InstanceClass instanceClass = InstanceClass.valueOf(family);
-    	InstanceSize instanceSize = InstanceSize.valueOf(size);
-    	
-    	return InstanceType.of(instanceClass,instanceSize);
+        if (pos < 0 || ec2InstanceType.trim().isEmpty()) {
+            throw new IllegalArgumentException("instance type is empty or invalid");
+        }
+
+        String family = ec2InstanceType.substring(0, pos).toUpperCase();
+        String size = ec2InstanceType.substring(pos + 1).toUpperCase();
+
+        //now perform lookup of these against known types
+        InstanceClass instanceClass = InstanceClass.valueOf(family);
+        InstanceSize instanceSize = InstanceSize.valueOf(size);
+
+        return InstanceType.of(instanceClass, instanceSize);
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
