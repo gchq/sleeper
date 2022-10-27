@@ -563,7 +563,7 @@ public class CompactionStack extends NestedStack {
     	Objects.requireNonNull(ec2InstanceType,"instance type cannot be null");
     	int pos = ec2InstanceType.indexOf('.');
     	
-    	if (pos<0||ec2InstanceType.strip().isEmpty()) {
+    	if (pos<0||ec2InstanceType.trim().isEmpty()) {
     		throw new IllegalArgumentException("instance type is empty or invalid");
     	}
     	
