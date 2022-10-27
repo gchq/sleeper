@@ -567,8 +567,8 @@ public class CompactionStack extends NestedStack {
             throw new IllegalArgumentException("instance type is empty or invalid");
         }
 
-        String family = ec2InstanceType.substring(0, pos).toUpperCase();
-        String size = ec2InstanceType.substring(pos + 1).toUpperCase();
+        String family = ec2InstanceType.substring(0, pos).toUpperCase(Locale.getDefault());
+        String size = ec2InstanceType.substring(pos + 1).toUpperCase(Locale.getDefault());
 
         //now perform lookup of these against known types
         InstanceClass instanceClass = InstanceClass.valueOf(family);
