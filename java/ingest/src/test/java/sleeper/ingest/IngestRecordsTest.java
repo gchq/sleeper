@@ -39,6 +39,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+import sleeper.ingest.testutils.ExpectedQuantile;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
@@ -60,7 +61,8 @@ import java.util.stream.Collectors;
 
 import static com.facebook.collections.ByteArray.wrap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.assertSketchUsingDirectValues;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.assertSketchUsingDirectValuesAllQuantiles;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.assertSketchUsingDirectValuesSpecificQuantiles;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.calculateQuantiles;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createLeafPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createRootPartition;
@@ -129,10 +131,12 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         assertThat(readRecords2).hasSize(1);
         assertThat(readRecords2.get(0)).isEqualTo(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        assertSketchUsingDirectValues(schema, "key", activeFiles.get(0).getFilename(),
-                1L, 1L, calculateQuantiles(1L));
-        assertSketchUsingDirectValues(schema, "key", activeFiles.get(1).getFilename(),
-                3L, 3L, calculateQuantiles(3L));
+        assertSketchUsingDirectValuesSpecificQuantiles(schema, "key", activeFiles.get(0).getFilename(),
+                1L, 1L,
+                Arrays.asList(ExpectedQuantile.with(0.4D, 1L), ExpectedQuantile.with(0.6D, 1L)));
+        assertSketchUsingDirectValuesSpecificQuantiles(schema, "key", activeFiles.get(1).getFilename(),
+                3L, 3L,
+                Arrays.asList(ExpectedQuantile.with(0.4D, 3L), ExpectedQuantile.with(0.6D, 3L)));
     }
 
     @Test
@@ -192,10 +196,10 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         assertThat(readRecords2).hasSize(1);
         assertThat(readRecords2.get(0)).isEqualTo(getRecordsByteArrayKey().get(2));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        assertSketchUsingDirectValues(schema, "key", activeFilesSortedByNumberOfLines.get(1).getFilename(),
+        assertSketchUsingDirectValuesAllQuantiles(schema, "key", activeFilesSortedByNumberOfLines.get(1).getFilename(),
                 wrap(new byte[]{1, 1}), wrap(new byte[]{2, 2}),
                 calculateQuantiles(Arrays.asList(wrap(new byte[]{1, 1}), wrap(new byte[]{2, 2}))));
-        assertSketchUsingDirectValues(schema, "key", activeFilesSortedByNumberOfLines.get(0).getFilename(),
+        assertSketchUsingDirectValuesAllQuantiles(schema, "key", activeFilesSortedByNumberOfLines.get(0).getFilename(),
                 wrap(new byte[]{64, 65}), wrap(new byte[]{64, 65}),
                 calculateQuantiles(wrap(new byte[]{64, 65})));
     }
@@ -263,16 +267,16 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         assertThat(readRecords2.get(1)).isEqualTo(getRecords2DimByteArrayKey().get(2));
         assertThat(readRecords2.get(2)).isEqualTo(getRecords2DimByteArrayKey().get(3));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        assertSketchUsingDirectValues(schema, "key1", activeFilesSortedByNumberOfLines.get(0).getFilename(),
+        assertSketchUsingDirectValuesAllQuantiles(schema, "key1", activeFilesSortedByNumberOfLines.get(0).getFilename(),
                 wrap(new byte[]{1, 1}), wrap(new byte[]{5}),
                 calculateQuantiles(Arrays.asList(wrap(new byte[]{1, 1}), wrap(new byte[]{5}))));
-        assertSketchUsingDirectValues(schema, "key2", activeFilesSortedByNumberOfLines.get(0).getFilename(),
+        assertSketchUsingDirectValuesAllQuantiles(schema, "key2", activeFilesSortedByNumberOfLines.get(0).getFilename(),
                 wrap(new byte[]{2, 3}), wrap(new byte[]{99}),
                 calculateQuantiles(Arrays.asList(wrap(new byte[]{2, 3}), wrap(new byte[]{99}))));
-        assertSketchUsingDirectValues(schema, "key1", activeFilesSortedByNumberOfLines.get(1).getFilename(),
+        assertSketchUsingDirectValuesAllQuantiles(schema, "key1", activeFilesSortedByNumberOfLines.get(1).getFilename(),
                 wrap(new byte[]{11, 2}), wrap(new byte[]{64, 65}),
                 calculateQuantiles(Arrays.asList(wrap(new byte[]{11, 2}), wrap(new byte[]{64, 65}), wrap(new byte[]{64, 65}))));
-        assertSketchUsingDirectValues(schema, "key2", activeFilesSortedByNumberOfLines.get(1).getFilename(),
+        assertSketchUsingDirectValuesAllQuantiles(schema, "key2", activeFilesSortedByNumberOfLines.get(1).getFilename(),
                 wrap(new byte[]{2, 2}), wrap(new byte[]{67, 68}),
                 calculateQuantiles(Arrays.asList(wrap(new byte[]{2, 2}), wrap(new byte[]{67, 68}), wrap(new byte[]{67, 68}))));
     }
@@ -366,13 +370,13 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         assertThat(readRecords2.get(0)).isEqualTo(getRecordsOscillatingBetween2Partitions().get(1));
         assertThat(readRecords2.get(1)).isEqualTo(getRecordsOscillatingBetween2Partitions().get(3));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        assertSketchUsingDirectValues(schema, "key1", fileInfo1.getFilename(),
+        assertSketchUsingDirectValuesAllQuantiles(schema, "key1", fileInfo1.getFilename(),
                 0, 100, calculateQuantiles(Arrays.asList(0, 100)));
-        assertSketchUsingDirectValues(schema, "key2", fileInfo1.getFilename(),
+        assertSketchUsingDirectValuesAllQuantiles(schema, "key2", fileInfo1.getFilename(),
                 1L, 1L, calculateQuantiles(1L));
-        assertSketchUsingDirectValues(schema, "key1", fileInfo2.getFilename(),
+        assertSketchUsingDirectValuesAllQuantiles(schema, "key1", fileInfo2.getFilename(),
                 0, 100, calculateQuantiles(Arrays.asList(0, 100)));
-        assertSketchUsingDirectValues(schema, "key2", fileInfo2.getFilename(),
+        assertSketchUsingDirectValuesAllQuantiles(schema, "key2", fileInfo2.getFilename(),
                 20L, 50L, calculateQuantiles(Arrays.asList(20L, 50L)));
     }
 
@@ -418,7 +422,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         assertThat(readRecords1.get(0)).isEqualTo(getRecordsInFirstPartitionOnly().get(1));
         assertThat(readRecords1.get(1)).isEqualTo(getRecordsInFirstPartitionOnly().get(0));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        assertSketchUsingDirectValues(schema, "key", fileInfo.getFilename(),
+        assertSketchUsingDirectValuesAllQuantiles(schema, "key", fileInfo.getFilename(),
                 0L, 1L, calculateQuantiles(Arrays.asList(0L, 1L)));
     }
 
@@ -457,7 +461,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         assertThat(readRecords1.get(2)).isEqualTo(getRecords().get(1));
         assertThat(readRecords1.get(3)).isEqualTo(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        assertSketchUsingDirectValues(schema, "key", fileInfo.getFilename(),
+        assertSketchUsingDirectValuesAllQuantiles(schema, "key", fileInfo.getFilename(),
                 1L, 3L, calculateQuantiles(Arrays.asList(1L, 3L)));
     }
 
@@ -571,9 +575,9 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
                 .filter(r -> r < 2L).sorted().collect(Collectors.toList());
         List<Long> keysInRightFile = records.stream().map(r -> ((Long) r.get("key")))
                 .filter(r -> r >= 2L).sorted().collect(Collectors.toList());
-        assertSketchUsingDirectValues(schema, "key", activeFiles.get(0).getFilename(),
+        assertSketchUsingDirectValuesAllQuantiles(schema, "key", activeFiles.get(0).getFilename(),
                 minLeftFile, maxLeftFile, calculateQuantiles(keysInLeftFile));
-        assertSketchUsingDirectValues(schema, "key", activeFiles.get(1).getFilename(),
+        assertSketchUsingDirectValuesAllQuantiles(schema, "key", activeFiles.get(1).getFilename(),
                 minRightFile, maxRightFile, calculateQuantiles(keysInRightFile));
     }
 
@@ -720,7 +724,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         }
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         List<Long> sortedKeyList = sortedRecords.stream().map(r -> (Long) r.get("key")).collect(Collectors.toList());
-        assertSketchUsingDirectValues(schema, "key", fileInfo.getFilename(),
+        assertSketchUsingDirectValuesAllQuantiles(schema, "key", fileInfo.getFilename(),
                 1L, 10L, calculateQuantiles(sortedKeyList));
     }
 
@@ -777,7 +781,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         sortedRecords.sort(Comparator.comparing(o -> wrap(((byte[]) o.get("key")))));
         CloseableIterator<Record> aggregatedRecords = additionIterator.apply(new WrappedIterator<>(sortedRecords.iterator()));
         List<ByteArray> sortedKeyList = Streams.stream(aggregatedRecords).map(r -> wrap((byte[]) r.get("key"))).collect(Collectors.toList());
-        assertSketchUsingDirectValues(schema, "key", activeFiles.get(0).getFilename(),
+        assertSketchUsingDirectValuesAllQuantiles(schema, "key", activeFiles.get(0).getFilename(),
                 wrap(new byte[]{1, 1}), wrap(new byte[]{11, 2}),
                 calculateQuantiles(sortedKeyList));
     }

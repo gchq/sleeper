@@ -280,17 +280,32 @@ public class IngestRecordsTestDataHelper {
         return readRecords;
     }
 
-    public static <T> void assertSketchUsingDirectValues(Schema schema, String keyToCompare, String filename,
-                                                         T expectedMin, T expectedMax, List<T> expectedQuantiles) throws IOException {
-        String sketchFile = filename.replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
+    public static <T> void assertSketchUsingDirectValuesSpecificQuantiles(Schema schema, String keyToCompare, String filename,
+                                                                          T expectedMin, T expectedMax, List<ExpectedQuantile<T>> expectedQuantiles) throws IOException {
+        Sketches readSketches = getSketch(schema, filename);
+        assertThat(readSketches.getQuantilesSketch(keyToCompare).getMinValue()).isEqualTo(expectedMin);
+        assertThat(readSketches.getQuantilesSketch(keyToCompare).getMaxValue()).isEqualTo(expectedMax);
+        for (ExpectedQuantile<T> q : expectedQuantiles) {
+            assertThat(readSketches.getQuantilesSketch(keyToCompare).getQuantile(q.getIndex()))
+                    .isEqualTo(q.getValue());
+        }
+    }
+
+    public static <T> void assertSketchUsingDirectValuesAllQuantiles(Schema schema, String keyToCompare, String filename,
+                                                                     T expectedMin, T expectedMax, List<T> expectedQuantiles) throws IOException {
+        Sketches readSketches = getSketch(schema, filename);
         assertThat(readSketches.getQuantilesSketch(keyToCompare).getMinValue()).isEqualTo(expectedMin);
         assertThat(readSketches.getQuantilesSketch(keyToCompare).getMaxValue()).isEqualTo(expectedMax);
         Object[] quantiles = readSketches.getQuantilesSketch(keyToCompare).getQuantiles(QUANTILE_RANGE);
         for (int i = 0; i < 10; i++) {
             assertThat(quantiles[i]).isEqualTo(expectedQuantiles.get(i));
         }
+    }
+
+    public static <T> Sketches getSketch(Schema schema, String filename) throws IOException {
+        String sketchFile = filename.replace(".parquet", ".sketches");
+        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
+        return new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
     }
 
     public static <T> List<T> calculateQuantiles(T key) {
