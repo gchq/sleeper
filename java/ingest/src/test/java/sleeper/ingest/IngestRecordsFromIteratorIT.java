@@ -16,36 +16,28 @@
 package sleeper.ingest;
 
 import org.junit.Test;
-import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
+import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.statestore.FileInfo;
-import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.assertSketchUsingDirectValues;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.calculateQuantiles;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultPropertiesBuilder;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 
 public class IngestRecordsFromIteratorIT extends IngestRecordsITBase {
     @Test
-    public void shouldWriteRecordsCorrectly() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+    public void shouldWriteRecordsCorrectly() throws Exception {
         // Given
         DynamoDBStateStore stateStore = getStateStore(schema);
-        String localDir = folder.newFolder().getAbsolutePath();
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
-                localDir, folder.newFolder().getAbsolutePath()).build();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
         long numWritten = new IngestRecordsFromIterator(properties, getRecords().iterator()).write();
 
         // Then:
@@ -63,9 +55,10 @@ public class IngestRecordsFromIteratorIT extends IngestRecordsITBase {
         List<Record> readRecords = readRecordsFromParquetFile(fileInfo.getFilename(), schema);
         assertThat(readRecords).containsExactly(getRecords().get(0), getRecords().get(1));
         //  - Local files should have been deleted
-        assertThat(Files.walk(Paths.get(localDir)).filter(Files::isRegularFile).count()).isZero();
+        assertThat(Files.walk(Paths.get(inputFolderName)).filter(Files::isRegularFile).count()).isZero();
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        assertSketchUsingDirectValues(schema, "key", fileInfo.getFilename(),
-                1L, 3L, calculateQuantiles(Arrays.asList(1L, 3L)));
+        AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
+                .min(1L).max(3L)
+                .quantile(0.4, 1L).quantile(0.6, 3L).verify();
     }
 }

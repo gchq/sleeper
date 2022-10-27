@@ -16,13 +16,7 @@
 
 package sleeper.ingest;
 
-import com.facebook.collections.ByteArray;
-import org.assertj.core.util.Streams;
 import org.junit.Test;
-import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.IteratorException;
-import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.iterator.impl.AdditionIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
@@ -32,11 +26,10 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
+import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -46,20 +39,19 @@ import java.util.stream.Collectors;
 
 import static com.facebook.collections.ByteArray.wrap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.assertSketchUsingDirectValues;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.calculateQuantiles;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.calculateAllQuantiles;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createLeafPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createRootPartition;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultPropertiesBuilder;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsForAggregationIteratorTest;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getUnsortedRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 
 public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
 
     @Test
-    public void shouldWriteRecordsSplitByPartitionLongKey() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+    public void shouldWriteRecordsSplitByPartitionLongKey() throws Exception {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
@@ -75,8 +67,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
-                folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
         long numWritten = new IngestRecordsFromIterator(properties, getRecords().iterator()).write();
 
         // Then:
@@ -104,22 +95,23 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         readRecords = readRecordsFromParquetFile(activeFiles.get(1).getFilename(), schema);
         assertThat(readRecords).containsExactly(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        assertSketchUsingDirectValues(schema, "key", activeFiles.get(0).getFilename(),
-                1L, 1L, calculateQuantiles(1L));
-        assertSketchUsingDirectValues(schema, "key", activeFiles.get(1).getFilename(),
-                3L, 3L, calculateQuantiles(3L));
+        AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
+                .min(1L).max(1L)
+                .quantile(0.4, 1L).quantile(0.6, 1L).verify();
+        AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(1).getFilename()).getQuantilesSketch("key"))
+                .min(3L).max(3L)
+                .quantile(0.4, 3L).quantile(0.6, 3L).verify();
     }
 
     @Test
-    public void shouldWriteDuplicateRecords() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+    public void shouldWriteDuplicateRecords() throws Exception {
         // Given
         StateStore stateStore = getStateStore(schema);
 
         // When
         List<Record> records = new ArrayList<>(getRecords());
         records.addAll(getRecords());
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
-                folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
         long numWritten = new IngestRecordsFromIterator(properties, records.iterator()).write();
 
         // Then:
@@ -139,18 +131,18 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
                 getRecords().get(0), getRecords().get(0),
                 getRecords().get(1), getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        assertSketchUsingDirectValues(schema, "key", fileInfo.getFilename(),
-                1L, 3L, calculateQuantiles(Arrays.asList(1L, 3L)));
+        AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
+                .min(1L).max(3L)
+                .quantile(0.4, 1L).quantile(0.6, 3L).verify();
     }
 
     @Test
-    public void shouldSortRecords() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+    public void shouldSortRecords() throws Exception {
         // Given
         StateStore stateStore = getStateStore(schema);
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
-                folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
         long numWritten = new IngestRecordsFromIterator(properties, getUnsortedRecords().iterator()).write();
 
         // Then:
@@ -176,12 +168,13 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         }
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         List<Long> sortedKeyList = sortedRecords.stream().map(r -> (Long) r.get("key")).collect(Collectors.toList());
-        assertSketchUsingDirectValues(schema, "key", activeFiles.get(0).getFilename(),
-                1L, 10L, calculateQuantiles(sortedKeyList));
+        AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
+                .min(1L).max(10L)
+                .quantiles(calculateAllQuantiles(sortedKeyList)).verify();
     }
 
     @Test
-    public void shouldApplyIterator() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+    public void shouldApplyIterator() throws Exception {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new ByteArrayType()))
@@ -192,8 +185,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         StateStore stateStore = getStateStore(schema);
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
-                folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath())
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema)
                 .iteratorClassName(AdditionIterator.class.getName())
                 .build();
         long numWritten = new IngestRecordsFromIterator(properties, getRecordsForAggregationIteratorTest().iterator()).write();
@@ -222,24 +214,18 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         assertThat(readRecords).containsExactly(expectedRecord1, expectedRecord2);
 
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AdditionIterator additionIterator = new AdditionIterator();
-        additionIterator.init("", schema);
-        List<Record> sortedRecords = new ArrayList<>(getRecordsForAggregationIteratorTest());
-        sortedRecords.sort(Comparator.comparing(o -> wrap(((byte[]) o.get("key")))));
-        CloseableIterator<Record> aggregatedRecords = additionIterator.apply(new WrappedIterator<>(sortedRecords.iterator()));
-        List<ByteArray> sortedKeyList = Streams.stream(aggregatedRecords).map(r -> wrap((byte[]) r.get("key"))).collect(Collectors.toList());
-        assertSketchUsingDirectValues(schema, "key", activeFiles.get(0).getFilename(),
-                wrap(new byte[]{1, 1}), wrap(new byte[]{11, 2}), calculateQuantiles(sortedKeyList));
+        AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
+                .min(wrap(new byte[]{1, 1})).max(wrap(new byte[]{11, 2}))
+                .quantile(0.4, wrap(new byte[]{1, 1})).quantile(0.6, wrap(new byte[]{11, 2})).verify();
     }
 
     @Test
-    public void shouldWriteNoRecordsSuccessfully() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+    public void shouldWriteNoRecordsSuccessfully() throws Exception {
         // Given
         StateStore stateStore = getStateStore(schema);
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
-                folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
         long numWritten = new IngestRecordsFromIterator(properties, Collections.emptyIterator()).write();
 
         // Then:
