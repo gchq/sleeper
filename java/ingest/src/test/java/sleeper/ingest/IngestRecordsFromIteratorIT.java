@@ -59,6 +59,10 @@ public class IngestRecordsFromIteratorIT extends IngestRecordsITBase {
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
                 .min(1L).max(3L)
-                .quantile(0.4, 1L).quantile(0.6, 3L).verify();
+                .quantile(0.0, 1L).quantile(0.1, 1L)
+                .quantile(0.2, 1L).quantile(0.3, 1L)
+                .quantile(0.4, 1L).quantile(0.5, 3L)
+                .quantile(0.6, 3L).quantile(0.7, 3L)
+                .quantile(0.8, 3L).quantile(0.9, 3L).verify();
     }
 }
