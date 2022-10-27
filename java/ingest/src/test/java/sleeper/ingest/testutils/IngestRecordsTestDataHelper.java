@@ -49,7 +49,6 @@ public class IngestRecordsTestDataHelper {
     private IngestRecordsTestDataHelper() {
     }
 
-    private static final double[] QUANTILE_RANGE = new double[]{0.0D, 0.1D, 0.2D, 0.3D, 0.4D, 0.5D, 0.6D, 0.7D, 0.8D, 0.9D};
 
     public static IngestProperties.Builder defaultPropertiesBuilder(
             StateStore stateStore, Schema sleeperSchema, String tempDirectory) {
@@ -276,45 +275,17 @@ public class IngestRecordsTestDataHelper {
         return readRecords;
     }
 
-    public static <T> void assertSketchUsingDirectValuesAllQuantiles(Schema schema, String keyToCompare, String filename,
-                                                                     T expectedMin, T expectedMax, List<T> expectedQuantiles) throws IOException {
-        Sketches readSketches = getSketches(schema, filename);
-        assertThat(readSketches.getQuantilesSketch(keyToCompare).getMinValue()).isEqualTo(expectedMin);
-        assertThat(readSketches.getQuantilesSketch(keyToCompare).getMaxValue()).isEqualTo(expectedMax);
-        Object[] quantiles = readSketches.getQuantilesSketch(keyToCompare).getQuantiles(QUANTILE_RANGE);
-        for (int i = 0; i < 10; i++) {
-            assertThat(quantiles[i]).isEqualTo(expectedQuantiles.get(i));
-        }
-    }
-
     public static Sketches getSketches(Schema schema, String filename) throws IOException {
         String sketchFile = filename.replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
         return new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
     }
 
-    public static <T> List<T> calculateQuantiles(T key) {
-        return Collections.nCopies(10, key);
-    }
-
-    public static <T> List<T> calculateQuantiles(List<T> keys) {
-        if (keys.isEmpty()) {
-            return Collections.emptyList();
-        }
-        List<T> quantiles = new ArrayList<>();
-        if (keys.size() > 10) {
-            int offset = keys.size() / 10;
-            for (int i = 0; i < keys.size(); i += offset) {
-                quantiles.add(keys.get(i));
-            }
-        } else {
-            int divisions = 10 / keys.size();
-            if (keys.size() % 2 != 0) {
-                quantiles.add(keys.get(0));
-            }
-            for (T key : keys) {
-                quantiles.addAll(Collections.nCopies(divisions, key));
-            }
+    public static List<Object> calculateAllQuantiles(List<?> keys) {
+        List<Object> quantiles = new ArrayList<>();
+        int offset = keys.size() / 10;
+        for (int i = 0; i < keys.size(); i += offset) {
+            quantiles.add(keys.get(i));
         }
         return quantiles;
     }

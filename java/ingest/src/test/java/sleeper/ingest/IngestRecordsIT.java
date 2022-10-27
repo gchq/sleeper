@@ -17,18 +17,17 @@ package sleeper.ingest;
 
 import org.junit.Test;
 import sleeper.core.record.Record;
+import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.assertSketchUsingDirectValuesAllQuantiles;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.calculateQuantiles;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 
 public class IngestRecordsIT extends IngestRecordsITBase {
@@ -65,8 +64,9 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         //  - Local files should have been deleted
         assertThat(Files.walk(Paths.get(folderName)).filter(Files::isRegularFile).count()).isZero();
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        assertSketchUsingDirectValuesAllQuantiles(schema, "key", fileInfo.getFilename(),
-                1L, 3L, calculateQuantiles(Arrays.asList(1L, 3L)));
+        AssertQuantiles.forSketch(getSketches(schema, fileInfo.getFilename()).getQuantilesSketch("key"))
+                .min(1L).max(3L)
+                .quantile(0.4, 1L).quantile(0.6, 3L).verify();
     }
 
     @Test
