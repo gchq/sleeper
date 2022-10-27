@@ -16,14 +16,10 @@
 package sleeper.ingest;
 
 import org.junit.Test;
-import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.statestore.FileInfo;
-import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -37,7 +33,7 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFr
 
 public class IngestRecordsIT extends IngestRecordsITBase {
     @Test
-    public void shouldWriteRecordsCorrectly() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+    public void shouldWriteRecordsCorrectly() throws Exception {
         // Given
         DynamoDBStateStore stateStore = getStateStore(schema);
 
@@ -74,7 +70,7 @@ public class IngestRecordsIT extends IngestRecordsITBase {
     }
 
     @Test
-    public void shouldWriteNoRecordsSuccessfully() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+    public void shouldWriteNoRecordsSuccessfully() throws Exception {
         // Given
         DynamoDBStateStore stateStore = getStateStore(schema);
 
