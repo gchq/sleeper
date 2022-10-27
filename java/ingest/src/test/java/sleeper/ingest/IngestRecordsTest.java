@@ -54,7 +54,6 @@ import java.util.stream.Collectors;
 
 import static com.facebook.collections.ByteArray.wrap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.calculateAllQuantiles;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createLeafPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createRootPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getLotsOfRecords;
@@ -566,16 +565,20 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
                 .collect(Collectors.toList());
         assertThat(readRecords2).isEqualTo(expectedRecords2);
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        List<Long> keysInLeftFile = records.stream().map(r -> ((Long) r.get("key")))
-                .filter(r -> r < 2L).sorted().collect(Collectors.toList());
-        List<Long> keysInRightFile = records.stream().map(r -> ((Long) r.get("key")))
-                .filter(r -> r >= 2L).sorted().collect(Collectors.toList());
         AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
                 .min(minLeftFile).max(maxLeftFile)
-                .quantiles(calculateAllQuantiles(keysInLeftFile)).verify();
+                .quantile(0.0, -198L).quantile(0.1, -178L)
+                .quantile(0.2, -158L).quantile(0.3, -138L)
+                .quantile(0.4, -118L).quantile(0.5, -98L)
+                .quantile(0.6, -78L).quantile(0.7, -58L)
+                .quantile(0.8, -38L).quantile(0.9, -18L).verify();
         AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(1).getFilename()).getQuantilesSketch("key"))
                 .min(minRightFile).max(maxRightFile)
-                .quantiles(calculateAllQuantiles(keysInRightFile)).verify();
+                .quantile(0.0, 2L).quantile(0.1, 22L)
+                .quantile(0.2, 42L).quantile(0.3, 62L)
+                .quantile(0.4, 82L).quantile(0.5, 102L)
+                .quantile(0.6, 122L).quantile(0.7, 142L)
+                .quantile(0.8, 162L).quantile(0.9, 182L).verify();
     }
 
     @Test
@@ -720,10 +723,13 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
             i++;
         }
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        List<Long> sortedKeyList = sortedRecords.stream().map(r -> (Long) r.get("key")).collect(Collectors.toList());
         AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
                 .min(1L).max(10L)
-                .quantiles(calculateAllQuantiles(sortedKeyList)).verify();
+                .quantile(0.0, 1L).quantile(0.1, 3L)
+                .quantile(0.2, 5L).quantile(0.3, 5L)
+                .quantile(0.4, 5L).quantile(0.5, 5L)
+                .quantile(0.6, 5L).quantile(0.7, 5L)
+                .quantile(0.8, 7L).quantile(0.9, 9L).verify();
     }
 
     @Test

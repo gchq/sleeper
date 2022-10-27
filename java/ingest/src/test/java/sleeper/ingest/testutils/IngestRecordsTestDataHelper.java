@@ -281,13 +281,4 @@ public class IngestRecordsTestDataHelper {
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
         return new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
     }
-
-    public static List<Object> calculateAllQuantiles(List<?> keys) {
-        List<Object> quantiles = new ArrayList<>();
-        int offset = keys.size() / 10;
-        for (int i = 0; i < keys.size(); i += offset) {
-            quantiles.add(keys.get(i));
-        }
-        return quantiles;
-    }
 }
