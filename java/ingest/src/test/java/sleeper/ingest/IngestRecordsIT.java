@@ -62,7 +62,7 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         assertThat(readRecords.get(0)).isEqualTo(getRecords().get(0));
         assertThat(readRecords.get(1)).isEqualTo(getRecords().get(1));
         //  - Local files should have been deleted
-        assertThat(Files.walk(Paths.get(folderName)).filter(Files::isRegularFile).count()).isZero();
+        assertThat(Files.walk(Paths.get(inputFolderName)).filter(Files::isRegularFile).count()).isZero();
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         AssertQuantiles.forSketch(getSketches(schema, fileInfo.getFilename()).getQuantilesSketch("key"))
                 .min(1L).max(3L)

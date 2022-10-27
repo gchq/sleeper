@@ -51,10 +51,10 @@ public class IngestRecordsTestDataHelper {
 
 
     public static IngestProperties.Builder defaultPropertiesBuilder(
-            StateStore stateStore, Schema sleeperSchema, String tempDirectory) {
+            StateStore stateStore, Schema sleeperSchema, String ingestLocalWorkingDirectory, String sketchDirectory) {
         return IngestProperties.builder()
                 .objectFactory(ObjectFactory.noUserJars())
-                .localDir(tempDirectory)
+                .localDir(ingestLocalWorkingDirectory)
                 .maxRecordsToWriteLocally(10L)
                 .maxInMemoryBatchSize(1000L)
                 .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
@@ -62,7 +62,8 @@ public class IngestRecordsTestDataHelper {
                 .compressionCodec("zstd")
                 .stateStore(stateStore)
                 .schema(sleeperSchema)
-                .filePathPrefix(tempDirectory)
+                .filePathPrefix(sketchDirectory)
+                .bucketName(sketchDirectory)
                 .ingestPartitionRefreshFrequencyInSecond(120);
     }
 
