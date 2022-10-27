@@ -122,9 +122,19 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         assertThat(readRecords2.get(0)).isEqualTo(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
-                .min(1L).max(1L).quantile(0.4, 1L).quantile(0.6, 1L).verify();
+                .min(1L).max(1L)
+                .quantile(0.0, 1L).quantile(0.1, 1L)
+                .quantile(0.2, 1L).quantile(0.3, 1L)
+                .quantile(0.4, 1L).quantile(0.5, 1L)
+                .quantile(0.6, 1L).quantile(0.7, 1L)
+                .quantile(0.8, 1L).quantile(0.9, 1L).verify();
         AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(1).getFilename()).getQuantilesSketch("key"))
-                .min(3L).max(3L).quantile(0.4, 3L).quantile(0.6, 3L).verify();
+                .min(3L).max(3L)
+                .quantile(0.0, 3L).quantile(0.1, 3L)
+                .quantile(0.2, 3L).quantile(0.3, 3L)
+                .quantile(0.4, 3L).quantile(0.5, 3L)
+                .quantile(0.6, 3L).quantile(0.7, 3L)
+                .quantile(0.8, 3L).quantile(0.9, 3L).verify();
     }
 
     @Test
@@ -186,10 +196,18 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         AssertQuantiles.forSketch(getSketches(schema, activeFilesSortedByNumberOfLines.get(1).getFilename()).getQuantilesSketch("key"))
                 .min(wrap(new byte[]{1, 1})).max(wrap(new byte[]{2, 2}))
-                .quantile(0.4, wrap(new byte[]{1, 1})).quantile(0.6, wrap(new byte[]{2, 2})).verify();
+                .quantile(0.0, wrap(new byte[]{1, 1})).quantile(0.1, wrap(new byte[]{1, 1}))
+                .quantile(0.2, wrap(new byte[]{1, 1})).quantile(0.3, wrap(new byte[]{1, 1}))
+                .quantile(0.4, wrap(new byte[]{1, 1})).quantile(0.5, wrap(new byte[]{2, 2}))
+                .quantile(0.6, wrap(new byte[]{2, 2})).quantile(0.7, wrap(new byte[]{2, 2}))
+                .quantile(0.8, wrap(new byte[]{2, 2})).quantile(0.9, wrap(new byte[]{2, 2})).verify();
         AssertQuantiles.forSketch(getSketches(schema, activeFilesSortedByNumberOfLines.get(0).getFilename()).getQuantilesSketch("key"))
                 .min(wrap(new byte[]{64, 65})).max(wrap(new byte[]{64, 65}))
-                .quantile(0.4, wrap(new byte[]{64, 65})).quantile(0.6, wrap(new byte[]{64, 65})).verify();
+                .quantile(0.0, wrap(new byte[]{64, 65})).quantile(0.1, wrap(new byte[]{64, 65}))
+                .quantile(0.2, wrap(new byte[]{64, 65})).quantile(0.3, wrap(new byte[]{64, 65}))
+                .quantile(0.4, wrap(new byte[]{64, 65})).quantile(0.5, wrap(new byte[]{64, 65}))
+                .quantile(0.6, wrap(new byte[]{64, 65})).quantile(0.7, wrap(new byte[]{64, 65}))
+                .quantile(0.8, wrap(new byte[]{64, 65})).quantile(0.9, wrap(new byte[]{64, 65})).verify();
     }
 
     @Test
@@ -257,16 +275,32 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         AssertQuantiles.forSketch(getSketches(schema, activeFilesSortedByNumberOfLines.get(0).getFilename()).getQuantilesSketch("key1"))
                 .min(wrap(new byte[]{1, 1})).max(wrap(new byte[]{5}))
-                .quantile(0.4, wrap(new byte[]{1, 1})).quantile(0.6, wrap(new byte[]{5})).verify();
+                .quantile(0.0, wrap(new byte[]{1, 1})).quantile(0.1, wrap(new byte[]{1, 1}))
+                .quantile(0.2, wrap(new byte[]{1, 1})).quantile(0.3, wrap(new byte[]{1, 1}))
+                .quantile(0.4, wrap(new byte[]{1, 1})).quantile(0.5, wrap(new byte[]{5}))
+                .quantile(0.6, wrap(new byte[]{5})).quantile(0.7, wrap(new byte[]{5}))
+                .quantile(0.8, wrap(new byte[]{5})).quantile(0.9, wrap(new byte[]{5})).verify();
         AssertQuantiles.forSketch(getSketches(schema, activeFilesSortedByNumberOfLines.get(0).getFilename()).getQuantilesSketch("key2"))
                 .min(wrap(new byte[]{2, 3})).max(wrap(new byte[]{99}))
-                .quantile(0.4, wrap(new byte[]{2, 3})).quantile(0.6, wrap(new byte[]{99})).verify();
+                .quantile(0.0, wrap(new byte[]{2, 3})).quantile(0.1, wrap(new byte[]{2, 3}))
+                .quantile(0.2, wrap(new byte[]{2, 3})).quantile(0.3, wrap(new byte[]{2, 3}))
+                .quantile(0.4, wrap(new byte[]{2, 3})).quantile(0.5, wrap(new byte[]{99}))
+                .quantile(0.6, wrap(new byte[]{99})).quantile(0.7, wrap(new byte[]{99}))
+                .quantile(0.8, wrap(new byte[]{99})).quantile(0.9, wrap(new byte[]{99})).verify();
         AssertQuantiles.forSketch(getSketches(schema, activeFilesSortedByNumberOfLines.get(1).getFilename()).getQuantilesSketch("key1"))
                 .min(wrap(new byte[]{11, 2})).max(wrap(new byte[]{64, 65}))
-                .quantile(0.2, wrap(new byte[]{11, 2})).quantile(0.5, wrap(new byte[]{64, 65})).quantile(0.8, wrap(new byte[]{64, 65})).verify();
+                .quantile(0.0, wrap(new byte[]{11, 2})).quantile(0.1, wrap(new byte[]{11, 2}))
+                .quantile(0.2, wrap(new byte[]{11, 2})).quantile(0.3, wrap(new byte[]{11, 2}))
+                .quantile(0.4, wrap(new byte[]{64, 65})).quantile(0.5, wrap(new byte[]{64, 65}))
+                .quantile(0.6, wrap(new byte[]{64, 65})).quantile(0.7, wrap(new byte[]{64, 65}))
+                .quantile(0.8, wrap(new byte[]{64, 65})).quantile(0.9, wrap(new byte[]{64, 65})).verify();
         AssertQuantiles.forSketch(getSketches(schema, activeFilesSortedByNumberOfLines.get(1).getFilename()).getQuantilesSketch("key2"))
                 .min(wrap(new byte[]{2, 2})).max(wrap(new byte[]{67, 68}))
-                .quantile(0.2, wrap(new byte[]{2, 2})).quantile(0.5, wrap(new byte[]{67, 68})).quantile(0.8, wrap(new byte[]{67, 68})).verify();
+                .quantile(0.0, wrap(new byte[]{2, 2})).quantile(0.1, wrap(new byte[]{2, 2}))
+                .quantile(0.2, wrap(new byte[]{2, 2})).quantile(0.3, wrap(new byte[]{2, 2}))
+                .quantile(0.4, wrap(new byte[]{67, 68})).quantile(0.5, wrap(new byte[]{67, 68}))
+                .quantile(0.6, wrap(new byte[]{67, 68})).quantile(0.7, wrap(new byte[]{67, 68}))
+                .quantile(0.8, wrap(new byte[]{67, 68})).quantile(0.9, wrap(new byte[]{67, 68})).verify();
     }
 
     @Test
@@ -360,16 +394,32 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         AssertQuantiles.forSketch(getSketches(schema, fileInfo1.getFilename()).getQuantilesSketch("key1"))
                 .min(0).max(100)
-                .quantile(0.4, 0).quantile(0.6, 100).verify();
+                .quantile(0.0, 0).quantile(0.1, 0)
+                .quantile(0.2, 0).quantile(0.3, 0)
+                .quantile(0.4, 0).quantile(0.5, 100)
+                .quantile(0.6, 100).quantile(0.7, 100)
+                .quantile(0.8, 100).quantile(0.9, 100).verify();
         AssertQuantiles.forSketch(getSketches(schema, fileInfo1.getFilename()).getQuantilesSketch("key2"))
                 .min(1L).max(1L)
-                .quantile(0.4, 1L).quantile(0.6, 1L).verify();
+                .quantile(0.0, 1L).quantile(0.1, 1L)
+                .quantile(0.2, 1L).quantile(0.3, 1L)
+                .quantile(0.4, 1L).quantile(0.5, 1L)
+                .quantile(0.6, 1L).quantile(0.7, 1L)
+                .quantile(0.8, 1L).quantile(0.9, 1L).verify();
         AssertQuantiles.forSketch(getSketches(schema, fileInfo2.getFilename()).getQuantilesSketch("key1"))
                 .min(0).max(100)
-                .quantile(0.4, 0).quantile(0.6, 100).verify();
+                .quantile(0.0, 0).quantile(0.1, 0)
+                .quantile(0.2, 0).quantile(0.3, 0)
+                .quantile(0.4, 0).quantile(0.5, 100)
+                .quantile(0.6, 100).quantile(0.7, 100)
+                .quantile(0.8, 100).quantile(0.9, 100).verify();
         AssertQuantiles.forSketch(getSketches(schema, fileInfo2.getFilename()).getQuantilesSketch("key2"))
                 .min(20L).max(50L)
-                .quantile(0.4, 20L).quantile(0.6, 50L).verify();
+                .quantile(0.0, 20L).quantile(0.1, 20L)
+                .quantile(0.2, 20L).quantile(0.3, 20L)
+                .quantile(0.4, 20L).quantile(0.5, 50L)
+                .quantile(0.6, 50L).quantile(0.7, 50L)
+                .quantile(0.8, 50L).quantile(0.9, 50L).verify();
     }
 
     @Test
@@ -416,7 +466,11 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         AssertQuantiles.forSketch(getSketches(schema, fileInfo.getFilename()).getQuantilesSketch("key"))
                 .min(0L).max(1L)
-                .quantile(0.4, 0L).quantile(0.6, 1L).verify();
+                .quantile(0.0, 0L).quantile(0.1, 0L)
+                .quantile(0.2, 0L).quantile(0.3, 0L)
+                .quantile(0.4, 0L).quantile(0.5, 1L)
+                .quantile(0.6, 1L).quantile(0.7, 1L)
+                .quantile(0.8, 1L).quantile(0.9, 1L).verify();
     }
 
     @Test
@@ -456,7 +510,11 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         AssertQuantiles.forSketch(getSketches(schema, fileInfo.getFilename()).getQuantilesSketch("key"))
                 .min(1L).max(3L)
-                .quantile(0.4, 1L).quantile(0.6, 3L).verify();
+                .quantile(0.0, 1L).quantile(0.1, 1L)
+                .quantile(0.2, 1L).quantile(0.3, 1L)
+                .quantile(0.4, 1L).quantile(0.5, 3L)
+                .quantile(0.6, 3L).quantile(0.7, 3L)
+                .quantile(0.8, 3L).quantile(0.9, 3L).verify();
     }
 
     @Test
@@ -781,6 +839,10 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
                 .min(wrap(new byte[]{1, 1})).max(wrap(new byte[]{11, 2}))
-                .quantile(0.4, wrap(new byte[]{1, 1})).quantile(0.6, wrap(new byte[]{11, 2})).verify();
+                .quantile(0.0, wrap(new byte[]{1, 1})).quantile(0.1, wrap(new byte[]{1, 1}))
+                .quantile(0.2, wrap(new byte[]{1, 1})).quantile(0.3, wrap(new byte[]{1, 1}))
+                .quantile(0.4, wrap(new byte[]{1, 1})).quantile(0.5, wrap(new byte[]{11, 2}))
+                .quantile(0.6, wrap(new byte[]{11, 2})).quantile(0.7, wrap(new byte[]{11, 2}))
+                .quantile(0.8, wrap(new byte[]{11, 2})).quantile(0.9, wrap(new byte[]{11, 2})).verify();
     }
 }
