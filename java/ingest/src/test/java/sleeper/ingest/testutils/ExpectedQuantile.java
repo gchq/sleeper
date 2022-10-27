@@ -16,39 +16,20 @@
 
 package sleeper.ingest.testutils;
 
-import java.util.Objects;
+class ExpectedQuantile {
+    private final double rank;
+    private final Object value;
 
-public class ExpectedQuantile<T> {
-    private final double index;
-    private final T value;
-
-    private ExpectedQuantile(double index, T value) {
-        this.index = index;
+    ExpectedQuantile(double rank, Object value) {
+        this.rank = rank;
         this.value = value;
     }
 
-    public static <T> ExpectedQuantile<T> with(double index, T value) {
-        return new ExpectedQuantile<T>(index, value);
+    double getRank() {
+        return rank;
     }
 
-    public double getIndex() {
-        return index;
-    }
-
-    public T getValue() {
+    Object getValue() {
         return value;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ExpectedQuantile<?> expectedQuantile = (ExpectedQuantile<?>) o;
-        return index == expectedQuantile.index && Objects.equals(value, expectedQuantile.value);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(index, value);
     }
 }

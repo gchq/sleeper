@@ -39,7 +39,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
-import sleeper.ingest.testutils.ExpectedQuantile;
+import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
@@ -62,7 +62,6 @@ import java.util.stream.Collectors;
 import static com.facebook.collections.ByteArray.wrap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.assertSketchUsingDirectValuesAllQuantiles;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.assertSketchUsingDirectValuesSpecificQuantiles;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.calculateQuantiles;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createLeafPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createRootPartition;
@@ -74,6 +73,7 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsByt
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsForAggregationIteratorTest;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsInFirstPartitionOnly;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsOscillatingBetween2Partitions;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketch;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getUnsortedRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
@@ -131,12 +131,10 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         assertThat(readRecords2).hasSize(1);
         assertThat(readRecords2.get(0)).isEqualTo(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        assertSketchUsingDirectValuesSpecificQuantiles(schema, "key", activeFiles.get(0).getFilename(),
-                1L, 1L,
-                Arrays.asList(ExpectedQuantile.with(0.4D, 1L), ExpectedQuantile.with(0.6D, 1L)));
-        assertSketchUsingDirectValuesSpecificQuantiles(schema, "key", activeFiles.get(1).getFilename(),
-                3L, 3L,
-                Arrays.asList(ExpectedQuantile.with(0.4D, 3L), ExpectedQuantile.with(0.6D, 3L)));
+        AssertQuantiles.forSketch(getSketch(schema, activeFiles.get(0).getFilename()), "key")
+                .min(1L).max(1L).quantile(0.4, 1L).quantile(0.6, 1L).verify();
+        AssertQuantiles.forSketch(getSketch(schema, activeFiles.get(1).getFilename()), "key")
+                .min(3L).max(3L).quantile(0.4, 3L).quantile(0.6, 3L).verify();
     }
 
     @Test
