@@ -43,11 +43,13 @@ public class IngestRecordsTestBase {
 
     protected final Field field = new Field("key", new LongType());
     protected final Schema schema = schemaWithRowKeys(field);
-    protected String folderName;
+    protected String inputFolderName;
+    protected String sketchFolderName;
 
     @Before
     public void setUpBase() throws Exception {
-        folderName = folder.newFolder().getAbsolutePath();
+        inputFolderName = folder.newFolder().getAbsolutePath();
+        sketchFolderName = folder.newFolder().getAbsolutePath();
     }
 
     protected static StateStore getStateStore(Schema schema) throws StateStoreException {
@@ -61,6 +63,6 @@ public class IngestRecordsTestBase {
     }
 
     protected IngestProperties.Builder defaultPropertiesBuilder(StateStore stateStore, Schema sleeperSchema) {
-        return IngestRecordsTestDataHelper.defaultPropertiesBuilder(stateStore, sleeperSchema, folderName);
+        return IngestRecordsTestDataHelper.defaultPropertiesBuilder(stateStore, sleeperSchema, inputFolderName, sketchFolderName);
     }
 }

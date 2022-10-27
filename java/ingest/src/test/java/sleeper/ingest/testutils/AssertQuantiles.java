@@ -24,7 +24,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class AssertQuantiles {
-
+    private static final double[] QUANTILE_RANGE = new double[]{0.0D, 0.1D, 0.2D, 0.3D, 0.4D, 0.5D, 0.6D, 0.7D, 0.8D, 0.9D};
     private final ItemsSketch<?> sketch;
     private final Object minValue;
     private final Object maxValue;
@@ -86,6 +86,14 @@ public class AssertQuantiles {
 
         public Builder quantile(double quantile, Object value) {
             quantiles.add(new ExpectedQuantile(quantile, value));
+            return this;
+        }
+
+        public Builder quantiles(List<Object> values) {
+            int index = 0;
+            for (double q : QUANTILE_RANGE) {
+                this.quantile(q, values.get(index++));
+            }
             return this;
         }
 
