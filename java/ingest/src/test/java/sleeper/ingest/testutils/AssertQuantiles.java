@@ -16,7 +16,6 @@
 package sleeper.ingest.testutils;
 
 import org.apache.datasketches.quantiles.ItemsSketch;
-import sleeper.sketches.Sketches;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,10 +35,6 @@ public class AssertQuantiles {
         minValue = builder.minValue;
         maxValue = builder.maxValue;
         quantiles = builder.quantiles;
-    }
-
-    public static Builder forSketch(Sketches sketches, String key) {
-        return forSketch(sketches.getQuantilesSketch(key));
     }
 
     public static Builder forSketch(ItemsSketch<?> sketch) {

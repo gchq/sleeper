@@ -126,9 +126,9 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         assertThat(readRecords2).hasSize(1);
         assertThat(readRecords2.get(0)).isEqualTo(getRecords().get(1));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()), "key")
+        AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
                 .min(1L).max(1L).quantile(0.4, 1L).quantile(0.6, 1L).verify();
-        AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(1).getFilename()), "key")
+        AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(1).getFilename()).getQuantilesSketch("key"))
                 .min(3L).max(3L).quantile(0.4, 3L).quantile(0.6, 3L).verify();
     }
 
