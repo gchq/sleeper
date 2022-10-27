@@ -21,6 +21,7 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
@@ -29,6 +30,8 @@ import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
+import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
@@ -48,6 +51,12 @@ public class IngestRecordsITBase {
 
     protected final Field field = new Field("key", new LongType());
     protected final Schema schema = schemaWithRowKeys(field);
+    protected String folderName;
+
+    @Before
+    public void setUpBase() throws Exception {
+        folderName = folder.newFolder().getAbsolutePath();
+    }
 
     protected static DynamoDBStateStore getStateStore(Schema schema)
             throws StateStoreException {
@@ -63,5 +72,9 @@ public class IngestRecordsITBase {
         DynamoDBStateStore stateStore = dynamoDBStateStoreCreator.create();
         stateStore.initialise();
         return stateStore;
+    }
+
+    protected IngestProperties.Builder defaultPropertiesBuilder(StateStore stateStore, Schema sleeperSchema) {
+        return IngestRecordsTestDataHelper.defaultPropertiesBuilder(stateStore, sleeperSchema, folderName);
     }
 }

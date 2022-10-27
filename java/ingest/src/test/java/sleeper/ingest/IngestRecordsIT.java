@@ -32,7 +32,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.assertSketchUsingDirectValuesAllQuantiles;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.calculateQuantiles;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultPropertiesBuilder;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 
@@ -41,10 +40,9 @@ public class IngestRecordsIT extends IngestRecordsITBase {
     public void shouldWriteRecordsCorrectly() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
         // Given
         DynamoDBStateStore stateStore = getStateStore(schema);
-        String localDir = folder.newFolder().getAbsolutePath();
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, localDir, folder.newFolder().getAbsolutePath()).build();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
         IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         for (Record record : getRecords()) {
@@ -69,7 +67,7 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         assertThat(readRecords.get(0)).isEqualTo(getRecords().get(0));
         assertThat(readRecords.get(1)).isEqualTo(getRecords().get(1));
         //  - Local files should have been deleted
-        assertThat(Files.walk(Paths.get(localDir)).filter(Files::isRegularFile).count()).isZero();
+        assertThat(Files.walk(Paths.get(folderName)).filter(Files::isRegularFile).count()).isZero();
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         assertSketchUsingDirectValuesAllQuantiles(schema, "key", fileInfo.getFilename(),
                 1L, 3L, calculateQuantiles(Arrays.asList(1L, 3L)));
@@ -81,7 +79,7 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
         IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         long numWritten = ingestRecords.close();

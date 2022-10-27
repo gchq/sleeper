@@ -24,9 +24,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.assertj.core.util.Streams;
 import org.junit.Test;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.MergingIterator;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.iterator.impl.AdditionIterator;
@@ -46,10 +44,8 @@ import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.util.ArrayList;
@@ -65,7 +61,6 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.assertSketchU
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.calculateQuantiles;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createLeafPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createRootPartition;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultPropertiesBuilder;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getLotsOfRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords2DimByteArrayKey;
@@ -80,7 +75,7 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRow
 
 public class IngestRecordsTest extends IngestRecordsTestBase {
     @Test
-    public void shouldWriteRecordsSplitByPartitionLongKey() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+    public void shouldWriteRecordsSplitByPartitionLongKey() throws Exception {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
@@ -96,7 +91,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
         IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         for (Record record : getRecords()) {
@@ -138,7 +133,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteRecordsSplitByPartitionByteArrayKey() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+    public void shouldWriteRecordsSplitByPartitionByteArrayKey() throws Exception {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = schemaWithRowKeys(field);
@@ -156,7 +151,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
         IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         for (Record record : getRecordsByteArrayKey()) {
@@ -203,7 +198,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+    public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey() throws Exception {
         // Given
         Field field1 = new Field("key1", new ByteArrayType());
         Field field2 = new Field("key2", new ByteArrayType());
@@ -225,7 +220,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
         IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         for (Record record : getRecords2DimByteArrayKey()) {
@@ -280,7 +275,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteRecordsSplitByPartition2DimensionalDifferentTypeKeysWhenSplitOnDim1() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+    public void shouldWriteRecordsSplitByPartition2DimensionalDifferentTypeKeysWhenSplitOnDim1() throws Exception {
         // Given
         Field field1 = new Field("key1", new IntType());
         Field field2 = new Field("key2", new LongType());
@@ -330,7 +325,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath())
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema)
                 .compressionCodec("snappy")
                 .build();
         IngestRecords ingestRecords = new IngestRecords(properties);
@@ -379,7 +374,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+    public void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition() throws Exception {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
@@ -395,7 +390,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
         IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         for (Record record : getRecordsInFirstPartitionOnly()) {
@@ -425,14 +420,14 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteDuplicateRecords() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+    public void shouldWriteDuplicateRecords() throws Exception {
         // Given
         StateStore stateStore = getStateStore(schema);
 
         // When
         List<Record> records = new ArrayList<>(getRecords());
         records.addAll(getRecords());
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
         IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         for (Record record : records) {
@@ -464,7 +459,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+    public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
@@ -481,7 +476,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         List<Record> records = getLotsOfRecords();
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath())
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema)
                 .maxRecordsToWriteLocally(1000L)
                 .maxInMemoryBatchSize(5L).build();
         IngestRecords ingestRecords = new IngestRecords(properties);
@@ -580,7 +575,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+    public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
@@ -597,7 +592,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         List<Record> records = getLotsOfRecords();
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath())
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema)
                 .maxRecordsToWriteLocally(10L)
                 .maxInMemoryBatchSize(5L).build();
         IngestRecords ingestRecords = new IngestRecords(properties);
@@ -686,12 +681,12 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldSortRecords() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+    public void shouldSortRecords() throws Exception {
         // Given
         StateStore stateStore = getStateStore(schema);
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
         IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         for (Record record : getUnsortedRecords()) {
@@ -727,7 +722,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldApplyIterator() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+    public void shouldApplyIterator() throws Exception {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new ByteArrayType()))
@@ -737,7 +732,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         StateStore stateStore = getStateStore(schema);
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath())
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema)
                 .iteratorClassName(AdditionIterator.class.getName()).build();
         IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
