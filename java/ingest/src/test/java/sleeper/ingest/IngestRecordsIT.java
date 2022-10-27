@@ -16,35 +16,29 @@
 package sleeper.ingest;
 
 import org.junit.Test;
-import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.statestore.FileInfo;
-import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.assertSketchUsingDirectValues;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.assertSketchUsingDirectValuesAllQuantiles;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.calculateQuantiles;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultPropertiesBuilder;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 
 public class IngestRecordsIT extends IngestRecordsITBase {
     @Test
-    public void shouldWriteRecordsCorrectly() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+    public void shouldWriteRecordsCorrectly() throws Exception {
         // Given
         DynamoDBStateStore stateStore = getStateStore(schema);
-        String localDir = folder.newFolder().getAbsolutePath();
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, localDir, folder.newFolder().getAbsolutePath()).build();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
         IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         for (Record record : getRecords()) {
@@ -69,19 +63,19 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         assertThat(readRecords.get(0)).isEqualTo(getRecords().get(0));
         assertThat(readRecords.get(1)).isEqualTo(getRecords().get(1));
         //  - Local files should have been deleted
-        assertThat(Files.walk(Paths.get(localDir)).filter(Files::isRegularFile).count()).isZero();
+        assertThat(Files.walk(Paths.get(folderName)).filter(Files::isRegularFile).count()).isZero();
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
-        assertSketchUsingDirectValues(schema, "key", fileInfo.getFilename(),
+        assertSketchUsingDirectValuesAllQuantiles(schema, "key", fileInfo.getFilename(),
                 1L, 3L, calculateQuantiles(Arrays.asList(1L, 3L)));
     }
 
     @Test
-    public void shouldWriteNoRecordsSuccessfully() throws StateStoreException, IOException, InterruptedException, IteratorException, ObjectFactoryException {
+    public void shouldWriteNoRecordsSuccessfully() throws Exception {
         // Given
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
+        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
         IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         long numWritten = ingestRecords.close();

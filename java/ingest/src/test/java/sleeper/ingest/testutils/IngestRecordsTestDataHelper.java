@@ -21,8 +21,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Region;
 import sleeper.core.record.CloneRecord;
@@ -53,13 +51,11 @@ public class IngestRecordsTestDataHelper {
 
     private static final double[] QUANTILE_RANGE = new double[]{0.0D, 0.1D, 0.2D, 0.3D, 0.4D, 0.5D, 0.6D, 0.7D, 0.8D, 0.9D};
 
-    public static IngestProperties.Builder defaultPropertiesBuilder(StateStore stateStore,
-                                                                    Schema sleeperSchema,
-                                                                    String ingestLocalWorkingDirectory,
-                                                                    String bucketName) throws ObjectFactoryException {
+    public static IngestProperties.Builder defaultPropertiesBuilder(
+            StateStore stateStore, Schema sleeperSchema, String tempDirectory) {
         return IngestProperties.builder()
-                .objectFactory(new ObjectFactory(new InstanceProperties(), null, ""))
-                .localDir(ingestLocalWorkingDirectory)
+                .objectFactory(ObjectFactory.noUserJars())
+                .localDir(tempDirectory)
                 .maxRecordsToWriteLocally(10L)
                 .maxInMemoryBatchSize(1000L)
                 .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
@@ -67,7 +63,7 @@ public class IngestRecordsTestDataHelper {
                 .compressionCodec("zstd")
                 .stateStore(stateStore)
                 .schema(sleeperSchema)
-                .bucketName(bucketName)
+                .filePathPrefix(tempDirectory)
                 .ingestPartitionRefreshFrequencyInSecond(120);
     }
 
@@ -280,17 +276,21 @@ public class IngestRecordsTestDataHelper {
         return readRecords;
     }
 
-    public static <T> void assertSketchUsingDirectValues(Schema schema, String keyToCompare, String filename,
-                                                         T expectedMin, T expectedMax, List<T> expectedQuantiles) throws IOException {
-        String sketchFile = filename.replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
+    public static <T> void assertSketchUsingDirectValuesAllQuantiles(Schema schema, String keyToCompare, String filename,
+                                                                     T expectedMin, T expectedMax, List<T> expectedQuantiles) throws IOException {
+        Sketches readSketches = getSketches(schema, filename);
         assertThat(readSketches.getQuantilesSketch(keyToCompare).getMinValue()).isEqualTo(expectedMin);
         assertThat(readSketches.getQuantilesSketch(keyToCompare).getMaxValue()).isEqualTo(expectedMax);
         Object[] quantiles = readSketches.getQuantilesSketch(keyToCompare).getQuantiles(QUANTILE_RANGE);
         for (int i = 0; i < 10; i++) {
             assertThat(quantiles[i]).isEqualTo(expectedQuantiles.get(i));
         }
+    }
+
+    public static Sketches getSketches(Schema schema, String filename) throws IOException {
+        String sketchFile = filename.replace(".parquet", ".sketches");
+        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
+        return new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
     }
 
     public static <T> List<T> calculateQuantiles(T key) {
