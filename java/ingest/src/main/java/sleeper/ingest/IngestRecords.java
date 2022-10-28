@@ -26,6 +26,7 @@ import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Writes a {@link Record} objects to the storage system, partitioned and sorted.
@@ -42,6 +43,10 @@ public class IngestRecords {
             properties = properties.toBuilder().hadoopConfiguration(defaultHadoopConfiguration()).build();
         }
         this.ingestCoordinator = StandardIngestCoordinator.directWriteBackedByArrayList(properties);
+    }
+
+    public IngestRecords(IngestCoordinator<Record> ingestCoordinator) {
+        this.ingestCoordinator = ingestCoordinator;
     }
 
     private static Configuration defaultHadoopConfiguration() {
@@ -63,5 +68,9 @@ public class IngestRecords {
         return ingestCoordinator.closeReturningFileInfoList().stream()
                 .mapToLong(FileInfo::getNumberOfRecords)
                 .sum();
+    }
+
+    public List<FileInfo> closeReturningFileInfoList() throws IOException, IteratorException, StateStoreException {
+        return ingestCoordinator.closeReturningFileInfoList();
     }
 }
