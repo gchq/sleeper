@@ -13,18 +13,20 @@
 # limitations under the License.
 
 fail_test() {
-  echo "$(find_test_source):${LINENO}" "$@"
+  echo "$(find_test_source_ref)" "$@"
   ((TEST_FAILURES++))
 }
 
-find_test_source() {
+find_test_source_ref() {
   local NUM_SOURCES=${#BASH_SOURCE[@]}
   local LAST_SOURCE=${BASH_SOURCE[$((NUM_SOURCES-1))]}
+  local SOURCE_INDEX
   if [[ "${LAST_SOURCE}" == *runAllTests.sh ]]; then
-    basename "${BASH_SOURCE[$((NUM_SOURCES-2))]}"
+    SOURCE_INDEX=$((NUM_SOURCES-2))
   else
-    basename "${LAST_SOURCE}"
+    SOURCE_INDEX=$((NUM_SOURCES-1))
   fi
+  echo "$(basename "${BASH_SOURCE[$SOURCE_INDEX]}"):${BASH_LINENO[$SOURCE_INDEX-1]}"
 }
 
 start_tests() {
