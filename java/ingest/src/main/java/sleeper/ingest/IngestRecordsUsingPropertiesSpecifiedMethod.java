@@ -18,21 +18,15 @@ package sleeper.ingest;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.parquet.hadoop.ParquetWriter;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
-import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
 import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriter;
-import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriter;
-import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriter;
-import sleeper.ingest.impl.recordbatch.RecordBatch;
-import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchAcceptingRecords;
-import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchAcceptingRecords;
+import sleeper.ingest.impl.StandardIngestCoordinator;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -41,23 +35,17 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_MAX_LOCAL_STORE_BYTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 
 /**
  * This class provide methods to support ingest into Sleeper, where the way in which that ingest should take place is
@@ -124,30 +112,17 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
             totalArrowBytesRequired = instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES) +
                     instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES);
         }
-        try (BufferAllocator arrowBufferAllocator =
-                     (totalArrowBytesRequired > 0) ?
-                             ((bufferAllocator == null) ?
-                                     new RootAllocator(totalArrowBytesRequired) :
-                                     bufferAllocator.newChildAllocator("Ingest buffer", totalArrowBytesRequired, totalArrowBytesRequired)) :
-                             null;
-             // Create an IngestRecords object
-             IngestCoordinator<Record> ingestCoordinator = createIngestCoordinatorFromProperties(
-                     objectFactory,
-                     sleeperStateStore,
-                     instanceProperties,
-                     tableProperties,
-                     localWorkingDirectory,
-                     arrowBufferAllocator,
-                     internalS3AsyncClient,
-                     internalHadoopConfiguration,
-                     sleeperIteratorClassName,
-                     sleeperIteratorConfig)) {
-            // Write all the records to the IngestCoordinator
-            while (recordIterator.hasNext()) {
-                ingestCoordinator.write(recordIterator.next());
-            }
-            return ingestCoordinator.closeReturningFileInfoList();
+        try (BufferAllocator arrowBufferAllocator = (totalArrowBytesRequired > 0) ? new RootAllocator(totalArrowBytesRequired) : null) {
+            IngestProperties ingestProperties = createIngestProperties(objectFactory,
+                    sleeperStateStore, instanceProperties, tableProperties, localWorkingDirectory,
+                    internalHadoopConfiguration, sleeperIteratorClassName, sleeperIteratorConfig);
+            IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIteratorWithProperties(
+                    ingestProperties, instanceProperties, arrowBufferAllocator,
+                    internalS3AsyncClient, recordIterator);
+            return ingestRecordsFromIterator.writeReturningFileInfoList();
             // The Arrow buffer will be auto-closed
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         } finally {
             recordIterator.close();
             // Close the S3 client if it was created in this method
@@ -158,117 +133,97 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
     }
 
     /**
-     * Create an {@link IngestCoordinator} object that is configured using Sleeper {@link InstanceProperties} and {@link
-     * TableProperties}.
+     * Create an {@link IngestRecordsFromIterator} object that is configured using Sleeper {@link InstanceProperties} and {@link
+     * TableProperties}, ready to iterate through the provided records and perform the ingest.
      *
-     * @param objectFactory            The object factory to use to create Sleeper iterators
-     * @param sleeperStateStore        The state store to update with the new data
-     * @param instanceProperties       The instance properties to use to configure the ingest
-     * @param tableProperties          The table properties to use to configure the ingest
-     * @param localWorkingDirectory    A local directory for temporary files
-     * @param bufferAllocator          A buffer allocator to use during Arrow-based ingest. It may be null, but if it is
-     *                                 needed, a {@link NullPointerException} will be thrown
-     * @param s3AsyncClient            A client to use during asynchronous ingest. It may be null, but if it is needed,
-     *                                 a {@link NullPointerException} will be thrown
-     * @param hadoopConfiguration      An Hadoop configuration to use when writing Parquet files. It may be null, and if
-     *                                 it is, a default configuration will be used
-     * @param sleeperIteratorClassName The name of the Sleeper iterator to apply
-     * @param sleeperIteratorConfig    The configuration of the iterator
-     * @return The relevant ingest coordinator
+     * @param ingestProperties   The ingest properties to use to configure the ingest
+     * @param instanceProperties The instance properties to use to configure the ingest
+     * @param bufferAllocator    A buffer allocator to use during Arrow-based ingest. It may be null, but if it is
+     *                           needed, a {@link NullPointerException} will be thrown
+     * @param s3AsyncClient      A client to use during asynchronous ingest. It may be null, but if it is needed,
+     *                           a {@link NullPointerException} will be thrown
+     * @param recordIterator     The iterator of records to ingest
+     * @return The relevant IngestRecordsFromIterator object
      */
-    public static IngestCoordinator<Record> createIngestCoordinatorFromProperties(
-            ObjectFactory objectFactory,
-            StateStore sleeperStateStore,
+    public static IngestRecordsFromIterator createIngestRecordsFromIteratorWithProperties(
+            IngestProperties ingestProperties,
             InstanceProperties instanceProperties,
-            TableProperties tableProperties,
-            String localWorkingDirectory,
             BufferAllocator bufferAllocator,
             S3AsyncClient s3AsyncClient,
-            Configuration hadoopConfiguration,
-            String sleeperIteratorClassName,
-            String sleeperIteratorConfig) {
-        Schema sleeperSchema = tableProperties.getSchema();
-        Supplier<RecordBatch<Record>> recordBatchFactoryFn;
-        Function<Partition, PartitionFileWriter> partitionFileFactoryFn;
+            CloseableIterator<Record> recordIterator) {
+        IngestCoordinator<Record> ingestCoordinator;
         // Define a factory function for record batches
-        switch (instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT)) {
+        String recordBatchType = instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
+        String fileWriterType = instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
+        switch (recordBatchType) {
             case "arraylist":
-                recordBatchFactoryFn = () -> new ArrayListRecordBatchAcceptingRecords(
-                        sleeperSchema,
-                        localWorkingDirectory,
-                        instanceProperties.getInt(MAX_IN_MEMORY_BATCH_SIZE),
-                        instanceProperties.getLong(MAX_RECORDS_TO_WRITE_LOCALLY),
-                        tableProperties.getInt(ROW_GROUP_SIZE),
-                        tableProperties.getInt(PAGE_SIZE),
-                        tableProperties.get(COMPRESSION_CODEC),
-                        hadoopConfiguration);
+                if (fileWriterType.equals("direct")) {
+                    ingestCoordinator = StandardIngestCoordinator.directWriteBackedByArrayList(ingestProperties);
+                } else if (fileWriterType.equals("async")) {
+                    if (!instanceProperties.get(FILE_SYSTEM).toLowerCase(Locale.ROOT).equals("s3a://")) {
+                        throw new UnsupportedOperationException("Attempting an asynchronous write to a file system that is not s3a://");
+                    }
+                    ingestCoordinator = StandardIngestCoordinator.asyncS3WriteBackedByArrayList(ingestProperties,
+                            ingestProperties.getBucketName(),
+                            s3AsyncClient);
+                } else {
+                    throw new UnsupportedOperationException(String.format("File writer type %s not supported", fileWriterType));
+                }
                 break;
             case "arrow":
-                recordBatchFactoryFn = () ->
-                        new ArrowRecordBatchAcceptingRecords(
-                                bufferAllocator,
-                                sleeperSchema,
-                                localWorkingDirectory,
-                                instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES),
-                                instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES),
-                                instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES),
-                                instanceProperties.getLong(ARROW_INGEST_MAX_LOCAL_STORE_BYTES),
-                                instanceProperties.getInt(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS));
-                break;
-            default:
-                throw new UnsupportedOperationException(String.format("Record batch type %s not supported", instanceProperties.get(INGEST_RECORD_BATCH_TYPE)));
-        }
-        // Define a factory function for partition file writers
-        switch (instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT)) {
-            case "direct":
-                partitionFileFactoryFn = partition -> {
-                    try {
-                        return new DirectPartitionFileWriter(
-                                sleeperSchema,
-                                partition,
-                                tableProperties.getInt(ROW_GROUP_SIZE),
-                                tableProperties.getInt(PAGE_SIZE),
-                                tableProperties.get(COMPRESSION_CODEC),
-                                hadoopConfiguration,
-                                instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET));
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
+                if (fileWriterType.equals("direct")) {
+                    ingestCoordinator = StandardIngestCoordinator.directWriteBackedByArrow(ingestProperties,
+                            bufferAllocator,
+                            instanceProperties.getInt(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS),
+                            instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES),
+                            instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES),
+                            instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES));
+                } else if (fileWriterType.equals("async")) {
+                    if (!instanceProperties.get(FILE_SYSTEM).toLowerCase(Locale.ROOT).equals("s3a://")) {
+                        throw new UnsupportedOperationException("Attempting an asynchronous write to a file system that is not s3a://");
                     }
-                };
-                break;
-            case "async":
-                if (!instanceProperties.get(FILE_SYSTEM).toLowerCase(Locale.ROOT).equals("s3a://")) {
-                    throw new UnsupportedOperationException("Attempting an asynchronous write to a file system that is not s3a://");
+                    ingestCoordinator = StandardIngestCoordinator.asyncS3WriteBackedByArrow(ingestProperties,
+                            ingestProperties.getBucketName(),
+                            s3AsyncClient,
+                            bufferAllocator,
+                            instanceProperties.getInt(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS),
+                            instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES),
+                            instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES),
+                            instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES));
+                } else {
+                    throw new UnsupportedOperationException(String.format("File writer type %s not supported", fileWriterType));
                 }
-                partitionFileFactoryFn = partition -> {
-                    try {
-                        return new AsyncS3PartitionFileWriter(
-                                sleeperSchema,
-                                partition,
-                                tableProperties.getInt(ROW_GROUP_SIZE),
-                                tableProperties.getInt(PAGE_SIZE),
-                                tableProperties.get(COMPRESSION_CODEC),
-                                hadoopConfiguration,
-                                tableProperties.get(DATA_BUCKET),
-                                s3AsyncClient,
-                                localWorkingDirectory);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                };
                 break;
             default:
-                throw new UnsupportedOperationException(String.format("Partition file writer type %s not supported", instanceProperties.get(INGEST_RECORD_BATCH_TYPE)));
+                throw new UnsupportedOperationException(String.format("Record batch type %s not supported", recordBatchType));
         }
-        return new IngestCoordinator<>(
-                objectFactory,
-                sleeperStateStore,
-                sleeperSchema,
-                sleeperIteratorClassName,
-                sleeperIteratorConfig,
-                instanceProperties.getInt(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS),
-                recordBatchFactoryFn,
-                partitionFileFactoryFn);
+        return new IngestRecordsFromIterator(ingestCoordinator, recordIterator);
+    }
+
+    private static IngestProperties createIngestProperties(ObjectFactory objectFactory,
+                                                           StateStore sleeperStateStore,
+                                                           InstanceProperties instanceProperties,
+                                                           TableProperties tableProperties,
+                                                           String localWorkingDirectory,
+                                                           Configuration hadoopConfiguration,
+                                                           String sleeperIteratorClassName,
+                                                           String sleeperIteratorConfig) {
+        return IngestProperties.builder()
+                .objectFactory(objectFactory)
+                .localDir(localWorkingDirectory)
+                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
+                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
+                .stateStore(sleeperStateStore)
+                .schema(tableProperties.getSchema())
+                .iteratorClassName(sleeperIteratorClassName)
+                .iteratorConfig(sleeperIteratorConfig)
+                .compressionCodec(tableProperties.get(COMPRESSION_CODEC))
+                .filePathPrefix(instanceProperties.get(FILE_SYSTEM))
+                .bucketName(tableProperties.get(DATA_BUCKET))
+                .hadoopConfiguration(hadoopConfiguration)
+                .maxInMemoryBatchSize(instanceProperties.getInt(MAX_IN_MEMORY_BATCH_SIZE))
+                .maxRecordsToWriteLocally(instanceProperties.getLong(MAX_RECORDS_TO_WRITE_LOCALLY))
+                .ingestPartitionRefreshFrequencyInSecond(120).build();
     }
 
     /**
