@@ -30,8 +30,20 @@ LOGIN_HOME=/home/$LOGIN_USER
 export DEBIAN_FRONTEND=noninteractive
 sudo apt update && sudo apt -y dist-upgrade
 
+# Install latest Docker
+sudo apt remove -y docker.io containerd runc
+sudo apt install -y ca-certificates curl gnupg lsb-release
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+export DEBIAN_FRONTEND=noninteractive
+sudo apt update
+sudo apt install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
 # Install AWS tools
-sudo apt install -y docker.io unzip htop
+sudo apt install -y unzip htop
 curl -sS "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
 unzip -qq "/tmp/awscliv2.zip" -d "/tmp" && sh /tmp/aws/install --update && rm -rf "/tmp/awscliv2.zip" "/tmp/aws"
 
