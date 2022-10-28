@@ -19,9 +19,8 @@ fail_test() {
 
 find_test_source_ref() {
   local NUM_SOURCES=${#BASH_SOURCE[@]}
-  local LAST_SOURCE=${BASH_SOURCE[$((NUM_SOURCES-1))]}
   local SOURCE_INDEX
-  if [[ "${LAST_SOURCE}" == *runAllTests.sh ]]; then
+  if [[ "${BASH_SOURCE[$((NUM_SOURCES-1))]}" == *runAllTests.sh ]]; then
     SOURCE_INDEX=$((NUM_SOURCES-2))
   else
     SOURCE_INDEX=$((NUM_SOURCES-1))
