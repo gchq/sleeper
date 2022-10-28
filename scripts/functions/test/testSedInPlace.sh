@@ -14,9 +14,12 @@
 # limitations under the License.
 
 THIS_DIR=$(cd $(dirname $0) && pwd)
+source "${THIS_DIR}/../sedInPlace.sh"
 source "${THIS_DIR}/runTestUtils.sh"
-for file in ${THIS_DIR}/test*.sh; do
-  source $file
-  echo "Ran $(basename $file)"
-done
-report_test_results
+
+echo "Hello name!" > testSedInPlace.txt
+sed_in_place -e "s|name|dude|" testSedInPlace.txt
+expect_string_for_actual "Hello dude!" "$(cat testSedInPlace.txt)"
+rm testSedInPlace.txt
+
+end_tests

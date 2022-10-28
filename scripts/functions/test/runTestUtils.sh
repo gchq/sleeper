@@ -13,8 +13,18 @@
 # limitations under the License.
 
 fail_test() {
-  echo "$@"
+  echo "$(find_test_source):${LINENO}" "$@"
   ((TEST_FAILURES++))
+}
+
+find_test_source() {
+  local NUM_SOURCES=${#BASH_SOURCE[@]}
+  local LAST_SOURCE=${BASH_SOURCE[$((NUM_SOURCES-1))]}
+  if [[ "${LAST_SOURCE}" == *runAllTests.sh ]]; then
+    basename "${BASH_SOURCE[$((NUM_SOURCES-2))]}"
+  else
+    basename "${LAST_SOURCE}"
+  fi
 }
 
 start_tests() {
@@ -29,15 +39,32 @@ end_tests() {
 }
 
 report_test_results() {
-  echo "$((TEST_FAILURES)) failures"
+  echo "$((TEST_FAILURES)) failure(s)"
   if [[ $TEST_FAILURES -gt 0 ]]; then
     exit 1
   fi
 }
 
 expect_string_for_actual() {
+  expect_arguments 2 "$@"
   if [[ "$1" != "$2" ]]; then
     fail_test "Expected '$1', got $2"
+  fi
+}
+
+expect_non_empty_string() {
+  expect_arguments 1 "$@"
+  local STRING=$1
+  if [[ ${#STRING} -lt 1 ]]; then
+    fail_test "Expected non-empty string"
+  fi
+}
+
+expect_arguments() {
+  local EXPECTED=$1
+  local FOUND=$(($#-1))
+  if [[ ${FOUND} -ne ${EXPECTED} ]]; then
+    fail_test "${FUNCNAME[1]} needs ${EXPECTED} argument(s), got ${FOUND}"
   fi
 }
 

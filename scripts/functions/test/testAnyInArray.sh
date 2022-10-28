@@ -14,27 +14,16 @@
 # limitations under the License.
 
 THIS_DIR=$(cd $(dirname $0) && pwd)
-source "${THIS_DIR}/arrayUtils.sh"
+source "${THIS_DIR}/../arrayUtils.sh"
 source "${THIS_DIR}/runTestUtils.sh"
 
+A=("A")
+Z_A=("Z" "A")
 A_B_C=("A" "B" "C")
-is_in_array "A" A_B_C || fail_test "A should be in A_B_C"
-is_in_array "B" A_B_C || fail_test "B should be in A_B_C"
-is_in_array "C" A_B_C || fail_test "C should be in A_B_C"
-is_in_array "Z" A_B_C && fail_test "Z should not be in A_B_C"
-
-AB_C=("A B" "C")
-is_in_array "A" AB_C && fail_test "A should not be in AB_C"
-is_in_array "B" AB_C && fail_test "B should not be in AB_C"
-is_in_array "A B" AB_C || fail_test "A B should be in AB_C"
-is_in_array "C" AB_C || fail_test "C should be in AB_C"
-
-if ! is_in_array "A" A_B_C; then
-  fail_test "A should be in A_B_C in if statement"
-fi
-
-if is_in_array "Z" A_B_C; then
-  fail_test "Z should not be in A_B_C in if statement"
-fi
+D_E_F=("D" "E" "F")
+any_in_array A A_B_C || fail_test "A should be in A_B_C"
+any_in_array Z_A A_B_C || fail_test "Z_A should be in A_B_C"
+any_in_array A D_E_F && fail_test "A should not be in D_E_F"
+any_in_array A_B_C D_E_F && fail_test "A_B_C should not be in D_E_F"
 
 end_tests

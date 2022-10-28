@@ -14,7 +14,7 @@
 # limitations under the License.
 
 THIS_DIR=$(cd $(dirname $0) && pwd)
-source "${THIS_DIR}/arrayUtils.sh"
+source "${THIS_DIR}/../arrayUtils.sh"
 source "${THIS_DIR}/runTestUtils.sh"
 
 A_B_C=("A" "B" "C")

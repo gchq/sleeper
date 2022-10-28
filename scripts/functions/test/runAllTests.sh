@@ -14,18 +14,9 @@
 # limitations under the License.
 
 THIS_DIR=$(cd $(dirname $0) && pwd)
-source "${THIS_DIR}/arrayUtils.sh"
 source "${THIS_DIR}/runTestUtils.sh"
-
-A_B=("A" "B")
-A_B_C=("A" "B" "C")
-C_D=("C" "D")
-EMPTY=()
-
-array_equals A_B C_D && fail_test "A_B should not equal C_D"
-array_equals A_B A_B_C && fail_test "A_B should not equal A_B_C"
-array_equals A_B A_B || fail_test "A_B should equal A_B"
-array_equals EMPTY EMPTY || fail_test "EMPTY should equal EMPTY"
-array_equals A_B EMPTY && fail_test "A_B should not equal EMPTY"
-
-end_tests
+for file in ${THIS_DIR}/test*.sh; do
+  source "$file"
+  echo "Ran $(basename "$file")"
+done
+report_test_results
