@@ -103,7 +103,7 @@ public class IngestJobQueueConsumerIT {
         this.fileSystemPrefix = fileSystemPrefix;
     }
 
-    @Parameterized.Parameters
+    @Parameterized.Parameters(name = "batchType={0}, fileWriterType={1}, fileSystemPrefix=\"{2}\"")
     public static Collection<Object[]> parametersForTests() {
         return Arrays.asList(new Object[][]{
                 {"arrow", "async", "s3a://"},
