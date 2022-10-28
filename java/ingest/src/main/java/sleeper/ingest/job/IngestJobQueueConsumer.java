@@ -221,7 +221,6 @@ public class IngestJobQueueConsumer {
                 instanceProperties,
                 tableProperties,
                 localDir,
-                null,
                 s3AsyncClient,
                 hadoopConfiguration,
                 tableProperties.get(ITERATOR_CLASS_NAME),

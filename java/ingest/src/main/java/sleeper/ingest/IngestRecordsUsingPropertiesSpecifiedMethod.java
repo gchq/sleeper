@@ -68,9 +68,6 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
      * @param instanceProperties       The instance properties to use to configure the ingest
      * @param tableProperties          The table properties to use to configure the ingest
      * @param localWorkingDirectory    A local directory for temporary files
-     * @param bufferAllocator          A buffer allocator to use during Arrow-based ingest. It may be null, and if it is
-     *                                 needed, then a new {@link RootAllocator} will be created for this ingest and then
-     *                                 closed
      * @param s3AsyncClient            A client to use during asynchronous ingest. It may be null, and if it is needed,
      *                                 a default will be created using {@link S3AsyncClient#create()} for this ingest
      *                                 and then closed
@@ -90,7 +87,6 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
             InstanceProperties instanceProperties,
             TableProperties tableProperties,
             String localWorkingDirectory,
-            BufferAllocator bufferAllocator,
             S3AsyncClient s3AsyncClient,
             Configuration hadoopConfiguration,
             String sleeperIteratorClassName,
