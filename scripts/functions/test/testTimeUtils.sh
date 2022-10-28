@@ -13,9 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-THIS_DIR=$(cd $(dirname $0) && pwd)
-source "${THIS_DIR}/../timeUtils.sh"
-source "${THIS_DIR}/runTestUtils.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../timeUtils.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/runTestUtils.sh"
 
 expect_non_empty_string "$(time_str)"
 

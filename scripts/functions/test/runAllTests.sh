@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-THIS_DIR=$(cd $(dirname $0) && pwd)
-source "${THIS_DIR}/runTestUtils.sh"
-for file in ${THIS_DIR}/test*.sh; do
+RUNALLTESTS_DIR=$(dirname "${BASH_SOURCE[0]}")
+source "$RUNALLTESTS_DIR/runTestUtils.sh"
+for file in "$RUNALLTESTS_DIR"/test*.sh; do
   source "$file"
   echo "Ran $(basename "$file")"
 done

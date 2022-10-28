@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+source "$(dirname "${BASH_SOURCE[0]}")/stringUtils.sh"
+
 time_str() {
   date -u +"$(time_format)"
 }
@@ -39,26 +41,4 @@ elapsed_time_str() {
   local END=$2
   local SECONDS=$((END-START))
   seconds_to_str ${SECONDS}
-}
-
-seconds_to_str() {
-  local TOTAL_SECONDS=$1
-  local SECONDS=$((TOTAL_SECONDS%60))
-  local MINUTES=$((TOTAL_SECONDS/60%60))
-  local HOURS=$((TOTAL_SECONDS/60/60))
-  local MESSAGES=()
-  [[ $HOURS -gt 0 ]] && MESSAGES+=("$(pluralise $HOURS "hour")")
-  [[ $MINUTES -gt 0 ]] && MESSAGES+=("$(pluralise $MINUTES "minute")")
-  [[ ${#MESSAGES} -eq 0 || $SECONDS -gt 0 ]] && MESSAGES+=("$(pluralise $SECONDS "second")")
-  echo "${MESSAGES[@]}"
-}
-
-pluralise() {
-  local NUMBER=$1
-  local DESCRIPTOR=$2
-  if [[ $NUMBER -eq 1 ]]; then
-    echo "1 $DESCRIPTOR"
-  else
-    echo "$NUMBER ${DESCRIPTOR}s"
-  fi
 }

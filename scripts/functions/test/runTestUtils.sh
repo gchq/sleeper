@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+source "$(dirname "${BASH_SOURCE[0]}")/../stringUtils.sh"
+
 fail_test() {
   echo "$(find_test_source_ref)" "$@"
   ((TEST_FAILURES++))
@@ -40,7 +42,7 @@ end_tests() {
 }
 
 report_test_results() {
-  echo "$((TEST_FAILURES)) failure(s)"
+  pluralise $((TEST_FAILURES)) "failure"
   if [[ $TEST_FAILURES -gt 0 ]]; then
     exit 1
   fi

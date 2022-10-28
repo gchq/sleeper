@@ -13,9 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-THIS_DIR=$(cd $(dirname $0) && pwd)
-source "${THIS_DIR}/../sedInPlace.sh"
-source "${THIS_DIR}/runTestUtils.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../sedInPlace.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/runTestUtils.sh"
 
 echo "Hello name!" > testSedInPlace.txt
 sed_in_place -e "s|name|dude|" testSedInPlace.txt
