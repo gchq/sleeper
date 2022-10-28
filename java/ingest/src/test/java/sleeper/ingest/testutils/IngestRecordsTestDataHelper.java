@@ -63,7 +63,6 @@ public class IngestRecordsTestDataHelper {
                 .stateStore(stateStore)
                 .schema(sleeperSchema)
                 .filePathPrefix(sketchDirectory)
-                .bucketName(sketchDirectory)
                 .ingestPartitionRefreshFrequencyInSecond(120);
     }
 
