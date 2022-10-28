@@ -23,6 +23,9 @@ START=$(record_time)
 END=$(record_time)
 expect_non_empty_string "$(elapsed_time_str "${START}" "${END}")"
 
+expect_string_for_actual "1970-01-01 00:00:00 UTC" "$(recorded_time_str 0)"
+expect_string_for_actual "2022-10-28 11:57:10 UTC" "$(recorded_time_str 1666958230)"
+
 expect_string_for_actual "0 seconds" "$(seconds_to_str 0)"
 expect_string_for_actual "42 seconds" "$(seconds_to_str 42)"
 expect_string_for_actual "1 minute" "$(seconds_to_str 60)"

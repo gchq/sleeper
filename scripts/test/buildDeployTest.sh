@@ -29,7 +29,7 @@ THIS_DIR=$(cd $(dirname $0) && pwd)
 PROJECT_ROOT=$(dirname $(dirname ${THIS_DIR}))
 source ${PROJECT_ROOT}/scripts/functions/timeUtils.sh
 START_TIME=$(record_time)
-echo "Started at $(time_str)"
+echo "Started at $(recorded_time_str "$START_TIME")"
 
 
 echo "-------------------------------------------------------------------------------"
@@ -45,7 +45,7 @@ cp -r ${PROJECT_ROOT}/java/distribution/target/distribution-${VERSION}-bin/scrip
 cp  ${PROJECT_ROOT}/java/distribution/target/distribution-${VERSION}-bin/scripts/templates/version.txt ${PROJECT_ROOT}/scripts/templates/version.txt
 
 END_BUILD_TIME=$(record_time)
-echo "Build finished at $(time_str), took $(elapsed_time_str "${START_TIME}" "${END_BUILD_TIME}")"
+echo "Build finished at $(recorded_time_str "$END_BUILD_TIME"), took $(elapsed_time_str "$START_TIME" "$END_BUILD_TIME")"
 
 echo "-------------------------------------------------------------------------------"
 echo "Configuring Deployment"
@@ -77,7 +77,7 @@ echo "Starting Pre-deployment steps"
 ${PROJECT_ROOT}/scripts/deploy/pre-deployment.sh ${INSTANCE_ID} ${VPC} ${SUBNET} ${TABLE_NAME} ${TEMPLATE_DIR} ${GENERATED_DIR}
 
 END_CONFIGURE_DEPLOYMENT_TIME=$(record_time)
-echo "Configuring deployment finished at $(time_str), took $(elapsed_time_str "${END_BUILD_TIME}" "${END_CONFIGURE_DEPLOYMENT_TIME}")"
+echo "Configuring deployment finished at $(recorded_time_str "$END_CONFIGURE_DEPLOYMENT_TIME"), took $(elapsed_time_str "$END_BUILD_TIME" "$END_CONFIGURE_DEPLOYMENT_TIME")"
 
 echo "-------------------------------------------------------------------------------"
 echo "Deploying Stack"
@@ -86,7 +86,7 @@ cdk -a "java -cp ${PROJECT_ROOT}/java/system-test/target/system-test-*-utility.j
 --require-approval never -c testpropertiesfile=${GENERATED_DIR}/instance.properties -c validate=true "*"
 
 END_STACK_DEPLOYMENT_TIME=$(record_time)
-echo "Stack deployment finished at $(time_str), took $(elapsed_time_str "${END_CONFIGURE_DEPLOYMENT_TIME}" "${END_STACK_DEPLOYMENT_TIME}")"
+echo "Stack deployment finished at $(recorded_time_str "$END_STACK_DEPLOYMENT_TIME"), took $(elapsed_time_str "$END_CONFIGURE_DEPLOYMENT_TIME" "$END_STACK_DEPLOYMENT_TIME")"
 
 echo "-------------------------------------------------------------------------------"
 echo "Writing Random Data"
@@ -96,5 +96,12 @@ java -cp ${PROJECT_ROOT}/java/system-test/target/system-test-*-utility.jar \
 sleeper.systemtest.ingest.RunWriteRandomDataTaskOnECS ${INSTANCE_ID} system-test
 
 FINISH_TIME=$(record_time)
-echo "Finished writing random data at $(time_str), took $(elapsed_time_str "${END_STACK_DEPLOYMENT_TIME}" "${FINISH_TIME}")"
-echo "Finished at $(time_str), took $(elapsed_time_str "${START_TIME}" "${FINISH_TIME}")"
+echo "-------------------------------------------------------------------------------"
+echo "Finished"
+echo "-------------------------------------------------------------------------------"
+echo "Started at $(recorded_time_str "$START_TIME")"
+echo "Build finished at $(recorded_time_str "$END_BUILD_TIME"), took $(elapsed_time_str "$START_TIME" "$END_BUILD_TIME")"
+echo "Configuring deployment finished at $(recorded_time_str "$END_CONFIGURE_DEPLOYMENT_TIME"), took $(elapsed_time_str "$END_BUILD_TIME" "$END_CONFIGURE_DEPLOYMENT_TIME")"
+echo "Stack deployment finished at $(recorded_time_str "$END_STACK_DEPLOYMENT_TIME"), took $(elapsed_time_str "$END_CONFIGURE_DEPLOYMENT_TIME" "$END_STACK_DEPLOYMENT_TIME")"
+echo "Writing random data finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "${END_STACK_DEPLOYMENT_TIME}" "${FINISH_TIME}")"
+echo "Overall, took $(elapsed_time_str "${START_TIME}" "${FINISH_TIME}")"

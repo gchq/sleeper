@@ -13,11 +13,25 @@
 # limitations under the License.
 
 time_str() {
-  date +"%Y-%m-%d %T"
+  date -u +"$(time_format)"
 }
 
 record_time() {
   date +"%s"
+}
+
+if date -d @0 &>/dev/null; then
+  recorded_time_str() {
+    date -ud "@$1" +"$(time_format)"
+  }
+else
+  recorded_time_str() {
+    date -ur "$1" +"$(time_format)"
+  }
+fi
+
+time_format() {
+  echo "%Y-%m-%d %T UTC"
 }
 
 elapsed_time_str() {
