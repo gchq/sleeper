@@ -24,10 +24,9 @@ fi
 INSTANCE_ID=$1
 DOCKER_REGISTRY=$2
 VERSION=$3
-STACKS=$4
+IFS="," read -r -a STACKS <<< "$4"
 BASE_DOCKERFILE_DIR=$5
 REGION=$(echo ${DOCKER_REGISTRY} | sed -e "s/^.*\.dkr\.ecr\.\(.*\)\.amazonaws\.com/\1/")
-STACKS=$(echo ${STACKS//,/ })
 DOCKER_STACKS_ALL=("CompactionStack" "IngestStack" "SystemTestStack" "EksBulkImportStack")
 REPO_PREFIX=${DOCKER_REGISTRY}/${INSTANCE_ID}
 FUNCTIONS_DIR=$(cd $(dirname $0) && cd "../functions" && pwd)
