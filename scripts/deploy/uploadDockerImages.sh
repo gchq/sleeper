@@ -40,7 +40,7 @@ echo "--------------------------------------------------------------------------
 
 echo "INSTANCE_ID: ${INSTANCE_ID}"
 echo "DOCKER_REGISTRY: ${DOCKER_REGISTRY}"
-echo "STACKS: ${DOCKER_STACKS}"
+echo "STACKS: ${DOCKER_STACKS[*]}"
 echo "REGION: ${REGION}"
 echo "BASE_DOCKERFILE_DIR: ${BASE_DOCKERFILE_DIR}"
 echo "REPO_PREFIX: ${REPO_PREFIX}"
