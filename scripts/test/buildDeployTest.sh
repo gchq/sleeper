@@ -91,7 +91,6 @@ echo "Stack deployment finished at $(recorded_time_str "$END_STACK_DEPLOYMENT_TI
 echo "-------------------------------------------------------------------------------"
 echo "Writing Random Data"
 echo "-------------------------------------------------------------------------------"
-CONFIG_BUCKET=$(cat ${GENERATED_DIR}/configBucket.txt)
 java -cp ${PROJECT_ROOT}/java/system-test/target/system-test-*-utility.jar \
 sleeper.systemtest.ingest.RunWriteRandomDataTaskOnECS ${INSTANCE_ID} system-test
 
