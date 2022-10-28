@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Copyright 2022 Crown Copyright
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,6 +27,9 @@ SUBNET=$3
 TABLE_NAME="system-test"
 THIS_DIR=$(cd $(dirname $0) && pwd)
 PROJECT_ROOT=$(dirname $(dirname ${THIS_DIR}))
+source ${PROJECT_ROOT}/scripts/functions/timeUtils.sh
+START_TIME=$(record_time)
+echo "Started at $(time_str)"
 
 
 echo "-------------------------------------------------------------------------------"
@@ -40,6 +43,9 @@ mkdir -p ${PROJECT_ROOT}/scripts/docker
 cp  ${PROJECT_ROOT}/java/distribution/target/distribution-${VERSION}-bin/scripts/jars/* ${PROJECT_ROOT}/scripts/jars/
 cp -r ${PROJECT_ROOT}/java/distribution/target/distribution-${VERSION}-bin/scripts/docker/* ${PROJECT_ROOT}/scripts/docker/
 cp  ${PROJECT_ROOT}/java/distribution/target/distribution-${VERSION}-bin/scripts/templates/version.txt ${PROJECT_ROOT}/scripts/templates/version.txt
+
+END_BUILD_TIME=$(record_time)
+echo "Build finished at $(time_str), took $(elapsed_time_str "${START_TIME}" "${END_BUILD_TIME}")"
 
 echo "-------------------------------------------------------------------------------"
 echo "Configuring Deployment"
@@ -70,11 +76,17 @@ cp -r "${PROJECT_ROOT}/java/system-test/target/system-test-${VERSION}-utility.ja
 echo "Starting Pre-deployment steps"
 ${PROJECT_ROOT}/scripts/deploy/pre-deployment.sh ${INSTANCE_ID} ${VPC} ${SUBNET} ${TABLE_NAME} ${TEMPLATE_DIR} ${GENERATED_DIR}
 
+END_CONFIGURE_DEPLOYMENT_TIME=$(record_time)
+echo "Configuring deployment finished at $(time_str), took $(elapsed_time_str "${END_BUILD_TIME}" "${END_CONFIGURE_DEPLOYMENT_TIME}")"
+
 echo "-------------------------------------------------------------------------------"
 echo "Deploying Stack"
 echo "-------------------------------------------------------------------------------"
 cdk -a "java -cp ${PROJECT_ROOT}/java/system-test/target/system-test-*-utility.jar sleeper.systemtest.cdk.SystemTestApp" deploy \
 --require-approval never -c testpropertiesfile=${GENERATED_DIR}/instance.properties -c validate=true "*"
+
+END_STACK_DEPLOYMENT_TIME=$(record_time)
+echo "Stack deployment finished at $(time_str), took $(elapsed_time_str "${END_CONFIGURE_DEPLOYMENT_TIME}" "${END_STACK_DEPLOYMENT_TIME}")"
 
 echo "-------------------------------------------------------------------------------"
 echo "Writing Random Data"
@@ -82,3 +94,7 @@ echo "--------------------------------------------------------------------------
 CONFIG_BUCKET=$(cat ${GENERATED_DIR}/configBucket.txt)
 java -cp ${PROJECT_ROOT}/java/system-test/target/system-test-*-utility.jar \
 sleeper.systemtest.ingest.RunWriteRandomDataTaskOnECS ${INSTANCE_ID} system-test
+
+FINISH_TIME=$(record_time)
+echo "Finished writing random data at $(time_str), took $(elapsed_time_str "${END_STACK_DEPLOYMENT_TIME}" "${FINISH_TIME}")"
+echo "Finished at $(time_str), took $(elapsed_time_str "${START_TIME}" "${FINISH_TIME}")"
