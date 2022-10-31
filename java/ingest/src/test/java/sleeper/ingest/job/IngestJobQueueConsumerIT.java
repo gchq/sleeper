@@ -41,10 +41,12 @@ import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.io.parquet.record.ParquetRecordWriter;
 import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.statestore.DelegatingStateStore;
+import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.statestore.inmemory.FixedPartitionStore;
+import sleeper.statestore.inmemory.InMemoryFileInfoStore;
 
 import java.io.IOException;
 import java.net.URI;
@@ -78,7 +80,6 @@ public class IngestJobQueueConsumerIT {
     @ClassRule
     public static final AwsExternalResource AWS_EXTERNAL_RESOURCE = new AwsExternalResource(
             LocalStackContainer.Service.S3,
-            LocalStackContainer.Service.DYNAMODB,
             LocalStackContainer.Service.SQS,
             LocalStackContainer.Service.CLOUDWATCH);
     private static final String TEST_INSTANCE_NAME = "myinstance";
@@ -140,7 +141,7 @@ public class IngestJobQueueConsumerIT {
         return instanceProperties;
     }
 
-    private TableProperties createTable(Schema schema) throws IOException, StateStoreException {
+    private TableProperties createTable(Schema schema) throws IOException {
         InstanceProperties instanceProperties = getInstanceProperties();
 
         TableProperties tableProperties = new TableProperties(instanceProperties);
@@ -151,12 +152,6 @@ public class IngestJobQueueConsumerIT {
         tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, TEST_TABLE_NAME + "-rfgcf");
         tableProperties.set(PARTITION_TABLENAME, TEST_TABLE_NAME + "-p");
         tableProperties.saveToS3(AWS_EXTERNAL_RESOURCE.getS3Client());
-
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(
-                instanceProperties,
-                tableProperties,
-                AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
-        dynamoDBStateStoreCreator.create();
 
         return tableProperties;
     }
@@ -217,8 +212,8 @@ public class IngestJobQueueConsumerIT {
         InstanceProperties instanceProperties = getInstanceProperties();
         TableProperties tableProperties = createTable(sleeperSchema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(AWS_EXTERNAL_RESOURCE.getS3Client(), instanceProperties);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), new InstanceProperties());
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        StateStore stateStore = new DelegatingStateStore(new InMemoryFileInfoStore(), new FixedPartitionStore(sleeperSchema));
+        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tablePropertiesProvider.getTableProperties(TEST_TABLE_NAME), stateStore);
         stateStore.initialise();
 
         // Run the job consumer
