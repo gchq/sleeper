@@ -80,8 +80,7 @@ public class IngestJobQueueConsumerIT {
     @ClassRule
     public static final AwsExternalResource AWS_EXTERNAL_RESOURCE = new AwsExternalResource(
             LocalStackContainer.Service.S3,
-            LocalStackContainer.Service.SQS,
-            LocalStackContainer.Service.CLOUDWATCH);
+            LocalStackContainer.Service.SQS);
     private static final String TEST_INSTANCE_NAME = "myinstance";
     private static final String TEST_TABLE_NAME = "mytable";
     private static final String INGEST_QUEUE_NAME = TEST_INSTANCE_NAME + "-ingestqueue";
@@ -220,7 +219,7 @@ public class IngestJobQueueConsumerIT {
         IngestJobQueueConsumer ingestJobQueueConsumer = new IngestJobQueueConsumer(
                 new ObjectFactory(instanceProperties, null, temporaryFolder.newFolder().getAbsolutePath()),
                 AWS_EXTERNAL_RESOURCE.getSqsClient(),
-                AWS_EXTERNAL_RESOURCE.getCloudWatchClient(),
+                FixedCloudWatchReporter.create(),
                 instanceProperties,
                 tablePropertiesProvider,
                 stateStoreProvider,

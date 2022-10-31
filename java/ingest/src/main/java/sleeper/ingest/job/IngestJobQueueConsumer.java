@@ -15,7 +15,6 @@
  */
 package sleeper.ingest.job;
 
-import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.model.Dimension;
 import com.amazonaws.services.cloudwatch.model.MetricDatum;
 import com.amazonaws.services.cloudwatch.model.PutMetricDataRequest;
@@ -76,7 +75,7 @@ public class IngestJobQueueConsumer {
 
     private final ObjectFactory objectFactory;
     private final AmazonSQS sqsClient;
-    private final AmazonCloudWatch cloudWatchClient;
+    private final CloudWatchReporter cloudWatchReporter;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
@@ -95,14 +94,14 @@ public class IngestJobQueueConsumer {
 
     public IngestJobQueueConsumer(ObjectFactory objectFactory,
                                   AmazonSQS sqsClient,
-                                  AmazonCloudWatch cloudWatchClient,
+                                  CloudWatchReporter cloudWatchReporter,
                                   InstanceProperties instanceProperties,
                                   TablePropertiesProvider tablePropertiesProvider,
                                   StateStoreProvider stateStoreProvider,
                                   String localDir) {
         this(objectFactory,
                 sqsClient,
-                cloudWatchClient,
+                cloudWatchReporter,
                 instanceProperties,
                 tablePropertiesProvider,
                 stateStoreProvider,
@@ -113,7 +112,7 @@ public class IngestJobQueueConsumer {
 
     public IngestJobQueueConsumer(ObjectFactory objectFactory,
                                   AmazonSQS sqsClient,
-                                  AmazonCloudWatch cloudWatchClient,
+                                  CloudWatchReporter cloudWatchReporter,
                                   InstanceProperties instanceProperties,
                                   TablePropertiesProvider tablePropertiesProvider,
                                   StateStoreProvider stateStoreProvider,
@@ -122,7 +121,7 @@ public class IngestJobQueueConsumer {
                                   Configuration hadoopConfiguration) {
         this.objectFactory = objectFactory;
         this.sqsClient = sqsClient;
-        this.cloudWatchClient = cloudWatchClient;
+        this.cloudWatchReporter = cloudWatchReporter;
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
@@ -242,9 +241,11 @@ public class IngestJobQueueConsumer {
         }
 
         // Update metrics
+        // Break out into CloudWatchMetricsReporter
+        // one for test one for prod
         String metricsNamespace = instanceProperties.get(UserDefinedInstanceProperty.METRICS_NAMESPACE);
         String instanceId = instanceProperties.get(UserDefinedInstanceProperty.ID);
-        cloudWatchClient.putMetricData(new PutMetricDataRequest()
+        cloudWatchReporter.report(new PutMetricDataRequest()
                 .withNamespace(metricsNamespace)
                 .withMetricData(new MetricDatum()
                         .withMetricName("StandardIngestRecordsWritten")

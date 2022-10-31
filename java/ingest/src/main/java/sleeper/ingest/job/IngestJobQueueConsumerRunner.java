@@ -98,7 +98,7 @@ public class IngestJobQueueConsumerRunner {
     }
 
     public void run() throws InterruptedException, IOException, IteratorException, StateStoreException {
-        IngestJobQueueConsumer ingestJobQueueConsumer = new IngestJobQueueConsumer(objectFactory, sqsClient, cloudWatchClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, localDir);
+        IngestJobQueueConsumer ingestJobQueueConsumer = new IngestJobQueueConsumer(objectFactory, sqsClient, AWSCloudWatchReporter.from(cloudWatchClient), instanceProperties, tablePropertiesProvider, stateStoreProvider, localDir);
         ingestJobQueueConsumer.run();
     }
 }
