@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import sleeper.ingest.job.AWSCloudWatchReporter;
 import sleeper.ingest.job.CloudWatchReporter;
+import sleeper.ingest.job.FixedCloudWatchReporter;
 import sleeper.ingest.testutils.AwsExternalResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,10 +47,11 @@ public class IngestCloudWatchReporterTest {
 
     @Test
     public void shouldReportMetricsInFixedReporter() {
-        // Given we have no AWS environment configured
-        // When we build and report using the FixedCloudWatchReporter
-        // Then the result should be a success
-        assertThat(false).isTrue();
+        // Given/When
+        CloudWatchReporter reporter = FixedCloudWatchReporter.create();
+        boolean result = reporter.report(createTestMetricRequest());
+        // Then
+        assertThat(result).isTrue();
     }
 
     private PutMetricDataRequest createTestMetricRequest() {
