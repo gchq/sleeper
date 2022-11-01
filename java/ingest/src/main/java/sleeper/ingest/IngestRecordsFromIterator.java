@@ -18,12 +18,10 @@ package sleeper.ingest;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * Writes an {@link Iterator} of {@link Record} objects to the storage system, partitioned and sorted.
@@ -42,21 +40,6 @@ public class IngestRecordsFromIterator {
     public IngestRecordsFromIterator(IngestCoordinator<Record> ingestCoordinator, Iterator<Record> recordsIterator) {
         this.recordsIterator = recordsIterator;
         this.ingestRecords = new IngestRecords(ingestCoordinator);
-    }
-
-    /**
-     * @return numbers of records written
-     * @throws StateStoreException  -
-     * @throws IOException          -
-     * @throws InterruptedException -
-     * @throws IteratorException    -
-     */
-    public long write() throws StateStoreException, IOException, InterruptedException, IteratorException {
-        return writeWithResult().getNumberOfRecords();
-    }
-
-    public List<FileInfo> writeReturningFileInfoList() throws StateStoreException, IOException, InterruptedException, IteratorException {
-        return writeWithResult().getFileInfoList();
     }
 
     public IngestResult writeWithResult() throws StateStoreException, IteratorException, IOException, InterruptedException {
