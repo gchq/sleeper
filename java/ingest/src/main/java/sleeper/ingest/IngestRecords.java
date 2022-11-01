@@ -73,4 +73,8 @@ public class IngestRecords {
     public List<FileInfo> closeReturningFileInfoList() throws IOException, IteratorException, StateStoreException {
         return ingestCoordinator.closeReturningFileInfoList();
     }
+
+    public IngestResult closeWithResult() throws StateStoreException, IteratorException, IOException {
+        return IngestResult.from(ingestCoordinator.closeReturningFileInfoList());
+    }
 }
