@@ -178,6 +178,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS("sleeper.compaction.job.creation.timeout.seconds", "900", Utils::isValidLambdaTimeout),
     MAXIMUM_CONCURRENT_COMPACTION_TASKS("sleeper.compaction.max.concurrent.tasks", "300"),
     COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES("sleeper.compaction.task.creation.period.minutes", "1"), // >0
+    COMPACTION_TASK_CPU_ARCHITECTURE("sleeper.compaction.task.cpu.architecture", "ARM64"),
     COMPACTION_TASK_CPU("sleeper.compaction.task.cpu", "2048"),
     COMPACTION_TASK_MEMORY("sleeper.compaction.task.memory", "4096"),
     COMPACTION_STATUS_STORE_ENABLED("sleeper.compaction.status.store.enabled", "true"),

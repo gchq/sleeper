@@ -100,6 +100,9 @@ sleeper.compaction.job.creation.timeout.seconds=900
 # The timeout for the lambda that creates compaction jobs in seconds
 sleeper.task.runner.timeout.seconds=900
 
+# The cpu architecture to run compaction tasks on. See Task CPU architecture at https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html
+sleeper.compaction.task.cpu.architecture=ARM64
+
 # The cpu and memory for a compaction task. See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.
 sleeper.compaction.task.cpu=2048
 sleeper.compaction.task.memory=4096

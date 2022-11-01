@@ -82,6 +82,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPA
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
@@ -362,7 +363,8 @@ public class CompactionStack extends NestedStack {
                 .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
                 .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
                 .runtimePlatform(RuntimePlatform.builder()
-                        .cpuArchitecture(CpuArchitecture.ARM64)
+                        .cpuArchitecture(CpuArchitecture.of(
+                                instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT)))
                         .operatingSystemFamily(OperatingSystemFamily.LINUX)
                         .build())
                 .build();
@@ -428,7 +430,8 @@ public class CompactionStack extends NestedStack {
                 .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
                 .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
                 .runtimePlatform(RuntimePlatform.builder()
-                        .cpuArchitecture(CpuArchitecture.ARM64)
+                        .cpuArchitecture(CpuArchitecture.of(
+                                instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT)))
                         .operatingSystemFamily(OperatingSystemFamily.LINUX)
                         .build())
                 .build();
