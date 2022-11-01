@@ -144,7 +144,7 @@ public class FindPartitionsToSplitIT {
                         .bucketName(directory.getAbsolutePath())
                         .ingestPartitionRefreshFrequencyInSecond(1_000_000)
                         .build();
-                new IngestRecordsFromIterator(properties, list.iterator()).writeWithResult().getNumberOfRecords();
+                new IngestRecordsFromIterator(properties, list.iterator()).write().getNumberOfRecords();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

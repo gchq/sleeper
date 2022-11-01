@@ -115,7 +115,7 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
             IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIteratorWithProperties(
                     ingestProperties, instanceProperties, arrowBufferAllocator,
                     internalS3AsyncClient, recordIterator);
-            return ingestRecordsFromIterator.writeWithResult().getFileInfoList();
+            return ingestRecordsFromIterator.write().getFileInfoList();
             // The Arrow buffer will be auto-closed
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

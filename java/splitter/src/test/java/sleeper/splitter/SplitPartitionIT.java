@@ -128,7 +128,7 @@ public class SplitPartitionIT {
             IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
                     records.iterator()
             );
-            ingestRecordsFromIterator.writeWithResult().getNumberOfRecords();
+            ingestRecordsFromIterator.write().getNumberOfRecords();
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -243,7 +243,7 @@ public class SplitPartitionIT {
                 IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
                         records.iterator()
                 );
-                ingestRecordsFromIterator.writeWithResult().getNumberOfRecords();
+                ingestRecordsFromIterator.write().getNumberOfRecords();
             }
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -351,7 +351,7 @@ public class SplitPartitionIT {
                 IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
                         records.iterator()
                 );
-                ingestRecordsFromIterator.writeWithResult().getNumberOfRecords();
+                ingestRecordsFromIterator.write().getNumberOfRecords();
             }
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -392,7 +392,7 @@ public class SplitPartitionIT {
             IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
                     records.iterator()
             );
-            ingestRecordsFromIterator.writeWithResult().getNumberOfRecords();
+            ingestRecordsFromIterator.write().getNumberOfRecords();
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -461,7 +461,7 @@ public class SplitPartitionIT {
             IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
                     records.iterator()
             );
-            ingestRecordsFromIterator.writeWithResult().getNumberOfRecords();
+            ingestRecordsFromIterator.write().getNumberOfRecords();
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -535,7 +535,7 @@ public class SplitPartitionIT {
             IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
                     records.iterator()
             );
-            ingestRecordsFromIterator.writeWithResult().getNumberOfRecords();
+            ingestRecordsFromIterator.write().getNumberOfRecords();
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -601,7 +601,7 @@ public class SplitPartitionIT {
             IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
                     records.iterator()
             );
-            ingestRecordsFromIterator.writeWithResult().getNumberOfRecords();
+            ingestRecordsFromIterator.write().getNumberOfRecords();
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -658,7 +658,7 @@ public class SplitPartitionIT {
             IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
                     records.iterator()
             );
-            ingestRecordsFromIterator.writeWithResult().getNumberOfRecords();
+            ingestRecordsFromIterator.write().getNumberOfRecords();
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -725,7 +725,7 @@ public class SplitPartitionIT {
             IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
                     records.iterator()
             );
-            ingestRecordsFromIterator.writeWithResult().getNumberOfRecords();
+            ingestRecordsFromIterator.write().getNumberOfRecords();
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -866,7 +866,7 @@ public class SplitPartitionIT {
                 IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
                         records.iterator()
                 );
-                ingestRecordsFromIterator.writeWithResult().getNumberOfRecords();
+                ingestRecordsFromIterator.write().getNumberOfRecords();
             }
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -982,7 +982,7 @@ public class SplitPartitionIT {
                 IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
                         records.iterator()
                 );
-                ingestRecordsFromIterator.writeWithResult().getNumberOfRecords();
+                ingestRecordsFromIterator.write().getNumberOfRecords();
             }
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -1023,7 +1023,7 @@ public class SplitPartitionIT {
             IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
                     records.iterator()
             );
-            ingestRecordsFromIterator.writeWithResult().getNumberOfRecords();
+            ingestRecordsFromIterator.write().getNumberOfRecords();
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -1094,7 +1094,7 @@ public class SplitPartitionIT {
             IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
                     records.iterator()
             );
-            ingestRecordsFromIterator.writeWithResult().getNumberOfRecords();
+            ingestRecordsFromIterator.write().getNumberOfRecords();
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
