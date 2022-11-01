@@ -92,7 +92,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         for (Record record : getRecords()) {
             ingestRecords.write(record);
         }
-        long numWritten = ingestRecords.closeWithResult().getNumberOfRecords();
+        long numWritten = ingestRecords.close().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -162,7 +162,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         for (Record record : getRecordsByteArrayKey()) {
             ingestRecords.write(record);
         }
-        long numWritten = ingestRecords.closeWithResult().getNumberOfRecords();
+        long numWritten = ingestRecords.close().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -239,7 +239,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         for (Record record : getRecords2DimByteArrayKey()) {
             ingestRecords.write(record);
         }
-        long numWritten = ingestRecords.closeWithResult().getNumberOfRecords();
+        long numWritten = ingestRecords.close().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -364,7 +364,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         for (Record record : getRecordsOscillatingBetween2Partitions()) {
             ingestRecords.write(record);
         }
-        long numWritten = ingestRecords.closeWithResult().getNumberOfRecords();
+        long numWritten = ingestRecords.close().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -445,7 +445,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         for (Record record : getRecordsInFirstPartitionOnly()) {
             ingestRecords.write(record);
         }
-        long numWritten = ingestRecords.closeWithResult().getNumberOfRecords();
+        long numWritten = ingestRecords.close().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -487,7 +487,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         for (Record record : records) {
             ingestRecords.write(record);
         }
-        long numWritten = ingestRecords.closeWithResult().getNumberOfRecords();
+        long numWritten = ingestRecords.close().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -543,7 +543,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         for (Record record : records) {
             ingestRecords.write(record);
         }
-        long numWritten = ingestRecords.closeWithResult().getNumberOfRecords();
+        long numWritten = ingestRecords.close().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -665,7 +665,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         for (Record record : records) {
             ingestRecords.write(record);
         }
-        long numWritten = ingestRecords.closeWithResult().getNumberOfRecords();
+        long numWritten = ingestRecords.close().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -757,7 +757,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         for (Record record : getUnsortedRecords()) {
             ingestRecords.write(record);
         }
-        long numWritten = ingestRecords.closeWithResult().getNumberOfRecords();
+        long numWritten = ingestRecords.close().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -808,7 +808,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         for (Record record : getRecordsForAggregationIteratorTest()) {
             ingestRecords.write(record);
         }
-        long numWritten = ingestRecords.closeWithResult().getNumberOfRecords();
+        long numWritten = ingestRecords.close().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written

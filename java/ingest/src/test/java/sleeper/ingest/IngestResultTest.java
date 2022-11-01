@@ -40,7 +40,7 @@ public class IngestResultTest extends IngestRecordsTestBase {
         }
 
         // Then
-        IngestResult result = ingestRecords.closeWithResult();
+        IngestResult result = ingestRecords.close();
         assertThat(result.getNumberOfRecords())
                 .isEqualTo(2L);
     }
@@ -57,7 +57,7 @@ public class IngestResultTest extends IngestRecordsTestBase {
         }
 
         // Then
-        IngestResult result = ingestRecords.closeWithResult();
+        IngestResult result = ingestRecords.close();
         assertThat(result.getFileInfoList())
                 .containsAll(stateStore.getActiveFiles());
     }

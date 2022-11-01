@@ -62,7 +62,7 @@ public class IngestRecords {
         ingestCoordinator.write(record);
     }
 
-    public IngestResult closeWithResult() throws StateStoreException, IteratorException, IOException {
+    public IngestResult close() throws StateStoreException, IteratorException, IOException {
         return IngestResult.from(ingestCoordinator.closeReturningFileInfoList());
     }
 }

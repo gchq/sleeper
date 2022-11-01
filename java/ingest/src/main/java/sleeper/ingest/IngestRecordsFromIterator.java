@@ -47,6 +47,6 @@ public class IngestRecordsFromIterator {
         while (recordsIterator.hasNext()) {
             ingestRecords.write(recordsIterator.next());
         }
-        return ingestRecords.closeWithResult();
+        return ingestRecords.close();
     }
 }
