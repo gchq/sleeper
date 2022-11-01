@@ -65,13 +65,11 @@ public class IngestRecords {
     }
 
     public long close() throws IOException, IteratorException, InterruptedException, StateStoreException {
-        return ingestCoordinator.closeReturningFileInfoList().stream()
-                .mapToLong(FileInfo::getNumberOfRecords)
-                .sum();
+        return closeWithResult().getNumberOfRecords();
     }
 
     public List<FileInfo> closeReturningFileInfoList() throws IOException, IteratorException, StateStoreException {
-        return ingestCoordinator.closeReturningFileInfoList();
+        return closeWithResult().getFileInfoList();
     }
 
     public IngestResult closeWithResult() throws StateStoreException, IteratorException, IOException {

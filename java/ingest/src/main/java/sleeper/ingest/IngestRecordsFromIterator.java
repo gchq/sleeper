@@ -52,18 +52,18 @@ public class IngestRecordsFromIterator {
      * @throws IteratorException    -
      */
     public long write() throws StateStoreException, IOException, InterruptedException, IteratorException {
-        ingestRecords.init();
-        while (recordsIterator.hasNext()) {
-            ingestRecords.write(recordsIterator.next());
-        }
-        return ingestRecords.close();
+        return writeWithResult().getNumberOfRecords();
     }
 
     public List<FileInfo> writeReturningFileInfoList() throws StateStoreException, IOException, InterruptedException, IteratorException {
+        return writeWithResult().getFileInfoList();
+    }
+
+    public IngestResult writeWithResult() throws StateStoreException, IteratorException, IOException, InterruptedException {
         ingestRecords.init();
         while (recordsIterator.hasNext()) {
             ingestRecords.write(recordsIterator.next());
         }
-        return ingestRecords.closeReturningFileInfoList();
+        return ingestRecords.closeWithResult();
     }
 }
