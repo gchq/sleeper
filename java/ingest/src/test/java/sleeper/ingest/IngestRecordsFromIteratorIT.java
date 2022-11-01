@@ -266,7 +266,7 @@ public class IngestRecordsFromIteratorIT {
         // When
         IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
                 localDir, folder.newFolder().getAbsolutePath()).build();
-        long numWritten = new IngestRecordsFromIterator(properties, getRecords().iterator()).write();
+        long numWritten = new IngestRecordsFromIterator(properties, getRecords().iterator()).writeWithResult().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -345,7 +345,7 @@ public class IngestRecordsFromIteratorIT {
         // When
         IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
                 folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
-        long numWritten = new IngestRecordsFromIterator(properties, getRecords().iterator()).write();
+        long numWritten = new IngestRecordsFromIterator(properties, getRecords().iterator()).writeWithResult().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -454,7 +454,7 @@ public class IngestRecordsFromIteratorIT {
         // When
         IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
                 folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
-        long numWritten = new IngestRecordsFromIterator(properties, getRecordsByteArrayKey().iterator()).write();
+        long numWritten = new IngestRecordsFromIterator(properties, getRecordsByteArrayKey().iterator()).writeWithResult().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -576,7 +576,7 @@ public class IngestRecordsFromIteratorIT {
         // When
         IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
                 folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
-        long numWritten = new IngestRecordsFromIterator(properties, getRecords2DimByteArrayKey().iterator()).write();
+        long numWritten = new IngestRecordsFromIterator(properties, getRecords2DimByteArrayKey().iterator()).writeWithResult().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -694,7 +694,7 @@ public class IngestRecordsFromIteratorIT {
         // When
         IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
                 folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
-        long numWritten = new IngestRecordsFromIterator(properties, getRecordsInFirstPartitionOnly().iterator()).write();
+        long numWritten = new IngestRecordsFromIterator(properties, getRecordsInFirstPartitionOnly().iterator()).writeWithResult().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -745,7 +745,7 @@ public class IngestRecordsFromIteratorIT {
         records.addAll(getRecords());
         IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
                 folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
-        long numWritten = new IngestRecordsFromIterator(properties, records.iterator()).write();
+        long numWritten = new IngestRecordsFromIterator(properties, records.iterator()).writeWithResult().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -826,7 +826,7 @@ public class IngestRecordsFromIteratorIT {
                 folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath())
                 .maxRecordsToWriteLocally(1000L)
                 .maxInMemoryBatchSize(5L).build();
-        long numWritten = new IngestRecordsFromIterator(properties, records.iterator()).write();
+        long numWritten = new IngestRecordsFromIterator(properties, records.iterator()).writeWithResult().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -992,7 +992,7 @@ public class IngestRecordsFromIteratorIT {
                 folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath())
                 .maxRecordsToWriteLocally(10L)
                 .maxInMemoryBatchSize(5L).build();
-        long numWritten = new IngestRecordsFromIterator(properties, records.iterator()).write();
+        long numWritten = new IngestRecordsFromIterator(properties, records.iterator()).writeWithResult().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -1080,7 +1080,7 @@ public class IngestRecordsFromIteratorIT {
         // When
         IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
                 folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
-        long numWritten = new IngestRecordsFromIterator(properties, getUnsortedRecords().iterator()).write();
+        long numWritten = new IngestRecordsFromIterator(properties, getUnsortedRecords().iterator()).writeWithResult().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -1132,7 +1132,7 @@ public class IngestRecordsFromIteratorIT {
         // When
         IngestProperties properties = defaultPropertiesBuilder(stateStore, schema,
                 folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath()).build();
-        long numWritten = new IngestRecordsFromIterator(properties, Collections.emptyIterator()).write();
+        long numWritten = new IngestRecordsFromIterator(properties, Collections.emptyIterator()).writeWithResult().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -1158,7 +1158,7 @@ public class IngestRecordsFromIteratorIT {
                 folder.newFolder().getAbsolutePath(), folder.newFolder().getAbsolutePath())
                 .iteratorClassName(AdditionIterator.class.getName())
                 .build();
-        long numWritten = new IngestRecordsFromIterator(properties, getRecordsForAggregationIteratorTest().iterator()).write();
+        long numWritten = new IngestRecordsFromIterator(properties, getRecordsForAggregationIteratorTest().iterator()).writeWithResult().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
