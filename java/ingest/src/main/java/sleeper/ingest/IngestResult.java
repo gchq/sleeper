@@ -18,6 +18,7 @@ package sleeper.ingest;
 
 import sleeper.statestore.FileInfo;
 
+import java.util.Collections;
 import java.util.List;
 
 public class IngestResult {
@@ -35,5 +36,9 @@ public class IngestResult {
         return fileInfoList.stream()
                 .mapToLong(FileInfo::getNumberOfRecords)
                 .sum();
+    }
+
+    public List<FileInfo> getFileInfoList() {
+        return Collections.unmodifiableList(fileInfoList);
     }
 }

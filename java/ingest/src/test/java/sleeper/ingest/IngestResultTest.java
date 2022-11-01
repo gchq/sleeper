@@ -44,4 +44,21 @@ public class IngestResultTest extends IngestRecordsTestBase {
         assertThat(result.getNumberOfRecords())
                 .isEqualTo(2L);
     }
+
+    @Test
+    public void shouldReturnFileInfoListFromIngestResult() throws StateStoreException, IteratorException, IOException, InterruptedException {
+        // Given
+        StateStore stateStore = getStateStore(schema);
+        IngestRecords ingestRecords = new IngestRecords(defaultPropertiesBuilder(stateStore, schema).build());
+
+        // When
+        for (Record record : getRecords()) {
+            ingestRecords.write(record);
+        }
+
+        // Then
+        IngestResult result = ingestRecords.closeWithResult();
+        assertThat(result.getFileInfoList())
+                .containsAll(stateStore.getActiveFiles());
+    }
 }
