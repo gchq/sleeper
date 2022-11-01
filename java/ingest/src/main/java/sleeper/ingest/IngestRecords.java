@@ -58,7 +58,7 @@ public class IngestRecords {
         // Do nothing
     }
 
-    public void write(Record record) throws IOException, IteratorException, InterruptedException, StateStoreException {
+    public void write(Record record) throws IOException, IteratorException, StateStoreException {
         ingestCoordinator.write(record);
     }
 

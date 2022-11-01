@@ -118,8 +118,6 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
                      internalS3AsyncClient)) {
             return new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write().getFileInfoList();
             // The Arrow buffer will be auto-closed
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         } finally {
             recordIterator.close();
             // Close the S3 client if it was created in this method

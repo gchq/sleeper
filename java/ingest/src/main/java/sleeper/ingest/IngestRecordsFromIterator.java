@@ -42,7 +42,7 @@ public class IngestRecordsFromIterator {
         this.ingestRecords = new IngestRecords(ingestCoordinator);
     }
 
-    public IngestResult write() throws StateStoreException, IteratorException, IOException, InterruptedException {
+    public IngestResult write() throws StateStoreException, IteratorException, IOException {
         ingestRecords.init();
         while (recordsIterator.hasNext()) {
             ingestRecords.write(recordsIterator.next());

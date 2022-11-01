@@ -138,7 +138,7 @@ public class TestUtils {
                     .ingestPartitionRefreshFrequencyInSecond(10)
                     .build();
             new IngestRecordsFromIterator(properties, generateTimeSeriesData().iterator()).write().getNumberOfRecords();
-        } catch (IOException | StateStoreException | InterruptedException | IteratorException |
+        } catch (IOException | StateStoreException | IteratorException |
                  ObjectFactoryException e) {
             throw new RuntimeException("Failed to Ingest data", e);
         } finally {
