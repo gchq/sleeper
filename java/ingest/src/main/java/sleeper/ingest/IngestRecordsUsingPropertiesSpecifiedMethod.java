@@ -108,14 +108,15 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
             totalArrowBytesRequired = instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES) +
                     instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES);
         }
-        try (BufferAllocator arrowBufferAllocator = (totalArrowBytesRequired > 0) ? new RootAllocator(totalArrowBytesRequired) : null) {
-            IngestProperties ingestProperties = createIngestProperties(objectFactory,
-                    sleeperStateStore, instanceProperties, tableProperties, localWorkingDirectory,
-                    internalHadoopConfiguration, sleeperIteratorClassName, sleeperIteratorConfig);
-            IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIteratorWithProperties(
-                    ingestProperties, instanceProperties, arrowBufferAllocator,
-                    internalS3AsyncClient, recordIterator);
-            return ingestRecordsFromIterator.write().getFileInfoList();
+        IngestProperties ingestProperties = createIngestProperties(objectFactory,
+                sleeperStateStore, instanceProperties, tableProperties, localWorkingDirectory,
+                internalHadoopConfiguration, sleeperIteratorClassName, sleeperIteratorConfig);
+        try (BufferAllocator arrowBufferAllocator = (totalArrowBytesRequired > 0) ?
+                new RootAllocator(totalArrowBytesRequired) : null;
+             IngestCoordinator<Record> ingestCoordinator = createIngestCoordinatorWithProperties(
+                     ingestProperties, instanceProperties, arrowBufferAllocator,
+                     internalS3AsyncClient)) {
+            return new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write().getFileInfoList();
             // The Arrow buffer will be auto-closed
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -129,8 +130,8 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
     }
 
     /**
-     * Create an {@link IngestRecordsFromIterator} object that is configured using Sleeper {@link InstanceProperties} and {@link
-     * TableProperties}, ready to iterate through the provided records and perform the ingest.
+     * Create an {@link IngestCoordinator} object that is configured using Sleeper {@link InstanceProperties} and {@link
+     * TableProperties}
      *
      * @param ingestProperties   The ingest properties to use to configure the ingest
      * @param instanceProperties The instance properties to use to configure the ingest
@@ -138,15 +139,13 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
      *                           needed, a {@link NullPointerException} will be thrown
      * @param s3AsyncClient      A client to use during asynchronous ingest. It may be null, but if it is needed,
      *                           a {@link NullPointerException} will be thrown
-     * @param recordIterator     The iterator of records to ingest
-     * @return The relevant IngestRecordsFromIterator object
+     * @return The relevant IngestCoordinator object
      */
-    public static IngestRecordsFromIterator createIngestRecordsFromIteratorWithProperties(
+    public static IngestCoordinator<Record> createIngestCoordinatorWithProperties(
             IngestProperties ingestProperties,
             InstanceProperties instanceProperties,
             BufferAllocator bufferAllocator,
-            S3AsyncClient s3AsyncClient,
-            CloseableIterator<Record> recordIterator) {
+            S3AsyncClient s3AsyncClient) {
         IngestCoordinator<Record> ingestCoordinator;
         // Define a factory function for record batches
         String recordBatchType = instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
@@ -193,7 +192,7 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
             default:
                 throw new UnsupportedOperationException(String.format("Record batch type %s not supported", recordBatchType));
         }
-        return new IngestRecordsFromIterator(ingestCoordinator, recordIterator);
+        return ingestCoordinator;
     }
 
     private static IngestProperties createIngestProperties(ObjectFactory objectFactory,
