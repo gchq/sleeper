@@ -1350,7 +1350,7 @@ public class QueryExecutorIT {
                 .bucketName(folder.newFolder().getAbsolutePath())
                 .ingestPartitionRefreshFrequencyInSecond(120)
                 .build();
-        new IngestRecordsFromIterator(properties, recordIterator).write();
+        new IngestRecordsFromIterator(properties, recordIterator).writeWithResult().getNumberOfRecords();
     }
 
     protected List<Record> getRecords() {
