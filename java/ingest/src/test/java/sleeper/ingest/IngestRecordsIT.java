@@ -43,7 +43,7 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         for (Record record : getRecords()) {
             ingestRecords.write(record);
         }
-        long numWritten = ingestRecords.close();
+        long numWritten = ingestRecords.closeWithResult().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -82,7 +82,7 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
         IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
-        long numWritten = ingestRecords.close();
+        long numWritten = ingestRecords.closeWithResult().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written

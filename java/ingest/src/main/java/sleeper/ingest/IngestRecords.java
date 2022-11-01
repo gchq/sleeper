@@ -22,11 +22,9 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.StandardIngestCoordinator;
-import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
  * Writes a {@link Record} objects to the storage system, partitioned and sorted.
@@ -62,14 +60,6 @@ public class IngestRecords {
 
     public void write(Record record) throws IOException, IteratorException, InterruptedException, StateStoreException {
         ingestCoordinator.write(record);
-    }
-
-    public long close() throws IOException, IteratorException, InterruptedException, StateStoreException {
-        return closeWithResult().getNumberOfRecords();
-    }
-
-    public List<FileInfo> closeReturningFileInfoList() throws IOException, IteratorException, StateStoreException {
-        return closeWithResult().getFileInfoList();
     }
 
     public IngestResult closeWithResult() throws StateStoreException, IteratorException, IOException {
