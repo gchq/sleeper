@@ -36,6 +36,8 @@ import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.ingest.job.sqs.InMemorySQSMessageHandler;
+import sleeper.ingest.job.sqs.SQSMessageHandler;
 import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
@@ -95,6 +97,8 @@ public class IngestJobQueueConsumerIT {
     public TemporaryFolder temporaryFolder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
     private String currentLocalIngestDirectory;
     private String currentLocalTableDataDirectory;
+    private final SQSMessageHandler messageHandler = InMemorySQSMessageHandler.builder()
+            .ingestJobSerDe(new IngestJobSerDe()).build();
 
     public IngestJobQueueConsumerIT(String recordBatchType,
                                     String partitionFileWriterType,
@@ -213,13 +217,13 @@ public class IngestJobQueueConsumerIT {
         TableProperties tableProperties = createTable(sleeperSchema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(AWS_EXTERNAL_RESOURCE.getS3Client(), instanceProperties);
         StateStore stateStore = new DelegatingStateStore(new InMemoryFileInfoStore(), new FixedPartitionStore(sleeperSchema));
-        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tablePropertiesProvider.getTableProperties(TEST_TABLE_NAME), stateStore);
-        stateStore.initialise();
+        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties, stateStore);
+        stateStoreProvider.getStateStore(tableProperties).initialise();
 
         // Run the job consumer
         IngestJobQueueConsumer ingestJobQueueConsumer = new IngestJobQueueConsumer(
                 new ObjectFactory(instanceProperties, null, temporaryFolder.newFolder().getAbsolutePath()),
-                AWS_EXTERNAL_RESOURCE.getSqsClient(),
+                messageHandler,
                 AWS_EXTERNAL_RESOURCE.getCloudWatchClient(),
                 instanceProperties,
                 tablePropertiesProvider,
@@ -251,8 +255,7 @@ public class IngestJobQueueConsumerIT {
                 .sorted(new RecordComparator(recordListAndSchema.sleeperSchema))
                 .collect(Collectors.toList());
         IngestJob ingestJob = new IngestJob(TEST_TABLE_NAME, "id", files);
-        AWS_EXTERNAL_RESOURCE.getSqsClient()
-                .sendMessage(getInstanceProperties().get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(ingestJob));
+        messageHandler.send(ingestJob);
         consumeAndVerify(recordListAndSchema.sleeperSchema, doubledRecords, 1);
     }
 
@@ -269,8 +272,7 @@ public class IngestJobQueueConsumerIT {
         FileSystem.get(uri2, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration()).createNewFile(new Path(uri2));
         files.add(getIngestBucket() + "/file-2.csv");
         IngestJob ingestJob = new IngestJob(TEST_TABLE_NAME, "id", files);
-        AWS_EXTERNAL_RESOURCE.getSqsClient()
-                .sendMessage(getInstanceProperties().get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(ingestJob));
+        messageHandler.send(ingestJob);
         consumeAndVerify(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList, 1);
     }
 
@@ -298,8 +300,7 @@ public class IngestJobQueueConsumerIT {
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
         IngestJob ingestJob = new IngestJob(TEST_TABLE_NAME, "id", files);
-        AWS_EXTERNAL_RESOURCE.getSqsClient()
-                .sendMessage(getInstanceProperties().get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(ingestJob));
+        messageHandler.send(ingestJob);
         consumeAndVerify(recordListAndSchema.sleeperSchema, expectedRecords, 1);
     }
 
@@ -323,9 +324,7 @@ public class IngestJobQueueConsumerIT {
                 .flatMap(List::stream)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
-        ingestJobs.forEach(ingestJob ->
-                AWS_EXTERNAL_RESOURCE.getSqsClient()
-                        .sendMessage(getInstanceProperties().get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(ingestJob)));
+        ingestJobs.forEach(messageHandler::send);
         consumeAndVerify(recordListAndSchema.sleeperSchema, expectedRecords, noOfJobs);
     }
 }

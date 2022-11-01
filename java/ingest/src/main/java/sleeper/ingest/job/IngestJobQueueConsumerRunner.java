@@ -30,11 +30,15 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
+import sleeper.ingest.job.sqs.AWSSQSMessageHandler;
+import sleeper.ingest.job.sqs.SQSMessageHandler;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
 public class IngestJobQueueConsumerRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobQueueConsumerRunner.class);
@@ -98,7 +102,11 @@ public class IngestJobQueueConsumerRunner {
     }
 
     public void run() throws InterruptedException, IOException, IteratorException, StateStoreException {
-        IngestJobQueueConsumer ingestJobQueueConsumer = new IngestJobQueueConsumer(objectFactory, sqsClient, cloudWatchClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, localDir);
+        SQSMessageHandler messageHandler = AWSSQSMessageHandler.builder()
+                .sqsClient(sqsClient)
+                .queueUrl(instanceProperties.get(INGEST_JOB_QUEUE_URL))
+                .ingestJobSerDe(new IngestJobSerDe()).build();
+        IngestJobQueueConsumer ingestJobQueueConsumer = new IngestJobQueueConsumer(objectFactory, messageHandler, cloudWatchClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, localDir);
         ingestJobQueueConsumer.run();
     }
 }

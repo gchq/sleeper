@@ -20,10 +20,7 @@ import com.amazonaws.services.cloudwatch.model.Dimension;
 import com.amazonaws.services.cloudwatch.model.MetricDatum;
 import com.amazonaws.services.cloudwatch.model.PutMetricDataRequest;
 import com.amazonaws.services.cloudwatch.model.StandardUnit;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
@@ -40,6 +37,8 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.IngestRecordsUsingPropertiesSpecifiedMethod;
+import sleeper.ingest.job.sqs.AWSSQSMessageHandler;
+import sleeper.ingest.job.sqs.SQSMessageHandler;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.job.common.action.ActionException;
@@ -55,6 +54,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
@@ -75,7 +75,7 @@ public class IngestJobQueueConsumer {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobQueueConsumer.class);
 
     private final ObjectFactory objectFactory;
-    private final AmazonSQS sqsClient;
+    private final SQSMessageHandler messageHandler;
     private final AmazonCloudWatch cloudWatchClient;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
@@ -94,14 +94,14 @@ public class IngestJobQueueConsumer {
     private final Configuration hadoopConfiguration;
 
     public IngestJobQueueConsumer(ObjectFactory objectFactory,
-                                  AmazonSQS sqsClient,
+                                  SQSMessageHandler messageHandler,
                                   AmazonCloudWatch cloudWatchClient,
                                   InstanceProperties instanceProperties,
                                   TablePropertiesProvider tablePropertiesProvider,
                                   StateStoreProvider stateStoreProvider,
                                   String localDir) {
         this(objectFactory,
-                sqsClient,
+                messageHandler,
                 cloudWatchClient,
                 instanceProperties,
                 tablePropertiesProvider,
@@ -112,7 +112,7 @@ public class IngestJobQueueConsumer {
     }
 
     public IngestJobQueueConsumer(ObjectFactory objectFactory,
-                                  AmazonSQS sqsClient,
+                                  SQSMessageHandler messageHandler,
                                   AmazonCloudWatch cloudWatchClient,
                                   InstanceProperties instanceProperties,
                                   TablePropertiesProvider tablePropertiesProvider,
@@ -121,7 +121,7 @@ public class IngestJobQueueConsumer {
                                   S3AsyncClient s3AsyncClient,
                                   Configuration hadoopConfiguration) {
         this.objectFactory = objectFactory;
-        this.sqsClient = sqsClient;
+        this.messageHandler = messageHandler;
         this.cloudWatchClient = cloudWatchClient;
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
@@ -149,25 +149,17 @@ public class IngestJobQueueConsumer {
     }
 
     public void run() throws InterruptedException, IOException, StateStoreException, IteratorException {
-        while (true) {
-            ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(sqsJobQueueUrl)
-                    .withMaxNumberOfMessages(1)
-                    .withWaitTimeSeconds(20); // Must be >= 0 and <= 20
-            ReceiveMessageResult receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
-            List<Message> messages = receiveMessageResult.getMessages();
-            if (messages.isEmpty()) {
-                LOGGER.info("Finishing as no jobs have been received");
-                return;
-            }
-            LOGGER.info("Received message {}", messages.get(0).getBody());
-            IngestJob ingestJob = ingestJobSerDe.fromJson(messages.get(0).getBody());
-            LOGGER.info("Deserialised message to ingest job {}", ingestJob);
+        Optional<Pair<IngestJob, String>> message = messageHandler.receive();
+        while (message.isPresent()) {
+            IngestJob ingestJob = message.get().getLeft();
+            String receiptHandle = message.get().getRight();
 
             TableProperties tableProperties = tablePropertiesProvider.getTableProperties(ingestJob.getTableName());
             Schema schema = tableProperties.getSchema();
 
-            long recordsWritten = ingest(ingestJob, schema, tableProperties, messages.get(0).getReceiptHandle());
+            long recordsWritten = ingest(ingestJob, schema, tableProperties, receiptHandle);
             LOGGER.info("{} records were written", recordsWritten);
+            message = messageHandler.receive();
         }
     }
 
@@ -207,10 +199,16 @@ public class IngestJobQueueConsumer {
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
         // Create background thread to keep messages alive
-        MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl, "Ingest job " + job.getId(), receiptHandle);
-        PeriodicActionRunnable changeTimeoutRunnable = new PeriodicActionRunnable(
-                messageReference.changeVisibilityTimeoutAction(visibilityTimeoutInSeconds), keepAlivePeriod);
-        changeTimeoutRunnable.start();
+        boolean isUsingAWSMessageHandler = messageHandler instanceof AWSSQSMessageHandler;
+        MessageReference messageReference = null;
+        PeriodicActionRunnable changeTimeoutRunnable = null;
+        if (isUsingAWSMessageHandler) {
+            messageReference = new MessageReference(messageHandler.getSqsClient(),
+                    sqsJobQueueUrl, "Ingest job " + job.getId(), receiptHandle);
+            changeTimeoutRunnable = new PeriodicActionRunnable(
+                    messageReference.changeVisibilityTimeoutAction(visibilityTimeoutInSeconds), keepAlivePeriod);
+            changeTimeoutRunnable.start();
+        }
         LOGGER.info("Ingest job {}: Created background thread to keep SQS messages alive (period is {} seconds)",
                 job.getId(), keepAlivePeriod);
 
@@ -227,18 +225,22 @@ public class IngestJobQueueConsumer {
                 tableProperties.get(ITERATOR_CONFIG),
                 concatenatingIterator);
         long numRecordsWritten = ingestedFileInfoList.stream().mapToLong(FileInfo::getNumberOfRecords).sum();
-        LOGGER.info("Ingest job {}: Stopping background thread to keep SQS messages alive",
-                job.getId());
-        changeTimeoutRunnable.stop();
+        if (isUsingAWSMessageHandler) {
+            LOGGER.info("Ingest job {}: Stopping background thread to keep SQS messages alive",
+                    job.getId());
+            changeTimeoutRunnable.stop();
+        }
         LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), numRecordsWritten, paths);
 
         // Delete messages from SQS queue
-        LOGGER.info("Ingest job {}: Deleting messages from queue", job.getId());
-        DeleteMessageAction deleteAction = messageReference.deleteAction();
-        try {
-            deleteAction.call();
-        } catch (ActionException e) {
-            LOGGER.error("Ingest job {}: ActionException deleting message with handle {}", job.getId(), receiptHandle);
+        if (isUsingAWSMessageHandler) {
+            LOGGER.info("Ingest job {}: Deleting messages from queue", job.getId());
+            DeleteMessageAction deleteAction = messageReference.deleteAction();
+            try {
+                deleteAction.call();
+            } catch (ActionException e) {
+                LOGGER.error("Ingest job {}: ActionException deleting message with handle {}", job.getId(), receiptHandle);
+            }
         }
 
         // Update metrics
