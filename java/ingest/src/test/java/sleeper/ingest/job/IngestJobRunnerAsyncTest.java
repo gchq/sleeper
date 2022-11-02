@@ -119,7 +119,6 @@ public class IngestJobRunnerAsyncTest extends IngestRecordsTestBase {
 
             // When we create and run an IngestJobRunner
             IngestJobRunner jobRunner = IngestJobRunner.with(ingestCoordinator, recordList.iterator());
-
             result = jobRunner.run();
         }
         // Then the files should be ingested
@@ -139,7 +138,6 @@ public class IngestJobRunnerAsyncTest extends IngestRecordsTestBase {
 
             // When we create and run an IngestJobRunner
             IngestJobRunner jobRunner = IngestJobRunner.with(ingestCoordinator, recordList.iterator());
-
             result = jobRunner.run();
         }
         // Then the files should be ingested
@@ -156,7 +154,6 @@ public class IngestJobRunnerAsyncTest extends IngestRecordsTestBase {
 
             // When we create and run an IngestJobRunner with an empty iterator
             IngestJobRunner jobRunner = IngestJobRunner.with(ingestCoordinator, Collections.emptyIterator());
-
             result = jobRunner.run();
         }
         // Then no files should be ingested
