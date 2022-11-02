@@ -17,6 +17,7 @@ package sleeper.clients.admin;
 
 import sleeper.console.ChooseOne;
 import sleeper.console.Chosen;
+import sleeper.console.ConsoleChoice;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 
@@ -32,7 +33,7 @@ public class TablePropertyReportScreen {
         this.store = store;
     }
 
-    public enum Option implements ChooseOne.Choice {
+    public enum Option implements ConsoleChoice {
         RETURN_TO_MAIN_MENU("Return to Main Menu");
 
         private final String description;

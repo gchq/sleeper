@@ -160,7 +160,7 @@ public class ChooseOneTest {
                 .chooseWithMessageFrom(message, TestOption.values());
     }
 
-    private enum TestOption implements ChooseOne.Choice {
+    private enum TestOption implements ConsoleChoice {
         ONE("Option 1"),
         TWO("Option 2");
 

@@ -18,6 +18,7 @@ package sleeper.clients.admin;
 import sleeper.clients.AdminClient;
 import sleeper.console.ChooseOne;
 import sleeper.console.Chosen;
+import sleeper.console.ConsoleChoice;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 
@@ -35,7 +36,7 @@ public class AdminMainScreen {
         this.chooseOne = new ChooseOne(out, in);
     }
 
-    public enum Option implements ChooseOne.Choice {
+    public enum Option implements ConsoleChoice {
         PRINT_PROPERTY_REPORT("Print Sleeper instance property report"),
         PRINT_TABLE_NAMES("Print Sleeper table names"),
         PRINT_TABLE_PROPERTY_REPORT("Print Sleeper table property report"),

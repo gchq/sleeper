@@ -17,7 +17,7 @@ package sleeper.console;
 
 import java.util.Optional;
 
-public class Chosen<T extends ChooseOne.Choice> {
+public class Chosen<T extends ConsoleChoice> {
 
     private final String entered;
     private final T choice;
@@ -45,11 +45,11 @@ public class Chosen<T extends ChooseOne.Choice> {
         return exit;
     }
 
-    public static <T extends ChooseOne.Choice> Chosen<T> exit(String entered) {
+    public static <T extends ConsoleChoice> Chosen<T> exit(String entered) {
         return new Chosen<>(entered, null, true);
     }
 
-    public static <T extends ChooseOne.Choice> Chosen<T> nothing(String entered) {
+    public static <T extends ConsoleChoice> Chosen<T> nothing(String entered) {
         return new Chosen<>(entered, null);
     }
 }
