@@ -29,7 +29,7 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 
 public class IngestResultTest extends IngestRecordsTestBase {
     @Test
-    public void shouldReturnNumberOfRecordsFromIngestResult() throws StateStoreException, IteratorException, IOException, InterruptedException {
+    public void shouldReturnNumberOfRecordsFromIngestResult() throws StateStoreException, IteratorException, IOException {
         // Given
         StateStore stateStore = getStateStore(schema);
         IngestRecords ingestRecords = new IngestRecords(defaultPropertiesBuilder(stateStore, schema).build());
@@ -46,7 +46,7 @@ public class IngestResultTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldReturnFileInfoListFromIngestResult() throws StateStoreException, IteratorException, IOException, InterruptedException {
+    public void shouldReturnFileInfoListFromIngestResult() throws StateStoreException, IteratorException, IOException {
         // Given
         StateStore stateStore = getStateStore(schema);
         IngestRecords ingestRecords = new IngestRecords(defaultPropertiesBuilder(stateStore, schema).build());
