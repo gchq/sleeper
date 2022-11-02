@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package sleeper.trino;
 
 import com.google.common.collect.ImmutableList;
@@ -34,15 +49,15 @@ public class SimpleKeyValueSchemaInsertIT {
 
 
     @ClassRule
-    public static final PopulatedSleeperExternalResource populatedSleeperExternalResource =
+    public static final PopulatedSleeperExternalResource POPULATED_SLEEPER_EXTERNAL_RESOURCE =
             new PopulatedSleeperExternalResource(ImmutableMap.of(), TABLE_DEFINITIONS, Optional.empty());
     private static QueryAssertions assertions;
 
     private static Schema generateSimpleSchema() {
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new StringType()));
-        schema.setValueFields(new Field("value", new StringType()));
-        return schema;
+        return Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value", new StringType()))
+                .build();
     }
 
     private static Stream<Record> generateSimpleRecordStream() {
@@ -56,11 +71,11 @@ public class SimpleKeyValueSchemaInsertIT {
 
     @BeforeClass
     public static void beforeClass() {
-        assertions = populatedSleeperExternalResource.getQueryAssertions();
+        assertions = POPULATED_SLEEPER_EXTERNAL_RESOURCE.getQueryAssertions();
         String valuesTerms = generateSimpleRecordStream()
                 .map(record -> String.format("('%s', '%s')", record.get("key"), record.get("value")))
                 .collect(Collectors.joining(","));
-        populatedSleeperExternalResource.getQueryAssertions().execute(
+        POPULATED_SLEEPER_EXTERNAL_RESOURCE.getQueryAssertions().execute(
                 String.format("INSERT INTO sleeper.default.%s VALUES %s", TEST_TABLE_NAME, valuesTerms));
     }
 

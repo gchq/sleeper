@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package sleeper.trino.remotesleeperconnection;
 
 import io.airlift.log.Logger;
@@ -15,9 +30,9 @@ class SleeperTablePartitionStructure {
     private final List<Partition> allPartitions;
     private final Map<String, List<String>> partitionToFileMapping;
 
-    public SleeperTablePartitionStructure(Instant asOfInstant,
-                                          List<Partition> allPartitions,
-                                          Map<String, List<String>> partitionToFileMapping) {
+    SleeperTablePartitionStructure(Instant asOfInstant,
+                                   List<Partition> allPartitions,
+                                   Map<String, List<String>> partitionToFileMapping) {
         this.asOfInstant = asOfInstant;
         this.allPartitions = allPartitions;
         this.partitionToFileMapping = partitionToFileMapping;
@@ -37,8 +52,12 @@ class SleeperTablePartitionStructure {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         SleeperTablePartitionStructure that = (SleeperTablePartitionStructure) o;
         return asOfInstant.equals(that.asOfInstant) && allPartitions.equals(that.allPartitions) && partitionToFileMapping.equals(that.partitionToFileMapping);
     }
