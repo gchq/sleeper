@@ -27,7 +27,10 @@ public class ChooseOneTest {
 
     @Test
     public void shouldOutputOptions() throws Exception {
+        // When
         chooseTestOption();
+
+        // Then
         assertThat(out).hasToString("" +
                 "Please select from the below options and hit return:\n" +
                 "[0] Exit program\n" +
@@ -38,47 +41,77 @@ public class ChooseOneTest {
 
     @Test
     public void shouldReturnFirstOptionWhenChosen() throws Exception {
+        // Given
         in.enterNextPrompt("1");
+
+        // When
         Chosen<TestOption> chosen = chooseTestOption();
+
+        // Then
         assertThat(chosen.isExited()).isFalse();
         assertThat(chosen.getChoice()).containsSame(TestOption.ONE);
     }
 
     @Test
     public void shouldReturnSecondOptionWhenChosen() throws Exception {
+        // Given
         in.enterNextPrompt("2");
+
+        // When
         Chosen<TestOption> chosen = chooseTestOption();
+
+        // Then
         assertThat(chosen.isExited()).isFalse();
         assertThat(chosen.getChoice()).containsSame(TestOption.TWO);
     }
 
     @Test
     public void shouldExitWhenChosen() throws Exception {
+        // Given
         in.enterNextPrompt("0");
+
+        // When
         Chosen<TestOption> chosen = chooseTestOption();
+
+        // Then
         assertThat(chosen.isExited()).isTrue();
     }
 
     @Test
     public void shouldReturnNoChoiceWhenNoneEntered() throws Exception {
+        // Given
         in.enterNextPrompt("");
+
+        // When
         Chosen<TestOption> chosen = chooseTestOption();
+
+        // Then
         assertThat(chosen.isExited()).isFalse();
         assertThat(chosen.getChoice()).isEmpty();
     }
 
     @Test
     public void shouldReturnNoChoiceWhenEnteredNumberTooLarge() throws Exception {
+        // Given
         in.enterNextPrompt("10");
+
+        // When
         Chosen<TestOption> chosen = chooseTestOption();
+
+        // Then
         assertThat(chosen.isExited()).isFalse();
         assertThat(chosen.getChoice()).isEmpty();
     }
 
     @Test
     public void shouldReturnNoChoiceWhenEnteredNumberTooSmall() throws Exception {
+        // Given
         in.enterNextPrompt("-1");
+
+        // When
         Chosen<TestOption> chosen = chooseTestOption();
+
+        // Then
         assertThat(chosen.isExited()).isFalse();
         assertThat(chosen.getChoice()).isEmpty();
     }

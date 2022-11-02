@@ -45,6 +45,7 @@ public class AdminClientTest extends AdminClientTestBase {
     public void shouldDisplayMainScreenAndExitWhenChosen() throws Exception {
         // Given
         in.enterNextPrompt("0");
+
         // When / Then
         assertThat(runClientGetOutput()).isEqualTo(MAIN_SCREEN);
     }
