@@ -15,18 +15,24 @@
  */
 package sleeper.clients.admin;
 
+import sleeper.clients.AdminClient;
 import sleeper.console.ChooseOne;
 import sleeper.console.Chosen;
+import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
+
+import java.util.Optional;
 
 public class AdminMainScreen {
 
     private final ConsoleOutput out;
+    private final ConsoleInput in;
     private final ChooseOne chooseOne;
 
-    public AdminMainScreen(ConsoleOutput out, ChooseOne chooseOne) {
+    public AdminMainScreen(ConsoleOutput out, ConsoleInput in) {
         this.out = out;
-        this.chooseOne = chooseOne;
+        this.in = in;
+        this.chooseOne = new ChooseOne(out, in);
     }
 
     public enum Option implements ChooseOne.Choice {
@@ -46,10 +52,42 @@ public class AdminMainScreen {
         }
     }
 
-    public Chosen<Option> chooseOption(String message) {
+    public void mainLoop(AdminClient client, String instanceId) {
+        Chosen<Option> chosen = chooseOption("");
+        while (!chosen.isExit()) {
+            Optional<Option> choice = chosen.getChoice();
+            if (choice.isPresent()) {
+                switch (choice.get()) {
+                    case PRINT_PROPERTY_REPORT:
+                        client.instancePropertyReport().print(instanceId);
+                        confirmReturnToMainScreen();
+                        break;
+                    case PRINT_TABLE_PROPERTY_REPORT:
+                        if (client.tablePropertyReportScreen().chooseTableAndPrint(instanceId)
+                                .isExit()) {
+                            return;
+                        }
+                        confirmReturnToMainScreen();
+                        break;
+                    case PRINT_TABLE_NAMES:
+                    case UPDATE_A_PROPERTY:
+                        break;
+                }
+            }
+            chosen = chooseOption("");
+        }
+    }
+
+    private Chosen<Option> chooseOption(String message) {
         out.clearScreen(message);
         out.println("ADMINISTRATION COMMAND LINE CLIENT\n----------------------------------\n");
         return chooseOne.chooseFrom(Option.values());
+    }
+
+    private void confirmReturnToMainScreen() {
+        out.println("\n\n----------------------------------");
+        out.println("Hit enter to return to main screen");
+        in.waitForLine();
     }
 
 }
