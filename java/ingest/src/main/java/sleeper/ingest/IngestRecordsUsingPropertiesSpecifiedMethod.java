@@ -129,7 +129,7 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
 
     /**
      * Create an {@link IngestCoordinator} object that is configured using Sleeper {@link InstanceProperties} and {@link
-     * TableProperties}
+     * TableProperties}.
      *
      * @param ingestProperties   The ingest properties to use to configure the ingest
      * @param instanceProperties The instance properties to use to configure the ingest
