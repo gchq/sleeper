@@ -224,7 +224,7 @@ class SleeperClient:
 
         print(query_message)
 
-        # Convert query messsage to json and send to query queue
+        # Convert query message to json and send to query queue
         query_message_json = json.dumps(query_message)
         query_queue_sqs = _sqs.get_queue_by_name(QueueName = self._query_queue)
         query_queue_sqs.send_message(MessageBody = query_message_json)
