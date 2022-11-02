@@ -18,12 +18,7 @@ package sleeper.console;
 import org.junit.Test;
 import sleeper.ToStringPrintStream;
 
-import java.io.UnsupportedEncodingException;
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 public class ChooseOneTest {
 
@@ -44,49 +39,53 @@ public class ChooseOneTest {
     @Test
     public void shouldReturnFirstOptionWhenChosen() throws Exception {
         in.enterNextPrompt("1");
-        assertThat(chooseTestOption()).containsSame(TestOption.ONE);
+        Chosen<TestOption> chosen = chooseTestOption();
+        assertThat(chosen.isExited()).isFalse();
+        assertThat(chosen.getChoice()).containsSame(TestOption.ONE);
     }
 
     @Test
     public void shouldReturnSecondOptionWhenChosen() throws Exception {
         in.enterNextPrompt("2");
-        assertThat(chooseTestOption()).containsSame(TestOption.TWO);
+        Chosen<TestOption> chosen = chooseTestOption();
+        assertThat(chosen.isExited()).isFalse();
+        assertThat(chosen.getChoice()).containsSame(TestOption.TWO);
     }
 
     @Test
-    public void shouldExitAndCleanupWhenChosen() throws Exception {
-        Runnable exit = mock(Runnable.class);
+    public void shouldExitWhenChosen() throws Exception {
         in.enterNextPrompt("0");
-        assertThat(chooseTestOptionWithExitFn(exit)).isEmpty();
-        verify(exit).run();
+        Chosen<TestOption> chosen = chooseTestOption();
+        assertThat(chosen.isExited()).isTrue();
     }
 
     @Test
     public void shouldReturnNoChoiceWhenNoneEntered() throws Exception {
         in.enterNextPrompt("");
-        assertThat(chooseTestOption()).isEmpty();
+        Chosen<TestOption> chosen = chooseTestOption();
+        assertThat(chosen.isExited()).isFalse();
+        assertThat(chosen.getChoice()).isEmpty();
     }
 
     @Test
     public void shouldReturnNoChoiceWhenEnteredNumberTooLarge() throws Exception {
         in.enterNextPrompt("10");
-        assertThat(chooseTestOption()).isEmpty();
+        Chosen<TestOption> chosen = chooseTestOption();
+        assertThat(chosen.isExited()).isFalse();
+        assertThat(chosen.getChoice()).isEmpty();
     }
 
     @Test
     public void shouldReturnNoChoiceWhenEnteredNumberTooSmall() throws Exception {
         in.enterNextPrompt("-1");
-        assertThat(chooseTestOption()).isEmpty();
+        Chosen<TestOption> chosen = chooseTestOption();
+        assertThat(chosen.isExited()).isFalse();
+        assertThat(chosen.getChoice()).isEmpty();
     }
 
-    private Optional<ChooseOne.Choice> chooseTestOption() throws UnsupportedEncodingException {
-        return chooseTestOptionWithExitFn(() -> {
-            throw new IllegalStateException("Unexpected exit");
-        });
-    }
-
-    private Optional<ChooseOne.Choice> chooseTestOptionWithExitFn(Runnable exitFn) throws UnsupportedEncodingException {
-        return new ChooseOne(out.consoleOut(), in.consoleIn(), exitFn).chooseFrom(TestOption.values());
+    private Chosen<TestOption> chooseTestOption() throws Exception {
+        return new ChooseOne(out.consoleOut(), in.consoleIn())
+                .chooseFrom(TestOption.values());
     }
 
     private enum TestOption implements ChooseOne.Choice {

@@ -29,6 +29,10 @@ public class TestConsoleInput {
     }
 
     public void enterNextPrompt(String entered) {
-        when(prompter.promptLine(any())).thenReturn(entered);
+        enterNextPrompts(entered);
+    }
+
+    public void enterNextPrompts(String entered, String... otherEntered) {
+        when(prompter.promptLine(any())).thenReturn(entered, otherEntered);
     }
 }

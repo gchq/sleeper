@@ -17,26 +17,23 @@ package sleeper.console;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 public class ChooseOne {
 
     private final ConsoleOutput out;
     private final ConsoleInput in;
-    private final Runnable exitFn;
 
-    public ChooseOne(ConsoleOutput out, ConsoleInput in, Runnable exitFn) {
+    public ChooseOne(ConsoleOutput out, ConsoleInput in) {
         this.out = out;
         this.in = in;
-        this.exitFn = exitFn;
     }
 
     @SafeVarargs
-    public final <T extends Choice> Optional<T> chooseFrom(T... choices) {
+    public final <T extends Choice> Chosen<T> chooseFrom(T... choices) {
         return chooseFrom(Arrays.asList(choices));
     }
 
-    public <T extends Choice> Optional<T> chooseFrom(List<T> choices) {
+    public <T extends Choice> Chosen<T> chooseFrom(List<T> choices) {
         out.println("Please select from the below options and hit return:");
         out.println("[0] Exit program");
         for (int i = 0; i < choices.size(); i++) {
@@ -47,11 +44,11 @@ public class ChooseOne {
         try {
             int entered = Integer.parseInt(enteredStr);
             if (entered == 0) {
-                exitFn.run();
+                return Chosen.exit();
             }
-            return Optional.of(choices.get(entered - 1));
+            return new Chosen<>(choices.get(entered - 1));
         } catch (NumberFormatException | IndexOutOfBoundsException e) {
-            return Optional.empty();
+            return Chosen.nothing();
         }
     }
 

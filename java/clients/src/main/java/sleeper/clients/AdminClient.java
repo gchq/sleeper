@@ -18,11 +18,17 @@ package sleeper.clients;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
+import sleeper.clients.admin.AdminConfigStore;
+import sleeper.clients.admin.AdminMainScreen;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.console.ChooseOne;
+import sleeper.console.Chosen;
+import sleeper.console.ConsoleInput;
+import sleeper.console.ConsoleOutput;
 import sleeper.table.job.TableLister;
 
 import java.io.IOException;
@@ -44,13 +50,32 @@ public class AdminClient {
     private static final String MAIN_MENU_OPTION = "[1] Return to Main Menu\n";
 
     private static AmazonS3 defaultS3Client;
+    private final AdminConfigStore store;
+    private final ConsoleOutput out;
+    private final ConsoleInput in;
+    private final ChooseOne chooseOne;
 
-    private AdminClient() {
+    public AdminClient(AdminConfigStore store, ConsoleOutput out, ConsoleInput in) {
+        this.store = store;
+        this.out = out;
+        this.in = in;
+        this.chooseOne = new ChooseOne(out, in);
+    }
+
+    public static AdminClient client(AmazonS3 s3Client) {
+        return new AdminClient(
+                new AdminConfigStore(s3Client),
+                new ConsoleOutput(System.out),
+                new ConsoleInput(System.console()));
     }
 
     static void printInstancePropertiesReport(AmazonS3 s3Client, String instanceId) throws IOException, AmazonS3Exception {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
+        client(s3Client).printInstancePropertiesReport(instanceProperties);
+    }
+
+    private void printInstancePropertiesReport(InstanceProperties instanceProperties) {
 
         Iterator<Map.Entry<Object, Object>> propertyIterator = instanceProperties.getPropertyIterator();
         TreeMap<Object, Object> instancePropertyTreeMap = new TreeMap<>();
@@ -63,9 +88,9 @@ public class AdminClient {
                 instancePropertyTreeMap.put(userDefinedInstanceProperty.getPropertyName(), instanceProperties.get(userDefinedInstanceProperty));
             }
         }
-        System.out.println("\n\n Instance Property Report \n -------------------------");
+        out.println("\n\n Instance Property Report \n -------------------------");
         for (Map.Entry<Object, Object> entry : instancePropertyTreeMap.entrySet()) {
-            System.out.println(entry.getKey() + ": " + entry.getValue());
+            out.println(entry.getKey() + ": " + entry.getValue());
         }
     }
 
@@ -355,5 +380,25 @@ public class AdminClient {
             throw new IllegalArgumentException("Usage: <instance id>");
         }
         mainScreen("", args[0]);
+    }
+
+    public void start(String instanceId) {
+        AdminMainScreen mainScreen = new AdminMainScreen(out, chooseOne);
+        Chosen<AdminMainScreen.Option> chosen = mainScreen.chooseOption("");
+        while (!chosen.isExited()) {
+            chosen.getChoice().ifPresent(option -> {
+                if (option == AdminMainScreen.Option.PRINT_PROPERTY_REPORT) {
+                    printInstancePropertiesReport(store.loadInstanceProperties(instanceId));
+                    confirmReturnToMainScreen();
+                }
+            });
+            chosen = mainScreen.chooseOption("");
+        }
+    }
+
+    private void confirmReturnToMainScreen() {
+        out.println("\n\n----------------------------------");
+        out.println("Hit enter to return to main screen");
+        in.waitForConfirmation();
     }
 }
