@@ -29,7 +29,6 @@ import io.trino.spi.Page;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.parquet.hadoop.ParquetWriter;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
@@ -86,18 +85,19 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CON
  * <p>
  * This class is intended to be thread-safe.
  */
-class SleeperRawAwsConnection implements AutoCloseable {
-    private static final Logger LOG = Logger.get(SleeperRawAwsConnection.class);
+public class SleeperRawAwsConnection implements AutoCloseable {
+    private static final Logger LOGGER = Logger.get(SleeperRawAwsConnection.class);
 
     private static final int NO_OF_EXECUTOR_THREADS = 10;
     private static final int PARTITION_CACHE_EXPIRY_VALUE = 60;
     private static final TimeUnit PARTITION_CACHE_EXPIRY_UNITS = TimeUnit.MINUTES;
-    private static final int MAX_NO_OF_RECORDS_TO_WRITE_TO_ARROW_FILE_AT_ONCE = 16 * 1024;
-    private static final long WORKING_ARROW_BUFFER_ALLOCATOR_BYTES = 64 * 1024 * 1024L;
-    private static final long BATCH_ARROW_BUFFER_ALLOCATOR_BYTES_MIN = 64 * 1024 * 1024L;
-    private static final String INGEST_COMPRESSION_CODEC = "snappy";
+    public static final int MAX_NO_OF_RECORDS_TO_WRITE_TO_ARROW_FILE_AT_ONCE = 16 * 1024;
+    public static final long WORKING_ARROW_BUFFER_ALLOCATOR_BYTES = 64 * 1024 * 1024L;
+    public static final long BATCH_ARROW_BUFFER_ALLOCATOR_BYTES_MIN = 64 * 1024 * 1024L;
+    public static final String INGEST_COMPRESSION_CODEC = "snappy";
     private static final int INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS = 120;
     private final BufferAllocator rootBufferAllocator;
+    private final SleeperConfig sleeperConfig;
     private final AmazonS3 s3Client;
     private final S3AsyncClient s3AsyncClient;
     private final AmazonDynamoDB dynamoDbClient;
@@ -110,8 +110,6 @@ class SleeperRawAwsConnection implements AutoCloseable {
     private final ExecutorService executorService;
     private final LoadingCache<Pair<String, Instant>, SleeperTablePartitionStructure> sleeperTablePartitionStructureCache;
     private final String localWorkingDirectory;
-    private final long maxBytesToWriteLocally;
-    private final long maxBatchArrowBufferAllocatorBytes;
 
     SleeperRawAwsConnection(SleeperConfig sleeperConfig,
                             AmazonS3 s3Client,
@@ -119,6 +117,7 @@ class SleeperRawAwsConnection implements AutoCloseable {
                             AmazonDynamoDB dynamoDbClient,
                             HadoopConfigurationProvider hadoopConfigurationProvider) throws IOException, ObjectFactoryException {
         requireNonNull(sleeperConfig);
+        this.sleeperConfig = sleeperConfig;
         this.s3Client = requireNonNull(s3Client);
         this.s3AsyncClient = requireNonNull(s3AsyncClient);
         this.dynamoDbClient = requireNonNull(dynamoDbClient);
@@ -127,8 +126,6 @@ class SleeperRawAwsConnection implements AutoCloseable {
 
         String configBucket = sleeperConfig.getConfigBucket();
         this.localWorkingDirectory = sleeperConfig.getLocalWorkingDirectory();
-        this.maxBytesToWriteLocally = sleeperConfig.getMaxBytesToWriteLocallyPerWriter();
-        this.maxBatchArrowBufferAllocatorBytes = sleeperConfig.getMaxArrowRootAllocatorBytes();
 
         // Member variables related to the Sleeper service
         // Note that the state-store provider is NOT thread-safe and so occasionally the state-store factory
@@ -144,14 +141,14 @@ class SleeperRawAwsConnection implements AutoCloseable {
         // Note that the table-properties provider is NOT thread-safe.
         List<String> tableNames = pullAllSleeperTableNames();
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(this.s3Client, this.instanceProperties);
-        LOG.info(String.format("Number of Sleeper tables: %d", tableNames.size()));
+        LOGGER.info(String.format("Number of Sleeper tables: %d", tableNames.size()));
         this.tableNameToSleeperTablePropertiesMap = tableNames.stream()
                 .collect(ImmutableMap.toImmutableMap(
                         Function.identity(),
                         tablePropertiesProvider::getTableProperties));
         this.tableNameToSleeperTablePropertiesMap.forEach(
                 (tableName, tableProperties) ->
-                        LOG.debug("Table %s with schema %s", tableName, tableProperties.getSchema()));
+                        LOGGER.debug("Table %s with schema %s", tableName, tableProperties.getSchema()));
 
         // Member variables related to queries via direct statestore/S3
         this.objectFactory = new ObjectFactory(this.instanceProperties, this.s3Client, this.localWorkingDirectory);
@@ -189,12 +186,12 @@ class SleeperRawAwsConnection implements AutoCloseable {
      */
     @Override
     public void close() {
-        LOG.info("Closing AWS clients");
+        LOGGER.info("Closing AWS clients");
         s3Client.shutdown();
         s3AsyncClient.close();
         dynamoDbClient.shutdown();
         rootBufferAllocator.close();
-        LOG.info("AWS clients closed");
+        LOGGER.info("AWS clients closed");
     }
 
     /**
@@ -249,7 +246,7 @@ class SleeperRawAwsConnection implements AutoCloseable {
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         List<Partition> partitions = stateStore.getAllPartitions();
         Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToActiveFilesMap();
-        LOG.debug("Retrieved " + partitions.size() + " partitions from StateStore");
+        LOGGER.debug("Retrieved " + partitions.size() + " partitions from StateStore");
         return new SleeperTablePartitionStructure(asOfInstant, partitions, partitionToFileMapping);
     }
 
@@ -327,7 +324,7 @@ class SleeperRawAwsConnection implements AutoCloseable {
         StateStore stateStore = this.stateStoreFactory.getStateStore(tableProperties);
         SleeperTablePartitionStructure sleeperTablePartitionStructure = sleeperTablePartitionStructureCache.get(Pair.of(query.getTableName(), asOfInstant));
 
-        LOG.debug("Creating result record iterator for query %s", query);
+        LOGGER.debug("Creating result record iterator for query %s", query);
         QueryExecutor queryExecutor = new QueryExecutor(
                 this.objectFactory,
                 tableProperties,
@@ -354,24 +351,16 @@ class SleeperRawAwsConnection implements AutoCloseable {
         StateStore stateStore = this.stateStoreFactory.getStateStore(tableProperties);
         // Create a new 'ingest records' object
         return BespokeIngestCoordinator.asyncFromPage(
-                this.objectFactory,
+                objectFactory,
                 stateStore,
                 tableProperties.getSchema(),
-                this.localWorkingDirectory,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                INGEST_COMPRESSION_CODEC,
-                this.hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties),
+                sleeperConfig,
+                hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties),
                 null,
                 null,
                 INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS,
                 tableProperties.get(TableProperty.DATA_BUCKET),
-                this.s3AsyncClient,
-                this.rootBufferAllocator,
-                MAX_NO_OF_RECORDS_TO_WRITE_TO_ARROW_FILE_AT_ONCE,
-                WORKING_ARROW_BUFFER_ALLOCATOR_BYTES,
-                BATCH_ARROW_BUFFER_ALLOCATOR_BYTES_MIN,
-                this.maxBatchArrowBufferAllocatorBytes,
-                this.maxBytesToWriteLocally);
+                s3AsyncClient,
+                rootBufferAllocator);
     }
 }

@@ -87,18 +87,17 @@ public class TpchSchemaPartitionedInsertPartitioningEnabledIT {
         // produces its data pre-sorted by custkey (and hence by name) which means that partitioning on one of these
         // columns would automatically result in efficient writing of data. Nationkey is assigned to the data in
         // a pseudorandom way.
-        Schema schema = new Schema();
-        schema.setRowKeyFields(
-                new Field("nationkey", new LongType()));
-        schema.setValueFields(
-                new Field("custkey", new LongType()),
-                new Field("name", new StringType()),
-                new Field("address", new StringType()),
-                new Field("phone", new StringType()),
-                new Field("acctbal", new StringType()),
-                new Field("mktsegment", new StringType()),
-                new Field("comment", new StringType()));
-        return schema;
+        return Schema.builder()
+                .rowKeyFields(new Field("nationkey", new LongType()))
+                .valueFields(
+                    new Field("custkey", new LongType()),
+                    new Field("name", new StringType()),
+                    new Field("address", new StringType()),
+                    new Field("phone", new StringType()),
+                    new Field("acctbal", new StringType()),
+                    new Field("mktsegment", new StringType()),
+                    new Field("comment", new StringType()))
+                .build();
     }
 
     private static List<Object> generateCustomerPartitionBoundaries() {

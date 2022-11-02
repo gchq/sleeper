@@ -38,6 +38,7 @@ import io.trino.spi.connector.LocalProperty;
 import io.trino.spi.connector.RetryMode;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.connector.SchemaTablePrefix;
+import io.trino.spi.connector.SortOrder;
 import io.trino.spi.connector.SortingProperty;
 import io.trino.spi.connector.TableColumnsMetadata;
 import io.trino.spi.predicate.Domain;

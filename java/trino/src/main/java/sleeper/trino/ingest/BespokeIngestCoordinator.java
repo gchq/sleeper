@@ -18,6 +18,8 @@ package sleeper.trino.ingest;
 import io.trino.spi.Page;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.parquet.hadoop.ParquetWriter;
+
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
@@ -26,6 +28,8 @@ import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriter;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriter;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
 import sleeper.statestore.StateStore;
+import sleeper.trino.SleeperConfig;
+import sleeper.trino.remotesleeperconnection.SleeperRawAwsConnection;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
@@ -33,46 +37,43 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class BespokeIngestCoordinator {
+
     private BespokeIngestCoordinator() {
     }
 
     public static IngestCoordinator<Page> asyncFromPage(ObjectFactory objectFactory,
                                                         StateStore sleeperStateStore,
                                                         Schema sleeperSchema,
-                                                        String localWorkingDirectory,
-                                                        int parquetRowGroupSize,
-                                                        int parquetPageSize,
-                                                        String parquetCompressionCodec,
+                                                        SleeperConfig sleeperConfig,
                                                         Configuration hadoopConfiguration,
                                                         String sleeperIteratorClassName,
                                                         String sleeperIteratorConfig,
                                                         int ingestPartitionRefreshFrequencyInSeconds,
                                                         String s3BucketName,
                                                         S3AsyncClient s3AsyncClient,
-                                                        BufferAllocator arrowBufferAllocator,
-                                                        int maxNoOfRecordsToWriteToArrowFileAtOnce,
-                                                        long workingArrowBufferAllocatorBytes,
-                                                        long minBatchArrowBufferAllocatorBytes,
-                                                        long maxBatchArrowBufferAllocatorBytes,
-                                                        long maxNoOfBytesToWriteLocally) {
+                                                        BufferAllocator arrowBufferAllocator) {
+        String localWorkingDirectory = sleeperConfig.getLocalWorkingDirectory();
+        long maxBytesToWriteLocally = sleeperConfig.getMaxBytesToWriteLocallyPerWriter();
+        long maxBatchArrowBufferAllocatorBytes = sleeperConfig.getMaxArrowRootAllocatorBytes();
+
         Supplier<RecordBatch<Page>> recordBatchFactoryFn = () ->
                 new ArrowRecordBatchAcceptingPages(
                         arrowBufferAllocator,
                         sleeperSchema,
                         localWorkingDirectory,
-                        workingArrowBufferAllocatorBytes,
-                        minBatchArrowBufferAllocatorBytes,
+                        SleeperRawAwsConnection.WORKING_ARROW_BUFFER_ALLOCATOR_BYTES,
+                        SleeperRawAwsConnection.BATCH_ARROW_BUFFER_ALLOCATOR_BYTES_MIN,
                         maxBatchArrowBufferAllocatorBytes,
-                        maxNoOfBytesToWriteLocally,
-                        maxNoOfRecordsToWriteToArrowFileAtOnce);
+                        maxBytesToWriteLocally,
+                        SleeperRawAwsConnection.MAX_NO_OF_RECORDS_TO_WRITE_TO_ARROW_FILE_AT_ONCE);
         Function<Partition, PartitionFileWriter> partitionFileFactoryFn = partition -> {
             try {
                 return new AsyncS3PartitionFileWriter(
                         sleeperSchema,
                         partition,
-                        parquetRowGroupSize,
-                        parquetPageSize,
-                        parquetCompressionCodec,
+                        ParquetWriter.DEFAULT_BLOCK_SIZE,
+                        ParquetWriter.DEFAULT_PAGE_SIZE,
+                        SleeperRawAwsConnection.INGEST_COMPRESSION_CODEC,
                         hadoopConfiguration,
                         s3BucketName,
                         s3AsyncClient,
