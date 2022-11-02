@@ -531,11 +531,17 @@ public class CompactionStack extends NestedStack {
 
     private void addEC2CapacityProvider(Cluster cluster, String clusterName, IVpc vpc) {
         AutoScalingGroup ec2scalingGroup = AutoScalingGroup.Builder.create(this, clusterName + "ScalingGroup").vpc(vpc)
-                .allowAllOutbound(true).associatePublicIpAddress(false)
-                .blockDevices(Arrays.asList(BlockDevice.builder().deviceName("/dev/xvda") // root volume
+                .allowAllOutbound(true)
+                .associatePublicIpAddress(false)
+                .requireImdsv2(true)
+                .blockDevices(Arrays.asList(BlockDevice.builder()
+                        .deviceName("/dev/xvda") // root volume
                         .volume(BlockDeviceVolume.ebs(instanceProperties.getInt(COMPACTION_EC2_ROOT_SIZE),
-                                EbsDeviceOptions.builder().deleteOnTermination(true).encrypted(true)
-                                        .volumeType(EbsDeviceVolumeType.GP2).build()))
+                                EbsDeviceOptions.builder()
+                                .deleteOnTermination(true)
+                                .encrypted(true)
+                                .volumeType(EbsDeviceVolumeType.GP2)
+                                .build()))
                         .build()))
                 .minCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MINIMUM))
                 .desiredCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_DESIRED))
@@ -549,21 +555,29 @@ public class CompactionStack extends NestedStack {
                 .build();
 
         AsgCapacityProvider ec2Provider = AsgCapacityProvider.Builder
-                .create(this, clusterName + "CapacityProvider").enableManagedScaling(false)
-                .enableManagedTerminationProtection(true)
-                .autoScalingGroup(ec2scalingGroup).spotInstanceDraining(true)
-                .canContainersAccessInstanceRole(false).machineImageType(MachineImageType.AMAZON_LINUX_2).build();
+                .create(this, clusterName + "CapacityProvider")
+                .enableManagedScaling(false)
+                .enableManagedTerminationProtection(false)
+                .autoScalingGroup(ec2scalingGroup)
+                .spotInstanceDraining(true)
+                .canContainersAccessInstanceRole(false)
+                .machineImageType(MachineImageType.AMAZON_LINUX_2)
+                .build();
 
         cluster.addAsgCapacityProvider(ec2Provider,
-                AddAutoScalingGroupCapacityOptions.builder().canContainersAccessInstanceRole(false)
-                        .machineImageType(MachineImageType.AMAZON_LINUX_2).spotInstanceDraining(true).build());
+                AddAutoScalingGroupCapacityOptions.builder()
+                    .canContainersAccessInstanceRole(false)
+                    .machineImageType(MachineImageType.AMAZON_LINUX_2)
+                    .spotInstanceDraining(true)
+                    .build()
+                );
     }
 
     public static InstanceType lookupEC2InstanceType(String ec2InstanceType) {
         Objects.requireNonNull(ec2InstanceType, "instance type cannot be null");
         int pos = ec2InstanceType.indexOf('.');
 
-        if (pos < 0 || ec2InstanceType.trim().isEmpty()) {
+        if (ec2InstanceType.trim().isEmpty() || pos < 0 || (pos + 1) >= ec2InstanceType.length()) {
             throw new IllegalArgumentException("instance type is empty or invalid");
         }
 
