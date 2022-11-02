@@ -66,7 +66,7 @@ public class IngestJobRunnerAsyncTest extends IngestRecordsTestBase {
         // Given we have an ArrayList backed Async coordinator
         IngestCoordinator<Record> ingestCoordinator = createArrayBackedAsyncCoordinator();
 
-        // And we have a list of records to ingest 
+        // And we have a list of records to ingest
         List<Record> recordList = getRecords();
 
         // When we create and run an IngestJobRunner
@@ -82,7 +82,7 @@ public class IngestJobRunnerAsyncTest extends IngestRecordsTestBase {
         // Given we have an ArrayList backed Async coordinator
         IngestCoordinator<Record> ingestCoordinator = createArrayBackedAsyncCoordinator();
 
-        // And we have a list of records to ingest 
+        // And we have a list of records to ingest
         List<Record> recordList = getSingleRecord();
 
         // When we create and run an IngestJobRunner
@@ -114,7 +114,7 @@ public class IngestJobRunnerAsyncTest extends IngestRecordsTestBase {
             // Given we have an Arrow backed Async coordinator
             IngestCoordinator<Record> ingestCoordinator = createArrowBackedAsyncCoordinator(bufferAllocator);
 
-            // And we have a list of records to ingest 
+            // And we have a list of records to ingest
             List<Record> recordList = getRecords();
 
             // When we create and run an IngestJobRunner
@@ -133,7 +133,7 @@ public class IngestJobRunnerAsyncTest extends IngestRecordsTestBase {
             // Given we have an Arrow backed Async coordinator
             IngestCoordinator<Record> ingestCoordinator = createArrowBackedAsyncCoordinator(bufferAllocator);
 
-            // And we have a list of records to ingest 
+            // And we have a list of records to ingest
             List<Record> recordList = getSingleRecord();
 
             // When we create and run an IngestJobRunner

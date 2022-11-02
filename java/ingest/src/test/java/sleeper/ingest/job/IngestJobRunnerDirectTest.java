@@ -52,7 +52,7 @@ public class IngestJobRunnerDirectTest extends IngestRecordsTestBase {
     public void shouldIngestMultipleRecordsWithArrayListBackedDirectCoordinator() throws StateStoreException, IteratorException, IOException {
         // Given we have an ArrayList backed Direct coordinator
         IngestCoordinator<Record> ingestCoordinator = createArrayListBackedDirectCoordinator();
-        // And we have a list of files to ingest 
+        // And we have a list of files to ingest
         List<Record> recordList = getRecords();
 
         // When we create and run an IngestJobRunner
@@ -70,7 +70,7 @@ public class IngestJobRunnerDirectTest extends IngestRecordsTestBase {
     public void shouldIngestSingleRecordWithArrayListBackedDirectCoordinator() throws StateStoreException, IteratorException, IOException {
         // Given we have an ArrayList backed Direct coordinator
         IngestCoordinator<Record> ingestCoordinator = createArrayListBackedDirectCoordinator();
-        // And we have a list of files to ingest 
+        // And we have a list of files to ingest
         List<Record> recordList = getSingleRecord();
 
         // When we create and run an IngestJobRunner
@@ -107,7 +107,7 @@ public class IngestJobRunnerDirectTest extends IngestRecordsTestBase {
             // Given we have an Arrow backed Direct coordinator
             IngestCoordinator<Record> ingestCoordinator = createArrowBackedDirectCoordinator(bufferAllocator);
 
-            // And we have a list of records to ingest 
+            // And we have a list of records to ingest
             List<Record> recordList = getRecords();
 
             // When we create and run an IngestJobRunner
@@ -126,7 +126,7 @@ public class IngestJobRunnerDirectTest extends IngestRecordsTestBase {
             // Given we have an Arrow backed Direct coordinator
             IngestCoordinator<Record> ingestCoordinator = createArrowBackedDirectCoordinator(bufferAllocator);
 
-            // And we have a list of records to ingest 
+            // And we have a list of records to ingest
             List<Record> recordList = getSingleRecord();
 
             // When we create and run an IngestJobRunner
