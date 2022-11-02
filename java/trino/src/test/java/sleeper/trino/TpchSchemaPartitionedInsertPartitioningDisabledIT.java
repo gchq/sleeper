@@ -18,6 +18,7 @@ package sleeper.trino;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.sql.query.QueryAssertions;
+
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -37,8 +38,6 @@ import java.util.Optional;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * This class is a copy of {@link TpchSchemaPartitionedInsertPartitioningEnabledIT} with minor changes and it would be a
@@ -117,38 +116,35 @@ public class TpchSchemaPartitionedInsertPartitioningDisabledIT {
     @Test
     public void testNumberOfLeafPartitionsInUnpartitionedTable() throws IOException, StateStoreException {
         int expectedNoOfLeafPartitionsInUnpartitionedTable = 1; // A root node is a single leaf partition
-        assertEquals(expectedNoOfLeafPartitionsInUnpartitionedTable,
-                POPULATED_SLEEPER_EXTERNAL_RESOURCE.getStateStore("customer_unpartitioned").getAllPartitions().stream()
-                        .filter(Partition::isLeafPartition)
-                        .count());
+        assertThat(expectedNoOfLeafPartitionsInUnpartitionedTable)
+            .isEqualTo(POPULATED_SLEEPER_EXTERNAL_RESOURCE.getStateStore("customer_unpartitioned").getAllPartitions().stream()
+                    .filter(Partition::isLeafPartition)
+                    .count());
     }
 
     @Test
     public void testNumberOfLeafPartitionsInPartitionedTable() throws IOException, StateStoreException {
         int expectedNoOfLeafPartitionsInPartitionedTable = (1 + NO_OF_NATION_KEYS / 2) * 2; // There are always an even number of partitions once it has split
-        assertEquals(expectedNoOfLeafPartitionsInPartitionedTable,
-                POPULATED_SLEEPER_EXTERNAL_RESOURCE.getStateStore("customer_partitioned").getAllPartitions().stream()
-                        .filter(Partition::isLeafPartition)
-                        .count());
+        assertThat(expectedNoOfLeafPartitionsInPartitionedTable)
+            .isEqualTo(POPULATED_SLEEPER_EXTERNAL_RESOURCE.getStateStore("customer_partitioned").getAllPartitions().stream()
+                    .filter(Partition::isLeafPartition)
+                    .count());
     }
 
     @Test
     public void testMoreThanOneParquetFileInRootPartitionInUnpartitionedTable() throws IOException, StateStoreException {
         StateStore stateStore = POPULATED_SLEEPER_EXTERNAL_RESOURCE.getStateStore("customer_unpartitioned");
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
-        assertTrue(
-                stateStore.getAllPartitions().stream()
-                        .filter(Partition::isLeafPartition)
-                        .allMatch(partition -> partitionToActiveFilesMap.getOrDefault(partition.getId(), ImmutableList.of()).size() > 1));
+        assertThat(stateStore.getAllPartitions().stream()
+            .filter(p -> p.getId().equals("root"))
+            .allMatch(partition -> partitionToActiveFilesMap.getOrDefault(partition.getId(), ImmutableList.of()).size() > 1));
     }
 
     @Test
     public void testMoreThanOneParquetFileInAnyPartitionInPartitionedTable() throws IOException, StateStoreException {
         StateStore stateStore = POPULATED_SLEEPER_EXTERNAL_RESOURCE.getStateStore("customer_partitioned");
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
-        assertTrue(
-                stateStore.getAllPartitions().stream()
-                        .filter(Partition::isLeafPartition)
-                        .anyMatch(partition -> partitionToActiveFilesMap.getOrDefault(partition.getId(), ImmutableList.of()).size() > 1));
+        assertThat(stateStore.getLeafPartitions().stream()
+            .anyMatch(partition -> partitionToActiveFilesMap.getOrDefault(partition.getId(), ImmutableList.of()).size() > 1));
     }
 }
