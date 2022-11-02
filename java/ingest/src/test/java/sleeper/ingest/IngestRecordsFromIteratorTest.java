@@ -43,6 +43,7 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createLeafPar
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createRootPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsForAggregationIteratorTest;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSingleRecord;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getUnsortedRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
@@ -111,40 +112,51 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteDuplicateRecords() throws Exception {
+    public void shouldWriteSingleRecord() throws Exception {
         // Given
-        StateStore stateStore = getStateStore(schema);
+        Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
+        Region rootRegion = new Region(rootRange);
+        Partition rootPartition = createRootPartition(rootRegion, new LongType());
+        Range range1 = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, 2L);
+        Region region1 = new Region(range1);
+        Partition partition1 = createLeafPartition("partition1", region1, new LongType());
+        Range range2 = new Range.RangeFactory(schema).createRange(field, 2L, null);
+        Region region2 = new Region(range2);
+        Partition partition2 = createLeafPartition("partition2", region2, new LongType());
+        rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
+        StateStore stateStore = getStateStore(schema,
+                Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        List<Record> records = new ArrayList<>(getRecords());
-        records.addAll(getRecords());
         IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
-        long numWritten = new IngestRecordsFromIterator(properties, records.iterator()).write();
+        long numWritten = new IngestRecordsFromIterator(properties, getSingleRecord().iterator()).write();
 
         // Then:
         //  - Check the correct number of records were written
-        assertThat(numWritten).isEqualTo(2L * getRecords().size());
+        assertThat(numWritten).isEqualTo(getSingleRecord().size());
         //  - Check StateStore has correct information
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        List<FileInfo> activeFiles = stateStore.getActiveFiles()
+                .stream()
+                .sorted((f1, f2) -> (int) (((long) f1.getMinRowKey().get(0)) - ((long) f2.getMinRowKey().get(0))))
+                .collect(Collectors.toList());
         assertThat(activeFiles).hasSize(1);
         FileInfo fileInfo = activeFiles.get(0);
         assertThat((long) fileInfo.getMinRowKey().get(0)).isOne();
-        assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(3L);
-        assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(4L);
-        assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
-        //  - Read file and check it has correct records
-        List<Record> readRecords = readRecordsFromParquetFile(fileInfo.getFilename(), schema);
-        assertThat(readRecords).containsExactly(
-                getRecords().get(0), getRecords().get(0),
-                getRecords().get(1), getRecords().get(1));
+        assertThat((long) fileInfo.getMaxRowKey().get(0)).isOne();
+        assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
+        assertThat(fileInfo.getPartitionId()).isEqualTo(partition1.getId());
+
+        //  - Read files and check they have the correct records
+        List<Record> readRecords = readRecordsFromParquetFile(activeFiles.get(0).getFilename(), schema);
+        assertThat(readRecords).containsExactly(getSingleRecord().get(0));
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
-                .min(1L).max(3L)
+                .min(1L).max(1L)
                 .quantile(0.0, 1L).quantile(0.1, 1L)
                 .quantile(0.2, 1L).quantile(0.3, 1L)
-                .quantile(0.4, 1L).quantile(0.5, 3L)
-                .quantile(0.6, 3L).quantile(0.7, 3L)
-                .quantile(0.8, 3L).quantile(0.9, 3L).verify();
+                .quantile(0.4, 1L).quantile(0.5, 1L)
+                .quantile(0.6, 1L).quantile(0.7, 1L)
+                .quantile(0.8, 1L).quantile(0.9, 1L).verify();
     }
 
     @Test

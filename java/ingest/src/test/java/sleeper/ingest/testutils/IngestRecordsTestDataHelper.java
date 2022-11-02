@@ -94,6 +94,14 @@ public class IngestRecordsTestDataHelper {
                 .build();
     }
 
+    public static List<Record> getSingleRecord() {
+        Record record1 = new Record();
+        record1.put("key", 1L);
+        record1.put("value1", 2L);
+        record1.put("value2", 3L);
+        return Collections.singletonList(record1);
+    }
+
     public static List<Record> getRecords() {
         List<Record> records = new ArrayList<>();
         Record record1 = new Record();
