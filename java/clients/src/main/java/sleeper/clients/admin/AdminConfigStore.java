@@ -39,10 +39,6 @@ public class AdminConfigStore {
         return instanceProperties;
     }
 
-    public void shutdown() {
-        s3.shutdown();
-    }
-
     public static class CouldNotLoadInstanceProperties extends RuntimeException {
         public CouldNotLoadInstanceProperties(String instanceId, Throwable e) {
             super("Could not load properties for instance " + instanceId, e);
