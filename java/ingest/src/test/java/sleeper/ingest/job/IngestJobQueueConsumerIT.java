@@ -63,7 +63,6 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
@@ -76,15 +75,11 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 @RunWith(Parameterized.class)
 public class IngestJobQueueConsumerIT {
-
     @ClassRule
     public static final AwsExternalResource AWS_EXTERNAL_RESOURCE = new AwsExternalResource(
-            LocalStackContainer.Service.S3,
-            LocalStackContainer.Service.SQS,
-            LocalStackContainer.Service.CLOUDWATCH);
+            LocalStackContainer.Service.S3);
     private static final String TEST_INSTANCE_NAME = "myinstance";
     private static final String TEST_TABLE_NAME = "mytable";
-    private static final String INGEST_QUEUE_NAME = TEST_INSTANCE_NAME + "-ingestqueue";
     private static final String CONFIG_BUCKET_NAME = TEST_INSTANCE_NAME + "-configbucket";
     private static final String INGEST_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-ingestdata";
     private static final String TABLE_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-tabledata";
@@ -120,7 +115,6 @@ public class IngestJobQueueConsumerIT {
         AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(CONFIG_BUCKET_NAME);
         AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(TABLE_DATA_BUCKET_NAME);
         AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(INGEST_DATA_BUCKET_NAME);
-        AWS_EXTERNAL_RESOURCE.getSqsClient().createQueue(INGEST_QUEUE_NAME);
         currentLocalIngestDirectory = temporaryFolder.newFolder().getAbsolutePath();
         currentLocalTableDataDirectory = temporaryFolder.newFolder().getAbsolutePath();
     }
@@ -134,7 +128,6 @@ public class IngestJobQueueConsumerIT {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, TEST_INSTANCE_NAME);
         instanceProperties.set(CONFIG_BUCKET, CONFIG_BUCKET_NAME);
-        instanceProperties.set(INGEST_JOB_QUEUE_URL, AWS_EXTERNAL_RESOURCE.getSqsClient().getQueueUrl(INGEST_QUEUE_NAME).getQueueUrl());
         instanceProperties.set(FILE_SYSTEM, fileSystemPrefix);
         instanceProperties.set(INGEST_RECORD_BATCH_TYPE, recordBatchType);
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, partitionFileWriterType);
@@ -204,8 +197,8 @@ public class IngestJobQueueConsumerIT {
         return files;
     }
 
-
     private void consumeAndVerify(Schema sleeperSchema,
+                                  List<IngestJob> ingestJobList,
                                   List<Record> expectedRecordList,
                                   int expectedNoOfFiles) throws Exception {
         String localDir = temporaryFolder.newFolder().getAbsolutePath();
@@ -217,16 +210,15 @@ public class IngestJobQueueConsumerIT {
         stateStore.initialise();
 
         // Run the job consumer
-        IngestJobQueueConsumer ingestJobQueueConsumer = new IngestJobQueueConsumer(
+        IngestJobRunner ingestJobQueueConsumer = new IngestJobRunner(
                 new ObjectFactory(instanceProperties, null, temporaryFolder.newFolder().getAbsolutePath()),
-                AWS_EXTERNAL_RESOURCE.getSqsClient(),
-                AWS_EXTERNAL_RESOURCE.getCloudWatchClient(),
                 instanceProperties,
                 tablePropertiesProvider,
                 stateStoreProvider,
                 localDir,
                 AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
-                AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
+                AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
+                ingestJobList);
         ingestJobQueueConsumer.run();
 
         // Verify the results
@@ -251,9 +243,7 @@ public class IngestJobQueueConsumerIT {
                 .sorted(new RecordComparator(recordListAndSchema.sleeperSchema))
                 .collect(Collectors.toList());
         IngestJob ingestJob = new IngestJob(TEST_TABLE_NAME, "id", files);
-        AWS_EXTERNAL_RESOURCE.getSqsClient()
-                .sendMessage(getInstanceProperties().get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(ingestJob));
-        consumeAndVerify(recordListAndSchema.sleeperSchema, doubledRecords, 1);
+        consumeAndVerify(recordListAndSchema.sleeperSchema, Collections.singletonList(ingestJob), doubledRecords, 1);
     }
 
     @Test
@@ -269,9 +259,7 @@ public class IngestJobQueueConsumerIT {
         FileSystem.get(uri2, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration()).createNewFile(new Path(uri2));
         files.add(getIngestBucket() + "/file-2.csv");
         IngestJob ingestJob = new IngestJob(TEST_TABLE_NAME, "id", files);
-        AWS_EXTERNAL_RESOURCE.getSqsClient()
-                .sendMessage(getInstanceProperties().get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(ingestJob));
-        consumeAndVerify(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList, 1);
+        consumeAndVerify(recordListAndSchema.sleeperSchema, Collections.singletonList(ingestJob), recordListAndSchema.recordList, 1);
     }
 
     @Test
@@ -298,9 +286,7 @@ public class IngestJobQueueConsumerIT {
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
         IngestJob ingestJob = new IngestJob(TEST_TABLE_NAME, "id", files);
-        AWS_EXTERNAL_RESOURCE.getSqsClient()
-                .sendMessage(getInstanceProperties().get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(ingestJob));
-        consumeAndVerify(recordListAndSchema.sleeperSchema, expectedRecords, 1);
+        consumeAndVerify(recordListAndSchema.sleeperSchema, Collections.singletonList(ingestJob), expectedRecords, 1);
     }
 
     @Test
@@ -323,9 +309,6 @@ public class IngestJobQueueConsumerIT {
                 .flatMap(List::stream)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
-        ingestJobs.forEach(ingestJob ->
-                AWS_EXTERNAL_RESOURCE.getSqsClient()
-                        .sendMessage(getInstanceProperties().get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(ingestJob)));
-        consumeAndVerify(recordListAndSchema.sleeperSchema, expectedRecords, noOfJobs);
+        consumeAndVerify(recordListAndSchema.sleeperSchema, ingestJobs, expectedRecords, noOfJobs);
     }
 }
