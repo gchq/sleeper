@@ -69,7 +69,7 @@ grep "^sleeper.table.schema=" ${TABLE_PROPERTIES} | cut -d'=' -f2 | sed 's/\\:/:
   > ${SCHEMA}
 
 # Overwrite references to local files
-source "${BASE_DIR}/scripts/utility/sedInPlace.sh"
+source "${BASE_DIR}/scripts/functions/sedInPlace.sh"
 sed_in_place \
 	-e "s|^sleeper.tags.file=.*|sleeper.tags.file=${TAGS}|" \
 	-e "s|^sleeper.table.properties=.*|sleeper.table.properties=${TABLE_PROPERTIES}|" \

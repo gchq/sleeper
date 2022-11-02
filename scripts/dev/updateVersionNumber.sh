@@ -31,7 +31,7 @@ pushd ${PROJECT_ROOT}/java
 mvn versions:set -DnewVersion=${NEW_VERSION} -DgenerateBackupPoms=false
 popd
 
-source "${PROJECT_ROOT}/scripts/utility/sedInPlace.sh"
+source "${PROJECT_ROOT}/scripts/functions/sedInPlace.sh"
 
 # Update the version number in the Python module
 sed_in_place \
