@@ -16,6 +16,10 @@
 package sleeper.trino.utils;
 
 public class SleeperSerDeUtils {
+
+    private SleeperSerDeUtils() {
+    }
+
     /**
      * Converts a string version of an object into an object of a specified type. It is a bit of a hack and it would be
      * good to remove the need for it.

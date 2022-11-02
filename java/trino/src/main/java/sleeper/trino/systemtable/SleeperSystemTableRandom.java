@@ -16,7 +16,14 @@
 package sleeper.trino.systemtable;
 
 import com.google.common.collect.ImmutableList;
-import io.trino.spi.connector.*;
+
+import io.trino.spi.connector.ColumnMetadata;
+import io.trino.spi.connector.ConnectorSession;
+import io.trino.spi.connector.ConnectorTableMetadata;
+import io.trino.spi.connector.ConnectorTransactionHandle;
+import io.trino.spi.connector.RecordCursor;
+import io.trino.spi.connector.SchemaTableName;
+import io.trino.spi.connector.SystemTable;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.VarcharType;

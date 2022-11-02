@@ -19,12 +19,8 @@ import com.google.common.collect.ImmutableList;
 import io.airlift.log.Logger;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorPartitionHandle;
-import io.trino.spi.connector.ConnectorSession;
-import io.trino.spi.connector.ConnectorSplitManager;
+import io.trino.spi.connector.ConnectorSplit;
 import io.trino.spi.connector.ConnectorSplitSource;
-import io.trino.spi.connector.ConnectorTableHandle;
-import io.trino.spi.connector.ConnectorTransactionHandle;
-import io.trino.spi.connector.Constraint;
 import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.Ranges;
@@ -35,7 +31,13 @@ import sleeper.trino.handle.SleeperTableHandle;
 import sleeper.trino.handle.SleeperTransactionHandle;
 import sleeper.trino.remotesleeperconnection.SleeperConnectionAsTrino;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.StreamSupport;
 

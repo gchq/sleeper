@@ -26,7 +26,7 @@ import sleeper.core.schema.type.StringType;
 import java.nio.charset.StandardCharsets;
 
 public class SleeperTypeConversionUtils {
-    
+
     private SleeperTypeConversionUtils() {
     }
 

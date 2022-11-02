@@ -22,7 +22,6 @@ import io.trino.spi.connector.RecordSet;
 import io.trino.spi.type.Type;
 import sleeper.trino.handle.SleeperColumnHandle;
 import sleeper.trino.handle.SleeperSplit;
-import sleeper.trino.handle.SleeperTableHandle;
 import sleeper.trino.handle.SleeperTransactionHandle;
 import sleeper.trino.remotesleeperconnection.SleeperConnectionAsTrino;
 
