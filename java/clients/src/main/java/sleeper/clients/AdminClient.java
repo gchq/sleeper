@@ -97,12 +97,15 @@ public class AdminClient {
     }
 
     static void printTablePropertiesReport(AmazonS3 s3Client, String instanceId, String tableName) throws IOException, AmazonS3Exception {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
+        client(s3Client).printTablePropertiesReport(instanceId, tableName);
+    }
 
-        TablePropertiesProvider tablePropertiesProvider =
-                new TablePropertiesProvider(s3Client, instanceProperties);
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
+    private void printTablePropertiesReport(String instanceId, String tableName) {
+        InstanceProperties instanceProperties = store.loadInstanceProperties(instanceId);
+        printTablePropertiesReport(store.tablePropertiesProvider(instanceProperties).getTableProperties(tableName));
+    }
+
+    private void printTablePropertiesReport(TableProperties tableProperties) {
 
         Iterator<Map.Entry<Object, Object>> propertyIterator = tableProperties.getPropertyIterator();
         TreeMap<Object, Object> tablePropertyTreeMap = new TreeMap<>();
@@ -115,9 +118,9 @@ public class AdminClient {
                 tablePropertyTreeMap.put(tableProperty.getPropertyName(), tableProperties.get(tableProperty));
             }
         }
-        System.out.println("\n\n Table Property Report \n -------------------------");
+        out.println("\n\n Table Property Report \n -------------------------");
         for (Map.Entry<Object, Object> entry : tablePropertyTreeMap.entrySet()) {
-            System.out.println(entry.getKey() + ": " + entry.getValue());
+            out.println(entry.getKey() + ": " + entry.getValue());
         }
     }
 
@@ -389,9 +392,15 @@ public class AdminClient {
         Chosen<AdminMainScreen.Option> chosen = mainScreen.chooseOption("");
         while (!chosen.isExited()) {
             chosen.getChoice().ifPresent(option -> {
-                if (option == AdminMainScreen.Option.PRINT_PROPERTY_REPORT) {
-                    printInstancePropertiesReport(store.loadInstanceProperties(instanceId));
-                    confirmReturnToMainScreen();
+                switch (option) {
+                    case PRINT_PROPERTY_REPORT:
+                        printInstancePropertiesReport(instanceId);
+                        confirmReturnToMainScreen();
+                        break;
+                    case PRINT_TABLE_PROPERTY_REPORT:
+                    case PRINT_TABLE_NAMES:
+                    case UPDATE_A_PROPERTY:
+                        break;
                 }
             });
             chosen = mainScreen.chooseOption("");

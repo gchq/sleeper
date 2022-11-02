@@ -18,6 +18,7 @@ package sleeper.clients.admin;
 import sleeper.ToStringPrintStream;
 import sleeper.clients.AdminClient;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.TestConsoleInput;
 import sleeper.core.schema.Field;
@@ -71,7 +72,13 @@ public abstract class AdminClientTestBase {
     }
 
     protected void setInstanceProperties(InstanceProperties instanceProperties) {
-        when(store.loadInstanceProperties(INSTANCE_ID)).thenReturn(instanceProperties);
+        when(store.loadInstanceProperties(instanceProperties.get(ID))).thenReturn(instanceProperties);
+    }
+
+    protected void setInstanceProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        setInstanceProperties(instanceProperties);
+        when(store.tablePropertiesProvider(instanceProperties))
+                .thenReturn(new FixedTablePropertiesProvider(tableProperties));
     }
 
     protected InstanceProperties createValidInstanceProperties() {
@@ -92,6 +99,10 @@ public abstract class AdminClientTestBase {
         instanceProperties.set(FILE_SYSTEM, "s3a://");
         instanceProperties.setNumber(LOG_RETENTION_IN_DAYS, 1);
         return instanceProperties;
+    }
+
+    protected TableProperties createValidTableProperties(InstanceProperties instanceProperties) {
+        return createValidTableProperties(instanceProperties, TABLE_NAME_VALUE);
     }
 
     protected TableProperties createValidTableProperties(InstanceProperties instanceProperties, String tableName) {
