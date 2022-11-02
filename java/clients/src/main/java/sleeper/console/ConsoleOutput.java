@@ -13,28 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper;
+package sleeper.console;
 
-import sleeper.console.ConsoleOutput;
-
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 
-public class ToStringPrintStream {
+public class ConsoleOutput {
 
-    private final OutputStream outputStream = new ByteArrayOutputStream();
+    private static final String CLEAR_CONSOLE = "\033[H\033[2J";
 
-    public PrintStream getPrintStream() throws UnsupportedEncodingException {
-        return new PrintStream(outputStream, false, "UTF-8");
+    private final PrintStream out;
+
+    public ConsoleOutput(PrintStream out) {
+        this.out = out;
     }
 
-    public ConsoleOutput consoleOut() throws UnsupportedEncodingException {
-        return new ConsoleOutput(getPrintStream());
+    public void clearScreen(String message) {
+        out.print(CLEAR_CONSOLE);
+        out.flush();
+        out.println(message);
     }
 
-    public String toString() {
-        return outputStream.toString();
+    public void println(String message) {
+        out.println(message);
+    }
+
+    public void println() {
+        out.println();
+    }
+
+    public void printf(String format, Object... args) {
+        out.printf(format, args);
     }
 }
