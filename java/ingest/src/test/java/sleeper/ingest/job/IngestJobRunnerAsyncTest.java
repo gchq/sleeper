@@ -94,7 +94,7 @@ public class IngestJobRunnerAsyncTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldNotIngestWithEmptyIteratorAndArrayListBackedAsyncCoordinator() throws StateStoreException, IteratorException, IOException {
+    public void shouldNotIngestRecordsWithEmptyIteratorAndArrayListBackedAsyncCoordinator() throws StateStoreException, IteratorException, IOException {
         // Given we have an ArrayList backed Async coordinator
         IngestCoordinator<Record> ingestCoordinator = createArrayBackedAsyncCoordinator();
 
