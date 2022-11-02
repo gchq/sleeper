@@ -251,7 +251,7 @@ public class StandardIngestCoordinator {
                 partitionFileFactoryFn);
     }
 
-    public static class BackedByArrayBuilder {
+    public static class BackedByArrayBuilder implements BackedBuilder {
         private final Builder builder;
         private int maxNoOfRecordsInMemory;
         private long maxNoOfRecordsInLocalStore;
@@ -279,7 +279,7 @@ public class StandardIngestCoordinator {
         }
     }
 
-    public static class BackedByArrowBuilder {
+    public static class BackedByArrowBuilder implements BackedBuilder {
         private final Builder builder;
         private BufferAllocator arrowBufferAllocator;
         private int maxNoOfRecordsToWriteToArrowFileAtOnce;
@@ -329,6 +329,12 @@ public class StandardIngestCoordinator {
         public IngestCoordinator<Record> buildAsyncS3Write(String s3BucketName, S3AsyncClient s3AsyncClient) {
             return asyncS3WriteBackedByArrow(builder, this, s3BucketName, s3AsyncClient);
         }
+    }
+
+    public interface BackedBuilder {
+        IngestCoordinator<Record> buildDirectWrite(String filePathPrefix);
+
+        IngestCoordinator<Record> buildAsyncS3Write(String s3BucketName, S3AsyncClient s3AsyncClient);
     }
 
     public static class Builder {
