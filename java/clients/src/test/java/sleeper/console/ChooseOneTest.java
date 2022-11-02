@@ -59,11 +59,11 @@ public class ChooseOneTest {
         in.enterNextPrompt("1");
 
         // When
-        Chosen<TestOption> chosen = chooseTestOption();
+        Chosen<ConsoleChoice> chosen = chooseTestOption();
 
         // Then
         assertThat(chosen.isExit()).isFalse();
-        assertThat(chosen.getChoice()).containsSame(TestOption.ONE);
+        assertThat(chosen.getChoice()).containsSame(OPTION_ONE);
         assertThat(chosen.getEntered()).isEqualTo("1");
     }
 
@@ -73,11 +73,11 @@ public class ChooseOneTest {
         in.enterNextPrompt("2");
 
         // When
-        Chosen<TestOption> chosen = chooseTestOption();
+        Chosen<ConsoleChoice> chosen = chooseTestOption();
 
         // Then
         assertThat(chosen.isExit()).isFalse();
-        assertThat(chosen.getChoice()).containsSame(TestOption.TWO);
+        assertThat(chosen.getChoice()).containsSame(OPTION_TWO);
         assertThat(chosen.getEntered()).isEqualTo("2");
     }
 
@@ -87,7 +87,7 @@ public class ChooseOneTest {
         in.enterNextPrompt("0");
 
         // When
-        Chosen<TestOption> chosen = chooseTestOption();
+        Chosen<ConsoleChoice> chosen = chooseTestOption();
 
         // Then
         assertThat(chosen.isExit()).isTrue();
@@ -100,7 +100,7 @@ public class ChooseOneTest {
         in.enterNextPrompt("");
 
         // When
-        Chosen<TestOption> chosen = chooseTestOption();
+        Chosen<ConsoleChoice> chosen = chooseTestOption();
 
         // Then
         assertThat(chosen.isExit()).isFalse();
@@ -114,7 +114,7 @@ public class ChooseOneTest {
         in.enterNextPrompt("test value");
 
         // When
-        Chosen<TestOption> chosen = chooseTestOption();
+        Chosen<ConsoleChoice> chosen = chooseTestOption();
 
         // Then
         assertThat(chosen.isExit()).isFalse();
@@ -128,7 +128,7 @@ public class ChooseOneTest {
         in.enterNextPrompt("10");
 
         // When
-        Chosen<TestOption> chosen = chooseTestOption();
+        Chosen<ConsoleChoice> chosen = chooseTestOption();
 
         // Then
         assertThat(chosen.isExit()).isFalse();
@@ -142,7 +142,7 @@ public class ChooseOneTest {
         in.enterNextPrompt("-1");
 
         // When
-        Chosen<TestOption> chosen = chooseTestOption();
+        Chosen<ConsoleChoice> chosen = chooseTestOption();
 
         // Then
         assertThat(chosen.isExit()).isFalse();
@@ -150,15 +150,34 @@ public class ChooseOneTest {
         assertThat(chosen.getEntered()).isEqualTo("-1");
     }
 
-    private Chosen<TestOption> chooseTestOption() throws Exception {
-        return new ChooseOne(out.consoleOut(), in.consoleIn())
-                .chooseFrom(TestOption.values());
+    @Test
+    public void shouldChooseAnOptionUsingAnEnum() throws Exception {
+        // Given
+        in.enterNextPrompt("1");
+
+        // When
+        Chosen<TestOption> chosen = chooseOne().chooseFrom(TestOption.values());
+
+        // Then
+        assertThat(chosen.isExit()).isFalse();
+        assertThat(chosen.getChoice()).containsSame(TestOption.ONE);
+        assertThat(chosen.getEntered()).isEqualTo("1");
     }
 
-    private Chosen<TestOption> chooseTestOptionWithMessage(String message) throws Exception {
-        return new ChooseOne(out.consoleOut(), in.consoleIn())
-                .chooseWithMessageFrom(message, TestOption.values());
+    private Chosen<ConsoleChoice> chooseTestOption() throws Exception {
+        return chooseOne().chooseFrom(OPTION_ONE, OPTION_TWO);
     }
+
+    private Chosen<ConsoleChoice> chooseTestOptionWithMessage(String message) throws Exception {
+        return chooseOne().chooseWithMessageFrom(message, OPTION_ONE, OPTION_TWO);
+    }
+
+    private ChooseOne chooseOne() throws Exception {
+        return new ChooseOne(out.consoleOut(), in.consoleIn());
+    }
+
+    private final ConsoleChoice OPTION_ONE = ConsoleChoice.describedAs("Option 1");
+    private final ConsoleChoice OPTION_TWO = ConsoleChoice.describedAs("Option 2");
 
     private enum TestOption implements ConsoleChoice {
         ONE("Option 1"),
