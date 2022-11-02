@@ -15,53 +15,41 @@
  */
 package sleeper.console;
 
-import java.util.Objects;
 import java.util.Optional;
 
 public class Chosen<T extends ChooseOne.Choice> {
 
+    private final String entered;
     private final T choice;
-    private final boolean exited;
+    private final boolean exit;
 
-    public Chosen(T choice) {
-        this(choice, false);
+    public Chosen(String entered, T choice) {
+        this(entered, choice, false);
     }
 
-    private Chosen(T choice, boolean exited) {
+    private Chosen(String entered, T choice, boolean exit) {
+        this.entered = entered;
         this.choice = choice;
-        this.exited = exited;
+        this.exit = exit;
+    }
+
+    public String getEntered() {
+        return entered;
     }
 
     public Optional<T> getChoice() {
         return Optional.ofNullable(choice);
     }
 
-    public boolean isExited() {
-        return exited;
+    public boolean isExit() {
+        return exit;
     }
 
-    public static <T extends ChooseOne.Choice> Chosen<T> exit() {
-        return new Chosen<>(null, true);
+    public static <T extends ChooseOne.Choice> Chosen<T> exit(String entered) {
+        return new Chosen<>(entered, null, true);
     }
 
-    public static <T extends ChooseOne.Choice> Chosen<T> nothing() {
-        return new Chosen<>(null);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        Chosen<?> chosen = (Chosen<?>) o;
-        return exited == chosen.exited && Objects.equals(choice, chosen.choice);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(choice, exited);
+    public static <T extends ChooseOne.Choice> Chosen<T> nothing(String entered) {
+        return new Chosen<>(entered, null);
     }
 }

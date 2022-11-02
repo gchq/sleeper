@@ -33,8 +33,17 @@ public class ChooseOne {
         return chooseFrom(Arrays.asList(choices));
     }
 
+    @SafeVarargs
+    public final <T extends Choice> Chosen<T> chooseWithMessageFrom(String message, T... choices) {
+        return chooseWithMessageFrom(message, Arrays.asList(choices));
+    }
+
     public <T extends Choice> Chosen<T> chooseFrom(List<T> choices) {
-        out.println("Please select from the below options and hit return:");
+        return chooseWithMessageFrom("Please select from the below options and hit return:", choices);
+    }
+
+    public <T extends Choice> Chosen<T> chooseWithMessageFrom(String message, List<T> choices) {
+        out.println(message);
         out.println("[0] Exit program");
         for (int i = 0; i < choices.size(); i++) {
             out.printf("[%s] %s%n", i + 1, choices.get(i).getDescription());
@@ -44,11 +53,11 @@ public class ChooseOne {
         try {
             int entered = Integer.parseInt(enteredStr);
             if (entered == 0) {
-                return Chosen.exit();
+                return Chosen.exit(enteredStr);
             }
-            return new Chosen<>(choices.get(entered - 1));
+            return new Chosen<>(enteredStr, choices.get(entered - 1));
         } catch (NumberFormatException | IndexOutOfBoundsException e) {
-            return Chosen.nothing();
+            return Chosen.nothing(enteredStr);
         }
     }
 

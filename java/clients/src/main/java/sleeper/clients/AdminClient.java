@@ -390,7 +390,7 @@ public class AdminClient {
     public void start(String instanceId) {
         AdminMainScreen mainScreen = new AdminMainScreen(out, chooseOne);
         Chosen<AdminMainScreen.Option> chosen = mainScreen.chooseOption("");
-        while (!chosen.isExited()) {
+        while (!chosen.isExit()) {
             chosen.getChoice().ifPresent(option -> {
                 switch (option) {
                     case PRINT_PROPERTY_REPORT:
