@@ -18,7 +18,11 @@ package sleeper.clients.admin;
 import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.ConsoleOutput;
+
+import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,16 +43,22 @@ public class AdminClientTest extends AdminClientTestBase {
 
     @Test
     public void shouldDisplayMainScreenAndExitWhenChosen() throws Exception {
+        // Given
         in.enterNextPrompt("0");
+        // When / Then
         assertThat(runClientGetOutput()).isEqualTo(MAIN_SCREEN);
     }
 
     @Test
     public void shouldPrintInstancePropertyReportWhenChosen() throws Exception {
+        // Given
         setInstanceProperties(createValidInstanceProperties());
         in.enterNextPrompts("1", "0");
+
+        // When
         String output = runClientGetOutput();
 
+        // Then
         assertThat(output).startsWith(MAIN_SCREEN).endsWith(MAIN_SCREEN)
                 .contains("Instance Property Report")
                 // Then check some default property values are present in the output, don't check values in case they change
@@ -73,6 +83,21 @@ public class AdminClientTest extends AdminClientTestBase {
         order.verify(in.mock).waitForLine();
         order.verify(in.mock).promptLine(any());
         order.verifyNoMoreInteractions();
+    }
+
+    @Test
+    public void shouldPrintTablePropertyReportWhenChosen() throws IOException {
+        // Given
+        InstanceProperties instanceProperties = createValidInstanceProperties();
+        TableProperties tableProperties = createValidTableProperties(instanceProperties);
+        setInstanceProperties(instanceProperties, tableProperties);
+        in.enterNextPrompts("2", "0");
+
+        // When
+        String output = runClientGetOutput();
+
+        // Then
+        assertThat(output).startsWith(MAIN_SCREEN).endsWith(MAIN_SCREEN);
     }
 
 }

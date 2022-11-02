@@ -18,6 +18,7 @@ package sleeper.clients.admin;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 
 import java.io.IOException;
 
@@ -37,6 +38,10 @@ public class AdminConfigStore {
             throw new CouldNotLoadInstanceProperties(instanceId, e);
         }
         return instanceProperties;
+    }
+
+    public TablePropertiesProvider tablePropertiesProvider(InstanceProperties instanceProperties) {
+        return new TablePropertiesProvider(s3, instanceProperties);
     }
 
     public static class CouldNotLoadInstanceProperties extends RuntimeException {
