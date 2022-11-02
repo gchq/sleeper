@@ -51,7 +51,7 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFr
 public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
 
     @Test
-    public void shouldWriteRecordsSplitByPartitionLongKey() throws Exception {
+    public void shouldWriteMultipleRecords() throws Exception {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
@@ -250,7 +250,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteNoRecordsSuccessfully() throws Exception {
+    public void shouldWriteNoRecordsWhenIteratorIsEmpty() throws Exception {
         // Given
         StateStore stateStore = getStateStore(schema);
 
