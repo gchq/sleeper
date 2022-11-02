@@ -16,7 +16,14 @@
 package sleeper.trino;
 
 import com.google.common.collect.ImmutableList;
-import io.trino.spi.connector.*;
+import io.trino.spi.connector.BucketFunction;
+import io.trino.spi.connector.ConnectorBucketNodeMap;
+import io.trino.spi.connector.ConnectorNodePartitioningProvider;
+import io.trino.spi.connector.ConnectorPartitionHandle;
+import io.trino.spi.connector.ConnectorPartitioningHandle;
+import io.trino.spi.connector.ConnectorSession;
+import io.trino.spi.connector.ConnectorSplit;
+import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.type.Type;
 import sleeper.core.key.Key;
 import sleeper.core.range.Range;

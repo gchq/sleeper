@@ -20,7 +20,10 @@ import io.airlift.slice.Slices;
 import io.trino.spi.Page;
 import io.trino.spi.block.Block;
 import io.trino.spi.block.BlockBuilder;
-import io.trino.spi.type.*;
+import io.trino.spi.type.BigintType;
+import io.trino.spi.type.IntegerType;
+import io.trino.spi.type.Type;
+import io.trino.spi.type.VarcharType;
 import sleeper.trino.handle.SleeperColumnHandle;
 
 import java.util.List;
@@ -30,6 +33,10 @@ import static io.trino.spi.type.IntegerType.INTEGER;
 import static io.trino.spi.type.VarcharType.VARCHAR;
 
 public class SleeperPageBlockUtils {
+
+    private SleeperPageBlockUtils() {
+    }
+
     /**
      * Read a single object from the specified channel and position in the given page.
      *

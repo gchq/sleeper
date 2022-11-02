@@ -17,7 +17,15 @@ package sleeper.trino;
 
 import com.google.common.collect.ImmutableList;
 import io.airlift.log.Logger;
-import io.trino.spi.connector.*;
+import io.trino.spi.connector.ColumnHandle;
+import io.trino.spi.connector.ConnectorPartitionHandle;
+import io.trino.spi.connector.ConnectorSession;
+import io.trino.spi.connector.ConnectorSplitManager;
+import io.trino.spi.connector.ConnectorSplitSource;
+import io.trino.spi.connector.ConnectorTableHandle;
+import io.trino.spi.connector.ConnectorTransactionHandle;
+import io.trino.spi.connector.Constraint;
+import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.Ranges;
 import io.trino.spi.predicate.TupleDomain;

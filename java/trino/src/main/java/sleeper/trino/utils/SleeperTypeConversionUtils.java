@@ -26,6 +26,10 @@ import sleeper.core.schema.type.StringType;
 import java.nio.charset.StandardCharsets;
 
 public class SleeperTypeConversionUtils {
+    
+    private SleeperTypeConversionUtils() {
+    }
+
     /**
      * Convert a Sleeper {@link sleeper.core.schema.type.Type} class into a {@link io.trino.spi.type.Type} class.
      *

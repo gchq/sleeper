@@ -15,7 +15,13 @@
  */
 package sleeper.trino;
 
-import io.trino.spi.connector.*;
+import io.trino.spi.connector.ConnectorSession;
+import io.trino.spi.connector.ConnectorSplitManager;
+import io.trino.spi.connector.ConnectorSplitSource;
+import io.trino.spi.connector.ConnectorTableHandle;
+import io.trino.spi.connector.ConnectorTransactionHandle;
+import io.trino.spi.connector.Constraint;
+import io.trino.spi.connector.DynamicFilter;
 import sleeper.trino.handle.SleeperSplit;
 import sleeper.trino.handle.SleeperTableHandle;
 import sleeper.trino.handle.SleeperTransactionHandle;
