@@ -33,7 +33,7 @@ import sleeper.query.model.Query;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.table.util.StateStoreProvider;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.ingest.BespokeIngestCoordinator;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
