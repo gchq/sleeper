@@ -93,7 +93,7 @@ sed \
 # Instance Properties
 # Note this sed command uses the file in generated dir not the template dir
 # as this was required to include some pre-generated system test specific properties
-source "${BASE_DIR}/scripts/utility/sedInPlace.sh"
+source "${BASE_DIR}/scripts/functions/sedInPlace.sh"
 sed_in_place \
 	-e "s|^sleeper.account=.*|sleeper.account=${ACCOUNT}|" \
 	-e "s|^sleeper.region=.*|sleeper.region=${REGION}|" \
