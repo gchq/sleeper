@@ -20,22 +20,20 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import sleeper.clients.admin.AdminConfigStore;
 import sleeper.clients.admin.AdminMainScreen;
+import sleeper.clients.admin.InstancePropertyReport;
+import sleeper.clients.admin.TablePropertyReport;
+import sleeper.clients.admin.TablePropertyReportScreen;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.console.ChooseOne;
-import sleeper.console.Chosen;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.table.job.TableLister;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 public class AdminClient {
     private static final String CLEAR_CONSOLE = "\033[H\033[2J";
@@ -53,13 +51,11 @@ public class AdminClient {
     private final AdminConfigStore store;
     private final ConsoleOutput out;
     private final ConsoleInput in;
-    private final ChooseOne chooseOne;
 
     public AdminClient(AdminConfigStore store, ConsoleOutput out, ConsoleInput in) {
         this.store = store;
         this.out = out;
         this.in = in;
-        this.chooseOne = new ChooseOne(out, in);
     }
 
     public static AdminClient client(AmazonS3 s3Client) {
@@ -70,58 +66,15 @@ public class AdminClient {
     }
 
     static void printInstancePropertiesReport(AmazonS3 s3Client, String instanceId) {
-        client(s3Client).printInstancePropertiesReport(instanceId);
+        client(s3Client).instancePropertyReport().print(instanceId);
     }
 
-    private void printInstancePropertiesReport(String instanceId) {
-        printInstancePropertiesReport(store.loadInstanceProperties(instanceId));
-    }
-
-    private void printInstancePropertiesReport(InstanceProperties instanceProperties) {
-
-        Iterator<Map.Entry<Object, Object>> propertyIterator = instanceProperties.getPropertyIterator();
-        TreeMap<Object, Object> instancePropertyTreeMap = new TreeMap<>();
-        while (propertyIterator.hasNext()) {
-            Map.Entry<Object, Object> mapElement = propertyIterator.next();
-            instancePropertyTreeMap.put(mapElement.getKey(), mapElement.getValue());
-        }
-        for (UserDefinedInstanceProperty userDefinedInstanceProperty : UserDefinedInstanceProperty.values()) {
-            if (!instancePropertyTreeMap.containsKey(userDefinedInstanceProperty.getPropertyName())) {
-                instancePropertyTreeMap.put(userDefinedInstanceProperty.getPropertyName(), instanceProperties.get(userDefinedInstanceProperty));
-            }
-        }
-        out.println("\n\n Instance Property Report \n -------------------------");
-        for (Map.Entry<Object, Object> entry : instancePropertyTreeMap.entrySet()) {
-            out.println(entry.getKey() + ": " + entry.getValue());
-        }
-    }
-
-    static void printTablePropertiesReport(AmazonS3 s3Client, String instanceId, String tableName) throws IOException, AmazonS3Exception {
+    static void printTablePropertiesReport(AmazonS3 s3Client, String instanceId, String tableName) {
         client(s3Client).printTablePropertiesReport(instanceId, tableName);
     }
 
     private void printTablePropertiesReport(String instanceId, String tableName) {
-        InstanceProperties instanceProperties = store.loadInstanceProperties(instanceId);
-        printTablePropertiesReport(store.tablePropertiesProvider(instanceProperties).getTableProperties(tableName));
-    }
-
-    private void printTablePropertiesReport(TableProperties tableProperties) {
-
-        Iterator<Map.Entry<Object, Object>> propertyIterator = tableProperties.getPropertyIterator();
-        TreeMap<Object, Object> tablePropertyTreeMap = new TreeMap<>();
-        while (propertyIterator.hasNext()) {
-            Map.Entry<Object, Object> mapElement = propertyIterator.next();
-            tablePropertyTreeMap.put(mapElement.getKey(), mapElement.getValue());
-        }
-        for (TableProperty tableProperty : TableProperty.values()) {
-            if (!tablePropertyTreeMap.containsKey(tableProperty.getPropertyName())) {
-                tablePropertyTreeMap.put(tableProperty.getPropertyName(), tableProperties.get(tableProperty));
-            }
-        }
-        out.println("\n\n Table Property Report \n -------------------------");
-        for (Map.Entry<Object, Object> entry : tablePropertyTreeMap.entrySet()) {
-            out.println(entry.getKey() + ": " + entry.getValue());
-        }
+        new TablePropertyReport(out, store).print(instanceId, tableName);
     }
 
     static void printTablesReport(AmazonS3 s3Client, String instanceId) throws IOException, AmazonS3Exception {
@@ -388,28 +341,14 @@ public class AdminClient {
     }
 
     public void start(String instanceId) {
-        AdminMainScreen mainScreen = new AdminMainScreen(out, chooseOne);
-        Chosen<AdminMainScreen.Option> chosen = mainScreen.chooseOption("");
-        while (!chosen.isExit()) {
-            chosen.getChoice().ifPresent(option -> {
-                switch (option) {
-                    case PRINT_PROPERTY_REPORT:
-                        printInstancePropertiesReport(instanceId);
-                        confirmReturnToMainScreen();
-                        break;
-                    case PRINT_TABLE_PROPERTY_REPORT:
-                    case PRINT_TABLE_NAMES:
-                    case UPDATE_A_PROPERTY:
-                        break;
-                }
-            });
-            chosen = mainScreen.chooseOption("");
-        }
+        new AdminMainScreen(out, in).mainLoop(this, instanceId);
     }
 
-    private void confirmReturnToMainScreen() {
-        out.println("\n\n----------------------------------");
-        out.println("Hit enter to return to main screen");
-        in.waitForLine();
+    public InstancePropertyReport instancePropertyReport() {
+        return new InstancePropertyReport(out, store);
+    }
+
+    public TablePropertyReportScreen tablePropertyReportScreen() {
+        return new TablePropertyReportScreen(out, in, store);
     }
 }

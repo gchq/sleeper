@@ -26,6 +26,8 @@ import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class AdminClientTest extends AdminClientTestBase {
 
@@ -39,6 +41,16 @@ public class AdminClientTest extends AdminClientTestBase {
             "[2] Print Sleeper table names\n" +
             "[3] Print Sleeper table property report\n" +
             "[4] Update an instance or table property\n" +
+            "\n";
+
+    private static final String PROMPT_RETURN_TO_MAIN = "Hit enter to return to main screen";
+
+    private static final String TABLE_PROPERTY_REPORT_SCREEN = ConsoleOutput.CLEAR_CONSOLE + "\n" +
+            "Which TABLE do you want to check?\n" +
+            "\n" +
+            "Please enter the TABLE NAME now or use the following options:\n" +
+            "[0] Exit program\n" +
+            "[1] Return to Main Menu\n" +
             "\n";
 
     @Test
@@ -61,7 +73,7 @@ public class AdminClientTest extends AdminClientTestBase {
 
         // Then
         assertThat(output).startsWith(MAIN_SCREEN).endsWith(MAIN_SCREEN)
-                .contains("Instance Property Report")
+                .contains("Instance Property Report").contains(PROMPT_RETURN_TO_MAIN)
                 // Then check some default property values are present in the output, don't check values in case they change
                 .contains("sleeper.athena.handler.memory")
                 .contains("sleeper.default.page.size")
@@ -92,13 +104,60 @@ public class AdminClientTest extends AdminClientTestBase {
         InstanceProperties instanceProperties = createValidInstanceProperties();
         TableProperties tableProperties = createValidTableProperties(instanceProperties);
         setInstanceProperties(instanceProperties, tableProperties);
-        in.enterNextPrompts("2", "0");
+        in.enterNextPrompts("3", tableProperties.get(TABLE_NAME), "0");
 
         // When
         String output = runClientGetOutput();
 
         // Then
-        assertThat(output).startsWith(MAIN_SCREEN).endsWith(MAIN_SCREEN);
+        assertThat(output).startsWith(MAIN_SCREEN).contains(TABLE_PROPERTY_REPORT_SCREEN).endsWith(MAIN_SCREEN)
+                .contains("Table Property Report").contains(PROMPT_RETURN_TO_MAIN)
+                // Then check some default table property values are present in the output, don't check values in case they change
+                .contains("sleeper.table.splits.base64.encoded")
+                .contains("sleeper.table.statestore.classname")
+                .contains("sleeper.table.fs.s3a.readahead.range")
+                // Then check some set table property values are present in the output
+                .contains("sleeper.table.name: test")
+                .contains("sleeper.table.encrypted: false")
+                .contains("sleeper.table.schema: " +
+                        "{\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]," +
+                        "\"sortKeyFields\":[]," +
+                        "\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}");
+
+        // Then check the ordering of some property names are correct
+        assertThat(output.indexOf("sleeper.table.encrypted"))
+                .isLessThan(output.indexOf("sleeper.table.name"))
+                .isLessThan(output.indexOf("sleeper.table.schema"));
+        assertThat(output.indexOf("sleeper.table.name"))
+                .isLessThan(output.indexOf("sleeper.table.schema"));
+
+        InOrder order = Mockito.inOrder(in.mock);
+        order.verify(in.mock, times(2)).promptLine(any());
+        order.verify(in.mock).waitForLine();
+        order.verify(in.mock).promptLine(any());
+        order.verifyNoMoreInteractions();
+    }
+
+    @Test
+    public void shouldExitWhenChoosingTablePropertyReportTable() throws IOException {
+        // Given
+        InstanceProperties instanceProperties = createValidInstanceProperties();
+        TableProperties tableProperties = createValidTableProperties(instanceProperties);
+        setInstanceProperties(instanceProperties, tableProperties);
+        in.enterNextPrompts("3", "0");
+
+        // When
+        String output = runClientGetOutput();
+
+        // Then
+        assertThat(output).startsWith(MAIN_SCREEN)
+                .endsWith(TABLE_PROPERTY_REPORT_SCREEN)
+                .doesNotContain("Table Property Report")
+                .doesNotContain(PROMPT_RETURN_TO_MAIN);
+
+        InOrder order = Mockito.inOrder(in.mock);
+        order.verify(in.mock, times(2)).promptLine(any());
+        order.verifyNoMoreInteractions();
     }
 
 }
