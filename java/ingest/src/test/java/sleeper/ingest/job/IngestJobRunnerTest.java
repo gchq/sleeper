@@ -74,7 +74,7 @@ import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 @RunWith(Parameterized.class)
-public class IngestJobQueueConsumerIT {
+public class IngestJobRunnerTest {
     @ClassRule
     public static final AwsExternalResource AWS_EXTERNAL_RESOURCE = new AwsExternalResource(
             LocalStackContainer.Service.S3);
@@ -91,9 +91,9 @@ public class IngestJobQueueConsumerIT {
     private String currentLocalIngestDirectory;
     private String currentLocalTableDataDirectory;
 
-    public IngestJobQueueConsumerIT(String recordBatchType,
-                                    String partitionFileWriterType,
-                                    String fileSystemPrefix) {
+    public IngestJobRunnerTest(String recordBatchType,
+                               String partitionFileWriterType,
+                               String fileSystemPrefix) {
         this.recordBatchType = recordBatchType;
         this.partitionFileWriterType = partitionFileWriterType;
         this.fileSystemPrefix = fileSystemPrefix;
