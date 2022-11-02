@@ -175,7 +175,7 @@ public class AdminClient {
                 returnToMainScreen(instanceId);
                 break;
             case "3":
-                tablePropertyReportScreen("", instanceId);
+                tablePropertyReportScreen(instanceId);
                 break;
             case "4":
                 updatePropertyScreen("", instanceId);
@@ -186,33 +186,8 @@ public class AdminClient {
         }
     }
 
-    private static void tablePropertyReportScreen(String message, String instanceId) throws IOException {
-        clearScreen(message);
-        System.out.println("Which TABLE do you want to check?\n");
-        System.out.println("Please enter the TABLE NAME now or use the following options:");
-        System.out.println(EXIT_PROGRAM_OPTION);
-        System.out.println(MAIN_MENU_OPTION);
-        String choice = System.console().readLine("Input: ");
-        switch (choice) {
-            case "0":
-                closeProgram();
-                break;
-            case "1":
-                mainScreen("", instanceId);
-                break;
-            case "":
-                tablePropertyReportScreen(INPUT_EMPTY, instanceId);
-                break;
-            default:
-                try {
-                    printTablePropertiesReport(defaultS3Client, instanceId, choice);
-                } catch (AmazonS3Exception amazonS3Exception) {
-                    System.out.println(PROPERTY_LOAD_ERROR + amazonS3Exception.getMessage());
-                    closeProgram();
-                }
-                returnToMainScreen(instanceId);
-                break;
-        }
+    private static void tablePropertyReportScreen(String instanceId) {
+        client(defaultS3Client).tablePropertyReportScreen().chooseTableAndPrint(instanceId);
     }
 
     private static void updatePropertyScreen(String message, String instanceId) throws IOException {
