@@ -17,5 +17,8 @@ package sleeper.query.model.output;
 
 public class ResultsOutputConstants {
 
+    private ResultsOutputConstants() {
+    }
+
     public static final String DESTINATION = "destination";
 }

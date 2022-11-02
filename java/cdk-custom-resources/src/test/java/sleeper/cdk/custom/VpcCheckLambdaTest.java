@@ -15,24 +15,26 @@
  */
 package sleeper.cdk.custom;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import com.amazonaws.services.ec2.AmazonEC2;
+import com.amazonaws.services.ec2.model.DescribeVpcEndpointsRequest;
+import com.amazonaws.services.ec2.model.DescribeVpcEndpointsResult;
+import com.amazonaws.services.ec2.model.Filter;
+import com.amazonaws.services.ec2.model.VpcEndpoint;
+import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
+import org.junit.Test;
+import org.mockito.Mockito;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.junit.Test;
-import org.mockito.Mockito;
-
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.model.DescribeVpcEndpointsRequest;
-import com.amazonaws.services.ec2.model.DescribeVpcEndpointsResult;
-import com.amazonaws.services.ec2.model.VpcEndpoint;
-import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class VpcCheckLambdaTest {
 
@@ -41,66 +43,64 @@ public class VpcCheckLambdaTest {
         // Given
         AmazonEC2 mockEc2 = mock(AmazonEC2.class);
         VpcCheckLambda vpcCheckLambda = new VpcCheckLambda(mockEc2);
-        
+
         // When
         when(mockEc2.describeVpcEndpoints(Mockito.any())).thenReturn(new DescribeVpcEndpointsResult());
-        
+
         // Then
-        try {
-            vpcCheckLambda.handleEvent(CloudFormationCustomResourceEvent.builder()
-                    .withRequestType("Create")
-                    .withResourceProperties(new HashMap<>()).build(), null);
-            fail("Exception expected");
-        } catch (IllegalArgumentException e) {
-            assertNotNull(e.getMessage());
-        }
+        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                .withRequestType("Create")
+                .withResourceProperties(new HashMap<>()).build();
+        assertThatThrownBy(() -> vpcCheckLambda.handleEvent(event, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("endpoint");
     }
-    
+
     @Test
     public void shouldNotThrowExceptionWhenVpcRequestReturnsMatchingEndpoints() {
         // Given
         AmazonEC2 mockEc2 = mock(AmazonEC2.class);
         VpcCheckLambda vpcCheckLambda = new VpcCheckLambda(mockEc2);
-        
+
         // When
         when(mockEc2.describeVpcEndpoints(Mockito.any())).thenReturn(new DescribeVpcEndpointsResult()
                 .withVpcEndpoints(new VpcEndpoint()));
-        
+
         // Then
-        vpcCheckLambda.handleEvent(CloudFormationCustomResourceEvent.builder()
+        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
                 .withRequestType("Create")
-                .withResourceProperties(new HashMap<>()).build(), null);
-        // no exceptions
+                .withResourceProperties(new HashMap<>()).build();
+        assertThatCode(() -> vpcCheckLambda.handleEvent(event, null))
+                .doesNotThrowAnyException();
     }
-    
+
     @Test
     public void shouldPassVpcIdAndRegionFromThePropertiesToTheRequest() {
         // Given
         AmazonEC2 mockEc2 = mock(AmazonEC2.class);
         VpcCheckLambda vpcCheckLambda = new VpcCheckLambda(mockEc2);
-        
+
         // When
         AtomicReference<DescribeVpcEndpointsRequest> requestReference = new AtomicReference<>();
         when(mockEc2.describeVpcEndpoints(Mockito.any()))
-                .then((invocations) ->  {
+                .then((invocations) -> {
                     requestReference.set(invocations.getArgument(0, DescribeVpcEndpointsRequest.class));
                     return new DescribeVpcEndpointsResult()
                             .withVpcEndpoints(new VpcEndpoint());
                 });
-        
+
         Map<String, Object> properties = new HashMap<>();
         properties.put("vpcId", "myVpc");
         properties.put("region", "my-region-1");
-        
+
         // Then
         vpcCheckLambda.handleEvent(CloudFormationCustomResourceEvent.builder()
                 .withRequestType("Create")
                 .withResourceProperties(properties).build(), null);
-        
-        DescribeVpcEndpointsRequest request = requestReference.get();
-        assertEquals("vpc-id", request.getFilters().get(0).getName());
-        assertEquals("myVpc", request.getFilters().get(0).getValues().get(0));
-        assertEquals("service-name", request.getFilters().get(1).getName());
-        assertEquals("com.amazonaws.my-region-1.s3", request.getFilters().get(1).getValues().get(0));
+
+        assertThat(requestReference.get().getFilters())
+                .extracting(Filter::getName, Filter::getValues).containsExactly(
+                        tuple("vpc-id", Collections.singletonList("myVpc")),
+                        tuple("service-name", Collections.singletonList("com.amazonaws.my-region-1.s3")));
     }
 }

@@ -21,10 +21,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import java.io.IOException;
-import java.util.List;
-import java.util.LongSummaryStatistics;
-import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,12 +31,17 @@ import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.table.util.StateStoreProvider;
+import sleeper.statestore.StateStoreProvider;
 import software.amazon.cloudwatchlogs.emf.logger.MetricsLogger;
 import software.amazon.cloudwatchlogs.emf.model.DimensionSet;
 import software.amazon.cloudwatchlogs.emf.model.Unit;
 import software.amazon.lambda.powertools.metrics.Metrics;
 import software.amazon.lambda.powertools.metrics.MetricsUtils;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.LongSummaryStatistics;
+import java.util.stream.Collectors;
 
 public class TableMetricsLambda implements RequestHandler<String, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableMetricsLambda.class);
@@ -50,8 +51,8 @@ public class TableMetricsLambda implements RequestHandler<String, Void> {
 
     public TableMetricsLambda() {
         this(
-            AmazonS3ClientBuilder.defaultClient(),
-            AmazonDynamoDBClientBuilder.defaultClient()
+                AmazonS3ClientBuilder.defaultClient(),
+                AmazonDynamoDBClientBuilder.defaultClient()
         );
     }
 
@@ -78,7 +79,7 @@ public class TableMetricsLambda implements RequestHandler<String, Void> {
 
         return null;
     }
-    
+
     public void publishStateStoreMetrics(String configBucketName, String tableName) throws IOException, StateStoreException {
         LOGGER.info("Loading instance properties from config bucket {}", configBucketName);
         InstanceProperties instanceProperties = new InstanceProperties();
@@ -96,10 +97,10 @@ public class TableMetricsLambda implements RequestHandler<String, Void> {
         LOGGER.info("Total number of records in table {} is {}", tableName, recordCount);
 
         LongSummaryStatistics filesPerPartitionStats = activeFiles.stream().collect(
-            Collectors.groupingBy(
-                activeFile -> activeFile.getPartitionId(),
-                Collectors.counting()
-            )
+                Collectors.groupingBy(
+                        activeFile -> activeFile.getPartitionId(),
+                        Collectors.counting()
+                )
         ).values().stream().mapToLong(value -> value).summaryStatistics();
         LOGGER.info("{}", filesPerPartitionStats);
 
@@ -114,8 +115,8 @@ public class TableMetricsLambda implements RequestHandler<String, Void> {
         MetricsLogger metricsLogger = MetricsUtils.metricsLogger();
         metricsLogger.setNamespace(metricsNamespace);
         metricsLogger.setDimensions(DimensionSet.of(
-            "instanceId", instanceProperties.get(UserDefinedInstanceProperty.ID),
-            "tableName", tableName
+                "instanceId", instanceProperties.get(UserDefinedInstanceProperty.ID),
+                "tableName", tableName
         ));
 
         metricsLogger.putMetric("ActiveFileCount", fileCount, Unit.COUNT);

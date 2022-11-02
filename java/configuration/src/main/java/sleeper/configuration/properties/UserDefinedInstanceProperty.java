@@ -35,6 +35,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     USER_JARS("sleeper.userjars"),
     TAGS_FILE("sleeper.tags.file"),
     TAGS("sleeper.tags"),
+    STACK_TAG_NAME("sleeper.stack.tag.name", "DeploymentStack"),
     RETAIN_INFRA_AFTER_DESTROY("sleeper.retain.infra.after.destroy", "true", Utils::isTrueOrFalse),
     OPTIONAL_STACKS("sleeper.optional.stacks",
             "CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrBulkImportStack,DashboardStack"),
@@ -72,13 +73,68 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     MAX_IN_MEMORY_BATCH_SIZE("sleeper.ingest.memory.max.batch.size", "1000000"),
 
     // Arrow ingest
-    ARROW_INGEST_WORKING_BUFFER_BYTES("sleeper.ingest.arrow.working.buffer.bytes", "134217728"),                    // 128M
+    ARROW_INGEST_WORKING_BUFFER_BYTES("sleeper.ingest.arrow.working.buffer.bytes", "268435456"),                    // 256M
     ARROW_INGEST_BATCH_BUFFER_BYTES("sleeper.ingest.arrow.batch.buffer.bytes", "1073741824"),                       // 1G
     ARROW_INGEST_MAX_LOCAL_STORE_BYTES("sleeper.ingest.arrow.max.local.store.bytes", "17179869184"),                // 16G
     ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS("sleeper.ingest.arrow.max.single.write.to.file.records", "1024"), // 1K
 
-    // Bulk Import
+    // Bulk Import - properties that are applicable to all bulk import platforms
     BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE("sleeper.bulk.import.min.partitions.coalesce", "100"),
+    BULK_IMPORT_CLASS_NAME("sleeper.bulk.import.class.name", "sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeRunner"),
+    BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC("sleeper.bulk.import.emr.spark.shuffle.mapStatus.compression.codec", "lz4"), // Stops "Decompression error: Version not supported" errors - only a value of "lz4" has been tested. This is used to set the value of spark.shuffle.mapStatus.compression.codec on the Spark configuration.
+    BULK_IMPORT_SPARK_SPECULATION("sleeper.bulk.import.emr.spark.speculation", "false", Utils::isTrueOrFalse),
+    // This is used to set the value of spark.speculation on the Spark configuration.
+    BULK_IMPORT_SPARK_SPECULATION_QUANTILE("sleeper.bulk.import.spark.speculation.quantile", "0.75"), // This is used to set the value of spark.speculation.quantile on the Spark configuration.
+
+    // Bulk import using EMR - these properties are used by both the persistent
+    // and non-persistent EMR stacks
+    BULK_IMPORT_EMR_EC2_KEYPAIR_NAME("sleeper.bulk.import.emr.keypair.name"),
+    BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP("sleeper.bulk.import.emr.master.additional.security.group"),
+    //  - The following properties depend on the instance type and number of instances - they have been chosen
+    //          based on the default settings for the EMR and persistent EMR clusters (these are currently the
+    //          same which allows the following properties to be used across both types):
+    //      - Theses are based on this blog
+    //      https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/
+    //      - Our default core/task instance type is m5.4xlarge. These have 64GB of RAM and 16 vCPU. The amount of
+    //          usable RAM is 56GB.
+    //      - The recommended value of spark.executor.cores is 5, irrespective of the number of servers or their specs.
+    //      - Number of executors per instance = (number of vCPU per instance - 1) / spark.executors.cores = (16 - 1) / 5 = 3
+    //      - Total executor memory = total RAM per instance / number of executors per instance = 56 / 3 = 18 (rounded down)
+    //      - Assign 90% of the total executor memory to the executor and 10% to the overhead
+    //      - spark.executor.memory = 0.9 * 18 = 16GB (memory must be an integer)
+    //      - spark.yarn.executor.memoryOverhead = 0.1 * 18 = 2GB
+    //      - spark.driver.memory = spark.executor.memory
+    //      - spark.driver.cores = spark.executor.core
+    //      - spark.executor.instances = (number of executors per instance * number of core&task instances) - 1 = 3 * 10 - 1 = 29
+    //      - spark.default.parallelism = spark.executor.instances * spark.executor.cores * 2 = 29 * 5 * 2 = 290
+    //      - spark.sql.shuffle.partitions = spark.default.parallelism
+    BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY("sleeper.bulk.import.emr.spark.executor.memory", "16g"),
+    BULK_IMPORT_EMR_SPARK_DRIVER_MEMORY("sleeper.bulk.import.emr.spark.driver.memory", BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY.getDefaultValue()),
+    BULK_IMPORT_EMR_SPARK_EXECUTOR_INSTANCES("sleeper.bulk.import.emr.spark.executor.instances", "29"),
+    BULK_IMPORT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD("sleeper.bulk.import.emr.spark.yarn.executor.memory.overhead", "2g"),
+    BULK_IMPORT_EMR_SPARK_YARN_DRIVER_MEMORY_OVERHEAD("sleeper.bulk.import.emr.spark.yarn.driver.memory.overhead", BULK_IMPORT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD.getDefaultValue()),
+    BULK_IMPORT_EMR_SPARK_DEFAULT_PARALLELISM("sleeper.bulk.import.emr.spark.default.parallelism", "290"),
+    BULK_IMPORT_EMR_SPARK_SQL_SHUFFLE_PARTITIONS("sleeper.bulk.import.emr.spark.sql.shuffle.partitions", BULK_IMPORT_EMR_SPARK_DEFAULT_PARALLELISM.getDefaultValue()),
+    //  - Properties that are independent of the instance type and number of instances:
+    BULK_IMPORT_EMR_SPARK_EXECUTOR_CORES("sleeper.bulk.import.emr.spark.executor.cores", "5"),
+    BULK_IMPORT_EMR_SPARK_DRIVER_CORES("sleeper.bulk.import.emr.spark.driver.cores", BULK_IMPORT_EMR_SPARK_EXECUTOR_CORES.getDefaultValue()),
+    BULK_IMPORT_EMR_SPARK_NETWORK_TIMEOUT("sleeper.bulk.import.emr.spark.network.timeout", "800s"),
+    BULK_IMPORT_EMR_SPARK_EXECUTOR_HEARTBEAT_INTERVAL("sleeper.bulk.import.emr.spark.executor.heartbeat.interval", "60s"),
+    BULK_IMPORT_EMR_SPARK_DYNAMIC_ALLOCATION_ENABLED("sleeper.bulk.import.emr.spark.dynamic.allocation.enabled", "false"),
+    BULK_IMPORT_EMR_SPARK_MEMORY_FRACTION("sleeper.bulk.import.emr.spark.memory.fraction", "0.80"),
+    BULK_IMPORT_EMR_SPARK_MEMORY_STORAGE_FRACTION("sleeper.bulk.import.emr.spark.memory.storage.fraction", "0.30"),
+    BULK_IMPORT_EMR_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS("sleeper.bulk.import.emr.spark.executor.extra.java.options",
+            "-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'"),
+    BULK_IMPORT_EMR_SPARK_DRIVER_EXTRA_JAVA_OPTIONS("sleeper.bulk.import.emr.spark.driver.extra.java.options",
+            BULK_IMPORT_EMR_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS.getDefaultValue()),
+    BULK_IMPORT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES("sleeper.bulk.import.emr.spark.yarn.scheduler.reporter.thread.max.failures",
+            "5"),
+    BULK_IMPORT_EMR_SPARK_STORAGE_LEVEL("sleeper.bulk.import.emr.spark.storage.level", "MEMORY_AND_DISK_SER"),
+    BULK_IMPORT_EMR_SPARK_RDD_COMPRESS("sleeper.bulk.import.emr.spark.rdd.compress", "true"),
+    BULK_IMPORT_EMR_SPARK_SHUFFLE_COMPRESS("sleeper.bulk.import.emr.spark.shuffle.compress", "true"),
+    BULK_IMPORT_EMR_SPARK_SHUFFLE_SPILL_COMPRESS("sleeper.bulk.import.emr.spark.shuffle.spill.compress", "true"),
+
+    // Bulk import using the non-persistent EMR approach
     DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL("sleeper.default.bulk.import.emr.release.label", "emr-6.4.0"),
     DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE("sleeper.default.bulk.import.emr.master.instance.type", "m5.xlarge"),
     DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE("sleeper.default.bulk.import.emr.executor.market.type", "SPOT", s -> ("SPOT".equals(s) || "ON_DEMAND".equals(s))),
@@ -86,29 +142,17 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     DEFAULT_BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS("sleeper.default.bulk.import.emr.executor.initial.instances", "2"),
     DEFAULT_BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS("sleeper.default.bulk.import.emr.executor.max.instances", "10"),
 
-    // Bulk import using EMR - these properties are used by both the persistent
-    // and non-persistent EMR stacks
-    BULK_IMPORT_EMR_BUCKET("sleeper.bulk.import.emr.bucket"),
-    BULK_IMPORT_EMR_BUCKET_CREATE("sleeper.bulk.import.emr.bucket.create", "true"),
-    BULK_IMPORT_EC2_KEY_NAME("sleeper.bulk.import.emr.keypair.name"),
-    BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP("sleeper.bulk.import.emr.master.additional.security.group"),
-
-    // Bulk import using persistent EMR cluster
+    // Bulk import using a persistent EMR cluster
     BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL("sleeper.bulk.import.persistent.emr.release.label", "emr-6.4.0"),
     BULK_IMPORT_PERSISTENT_EMR_MASTER_INSTANCE_TYPE("sleeper.bulk.import.persistent.emr.master.instance.type", DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE.defaultValue),
     BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPE("sleeper.bulk.import.persistent.emr.core.instance.type", DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE.defaultValue),
     BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING("sleeper.bulk.import.persistent.emr.use.managed.scaling", "true"),
-    BULK_IMPORT_PERSISTENT_EMR_MIN_NUMBER_OF_EXECUTORS("sleeper.bulk.import.persistent.emr.min.instances", "1"),
-    BULK_IMPORT_PERSISTENT_EMR_MAX_NUMBER_OF_EXECUTORS("sleeper.bulk.import.persistent.emr.max.instances", "10"),
+    BULK_IMPORT_PERSISTENT_EMR_MIN_NUMBER_OF_INSTANCES("sleeper.bulk.import.persistent.emr.min.instances", "1"),
+    BULK_IMPORT_PERSISTENT_EMR_MAX_NUMBER_OF_INSTANCES("sleeper.bulk.import.persistent.emr.max.instances", "10"),
+    BULK_IMPORT_PERSISTENT_EMR_STEP_CONCURRENCY_LEVEL("sleeper.bulk.import.persistent.emr.step.concurrency.level", "2"),
 
     // Bulk import using EKS
     BULK_IMPORT_REPO("sleeper.bulk.import.eks.repo"),
-
-    // Bulk import common properties
-    DEFAULT_BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC("sleeper.default.bulk.import.spark.shuffle.mapStatus.compression.codec", "lz4"), // Stops "Decompression error: Version not supported" errors - only a value of "lz4" has been tested. This is used to set the value of spark.shuffle.mapStatus.compression.codec on the Spark configuration.
-    DEFAULT_BULK_IMPORT_SPARK_SPECULATION("sleeper.default.bulk.import.spark.speculation", "false", Utils::isTrueOrFalse),
-    // This is used to set the value of spark.speculation on the Spark configuration.
-    DEFAULT_BULK_IMPORT_SPARK_SPECULATION_QUANTILE("sleeper.default.bulk.import.spark.speculation.quantile", "0.75"), // This is used to set the value of spark.speculation.quantile on the Spark configuration.
 
     // Partition splitting
     PARTITION_SPLITTING_PERIOD_IN_MINUTES("sleeper.partition.splitting.period.minutes", "2"),
@@ -136,6 +180,8 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES("sleeper.compaction.task.creation.period.minutes", "1"), // >0
     COMPACTION_TASK_CPU("sleeper.compaction.task.cpu", "2048"),
     COMPACTION_TASK_MEMORY("sleeper.compaction.task.memory", "4096"),
+    COMPACTION_STATUS_STORE_ENABLED("sleeper.compaction.status.store.enabled", "true"),
+    COMPACTION_JOB_STATUS_TTL_IN_SECONDS("sleeper.compaction.job.status.ttl", "604800", Utils::isPositiveInteger), // Default is 1 week
     DEFAULT_COMPACTION_STRATEGY_CLASS("sleeper.default.compaction.strategy.class", "sleeper.compaction.strategy.impl.SizeRatioCompactionStrategy"),
     DEFAULT_COMPACTION_FILES_BATCH_SIZE("sleeper.default.compaction.files.batch.size", "11"),
     DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO("sleeper.default.table.compaction.strategy.sizeratio.ratio", "3"),
@@ -147,6 +193,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS("sleeper.query.processor.timeout.seconds", "900"),
     QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS("sleeper.query.processor.state.refresh.period.seconds", "60"),
     QUERY_PROCESSING_LAMBDA_RESULTS_BATCH_SIZE("sleeper.query.processor.results.batch.size", "2000"),
+    QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS("sleeper.query.processor.record.retrieval.threads", "10", Utils::isPositiveInteger),
     QUERY_TRACKER_ITEM_TTL_IN_DAYS("sleeper.query.tracker.ttl.days", "1", Utils::isPositiveInteger),
     QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS("sleeper.query.results.bucket.expiry.days", "7", Utils::isPositiveInteger),
     DEFAULT_RESULTS_ROW_GROUP_SIZE("sleeper.default.query.results.rowgroup.size", "" + (8 * 1024 * 1024)), // 8 MiB

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2022 Crown Copyright
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -51,13 +51,11 @@ INSTANCE_PROPERTIES=${GENERATED_DIR}/instance.properties
 mkdir -p ${GENERATED_DIR}
 
 echo "Creating System Test Specific Instance Properties Template"
-cp ${THIS_DIR}/system-test-instance.properties ${INSTANCE_PROPERTIES}
 sed \
   -e "s|^sleeper.systemtest.repo=.*|sleeper.systemtest.repo=${INSTANCE_ID}/system-test|" \
   -e "s|^sleeper.optional.stacks=.*|sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,PartitionSplittingStack,QueryStack,SystemTestStack,IngestStack,EmrBulkImportStack|" \
   -e "s|^sleeper.retain.infra.after.destroy=.*|sleeper.retain.infra.after.destroy=false|" \
-  -e "s|^sleeper.bulk.import.emr.bucket.create=.*|sleeper.bulk.import.emr.bucket.create=false|" \
-	-i ${GENERATED_DIR}/instance.properties
+  ${THIS_DIR}/system-test-instance.properties > ${INSTANCE_PROPERTIES}
 
 echo "THIS_DIR: ${THIS_DIR}"
 echo "PROJECT_ROOT: ${PROJECT_ROOT}"

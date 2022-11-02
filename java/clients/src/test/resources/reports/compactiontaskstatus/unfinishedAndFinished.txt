@@ -1,0 +1,11 @@
+
+Compaction Task Status Report
+-----------------------------
+Total tasks: 2
+Total unfinished tasks: 1
+Total finished tasks: 1
+------------------------------------------------------------------------------------
+| STATE    | START_TIME               | FINISH_TIME              | TASK_ID         |
+| RUNNING  | 2022-10-06T12:17:00.001Z |                          | unfinished-task |
+| FINISHED | 2022-10-06T12:20:00.001Z | 2022-10-06T12:20:30.001Z | finished-task   |
+------------------------------------------------------------------------------------

@@ -1,0 +1,29 @@
+name: Build Compaction Modules
+on:
+  push:
+    paths:
+      - '.github/workflows/chunk-compaction.yaml'
+      - '.github/workflows/chunk.yaml'
+      - 'code-style/checkstyle*.xml'
+      - 'code-style/spotbugs*.xml'
+      - 'java/pom.xml'
+      - 'java/compaction-job-execution/**'
+      - 'java/compaction-job-creation/**'
+      - 'java/compaction-status-store/**'
+      - 'java/compaction-core/**'
+      - 'java/splitter/**'
+      - 'java/ingest/**'
+      - 'java/common-job/**'
+      - 'java/sketches/**'
+      - 'java/tables/**'
+      - 'java/statestore/**'
+      - 'java/parquet/**'
+      - 'java/configuration/**'
+      - 'java/core/**'
+
+jobs:
+  module-workflow:
+    uses: ./.github/workflows/chunk.yaml
+    with:
+      chunkName: Compaction
+      moduleList: compaction-job-execution,compaction-job-creation,compaction-status-store,compaction-core,splitter

@@ -15,17 +15,18 @@
  */
 package sleeper.query.model.output;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.record.Record;
+import sleeper.query.model.Query;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.Record;
-import sleeper.query.model.Query;
 
 /**
  * An implementation of {@link ResultsOutput} that writes results to a client
@@ -44,6 +45,10 @@ public class WebSocketResultsOutput extends WebSocketOutput implements ResultsOu
         String maxBatchSize = config.get(MAX_BATCH_SIZE);
         this.maxBatchSize = maxBatchSize != null && !maxBatchSize.isEmpty() ? Long.parseLong(maxBatchSize) : null;
 
+        addOutputLocations();
+    }
+
+    private void addOutputLocations() {
         this.outputLocations.add(new ResultsOutputLocation("websocket-endpoint", this.getEndpoint()));
         this.outputLocations.add(new ResultsOutputLocation("websocket-connection-id", this.getConnectionId()));
     }

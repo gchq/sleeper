@@ -17,7 +17,10 @@ package sleeper.status.report.filestatus;
 
 import sleeper.statestore.FileInfo;
 
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * A data structure to hold information about the status of files within Sleeper
@@ -152,6 +155,10 @@ public class FileStatus {
 
     public void setTotalRecordsInLeafPartitions(long totalRecordsInLeafPartitions) {
         this.totalRecordsInLeafPartitions = totalRecordsInLeafPartitions;
+    }
+
+    public String verboseReportString(Function<PrintStream, FileStatusReporter> getReporter) throws UnsupportedEncodingException {
+        return FileStatusReporter.asString(getReporter, this, true);
     }
 
     public static class PartitionStats {

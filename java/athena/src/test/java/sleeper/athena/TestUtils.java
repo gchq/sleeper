@@ -26,6 +26,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.ingest.IngestProperties;
 import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.statestore.InitialiseStateStore;
 import sleeper.statestore.StateStoreException;
@@ -61,6 +62,9 @@ import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZ
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TestUtils {
+
+    private TestUtils() {
+    }
 
     public static InstanceProperties createInstance(AmazonS3 s3Client) {
         String configBucket = s3Client.createBucket(UUID.randomUUID().toString()).getName();
@@ -119,23 +123,23 @@ public class TestUtils {
                                   TableProperties table) {
         DynamoDBStateStore stateStore = new DynamoDBStateStore(table, dynamoClient);
         try {
-            new IngestRecordsFromIterator(new ObjectFactory(instanceProperties, s3Client, "/tmp"),
-                    generateTimeSeriesData().iterator(),
-                    dataDir,
-                    1000L,
-                    1024L,
-                    table.getInt(ROW_GROUP_SIZE),
-                    table.getInt(PAGE_SIZE),
-                    table.get(COMPRESSION_CODEC),
-                    stateStore,
-                    table.getSchema(),
-                    "file://",
-                    table.get(DATA_BUCKET),
-                    null,
-                    null,
-                    10
-            ).write();
-        } catch (IOException | StateStoreException | InterruptedException | IteratorException | ObjectFactoryException e) {
+            IngestProperties properties = IngestProperties.builder()
+                    .objectFactory(new ObjectFactory(instanceProperties, s3Client, "/tmp"))
+                    .localDir(dataDir)
+                    .maxRecordsToWriteLocally(1000L)
+                    .maxInMemoryBatchSize(1024L)
+                    .rowGroupSize(table.getInt(ROW_GROUP_SIZE))
+                    .pageSize(table.getInt(PAGE_SIZE))
+                    .compressionCodec(table.get(COMPRESSION_CODEC))
+                    .stateStore(stateStore)
+                    .schema(table.getSchema())
+                    .filePathPrefix("file://")
+                    .bucketName(table.get(DATA_BUCKET))
+                    .ingestPartitionRefreshFrequencyInSecond(10)
+                    .build();
+            new IngestRecordsFromIterator(properties, generateTimeSeriesData().iterator()).write();
+        } catch (IOException | StateStoreException | InterruptedException | IteratorException |
+                 ObjectFactoryException e) {
             throw new RuntimeException("Failed to Ingest data", e);
         } finally {
             dynamoClient.shutdown();

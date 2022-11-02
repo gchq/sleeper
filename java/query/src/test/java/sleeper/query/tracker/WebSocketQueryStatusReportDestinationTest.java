@@ -18,14 +18,13 @@ package sleeper.query.tracker;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
 import com.github.tomakehurst.wiremock.matching.UrlPattern;
-
 import org.apache.curator.shaded.com.google.common.collect.Lists;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
+import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -34,6 +33,10 @@ import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.model.output.ResultsOutputLocation;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.absent;
@@ -44,17 +47,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import sleeper.core.range.Region;
-
 public class WebSocketQueryStatusReportDestinationTest {
-    private static final Schema SCHEMA = new Schema();
-    static {
-        SCHEMA.setRowKeyFields(new Field("key", new StringType()));
-        SCHEMA.setValueFields(new Field("count", new LongType()));
-    }
+    private static final Schema SCHEMA = Schema.builder()
+            .rowKeyFields(new Field("key", new StringType()))
+            .valueFields(new Field("count", new LongType()))
+            .build();
 
     @ClassRule
     public static WireMockClassRule wireMockRule = new WireMockClassRule();
@@ -110,9 +107,9 @@ public class WebSocketQueryStatusReportDestinationTest {
         Region partitionRegion = new Region(partitionRange);
         Query query = new Query.Builder("tableName", "q1", new Region(range)).build();
         ArrayList<LeafPartitionQuery> subQueries = Lists.newArrayList(
-            new LeafPartitionQuery.Builder("tableName", "q1", "s1", region, "leaf1", partitionRegion, Collections.emptyList()).build(),
-            new LeafPartitionQuery.Builder("tableName", "q1", "s2", region, "leaf2", partitionRegion, Collections.emptyList()).build(),
-            new LeafPartitionQuery.Builder("tableName", "q1", "s3", region, "leaf3", partitionRegion, Collections.emptyList()).build()
+                new LeafPartitionQuery.Builder("tableName", "q1", "s1", region, "leaf1", partitionRegion, Collections.emptyList()).build(),
+                new LeafPartitionQuery.Builder("tableName", "q1", "s2", region, "leaf2", partitionRegion, Collections.emptyList()).build(),
+                new LeafPartitionQuery.Builder("tableName", "q1", "s3", region, "leaf3", partitionRegion, Collections.emptyList()).build()
         );
 
         // When
@@ -120,11 +117,11 @@ public class WebSocketQueryStatusReportDestinationTest {
 
         // Then
         wireMock.verify(1, postRequestedFor(url).withRequestBody(
-            matchingJsonPath("$.queryId", equalTo("q1"))
-            .and(matchingJsonPath("$.message", equalTo("subqueries")))
-            .and(matchingJsonPath("$.error", absent()))
-            .and(matchingJsonPath("$.recordCount", absent()))
-            .and(matchingJsonPath("$.queryIds", equalToJson("[\"s1\",\"s2\",\"s3\"]")))
+                matchingJsonPath("$.queryId", equalTo("q1"))
+                        .and(matchingJsonPath("$.message", equalTo("subqueries")))
+                        .and(matchingJsonPath("$.error", absent()))
+                        .and(matchingJsonPath("$.recordCount", absent()))
+                        .and(matchingJsonPath("$.queryIds", equalToJson("[\"s1\",\"s2\",\"s3\"]")))
         ));
     }
 
@@ -134,8 +131,8 @@ public class WebSocketQueryStatusReportDestinationTest {
         Range range = rangeFactory.createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
         Query query = new Query.Builder("tableName", "q1", new Region(range)).build();
         ResultsOutputInfo result = new ResultsOutputInfo(1, Lists.newArrayList(
-            new ResultsOutputLocation("s3", "s3://bucket/file1.parquet"),
-            new ResultsOutputLocation("s3", "s3://bucket/file2.parquet")
+                new ResultsOutputLocation("s3", "s3://bucket/file1.parquet"),
+                new ResultsOutputLocation("s3", "s3://bucket/file2.parquet")
         ));
 
         // When
@@ -143,10 +140,10 @@ public class WebSocketQueryStatusReportDestinationTest {
 
         // Then
         wireMock.verify(1, postRequestedFor(url).withRequestBody(
-            matchingJsonPath("$.queryId", equalTo("q1"))
-            .and(matchingJsonPath("$.message", equalTo("completed")))
-            .and(matchingJsonPath("$.error", absent()))
-            .and(matchingJsonPath("$.recordCount", equalTo(String.valueOf(result.getRecordCount()))))
+                matchingJsonPath("$.queryId", equalTo("q1"))
+                        .and(matchingJsonPath("$.message", equalTo("completed")))
+                        .and(matchingJsonPath("$.error", absent()))
+                        .and(matchingJsonPath("$.recordCount", equalTo(String.valueOf(result.getRecordCount()))))
         ));
     }
 
@@ -156,8 +153,8 @@ public class WebSocketQueryStatusReportDestinationTest {
         Range range = rangeFactory.createExactRange(SCHEMA.getRowKeyFields().get(0), "a");
         Query query = new Query.Builder("tableName", "q2", new Region(range)).build();
         ResultsOutputInfo result = new ResultsOutputInfo(1, Lists.newArrayList(
-            new ResultsOutputLocation("data", "s3://bucket/data/parquet"),
-            new ResultsOutputLocation("sketches", "s3://bucket/sketches.parquet")
+                new ResultsOutputLocation("data", "s3://bucket/data/parquet"),
+                new ResultsOutputLocation("sketches", "s3://bucket/sketches.parquet")
         ), new IOException("error writing record #2"));
 
         // When
@@ -165,10 +162,10 @@ public class WebSocketQueryStatusReportDestinationTest {
 
         // Then
         wireMock.verify(1, postRequestedFor(url).withRequestBody(
-            matchingJsonPath("$.queryId", equalTo("q2"))
-            .and(matchingJsonPath("$.message", equalTo("error")))
-            .and(matchingJsonPath("$.error", equalTo(result.getError().getClass().getSimpleName() + ": " + result.getError().getMessage())))
-            .and(matchingJsonPath("$.recordCount", equalTo(String.valueOf(result.getRecordCount()))))
+                matchingJsonPath("$.queryId", equalTo("q2"))
+                        .and(matchingJsonPath("$.message", equalTo("error")))
+                        .and(matchingJsonPath("$.error", equalTo(result.getError().getClass().getSimpleName() + ": " + result.getError().getMessage())))
+                        .and(matchingJsonPath("$.recordCount", equalTo(String.valueOf(result.getRecordCount()))))
         ));
     }
 
@@ -183,10 +180,10 @@ public class WebSocketQueryStatusReportDestinationTest {
 
         // Then
         wireMock.verify(1, postRequestedFor(url).withRequestBody(
-            matchingJsonPath("$.queryId", equalTo("q3"))
-            .and(matchingJsonPath("$.message", equalTo("error")))
-            .and(matchingJsonPath("$.error", equalTo("IOException: fail")))
-            .and(matchingJsonPath("$.recordCount", absent()))
+                matchingJsonPath("$.queryId", equalTo("q3"))
+                        .and(matchingJsonPath("$.message", equalTo("error")))
+                        .and(matchingJsonPath("$.error", equalTo("IOException: fail")))
+                        .and(matchingJsonPath("$.recordCount", absent()))
         ));
     }
 }

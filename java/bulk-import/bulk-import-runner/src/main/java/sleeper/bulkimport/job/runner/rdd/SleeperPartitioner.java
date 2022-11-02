@@ -15,6 +15,14 @@
  */
 package sleeper.bulkimport.job.runner.rdd;
 
+import org.apache.spark.Partitioner;
+import org.apache.spark.broadcast.Broadcast;
+import sleeper.core.key.Key;
+import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.SchemaSerDe;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,15 +30,6 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-
-import org.apache.spark.Partitioner;
-import org.apache.spark.broadcast.Broadcast;
-
-import sleeper.core.key.Key;
-import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionTree;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.SchemaSerDe;
 
 /**
  * A {@link SleeperPartitioner} is a custom {@link Partitioner} which uses the

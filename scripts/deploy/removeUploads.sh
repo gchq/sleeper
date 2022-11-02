@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2022 Crown Copyright
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,16 +32,17 @@ STACKS=`grep sleeper.optional.stacks ${PROPERTIES} | cut -d'=' -f2`
 STACKS=$(echo ${STACKS//,/ })
 echo "Stacks:${STACKS}"
 
-declare -A LOOKUP
-LOOKUP=( \
-["CompactionStack"]="sleeper.compaction.repo=" \
-["IngestStack"]="sleeper.ingest.repo=" \
-["SystemTestStack"]="sleeper.systemtest.repo=" \
-["EksBulkImportStack"]="sleeper.bulk.import.eks.repo=")
+Properties_CompactionStack="sleeper.compaction.repo="
+Properties_IngestStack="sleeper.ingest.repo="
+Properties_SystemTestStack="sleeper.systemtest.repo="
+Properties_EksBulkImportStack="sleeper.bulk.import.eks.repo="
 
 echo "Removing ECR images"
 for stack in ${STACKS}; do
-    PROPERTY=${LOOKUP[${stack}]}
+
+    Key=Properties_${stack}
+    PROPERTY=${!Key}
+
     if [[ ! -z "${PROPERTY}" ]]; then
       REPO="$(grep "${PROPERTY}" ${PROPERTIES} | sed -e "s/\(.*=\)\(.*\)/\2/")"
       echo ${REPO}

@@ -52,7 +52,7 @@ class RecordIteratorWithSleeperIteratorApplied implements CloseableIterator<Reco
      * @param sourceIterator           The {@link CloseableIterator} to provide the source {@link Record} objects
      * @throws IteratorException Thrown when there is an error in the Sleeper iterator
      */
-    public RecordIteratorWithSleeperIteratorApplied(
+    RecordIteratorWithSleeperIteratorApplied(
             ObjectFactory objectFactory,
             Schema sleeperSchema,
             String sleeperIteratorClassName,

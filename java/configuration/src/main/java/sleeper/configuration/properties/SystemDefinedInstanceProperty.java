@@ -25,7 +25,7 @@ public enum SystemDefinedInstanceProperty implements InstanceProperty {
 
     // Table management
     TABLE_REQUEST_FUNCTION_NAME("sleeper.table.requests.function.name"),
-    
+
     // Table metrics
     TABLE_METRICS_RULES("sleeper.table.metrics.rulenames"),
 
@@ -67,27 +67,30 @@ public enum SystemDefinedInstanceProperty implements InstanceProperty {
     INGEST_TASK_DEFINITION_FAMILY("sleeper.ingest.task.definition.family"),
     INGEST_CLUSTER("sleeper.ingest.cluster"),
 
+    // Bulk import
+    BULK_IMPORT_BUCKET("sleeper.bulk.import.bucket"),
+
     // Bulk import using EMR - these properties are used by both the persistent
     // and non-persistent EMR stacks
     BULK_IMPORT_EMR_EC2_ROLE_NAME("sleeper.bulk.import.emr.ec2.role.name"),
     BULK_IMPORT_EMR_CLUSTER_ROLE_NAME("sleeper.bulk.import.emr.role.name"),
     BULK_IMPORT_EMR_SECURITY_CONF_NAME("sleeper.bulk.import.emr.security.conf.name"),
-    
+
     // Bulk import using EMR
     BULK_IMPORT_EMR_JOB_QUEUE_URL("sleeper.bulk.import.emr.job.queue.url"),
-    
+
     // Bulk import using persistent EMR
     BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL("sleeper.bulk.import.persistent.emr.job.queue.url"),
     BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS("sleeper.bulk.import.persistent.emr.master"),
-    
+
     // Bulk import using EKS
     BULK_IMPORT_EKS_JOB_QUEUE_URL("sleeper.bulk.import.eks.job.queue.url"),
     BULK_IMPORT_EKS_STATE_MACHINE_ARN("sleeper.bulk.import.eks.statemachine.arn"),
     BULK_IMPORT_EKS_NAMESPACE("sleeper.bulk.import.eks.k8s.namespace"),
     BULK_IMPORT_EKS_CLUSTER_ENDPOINT("sleeper.bulk.import.eks.k8s.endpoint");
-    
+
     private final String propertyName;
-    
+
     SystemDefinedInstanceProperty(String propertyName) {
         this.propertyName = propertyName;
     }

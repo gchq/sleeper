@@ -16,6 +16,10 @@
 package sleeper.core;
 
 public class ContainerConstants {
+
+    private ContainerConstants() {
+    }
+
     public static final String COMPACTION_CONTAINER_NAME = "MergeContainer";
     public static final String SPLITTING_COMPACTION_CONTAINER_NAME = "SplittingMergeContainer";
     public static final String INGEST_CONTAINER_NAME = "IngestContainer";

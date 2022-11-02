@@ -17,17 +17,10 @@ package sleeper.table.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_BASE64_ENCODED;
-import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_KEY;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
@@ -38,6 +31,16 @@ import sleeper.statestore.InitialiseStateStore;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreFactory;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+
+import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_BASE64_ENCODED;
+import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_KEY;
 
 /**
  * The TableInitialiser is a class which can initialise a StateStore using TableProperties
@@ -74,13 +77,16 @@ public class TableInitialiser {
             return null;
         }
         List<Object> splitPoints = new ArrayList<>();
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(s3.getObject(configBucket, splitsFile).getObjectContent()));
-        boolean stringsBase64Encoded = Boolean.parseBoolean(tableProperties.get(SPLIT_POINTS_BASE64_ENCODED));
-        PrimitiveType keyType = tableProperties.getSchema().getRowKeyTypes().get(0);
-        bufferedReader.lines()
-                .map(l -> createSplitPoint(l, stringsBase64Encoded,  keyType))
-                .forEach(splitPoints::add);
-
+        try (InputStreamReader inputStreamReader = new InputStreamReader(s3.getObject(configBucket, splitsFile).getObjectContent(), StandardCharsets.UTF_8);
+             BufferedReader bufferedReader = new BufferedReader(inputStreamReader)) {
+            boolean stringsBase64Encoded = Boolean.parseBoolean(tableProperties.get(SPLIT_POINTS_BASE64_ENCODED));
+            PrimitiveType keyType = tableProperties.getSchema().getRowKeyTypes().get(0);
+            bufferedReader.lines()
+                    .map(l -> createSplitPoint(l, stringsBase64Encoded, keyType))
+                    .forEach(splitPoints::add);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         return splitPoints;
     }
 
@@ -93,7 +99,7 @@ public class TableInitialiser {
         }
         if (keyType instanceof StringType) {
             if (stringsBase64Encoded) {
-                return new String(Base64.decodeBase64(line));
+                return new String(Base64.decodeBase64(line), StandardCharsets.UTF_8);
             }
             return line;
         }

@@ -2,7 +2,7 @@ Python API
 ==========
 
 The Python API allows users to query Sleeper from Python, and to trigger uploads of data in Parquet files. There is
-also the ability to upload records directly from the Python API, but this is only intended to be used for small
+also the ability to upload records directly from the Python API, but this is only intended to be used for very small
 volumes of data.
 
 ## Requirements
@@ -41,9 +41,8 @@ my_sleeper = SleeperClient('my_sleeper_instance')
 Write a batch of records into Sleeper. As noted above, this is not intended to be used for large volumes of
 data.
 
-* table_name: This is the name of the table to ingest data to.
-
-* records_to_write: This should be a list of dictionaries to write to Sleeper. Each dictionary should contain a single record.
+* `table_name`: This is the name of the table to ingest data to.
+* `records_to_write`: This should be a list of dictionaries to write to Sleeper. Each dictionary should contain a single record.
 
 #### Example:
 
@@ -58,9 +57,8 @@ Ingest data from Parquet files in S3 into the given table. Note that Sleeper mus
 to read files in that bucket. This can be done by specifying the `sleeper.ingest.source.bucket` parameter
 in the instance properties file.
 
-* table_name: This is the name of the table to ingest data to
-
-* files: This should be a list of files or directories in S3, in the form bucket/file. If directories are specified
+* `table_name`: This is the name of the table to ingest data to
+* `files`: This should be a list of files or directories in S3, in the form `bucket/file`. If directories are specified
 then all Parquet files contained in them will be ingested.
 
 #### Example:
@@ -76,15 +74,12 @@ Bulk imports the data from Parquet files in S3 into the given table. Note that S
 permission to read files in that bucket. This can be done by specifying the `sleeper.ingest.source.bucket parameter`
 in the instance properties file.
 
-* table_name: This is the name of the table to ingest data to
-
-* files: This should be a list of files or directories in S3, in the form bucket/file. If directories are specified
+* `table_name`: This is the name of the table to ingest data to
+* `files`: This should be a list of files or directories in S3, in the form `bucket/file`. If directories are specified
 then all Parquet files contained in them will be ingested
-
-* id: This is the id of the bulk import job. This id will appear in the name of the cluster that runs the job. If
+* `id`: This is the id of the bulk import job. This id will appear in the name of the cluster that runs the job. If
 no id is provided a random one will be generated. Note that only lower case letters, numbers and dashes should be used.
-
-* platform_spec: This optional parameter allows you to configure details of the EMR cluster that is created to run
+* `platform_spec`: This optional parameter allows you to configure details of the EMR cluster that is created to run
 the bulk import job. This should be a dict, containing parameters specifying details of the cluster (see the second
 example below). If this is not provided then sensible defaults are used.
 
@@ -111,14 +106,12 @@ my_sleeper.bulk_import_parquet_files_from_s3('my_table', files, 'my_bulk_import_
 
 Allows for the querying for records matching a specific key from Sleeper.
 
-* table_name: This is the name of the table to query.
-
-* queried_key: This should be the key or keys to query Sleeper for in the form of a list of dicts.
-
-* key_schema_name: This should be the name given to keys as it appears in their Sleeper instance schema.
+* `table_name`: This is the name of the table to query
+* `queried_key`: This should be the key or keys to query Sleeper for in the form of a list of dicts
+* `key_schema_name`: This should be the name given to keys as it appears in their Sleeper instance schema
 
 This function returns a list of the records that contain the queried key. Each element of this list is another list
-containing 2 tuples, one containing the schema name of the key followed by they key (the one that was queried) and
+containing two tuples, one containing the schema name of the key followed by they key (the one that was queried) and
 the other tuple contains the associated value.
 
 #### Example:
@@ -135,25 +128,21 @@ And this would return something along the lines of
 [[('key', 'akey'), ('value', 'my_value')]]
 ```
 
-In this example, there was one record found with the key 'akey' which has the value of 'my_value'. If there
+In this example, there was one record found with the key `akey` which has the value of `my_value`. If there
 were more records with this key then the returned list would be longer.
 
 ### range_key_query(table_name: str, regions: list)
 
-Queries for all records where the key is in a given range, for example between a and c.
+Queries for all records where the key is in a given range, for example between 'a' and 'c'.
 
-* table_name: This is the name of the table to query.
-
-* regions: A list of regions where each region is a dict with a key of the name of the row key field and
+* `table_name`: This is the name of the table to query
+* `regions`: A list of regions where each region is a dict with a key of the name of the row key field and
 the value is a list, either ["a", "c"] or ["a", True, "b", True] where the latter form allows the user to
 specify whether the ends are inclusive (True means inclusive, the default is that the minimum is inclusive
-and the maximum is exclusive).
-
-* queried_key_min: This should be the lower bound of the range to query for.
-
-* queried_key_max: This should be the upper bound of the range to query for.
-
-* key_schema_name: This should be the name given to keys as it appears in their Sleeper instance schema.
+and the maximum is exclusive)
+* `queried_key_min`: This should be the lower bound of the range to query for
+* `queried_key_max`: This should be the upper bound of the range to query for
+* `key_schema_name`: This should be the name given to keys as it appears in their Sleeper instance schema.
 
 #### Example function call
 
@@ -171,7 +160,7 @@ And this would return something similar to
 
 Creates a writer for writing batches of records to Sleeper.
 
-* table_name: This is the name of the table to ingest data to.
+* `table_name`: This is the name of the table to ingest data to.
   
 The returned object is designed to be used within a Python context manager
 as follows:

@@ -9,11 +9,11 @@ to AWS and then interact with it.
 
 ### Install Prerequisite Software 
 You will need the following software:
-* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
-* [NodeJS / Npm](https://github.com/nvm-sh/nvm#installing-and-updating)
-* [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html)
+* [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html): Tested with v2.39.1
+* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html): Tested with v2.7.27
 * [Java 8](https://openjdk.java.net/install/)
-* [maven](https://maven.apache.org/)
+* [Maven](https://maven.apache.org/): Tested with v3.8.6
+* [NodeJS / Npm](https://github.com/nvm-sh/nvm#installing-and-updating): Tested with NodeJS v16.16.0 and npm v8.11.0
 
 ### Configure AWS
 The following configuration should allow the SDKs, the CLI and CDK to all access AWS:
@@ -39,16 +39,13 @@ export AWS_REGION=eu-west-2
 ```
 
 ### Bootstrapping CDK
-If you are installing Sleeper into your own account you will need to bootstrap CDK, if
-you haven't already done this in your AWS account. Bootstrapping installs all the resources
-that CDK needs to do deployments into your account. 
-See [this link](https://docs.aws.amazon.com/cdk/latest/guide/bootstrapping.html).
-
-You can do this by running the following command `cdk bootstrap aws://ACCOUNT-NUMBER-1/REGION-1`, e.g.:
-
-```bash
-cdk bootstrap aws://123456789012/eu-west-2
-```
+To deploy Sleeper into your AWS account you will need to have bootstrapped CDK in the
+account. Bootstrapping installs all the resources that CDK needs to do deployments. Note
+that bootstrapping CDK is a one-time action for the account that is nothing to do with
+Sleeper itself. See
+[this link](https://docs.aws.amazon.com/cdk/latest/guide/bootstrapping.html) for guidance
+on how to bootstrap CDK in your account. Note that the `cdk bootstrap` command should
+not be run from inside the sleeper directory.
 
 ### Lambda Reserved Concurrency
 When deploying Sleeper, depending on the stacks you need, it will deploy a few Lambda
@@ -64,6 +61,11 @@ limit. So if Y is greater than or equal to X-100 you won't be able to deploy Sle
 and you will have to see if you can adjust your existing lambdas to free some up.
 
 You're now ready to build and deploy Sleeper.
+
+### Deployment environment
+
+See [getting started](01-getting-started.md#deployment-environment) for information on setting up a VPC and EC2 instance
+to deploy Sleeper. You may want to follow the remaining instructions here from within the EC2 instance.
 
 ## Building
 The first step is to build Sleeper. We have a section in our 
@@ -98,14 +100,14 @@ from the root directory:
 ```bash
 ./scripts/deploy/buildAndDeploy.sh <sleeper-instance-unique-id> <vpc-id> <subnet-id> <table-name>
 ```
-Here vpc-id and subnet-id are the ids of the VPC and subnet that some components of Sleeper
+Here `vpc-id` and `subnet-id` are the ids of the VPC and subnet that some components of Sleeper
 will be deployed into.
 
 This script will build Sleeper and upload the necessary jars to a bucket in S3
 and push the Docker container images to respositories in ECR.
 
 The deployment scripts will create all of the required configuration files in a 
-folder called "generated" under the root directory. It is recommended you keep
+folder called `generated` under the root directory. It is recommended you keep
 this folder somewhere safe.
 
 ### Manual Deployment
@@ -168,7 +170,7 @@ docker push ${REPO_PREFIX}/bulk-import-runner:${VERSION}
 cd ..
 ```
 
-#### Upload the bars to a bucket
+#### Upload the jars to a bucket
 We need to upload jars to a S3 bucket so that they can be used by various resources. The code
 below assumes you start in the project root directory.
 
@@ -183,18 +185,7 @@ aws s3api create-bucket --acl private --bucket ${SLEEPER_JARS} --region ${REGION
 
 rm -rf temp-jars
 mkdir -p temp-jars
-cp compaction-job-creation/target/compaction-job-creation-${VERSION}-utility.jar temp-jars/lambda-jobSpecCreationLambda-${VERSION}.jar
-cp compaction-job-execution/target/compaction-job-execution-${VERSION}-utility.jar temp-jars/runningjobs-${VERSION}.jar
-cp garbage-collector/target/garbage-collector-${VERSION}-utility.jar temp-jars/lambda-garbagecollector-${VERSION}.jar
-cp splitter/target/splitter-${VERSION}-utility.jar temp-jars/lambda-splitter-${VERSION}.jar
-cp query/target/query-${VERSION}-utility.jar temp-jars/query-${VERSION}.jar
-cp ingest/target/ingest-${VERSION}-utility.jar temp-jars/ingest-${VERSION}.jar
-cp metrics/target/metrics-${VERSION}-utility.jar temp-jars/metrics-${VERSION}.jar
-cp athena/target/athena-${VERSION}-utility.jar temp-jars/athena-${VERSION}.jar
-cp cdk/target/cdk-${VERSION}-utility.jar temp-jars/cdk-${VERSION}.jar
-cp cdk-custom-resources/target/cdk-custom-resources-${VERSION}-utility.jar temp-jars/cdk-custom-resources-${VERSION}.jar
-cp bulk-import/bulk-import-starter/target/bulk-import-starter-${VERSION}-utility.jar temp-jars/bulk-import-starter-${VERSION}.jar
-cp bulk-import/bulk-import-runner/target/bulk-import-runner-${VERSION}-utility.jar temp-jars/bulk-import-runner-${VERSION}.jar
+cp distribution/target/distribution-${VERSION}-bin/scripts/jars/* temp-jars/
 aws s3 sync --size-only temp-jars s3://${SLEEPER_JARS}
 rm -rf temp-jars
 cd ..
@@ -204,11 +195,11 @@ cd ..
 
 Before we can use CDK to deploy Sleeper, we need to create some configuration files:
 
-* An instance.properties file - containing information about your Sleeper instance, as well as
+* An `instance.properties` file - containing information about your Sleeper instance, as well as
 default values used by tables if not specified.
-* A table.properties file which contains information about a table and a link to its schema file.
-* A schema.json file which describes the data stored in a Sleeper table.
-* A tags.properties file which lists the tags you want all of your Sleeper infrastructure to be tagged with.
+* A `table.properties` file which contains information about a table and a link to its schema file.
+* A `schema.json` file which describes the data stored in a Sleeper table.
+* A `tags.properties` file which lists the tags you want all of your Sleeper infrastructure to be tagged with.
 
 There's an example of a basic instance properties file [here](../example/basic/instance.properties)
 and an example of a full instance properties file [here](../example/full/instance.properties).
@@ -216,17 +207,17 @@ This latter file shows all the instance properties that you can set. Whichever o
 files you use as your starting point, you will need to set sensible values for the following
 properties:
 
-* sleeper.id
-* sleeper.table.properties - see below
-* sleeper.jars.bucket - if you followed the steps above for uploading the jars this needs to be set to
-sleeper-${INSTANCE_ID}-jars
-* sleeper.tags.file - see below
-* sleeper.account
-* sleeper.region
-* sleeper.version - set this to the value of ${VERSION}
-* sleeper.vpc
-* sleeper.subnet
-* sleeper.retain.infra.after.destroy - set to false to cause resources such as the S3
+* `sleeper.id`
+* `sleeper.table.properties` - see below
+* `sleeper.jars.bucket` - if you followed the steps above for uploading the jars this needs to be set to
+`sleeper-${INSTANCE_ID}-jars`
+* `sleeper.tags.file` - see below
+* `sleeper.account`
+* `sleeper.region`
+* `sleeper.version` - set this to the value of ${VERSION}
+* `sleeper.vpc`
+* `sleeper.subnet`
+* `sleeper.retain.infra.after.destroy` - set to false to cause resources such as the S3
 buckets and Dynamo tables to be destroyed after running CDK destroy.
 
 To include a table in your instance you need to set the `sleeper.table.properties`
@@ -242,7 +233,7 @@ the files in these directories are table properties.
 ```properties
 sleeper.table.properties=/sleeper/config/tables
 ```
-Note, if you do not set the property "sleeper.retain.infra.after.destroy" to false
+Note, if you do not set the property `sleeper.retain.infra.after.destroy` to false
 when deploying then however you choose to tear down Sleeper later on
 you will also need to destroy some further S3 buckets and DynamoDB tables manually.
 This is because by default they are kept.
@@ -256,7 +247,9 @@ You may optionally want to predefine your split points for a given table.
 You can do this by setting the `sleeper.table.splits.file` property in the
 table properties file. There's an example of this in the 
 [full example](../example/full/table.properties). If you decide not to set
-this, your statestore will be initialised with a single root partition.
+this, your statestore will be initialised with a single root partition. Note that
+pre-splitting a table is important for any large-scale use of Sleeper, and is essential
+for running bulk import jobs.
 
 To make sure you tag the Sleeper infrastructure correctly you will need set
 the following property in your instance.properties. An example tags.properties file
@@ -281,26 +274,27 @@ add "--require-approval never" to the command.
 By default all the stacks are deployed. However, if you don't 
 need them, you can customise which stacks are deployed. 
 
-The mandatory ones are the TableStack which deploys the statestore and 
-data bucket for each table you specify, the TopicStack which creates an 
+The mandatory ones are the `TableStack` which deploys the statestore and
+data bucket for each table you specify, the `TopicStack` which creates an
 SNS topic used by other stacks to send errors and finally the
-ConfigurationStack and PropertiesStack which writes the instance properties 
+`ConfigurationStack` and `PropertiesStack` which writes the instance properties
 to the configuration bucket.
 
 That leaves the following stacks as optional:
-* CompactionStack - for running compactions
-* GarbageCollectorStack - for running garbage collection
-* IngestStack - for ingesting files using the "standard" ingest method
-* PartitionSplittingStack - for splitting partitions when they get too large
-* QueryStack - for handling queries
-* EmrBulkImportStack - for running BulkImport jobs using Spark running on an EMR cluster that is created on demand
-* PersistentEmrBulkImportStack - for running BulkImport jobs using Spark running on a persistent EMR cluster, i.e. one that
+* `CompactionStack` - for running compactions (in practice this is essential)
+* `GarbageCollectorStack` - for running garbage collection (in practice this is essential)
+* `IngestStack` - for ingesting files using the "standard" ingest method
+* `PartitionSplittingStack` - for splitting partitions when they get too large
+* `QueryStack` - for handling queries
+* `EmrBulkImportStack` - for running BulkImport jobs using Spark running on an EMR cluster that is created on demand
+* `PersistentEmrBulkImportStack` - for running BulkImport jobs using Spark running on a persistent EMR cluster, i.e. one that
 is always running (and therefore always costing money). By default, this uses EMR's managed scaling to scale up and down on
 demand.
+* `DashboardStack` - for creating Cloudwatch metrics showing statistics such as the number of records in a table over time
 
 The following stacks are optional and experimental:
-* AthenaStack - for running SQL analytics over the data
-* EksBulkImportStack - for running bulk import jobs using Spark running on EKS
+* `AthenaStack` - for running SQL analytics over the data
+* `EksBulkImportStack` - for running bulk import jobs using Spark running on EKS
 
 By default all the optional stacks are included but to customise
 it, set the `sleeper.optional.stacks` sleeper property to a
@@ -314,7 +308,7 @@ Once your finished with your Sleeper instance, you can delete it, i.e. remove al
 associated with it. 
 
 Again there are two options regarding teardown, the automatic and the manual options. The automatic option
-will only work if you deployed Sleeper automatically and you still have the "generated" folder
+will only work if you deployed Sleeper automatically and you still have the `generated` folder
 in the project root directory. If you do you can simply run:
 
 ```bash

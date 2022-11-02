@@ -27,11 +27,11 @@ import java.util.Objects;
  */
 public class Key {
     private List<Object> key;
-    
+
     private Key(List<Object> key) {
         this.key = key;
     }
-    
+
     public Object get(int i) {
         return key.get(i);
     }
@@ -39,15 +39,15 @@ public class Key {
     public List<Object> getKeys() {
         return key;
     }
-    
+
     public int size() {
         return key.size();
     }
-    
+
     public boolean isEmpty() {
         return key.isEmpty();
     }
-    
+
     @Override
     public int hashCode() {
         List<Object> transformedThis = cloneWithWrappedByteArray(key);
@@ -68,12 +68,12 @@ public class Key {
             return false;
         }
         final Key other = (Key) obj;
-        
+
         final List<Object> transformedThis = cloneWithWrappedByteArray(key);
         final List<Object> transformedOther = cloneWithWrappedByteArray(other.key);
         return Objects.equals(transformedThis, transformedOther);
     }
-    
+
     private static List<Object> cloneWithWrappedByteArray(List<Object> input) {
         if (null == input) {
             return null;
@@ -93,7 +93,7 @@ public class Key {
     public String toString() {
         return "Key{" + cloneWithWrappedByteArray(key) + '}';
     }
-    
+
     public static Key create(Object obj) {
         if (null == obj) {
             return new Key(Collections.singletonList(null));

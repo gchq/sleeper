@@ -101,35 +101,37 @@ public class CompactionJobSerDe {
         byte[] bytes = Base64.decodeBase64(serialisedJob);
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         DataInputStream dis = new DataInputStream(bais);
-        CompactionJob compactionJob = new CompactionJob(dis.readUTF(), dis.readUTF());
-        compactionJob.setPartitionId(dis.readUTF());
+        String tableName = dis.readUTF();
+        CompactionJob.Builder compactionJobBuilder = CompactionJob.builder()
+                .tableName(tableName)
+                .jobId(dis.readUTF())
+                .partitionId(dis.readUTF());
         int numInputFiles = dis.readInt();
         List<String> inputFiles = new ArrayList<>(numInputFiles);
         for (int i = 0; i < numInputFiles; i++) {
             inputFiles.add(dis.readUTF());
         }
-        compactionJob.setInputFiles(inputFiles);
-        compactionJob.setIsSplittingJob(dis.readBoolean());
-        if (!dis.readBoolean()) {
-            compactionJob.setIteratorClassName(dis.readUTF());
-        }
-        if (!dis.readBoolean()) {
-            compactionJob.setIteratorConfig(dis.readUTF());
-        }
-        if (compactionJob.isSplittingJob()) {
-            compactionJob.setDimension(dis.readInt());
-            Schema schema = tablePropertiesProvider.getTableProperties(compactionJob.getTableName()).getSchema();
-            PrimitiveType type = (PrimitiveType) schema.getRowKeyFields().get(compactionJob.getDimension()).getType();
+        boolean isSplittingJob = dis.readBoolean();
+        compactionJobBuilder.inputFiles(inputFiles)
+                .isSplittingJob(isSplittingJob)
+                .iteratorClassName(!dis.readBoolean() ? dis.readUTF() : null)
+                .iteratorConfig(!dis.readBoolean() ? dis.readUTF() : null);
+
+        if (isSplittingJob) {
+            int dimension = dis.readInt();
+            compactionJobBuilder.dimension(dimension);
+            Schema schema = tablePropertiesProvider.getTableProperties(tableName).getSchema();
+            PrimitiveType type = (PrimitiveType) schema.getRowKeyFields().get(dimension).getType();
             if (type instanceof IntType) {
-                compactionJob.setSplitPoint(dis.readInt());
+                compactionJobBuilder.splitPoint(dis.readInt());
             } else if (type instanceof LongType) {
-                compactionJob.setSplitPoint(dis.readLong());
+                compactionJobBuilder.splitPoint(dis.readLong());
             } else if (type instanceof StringType) {
-                compactionJob.setSplitPoint(dis.readUTF());
+                compactionJobBuilder.splitPoint(dis.readUTF());
             } else if (type instanceof ByteArrayType) {
-                byte[] splitPoint =  new byte[dis.readInt()];
-                dis.read(splitPoint);
-                compactionJob.setSplitPoint(splitPoint);
+                byte[] splitPoint = new byte[dis.readInt()];
+                dis.readFully(splitPoint);
+                compactionJobBuilder.splitPoint(splitPoint);
             } else {
                 throw new IllegalArgumentException("Unknown type " + type);
             }
@@ -138,16 +140,15 @@ public class CompactionJobSerDe {
             for (int i = 0; i < numChildPartitions; i++) {
                 childPartitions.add(dis.readUTF());
             }
-            compactionJob.setChildPartitions(childPartitions);
+            compactionJobBuilder.childPartitions(childPartitions);
             MutablePair<String, String> outputFiles = new MutablePair<>();
             outputFiles.setLeft(dis.readUTF());
             outputFiles.setRight(dis.readUTF());
-            compactionJob.setOutputFiles(outputFiles);
+            compactionJobBuilder.outputFiles(outputFiles);
         } else {
-            compactionJob.setOutputFile(dis.readUTF());
+            compactionJobBuilder.outputFile(dis.readUTF());
         }
         dis.close();
-
-        return compactionJob;
+        return compactionJobBuilder.build();
     }
 }

@@ -99,7 +99,7 @@ class SleeperClient:
 
 
     def bulk_import_parquet_files_from_s3(self, table_name: str, files: list,
-        id: str = str(uuid.uuid4()), platform: str = "EMR", platform_spec: dict = None):
+        id: str = None, platform: str = "EMR", platform_spec: dict = None, class_name: str = None):
         """
         Ingests the data in the given files to the Sleeper table with name table_name using the bulk
         import method. This is done by posting a message containing the list of files to the bulk
@@ -109,11 +109,11 @@ class SleeperClient:
 
         :param table_name: the table name to write to
         :param files: list of the files containing the records to ingest
-        :param id: the id of the bulk import job
+        :param id: the id of the bulk import job - if one is not provided then a UUID will be assigned
         :param platform: the platform to use - either "EMR" or "PersistentEMR" or "EKS"
         :param platform_spec: a dict containing details of the platform to use - see docs/python-api.md
         """
-        _bulk_import(table_name, files, self._emr_bulk_import_queue, self._persistent_emr_bulk_import_queue, self._eks_bulk_import_queue, id, platform, platform_spec)
+        _bulk_import(table_name, files, self._emr_bulk_import_queue, self._persistent_emr_bulk_import_queue, self._eks_bulk_import_queue, id, platform, platform_spec, class_name)
 
 
     def exact_key_query(self, table_name: str, keys) -> list:
@@ -224,7 +224,7 @@ class SleeperClient:
 
         print(query_message)
 
-        # Convert query messsage to json and send to query queue
+        # Convert query message to json and send to query queue
         query_message_json = json.dumps(query_message)
         query_queue_sqs = _sqs.get_queue_by_name(QueueName = self._query_queue)
         query_queue_sqs.send_message(MessageBody = query_message_json)
@@ -262,7 +262,7 @@ class SleeperClient:
 
                 class RecordWriter:
                     def __init__(self):
-                        self.num_records = 0
+                        self.num_records: int = 0
 
                     def write(self, records: List[Dict]):
                         for record in records:
@@ -284,15 +284,15 @@ class SleeperClient:
                 databucket: str = _make_ingest_bucket_name(
                     self._basename, table_name)
                 s3_filename: str = _make_ingest_s3_name(databucket)
-                bucket: str = s3_filename.lsplit('/', 1)[0]
-                key: str = s3_filename.lsplit('/', 1)[1]
+                bucket: str = s3_filename.split('/', 1)[0]
+                key: str = s3_filename.split('/', 1)[1]
 
                 # Perform upload
                 _s3.upload_file(fp.name, bucket, key)
-                logger.debug(f"Uploaded {num_records} records to S3")
+                logger.debug(f"Uploaded {writer.num_records} records to S3")
 
                 # Notify Sleeper
-                _ingest(table_name, s3_filename, self._ingest_queue)
+                _ingest(table_name, [s3_filename], self._ingest_queue)
 
 def _get_resource_names(configbucket: str) -> Tuple[str, str, str, str, str, str, str]:
     """
@@ -372,7 +372,7 @@ def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str):
     if ingest_queue == None:
         raise Exception("Ingest queue is not defined - was the Ingest Stack deployed?")
 
-    # Creates the ingest message and generates and ID
+    # Creates the ingest message and generates an ID
     ingest_message = {
         "id": str(uuid.uuid4()),
         "tableName": table_name,
@@ -388,7 +388,7 @@ def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str):
 
 def _bulk_import(table_name: str, files_to_ingest: list,
         emr_bulk_import_queue: str, persistent_emr_bulk_import_queue: str, eks_bulk_import_queue: str,
-        id: str, platform: str, platform_spec: dict):
+        id: str, platform: str, platform_spec: dict, class_name: str):
     """
     Instructs Sleeper to bulk imoport the given files from S3.
 
@@ -415,6 +415,9 @@ def _bulk_import(table_name: str, files_to_ingest: list,
             raise Exception("EKS bulk import queue is not defined - was the EksBulkImportStack deployed?")
         queue = eks_bulk_import_queue
 
+    if id == None:
+        id = str(uuid.uuid4())
+
     # Creates the ingest message and generates and ID
     bulk_import_message = {
         "id": id,
@@ -423,9 +426,12 @@ def _bulk_import(table_name: str, files_to_ingest: list,
     }
     if platform_spec != None and platform != "PersistentEMR":
         bulk_import_message["platformSpec"] = platform_spec
+    if class_name != None:
+        bulk_import_message["className"] = class_name
 
     # Converts bulk import message to json and sends to the SQS queue
     bulk_import_message_json = json.dumps(bulk_import_message)
+    logger.debug(f"Sending JSON message to queue {bulk_import_message_json}")
     bulk_import_queue_sqs = _sqs.get_queue_by_name(QueueName = queue)
     bulk_import_queue_sqs.send_message(MessageBody = bulk_import_message_json)
 
@@ -502,7 +508,7 @@ def _make_ingest_bucket_name(basename: str, table_name: str) -> str:
 
     :return: S3 bucket name
     """
-    return f"sleeper-{basename}-{table_name}"
+    return f"sleeper-{basename}-table-{table_name}"
 
 
 def _make_ingest_s3_name(bucket: str) -> str:

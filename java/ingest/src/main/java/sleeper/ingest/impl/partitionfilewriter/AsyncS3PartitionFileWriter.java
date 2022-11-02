@@ -1,9 +1,23 @@
+/*
+ * Copyright 2022 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package sleeper.ingest.impl.partitionfilewriter;
 
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
@@ -70,10 +84,10 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
 
     /**
      * Warning: this constructor allows a bespoke Hadoop configuration to be specified, but it will not always be used
-     * due an underlying cache in the underlying {@link FileSystem} object. This {@link FileSystem} object maintains a
+     * due an underlying cache in the underlying {@link org.apache.hadoop.fs.FileSystem} object. This {@link org.apache.hadoop.fs.FileSystem} object maintains a
      * cache of file systems and the first time that it creates a {@link org.apache.hadoop.fs.s3a.S3AFileSystem} object,
      * the provided Hadoop configuration will be used. Thereafter, the Hadoop configuration will be ignored until {@link
-     * FileSystem#closeAll()} is called. This is strange behaviour and can cause errors which are difficult to
+     * org.apache.hadoop.fs.FileSystem#closeAll()} is called. This is strange behaviour and can cause errors which are difficult to
      * diagnose.
      *
      * @param sleeperSchema           The schema of the records in the partition
@@ -141,16 +155,16 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
             Object minKey,
             Object maxKey,
             long updateTime) {
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setRowKeyTypes(sleeperSchema.getRowKeyTypes());
-        fileInfo.setFilename(filename);
-        fileInfo.setPartitionId(partitionId);
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setNumberOfRecords(numberOfLines);
-        fileInfo.setMinRowKey(Key.create(minKey));
-        fileInfo.setMaxRowKey(Key.create(maxKey));
-        fileInfo.setLastStateStoreUpdateTime(updateTime);
-        return fileInfo;
+        return FileInfo.builder()
+                .rowKeyTypes(sleeperSchema.getRowKeyTypes())
+                .filename(filename)
+                .partitionId(partitionId)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(numberOfLines)
+                .minRowKey(Key.create(minKey))
+                .maxRowKey(Key.create(maxKey))
+                .lastStateStoreUpdateTime(updateTime)
+                .build();
     }
 
     /**
@@ -190,7 +204,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * @param s3BucketName        The S3 bucket to put the file into
      * @param s3Key               The S3 key of the uploaded file
      * @param hadoopConfiguration The Hadoop configuration to use when deleting the local file
-     * @return The {@link CompletableFuture<PutObjectResponse>} which was returned by the {@link
+     * @return The {@link CompletableFuture} which was returned by the {@link
      * S3AsyncClient#putObject} method.
      */
     private static CompletableFuture<PutObjectResponse> asyncUploadLocalFileToS3ThenDeleteLocalCopy(

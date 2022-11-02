@@ -21,15 +21,7 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.facebook.collections.ByteArray;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 import org.junit.AfterClass;
-import static org.junit.Assert.assertEquals;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -46,6 +38,17 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class InitialiseStateStoreIT {
     private static final int DYNAMO_PORT = 8000;
@@ -77,44 +80,43 @@ public class InitialiseStateStoreIT {
         return dynamoDBStateStoreCreator.create();
     }
 
+    private final Field field = new Field("key", new IntType());
+    private final Schema schema = schemaWithRowKeys(field);
+
+    private Schema schemaWithRowKeys(Field... rowKeys) {
+        return Schema.builder()
+                .rowKeyFields(rowKeys)
+                .sortKeyFields(new Field("sort", new LongType()))
+                .valueFields(new Field("value", new ByteArrayType()))
+                .build();
+    }
+
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithIntKeyAndNoSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.EMPTY_LIST);
+        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.emptyList());
 
         // When
         initialiseStateStore.run();
 
         // Then
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertEquals(1, partitions.size());
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, null));
-        Partition expectedPartition = new Partition(
-                schema.getRowKeyTypes(),
-                expectedRegion,
-                "root",
-                true,
-                null,
-                Collections.emptyList(),
-                -1
-        );
-        assertEquals(expectedPartition, partitions.get(0));
+        Partition expectedPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedRegion)
+                .id("root")
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
+        assertThat(dynamoDBStateStore.getAllPartitions()).containsExactly(expectedPartition);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithIntKeyAndOneSplitPoint() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10);
@@ -125,56 +127,50 @@ public class InitialiseStateStoreIT {
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertEquals(3, partitions.size());
+        assertThat(partitions).hasSize(3);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
         List<Partition> leafPartitions = partitions.stream().filter(Partition::isLeafPartition).collect(Collectors.toList());
         leafPartitions.sort(Comparator.comparing(p -> (int) p.getRegion().getRange("key").getMin()));
 
         Region expectedRootRegion = new Region(new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, null));
-        Partition expectedRootPartition = new Partition(
-                schema.getRowKeyTypes(),
-                expectedRootRegion,
-                rootPartition.getId(),
-                false,
-                null,
-                Arrays.asList(leafPartitions.get(0).getId(), leafPartitions.get(1).getId()),
-                0
-        );
+        Partition expectedRootPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedRootRegion)
+                .id(rootPartition.getId())
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Arrays.asList(leafPartitions.get(0).getId(), leafPartitions.get(1).getId()))
+                .dimension(0)
+                .build();
         Region expectedLeafRegion0 = new Region(new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, -10));
-        Partition expectedLeafPartition0 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion0,
-                leafPartitions.get(0).getId(),
-                true,
-                rootPartition.getId(),
-                Collections.emptyList(),
-                -1
-        );
+        Partition expectedLeafPartition0 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion0)
+                .id(leafPartitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         Region expectedLeafRegion1 = new Region(new RangeFactory(schema).createRange(field, -10, null));
-        Partition expectedLeafPartition1 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion1,
-                leafPartitions.get(1).getId(),
-                true,
-                rootPartition.getId(),
-                Collections.emptyList(),
-                -1
-        );
+        Partition expectedLeafPartition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion1)
+                .id(leafPartitions.get(1).getId())
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
 
-        assertEquals(expectedRootPartition, rootPartition);
-        assertEquals(expectedLeafPartition0, leafPartitions.get(0));
-        assertEquals(expectedLeafPartition1, leafPartitions.get(1));
+        assertThat(rootPartition).isEqualTo(expectedRootPartition);
+        assertThat(leafPartitions).containsExactly(expectedLeafPartition0, expectedLeafPartition1);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithIntKeyAndMultipleSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10);
@@ -187,7 +183,7 @@ public class InitialiseStateStoreIT {
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertEquals(7, partitions.size());
+        assertThat(partitions).hasSize(7);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
         List<Partition> internalPartitions = partitions.stream()
@@ -199,96 +195,90 @@ public class InitialiseStateStoreIT {
         leafPartitions.sort(Comparator.comparing(p -> (int) p.getRegion().getRange("key").getMin()));
 
         Region expectedRootRegion = new Region(new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, null));
-        Partition expectedRootPartition = new Partition(
-                schema.getRowKeyTypes(),
-                expectedRootRegion,
-                rootPartition.getId(),
-                false,
-                null,
-                Arrays.asList(internalPartitions.get(0).getId(), internalPartitions.get(1).getId()),
-                0
-        );
+        Partition expectedRootPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedRootRegion)
+                .id(rootPartition.getId())
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Arrays.asList(internalPartitions.get(0).getId(), internalPartitions.get(1).getId()))
+                .dimension(0)
+                .build();
         Region expectedInternalRegion0 = new Region(new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, 0));
-        Partition expectedInternalPartition0 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedInternalRegion0,
-                internalPartitions.get(0).getId(),
-                false,
-                rootPartition.getId(),
-                Arrays.asList(leafPartitions.get(0).getId(), leafPartitions.get(1).getId()),
-                0
-        );
+        Partition expectedInternalPartition0 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedInternalRegion0)
+                .id(internalPartitions.get(0).getId())
+                .leafPartition(false)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Arrays.asList(leafPartitions.get(0).getId(), leafPartitions.get(1).getId()))
+                .dimension(0)
+                .build();
         Region expectedInternalRegion1 = new Region(new RangeFactory(schema).createRange(field, 0, null));
-        Partition expectedInternalPartition1 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedInternalRegion1,
-                internalPartitions.get(1).getId(),
-                false,
-                rootPartition.getId(),
-                Arrays.asList(leafPartitions.get(2).getId(), leafPartitions.get(3).getId()),
-                0
-        );
+        Partition expectedInternalPartition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedInternalRegion1)
+                .id(internalPartitions.get(1).getId())
+                .leafPartition(false)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Arrays.asList(leafPartitions.get(2).getId(), leafPartitions.get(3).getId()))
+                .dimension(0)
+                .build();
         Region expectedLeafRegion0 = new Region(new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, -10));
-        Partition expectedLeafPartition0 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion0,
-                leafPartitions.get(0).getId(),
-                true,
-                internalPartitions.get(0).getId(),
-                Collections.emptyList(),
-                -1
-        );
+        Partition expectedLeafPartition0 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion0)
+                .id(leafPartitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(0).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         Region expectedLeafRegion1 = new Region(new RangeFactory(schema).createRange(field, -10, 0));
-        Partition expectedLeafPartition1 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion1,
-                leafPartitions.get(1).getId(),
-                true,
-                internalPartitions.get(0).getId(),
-                Collections.emptyList(),
-                -1
-        );
+        Partition expectedLeafPartition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion1)
+                .id(leafPartitions.get(1).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(0).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         Region expectedLeafRegion2 = new Region(new RangeFactory(schema).createRange(field, 0, 1000));
-        Partition expectedLeafPartition2 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion2,
-                leafPartitions.get(2).getId(),
-                true,
-                internalPartitions.get(1).getId(),
-                Collections.emptyList(),
-                -1
-        );
+        Partition expectedLeafPartition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion2)
+                .id(leafPartitions.get(2).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(1).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         Region expectedLeafRegion3 = new Region(new RangeFactory(schema).createRange(field, 1000, null));
-        Partition expectedLeafPartition3 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion3,
-                leafPartitions.get(3).getId(),
-                true,
-                internalPartitions.get(1).getId(),
-                Collections.emptyList(),
-                -1
-        );
+        Partition expectedLeafPartition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion3)
+                .id(leafPartitions.get(3).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(1).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
 
-        assertEquals(expectedRootPartition, rootPartition);
-        assertEquals(expectedInternalPartition0, internalPartitions.get(0));
-        assertEquals(expectedInternalPartition1, internalPartitions.get(1));
-        assertEquals(expectedLeafPartition0, leafPartitions.get(0));
-        assertEquals(expectedLeafPartition1, leafPartitions.get(1));
-        assertEquals(expectedLeafPartition2, leafPartitions.get(2));
-        assertEquals(expectedLeafPartition3, leafPartitions.get(3));
+        assertThat(rootPartition).isEqualTo(expectedRootPartition);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithIntKeyAndMultipleSplitPointsAndMultiDimRowKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field0 = new Field("key0", new IntType());
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
         Field field3 = new Field("key3", new ByteArrayType());
-        schema.setRowKeyFields(field0, field1, field2, field3);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field0, field1, field2, field3);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10);
@@ -301,7 +291,7 @@ public class InitialiseStateStoreIT {
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertEquals(7, partitions.size());
+        assertThat(partitions).hasSize(7);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
         List<Partition> internalPartitions = partitions.stream()
@@ -316,131 +306,122 @@ public class InitialiseStateStoreIT {
         Range rangeForDim1 = new RangeFactory(schema).createRange(field1, Long.MIN_VALUE, null);
         Range rangeForDim2 = new RangeFactory(schema).createRange(field2, "", null);
         Range rangeForDim3 = new RangeFactory(schema).createRange(field3, new byte[]{}, null);
-        
+
         Region expectedRootRegion = new Region(Arrays.asList(rangeForDim0, rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedRootPartition = new Partition(
-                schema.getRowKeyTypes(),
-                expectedRootRegion,
-                rootPartition.getId(),
-                false,
-                null,
-                Arrays.asList(internalPartitions.get(0).getId(), internalPartitions.get(1).getId()),
-                0
-        );
+        Partition expectedRootPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedRootRegion)
+                .id(rootPartition.getId())
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Arrays.asList(internalPartitions.get(0).getId(), internalPartitions.get(1).getId()))
+                .dimension(0)
+                .build();
 
         Region expectedInternalRegion0 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, Integer.MIN_VALUE, 0), rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedInternalPartition0 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedInternalRegion0,
-                internalPartitions.get(0).getId(),
-                false,
-                rootPartition.getId(),
-                Arrays.asList(leafPartitions.get(0).getId(), leafPartitions.get(1).getId()),
-                0
-        );
-        
+        Partition expectedInternalPartition0 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedInternalRegion0)
+                .id(internalPartitions.get(0).getId())
+                .leafPartition(false)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Arrays.asList(leafPartitions.get(0).getId(), leafPartitions.get(1).getId()))
+                .dimension(0)
+                .build();
+
         Region expectedInternalRegion1 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, 0, null), rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedInternalPartition1 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedInternalRegion1,
-                internalPartitions.get(1).getId(),
-                false,
-                rootPartition.getId(),
-                Arrays.asList(leafPartitions.get(2).getId(), leafPartitions.get(3).getId()),
-                0
-        );
+        Partition expectedInternalPartition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedInternalRegion1)
+                .id(internalPartitions.get(1).getId())
+                .leafPartition(false)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Arrays.asList(leafPartitions.get(2).getId(), leafPartitions.get(3).getId()))
+                .dimension(0)
+                .build();
 
         Region expectedLeafRegion0 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, Integer.MIN_VALUE, -10), rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedLeafPartition0 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion0,
-                leafPartitions.get(0).getId(),
-                true,
-                internalPartitions.get(0).getId(),
-                Collections.emptyList(),
-                -1
-        );
-        
-        Region expectedLeafRegion1 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, -10, 0), rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedLeafPartition1 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion1,
-                leafPartitions.get(1).getId(),
-                true,
-                internalPartitions.get(0).getId(),
-                Collections.emptyList(),
-                -1
-        );
-        
-        Region expectedLeafRegion2 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, 0, 1000), rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedLeafPartition2 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion2,
-                leafPartitions.get(2).getId(),
-                true,
-                internalPartitions.get(1).getId(),
-                Collections.emptyList(),
-                -1
-        );
-        
-        Region expectedLeafRegion3 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, 1000, null), rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedLeafPartition3 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion3,
-                leafPartitions.get(3).getId(),
-                true,
-                internalPartitions.get(1).getId(),
-                Collections.emptyList(),
-                -1
-        );
+        Partition expectedLeafPartition0 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion0)
+                .id(leafPartitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(0).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
 
-        assertEquals(expectedRootPartition, rootPartition);
-        assertEquals(expectedInternalPartition0, internalPartitions.get(0));
-        assertEquals(expectedInternalPartition1, internalPartitions.get(1));
-        assertEquals(expectedLeafPartition0, leafPartitions.get(0));
-        assertEquals(expectedLeafPartition1, leafPartitions.get(1));
-        assertEquals(expectedLeafPartition2, leafPartitions.get(2));
-        assertEquals(expectedLeafPartition3, leafPartitions.get(3));
+        Region expectedLeafRegion1 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, -10, 0), rangeForDim1, rangeForDim2, rangeForDim3));
+        Partition expectedLeafPartition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion1)
+                .id(leafPartitions.get(1).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(0).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
+
+        Region expectedLeafRegion2 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, 0, 1000), rangeForDim1, rangeForDim2, rangeForDim3));
+        Partition expectedLeafPartition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion2)
+                .id(leafPartitions.get(2).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(1).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
+
+        Region expectedLeafRegion3 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, 1000, null), rangeForDim1, rangeForDim2, rangeForDim3));
+        Partition expectedLeafPartition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion3)
+                .id(leafPartitions.get(3).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(1).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
+
+        assertThat(rootPartition).isEqualTo(expectedRootPartition);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithStringKeyAndNoSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field);
         StateStore dynamoDBStateStore = getStateStore(schema);
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.EMPTY_LIST);
+        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.emptyList());
 
         // When
         initialiseStateStore.run();
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertEquals(1, partitions.size());
+        assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, "", null));
-        Partition expectedPartition = new Partition(
-                schema.getRowKeyTypes(),
-                expectedRegion,
-                partitions.get(0).getId(),
-                true,
-                null,
-                Collections.emptyList(),
-                -1
-        );
-        assertEquals(expectedPartition, partitions.get(0));
+        Partition expectedPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedRegion)
+                .id(partitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithStringKeyAndOneSplitPoint() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add("E");
@@ -451,56 +432,52 @@ public class InitialiseStateStoreIT {
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertEquals(3, partitions.size());
+        assertThat(partitions).hasSize(3);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
         List<Partition> leafPartitions = partitions.stream().filter(Partition::isLeafPartition).collect(Collectors.toList());
         leafPartitions.sort(Comparator.comparing(p -> (String) p.getRegion().getRange("key").getMin()));
 
         Region expectedRootRegion = new Region(new RangeFactory(schema).createRange(field, "", null));
-        Partition expectedRootPartition = new Partition(
-                schema.getRowKeyTypes(),
-                expectedRootRegion,
-                rootPartition.getId(),
-                false,
-                null,
-                Arrays.asList(leafPartitions.get(0).getId(), leafPartitions.get(1).getId()),
-                0
-        );
+        Partition expectedRootPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedRootRegion)
+                .id(rootPartition.getId())
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Arrays.asList(leafPartitions.get(0).getId(), leafPartitions.get(1).getId()))
+                .dimension(0)
+                .build();
         Region expectedLeafRegion0 = new Region(new RangeFactory(schema).createRange(field, "", "E"));
-        Partition expectedLeafPartition0 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion0,
-                leafPartitions.get(0).getId(),
-                true,
-                rootPartition.getId(),
-                Collections.emptyList(),
-                -1
-        );
+        Partition expectedLeafPartition0 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion0)
+                .id(leafPartitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         Region expectedLeafRegion1 = new Region(new RangeFactory(schema).createRange(field, "E", null));
-        Partition expectedLeafPartition1 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion1,
-                leafPartitions.get(1).getId(),
-                true,
-                rootPartition.getId(),
-                Collections.emptyList(),
-                -1
-        );
+        Partition expectedLeafPartition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion1)
+                .id(leafPartitions.get(1).getId())
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
 
-        assertEquals(expectedRootPartition, rootPartition);
-        assertEquals(expectedLeafPartition0, leafPartitions.get(0));
-        assertEquals(expectedLeafPartition1, leafPartitions.get(1));
+        assertThat(rootPartition).isEqualTo(expectedRootPartition);
+        assertThat(leafPartitions).containsExactly(expectedLeafPartition0, expectedLeafPartition1);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithStringKeyAndMultipleSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add("E");
@@ -513,7 +490,7 @@ public class InitialiseStateStoreIT {
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertEquals(7, partitions.size());
+        assertThat(partitions).hasSize(7);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
         List<Partition> internalPartitions = partitions.stream()
@@ -525,96 +502,90 @@ public class InitialiseStateStoreIT {
         leafPartitions.sort(Comparator.comparing(p -> (String) p.getRegion().getRange("key").getMin()));
 
         Region expectedRootRegion = new Region(new RangeFactory(schema).createRange(field, "", null));
-        Partition expectedRootPartition = new Partition(
-                schema.getRowKeyTypes(),
-                expectedRootRegion,
-                rootPartition.getId(),
-                false,
-                null,
-                Arrays.asList(internalPartitions.get(0).getId(), internalPartitions.get(1).getId()),
-                0
-        );
+        Partition expectedRootPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedRootRegion)
+                .id(rootPartition.getId())
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Arrays.asList(internalPartitions.get(0).getId(), internalPartitions.get(1).getId()))
+                .dimension(0)
+                .build();
         Region expectedInternalfRegion0 = new Region(new RangeFactory(schema).createRange(field, "", "P"));
-        Partition expectedInternalPartition0 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedInternalfRegion0,
-                internalPartitions.get(0).getId(),
-                false,
-                rootPartition.getId(),
-                Arrays.asList(leafPartitions.get(0).getId(), leafPartitions.get(1).getId()),
-                0
-        );
+        Partition expectedInternalPartition0 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedInternalfRegion0)
+                .id(internalPartitions.get(0).getId())
+                .leafPartition(false)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Arrays.asList(leafPartitions.get(0).getId(), leafPartitions.get(1).getId()))
+                .dimension(0)
+                .build();
         Region expectedInternalfRegion1 = new Region(new RangeFactory(schema).createRange(field, "P", null));
-        Partition expectedInternalPartition1 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedInternalfRegion1,
-                internalPartitions.get(1).getId(),
-                false,
-                rootPartition.getId(),
-                Arrays.asList(leafPartitions.get(2).getId(), leafPartitions.get(3).getId()),
-                0
-        );
+        Partition expectedInternalPartition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedInternalfRegion1)
+                .id(internalPartitions.get(1).getId())
+                .leafPartition(false)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Arrays.asList(leafPartitions.get(2).getId(), leafPartitions.get(3).getId()))
+                .dimension(0)
+                .build();
         Region expectedLeafRegion0 = new Region(new RangeFactory(schema).createRange(field, "", "E"));
-        Partition expectedLeafPartition0 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion0,
-                leafPartitions.get(0).getId(),
-                true,
-                internalPartitions.get(0).getId(),
-                Collections.emptyList(),
-                -1
-        );
+        Partition expectedLeafPartition0 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion0)
+                .id(leafPartitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(0).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         Region expectedLeafRegion1 = new Region(new RangeFactory(schema).createRange(field, "E", "P"));
-        Partition expectedLeafPartition1 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion1,
-                leafPartitions.get(1).getId(),
-                true,
-                internalPartitions.get(0).getId(),
-                Collections.emptyList(),
-                -1
-        );
+        Partition expectedLeafPartition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion1)
+                .id(leafPartitions.get(1).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(0).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         Region expectedLeafRegion2 = new Region(new RangeFactory(schema).createRange(field, "P", "T"));
-        Partition expectedLeafPartition2 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion2,
-                leafPartitions.get(2).getId(),
-                true,
-                internalPartitions.get(1).getId(),
-                Collections.emptyList(),
-                -1
-        );
+        Partition expectedLeafPartition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion2)
+                .id(leafPartitions.get(2).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(1).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         Region expectedLeafRegion3 = new Region(new RangeFactory(schema).createRange(field, "T", null));
-        Partition expectedLeafPartition3 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion3,
-                leafPartitions.get(3).getId(),
-                true,
-                internalPartitions.get(1).getId(),
-                Collections.emptyList(),
-                -1
-        );
+        Partition expectedLeafPartition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion3)
+                .id(leafPartitions.get(3).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(1).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
 
-        assertEquals(expectedRootPartition, rootPartition);
-        assertEquals(expectedInternalPartition0, internalPartitions.get(0));
-        assertEquals(expectedInternalPartition1, internalPartitions.get(1));
-        assertEquals(expectedLeafPartition0, leafPartitions.get(0));
-        assertEquals(expectedLeafPartition1, leafPartitions.get(1));
-        assertEquals(expectedLeafPartition2, leafPartitions.get(2));
-        assertEquals(expectedLeafPartition3, leafPartitions.get(3));
+        assertThat(rootPartition).isEqualTo(expectedRootPartition);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithStringKeyAndMultipleSplitPointsAndMultiDimRowKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field0 = new Field("key0", new StringType());
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
         Field field3 = new Field("key3", new ByteArrayType());
-        schema.setRowKeyFields(field0, field1, field2, field3);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field0, field1, field2, field3);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add("E");
@@ -627,7 +598,7 @@ public class InitialiseStateStoreIT {
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertEquals(7, partitions.size());
+        assertThat(partitions).hasSize(7);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
         List<Partition> internalPartitions = partitions.stream()
@@ -642,132 +613,123 @@ public class InitialiseStateStoreIT {
         Range rangeForDim1 = new RangeFactory(schema).createRange(field1, Long.MIN_VALUE, null);
         Range rangeForDim2 = new RangeFactory(schema).createRange(field2, "", null);
         Range rangeForDim3 = new RangeFactory(schema).createRange(field3, new byte[]{}, null);
-        
+
         Region expectedRootRegion = new Region(Arrays.asList(rangeForDim0, rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedRootPartition = new Partition(
-                schema.getRowKeyTypes(),
-                expectedRootRegion,
-                rootPartition.getId(),
-                false,
-                null,
-                Arrays.asList(internalPartitions.get(0).getId(), internalPartitions.get(1).getId()),
-                0
-        );
-        
+        Partition expectedRootPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedRootRegion)
+                .id(rootPartition.getId())
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Arrays.asList(internalPartitions.get(0).getId(), internalPartitions.get(1).getId()))
+                .dimension(0)
+                .build();
+
         Region expectedInternalRegion0 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, "", "P"), rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedInternalPartition0 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedInternalRegion0,
-                internalPartitions.get(0).getId(),
-                false,
-                rootPartition.getId(),
-                Arrays.asList(leafPartitions.get(0).getId(), leafPartitions.get(1).getId()),
-                0
-        );
-        
+        Partition expectedInternalPartition0 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedInternalRegion0)
+                .id(internalPartitions.get(0).getId())
+                .leafPartition(false)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Arrays.asList(leafPartitions.get(0).getId(), leafPartitions.get(1).getId()))
+                .dimension(0)
+                .build();
+
         Region expectedInternalRegion1 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, "P", null), rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedInternalPartition1 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedInternalRegion1,
-                internalPartitions.get(1).getId(),
-                false,
-                rootPartition.getId(),
-                Arrays.asList(leafPartitions.get(2).getId(), leafPartitions.get(3).getId()),
-                0
-        );
+        Partition expectedInternalPartition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedInternalRegion1)
+                .id(internalPartitions.get(1).getId())
+                .leafPartition(false)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Arrays.asList(leafPartitions.get(2).getId(), leafPartitions.get(3).getId()))
+                .dimension(0)
+                .build();
 
         Region expectedLeafRegion0 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, "", "E"), rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedLeafPartition0 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion0,
-                leafPartitions.get(0).getId(),
-                true,
-                internalPartitions.get(0).getId(),
-                Collections.emptyList(),
-                -1
-        );
-        
+        Partition expectedLeafPartition0 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion0)
+                .id(leafPartitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(0).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
+
         Region expectedLeafRegion1 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, "E", "P"), rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedLeafPartition1 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion1,
-                leafPartitions.get(1).getId(),
-                true,
-                internalPartitions.get(0).getId(),
-                Collections.emptyList(),
-                -1
-        );
-        
+        Partition expectedLeafPartition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion1)
+                .id(leafPartitions.get(1).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(0).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
+
         Region expectedLeafRegion2 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, "P", "T"), rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedLeafPartition2 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion2,
-                leafPartitions.get(2).getId(),
-                true,
-                internalPartitions.get(1).getId(),
-                Collections.emptyList(),
-                -1
-        );
+        Partition expectedLeafPartition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion2)
+                .id(leafPartitions.get(2).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(1).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
 
         Region expectedLeafRegion3 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, "T", null), rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedLeafPartition3 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion3,
-                leafPartitions.get(3).getId(),
-                true,
-                internalPartitions.get(1).getId(),
-                Collections.emptyList(),
-                -1
-        );
+        Partition expectedLeafPartition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion3)
+                .id(leafPartitions.get(3).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(1).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
 
-        assertEquals(expectedRootPartition, rootPartition);
-        assertEquals(expectedInternalPartition0, internalPartitions.get(0));
-        assertEquals(expectedInternalPartition1, internalPartitions.get(1));
-        assertEquals(expectedLeafPartition0, leafPartitions.get(0));
-        assertEquals(expectedLeafPartition1, leafPartitions.get(1));
-        assertEquals(expectedLeafPartition2, leafPartitions.get(2));
-        assertEquals(expectedLeafPartition3, leafPartitions.get(3));
+        assertThat(rootPartition).isEqualTo(expectedRootPartition);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithByteArrayKeyAndNoSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field);
         StateStore dynamoDBStateStore = getStateStore(schema);
-        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.EMPTY_LIST);
+        InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, Collections.emptyList());
 
         // When
         initialiseStateStore.run();
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertEquals(1, partitions.size());
-        
+        assertThat(partitions).hasSize(1);
+
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, new byte[]{}, null));
-        Partition expectedPartition = new Partition(
-                schema.getRowKeyTypes(),
-                expectedRegion,
-                partitions.get(0).getId(),
-                true,
-                null,
-                Collections.emptyList(),
-                -1
-        );
-        assertEquals(expectedPartition, partitions.get(0));
+        Partition expectedPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedRegion)
+                .id(partitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
+        assertThat(partitions).containsExactly(expectedPartition);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithByteArrayKeyAndOneSplitPoint() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(new byte[]{10});
@@ -778,56 +740,52 @@ public class InitialiseStateStoreIT {
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertEquals(3, partitions.size());
+        assertThat(partitions).hasSize(3);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
         List<Partition> leafPartitions = partitions.stream().filter(Partition::isLeafPartition).collect(Collectors.toList());
         leafPartitions.sort(Comparator.comparing(p -> ByteArray.wrap((byte[]) p.getRegion().getRange("key").getMin())));
 
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, new byte[]{}, null));
-        Partition expectedRootPartition = new Partition(
-                schema.getRowKeyTypes(),
-                expectedRegion,
-                rootPartition.getId(),
-                false,
-                null,
-                Arrays.asList(leafPartitions.get(0).getId(), leafPartitions.get(1).getId()),
-                0
-        );
+        Partition expectedRootPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedRegion)
+                .id(rootPartition.getId())
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Arrays.asList(leafPartitions.get(0).getId(), leafPartitions.get(1).getId()))
+                .dimension(0)
+                .build();
         Region expectedLeafRegion0 = new Region(new RangeFactory(schema).createRange(field, new byte[]{}, new byte[]{10}));
-        Partition expectedLeafPartition0 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion0,
-                leafPartitions.get(0).getId(),
-                true,
-                rootPartition.getId(),
-                Collections.emptyList(),
-                -1
-        );
+        Partition expectedLeafPartition0 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion0)
+                .id(leafPartitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
         Region expectedLeafRegion1 = new Region(new RangeFactory(schema).createRange(field, new byte[]{10}, null));
-        Partition expectedLeafPartition1 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion1,
-                leafPartitions.get(1).getId(),
-                true,
-                rootPartition.getId(),
-                Collections.emptyList(),
-                -1
-        );
+        Partition expectedLeafPartition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion1)
+                .id(leafPartitions.get(1).getId())
+                .leafPartition(true)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
 
-        assertEquals(expectedRootPartition, rootPartition);
-        assertEquals(expectedLeafPartition0, leafPartitions.get(0));
-        assertEquals(expectedLeafPartition1, leafPartitions.get(1));
+        assertThat(rootPartition).isEqualTo(expectedRootPartition);
+        assertThat(leafPartitions).containsExactly(expectedLeafPartition0, expectedLeafPartition1);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithByteArrayKeyAndMultipleSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(new byte[]{10});
@@ -840,7 +798,7 @@ public class InitialiseStateStoreIT {
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertEquals(7, partitions.size());
+        assertThat(partitions).hasSize(7);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
         List<Partition> internalPartitions = partitions.stream()
@@ -852,102 +810,96 @@ public class InitialiseStateStoreIT {
         leafPartitions.sort(Comparator.comparing(p -> ByteArray.wrap((byte[]) p.getRegion().getRange("key").getMin())));
 
         Region expectedRootRegion = new Region(new RangeFactory(schema).createRange(field, new byte[]{}, null));
-        Partition expectedRootPartition = new Partition(
-                schema.getRowKeyTypes(),
-                expectedRootRegion,
-                rootPartition.getId(),
-                false,
-                null,
-                Arrays.asList(internalPartitions.get(0).getId(), internalPartitions.get(1).getId()),
-                0
-        );
-        
+        Partition expectedRootPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedRootRegion)
+                .id(rootPartition.getId())
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Arrays.asList(internalPartitions.get(0).getId(), internalPartitions.get(1).getId()))
+                .dimension(0)
+                .build();
+
         Region expectedInternalRegion0 = new Region(new RangeFactory(schema).createRange(field, new byte[]{}, new byte[]{50}));
-        Partition expectedInternalPartition0 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedInternalRegion0,
-                internalPartitions.get(0).getId(),
-                false,
-                rootPartition.getId(),
-                Arrays.asList(leafPartitions.get(0).getId(), leafPartitions.get(1).getId()),
-                0
-        );
-        
+        Partition expectedInternalPartition0 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedInternalRegion0)
+                .id(internalPartitions.get(0).getId())
+                .leafPartition(false)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Arrays.asList(leafPartitions.get(0).getId(), leafPartitions.get(1).getId()))
+                .dimension(0)
+                .build();
+
         Region expectedInternalRegion1 = new Region(new RangeFactory(schema).createRange(field, new byte[]{50}, null));
-        Partition expectedInternalPartition1 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedInternalRegion1,
-                internalPartitions.get(1).getId(),
-                false,
-                rootPartition.getId(),
-                Arrays.asList(leafPartitions.get(2).getId(), leafPartitions.get(3).getId()),
-                0
-        );
-        
+        Partition expectedInternalPartition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedInternalRegion1)
+                .id(internalPartitions.get(1).getId())
+                .leafPartition(false)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Arrays.asList(leafPartitions.get(2).getId(), leafPartitions.get(3).getId()))
+                .dimension(0)
+                .build();
+
         Region expectedLeafRegion0 = new Region(new RangeFactory(schema).createRange(field, new byte[]{}, new byte[]{10}));
-        Partition expectedLeafPartition0 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion0,
-                leafPartitions.get(0).getId(),
-                true,
-                internalPartitions.get(0).getId(),
-                Collections.emptyList(),
-                -1
-        );
-        
+        Partition expectedLeafPartition0 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion0)
+                .id(leafPartitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(0).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
+
         Region expectedLeafRegion1 = new Region(new RangeFactory(schema).createRange(field, new byte[]{10}, new byte[]{50}));
-        Partition expectedLeafPartition1 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion1,
-                leafPartitions.get(1).getId(),
-                true,
-                internalPartitions.get(0).getId(),
-                Collections.emptyList(),
-                -1
-        );
-        
+        Partition expectedLeafPartition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion1)
+                .id(leafPartitions.get(1).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(0).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
+
         Region expectedLeafRegion2 = new Region(new RangeFactory(schema).createRange(field, new byte[]{50}, new byte[]{99}));
-        Partition expectedLeafPartition2 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion2,
-                leafPartitions.get(2).getId(),
-                true,
-                internalPartitions.get(1).getId(),
-                Collections.emptyList(),
-                -1
-        );
-        
+        Partition expectedLeafPartition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion2)
+                .id(leafPartitions.get(2).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(1).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
+
         Region expectedLeafRegion3 = new Region(new RangeFactory(schema).createRange(field, new byte[]{99}, null));
-        Partition expectedLeafPartition3 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion3,
-                leafPartitions.get(3).getId(),
-                true,
-                internalPartitions.get(1).getId(),
-                Collections.emptyList(),
-                -1
-        );
-        
-        assertEquals(expectedRootPartition, rootPartition);
-        assertEquals(expectedInternalPartition0, internalPartitions.get(0));
-        assertEquals(expectedInternalPartition1, internalPartitions.get(1));
-        assertEquals(expectedLeafPartition0, leafPartitions.get(0));
-        assertEquals(expectedLeafPartition1, leafPartitions.get(1));
-        assertEquals(expectedLeafPartition2, leafPartitions.get(2));
-        assertEquals(expectedLeafPartition3, leafPartitions.get(3));
+        Partition expectedLeafPartition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion3)
+                .id(leafPartitions.get(3).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(1).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
+
+        assertThat(rootPartition).isEqualTo(expectedRootPartition);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithByteArrayKeyAndMultipleSplitPointsAndMultiDimRowKey() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
         Field field0 = new Field("key0", new ByteArrayType());
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
         Field field3 = new Field("key3", new ByteArrayType());
-        schema.setRowKeyFields(field0, field1, field2, field3);
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(field0, field1, field2, field3);
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(new byte[]{10});
@@ -960,7 +912,7 @@ public class InitialiseStateStoreIT {
 
         // Then
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
-        assertEquals(7, partitions.size());
+        assertThat(partitions).hasSize(7);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
         List<Partition> internalPartitions = partitions.stream()
@@ -975,116 +927,108 @@ public class InitialiseStateStoreIT {
         Range rangeForDim1 = new RangeFactory(schema).createRange(field1, Long.MIN_VALUE, null);
         Range rangeForDim2 = new RangeFactory(schema).createRange(field2, "", null);
         Range rangeForDim3 = new RangeFactory(schema).createRange(field3, new byte[]{}, null);
-        
+
         Region expectedRootRegion = new Region(Arrays.asList(rangeForDim0, rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedRootPartition = new Partition(
-                schema.getRowKeyTypes(),
-                expectedRootRegion,
-                rootPartition.getId(),
-                false,
-                null,
-                Arrays.asList(internalPartitions.get(0).getId(), internalPartitions.get(1).getId()),
-                0
-        );
-        
+        Partition expectedRootPartition = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedRootRegion)
+                .id(rootPartition.getId())
+                .leafPartition(false)
+                .parentPartitionId(null)
+                .childPartitionIds(Arrays.asList(internalPartitions.get(0).getId(), internalPartitions.get(1).getId()))
+                .dimension(0)
+                .build();
+
         Region expectedInternalRegion0 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, new byte[]{}, new byte[]{50}), rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedInternalPartition0 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedInternalRegion0,
-                internalPartitions.get(0).getId(),
-                false,
-                rootPartition.getId(),
-                Arrays.asList(leafPartitions.get(0).getId(), leafPartitions.get(1).getId()),
-                0
-        );
-        
+        Partition expectedInternalPartition0 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedInternalRegion0)
+                .id(internalPartitions.get(0).getId())
+                .leafPartition(false)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Arrays.asList(leafPartitions.get(0).getId(), leafPartitions.get(1).getId()))
+                .dimension(0)
+                .build();
+
         Region expectedInternalRegion1 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, new byte[]{50}, null), rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedInternalPartition1 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedInternalRegion1,
-                internalPartitions.get(1).getId(),
-                false,
-                rootPartition.getId(),
-                Arrays.asList(leafPartitions.get(2).getId(), leafPartitions.get(3).getId()),
-                0
-        );
+        Partition expectedInternalPartition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedInternalRegion1)
+                .id(internalPartitions.get(1).getId())
+                .leafPartition(false)
+                .parentPartitionId(rootPartition.getId())
+                .childPartitionIds(Arrays.asList(leafPartitions.get(2).getId(), leafPartitions.get(3).getId()))
+                .dimension(0)
+                .build();
 
         Region expectedLeafRegion0 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, new byte[]{}, new byte[]{10}), rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedLeafPartition0 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion0,
-                leafPartitions.get(0).getId(),
-                true,
-                internalPartitions.get(0).getId(),
-                Collections.emptyList(),
-                -1
-        );
-        
-        Region expectedLeafRegion1 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, new byte[]{10}, new byte[]{50}), rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedLeafPartition1 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion1,
-                leafPartitions.get(1).getId(),
-                true,
-                internalPartitions.get(0).getId(),
-                Collections.emptyList(),
-                -1
-        );
-        
-        Region expectedLeafRegion2 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, new byte[]{50}, new byte[]{99}), rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedLeafPartition2 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion2,
-                leafPartitions.get(2).getId(),
-                true,
-                internalPartitions.get(1).getId(),
-                Collections.emptyList(),
-                -1
-        );
-        
-        Region expectedLeafRegion3 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, new byte[]{99}, null), rangeForDim1, rangeForDim2, rangeForDim3));
-        Partition expectedLeafPartition3 = new Partition(
-                schema.getRowKeyTypes(),
-                expectedLeafRegion3,
-                leafPartitions.get(3).getId(),
-                true,
-                internalPartitions.get(1).getId(),
-                Collections.emptyList(),
-                -1
-        );
+        Partition expectedLeafPartition0 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion0)
+                .id(leafPartitions.get(0).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(0).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
 
-        assertEquals(expectedRootPartition, rootPartition);
-        assertEquals(expectedInternalPartition0, internalPartitions.get(0));
-        assertEquals(expectedInternalPartition1, internalPartitions.get(1));
-        assertEquals(expectedLeafPartition0, leafPartitions.get(0));
-        assertEquals(expectedLeafPartition1, leafPartitions.get(1));
-        assertEquals(expectedLeafPartition2, leafPartitions.get(2));
-        assertEquals(expectedLeafPartition3, leafPartitions.get(3));
+        Region expectedLeafRegion1 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, new byte[]{10}, new byte[]{50}), rangeForDim1, rangeForDim2, rangeForDim3));
+        Partition expectedLeafPartition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion1)
+                .id(leafPartitions.get(1).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(0).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
+
+        Region expectedLeafRegion2 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, new byte[]{50}, new byte[]{99}), rangeForDim1, rangeForDim2, rangeForDim3));
+        Partition expectedLeafPartition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion2)
+                .id(leafPartitions.get(2).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(1).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
+
+        Region expectedLeafRegion3 = new Region(Arrays.asList(new RangeFactory(schema).createRange(field0, new byte[]{99}, null), rangeForDim1, rangeForDim2, rangeForDim3));
+        Partition expectedLeafPartition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(expectedLeafRegion3)
+                .id(leafPartitions.get(3).getId())
+                .leafPartition(true)
+                .parentPartitionId(internalPartitions.get(1).getId())
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
+
+        assertThat(rootPartition).isEqualTo(expectedRootPartition);
+        assertThat(internalPartitions).containsExactly(expectedInternalPartition0, expectedInternalPartition1);
+        assertThat(leafPartitions).containsExactly(
+                expectedLeafPartition0, expectedLeafPartition1, expectedLeafPartition2, expectedLeafPartition3);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldThrowExceptionIfSplitPointIsOfWrongType() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(new Field("key", new IntType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(Long.MIN_VALUE);
         InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, splitPoints);
 
         // When / Then
-        initialiseStateStore.run();
+        assertThatThrownBy(initialiseStateStore::run)
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldThrowExceptionIfDuplicateSplitPoints() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(new Field("key", new IntType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(0);
@@ -1092,16 +1036,14 @@ public class InitialiseStateStoreIT {
         InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, splitPoints);
 
         // When / Then
-        initialiseStateStore.run();
+        assertThatThrownBy(initialiseStateStore::run)
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldThrowExceptionIfSplitPointsAreInWrongOrder() throws StateStoreException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(new Field("value", new ByteArrayType()));
+        Schema schema = schemaWithRowKeys(new Field("key", new IntType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(1);
@@ -1109,6 +1051,7 @@ public class InitialiseStateStoreIT {
         InitialiseStateStore initialiseStateStore = new InitialiseStateStore(schema, dynamoDBStateStore, splitPoints);
 
         // When / Then
-        initialiseStateStore.run();
+        assertThatThrownBy(initialiseStateStore::run)
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

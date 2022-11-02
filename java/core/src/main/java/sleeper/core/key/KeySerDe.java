@@ -27,6 +27,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -39,8 +40,8 @@ import java.util.List;
  */
 public class KeySerDe {
     private static final String NULL_STRING_MARKER = "SLEEPER-NULL-STRING";
-    private static final byte[] NULL_BYTE_ARRAY_MARKER = "SLEEPER-NULL-BYTE-ARRAY".getBytes();
-    
+    private static final byte[] NULL_BYTE_ARRAY_MARKER = "SLEEPER-NULL-BYTE-ARRAY".getBytes(Charset.forName("UTF-8"));
+
     private final List<PrimitiveType> rowKeyTypes;
     private final int numRowKeysInSchema;
 
@@ -48,13 +49,13 @@ public class KeySerDe {
         this.rowKeyTypes = schema.getRowKeyTypes();
         this.numRowKeysInSchema = this.rowKeyTypes.size();
     }
-    
+
     public KeySerDe(List<PrimitiveType> rowKeyTypes) {
         this.rowKeyTypes = new ArrayList<>();
         this.rowKeyTypes.addAll(rowKeyTypes);
         this.numRowKeysInSchema = this.rowKeyTypes.size();
     }
-    
+
     public byte[] serialise(Key key) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
@@ -106,7 +107,7 @@ public class KeySerDe {
         dos.close();
         return baos.toByteArray();
     }
-    
+
     public Key deserialise(byte[] bytes) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         DataInputStream dis = new DataInputStream(bais);
@@ -136,7 +137,7 @@ public class KeySerDe {
             } else if (type instanceof ByteArrayType) {
                 int length = dis.readInt();
                 byte[] byteArray = new byte[length];
-                dis.read(byteArray);
+                dis.readFully(byteArray);
                 if (Arrays.equals(NULL_BYTE_ARRAY_MARKER, byteArray)) {
                     key.add(null);
                 } else {

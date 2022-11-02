@@ -17,7 +17,6 @@ package sleeper.cdk.stack;
 
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
-import software.constructs.Construct;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.events.Rule;
@@ -28,9 +27,11 @@ import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
+import software.constructs.Construct;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
@@ -47,11 +48,12 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSI
  */
 public class GarbageCollectorStack extends NestedStack {
 
-    public GarbageCollectorStack(Construct scope,
-                                 String id,
-                                 InstanceProperties instanceProperties,
-                                 List<StateStoreStack> stateStoreStacks,
-                                 List<IBucket> dataBuckets) {
+    public GarbageCollectorStack(
+            Construct scope,
+            String id,
+            InstanceProperties instanceProperties,
+            List<StateStoreStack> stateStoreStacks,
+            List<IBucket> dataBuckets) {
         super(scope, id);
 
         // Config bucket
@@ -64,7 +66,7 @@ public class GarbageCollectorStack extends NestedStack {
         Code code = Code.fromBucket(jarsBucket, "lambda-garbagecollector-" + instanceProperties.get(VERSION) + ".jar");
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "garbage-collector"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "garbage-collector"));
 
         // Garbage collector function
         Function handler = Function.Builder
@@ -101,5 +103,7 @@ public class GarbageCollectorStack extends NestedStack {
                 .targets(Collections.singletonList(new LambdaFunction(handler)))
                 .build();
         instanceProperties.set(GARBAGE_COLLECTOR_CLOUDWATCH_RULE, rule.getRuleName());
+
+        Utils.addStackTagIfSet(this, instanceProperties);
     }
 }

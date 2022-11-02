@@ -15,7 +15,7 @@ SUBNET=<id-of-the-subnet-to-deploy-to>
 ```
 
 Find the ECS cluster that is running the containers that are writing data for ingest. It will have the name
-sleeper-${ID}-system-test-cluster. There should be 11 running tasks. Wait until all those tasks have finished.
+`sleeper-${ID}-system-test-cluster`. There should be 11 running tasks. Wait until all those tasks have finished.
 Click on one of the tasks and find the corresponding Cloudwatch log group. Use the following command in
 Cloudwatch Log Insights with the above log group selected:
 ```
@@ -30,7 +30,7 @@ This should result in a single value which summarises the performance of the con
 approach - they are not using the ingest queue). The table below records the performance for various versions of
 Sleeper.
 
-Now find the ECS cluster that runs compaction tasks. It will be named sleeper-${ID}-merge-compaction-cluster.
+Now find the ECS cluster that runs compaction tasks. It will be named `sleeper-${ID}-merge-compaction-cluster`.
 Click on one of the tasks and find the corresponding Cloudwatch log group. Use the following command in Cloudwatch
 Log Insights with the above log group selected:
 ```
@@ -52,3 +52,4 @@ otherwise not have been noticed.
 | Version number | Test date  | Compaction rate (records/s) | Ingest S3 write rate (records/s)
 |----------------|------------|-----------------------------|---------------------------------
 | 0.11.0         | 13/06/2022 | 366000                      | 160000
+| 0.12.0         | 18/10/2022 | 378000                      | 146600

@@ -15,15 +15,6 @@
  */
 package sleeper.cdk.stack;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
-
-import java.io.IOException;
-import java.util.HashMap;
-
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import software.amazon.awscdk.CustomResource;
@@ -36,6 +27,16 @@ import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Locale;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 
 /**
  * The properties stack writes the Sleeper properties to S3 using a custom resource.
@@ -61,7 +62,7 @@ public class PropertiesStack extends NestedStack {
         }
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "properties-writer"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "properties-writer"));
 
         Function propertiesWriterLambda = new Function(this, "PropertiesWriterLambda", FunctionProps.builder()
                 .code(Code.fromBucket(jarsBucket, "cdk-custom-resources-" + instanceProperties.get(VERSION) + ".jar"))
@@ -86,5 +87,7 @@ public class PropertiesStack extends NestedStack {
                 .properties(properties)
                 .serviceToken(propertiesWriterProvider.getServiceToken())
                 .build();
+
+        Utils.addStackTagIfSet(this, instanceProperties);
     }
 }

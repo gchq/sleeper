@@ -282,7 +282,7 @@ public abstract class ArrayListRecordBatchBase<INCOMINGDATATYPE> implements Reco
                     if (!success) {
                         LOGGER.error("Failed to delete local file {}", localFileName);
                     }
-                } catch (Exception e) {
+                } catch (IOException e) {
                     LOGGER.error("Failed to delete local file " + localFileName, e);
                 }
             });

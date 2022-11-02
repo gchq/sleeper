@@ -1,0 +1,22 @@
+name: Build Common Modules
+on:
+  push:
+    paths:
+      - '.github/workflows/chunk-common.yaml'
+      - '.github/workflows/chunk.yaml'
+      - 'code-style/checkstyle*.xml'
+      - 'code-style/spotbugs*.xml'
+      - 'java/pom.xml'
+      - 'java/build/**'
+      - 'java/common-job/**'
+      - 'java/parquet/**'
+      - 'java/sketches/**'
+      - 'java/configuration/**'
+      - 'java/core/**'
+
+jobs:
+  module-workflow:
+    uses: ./.github/workflows/chunk.yaml
+    with:
+      chunkName: Common
+      moduleList: core,configuration,sketches,parquet,common-job,build

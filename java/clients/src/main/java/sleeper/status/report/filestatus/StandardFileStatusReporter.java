@@ -17,7 +17,10 @@ package sleeper.status.report.filestatus;
 
 import sleeper.statestore.FileInfo;
 
+import java.io.PrintStream;
 import java.util.List;
+
+import static sleeper.ClientUtils.abbreviatedRecordCount;
 
 /**
  * The standard implementation of {@link FileStatusReporter} that returns file
@@ -25,14 +28,24 @@ import java.util.List;
  */
 public class StandardFileStatusReporter implements FileStatusReporter {
 
+    private final PrintStream out;
+
+    public StandardFileStatusReporter() {
+        this(System.out);
+    }
+
+    public StandardFileStatusReporter(PrintStream out) {
+        this.out = out;
+    }
+
     @Override
     public void report(FileStatus fileStatusReport, boolean verbose) {
-        System.out.println("\nFiles Status Report:\n--------------------------");
-        System.out.println("There are " + fileStatusReport.getLeafPartitionCount() + " leaf partitions and " + fileStatusReport.getNonLeafPartitionCount() + " non-leaf partitions");
-        System.out.println("There are " + (fileStatusReport.isReachedMax() ? ">=" : "") + fileStatusReport.getGcFiles().size() + " files with status of \"Ready_to_be_garbage_collected\"");
-        System.out.println("\t(" + fileStatusReport.getReadyForGCFilesInLeafPartitions() + " in leaf partitions, " + fileStatusReport.getReadyForGCInNonLeafPartitions() + " in non-leaf partitions)");
-        System.out.println("There are " + fileStatusReport.getActiveFilesCount() + " files with status of \"Active\"");
-        System.out.println("\t(" + fileStatusReport.getActiveFilesInLeafPartitions() + " in leaf partitions, " + fileStatusReport.getActiveFilesInNonLeafPartitions() + " in non-leaf partitions)");
+        out.println("\nFiles Status Report:\n--------------------------");
+        out.println("There are " + fileStatusReport.getLeafPartitionCount() + " leaf partitions and " + fileStatusReport.getNonLeafPartitionCount() + " non-leaf partitions");
+        out.println("There are " + (fileStatusReport.isReachedMax() ? ">=" : "") + fileStatusReport.getGcFiles().size() + " files with status of \"Ready_to_be_garbage_collected\"");
+        out.println("\t(" + fileStatusReport.getReadyForGCFilesInLeafPartitions() + " in leaf partitions, " + fileStatusReport.getReadyForGCInNonLeafPartitions() + " in non-leaf partitions)");
+        out.println("There are " + fileStatusReport.getActiveFilesCount() + " files with status of \"Active\"");
+        out.println("\t(" + fileStatusReport.getActiveFilesInLeafPartitions() + " in leaf partitions, " + fileStatusReport.getActiveFilesInNonLeafPartitions() + " in non-leaf partitions)");
 
         printPartitionStats(fileStatusReport.getLeafPartitionStats(), "leaf");
         printPartitionStats(fileStatusReport.getNonLeafPartitionStats(), "non-leaf");
@@ -41,25 +54,26 @@ public class StandardFileStatusReporter implements FileStatusReporter {
             printFileInfoList("Ready_to_be_garbage_collected", fileStatusReport.getGcFiles());
             printFileInfoList("Active", fileStatusReport.getActiveFiles());
         }
-        System.out.println("Total number of records in all active files = " + fileStatusReport.getTotalRecords());
-        System.out.println("Total number of records in leaf partitions = " + fileStatusReport.getTotalRecordsInLeafPartitions());
-        System.out.println("Percentage of records in leaf partitions = " + (fileStatusReport.getTotalRecordsInLeafPartitions() / (double) fileStatusReport.getTotalRecords()) * 100.0);
+        out.println("Total number of records in all active files = " + abbreviatedRecordCount(fileStatusReport.getTotalRecords()));
+        out.println("Total number of records in leaf partitions = " + abbreviatedRecordCount(fileStatusReport.getTotalRecordsInLeafPartitions()));
+        out.println("Percentage of records in leaf partitions = " + (fileStatusReport.getTotalRecordsInLeafPartitions() / (double) fileStatusReport.getTotalRecords()) * 100.0);
 
     }
 
     private void printPartitionStats(FileStatus.PartitionStats partitions, String type) {
         if (partitions.getTotal() > 0) {
-            System.out.println("Number of files in " + type + " partitions:" +
+            out.println("Number of files in " + type + " partitions:" +
                     " min = " + partitions.getMinSize() +
                     ", max = " + partitions.getMaxMax() +
                     ", average = " + partitions.getAverageSize());
         } else {
-            System.out.println("No files in " + type + " partitions");
+            out.println("No files in " + type + " partitions");
         }
     }
 
-    private static void printFileInfoList(String type, List<FileInfo> strings) {
-        System.out.println(type + ":");
-        strings.forEach(System.out::println);
+    private void printFileInfoList(String type, List<FileInfo> strings) {
+        out.println(type + ":");
+        strings.forEach(out::println);
     }
+
 }

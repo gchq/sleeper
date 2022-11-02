@@ -18,35 +18,48 @@ package sleeper.bulkimport.starter.executor;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.stepfunctions.AWSStepFunctions;
-import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.configuration.properties.InstanceProperties;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 
+import java.io.IOException;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+
 public class ExecutorFactory {
-    private final static String BULK_IMPORT_PLATFORM = "BULK_IMPORT_PLATFORM";
-    
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExecutorFactory.class);
+    private static final String BULK_IMPORT_PLATFORM = "BULK_IMPORT_PLATFORM";
+
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final AmazonS3 s3Client;
     private final AmazonElasticMapReduce emrClient;
     private final AWSStepFunctions stepFunctionsClient;
+    private final String bulkImportPlatform;
 
-    public ExecutorFactory(AmazonS3 s3Client, AmazonElasticMapReduce emrClient, AWSStepFunctions stepFunctionsClient) throws IOException {
+    public ExecutorFactory(AmazonS3 s3Client,
+            AmazonElasticMapReduce emrClient,
+            AWSStepFunctions stepFunctionsClient) throws IOException {
         this.instanceProperties = new InstanceProperties();
         this.instanceProperties.loadFromS3(s3Client, System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
         this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         this.s3Client = s3Client;
         this.emrClient = emrClient;
         this.stepFunctionsClient = stepFunctionsClient;
+        this.bulkImportPlatform = System.getenv(BULK_IMPORT_PLATFORM);
+        LOGGER.info("Initialised ExecutorFactory. Environment variable {} is set to {}.", BULK_IMPORT_PLATFORM, this.bulkImportPlatform);
     }
 
     public Executor createExecutor() {
-        switch (System.getenv(BULK_IMPORT_PLATFORM)) {
+        switch (bulkImportPlatform) {
             case "NonPersistentEMR":
                 return new EmrExecutor(emrClient, instanceProperties, tablePropertiesProvider, s3Client);
             case "EKS":
                 return new StateMachineExecutor(stepFunctionsClient, instanceProperties, tablePropertiesProvider, s3Client);
+            case "PersistentEMR":
+                return new PersistentEmrExecutor(emrClient, instanceProperties, tablePropertiesProvider, s3Client);
             default:
                 throw new IllegalArgumentException("Invalid value for " + System.getenv(BULK_IMPORT_PLATFORM));
         }

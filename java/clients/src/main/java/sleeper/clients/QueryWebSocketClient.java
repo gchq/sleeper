@@ -15,15 +15,6 @@
  */
 package sleeper.clients;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.Map.Entry;
-
 import com.amazonaws.DefaultRequest;
 import com.amazonaws.auth.AWS4Signer;
 import com.amazonaws.auth.AWSCredentials;
@@ -36,11 +27,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import sleeper.ClientUtils;
-
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
@@ -48,6 +37,15 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 import sleeper.statestore.StateStoreException;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class QueryWebSocketClient extends QueryCommandLineClient {
     private final String apiUrl;
@@ -90,7 +88,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         }
     }
 
-    private class Client extends WebSocketClient {
+    private static class Client extends WebSocketClient {
         private final Gson serde = new GsonBuilder().create();
         private final Set<String> outstandingQueries = new HashSet<>();
         private final Map<String, JsonArray> records = new HashMap<>();
@@ -99,11 +97,15 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         private boolean queryComplete = false;
         private long totalRecordsReturned = 0L;
 
-        public Client(URI serverUri, Query query, QuerySerDe querySerDe) throws InterruptedException {
+        private Client(URI serverUri, Query query, QuerySerDe querySerDe) throws InterruptedException {
             super(serverUri);
             this.query = query;
             this.querySerDe = querySerDe;
 
+            initialiseConnection(serverUri);
+        }
+
+        private void initialiseConnection(URI serverUri) throws InterruptedException {
             try {
                 Map<String, String> authHeaders = this.getAwsIamAuthHeaders(serverUri);
                 for (Entry<String, String> header : authHeaders.entrySet()) {
@@ -113,7 +115,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
                 System.err.println(e);
             }
             System.out.println("Connecting to WebSocket API at " + serverUri);
-            this.connectBlocking();
+            connectBlocking();
         }
 
         private Map<String, String> getAwsIamAuthHeaders(URI serverUri) throws URISyntaxException {

@@ -28,7 +28,7 @@ import sleeper.core.schema.type.StringType;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class JSONResultsBatchSerialiserTest {
 
@@ -36,10 +36,11 @@ public class JSONResultsBatchSerialiserTest {
     public void testWriteRead() {
         // Given
         String queryId = "query1";
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new LongType()));
-        schema.setSortKeyFields(new Field("column3", new StringType()), new Field("column4", new ByteArrayType()));
-        schema.setValueFields(new Field("column5", new ByteArrayType()), new Field("column6", new ByteArrayType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new IntType()), new Field("column2", new LongType()))
+                .sortKeyFields(new Field("column3", new StringType()), new Field("column4", new ByteArrayType()))
+                .valueFields(new Field("column5", new ByteArrayType()), new Field("column6", new ByteArrayType()))
+                .build();
         List<Record> records = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             Record record = new Record();
@@ -59,6 +60,6 @@ public class JSONResultsBatchSerialiserTest {
         ResultsBatch deserialised = serialiser.deserialise(serialised);
 
         // Then
-        assertEquals(resultsBatch, deserialised);
+        assertThat(deserialised).isEqualTo(resultsBatch);
     }
 }

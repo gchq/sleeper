@@ -14,13 +14,14 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.11.1-SNAPSHOT</version>
+    <version>0.13.0-SNAPSHOT</version>
 
     <modules>
         <module>core</module>
@@ -29,8 +30,10 @@
         <module>clients</module>
         <module>statestore</module>
         <module>configuration</module>
+        <module>compaction-core</module>
         <module>compaction-job-creation</module>
         <module>compaction-job-execution</module>
+        <module>compaction-status-store</module>
         <module>query</module>
         <module>system-test</module>
         <module>garbage-collector</module>
@@ -42,12 +45,15 @@
         <module>common-job</module>
         <module>bulk-import</module>
         <module>cdk-custom-resources</module>
+        <module>cdk-environment</module>
         <module>metrics</module>
         <module>distribution</module>
         <module>trino</module>
+        <module>build</module>
     </modules>
 
     <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
         <scala.version>2.12</scala.version>
         <spark.version>3.1.2</spark.version>
@@ -64,9 +70,10 @@
         <jackson.version>2.11.4</jackson.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <testcontainers.version>1.16.2</testcontainers.version>
-        <cdk.version>2.24.1</cdk.version>
-        <apigatewayv2.version>2.24.1-alpha.0</apigatewayv2.version>
-        <constructs.version>10.1.10</constructs.version>
+        <cdk.version>2.35.0</cdk.version>
+        <apigatewayv2.version>2.35.0-alpha.0</apigatewayv2.version>
+        <awskeypair.version>1.0.0-alpha.5</awskeypair.version>
+        <constructs.version>10.1.69</constructs.version>
         <gson.version>2.7</gson.version>
         <datasketches.version>3.1.0</datasketches.version>
         <slf4j.version>1.7.36</slf4j.version>
@@ -74,12 +81,17 @@
         <java-websocket.version>1.5.2</java-websocket.version>
         <arrow.version>8.0.0</arrow.version>
         <trino.version>390</trino.version>
+        <bouncycastle.version>1.71.1</bouncycastle.version>
+        <github-api.version>1.308</github-api.version>
         <!-- Testing -->
         <junit.version>4.13</junit.version>
         <mockito.version>3.3.3</mockito.version>
         <testcontainers.version>1.16.2</testcontainers.version>
         <wiremock.version>2.32.0</wiremock.version>
+        <assertj.version>3.23.1</assertj.version>
+        <jsonunit.version>2.22.1</jsonunit.version>
         <!-- Maven plugins -->
+        <checkstyle.plugin.version>2.17</checkstyle.plugin.version>
         <release.plugin.version>3.0.0-M4</release.plugin.version>
         <surefire.plugin.version>3.0.0-M5</surefire.plugin.version>
         <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
@@ -88,6 +100,8 @@
         <compiler.plugin.version>3.8.1</compiler.plugin.version>
         <enforcer.plugin.version>3.0.0</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
+        <spotbugs.plugin.version>4.7.2.0</spotbugs.plugin.version>
+        <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -108,6 +122,11 @@
                 <artifactId>constructs</artifactId>
                 <version>${constructs.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.github.cdklabs.cdk_cloudformation</groupId>
+                <artifactId>tf-aws-keypair</artifactId>
+                <version>${awskeypair.version}</version>
+            </dependency>
             <!-- Apache commons -->
             <dependency>
                 <groupId>commons-codec</groupId>
@@ -118,6 +137,11 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons-lang3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
             </dependency>
             <!-- GSON -->
             <dependency>
@@ -140,6 +164,18 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-reload4j</artifactId>
                 <version>${slf4j.version}</version>
+            </dependency>
+            <!-- Build -->
+            <dependency>
+                <groupId>org.kohsuke</groupId>
+                <artifactId>github-api</artifactId>
+                <version>${github-api.version}</version>
+            </dependency>
+            <!-- Cryptography -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
             </dependency>
             <!-- Test Dependencies -->
             <dependency>
@@ -166,6 +202,18 @@
                 <version>${mockito.version}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>net.javacrumbs.json-unit</groupId>
+                <artifactId>json-unit-assertj</artifactId>
+                <version>${jsonunit.version}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -174,6 +222,11 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -181,6 +234,77 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${checkstyle.plugin.version}</version>
+                <configuration>
+                    <configLocation>../code-style/checkstyle.xml</configLocation>
+                    <suppressionsLocation>
+                        ../code-style/checkstyle-suppressions.xml
+                    </suppressionsLocation>
+                    <suppressionsFileExpression>checkstyle.suppressions.file</suppressionsFileExpression>
+                    <encoding>UTF-8</encoding>
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>true</failsOnError>
+                    <headerLocation>../code-style/licenseHeader.txt</headerLocation>
+                    <excludes>**/generated/**/*</excludes>
+                    <sourceDirectories>
+                        <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+                        <sourceDirectory>${project.build.testSourceDirectory}</sourceDirectory>
+                    </sourceDirectories>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>validate</id>
+                        <phase>test</phase>
+                        <configuration>
+                            <configLocation>../code-style/checkstyle.xml</configLocation>
+                            <encoding>UTF-8</encoding>
+                            <consoleOutput>true</consoleOutput>
+                            <failsOnError>true</failsOnError>
+                            <headerLocation>../code-style/licenseHeader.txt</headerLocation>
+                        </configuration>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${spotbugs.plugin.version}</version>
+                <configuration>
+                    <effort>Max</effort>
+                    <threshold>Low</threshold>
+                    <xmlOutput>true</xmlOutput>
+                    <spotbugsXmlOutputDirectory>
+                        ${project.build.directory}/spotbugs
+                    </spotbugsXmlOutputDirectory>
+                    <onlyAnalyze>sleeper.-</onlyAnalyze>
+                    <excludeFilterFile>
+                        ../code-style/spotbugs-exclude.xml
+                    </excludeFilterFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>validate</id>
+                        <phase>test</phase>
+                        <configuration>
+                            <effort>Max</effort>
+                            <threshold>Low</threshold>
+                            <xmlOutput>true</xmlOutput>
+                            <spotbugsXmlOutputDirectory>
+                                ${project.build.directory}/spotbugs
+                            </spotbugsXmlOutputDirectory>
+                        </configuration>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -255,6 +379,11 @@
                     </rules>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>de.qaware.maven</groupId>
+                <artifactId>go-offline-maven-plugin</artifactId>
+                <version>${go-offline.plugin.version}</version>
+            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
@@ -298,6 +427,60 @@
                 <skipTests>true</skipTests>
                 <skipITs>true</skipITs>
             </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-checkstyle-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>validate</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
+                        <version>${spotbugs.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>validate</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>style</id>
+            <properties>
+                <skipTests>true</skipTests>
+                <skipITs>true</skipITs>
+            </properties>
+        </profile>
+        <profile>
+            <id>skipShade</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-shade-plugin</artifactId>
+                            <version>${shade.plugin.version}</version>
+                            <executions>
+                                <execution>
+                                    <phase>none</phase>
+                                    <goals>
+                                        <goal>shade</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
         </profile>
     </profiles>
 </project>

@@ -15,18 +15,8 @@
  */
 package sleeper.cdk;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.List;
-
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-
 import sleeper.cdk.stack.AthenaStack;
 import sleeper.cdk.stack.CompactionStack;
 import sleeper.cdk.stack.ConfigurationStack;
@@ -49,6 +39,15 @@ import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.Tags;
 import software.constructs.Construct;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.List;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 
 /**
  * The {@link App} that deploys all the Sleeper stacks.
@@ -89,7 +88,7 @@ public class SleeperCdkApp extends Stack {
         if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {
             new AthenaStack(this, "Athena", instanceProperties, getTableStack().getStateStoreStacks(), getTableStack().getDataBuckets());
         }
-        
+
         // Stack to run bulk import jobs via EMR (one cluster per bulk import job)
         if (optionalStacks.contains(EmrBulkImportStack.class.getSimpleName())) {
             emrBulkImportStack = new EmrBulkImportStack(this, "BulkImportEMR",
@@ -97,8 +96,9 @@ public class SleeperCdkApp extends Stack {
                     tableStack.getStateStoreStacks(),
                     instanceProperties,
                     topicStack.getTopic());
+            emrBulkImportStack.create();
         }
-        
+
         // Stack to run bulk import jobs via a persistent EMR cluster
         if (optionalStacks.contains(PersistentEmrBulkImportStack.class.getSimpleName())) {
             persistentEmrBulkImportStack = new PersistentEmrBulkImportStack(this, "BulkImportPersistentEMR",
@@ -106,15 +106,16 @@ public class SleeperCdkApp extends Stack {
                     tableStack.getStateStoreStacks(),
                     instanceProperties,
                     topicStack.getTopic());
+            persistentEmrBulkImportStack.create();
         }
-        
+
         // Stack to run bulk import jobs via EKS
         if (optionalStacks.contains(EksBulkImportStack.class.getSimpleName())) {
             new EksBulkImportStack(this, "BulkImportEKS",
                     tableStack.getDataBuckets(),
                     tableStack.getStateStoreStacks(),
                     instanceProperties,
-                    topicStack.getTopic());
+                    topicStack.getTopic()).create();
         }
 
         // Stack to garbage collect old files
@@ -167,11 +168,11 @@ public class SleeperCdkApp extends Stack {
 
         if (optionalStacks.contains(DashboardStack.class.getSimpleName())) {
             new DashboardStack(this,
-                "Dashboard",
-                ingestStack,
-                compactionStack,
-                partitionSplittingStack,
-                instanceProperties
+                    "Dashboard",
+                    ingestStack,
+                    compactionStack,
+                    partitionSplittingStack,
+                    instanceProperties
             );
         }
 
@@ -194,11 +195,11 @@ public class SleeperCdkApp extends Stack {
     public EmrBulkImportStack getEmrBulkImportStack() {
         return emrBulkImportStack;
     }
-    
+
     public PersistentEmrBulkImportStack getPersistentEmrBulkImportStack() {
         return persistentEmrBulkImportStack;
     }
-    
+
     private void addTags(Construct construct) {
         instanceProperties.getTags()
                 .forEach((key, value) -> Tags.of(construct).add(key, value));
@@ -222,7 +223,7 @@ public class SleeperCdkApp extends Stack {
             new ConfigValidator(AmazonS3ClientBuilder.defaultClient(),
                     AmazonDynamoDBClientBuilder.defaultClient()).validate(instanceProperties);
         }
-        
+
         String id = instanceProperties.get(ID);
         Environment environment = Environment.builder()
                 .account(instanceProperties.get(ACCOUNT))

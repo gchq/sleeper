@@ -20,23 +20,24 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.stepfunctions.AWSStepFunctions;
 import com.amazonaws.services.stepfunctions.model.StartExecutionRequest;
 import com.google.gson.Gson;
+import sleeper.bulkimport.configuration.ConfigurationUtils;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperty;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 
@@ -56,7 +57,7 @@ public class StateMachineExecutor extends Executor {
         Map<String, String> defaultConf = new HashMap<>();
         defaultConf.put("spark.executor.instances", "3");
         // Default Memory requests are overwritten because Fargate doesn't work with
-        // spark's default values
+        // Spark's default values
         defaultConf.put("spark.driver.memory", "7g");
         defaultConf.put("spark.executor.memory", "7g");
         // Fargate provides extra memory so no need to include extra which also messes
@@ -90,15 +91,13 @@ public class StateMachineExecutor extends Executor {
 
         stepFunctions.startExecution(
                 new StartExecutionRequest()
-                        .withStateMachineArn(getInstanceProperties().get(BULK_IMPORT_EKS_STATE_MACHINE_ARN))
-                        .withName(String.join("-", "sleeper", getInstanceProperties().get(ID), bulkImportJob.getTableName(), bulkImportJob.getId()))
+                        .withStateMachineArn(instanceProperties.get(BULK_IMPORT_EKS_STATE_MACHINE_ARN))
+                        .withName(String.join("-", "sleeper", instanceProperties.get(ID), bulkImportJob.getTableName(), bulkImportJob.getId()))
                         .withInput(new Gson().toJson(input)));
     }
 
-    @Override
-    protected Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties) {
-        InstanceProperties instanceProperties = getInstanceProperties();
-        Map<String, String> defaultConfig = new HashMap<>(DEFAULT_CONFIG);
+    private Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties, InstanceProperties instanceProperties) {
+        Map<String, String> defaultConfig = new HashMap<>(ConfigurationUtils.getSparkConfigurationFromInstanceProperties(instanceProperties));
         String imageName = instanceProperties.get(ACCOUNT) + ".dkr.ecr." +
                 instanceProperties.get(REGION) + ".amazonaws.com/" +
                 instanceProperties.get(BULK_IMPORT_REPO) + ":" + instanceProperties.get(VERSION);
@@ -107,12 +106,36 @@ public class StateMachineExecutor extends Executor {
         defaultConfig.put("spark.kubernetes.container.image", imageName);
         defaultConfig.put("spark.kubernetes.namespace", instanceProperties.get(BULK_IMPORT_EKS_NAMESPACE));
         defaultConfig.put("spark.kubernetes.driver.pod.name", bulkImportJob.getId());
-        defaultConfig.put("spark.hadoop.fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3));
-        defaultConfig.put("spark.shuffle.mapStatus.compression.codec", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC, platformSpec, tableProperties));
-        defaultConfig.put("spark.speculation", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SPECULATION, platformSpec, tableProperties));
-        defaultConfig.put("spark.speculation.quantile", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SPECULATION_QUANTILE, platformSpec, tableProperties));
+
+        defaultConfig.putAll(DEFAULT_CONFIG);
 
         return defaultConfig;
+    }
+
+    @Override
+    protected List<String> constructArgs(BulkImportJob bulkImportJob) {
+        Map<String, String> sparkProperties = getDefaultSparkConfig(bulkImportJob, DEFAULT_CONFIG, tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName()), instanceProperties);
+
+        // Create Spark conf by copying DEFAULT_CONFIG and over-writing any entries
+        // which have been specified in the Spark conf on the bulk import job.
+        if (null != bulkImportJob.getSparkConf()) {
+            for (Map.Entry<String, String> entry : bulkImportJob.getSparkConf().entrySet()) {
+                sparkProperties.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        BulkImportJob cloneWithUpdatedProps = new BulkImportJob.Builder()
+                .className(bulkImportJob.getClassName())
+                .files(bulkImportJob.getFiles())
+                .id(bulkImportJob.getId())
+                .tableName(bulkImportJob.getTableName())
+                .platformSpec(bulkImportJob.getPlatformSpec())
+                .sparkConf(sparkProperties)
+                .build();
+        List<String> args = super.constructArgs(cloneWithUpdatedProps);
+        args.add(bulkImportJob.getId());
+        args.add(instanceProperties.get(CONFIG_BUCKET));
+        return args;
     }
 
     @Override

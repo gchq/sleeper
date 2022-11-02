@@ -15,37 +15,11 @@
  */
 package sleeper.bulkimport.job.runner;
 
-import static org.junit.Assert.assertEquals;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.google.common.collect.Lists;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.junit.AfterClass;
@@ -59,19 +33,10 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
-
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.google.common.collect.Lists;
-import static org.junit.Assert.assertTrue;
-
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeRunner;
 import sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDRunner;
 import sleeper.configuration.properties.InstanceProperties;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
@@ -91,31 +56,64 @@ import sleeper.io.parquet.record.SchemaConverter;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
-import sleeper.table.util.StateStoreProvider;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 @RunWith(Parameterized.class)
 public class BulkImportJobRunnerIT {
-	
+
     @Parameters
     public static Collection<Object[]> getParameters() {
-        return Lists.newArrayList(new Object[][]{{ new BulkImportJobDataframeRunner() }, {  new BulkImportJobRDDRunner() }});
+        return Lists.newArrayList(new Object[][]{{new BulkImportJobDataframeRunner()}, {new BulkImportJobRDDRunner()}});
     }
 
     @ClassRule
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
-        LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3
+            LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3
     );
-    
+
     @Rule
     public TemporaryFolder folder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
-    
+
     private final BulkImportJobRunner runner;
 
     public BulkImportJobRunnerIT(BulkImportJobRunner runner) {
         this.runner = runner;
     }
-	
+
     private AmazonDynamoDB createDynamoClient() {
         return AmazonDynamoDBClientBuilder.standard()
                 .withCredentials(localStackContainer.getDefaultCredentialsProvider())
@@ -148,13 +146,13 @@ public class BulkImportJobRunnerIT {
 
         return instanceProperties;
     }
-    
+
     @BeforeClass
     public static void setSparkProperties() {
         System.setProperty("spark.master", "local");
         System.setProperty("spark.app.name", "bulk import");
     }
-    
+
     @AfterClass
     public static void clearSparkProperties() {
         System.clearProperty("spark.master");
@@ -179,25 +177,24 @@ public class BulkImportJobRunnerIT {
         tableProperties.saveToS3(s3);
 
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(instanceProperties,
-            tableProperties, dynamoDB);
+                tableProperties, dynamoDB);
         dynamoDBStateStoreCreator.create();
         return tableProperties;
     }
-    
+
     private Schema getSchema() {
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new IntType()));
-        schema.setSortKeyFields(new Field("sort", new LongType()));
-        schema.setValueFields(
-            new Field("value1", new StringType()),
-            new Field("value2", new ListType(new IntType())),
-            new Field("value3", new MapType(new StringType(), new LongType())));
-        return schema;
+        return Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .sortKeyFields(new Field("sort", new LongType()))
+                .valueFields(
+                        new Field("value1", new StringType()),
+                        new Field("value2", new ListType(new IntType())),
+                        new Field("value3", new MapType(new StringType(), new LongType())))
+                .build();
     }
-    
+
     @Test
-    public void shouldImportDataSinglePartition() throws IOException, StateStoreException,
-            ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public void shouldImportDataSinglePartition() throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -238,20 +235,20 @@ public class BulkImportJobRunnerIT {
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
-        
+
         // When
         runner.init(instanceProperties, s3Client, dynamoDBClient);
         runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles).tableName(tableName).build());
-        
+
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         //  - Currently only BulkImportJobDataframeRunner supports not coalescing to the number of leaf partitions
         if (runner instanceof BulkImportJobDataframeRunner) {
-            assertTrue(activeFiles.size() > 1);
+            assertThat(activeFiles).hasSizeGreaterThan(1);
         } else {
-            assertEquals(1, activeFiles.size());
+            assertThat(activeFiles).hasSize(1);
         }
-        
+
         List<Record> readRecords = new ArrayList<>();
         for (FileInfo fileInfo : activeFiles) {
             try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileInfo.getFilename()), schema)) {
@@ -265,21 +262,19 @@ public class BulkImportJobRunnerIT {
                 }
                 List<Record> sortedRecordsInThisFile = new ArrayList<>(recordsInThisFile);
                 sortRecords(sortedRecordsInThisFile);
-                assertEquals(sortedRecordsInThisFile, recordsInThisFile);
+                assertThat(recordsInThisFile).isEqualTo(sortedRecordsInThisFile);
             }
         }
-        assertEquals(records.size(), readRecords.size());
+        assertThat(readRecords).hasSameSizeAs(records);
 
-        List<Record> expectedRecords = new ArrayList<>();
-        expectedRecords.addAll(records);
+        List<Record> expectedRecords = new ArrayList<>(records);
         sortRecords(expectedRecords);
         sortRecords(readRecords);
-        assertEquals(expectedRecords, readRecords);
+        assertThat(readRecords).isEqualTo(expectedRecords);
     }
 
     @Test
-    public void shouldNotCoalesceIfSmallNumberOfLeafPartitions() throws IOException, StateStoreException,
-            ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public void shouldNotCoalesceIfSmallNumberOfLeafPartitions() throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -329,21 +324,21 @@ public class BulkImportJobRunnerIT {
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
-        
+
         // When
         runner.init(instanceProperties, s3Client, dynamoDBClient);
         runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles).tableName(tableName).build());
-        
+
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        
+
         //  - Currently only BulkImportJobDataframeRunner supports not coalescing to the number of leaf partitions
         if (runner instanceof BulkImportJobDataframeRunner) {
-            assertTrue(activeFiles.size() > 1);
+            assertThat(activeFiles).hasSizeGreaterThan(1);
         } else {
-            assertEquals(1, activeFiles.size());
+            assertThat(activeFiles).hasSize(1);
         }
-        
+
         List<Record> readRecords = new ArrayList<>();
         for (FileInfo fileInfo : activeFiles) {
             try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileInfo.getFilename()), schema)) {
@@ -357,22 +352,21 @@ public class BulkImportJobRunnerIT {
                 }
                 List<Record> sortedRecordsInThisFile = new ArrayList<>(recordsInThisFile);
                 sortRecords(sortedRecordsInThisFile);
-                assertEquals(sortedRecordsInThisFile, recordsInThisFile);
+                assertThat(recordsInThisFile).isEqualTo(sortedRecordsInThisFile);
             }
         }
-        assertEquals(2 * records.size(), readRecords.size());
+        assertThat(readRecords).hasSize(2 * records.size());
 
         List<Record> expectedRecords = new ArrayList<>();
         expectedRecords.addAll(records);
         expectedRecords.addAll(records);
         sortRecords(expectedRecords);
         sortRecords(readRecords);
-        assertEquals(expectedRecords, readRecords);
+        assertThat(readRecords).isEqualTo(expectedRecords);
     }
-    
+
     @Test
-    public void shouldImportDataMultiplePartitions() throws IOException, StateStoreException,
-            ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public void shouldImportDataMultiplePartitions() throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -411,20 +405,12 @@ public class BulkImportJobRunnerIT {
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise(new PartitionsFromSplitPoints(schema, Collections.singletonList(50)).construct());
-        
+
         // When
         runner.init(instanceProperties, s3Client, dynamoDBClient);
         runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles).tableName(tableName).build());
-        
+
         // Then
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertEquals(2, activeFiles.size());
-        FileInfo fileInfo1 = activeFiles.get(0);
-        assertEquals(50L, (long) fileInfo1.getNumberOfRecords());
-        List<Record> readRecords1 = readRecords(fileInfo1.getFilename(), schema);
-        FileInfo fileInfo2 = activeFiles.get(1);
-        assertEquals(50L, (long) fileInfo2.getNumberOfRecords());
-        List<Record> readRecords2 = readRecords(fileInfo2.getFilename(), schema);
         List<Record> leftPartition = records.stream()
                 .filter(record -> ((int) record.get("key")) < 50)
                 .sorted((record1, record2) -> {
@@ -441,18 +427,16 @@ public class BulkImportJobRunnerIT {
                     return key1 - key2;
                 })
                 .collect(Collectors.toList());
-       if (((int) readRecords1.get(0).get("key")) < 50) {
-           assertEquals(leftPartition, readRecords1);
-           assertEquals(rightPartition, readRecords2);
-       } else {
-           assertEquals(rightPartition, readRecords1);
-           assertEquals(leftPartition, readRecords2);
-       }
+        assertThat(stateStore.getActiveFiles())
+                .extracting(FileInfo::getNumberOfRecords,
+                        file -> readRecords(file.getFilename(), schema))
+                .containsExactlyInAnyOrder(
+                        tuple(50L, leftPartition),
+                        tuple(50L, rightPartition));
     }
-    
+
     @Test
-    public void shouldImportLargeAmountOfDataMultiplePartitions() throws IOException, StateStoreException,
-            ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public void shouldImportLargeAmountOfDataMultiplePartitions() throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -469,9 +453,9 @@ public class BulkImportJobRunnerIT {
         List<Record> records = new ArrayList<>(100000);
         List<Object> splitPoints = new ArrayList<>();
         for (int i = 0; i < 100000; i++) {
-        	if (i % 1000 == 0) {
-        		splitPoints.add(i);
-	        }
+            if (i % 1000 == 0) {
+                splitPoints.add(i);
+            }
             Record record = new Record();
             record.put("key", i);
             record.put("sort", (long) i);
@@ -481,7 +465,7 @@ public class BulkImportJobRunnerIT {
             map.put("A", 1L);
             record.put("value3", map);
             records.add(record);
-           
+
         }
         Collections.shuffle(records);
         ParquetRecordWriter writer = new ParquetRecordWriter(new Path(dataDir + "/import/a.parquet"),
@@ -496,63 +480,63 @@ public class BulkImportJobRunnerIT {
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise(new PartitionsFromSplitPoints(schema, splitPoints).construct());
-        
+
         // When
         runner.init(instanceProperties, s3Client, dynamoDBClient);
         runner.run(new BulkImportJob.Builder().id("my-job").files(inputFiles).tableName(tableName).build());
-        
+
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         List<Partition> leafPartitions = stateStore.getLeafPartitions();
         for (Partition leaf : leafPartitions) {
             Integer minRowKey = (Integer) leaf.getRegion().getRange(schema.getRowKeyFieldNames().get(0)).getMin();
             if (Integer.MIN_VALUE == minRowKey) {
-                    continue;
+                continue;
             }
             List<FileInfo> relevantFiles = activeFiles.stream()
-                            .filter(af -> af.getPartitionId().equals(leaf.getId()))
-                            .collect(Collectors.toList());
+                    .filter(af -> af.getPartitionId().equals(leaf.getId()))
+                    .collect(Collectors.toList());
 
             long totalRecords = relevantFiles.stream()
-                            .map(FileInfo::getNumberOfRecords)
-                            .reduce(Long::sum)
-                            .get();
+                    .map(FileInfo::getNumberOfRecords)
+                    .reduce(Long::sum)
+                    .get();
 
-            assertEquals(1000L, totalRecords);
+            assertThat(totalRecords).isEqualTo(1000L);
 
             relevantFiles.stream()
-                .map(af -> {
+                    .map(af -> {
                         try {
                             return new ParquetRecordReader(new Path(af.getFilename()), schema);
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
                     })
-                .map(reader -> {
-                    List<Record> recordsRead = new ArrayList<>();
-                    Record record;
-                    try {
-                        record = reader.read();
-                        while (record != null) {
+                    .map(reader -> {
+                        List<Record> recordsRead = new ArrayList<>();
+                        Record record;
+                        try {
+                            record = reader.read();
+                            while (record != null) {
                                 recordsRead.add(record);
                                 record = reader.read();
+                            }
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
                         }
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
 
-                    return recordsRead;
-                })
-                .forEach(read -> {
-                    List<Record> sorted = read.stream()
-                        .sorted(new RecordComparator(schema))
-                        .collect(Collectors.toList());
+                        return recordsRead;
+                    })
+                    .forEach(read -> {
+                        List<Record> sorted = read.stream()
+                                .sorted(new RecordComparator(schema))
+                                .collect(Collectors.toList());
 
-                    assertEquals(sorted, read);
-                });
+                        assertThat(read).isEqualTo(sorted);
+                    });
         }
     }
-    
+
     @Test
     public void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles() throws IOException, StateStoreException {
         // Given
@@ -587,55 +571,45 @@ public class BulkImportJobRunnerIT {
             writer.write(record);
         }
         writer.close();
-        
+
         try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(dataDir + "/import/b.txt"))) {
             bufferedWriter.append("test");
         }
-        
+
         //  - State store
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
-        
+
         // When
         runner.init(instanceProperties, s3Client, dynamoDBClient);
         runner.run(new BulkImportJob.Builder().id("my-job").files(Lists.newArrayList("/import/")).tableName(tableName).build());
-        
+
         // Then
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        assertEquals(1, activeFiles.size());
-        FileInfo fileInfo = activeFiles.get(0);
-        assertEquals(100L, (long) fileInfo.getNumberOfRecords());
-        assertEquals(stateStore.getAllPartitions().get(0).getId(), fileInfo.getPartitionId());
-        ParquetRecordReader reader = new ParquetRecordReader(new Path(fileInfo.getFilename()), schema);
-        List<Record> readRecords = new ArrayList<>(100);
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(new Record(record));
-            record = reader.read();
-        }
-        reader.close();
-        Collections.sort(records, (record1, record2) -> {
-            int key1 = (int) record1.get("key");
-            int key2 = (int) record2.get("key");
-            return key1 - key2;
-        });
-        assertEquals(records, readRecords);
+        String expectedPartitionId = stateStore.getAllPartitions().get(0).getId();
+        sortRecords(records);
+        assertThat(stateStore.getActiveFiles())
+                .extracting(FileInfo::getNumberOfRecords, FileInfo::getPartitionId,
+                        file -> readRecords(file.getFilename(), schema))
+                .containsExactly(tuple(100L, expectedPartitionId, records));
     }
-    
-    private List<Record> readRecords(String filename, Schema schema) throws IOException {
-        ParquetRecordReader reader = new ParquetRecordReader(new Path(filename), schema);
-        List<Record> readRecords = new ArrayList<>();
-        Record record = reader.read();
-        while (null != record) {
-            readRecords.add(new Record(record));
-            record = reader.read();
+
+    private List<Record> readRecords(String filename, Schema schema) {
+        try (ParquetRecordReader reader = new ParquetRecordReader(new Path(filename), schema)) {
+            List<Record> readRecords = new ArrayList<>();
+            Record record = reader.read();
+            while (null != record) {
+                readRecords.add(new Record(record));
+                record = reader.read();
+            }
+            return readRecords;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed reading records", e);
         }
-        return readRecords;
     }
-    
+
     private void sortRecords(List<Record> records) {
-        Collections.sort(records, (record1, record2) -> {
+        records.sort((record1, record2) -> {
             int key1 = (int) record1.get("key");
             int key2 = (int) record2.get("key");
             return key1 - key2;

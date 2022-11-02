@@ -15,18 +15,24 @@
  */
 package sleeper.cdk;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
+import software.amazon.awscdk.RemovalPolicy;
+import software.amazon.awscdk.Stack;
+import software.amazon.awscdk.Tags;
 import software.amazon.awscdk.services.logs.RetentionDays;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -34,7 +40,9 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.APACH
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.AWS_LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOGGING_LEVEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.PARQUET_LOGGING_LEVEL;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ROOT_LOGGING_LEVEL;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.STACK_TAG_NAME;
 
 /**
  * Collection of utility methods related to the CDK deployment
@@ -83,8 +91,9 @@ public class Utils {
     }
 
     /**
-     *  Valid values are taken from https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html
-     *  A value of -1 represents an infinite number of days.
+     * Valid values are taken from https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html
+     * A value of -1 represents an infinite number of days.
+     *
      * @param numberOfDays number of days you want to retain the logs
      * @return The RetentionDays equivalent
      */
@@ -133,34 +142,43 @@ public class Utils {
 
     public static Stream<TableProperties> getAllTableProperties(InstanceProperties instanceProperties) {
         return instanceProperties.getList(UserDefinedInstanceProperty.TABLE_PROPERTIES).stream()
-            .map(File::new)
-            .flatMap(f -> {
-                if (!f.exists()) {
-                    throw new RuntimeException("There was a problem with the table configuration. " +
-                            f.getAbsolutePath() + " doesn't exist");
-                }
-                if (f.isDirectory()) {
-                    return Arrays.stream(f.listFiles())
-                        .map(file -> {
-                            try {
-                                return new FileInputStream(file);
-                            } catch (FileNotFoundException e) {
-                                // This should never happen
-                                throw new RuntimeException("Failed to open stream to file: " + file.getAbsolutePath());
-                            }
-                        });
-                }
-                try {
-                    return Stream.of(new FileInputStream(f));
-                } catch (FileNotFoundException e) {
-                    // this should never happen
-                    throw new RuntimeException("Failed to open stream to file: " + f.getAbsolutePath());
-                }
-            })
-            .map(fis -> {
-                TableProperties tableProperties = new TableProperties(instanceProperties);
-                tableProperties.load(fis);
-                return tableProperties;
-            });
+                .map(File::new)
+                .flatMap(Utils::processDirectory)
+                .map(f -> processFile(f, instanceProperties));
+    }
+
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
+    private static Stream<File> processDirectory(File f) {
+        if (!f.exists()) {
+            throw new RuntimeException("There was a problem with the table configuration. " +
+                    f.getAbsolutePath() + " doesn't exist");
+        }
+        if (f.isDirectory()) {
+            return Arrays.stream(Objects.requireNonNull(f.listFiles()));
+        }
+        return Stream.of(f);
+    }
+
+    private static TableProperties processFile(File file, InstanceProperties instanceProperties) {
+        try (FileInputStream fis = new FileInputStream(file)) {
+            TableProperties tableProperties = new TableProperties(instanceProperties);
+            tableProperties.load(fis);
+            return tableProperties;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to open stream to file: " + file.getAbsolutePath());
+        }
+    }
+
+    public static void addStackTagIfSet(Stack stack, InstanceProperties properties) {
+        Optional.ofNullable(properties.get(STACK_TAG_NAME))
+                .ifPresent(tagName -> Tags.of(stack).add(tagName, stack.getNode().getId()));
+    }
+
+    public static RemovalPolicy removalPolicy(InstanceProperties properties) {
+        if (Boolean.TRUE.equals(properties.getBoolean(RETAIN_INFRA_AFTER_DESTROY))) {
+            return RemovalPolicy.RETAIN;
+        } else {
+            return RemovalPolicy.DESTROY;
+        }
     }
 }

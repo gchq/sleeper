@@ -15,12 +15,6 @@
  */
 package sleeper.query.lambda;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.services.apigatewaymanagementapi.AmazonApiGatewayManagementApi;
 import com.amazonaws.services.apigatewaymanagementapi.AmazonApiGatewayManagementApiClientBuilder;
@@ -34,10 +28,8 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.google.gson.JsonParseException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -48,6 +40,13 @@ import sleeper.query.model.output.WebSocketResultsOutput;
 import sleeper.query.tracker.QueryStatusReportListener;
 import sleeper.query.tracker.WebSocketQueryStatusReportDestination;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV2WebSocketEvent, APIGatewayV2WebSocketResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketQueryProcessorLambda.class);
 
@@ -57,9 +56,9 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
 
     public WebSocketQueryProcessorLambda() throws IOException {
         this(
-            AmazonS3ClientBuilder.defaultClient(),
-            AmazonSQSClientBuilder.defaultClient(),
-            System.getenv(SystemDefinedInstanceProperty.CONFIG_BUCKET.toEnvironmentVariable())
+                AmazonS3ClientBuilder.defaultClient(),
+                AmazonSQSClientBuilder.defaultClient(),
+                System.getenv(SystemDefinedInstanceProperty.CONFIG_BUCKET.toEnvironmentVariable())
         );
     }
 
@@ -74,13 +73,13 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
 
     private void sendErrorToClient(String endpoint, String region, String connectionId, String errorMessage) {
         AmazonApiGatewayManagementApi client = AmazonApiGatewayManagementApiClientBuilder.standard()
-            .withEndpointConfiguration(new EndpointConfiguration(endpoint, region))
-            .build();
+                .withEndpointConfiguration(new EndpointConfiguration(endpoint, region))
+                .build();
 
         String data = "{\"message\":\"error\",\"error\":\"" + errorMessage + "\"}";
         PostToConnectionRequest request = new PostToConnectionRequest()
-            .withConnectionId(connectionId)
-            .withData(ByteBuffer.wrap(data.getBytes()));
+                .withConnectionId(connectionId)
+                .withData(ByteBuffer.wrap(data.getBytes(StandardCharsets.UTF_8)));
 
         client.postToConnection(request);
     }
@@ -120,11 +119,13 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
                 statusReportDestination.put(WebSocketQueryStatusReportDestination.CONNECTION_ID, event.getRequestContext().getConnectionId());
                 query.addStatusReportDestination(statusReportDestination);
 
-                if (query.getResultsPublisherConfig() == null) query.setResultsPublisherConfig(new HashMap<>());
+                if (query.getResultsPublisherConfig() == null) {
+                    query.setResultsPublisherConfig(new HashMap<>());
+                }
                 // Default to sending results back to client via WebSocket connection
                 if (
-                    query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION) == null ||
-                    query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION).equals(WebSocketResultsOutput.DESTINATION_NAME)
+                        query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION) == null ||
+                                query.getResultsPublisherConfig().get(ResultsOutputConstants.DESTINATION).equals(WebSocketResultsOutput.DESTINATION_NAME)
                 ) {
                     query.getResultsPublisherConfig().put(ResultsOutputConstants.DESTINATION, WebSocketResultsOutput.DESTINATION_NAME);
                     query.getResultsPublisherConfig().put(WebSocketResultsOutput.ENDPOINT, endpoint);

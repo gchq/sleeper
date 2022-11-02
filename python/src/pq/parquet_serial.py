@@ -136,7 +136,7 @@ class ParquetSerialiser():
         self._row_count += 1
 
 
-    def _getsize(record: Mapping[str, str]) -> int:
+    def _getsize(self, record: Mapping[str, str]) -> int:
         """
         A hacky way to estimate the size of the object.
         
@@ -164,7 +164,7 @@ class ParquetSerialiser():
         # This tends to over-estimate quite badly (especially given compression) so we have a scaling factor.
 
         if self._row_count >= self._next_row_memory_check:
-            row_sz: int = getsize(record)
+            row_sz: int = self._getsize(record)
             # This tends to massively over-estimate, so we scale down by a scaling factor
             total_predicted: int = (row_sz * self._mem_sample_duration) / 5
             self._total_memory += total_predicted

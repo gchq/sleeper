@@ -22,77 +22,172 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SchemaTest {
+
+    private static Schema.Builder equalsTestBuilder() {
+        return Schema.builder()
+                .rowKeyFields(
+                        new Field("column1", new IntType()),
+                        new Field("column2", new StringType()))
+                .sortKeyFields(
+                        new Field("column3", new IntType()))
+                .valueFields(
+                        new Field("column4", new MapType(new IntType(), new ByteArrayType())),
+                        new Field("column5", new ListType(new StringType())));
+    }
 
     @Test
     public void equalsShouldReturnCorrectResults() {
         // Given
-        Schema schema1 = new Schema();
-        schema1.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new StringType()));
-        schema1.setSortKeyFields(new Field("column3", new IntType()));
-        schema1.setValueFields(new Field("column4", new MapType(new IntType(), new ByteArrayType())),
-                new Field("column5", new ListType(new StringType())));
-        Schema schema2 = new Schema();
-        schema2.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new StringType()));
-        schema2.setSortKeyFields(new Field("column3", new IntType()));
-        schema2.setValueFields(new Field("column4", new MapType(new IntType(), new ByteArrayType())),
-                new Field("column5", new ListType(new StringType())));
-        Schema schema3 = new Schema();
-        schema3.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new StringType()));
-        schema3.setSortKeyFields(new Field("column3", new IntType()));
-        schema3.setValueFields(new Field("column4", new MapType(new IntType(), new StringType())));
+        Schema schema1 = equalsTestBuilder().build();
+        Schema schema2 = equalsTestBuilder().build();
+        Schema schema3 = equalsTestBuilder()
+                .valueFields(new Field("column4", new MapType(new IntType(), new StringType())))
+                .build();
 
         // When
         boolean test1 = schema1.equals(schema2);
         boolean test2 = schema1.equals(schema3);
 
         // Then
-        assertTrue(test1);
-        assertFalse(test2);
+        assertThat(test1).isTrue();
+        assertThat(test2).isFalse();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldntAllowMapTypeAsRowKey() {
         // Given
-        Schema schema1 = new Schema();
-        schema1.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new MapType(new IntType(), new ByteArrayType())));
+        Field allowField = new Field("column1", new IntType());
+        Field refuseField = new Field("column2", new MapType(new IntType(), new ByteArrayType()));
+        Schema.Builder builder = Schema.builder().rowKeyFields(allowField, refuseField);
 
         // When / Then
-        schema1.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new StringType()));
+        assertThatThrownBy(builder::build)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContainingAll("Row key", "type");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldntAllowMapTypeAsSortKey() {
         // Given
-        Schema schema1 = new Schema();
-        schema1.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new StringType()));
-        schema1.setSortKeyFields(new Field("column3", new MapType(new IntType(), new ByteArrayType())));
+        List<Field> rowKeyFields = Arrays.asList(
+                new Field("column1", new IntType()),
+                new Field("column2", new StringType()));
+        Field refuseField = new Field("column3", new MapType(new IntType(), new ByteArrayType()));
+        Schema.Builder builder = Schema.builder().rowKeyFields(rowKeyFields).sortKeyFields(refuseField);
 
         // When / Then
-        schema1.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new StringType()));
+        assertThatThrownBy(builder::build)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContainingAll("Sort key", "type");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldntAllowListTypeAsRowKey() {
         // Given
-        Schema schema1 = new Schema();
-        schema1.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new ListType(new IntType())));
+        Field allowField = new Field("column1", new IntType());
+        Field refuseField = new Field("column2", new ListType(new IntType()));
+        Schema.Builder builder = Schema.builder().rowKeyFields(allowField, refuseField);
 
         // When / Then
-        schema1.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new StringType()));
+        assertThatThrownBy(builder::build)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContainingAll("Row key", "type");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldntAllowListTypeAsSortKey() {
         // Given
-        Schema schema1 = new Schema();
-        schema1.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new StringType()));
-        schema1.setSortKeyFields(new Field("column3", new ListType(new IntType())));
+        List<Field> rowKeyFields = Arrays.asList(
+                new Field("column1", new IntType()),
+                new Field("column2", new StringType()));
+        Field refuseField = new Field("column3", new ListType(new IntType()));
+        Schema.Builder builder = Schema.builder().rowKeyFields(rowKeyFields).sortKeyFields(refuseField);
 
         // When / Then
-        schema1.setRowKeyFields(new Field("column1", new IntType()), new Field("column2", new StringType()));
+        assertThatThrownBy(builder::build)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContainingAll("Sort key", "type");
+    }
+
+    @Test
+    public void refuseNoKeyFields() {
+        // Given
+        Schema.Builder builder = Schema.builder()
+                .rowKeyFields()
+                .sortKeyFields(new Field("column1", new IntType()))
+                .valueFields(new Field("column2", new StringType()));
+
+        // When / Then
+        assertThatThrownBy(builder::build)
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    public void refuseNullKeyFields() {
+        // Given
+        Schema.Builder builder = Schema.builder()
+                .rowKeyFields((List<Field>) null)
+                .sortKeyFields(new Field("column1", new IntType()))
+                .valueFields(new Field("column2", new StringType()));
+
+        // When / Then
+        assertThatThrownBy(builder::build)
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    public void setNoSortKeysByDefault() {
+        // Given
+        Field rowKeyField = new Field("column1", new IntType());
+        Field valueField = new Field("column2", new StringType());
+
+        // When / Then
+        assertThat(Schema.builder()
+                .rowKeyFields(rowKeyField).valueFields(valueField)
+                .build())
+                .isEqualTo(Schema.builder()
+                        .rowKeyFields(rowKeyField).valueFields(valueField)
+                        .sortKeyFields(Collections.emptyList())
+                        .build());
+    }
+
+    @Test
+    public void setNoValueFieldsByDefault() {
+        // Given
+        Field rowKeyField = new Field("column1", new IntType());
+        Field sortKeyField = new Field("column2", new StringType());
+
+        // When / Then
+        assertThat(Schema.builder()
+                .rowKeyFields(rowKeyField).sortKeyFields(sortKeyField)
+                .build())
+                .isEqualTo(Schema.builder()
+                        .rowKeyFields(rowKeyField).sortKeyFields(sortKeyField)
+                        .valueFields(Collections.emptyList())
+                        .build());
+    }
+
+    @Test
+    public void setNoSortAndValueFieldsByDefault() {
+        // Given
+        Field rowKeyField = new Field("column1", new IntType());
+
+        // When / Then
+        assertThat(Schema.builder()
+                .rowKeyFields(rowKeyField)
+                .build())
+                .isEqualTo(Schema.builder()
+                        .rowKeyFields(rowKeyField)
+                        .sortKeyFields(Collections.emptyList())
+                        .valueFields(Collections.emptyList())
+                        .build());
     }
 }

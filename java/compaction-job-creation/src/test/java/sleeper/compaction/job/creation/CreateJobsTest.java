@@ -15,188 +15,167 @@
  */
 package sleeper.compaction.job.creation;
 
-import sleeper.compaction.job.CompactionJobSerDe;
-import sleeper.compaction.job.CompactionJob;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import com.google.common.collect.Sets;
-import org.junit.ClassRule;
 import org.junit.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
+import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.FileInfoFactory;
+import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
-import sleeper.table.job.TableCreator;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableLister;
-import sleeper.table.util.StateStoreProvider;
 
-import java.io.IOException;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+import static sleeper.compaction.job.creation.CreateJobsTestUtils.createInstanceProperties;
+import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class CreateJobsTest {
 
-    @ClassRule
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
-            LocalStackContainer.Service.S3, LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.IAM
-    );
+    private final StateStore stateStore = mock(StateStore.class);
+    private final CompactionJobStatusStore jobStatusStore = mock(CompactionJobStatusStore.class);
+    private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
 
-    private AmazonS3 createS3Client() {
-        return AmazonS3ClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .build();
-    }
+    @Test
+    public void shouldCompactAllFilesInSinglePartition() throws Exception {
+        // Given
+        Partition partition = setSinglePartition();
+        FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, Collections.singletonList(partition), Instant.now());
+        FileInfo fileInfo1 = fileInfoFactory.leafFile("file1", 200L, "a", "b");
+        FileInfo fileInfo2 = fileInfoFactory.leafFile("file2", 200L, "c", "d");
+        FileInfo fileInfo3 = fileInfoFactory.leafFile("file3", 200L, "e", "f");
+        FileInfo fileInfo4 = fileInfoFactory.leafFile("file4", 200L, "g", "h");
+        List<FileInfo> files = Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4);
+        setActiveFiles(files);
 
-    private AmazonSQS createSQSClient() {
-        return AmazonSQSClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.SQS))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .build();
-    }
+        // When
+        List<CompactionJob> jobs = createJobs();
 
-    private AmazonDynamoDB createDynamoClient() {
-        return AmazonDynamoDBClientBuilder.standard()
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
-                .build();
-    }
-
-    private Schema createSchema() {
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("key", new LongType()));
-        schema.setValueFields(new Field("value1", new LongType()), new Field("value2", new LongType()));
-        return schema;
-    }
-
-    private InstanceProperties createProperties(AmazonS3 s3) {
-        AmazonSQS sqs = createSQSClient();
-        String queue = UUID.randomUUID().toString();
-
-        String queueUrl = sqs.createQueue(queue).getQueueUrl();;
-
-        sqs.shutdown();
-
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, UUID.randomUUID().toString());
-        instanceProperties.set(CONFIG_BUCKET, UUID.randomUUID().toString());
-        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, queueUrl);
-        instanceProperties.set(FILE_SYSTEM, "");
-
-        s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
-
-        return instanceProperties;
-    }
-
-    private TableProperties createTable(AmazonS3 s3, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, String tableName, Schema schema) throws IOException {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.setSchema(schema);
-        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
-        TableCreator tableCreator = new TableCreator(s3, dynamoDB, instanceProperties);
-        tableCreator.createTable(tableProperties);
-
-        tableProperties.loadFromS3(s3, tableName);
-        return tableProperties;
+        // Then
+        assertThat(jobs).singleElement().satisfies(job -> {
+            verifySetJobForFilesInStateStore(job.getId(), files);
+            assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
+            assertThat(job.getPartitionId()).isEqualTo(partition.getId());
+            assertThat(job.isSplittingJob()).isFalse();
+            verifyJobCreationReported(job);
+        });
+        verifyOtherStateStoreCalls();
+        verifyNoMoreJobCreationReports();
     }
 
     @Test
-    public void shouldCreateJobs() throws StateStoreException, IOException, IllegalAccessException, InstantiationException, ClassNotFoundException, ObjectFactoryException {
+    public void shouldCompactFilesInDifferentPartitions() throws Exception {
         // Given
-        AmazonS3 s3 = createS3Client();
-        AmazonDynamoDB dynamoDB = createDynamoClient();
-        AmazonSQS sqsClient = createSQSClient();
-        String tableName = UUID.randomUUID().toString();
-        InstanceProperties instanceProperties = createProperties(s3);
-        TableProperties tableProperties = createTable(s3, dynamoDB, instanceProperties, tableName, createSchema());
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
-        TableLister tableLister = new TableLister(s3, instanceProperties);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, new InstanceProperties());
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        stateStore.initialise();
-        Partition partition = stateStore.getAllPartitions().get(0);
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setPartitionId(partition.getId());
-        fileInfo1.setFilename("file1");
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setNumberOfRecords(200L);
-        fileInfo1.setRowKeyTypes(new LongType());
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setPartitionId(partition.getId());
-        fileInfo2.setFilename("file2");
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setNumberOfRecords(200L);
-        fileInfo2.setRowKeyTypes(new LongType());
-        FileInfo fileInfo3 = new FileInfo();
-        fileInfo3.setPartitionId(partition.getId());
-        fileInfo3.setFilename("file3");
-        fileInfo3.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo3.setNumberOfRecords(200L);
-        fileInfo3.setRowKeyTypes(new LongType());
-        FileInfo fileInfo4 = new FileInfo();
-        fileInfo4.setPartitionId(partition.getId());
-        fileInfo4.setFilename("file4");
-        fileInfo4.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo4.setNumberOfRecords(200L);
-        fileInfo4.setRowKeyTypes(new LongType());
-        stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
-        CreateJobs createJobs = new CreateJobs(new ObjectFactory(instanceProperties, s3, null), instanceProperties, tablePropertiesProvider, stateStoreProvider, dynamoDB, sqsClient, tableLister);
+        List<Partition> partitions = new PartitionsBuilder(schema)
+                .leavesWithSplits(
+                        Arrays.asList("A", "B"),
+                        Collections.singletonList("ddd"))
+                .parentJoining("C", "A", "B")
+                .buildList();
+        setPartitions(partitions);
+        FileInfoFactory fileInfoFactory = new FileInfoFactory(schema, partitions, Instant.now());
+        FileInfo fileInfo1 = fileInfoFactory.leafFile("file1", 200L, "a", "b");
+        FileInfo fileInfo2 = fileInfoFactory.leafFile("file2", 200L, "c", "d");
+        FileInfo fileInfo3 = fileInfoFactory.leafFile("file3", 200L, "e", "f");
+        FileInfo fileInfo4 = fileInfoFactory.leafFile("file4", 200L, "g", "h");
+        setActiveFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
 
         // When
-        createJobs.createJobs();
+        List<CompactionJob> jobs = createJobs();
 
         // Then
-        assertTrue(stateStore.getActiveFilesWithNoJobId().isEmpty());
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        Set<String> jobIds = new HashSet<>();
-        for (int i = 0; i < 4; i++) {
-            String jobId = activeFiles.get(i).getJobId();
-            assertNotNull(jobId);
-            jobIds.add(jobId);
-        }
-        assertEquals(1, jobIds.size());
-        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
-                .withMaxNumberOfMessages(10);
-        ReceiveMessageResult receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
-        assertEquals(1, receiveMessageResult.getMessages().size());
-        Message message = receiveMessageResult.getMessages().get(0);
-        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
-        CompactionJob compactionJob = compactionJobSerDe.deserialiseFromString(message.getBody());
-        assertEquals(Sets.newHashSet("file1", "file2", "file3", "file4"), Sets.newHashSet(compactionJob.getInputFiles()));
-        assertEquals(partition.getId(), compactionJob.getPartitionId());
-        assertFalse(compactionJob.isSplittingJob());
+        assertThat(jobs).satisfiesExactlyInAnyOrder(job -> {
+            verifySetJobForFilesInStateStore(job.getId(), Arrays.asList(fileInfo1, fileInfo2));
+            assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2");
+            assertThat(job.getPartitionId()).isEqualTo("A");
+            assertThat(job.isSplittingJob()).isFalse();
+            verifyJobCreationReported(job);
+        }, job -> {
+            verifySetJobForFilesInStateStore(job.getId(), Arrays.asList(fileInfo3, fileInfo4));
+            assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file3", "file4");
+            assertThat(job.getPartitionId()).isEqualTo("B");
+            assertThat(job.isSplittingJob()).isFalse();
+            verifyJobCreationReported(job);
+        });
+        verifyOtherStateStoreCalls();
+        verifyNoMoreJobCreationReports();
+    }
+
+    private Partition setSinglePartition() throws Exception {
+        List<Partition> partitions = new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct();
+        setPartitions(partitions);
+        return partitions.get(0);
+    }
+
+    private void setPartitions(List<Partition> partitions) throws Exception {
+        when(stateStore.getAllPartitions()).thenReturn(partitions);
+    }
+
+    private void setActiveFiles(List<FileInfo> files) throws Exception {
+        when(stateStore.getActiveFiles()).thenReturn(files);
+    }
+
+    private void verifySetJobForFilesInStateStore(String jobId, List<FileInfo> files) throws Exception {
+        verify(stateStore).atomicallyUpdateJobStatusOfFiles(
+                eq(jobId), argThat(actualFiles -> {
+                    assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(files);
+                    return true;
+                }));
+    }
+
+    private void verifyOtherStateStoreCalls() throws Exception {
+        verify(stateStore).getAllPartitions();
+        verify(stateStore).getActiveFiles();
+        verifyNoMoreInteractions(stateStore);
+    }
+
+    private void verifyJobCreationReported(CompactionJob job) {
+        verify(jobStatusStore).jobCreated(job);
+    }
+
+    private void verifyNoMoreJobCreationReports() {
+        verifyNoMoreInteractions(jobStatusStore);
+    }
+
+    private List<CompactionJob> createJobs() throws Exception {
+
+        InstanceProperties instanceProperties = createInstanceProperties();
+        TableProperties tableProperties = createTableProperties(schema, instanceProperties);
+
+        TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
+        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties, stateStore);
+
+        TableLister tableLister = mock(TableLister.class);
+        when(tableLister.listTables()).thenReturn(Collections.singletonList(tableProperties.get(TABLE_NAME)));
+
+        List<CompactionJob> compactionJobs = new ArrayList<>();
+        CreateJobs createJobs = new CreateJobs(ObjectFactory.noUserJars(),
+                instanceProperties, tablePropertiesProvider, stateStoreProvider, compactionJobs::add,
+                tableLister, jobStatusStore);
+        createJobs.createJobs();
+        return compactionJobs;
     }
 }

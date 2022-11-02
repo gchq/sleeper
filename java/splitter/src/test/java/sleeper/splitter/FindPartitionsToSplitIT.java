@@ -30,6 +30,8 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
@@ -37,6 +39,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
+import sleeper.ingest.IngestProperties;
 import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
@@ -51,9 +54,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 
 public class FindPartitionsToSplitIT {
@@ -64,11 +65,7 @@ public class FindPartitionsToSplitIT {
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
 
-    private static final Schema SCHEMA = new Schema();
-
-    static {
-        SCHEMA.setRowKeyFields(new Field("key", new IntType()));
-    }
+    private static final Schema SCHEMA = Schema.builder().rowKeyFields(new Field("key", new IntType())).build();
 
     private AmazonDynamoDB createDynamoClient() {
         return AmazonDynamoDBClientBuilder.standard()
@@ -133,22 +130,21 @@ public class FindPartitionsToSplitIT {
             try {
                 File stagingArea = tempDir.newFolder();
                 File directory = tempDir.newFolder();
-                new IngestRecordsFromIterator(new ObjectFactory(new InstanceProperties(), null, ""),
-                        list.iterator(),
-                        stagingArea.getAbsolutePath(),
-                        0,
-                        1_000_000L,
-                        ParquetWriter.DEFAULT_BLOCK_SIZE,
-                        ParquetWriter.DEFAULT_PAGE_SIZE,
-                        "zstd",
-                        stateStore,
-                        schema,
-                        "file:///",
-                        directory.getAbsolutePath(),
-                        null,
-                        null,
-                        1_000_000
-                ).write();
+                IngestProperties properties = IngestProperties.builder()
+                        .objectFactory(new ObjectFactory(new InstanceProperties(), null, ""))
+                        .localDir(stagingArea.getAbsolutePath())
+                        .maxRecordsToWriteLocally(0L)
+                        .maxInMemoryBatchSize(1_000_000L)
+                        .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
+                        .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
+                        .compressionCodec("zstd")
+                        .stateStore(stateStore)
+                        .schema(schema)
+                        .filePathPrefix("file://")
+                        .bucketName(directory.getAbsolutePath())
+                        .ingestPartitionRefreshFrequencyInSecond(1_000_000)
+                        .build();
+                new IngestRecordsFromIterator(properties, list.iterator()).write();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -173,14 +169,14 @@ public class FindPartitionsToSplitIT {
 
         // Then
         List<Message> messages = sqsClient.receiveMessage(queue.getQueueUrl()).getMessages();
-        assertEquals(1, messages.size());
+        assertThat(messages).hasSize(1);
 
         SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
                 .fromJson(messages.get(0).getBody());
 
-        assertEquals(10, job.getFileNames().size());
-        assertEquals("test", job.getTableName());
-        assertEquals(stateStore.getAllPartitions().get(0), job.getPartition());
+        assertThat(job.getFileNames()).hasSize(10);
+        assertThat(job.getTableName()).isEqualTo("test");
+        assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
     }
 
     @Test
@@ -201,7 +197,7 @@ public class FindPartitionsToSplitIT {
 
         // Then
         List<Message> messages = sqsClient.receiveMessage(queue.getQueueUrl()).getMessages();
-        assertEquals(0, messages.size());
+        assertThat(messages).isEmpty();
     }
 
     @Test
@@ -222,14 +218,14 @@ public class FindPartitionsToSplitIT {
 
         // Then
         List<Message> messages = sqsClient.receiveMessage(queue.getQueueUrl()).getMessages();
-        assertEquals(1, messages.size());
+        assertThat(messages).hasSize(1);
 
         SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
                 .fromJson(messages.get(0).getBody());
 
-        assertEquals(5, job.getFileNames().size());
-        assertEquals("test", job.getTableName());
-        assertEquals(stateStore.getAllPartitions().get(0), job.getPartition());
+        assertThat(job.getFileNames()).hasSize(5);
+        assertThat(job.getTableName()).isEqualTo("test");
+        assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
     }
 
     @Test
@@ -250,14 +246,14 @@ public class FindPartitionsToSplitIT {
 
         // Then
         List<Message> messages = sqsClient.receiveMessage(queue.getQueueUrl()).getMessages();
-        assertEquals(1, messages.size());
+        assertThat(messages).hasSize(1);
 
         SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
                 .fromJson(messages.get(0).getBody());
 
-        assertEquals(5, job.getFileNames().size());
-        assertEquals("test", job.getTableName());
-        assertEquals(stateStore.getAllPartitions().get(0), job.getPartition());
+        assertThat(job.getFileNames()).hasSize(5);
+        assertThat(job.getTableName()).isEqualTo("test");
+        assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
 
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         Optional<Long> numberOfRecords = job.getFileNames().stream().flatMap(fileName -> activeFiles.stream()
@@ -265,23 +261,23 @@ public class FindPartitionsToSplitIT {
                 .map(FileInfo::getNumberOfRecords)).reduce(Long::sum);
 
         // 109 + 108 + 107 + 106 + 105 = 535
-        assertEquals(new Long(535), numberOfRecords.get());
+        assertThat(numberOfRecords).contains(new Long(535));
     }
-    
+
     public static class TestTablePropertiesProvider extends TablePropertiesProvider {
         private final Schema schema;
         private final long splitThreshold;
-        
+
         TestTablePropertiesProvider(Schema schema, long splitThreshold) {
             super(null, null);
             this.schema = schema;
             this.splitThreshold = splitThreshold;
         }
-        
+
         TestTablePropertiesProvider(Schema schema) {
             this(schema, 1_000_000_000L);
         }
-        
+
         @Override
         public TableProperties getTableProperties(String tableName) {
             TableProperties tableProperties = new TableProperties(new InstanceProperties());

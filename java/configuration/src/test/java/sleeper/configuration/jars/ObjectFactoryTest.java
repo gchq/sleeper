@@ -45,7 +45,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -82,7 +82,7 @@ public class ObjectFactoryTest {
     @Test
     public void shouldLoadCode() throws IOException, ObjectFactoryException {
         // Create a class implementing SortedRecordIterator
-        String sourceCode =
+        String sourceCode = "" +
                 "import sleeper.core.record.Record;\n" +
                 "import sleeper.core.schema.Schema;\n" +
                 "import sleeper.core.iterator.CloseableIterator;\n" +
@@ -120,7 +120,7 @@ public class ObjectFactoryTest {
         AmazonS3 s3Client = createS3Client();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         instanceProperties.set(USER_JARS, "iterator.jar");
-        PutObjectRequest pubObjectRequest = new PutObjectRequest(instanceProperties.get(JARS_BUCKET),"iterator.jar", new File(jarFileLocation));
+        PutObjectRequest pubObjectRequest = new PutObjectRequest(instanceProperties.get(JARS_BUCKET), "iterator.jar", new File(jarFileLocation));
         s3Client.putObject(pubObjectRequest);
         // Delete local class file
         Files.delete(new File("MyIterator.class").toPath());
@@ -128,7 +128,7 @@ public class ObjectFactoryTest {
         ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, folder.newFolder().getPath());
         SortedRecordIterator sri = objectFactory.getObject("MyIterator", SortedRecordIterator.class);
 
-        assertEquals("MyIterator", sri.toString());
+        assertThat(sri).hasToString("MyIterator");
     }
 
     public static class MySimpleJavaFileObject extends SimpleJavaFileObject {

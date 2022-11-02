@@ -24,8 +24,8 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.SystemTestProperties;
-import sleeper.table.util.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
@@ -37,6 +37,9 @@ import static sleeper.systemtest.SystemTestProperty.INGEST_MODE;
  * the properties which were written to S3.
  */
 public class IngestRandomData {
+
+    private IngestRandomData() {
+    }
 
     public static void main(String[] args) throws IOException, ObjectFactoryException {
         if (args.length != 2) {

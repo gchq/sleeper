@@ -37,7 +37,7 @@ public class RecordReadSupport extends ReadSupport<Record> {
             Map<String, String> keyValueMetaData,
             MessageType fileSchema,
             ReadContext readContext) {
-        return new RecordMaterializer(schema);
+        return new SleeperRecordMaterializer(schema);
     }
 
     @Override

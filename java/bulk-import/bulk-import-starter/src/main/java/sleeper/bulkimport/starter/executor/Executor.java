@@ -17,30 +17,30 @@ package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.bulkimport.job.BulkImportJobSerDe;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.bulkimport.job.BulkImportJobSerDe;
-import sleeper.configuration.properties.InstanceProperties;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperty;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_CLASS_NAME;
 
 public abstract class Executor {
     private static final Logger LOGGER = LoggerFactory.getLogger(Executor.class);
     private static final Predicate<String> LOWER_ALPHANUMERICS_AND_DASHES = Pattern.compile("^[a-z0-9-]+$").asPredicate();
-    protected static final String DEFAULT_CLASS = "sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeRunner";
 
     protected final InstanceProperties instanceProperties;
-    private final TablePropertiesProvider tablePropertiesProvider;
-    private final AmazonS3 s3Client;
+    protected final TablePropertiesProvider tablePropertiesProvider;
+    protected final AmazonS3 s3Client;
 
     public Executor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AmazonS3 amazonS3Client) {
         this.instanceProperties = instanceProperties;
@@ -55,50 +55,35 @@ public abstract class Executor {
         }
         LOGGER.info("Validating job: {}", bulkImportJob);
         validateJob(bulkImportJob);
-        LOGGER.info("Submitting job");
+        LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
+        writeJobToJSONFile(bulkImportJob);
+        LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
         runJobOnPlatform(bulkImportJob);
         LOGGER.info("Successfully submitted job");
     }
 
     protected abstract void runJobOnPlatform(BulkImportJob bulkImportJob);
 
-    protected abstract Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties);
-
     protected abstract String getJarLocation();
 
-    public InstanceProperties getInstanceProperties() {
-        return instanceProperties;
-    }
-
     protected List<String> constructArgs(BulkImportJob bulkImportJob) {
-        Map<String, String> config = getDefaultSparkConfig(bulkImportJob, bulkImportJob.getPlatformSpec(), tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName()));
         Map<String, String> userConfig = bulkImportJob.getSparkConf();
-        if (null != userConfig) {
-            config.putAll(userConfig);
-        }
-        LOGGER.info("Using Spark config {}", config);
+        LOGGER.info("Using Spark config {}", userConfig);
 
-        String className = bulkImportJob.getClassName() != null ? bulkImportJob.getClassName() : DEFAULT_CLASS;
+        String className = bulkImportJob.getClassName() != null ? bulkImportJob.getClassName() : instanceProperties.get(BULK_IMPORT_CLASS_NAME);
 
         List<String> args = Lists.newArrayList("spark-submit", "--deploy-mode", "cluster", "--class", className);
 
-        for (Map.Entry<String, String> configurationItem : config.entrySet()) {
-            args.add("--conf");
-            args.add(configurationItem.getKey() + "=" + configurationItem.getValue());
+        if (null != userConfig) {
+            for (Map.Entry<String, String> configurationItem : userConfig.entrySet()) {
+                args.add("--conf");
+                args.add(configurationItem.getKey() + "=" + configurationItem.getValue());
+            }
         }
 
         args.add(getJarLocation());
-        args.add(new BulkImportJobSerDe().toJson(bulkImportJob));
-        args.add(instanceProperties.get(CONFIG_BUCKET));
 
         return args;
-    }
-
-    protected String getFromPlatformSpec(TableProperty tableProperty, Map<String, String> platformSpec, TableProperties tableProperties) {
-        if (null == platformSpec) {
-            return tableProperties.get(tableProperty);
-        }
-        return platformSpec.getOrDefault(tableProperty.getPropertyName(), tableProperties.get(tableProperty));
     }
 
     private void validateJob(BulkImportJob bulkImportJob) {
@@ -127,7 +112,7 @@ public abstract class Executor {
             failedChecks.add("The input files must be set to a non-null and non-empty value.");
         }
 
-        if (failedChecks.size() > 0) {
+        if (!failedChecks.isEmpty()) {
             String errorMessage = "The bulk import job failed validation with the following checks failing: \n"
                     + String.join("\n", failedChecks);
 
@@ -144,5 +129,16 @@ public abstract class Executor {
             LOGGER.warn("Could not find properties for table");
         }
         return false;
+    }
+
+    private void writeJobToJSONFile(BulkImportJob bulkImportJob) {
+        String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
+        if (null == bulkImportBucket) {
+            throw new RuntimeException("sleeper.bulk.import.bucket was not set. Has one of the bulk import stacks been deployed?");
+        }
+        String key = "bulk_import/" + bulkImportJob.getId() + ".json";
+        String bulkImportJobJSON = new BulkImportJobSerDe().toJson(bulkImportJob);
+        s3Client.putObject(bulkImportBucket, key, bulkImportJobJSON);
+        LOGGER.info("Put object for job {} to key {} in bucket {}", bulkImportJob.getId(), key, bulkImportBucket);
     }
 }

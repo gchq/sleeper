@@ -17,13 +17,14 @@ package sleeper.cdk.stack;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
-import software.constructs.Construct;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.athena.CfnDataCatalog;
+import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.Policy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.kms.Key;
@@ -36,9 +37,12 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.s3.LifecycleRule;
+import software.constructs.Construct;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -50,9 +54,10 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPILL_BUCKET_AGE_OFF_IN_DAYS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.USER_JARS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.USER_JARS;;
 
+@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AthenaStack extends NestedStack {
     public AthenaStack(Construct scope, String id, InstanceProperties instanceProperties,
                        List<StateStoreStack> stateStoreStacks, List<IBucket> dataBuckets) {
@@ -65,11 +70,11 @@ public class AthenaStack extends NestedStack {
         List<String> userJars = instanceProperties.getList(USER_JARS);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jarsBucketName);
         S3Code s3Code = Code.fromBucket(jarsBucket, "athena-" + version + ".jar");
-        
+
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
         String bucketName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceProperties.get(ID).toLowerCase(), "spill-bucket"));
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "spill-bucket"));
 
         Bucket spillBucket = Bucket.Builder.create(this, "SpillBucket")
                 .bucketName(bucketName)
@@ -138,16 +143,20 @@ public class AthenaStack extends NestedStack {
             spillBucket.grantReadWrite(handler);
             spillMasterKey.grant(handler, "kms:GenerateDataKey", "kms:DescribeKey");
 
+            IRole role = Objects.requireNonNull(handler.getRole());
             // Required for when spill bucket changes
-            handler.getRole().attachInlinePolicy(listAllBucketsPolicy);
+            role.attachInlinePolicy(listAllBucketsPolicy);
 
             // Required for when creating a encryption data key
-            handler.getRole().attachInlinePolicy(keyGenerationPolicy);
+            role.attachInlinePolicy(keyGenerationPolicy);
 
             // Allow our function to get the status of the query. Allowed to query all workgroups within this account
             // and region
-            handler.getRole().attachInlinePolicy(getAthenaQueryStatusPolicy);
+            role.attachInlinePolicy(getAthenaQueryStatusPolicy);
+
         }
+
+        Utils.addStackTagIfSet(this, instanceProperties);
     }
 
     private Function createConnector(String className, String instanceId, int logRetentionDays, S3Code s3Code, Map<String, String> env, Integer memory, Integer timeout) {
@@ -157,7 +166,7 @@ public class AthenaStack extends NestedStack {
         }
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                instanceId.toLowerCase(), simpleClassName, "athena-composite-handler"));
+                instanceId.toLowerCase(Locale.ROOT), simpleClassName, "athena-composite-handler"));
 
         Function athenaCompositeHandler = Function.Builder.create(this, simpleClassName + "AthenaCompositeHandler")
                 .functionName(functionName)

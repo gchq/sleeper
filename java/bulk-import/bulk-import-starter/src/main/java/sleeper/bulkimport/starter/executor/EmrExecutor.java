@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2022 Crown Copyright
  *
@@ -17,29 +16,49 @@
 package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.model.*;
+import com.amazonaws.services.elasticmapreduce.model.Application;
+import com.amazonaws.services.elasticmapreduce.model.ComputeLimits;
+import com.amazonaws.services.elasticmapreduce.model.ComputeLimitsUnitType;
+import com.amazonaws.services.elasticmapreduce.model.Configuration;
+import com.amazonaws.services.elasticmapreduce.model.HadoopJarStepConfig;
+import com.amazonaws.services.elasticmapreduce.model.InstanceGroupConfig;
+import com.amazonaws.services.elasticmapreduce.model.InstanceRoleType;
+import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
+import com.amazonaws.services.elasticmapreduce.model.ManagedScalingPolicy;
+import com.amazonaws.services.elasticmapreduce.model.MarketType;
+import com.amazonaws.services.elasticmapreduce.model.RunJobFlowRequest;
+import com.amazonaws.services.elasticmapreduce.model.RunJobFlowResult;
+import com.amazonaws.services.elasticmapreduce.model.ScaleDownBehavior;
+import com.amazonaws.services.elasticmapreduce.model.StepConfig;
+import com.amazonaws.services.elasticmapreduce.model.Tag;
 import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.Lists;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sleeper.bulkimport.configuration.ConfigurationUtils;
 import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+
 /**
  * An {@link Executor} which runs a bulk import job on an EMR cluster.
  */
-public class EmrExecutor extends Executor {
+public class EmrExecutor extends AbstractEmrExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmrExecutor.class);
 
     private final TablePropertiesProvider tablePropertiesProvider;
@@ -57,9 +76,8 @@ public class EmrExecutor extends Executor {
     @Override
     public void runJobOnPlatform(BulkImportJob bulkImportJob) {
         Map<String, String> platformSpec = bulkImportJob.getPlatformSpec();
-        InstanceProperties instanceProperties = getInstanceProperties();
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName());
-        String bulkImportBucket = instanceProperties.get(UserDefinedInstanceProperty.BULK_IMPORT_EMR_BUCKET);
+        String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         String logUri = null == bulkImportBucket ? null : "s3://" + bulkImportBucket + "/logs";
 
         Integer maxNumberOfExecutors = Integer.max(
@@ -74,15 +92,12 @@ public class EmrExecutor extends Executor {
         if (clusterName.length() > 64) {
             clusterName = clusterName.substring(0, 64);
         }
-        
+
         RunJobFlowResult response = emrClient.runJobFlow(new RunJobFlowRequest()
                 .withName(clusterName)
-                .withInstances(createConfig(bulkImportJob, tableProperties))
+                .withInstances(createJobFlowInstancesConfig(bulkImportJob, tableProperties))
                 .withVisibleToAllUsers(true)
                 .withSecurityConfiguration(instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME))
-                .withConfigurations(new Configuration()
-                        .withClassification("spark")
-                        .addPropertiesEntry("maximizeResourceAllocation", "true"))
                 .withManagedScalingPolicy(new ManagedScalingPolicy()
                         .withComputeLimits(new ComputeLimits()
                                 .withUnitType(ComputeLimitsUnitType.Instances)
@@ -95,6 +110,7 @@ public class EmrExecutor extends Executor {
                 .withLogUri(logUri)
                 .withServiceRole(instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME))
                 .withJobFlowRole(instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME))
+                .withConfigurations(getConfigurations())
                 .withSteps(new StepConfig()
                         .withName("Bulk Load")
                         .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar").withArgs(constructArgs(bulkImportJob))))
@@ -105,16 +121,16 @@ public class EmrExecutor extends Executor {
         LOGGER.info("Cluster created with ARN " + response.getClusterArn());
     }
 
-    private JobFlowInstancesConfig createConfig(BulkImportJob bulkImportJob, TableProperties tableProperties) {
+    private JobFlowInstancesConfig createJobFlowInstancesConfig(BulkImportJob bulkImportJob, TableProperties tableProperties) {
         JobFlowInstancesConfig config = new JobFlowInstancesConfig()
-                .withEc2SubnetId(getInstanceProperties().get(UserDefinedInstanceProperty.SUBNET));
+                .withEc2SubnetId(instanceProperties.get(UserDefinedInstanceProperty.SUBNET));
 
         Map<String, String> platformSpec = bulkImportJob.getPlatformSpec();
         String driverInstanceType = getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE, platformSpec, tableProperties);
         String executorInstanceType = getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE, platformSpec, tableProperties);
         Integer initialNumberOfExecutors = Integer.parseInt(getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS, platformSpec, tableProperties));
 
-        String marketTypeOfExecutors =  getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, platformSpec, tableProperties);
+        String marketTypeOfExecutors = getFromPlatformSpec(TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, platformSpec, tableProperties);
         if (marketTypeOfExecutors == null) {
             marketTypeOfExecutors = "SPOT";
         }
@@ -133,38 +149,62 @@ public class EmrExecutor extends Executor {
                         .withInstanceCount(1)
         ));
 
-        String keyName = getInstanceProperties().get(UserDefinedInstanceProperty.BULK_IMPORT_EC2_KEY_NAME);
-        if (null != keyName) {
-            config.setEc2KeyName(keyName);
+        String ec2KeyName = instanceProperties.get(BULK_IMPORT_EMR_EC2_KEYPAIR_NAME);
+        if (null != ec2KeyName && !ec2KeyName.isEmpty()) {
+            config.setEc2KeyName(ec2KeyName);
+        }
+        String additionalSecurityGroup = instanceProperties.get(BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP);
+        if (null != additionalSecurityGroup && !additionalSecurityGroup.isEmpty()) {
+            config.setAdditionalMasterSecurityGroups(Collections.singletonList(additionalSecurityGroup));
         }
 
         return config;
     }
 
-    @Override
-    protected Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties) {
-        Map<String, String> defaultConfig = new HashMap<>();
-        defaultConfig.put("spark.shuffle.mapStatus.compression.codec", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC, platformSpec, tableProperties));
-        defaultConfig.put("spark.speculation", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SPECULATION, platformSpec, tableProperties));
-        defaultConfig.put("spark.speculation.quantile", getFromPlatformSpec(TableProperty.BULK_IMPORT_SPARK_SPECULATION_QUANTILE, platformSpec, tableProperties));
-        defaultConfig.put("spark.hadoop.fs.s3a.connection.maximum", getInstanceProperties().get(UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3));
-        return defaultConfig;
+    private List<Configuration> getConfigurations() {
+        List<Configuration> configurations = new ArrayList<>();
+
+        Map<String, String> emrSparkProps = ConfigurationUtils.getSparkEMRConfiguration();
+        Configuration emrConfiguration = new Configuration()
+                .withClassification("spark")
+                .withProperties(emrSparkProps);
+        configurations.add(emrConfiguration);
+
+        Map<String, String> yarnConf = ConfigurationUtils.getYarnConfiguration();
+        Configuration yarnConfiguration = new Configuration()
+                .withClassification("yarn-site")
+                .withProperties(yarnConf);
+        configurations.add(yarnConfiguration);
+
+        Map<String, String> sparkConf = ConfigurationUtils.getSparkConfigurationFromInstanceProperties(instanceProperties);
+        Configuration sparkDefaultsConfigurations = new Configuration()
+                .withClassification("spark-defaults")
+                .withProperties(sparkConf);
+        configurations.add(sparkDefaultsConfigurations);
+
+        Map<String, String> mapReduceSiteConf = ConfigurationUtils.getMapRedSiteConfiguration();
+        Configuration mapRedSiteConfigurations = new Configuration()
+                .withClassification("mapred-site")
+                .withProperties(mapReduceSiteConf);
+        configurations.add(mapRedSiteConfigurations);
+
+        Map<String, String> javaHomeConf = ConfigurationUtils.getJavaHomeConfiguration();
+
+        Configuration hadoopEnvExportConfigurations = new Configuration()
+                .withClassification("export")
+                .withProperties(javaHomeConf);
+        Configuration hadoopEnvConfigurations = new Configuration()
+                .withClassification("hadoop-env")
+                .withConfigurations(hadoopEnvExportConfigurations);
+        configurations.add(hadoopEnvConfigurations);
+
+        return configurations;
     }
 
-    @Override
-    protected List<String> constructArgs(BulkImportJob bulkImportJob) {
-        List<String> args = super.constructArgs(bulkImportJob);
-        // EMR doesn't seem to handle json very well - it cuts off the final "}}" characters. However
-        // Pretty printing it seems to force it to quote the job and handle it properly
-        args.set(args.size() - 2, new BulkImportJobSerDe().toPrettyJson(bulkImportJob));
-        return args;
-    }
-
-    @Override
-    protected String getJarLocation() {
-        return "s3a://"
-                + getInstanceProperties().get(UserDefinedInstanceProperty.JARS_BUCKET)
-                + "/bulk-import-runner-"
-                + getInstanceProperties().get(UserDefinedInstanceProperty.VERSION) + ".jar";
+    protected String getFromPlatformSpec(TableProperty tableProperty, Map<String, String> platformSpec, TableProperties tableProperties) {
+        if (null == platformSpec) {
+            return tableProperties.get(tableProperty);
+        }
+        return platformSpec.getOrDefault(tableProperty.getPropertyName(), tableProperties.get(tableProperty));
     }
 }

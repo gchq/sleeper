@@ -15,10 +15,6 @@
  */
 package sleeper.splitter;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
@@ -34,38 +30,46 @@ import sleeper.core.schema.type.StringType;
 import sleeper.splitter.FindPartitionsToSplitIT.TestTablePropertiesProvider;
 import sleeper.statestore.FileInfo;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 public class SplitPartitionJobDefinitionSerDeTest {
 
     @Test
     public void shouldSerialiseAndDeserialiseWithIntKey() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new IntType());
-        schema.setRowKeyFields(field);
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new IntType());
-        partition.setId("123");
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(new ArrayList<>());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Range range = new RangeFactory(schema).createRange(field, 1, 10);
-        partition.setRegion(new Region(range));
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new IntType());
-        fileInfo1.setFilename("f1");
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setMinRowKey(Key.create(1));
-        fileInfo1.setMaxRowKey(Key.create(2));
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setPartitionId("123");
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new IntType());
-        fileInfo2.setFilename("f2");
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setMinRowKey(Key.create(1));
-        fileInfo2.setMaxRowKey(Key.create(10));
-        fileInfo2.setNumberOfRecords(1000L);
-        fileInfo2.setPartitionId("123");
+        Partition partition = Partition.builder()
+                .rowKeyTypes(new IntType())
+                .id("123")
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .region(new Region(range))
+                .build();
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new IntType())
+                .filename("f1")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(2))
+                .numberOfRecords(100L)
+                .partitionId("123")
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new IntType())
+                .filename("f2")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .minRowKey(Key.create(1))
+                .maxRowKey(Key.create(10))
+                .numberOfRecords(1000L)
+                .partitionId("123")
+                .build();
         List<String> fileNames = new ArrayList<>();
         fileNames.add(fileInfo1.getFilename());
         fileNames.add(fileInfo2.getFilename());
@@ -77,39 +81,41 @@ public class SplitPartitionJobDefinitionSerDeTest {
         SplitPartitionJobDefinition deserialised = jobDefinitionSerDe.fromJson(serialised);
 
         // Then
-        assertEquals(jobDefinition, deserialised);
+        assertThat(deserialised).isEqualTo(jobDefinition);
     }
 
     @Test
     public void shouldSerialiseAndDeserialiseWithLongKey() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new LongType());
-        schema.setRowKeyFields(field);
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new LongType());
-        partition.setId("123");
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(new ArrayList<>());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Range range = new RangeFactory(schema).createRange(field, 1L, 10L);
-        partition.setRegion(new Region(range));
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new LongType());
-        fileInfo1.setFilename("f1");
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setMinRowKey(Key.create(1L));
-        fileInfo1.setMaxRowKey(Key.create(2L));
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setPartitionId("123");
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new LongType());
-        fileInfo2.setFilename("f2");
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setMinRowKey(Key.create(1L));
-        fileInfo2.setMaxRowKey(Key.create(10L));
-        fileInfo2.setNumberOfRecords(1000L);
-        fileInfo2.setPartitionId("123");
+        Partition partition = Partition.builder()
+                .rowKeyTypes(new LongType())
+                .id("123")
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .region(new Region(range))
+                .build();
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("f1")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(2L))
+                .numberOfRecords(100L)
+                .partitionId("123")
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename("f2")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .minRowKey(Key.create(1L))
+                .maxRowKey(Key.create(10L))
+                .numberOfRecords(1000L)
+                .partitionId("123")
+                .build();
         List<String> fileNames = new ArrayList<>();
         fileNames.add(fileInfo1.getFilename());
         fileNames.add(fileInfo2.getFilename());
@@ -121,39 +127,41 @@ public class SplitPartitionJobDefinitionSerDeTest {
         SplitPartitionJobDefinition deserialised = jobDefinitionSerDe.fromJson(serialised);
 
         // Then
-        assertEquals(jobDefinition, deserialised);
+        assertThat(deserialised).isEqualTo(jobDefinition);
     }
 
     @Test
     public void shouldSerialiseAndDeserialiseWithStringKey() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new StringType());
-        partition.setId("123");
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(new ArrayList<>());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Range range = new RangeFactory(schema).createRange(field, "A", "Z");
-        partition.setRegion(new Region(range));
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new StringType());
-        fileInfo1.setFilename("f1");
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setMinRowKey(Key.create("A"));
-        fileInfo1.setMaxRowKey(Key.create("Z"));
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setPartitionId("123");
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new StringType());
-        fileInfo2.setFilename("f2");
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setMinRowKey(Key.create("A"));
-        fileInfo2.setMaxRowKey(Key.create("Z"));
-        fileInfo2.setNumberOfRecords(1000L);
-        fileInfo2.setPartitionId("123");
+        Partition partition = Partition.builder()
+                .rowKeyTypes(new StringType())
+                .id("123")
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .region(new Region(range))
+                .build();
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new StringType())
+                .filename("f1")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .minRowKey(Key.create("A"))
+                .maxRowKey(Key.create("Z"))
+                .numberOfRecords(100L)
+                .partitionId("123")
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new StringType())
+                .filename("f2")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .minRowKey(Key.create("A"))
+                .maxRowKey(Key.create("Z"))
+                .numberOfRecords(1000L)
+                .partitionId("123")
+                .build();
         List<String> fileNames = new ArrayList<>();
         fileNames.add(fileInfo1.getFilename());
         fileNames.add(fileInfo2.getFilename());
@@ -165,39 +173,41 @@ public class SplitPartitionJobDefinitionSerDeTest {
         SplitPartitionJobDefinition deserialised = jobDefinitionSerDe.fromJson(serialised);
 
         // Then
-        assertEquals(jobDefinition, deserialised);
+        assertThat(deserialised).isEqualTo(jobDefinition);
     }
 
     @Test
     public void shouldSerialiseAndDeserialiseWithStringKeyWithNullMax() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new StringType());
-        schema.setRowKeyFields(field);
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new StringType());
-        partition.setId("123");
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(new ArrayList<>());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Range range = new RangeFactory(schema).createRange(field, "", null);
-        partition.setRegion(new Region(range));
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new StringType());
-        fileInfo1.setFilename("f1");
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setMinRowKey(Key.create("A"));
-        fileInfo1.setMaxRowKey(Key.create("Z"));
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setPartitionId("123");
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new StringType());
-        fileInfo2.setFilename("f2");
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setMinRowKey(Key.create("A"));
-        fileInfo2.setMaxRowKey(Key.create("Z"));
-        fileInfo2.setNumberOfRecords(1000L);
-        fileInfo2.setPartitionId("123");
+        Partition partition = Partition.builder()
+                .rowKeyTypes(new StringType())
+                .id("123")
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .region(new Region(range))
+                .build();
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new StringType())
+                .filename("f1")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .minRowKey(Key.create("A"))
+                .maxRowKey(Key.create("Z"))
+                .numberOfRecords(100L)
+                .partitionId("123")
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new StringType())
+                .filename("f2")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .minRowKey(Key.create("A"))
+                .maxRowKey(Key.create("Z"))
+                .numberOfRecords(1000L)
+                .partitionId("123")
+                .build();
         List<String> fileNames = new ArrayList<>();
         fileNames.add(fileInfo1.getFilename());
         fileNames.add(fileInfo2.getFilename());
@@ -209,39 +219,41 @@ public class SplitPartitionJobDefinitionSerDeTest {
         SplitPartitionJobDefinition deserialised = jobDefinitionSerDe.fromJson(serialised);
 
         // Then
-        assertEquals(jobDefinition, deserialised);
+        assertThat(deserialised).isEqualTo(jobDefinition);
     }
 
     @Test
     public void shouldSerialiseAndDeserialiseWithByteArrayKey() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new ByteArrayType());
-        partition.setId("123");
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(new ArrayList<>());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Range range = new RangeFactory(schema).createRange(field, new byte[]{}, new byte[]{64, 64});
-        partition.setRegion(new Region(range));
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new ByteArrayType());
-        fileInfo1.setFilename("f1");
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setMinRowKey(Key.create(new byte[]{}));
-        fileInfo1.setMaxRowKey(Key.create(new byte[]{64, 64}));
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setPartitionId("123");
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new ByteArrayType());
-        fileInfo2.setFilename("f2");
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setMinRowKey(Key.create(new byte[]{}));
-        fileInfo2.setMaxRowKey(Key.create(new byte[]{64, 64}));
-        fileInfo2.setNumberOfRecords(1000L);
-        fileInfo2.setPartitionId("123");
+        Partition partition = Partition.builder()
+                .rowKeyTypes(new ByteArrayType())
+                .id("123")
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .region(new Region(range))
+                .build();
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new ByteArrayType())
+                .filename("f1")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .minRowKey(Key.create(new byte[]{}))
+                .maxRowKey(Key.create(new byte[]{64, 64}))
+                .numberOfRecords(100L)
+                .partitionId("123")
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new ByteArrayType())
+                .filename("f2")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .minRowKey(Key.create(new byte[]{}))
+                .maxRowKey(Key.create(new byte[]{64, 64}))
+                .numberOfRecords(1000L)
+                .partitionId("123")
+                .build();
         List<String> fileNames = new ArrayList<>();
         fileNames.add(fileInfo1.getFilename());
         fileNames.add(fileInfo2.getFilename());
@@ -253,39 +265,41 @@ public class SplitPartitionJobDefinitionSerDeTest {
         SplitPartitionJobDefinition deserialised = jobDefinitionSerDe.fromJson(serialised);
 
         // Then
-        assertEquals(jobDefinition, deserialised);
+        assertThat(deserialised).isEqualTo(jobDefinition);
     }
 
     @Test
     public void shouldSerialiseAndDeserialiseWithByteArrayKeyWithNullMax() throws IOException {
         // Given
-        Schema schema = new Schema();
         Field field = new Field("key", new ByteArrayType());
-        schema.setRowKeyFields(field);
-        Partition partition = new Partition();
-        partition.setRowKeyTypes(new ByteArrayType());
-        partition.setId("123");
-        partition.setLeafPartition(true);
-        partition.setParentPartitionId(null);
-        partition.setChildPartitionIds(new ArrayList<>());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
         Range range = new RangeFactory(schema).createRange(field, new byte[]{}, null);
-        partition.setRegion(new Region(range));
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setRowKeyTypes(new ByteArrayType());
-        fileInfo1.setFilename("f1");
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setMinRowKey(Key.create(new byte[]{}));
-        fileInfo1.setMaxRowKey(Key.create(new byte[]{64, 64}));
-        fileInfo1.setNumberOfRecords(100L);
-        fileInfo1.setPartitionId("123");
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setRowKeyTypes(new ByteArrayType());
-        fileInfo2.setFilename("f2");
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setMinRowKey(Key.create(new byte[]{}));
-        fileInfo2.setMaxRowKey(Key.create(new byte[]{64, 64}));
-        fileInfo2.setNumberOfRecords(1000L);
-        fileInfo2.setPartitionId("123");
+        Partition partition = Partition.builder()
+                .rowKeyTypes(new ByteArrayType())
+                .id("123")
+                .leafPartition(true)
+                .parentPartitionId(null)
+                .childPartitionIds(new ArrayList<>())
+                .region(new Region(range))
+                .build();
+        FileInfo fileInfo1 = FileInfo.builder()
+                .rowKeyTypes(new ByteArrayType())
+                .filename("f1")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .minRowKey(Key.create(new byte[]{}))
+                .maxRowKey(Key.create(new byte[]{64, 64}))
+                .numberOfRecords(100L)
+                .partitionId("123")
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .rowKeyTypes(new ByteArrayType())
+                .filename("f2")
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .minRowKey(Key.create(new byte[]{}))
+                .maxRowKey(Key.create(new byte[]{64, 64}))
+                .numberOfRecords(1000L)
+                .partitionId("123")
+                .build();
         List<String> fileInfos = new ArrayList<>();
         fileInfos.add(fileInfo1.getFilename());
         fileInfos.add(fileInfo2.getFilename());
@@ -297,6 +311,6 @@ public class SplitPartitionJobDefinitionSerDeTest {
         SplitPartitionJobDefinition deserialised = jobDefinitionSerDe.fromJson(serialised);
 
         // Then
-        assertEquals(jobDefinition, deserialised);
+        assertThat(deserialised).isEqualTo(jobDefinition);
     }
 }

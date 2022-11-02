@@ -17,7 +17,11 @@ package sleeper.ingest.impl;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import sleeper.configuration.jars.ObjectFactory;
@@ -28,6 +32,7 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.key.Key;
 import sleeper.core.record.Record;
 import sleeper.core.schema.type.LongType;
+import sleeper.ingest.IngestProperties;
 import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.PartitionedTableCreator;
 import sleeper.ingest.testutils.RecordGenerator;
@@ -119,21 +124,21 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrayListIT {
                 keyAndDimensionToSplitOnInOrder);
         String objectFactoryLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
         String ingestLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
-        IngestCoordinator<Record> ingestCoordinator = StandardIngestCoordinator.directWriteBackedByArrayList(
-                new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory),
-                stateStore,
-                recordListAndSchema.sleeperSchema,
-                ingestLocalWorkingDirectory,
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "zstd",
-                AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
-                null,
-                null,
-                Integer.MAX_VALUE,
-                "s3a://" + DATA_BUCKET_NAME,
-                maxNoOfRecordsInMemory,
-                maxNoOfRecordsInLocalStore);
+        IngestProperties properties = IngestProperties.builder()
+                .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
+                .stateStore(stateStore)
+                .schema(recordListAndSchema.sleeperSchema)
+                .localDir(ingestLocalWorkingDirectory)
+                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
+                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
+                .compressionCodec("zstd")
+                .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
+                .ingestPartitionRefreshFrequencyInSecond(Integer.MAX_VALUE)
+                .filePathPrefix("s3a://" + DATA_BUCKET_NAME)
+                .maxInMemoryBatchSize(maxNoOfRecordsInMemory)
+                .maxRecordsToWriteLocally(maxNoOfRecordsInLocalStore)
+                .build();
+        IngestCoordinator<Record> ingestCoordinator = StandardIngestCoordinator.directWriteBackedByArrayList(properties);
 
         try {
             for (Record record : recordListAndSchema.recordList) {

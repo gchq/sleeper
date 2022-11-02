@@ -17,55 +17,58 @@ package sleeper.statestore;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class FileInfoTest {
 
     @Test
     public void testSettersAndGetters() {
         // Given
-        FileInfo fileInfo = new FileInfo();
-        fileInfo.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo.setPartitionId("0");
-        fileInfo.setFilename("abc");
-        fileInfo.setJobId("Job1");
-        fileInfo.setLastStateStoreUpdateTime(1_000_000L);
+        FileInfo fileInfo = FileInfo.builder()
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("0")
+                .filename("abc")
+                .jobId("Job1")
+                .lastStateStoreUpdateTime(1_000_000L)
+                .build();
 
         // When / Then
-        assertEquals(FileInfo.FileStatus.ACTIVE, fileInfo.getFileStatus());
-        assertEquals("0", fileInfo.getPartitionId());
-        assertEquals("abc", fileInfo.getFilename());
-        assertEquals("Job1", fileInfo.getJobId());
-        assertEquals(1_000_000L, fileInfo.getLastStateStoreUpdateTime().longValue());
+        assertThat(fileInfo.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
+        assertThat(fileInfo.getPartitionId()).isEqualTo("0");
+        assertThat(fileInfo.getFilename()).isEqualTo("abc");
+        assertThat(fileInfo.getJobId()).isEqualTo("Job1");
+        assertThat(fileInfo.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
     }
 
     @Test
     public void testEqualsAndHashCode() {
         // Given
-        FileInfo fileInfo1 = new FileInfo();
-        fileInfo1.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo1.setPartitionId("0");
-        fileInfo1.setFilename("abc");
-        fileInfo1.setJobId("Job1");
-        fileInfo1.setLastStateStoreUpdateTime(1_000_000L);
-        FileInfo fileInfo2 = new FileInfo();
-        fileInfo2.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo2.setPartitionId("0");
-        fileInfo2.setFilename("abc");
-        fileInfo2.setJobId("Job1");
-        fileInfo2.setLastStateStoreUpdateTime(1_000_000L);
-        FileInfo fileInfo3 = new FileInfo();
-        fileInfo3.setFileStatus(FileInfo.FileStatus.ACTIVE);
-        fileInfo3.setPartitionId("0");
-        fileInfo3.setFilename("abc");
-        fileInfo3.setJobId("Job3");
-        fileInfo3.setLastStateStoreUpdateTime(2_000_000L);
+        FileInfo fileInfo1 = FileInfo.builder()
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("0")
+                .filename("abc")
+                .jobId("Job1")
+                .lastStateStoreUpdateTime(1_000_000L)
+                .build();
+        FileInfo fileInfo2 = FileInfo.builder()
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("0")
+                .filename("abc")
+                .jobId("Job1")
+                .lastStateStoreUpdateTime(1_000_000L)
+                .build();
+        FileInfo fileInfo3 = FileInfo.builder()
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("0")
+                .filename("abc")
+                .jobId("Job3")
+                .lastStateStoreUpdateTime(2_000_000L)
+                .build();
 
         // When / Then
-        assertEquals(fileInfo1, fileInfo2);
-        assertEquals(fileInfo1.hashCode(), fileInfo2.hashCode());
-        assertNotEquals(fileInfo1, fileInfo3);
-        assertNotEquals(fileInfo1.hashCode(), fileInfo3.hashCode());
+        assertThat(fileInfo2).isEqualTo(fileInfo1)
+                .hasSameHashCodeAs(fileInfo1);
+        assertThat(fileInfo3).isNotEqualTo(fileInfo1);
+        assertThat(fileInfo3.hashCode()).isNotEqualTo(fileInfo1.hashCode());
     }
 }

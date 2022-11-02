@@ -24,13 +24,21 @@ import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.*;
+import com.amazonaws.services.s3.model.DeleteObjectsRequest;
+import com.amazonaws.services.s3.model.DeleteObjectsResult;
+import com.amazonaws.services.s3.model.ListObjectsV2Request;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.schema.type.*;
+import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.PrimitiveType;
+import sleeper.core.schema.type.StringType;
 import sleeper.statestore.InitialiseStateStore;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -38,14 +46,24 @@ import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.s3.S3StateStore;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.*;
+import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.PARTITION_ID;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
@@ -65,7 +83,8 @@ public class ReinitialiseTable {
     private final String tableName;
     private final String splitPointsFileLocation;
 
-    public ReinitialiseTable(AmazonS3 s3Client,
+    public ReinitialiseTable(
+            AmazonS3 s3Client,
             AmazonDynamoDB dynamoDBClient,
             String instanceId,
             String tableName,
@@ -156,7 +175,7 @@ public class ReinitialiseTable {
             }
             String token = result.getNextContinuationToken();
             req.setContinuationToken(token);
-            totalObjectsDeleted +=  deleteObjects(s3TableBucketName, objectKeysForDeletion);
+            totalObjectsDeleted += deleteObjects(s3TableBucketName, objectKeysForDeletion);
         } while (result.isTruncated());
         System.out.println("A total of " + totalObjectsDeleted + " objects were deleted");
     }
@@ -174,7 +193,7 @@ public class ReinitialiseTable {
         }
         return successfulDeletes;
     }
-    
+
     private void deleteContentsOfDynamoDbTables(TableProperties tableProperties, boolean isS3StateStore) {
         if (isS3StateStore) {
             deleteRelevantS3StateStoreRevisionInfo(tableProperties.get(REVISION_TABLENAME));
@@ -260,15 +279,16 @@ public class ReinitialiseTable {
             splitPoints = new ArrayList<>();
 
             PrimitiveType rowKey1Type = tableProperties.getSchema().getRowKeyTypes().get(0);
-            BufferedReader reader = new BufferedReader(new FileReader(splitPointsFileLocation));
             List<String> lines = new ArrayList<>();
-            String lineFromFile = reader.readLine();
-            while (null != lineFromFile) {
-                lines.add(lineFromFile);
-                lineFromFile = reader.readLine();
+            try (InputStream inputStream = new FileInputStream(splitPointsFileLocation);
+                 Reader tempReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+                 BufferedReader reader = new BufferedReader(tempReader)) {
+                String lineFromFile = reader.readLine();
+                while (null != lineFromFile) {
+                    lines.add(lineFromFile);
+                    lineFromFile = reader.readLine();
+                }
             }
-            reader.close();
-
             for (String line : lines) {
                 if (rowKey1Type instanceof IntType) {
                     splitPoints.add(Integer.parseInt(line));
@@ -303,7 +323,7 @@ public class ReinitialiseTable {
         System.out.println("\nIf you continue all data will be deleted in the table\n" +
                 "Including the partitions data as well, if you have chosen that option\n");
         String choice = System.console().readLine("Are you sure you want to delete the data and " +
-                        "reinitialise this table?\nPlease enter Y or N: ");
+                "reinitialise this table?\nPlease enter Y or N: ");
         if (!choice.equalsIgnoreCase("y")) {
             System.exit(0);
         }
@@ -358,7 +378,7 @@ public class ReinitialiseTable {
                 }
             }
             System.out.println("Table reinitialised successfully");
-        } catch (Exception e) {
+        } catch (RuntimeException | IOException | StateStoreException e) {
             System.out.println("\nAn Error occurred while trying to reinitialise the table. " +
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());

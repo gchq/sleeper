@@ -41,8 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ParquetRecordReaderTest {
 
@@ -52,12 +51,13 @@ public class ParquetRecordReaderTest {
     @Test
     public void shouldReadRecordsCorrectlyWithIntKey() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("column1", new IntType()));
-        schema.setValueFields(new Field("column2", new StringType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new IntType()))
+                .valueFields(new Field("column2", new StringType()))
+                .build();
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
-            .build();
+                .build();
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", 5);
         map1.put("column2", "B");
@@ -77,22 +77,23 @@ public class ParquetRecordReaderTest {
         Record readRecord3 = reader.read();
 
         // Then
-        assertEquals(record1, readRecord1);
-        assertEquals(2, readRecord1.getKeys().size());
-        assertEquals(record2, readRecord2);
-        assertEquals(2, readRecord2.getKeys().size());
-        assertNull(readRecord3);
+        assertThat(readRecord1).isEqualTo(record1);
+        assertThat(readRecord1.getKeys()).hasSize(2);
+        assertThat(readRecord2).isEqualTo(record2);
+        assertThat(readRecord2.getKeys()).hasSize(2);
+        assertThat(readRecord3).isNull();
     }
 
     @Test
     public void shouldReadRecordsCorrectlyWithByteArrayKey() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("column1", new ByteArrayType()));
-        schema.setValueFields(new Field("column2", new StringType()));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new ByteArrayType()))
+                .valueFields(new Field("column2", new StringType()))
+                .build();
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
-            .build();
+                .build();
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", new byte[]{1, 2, 3});
         map1.put("column2", "B");
@@ -113,20 +114,22 @@ public class ParquetRecordReaderTest {
 
         // Then
         //  - Replace byte array field in record1 with wrapped version so that equals works
-        assertEquals(record1, readRecord1);
-        assertEquals(2, readRecord1.getKeys().size());
-        assertEquals(record2, readRecord2);
-        assertEquals(2, readRecord2.getKeys().size());
-        assertNull(readRecord3);
+        assertThat(readRecord1).isEqualTo(record1);
+        assertThat(readRecord1.getKeys()).hasSize(2);
+        assertThat(readRecord2).isEqualTo(record2);
+        assertThat(readRecord2.getKeys()).hasSize(2);
+        assertThat(readRecord3).isNull();
     }
 
     @Test
     public void shouldReadRecordsCorrectlyWithByteArrayKeyAndMapValue() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("column1", new ByteArrayType()));
-        schema.setValueFields(new Field("column2", new StringType()),
-                new Field("column3", new MapType(new StringType(), new LongType())));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new ByteArrayType()))
+                .valueFields(
+                        new Field("column2", new StringType()),
+                        new Field("column3", new MapType(new StringType(), new LongType())))
+                .build();
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
@@ -156,20 +159,22 @@ public class ParquetRecordReaderTest {
         Record readRecord3 = reader.read();
 
         // Then
-        assertEquals(record1, readRecord1);
-        assertEquals(3, readRecord1.getKeys().size());
-        assertEquals(record2, readRecord2);
-        assertEquals(3, readRecord2.getKeys().size());
-        assertNull(readRecord3);
+        assertThat(readRecord1).isEqualTo(record1);
+        assertThat(readRecord1.getKeys()).hasSize(3);
+        assertThat(readRecord2).isEqualTo(record2);
+        assertThat(readRecord2.getKeys()).hasSize(3);
+        assertThat(readRecord3).isNull();
     }
 
     @Test
     public void shouldReadRecordsCorrectlyWithByteArrayKeyAndEmptyMapValue() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("column1", new ByteArrayType()));
-        schema.setValueFields(new Field("column2", new StringType()),
-                new Field("column3", new MapType(new StringType(), new LongType())));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new ByteArrayType()))
+                .valueFields(
+                        new Field("column2", new StringType()),
+                        new Field("column3", new MapType(new StringType(), new LongType())))
+                .build();
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
@@ -199,20 +204,22 @@ public class ParquetRecordReaderTest {
         Record readRecord3 = reader.read();
 
         // Then
-        assertEquals(record1, readRecord1);
-        assertEquals(3, readRecord1.getKeys().size());
-        assertEquals(record2, readRecord2);
-        assertEquals(3, readRecord2.getKeys().size());
-        assertNull(readRecord3);
+        assertThat(readRecord1).isEqualTo(record1);
+        assertThat(readRecord1.getKeys()).hasSize(3);
+        assertThat(readRecord2).isEqualTo(record2);
+        assertThat(readRecord2.getKeys()).hasSize(3);
+        assertThat(readRecord3).isNull();
     }
 
     @Test
     public void shouldReadRecordsCorrectlyWithByteArrayKeyAndListValue() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("column1", new ByteArrayType()));
-        schema.setValueFields(new Field("column2", new StringType()),
-                new Field("column3", new ListType(new StringType())));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new ByteArrayType()))
+                .valueFields(
+                        new Field("column2", new StringType()),
+                        new Field("column3", new ListType(new StringType())))
+                .build();
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
@@ -242,20 +249,22 @@ public class ParquetRecordReaderTest {
         Record readRecord3 = reader.read();
 
         // Then
-        assertEquals(record1, readRecord1);
-        assertEquals(3, readRecord1.getKeys().size());
-        assertEquals(record2, readRecord2);
-        assertEquals(3, readRecord2.getKeys().size());
-        assertNull(readRecord3);
+        assertThat(readRecord1).isEqualTo(record1);
+        assertThat(readRecord1.getKeys()).hasSize(3);
+        assertThat(readRecord2).isEqualTo(record2);
+        assertThat(readRecord2.getKeys()).hasSize(3);
+        assertThat(readRecord3).isNull();
     }
 
     @Test
     public void shouldReadRecordsCorrectlyWithByteArrayKeyAndEmptyListValue() throws IOException {
         // Given
-        Schema schema = new Schema();
-        schema.setRowKeyFields(new Field("column1", new ByteArrayType()));
-        schema.setValueFields(new Field("column2", new StringType()),
-                new Field("column3", new ListType(new StringType())));
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("column1", new ByteArrayType()))
+                .valueFields(
+                        new Field("column2", new StringType()),
+                        new Field("column3", new ListType(new StringType())))
+                .build();
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(schema), schema)
                 .build();
@@ -285,22 +294,23 @@ public class ParquetRecordReaderTest {
         Record readRecord3 = reader.read();
 
         // Then
-        assertEquals(record1, readRecord1);
-        assertEquals(3, readRecord1.getKeys().size());
-        assertEquals(record2, readRecord2);
-        assertEquals(3, readRecord2.getKeys().size());
-        assertNull(readRecord3);
+        assertThat(readRecord1).isEqualTo(record1);
+        assertThat(readRecord1.getKeys()).hasSize(3);
+        assertThat(readRecord2).isEqualTo(record2);
+        assertThat(readRecord2.getKeys()).hasSize(3);
+        assertThat(readRecord3).isNull();
     }
 
     @Test
     public void shouldReadRecordsCorrectlyWithASubsetOfTheSchema() throws IOException {
         // Given
-        Schema writeSchema = new Schema();
-        writeSchema.setRowKeyFields(new Field("column1", new StringType()));
-        writeSchema.setValueFields(new Field("column2", new StringType()));
+        Schema writeSchema = Schema.builder()
+                .rowKeyFields(new Field("column1", new StringType()))
+                .valueFields(new Field("column2", new StringType()))
+                .build();
         Path path = new Path(folder.newFolder().getAbsolutePath() + "/file.parquet");
         ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(path, SchemaConverter.getSchema(writeSchema), writeSchema)
-            .build();
+                .build();
         Map<String, Object> map1 = new HashMap<>();
         map1.put("column1", "A");
         map1.put("column2", "B");
@@ -312,8 +322,7 @@ public class ParquetRecordReaderTest {
         Record record2 = new Record(map2);
         writer.write(record2);
         writer.close();
-        Schema readSchema = new Schema();
-        readSchema.setRowKeyFields(new Field("column1", new StringType()));
+        Schema readSchema = Schema.builder().rowKeyFields(new Field("column1", new StringType())).build();
 
         // When
         ParquetReader<Record> reader = new ParquetRecordReader.Builder(path, readSchema).build();
@@ -322,10 +331,10 @@ public class ParquetRecordReaderTest {
         Record readRecord3 = reader.read();
 
         // Then
-        assertEquals("A", readRecord1.get("column1"));
-        assertEquals(1, readRecord1.getKeys().size());
-        assertEquals("C", readRecord2.get("column1"));
-        assertEquals(1, readRecord2.getKeys().size());
-        assertNull(readRecord3);
+        assertThat(readRecord1.get("column1")).isEqualTo("A");
+        assertThat(readRecord1.getKeys()).hasSize(1);
+        assertThat(readRecord2.get("column1")).isEqualTo("C");
+        assertThat(readRecord2.getKeys()).hasSize(1);
+        assertThat(readRecord3).isNull();
     }
 }

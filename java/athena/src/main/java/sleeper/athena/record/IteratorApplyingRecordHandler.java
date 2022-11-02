@@ -15,31 +15,6 @@
  */
 package sleeper.athena.record;
 
-import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.ROW_KEY_PREFIX_TEST;
-import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
-
-import org.apache.arrow.vector.types.Types;
-import org.apache.arrow.vector.types.pojo.ArrowType;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.parquet.filter2.predicate.FilterPredicate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.amazonaws.athena.connector.lambda.data.BlockAllocatorImpl;
 import com.amazonaws.athena.connector.lambda.domain.Split;
 import com.amazonaws.athena.connector.lambda.domain.predicate.Range;
@@ -53,10 +28,13 @@ import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.amazonaws.util.Base64;
 import com.facebook.collections.Pair;
 import com.google.gson.Gson;
-
+import org.apache.arrow.vector.types.Types;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.parquet.filter2.predicate.FilterPredicate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sleeper.athena.FilterTranslator;
-import sleeper.query.recordretrieval.LeafPartitionRecordRetriever;
-import sleeper.query.recordretrieval.RecordRetrievalException;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.table.TableProperties;
@@ -70,18 +48,38 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
+import sleeper.query.recordretrieval.LeafPartitionRecordRetriever;
+import sleeper.query.recordretrieval.RecordRetrievalException;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+
+import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.ROW_KEY_PREFIX_TEST;
+import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
 /**
  * Handles requests for data. Searches within a single partition for data which matches the constraints of the query.
  * To protect against queries which span multiple partitions, only data in parent partitions which also fall into the
  * constraints of the leaf partition are returned.
- *
+ * <p>
  * Compaction time iterators are also applied to the results before they are returned.
  */
 public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(IteratorApplyingRecordHandler.class);
 
-    private final ExecutorService executorService;
+    private final ExecutorService executorService = Executors.newFixedThreadPool(10);
     private final ObjectFactory objectFactory;
 
     public IteratorApplyingRecordHandler() throws IOException {
@@ -91,19 +89,17 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
 
     public IteratorApplyingRecordHandler(AmazonS3 s3Client, String configBucket) throws IOException {
         super(s3Client, configBucket);
-        this.executorService = Executors.newFixedThreadPool(10);
-        try {
-            this.objectFactory = new ObjectFactory(getInstanceProperties(), s3Client, "/tmp");
-        } catch (ObjectFactoryException e) {
-            throw new RuntimeException("Failed to initialise Object Factory");
-        }
+        objectFactory = createObjectFactory(s3Client);
     }
 
     public IteratorApplyingRecordHandler(AmazonS3 s3Client, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) throws IOException {
         super(s3Client, configBucket, secretsManager, athena);
-        this.executorService = Executors.newFixedThreadPool(10);
+        objectFactory = createObjectFactory(s3Client);
+    }
+
+    private ObjectFactory createObjectFactory(AmazonS3 s3Client) {
         try {
-            this.objectFactory = new ObjectFactory(getInstanceProperties(), s3Client, "/tmp");
+            return new ObjectFactory(getInstanceProperties(), s3Client, "/tmp");
         } catch (ObjectFactoryException e) {
             throw new RuntimeException("Failed to initialise Object Factory");
         }
@@ -113,7 +109,8 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
      * The iterator may need the records sorted and may need certain fields to be present. Without knowing this
      * information (to be added in a separate issue, there's no way of slimming down the schema). Once this is
      * done, we can limit the value fields. (The merging iterator still requires the values to be sorted).
-     * @param schema the original schema
+     *
+     * @param schema         the original schema
      * @param recordsRequest the request
      * @return the original schema for now
      */
@@ -174,14 +171,16 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
     /**
      * Creates an iterator which will read all the Parquet files relevant to the leaf partition, pushing down any
      * predicates derived from the query. It also applies any Table specific iterators that may have been configured.
-     * @param relevantFiles list of relevant partitions (the first should be the leaf partition)
-     * @param minRowKeys the Min row keys for this leaf partition
-     * @param maxRowKeys the max row keys for this leaf partition
-     * @param schema the schema to use for reading the data
+     *
+     * @param relevantFiles   list of relevant partitions (the first should be the leaf partition)
+     * @param minRowKeys      the Min row keys for this leaf partition
+     * @param maxRowKeys      the max row keys for this leaf partition
+     * @param schema          the schema to use for reading the data
      * @param tableProperties the table properties for this table
-     * @param valueSets a Summary of the predicates associated with this query.
+     * @param valueSets       a Summary of the predicates associated with this query.
      * @return A single iterator of records
-     * @throws ObjectFactoryException If something goes wrong creating the iterators.
+     * @throws ObjectFactoryException   If something goes wrong creating the iterators.
+     * @throws RecordRetrievalException If something goes wrong retrieving records.
      */
     private CloseableIterator<Record> createIterator(Set<String> relevantFiles,
                                                      List<Object> minRowKeys,
@@ -192,7 +191,7 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
         FilterTranslator filterTranslator = new FilterTranslator(schema);
         FilterPredicate filterPredicate = FilterTranslator.and(filterTranslator.toPredicate(valueSets), createFilter(schema, minRowKeys, maxRowKeys));
         Configuration conf = getConfigurationForTable(tableProperties);
-        
+
         LeafPartitionRecordRetriever recordRetriever = new LeafPartitionRecordRetriever(executorService, conf);
 
         CloseableIterator<Record> iterator = recordRetriever.getRecords(new ArrayList<>(relevantFiles), schema, filterPredicate);
@@ -205,7 +204,8 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
     /**
      * Creates a filter to ensure records returned from the data files fall within the scope of the leaf partition
      * that was queried.
-     * @param schema The Sleeper Schema
+     *
+     * @param schema     The Sleeper Schema
      * @param minRowKeys The Min row keys of the leaf partition
      * @param maxRowKeys The max row keys of the leaf partition.
      * @return A filter that ensures a record falls within the leaf partition queried.
@@ -220,7 +220,7 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
             String name = field.getName();
             ArrowType arrowType;
             if (type instanceof IntType) {
-               arrowType = Types.MinorType.INT.getType();
+                arrowType = Types.MinorType.INT.getType();
             } else if (type instanceof LongType) {
                 arrowType = Types.MinorType.BIGINT.getType();
             } else if (type instanceof StringType) {
@@ -246,8 +246,9 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
 
     /**
      * Applies an iterator configured for this table. This iterator will run before it passes to Athena.
+     *
      * @param mergingIterator an iterator encompassing all the Parquet iterators
-     * @param schema The schema to use for reading the data
+     * @param schema          The schema to use for reading the data
      * @param tableProperties The table properties for the table being queried
      * @return A combined iterator
      * @throws ObjectFactoryException if the iterator can't be instantiated

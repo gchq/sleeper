@@ -34,7 +34,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
-
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +42,6 @@ import java.util.Properties;
 /**
  * Abstract class which backs both {@link InstanceProperties} and
  * {@link sleeper.configuration.properties.table.TableProperties}.
- *
  */
 public abstract class SleeperProperties<T extends SleeperProperty> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperProperties.class);
@@ -101,7 +99,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
     }
 
     public Iterator<Map.Entry<Object, Object>> getPropertyIterator() {
-         return properties.entrySet().iterator();
+        return properties.entrySet().iterator();
     }
 
     public void load(InputStream inputStream) {
@@ -157,9 +155,12 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         SleeperProperties that = (SleeperProperties) o;
 

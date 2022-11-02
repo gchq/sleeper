@@ -37,7 +37,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class SketchesSerDeToS3Test {
     @Rule
@@ -50,8 +50,7 @@ public class SketchesSerDeToS3Test {
         Field field2 = new Field("key2", new LongType());
         Field field3 = new Field("key3", new StringType());
         Field field4 = new Field("key4", new ByteArrayType());
-        Schema schema = new Schema();
-        schema.setRowKeyFields(field1, field2, field3, field4);
+        Schema schema = Schema.builder().rowKeyFields(field1, field2, field3, field4).build();
         ItemsSketch<Integer> sketch1 = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         for (int i = 0; i < 100; i++) {
             sketch1.update(i);
@@ -83,12 +82,12 @@ public class SketchesSerDeToS3Test {
         Sketches deserialisedSketches = sketchesSerDeToS3.loadFromHadoopFS(path, new Configuration());
 
         // Then
-        assertEquals(new HashSet<>(schema.getRowKeyFieldNames()), deserialisedSketches.getQuantilesSketches().keySet());
+        assertThat(deserialisedSketches.getQuantilesSketches().keySet()).isEqualTo(new HashSet<>(schema.getRowKeyFieldNames()));
         for (Map.Entry<String, ItemsSketch> entry : map.entrySet()) {
-            assertEquals(entry.getValue().getMinValue(), deserialisedSketches.getQuantilesSketch(entry.getKey()).getMinValue());
-            assertEquals(entry.getValue().getMaxValue(), deserialisedSketches.getQuantilesSketch(entry.getKey()).getMaxValue());
+            assertThat(deserialisedSketches.getQuantilesSketch(entry.getKey()).getMinValue()).isEqualTo(entry.getValue().getMinValue());
+            assertThat(deserialisedSketches.getQuantilesSketch(entry.getKey()).getMaxValue()).isEqualTo(entry.getValue().getMaxValue());
             for (double d = 0.0D; d < 1.0D; d += 0.1D) {
-                assertEquals(entry.getValue().getQuantile(d), deserialisedSketches.getQuantilesSketch(entry.getKey()).getQuantile(d));
+                assertThat(deserialisedSketches.getQuantilesSketch(entry.getKey()).getQuantile(d)).isEqualTo(entry.getValue().getQuantile(d));
             }
         }
     }
