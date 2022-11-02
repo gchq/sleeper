@@ -16,9 +16,12 @@
 package sleeper.clients.admin;
 
 import org.junit.Test;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
 import sleeper.console.ConsoleOutput;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 
 public class AdminClientTest extends AdminClientTestBase {
 
@@ -47,9 +50,7 @@ public class AdminClientTest extends AdminClientTestBase {
         String output = runClientGetOutput();
 
         assertThat(output).startsWith(MAIN_SCREEN).endsWith(MAIN_SCREEN)
-                .contains("\n" +
-                        " Instance Property Report \n" +
-                        " -------------------------\n")
+                .contains("Instance Property Report")
                 // Then check some default property values are present in the output, don't check values in case they change
                 .contains("sleeper.athena.handler.memory")
                 .contains("sleeper.default.page.size")
@@ -66,6 +67,12 @@ public class AdminClientTest extends AdminClientTestBase {
                 .isLessThan(output.indexOf("sleeper.vpc"));
         assertThat(output.indexOf("sleeper.log.retention.days"))
                 .isLessThan(output.indexOf("sleeper.vpc"));
+
+        InOrder order = Mockito.inOrder(in.mock);
+        order.verify(in.mock).promptLine(any());
+        order.verify(in.mock).waitForLine();
+        order.verify(in.mock).promptLine(any());
+        order.verifyNoMoreInteractions();
     }
 
 }

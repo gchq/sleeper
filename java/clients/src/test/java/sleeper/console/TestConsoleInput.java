@@ -21,11 +21,10 @@ import static org.mockito.Mockito.when;
 
 public class TestConsoleInput {
 
-    private final ConsolePrompter prompter = mock(ConsolePrompter.class);
-    private final ConsoleConfirmer confirmer = mock(ConsoleConfirmer.class);
+    public final ConsoleInput mock = mock(ConsoleInput.class);
 
     public ConsoleInput consoleIn() {
-        return new ConsoleInput(prompter, confirmer);
+        return mock;
     }
 
     public void enterNextPrompt(String entered) {
@@ -33,6 +32,6 @@ public class TestConsoleInput {
     }
 
     public void enterNextPrompts(String entered, String... otherEntered) {
-        when(prompter.promptLine(any())).thenReturn(entered, otherEntered);
+        when(mock.promptLine(any())).thenReturn(entered, otherEntered);
     }
 }

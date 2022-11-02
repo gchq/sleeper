@@ -69,10 +69,12 @@ public class AdminClient {
                 new ConsoleInput(System.console()));
     }
 
-    static void printInstancePropertiesReport(AmazonS3 s3Client, String instanceId) throws IOException, AmazonS3Exception {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        client(s3Client).printInstancePropertiesReport(instanceProperties);
+    static void printInstancePropertiesReport(AmazonS3 s3Client, String instanceId) {
+        client(s3Client).printInstancePropertiesReport(instanceId);
+    }
+
+    private void printInstancePropertiesReport(String instanceId) {
+        printInstancePropertiesReport(store.loadInstanceProperties(instanceId));
     }
 
     private void printInstancePropertiesReport(InstanceProperties instanceProperties) {
@@ -399,6 +401,6 @@ public class AdminClient {
     private void confirmReturnToMainScreen() {
         out.println("\n\n----------------------------------");
         out.println("Hit enter to return to main screen");
-        in.waitForConfirmation();
+        in.waitForLine();
     }
 }

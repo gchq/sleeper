@@ -19,23 +19,17 @@ import java.io.Console;
 
 public class ConsoleInput {
 
-    private final ConsolePrompter prompter;
-    private final ConsoleConfirmer confirmer;
+    private final Console console;
 
     public ConsoleInput(Console console) {
-        this(console::readLine, console::readLine);
-    }
-
-    public ConsoleInput(ConsolePrompter prompter, ConsoleConfirmer confirmer) {
-        this.prompter = prompter;
-        this.confirmer = confirmer;
+        this.console = console;
     }
 
     public String promptLine(String prompt) {
-        return prompter.promptLine(prompt);
+        return console.readLine(prompt);
     }
 
-    public void waitForConfirmation() {
-        confirmer.waitForConfirmation();
+    public void waitForLine() {
+        console.readLine();
     }
 }
