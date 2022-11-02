@@ -39,6 +39,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.ingest.IngestProperties;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.StandardIngestCoordinator;
 import sleeper.statestore.InitialiseStateStore;
@@ -145,26 +146,29 @@ public class PopulatedSleeperExternalResource extends ExternalResource {
                             Iterator<Record> recordIterator)
             throws Exception {
         Configuration hadoopConfiguration = this.hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties);
+        IngestProperties ingestProperties = IngestProperties.builder()
+                .objectFactory(new ObjectFactory(instanceProperties, null, temporaryFolder.toString()))
+                .stateStore(stateStore)
+                .schema(tableProperties.getSchema())
+                .bucketName(tableProperties.get(DATA_BUCKET))
+                .localDir(temporaryFolder.newFolder().getAbsolutePath())
+                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
+                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
+                .compressionCodec("snappy")
+                .hadoopConfiguration(hadoopConfiguration)
+                .ingestPartitionRefreshFrequencyInSecond(120)
+                .build();
         IngestCoordinator<Record> ingestRecordsAsync = StandardIngestCoordinator.asyncS3WriteBackedByArrow(
-                new ObjectFactory(instanceProperties, null, temporaryFolder.toString()),
-                stateStore,
-                tableProperties.getSchema(),
-                temporaryFolder.newFolder().getAbsolutePath(),
-                ParquetWriter.DEFAULT_BLOCK_SIZE,
-                ParquetWriter.DEFAULT_PAGE_SIZE,
-                "snappy",
-                hadoopConfiguration,
-                null,
-                null,
-                120,
+                ingestProperties,
                 tableProperties.get(DATA_BUCKET),
-                this.s3AsyncClient,
-                this.rootBufferAllocator,
+                s3AsyncClient,
+                rootBufferAllocator,
                 30,
                 16 * 1024 * 1024L,
                 16 * 1024 * 1024L,
-                32 * 1024 * 1024L,
-                200L);
+                32 * 1024 * 1024L
+                );
+
         while (recordIterator.hasNext()) {
             ingestRecordsAsync.write(recordIterator.next());
         }
