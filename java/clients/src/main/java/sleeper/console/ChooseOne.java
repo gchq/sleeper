@@ -29,20 +29,20 @@ public class ChooseOne {
     }
 
     @SafeVarargs
-    public final <T extends Choice> Chosen<T> chooseFrom(T... choices) {
+    public final <T extends ConsoleChoice> Chosen<T> chooseFrom(T... choices) {
         return chooseFrom(Arrays.asList(choices));
     }
 
     @SafeVarargs
-    public final <T extends Choice> Chosen<T> chooseWithMessageFrom(String message, T... choices) {
+    public final <T extends ConsoleChoice> Chosen<T> chooseWithMessageFrom(String message, T... choices) {
         return chooseWithMessageFrom(message, Arrays.asList(choices));
     }
 
-    public <T extends Choice> Chosen<T> chooseFrom(List<T> choices) {
+    public <T extends ConsoleChoice> Chosen<T> chooseFrom(List<T> choices) {
         return chooseWithMessageFrom("Please select from the below options and hit return:", choices);
     }
 
-    public <T extends Choice> Chosen<T> chooseWithMessageFrom(String message, List<T> choices) {
+    public <T extends ConsoleChoice> Chosen<T> chooseWithMessageFrom(String message, List<T> choices) {
         out.println(message);
         out.println("[0] Exit program");
         for (int i = 0; i < choices.size(); i++) {
@@ -61,7 +61,4 @@ public class ChooseOne {
         }
     }
 
-    public interface Choice {
-        String getDescription();
-    }
 }
