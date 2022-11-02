@@ -15,33 +15,9 @@
  */
 package sleeper.console;
 
-import java.io.PrintStream;
+public class UserExitedException extends RuntimeException {
 
-public class ConsoleOutput {
-
-    public static final String CLEAR_CONSOLE = "\033[H\033[2J";
-
-    private final PrintStream out;
-
-    public ConsoleOutput(PrintStream out) {
-        this.out = out;
-    }
-
-    public void clearScreen(String message) {
-        out.print(CLEAR_CONSOLE);
-        out.flush();
-        out.println(message);
-    }
-
-    public void println(String message) {
-        out.println(message);
-    }
-
-    public void println() {
-        out.println();
-    }
-
-    public void printf(String format, Object... args) {
-        out.printf(format, args);
+    public UserExitedException() {
+        super("User chose to exit");
     }
 }
