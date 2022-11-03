@@ -42,8 +42,8 @@ public abstract class ChooseOneTestBase {
         return chooseOne;
     }
 
-    protected final ConsoleChoice OPTION_ONE = ConsoleChoice.describedAs("Option 1");
-    protected final ConsoleChoice OPTION_TWO = ConsoleChoice.describedAs("Option 2");
+    protected static final ConsoleChoice OPTION_ONE = ConsoleChoice.describedAs("Option 1");
+    protected static final ConsoleChoice OPTION_TWO = ConsoleChoice.describedAs("Option 2");
 
     protected enum TestOption implements ConsoleChoice {
         ONE("Option 1"),
