@@ -26,13 +26,8 @@ import sleeper.clients.admin.TablePropertyReport;
 import sleeper.clients.admin.TablePropertyReportScreen;
 import sleeper.clients.admin.UpdatePropertyScreen;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
-import sleeper.console.UserExitedException;
 
 import java.io.IOException;
 
@@ -90,225 +85,20 @@ public class AdminClient {
         if (propertyName.startsWith("sleeper.table.") && tableName == null) {
             throw new IllegalArgumentException(TABLE_NULL_ERROR);
         }
-
-        boolean foundProperty = false;
-
-        if (tableName != null) {
-            TablePropertiesProvider tablePropertiesProvider =
-                    new TablePropertiesProvider(s3Client, instanceProperties);
-            TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
-
-            for (TableProperty tableProperty : TableProperty.values()) {
-                if (tableProperty.getPropertyName().equals(propertyName)) {
-                    foundProperty = true;
-                    tableProperties.set(tableProperty, propertyValue);
-                    if (!tableProperty.validationPredicate().test(tableProperties.get(tableProperty))) {
-                        throw new IllegalArgumentException("Sleeper property: " +
-                                tableProperty.getPropertyName() + " is invalid");
-                    }
-                }
-            }
-            if (!foundProperty) {
-                throw new IllegalArgumentException("Sleeper property: " + propertyName +
-                        " does not exist and cannot be updated");
-            }
-            tableProperties.saveToS3(s3Client);
+        if (tableName == null) {
+            client(s3Client).store.updateInstanceProperty(instanceId, propertyName, propertyValue);
         } else {
-            for (UserDefinedInstanceProperty userDefinedInstanceProperty : UserDefinedInstanceProperty.values()) {
-                if (userDefinedInstanceProperty.getPropertyName().equals(propertyName)) {
-                    foundProperty = true;
-                    instanceProperties.set(userDefinedInstanceProperty, propertyValue);
-                    if (!userDefinedInstanceProperty.validationPredicate().test(
-                            instanceProperties.get(userDefinedInstanceProperty))) {
-                        throw new IllegalArgumentException("Sleeper property: " +
-                                userDefinedInstanceProperty.getPropertyName() + " is invalid");
-                    }
-                }
-            }
-            if (!foundProperty) {
-                throw new IllegalArgumentException("Sleeper property: " + propertyName +
-                        " does not exist and cannot be updated");
-            }
-            instanceProperties.saveToS3(s3Client);
+            client(s3Client).store.updateTableProperty(instanceId, tableName, propertyName, propertyValue);
         }
         System.out.println(propertyName + " has been updated to " + propertyValue);
     }
 
-    private static void mainScreen(String message, String instanceId) throws IOException {
-        clearScreen(message);
-        System.out.println("ADMINISTRATION COMMAND LINE CLIENT\n----------------------------------\n");
-        System.out.println("Please select from the below options and hit return:");
-        System.out.println(EXIT_PROGRAM_OPTION);
-        System.out.println("[1] Print Sleeper instance property report");
-        System.out.println("[2] Print Sleeper table names");
-        System.out.println("[3] Print Sleeper table property report");
-        System.out.println("[4] Update an instance or table property\n");
-        String choice = System.console().readLine("Input: ");
-        switch (choice) {
-            case "0":
-                closeProgram();
-                break;
-            case "1":
-                try {
-                    printInstancePropertiesReport(defaultS3Client, instanceId);
-                } catch (AmazonS3Exception amazonS3Exception) {
-                    System.out.println(PROPERTY_LOAD_ERROR + amazonS3Exception.getMessage());
-                    closeProgram();
-                }
-                returnToMainScreen(instanceId);
-                break;
-            case "2":
-                try {
-                    printTablesReport(defaultS3Client, instanceId);
-                } catch (AmazonS3Exception amazonS3Exception) {
-                    System.out.println(PROPERTY_LOAD_ERROR + amazonS3Exception.getMessage());
-                    closeProgram();
-                }
-                returnToMainScreen(instanceId);
-                break;
-            case "3":
-                tablePropertyReportScreen(instanceId);
-                break;
-            case "4":
-                updatePropertyScreen("", instanceId);
-                break;
-            default:
-                mainScreen("Input not recognised please try again\n", instanceId);
-                break;
-        }
-    }
-
-    private static void tablePropertyReportScreen(String instanceId) {
-        try {
-            client(defaultS3Client).tablePropertyReportScreen().chooseTableAndPrint(instanceId);
-        } catch (UserExitedException e) {
-            closeProgram();
-        }
-    }
-
-    private static void updatePropertyScreen(String message, String instanceId) throws IOException {
-        clearScreen(message);
-        System.out.println("What is the PROPERTY NAME of the property that you would like to update?\n");
-        System.out.println("Please enter the PROPERTY NAME now or use the following options:");
-        System.out.println(EXIT_PROGRAM_OPTION);
-        System.out.println(MAIN_MENU_OPTION);
-        String choice = System.console().readLine("Input: ");
-        switch (choice) {
-            case "0":
-                closeProgram();
-                break;
-            case "1":
-                mainScreen("", instanceId);
-                break;
-            case "":
-                System.out.println();
-                updatePropertyScreen(INPUT_EMPTY, instanceId);
-                break;
-            default:
-                updatePropertySecondScreen("", instanceId, choice);
-                break;
-        }
-    }
-
-    private static void updatePropertySecondScreen(String message, String instanceId, String propertyName) throws IOException {
-        clearScreen(message);
-        System.out.println("What is the new PROPERTY VALUE?\n");
-        System.out.println("Please enter the PROPERTY VALUE now or use the following options:");
-        System.out.println(EXIT_PROGRAM_OPTION);
-        System.out.println(MAIN_MENU_OPTION);
-        String choice = System.console().readLine("Input: ");
-        switch (choice) {
-            case "0":
-                closeProgram();
-                break;
-            case "1":
-                mainScreen("", instanceId);
-                break;
-            case "":
-                updatePropertySecondScreen(INPUT_EMPTY, instanceId, propertyName);
-                break;
-            default:
-                if (propertyName.startsWith("sleeper.table.")) {
-                    updatePropertyThirdScreen("", instanceId, propertyName, choice);
-                } else {
-                    try {
-                        updateProperty(defaultS3Client, instanceId, propertyName, choice, null);
-                    } catch (AmazonS3Exception amazonS3Exception) {
-                        System.out.println(PROPERTY_LOAD_ERROR + amazonS3Exception.getMessage());
-                        closeProgram();
-                    } catch (IllegalArgumentException illegalArgumentException) {
-                        System.out.println(PROPERTY_ERROR + illegalArgumentException.getMessage());
-                        returnToPropertyScreen(instanceId);
-                    }
-                    returnToMainScreen(instanceId);
-                }
-                break;
-        }
-    }
-
-    private static void updatePropertyThirdScreen(String message, String instanceId, String propertyName, String propertyValue) throws IOException {
-        clearScreen(message);
-        System.out.println("As the property name begins with sleeper.table we also need to know the TABLE you want to update\n");
-        System.out.println("Please enter the TABLE NAME now or use the following options:");
-        System.out.println(EXIT_PROGRAM_OPTION);
-        System.out.println(MAIN_MENU_OPTION);
-        String choice = System.console().readLine("Input: ");
-        switch (choice) {
-            case "0":
-                closeProgram();
-                break;
-            case "1":
-                mainScreen("", instanceId);
-                break;
-            case "":
-                updatePropertyThirdScreen(INPUT_EMPTY, instanceId, propertyName, propertyValue);
-                break;
-            default:
-                try {
-                    updateProperty(defaultS3Client, instanceId, propertyName, propertyValue, choice);
-                } catch (AmazonS3Exception amazonS3Exception) {
-                    System.out.println(PROPERTY_LOAD_ERROR + amazonS3Exception.getMessage());
-                    closeProgram();
-                } catch (IllegalArgumentException illegalArgumentException) {
-                    System.out.println(PROPERTY_ERROR + illegalArgumentException.getMessage());
-                    returnToPropertyScreen(instanceId);
-                }
-                returnToMainScreen(instanceId);
-                break;
-        }
-    }
-
-    private static void clearScreen(String message) {
-        System.out.print(CLEAR_CONSOLE);
-        System.out.flush();
-        System.out.println(message);
-    }
-
-    private static void returnToMainScreen(String instanceId) throws IOException {
-        System.out.println("\n\n----------------------------------");
-        System.out.println("Hit enter to return to main screen");
-        System.console().readLine();
-        mainScreen("", instanceId);
-    }
-
-    private static void returnToPropertyScreen(String bucketName) throws IOException {
-        System.out.println("\n\n----------------------------------");
-        System.out.println("Hit enter to return to the property screen so you can adjust the property and continue");
-        System.console().readLine();
-        updatePropertyScreen("", bucketName);
-    }
-
-    private static void closeProgram() {
-        defaultS3Client.shutdown();
-        System.exit(0);
-    }
-
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         defaultS3Client = AmazonS3ClientBuilder.defaultClient();
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance id>");
         }
-        mainScreen("", args[0]);
+        client(defaultS3Client).start(args[0]);
     }
 
     public void start(String instanceId) {

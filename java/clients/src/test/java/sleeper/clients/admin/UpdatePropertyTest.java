@@ -47,6 +47,14 @@ public class UpdatePropertyTest extends AdminClientTestBase {
             "[1] Return to Main Menu\n" +
             "\n";
 
+    private static final String UPDATE_PROPERTY_ENTER_TABLE_SCREEN = "\n" +
+            "As the property name begins with sleeper.table we also need to know the TABLE you want to update\n" +
+            "\n" +
+            "Please enter the TABLE NAME now or use the following options:\n" +
+            "[0] Exit program\n" +
+            "[1] Return to Main Menu\n" +
+            "\n";
+
     @Test
     public void shouldExitWhenChosenOnUpdatePropertyScreen() throws IOException {
         // Given
@@ -76,11 +84,36 @@ public class UpdatePropertyTest extends AdminClientTestBase {
         assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN
                 + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN
                 + CLEAR_CONSOLE + UPDATE_PROPERTY_ENTER_VALUE_SCREEN
+                + "sleeper.retain.infra.after.destroy has been updated to false\n"
                 + PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN);
 
         InOrder order = Mockito.inOrder(in.mock, store);
         order.verify(in.mock, times(3)).promptLine(any());
         order.verify(store).updateInstanceProperty(INSTANCE_ID, "sleeper.retain.infra.after.destroy", "false");
+        order.verify(in.mock).waitForLine();
+        order.verify(in.mock).promptLine(any());
+        order.verifyNoMoreInteractions();
+    }
+
+    @Test
+    public void shouldUpdateTablePropertyWhenNameValueAndTableEntered() throws IOException {
+        // Given
+        in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.table.iterator.class.name", "SomeIteratorClass", "update-table", EXIT_OPTION);
+
+        // When
+        String output = runClientGetOutput();
+
+        // Then
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_ENTER_VALUE_SCREEN
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_ENTER_TABLE_SCREEN
+                + "sleeper.table.iterator.class.name has been updated to SomeIteratorClass\n"
+                + PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN);
+
+        InOrder order = Mockito.inOrder(in.mock, store);
+        order.verify(in.mock, times(4)).promptLine(any());
+        order.verify(store).updateTableProperty(INSTANCE_ID, "update-table", "sleeper.table.iterator.class.name", "SomeIteratorClass");
         order.verify(in.mock).waitForLine();
         order.verify(in.mock).promptLine(any());
         order.verifyNoMoreInteractions();

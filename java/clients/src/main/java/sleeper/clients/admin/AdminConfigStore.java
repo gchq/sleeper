@@ -21,6 +21,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.table.job.TableLister;
 
 import java.io.IOException;
@@ -45,7 +46,7 @@ public class AdminConfigStore {
         return instanceProperties;
     }
 
-    public TableProperties getTableProperties(String instanceId, String tableName) {
+    public TableProperties loadTableProperties(String instanceId, String tableName) {
         return new TablePropertiesProvider(s3, loadInstanceProperties(instanceId)).getTableProperties(tableName);
     }
 
@@ -54,7 +55,7 @@ public class AdminConfigStore {
     }
 
     public void updateInstanceProperty(String instanceId, String propertyName, String propertyValue) {
-        UserDefinedInstanceProperty property = getUserDefinedProperty(propertyName)
+        UserDefinedInstanceProperty property = getUserDefinedInstanceProperty(propertyName)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Sleeper property " + propertyName + " does not exist and cannot be updated"));
         if (!property.validationPredicate().test(propertyValue)) {
@@ -69,8 +70,33 @@ public class AdminConfigStore {
         }
     }
 
-    private Optional<UserDefinedInstanceProperty> getUserDefinedProperty(String propertyName) {
+    public void updateTableProperty(String instanceId, String tableName, String propertyName, String propertyValue) {
+        TableProperty property = getTableProperty(propertyName)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Sleeper property " + propertyName + " does not exist and cannot be updated"));
+        if (!property.validationPredicate().test(propertyValue)) {
+            throw new IllegalArgumentException("Sleeper property " + propertyName + " is invalid");
+        }
+        TableProperties properties = loadTableProperties(instanceId, tableName);
+        properties.set(property, propertyValue);
+        try {
+            properties.saveToS3(s3);
+        } catch (IOException | AmazonS3Exception e) {
+            throw new CouldNotSaveTableProperties(instanceId, tableName, e);
+        }
+    }
+
+    private Optional<UserDefinedInstanceProperty> getUserDefinedInstanceProperty(String propertyName) {
         for (UserDefinedInstanceProperty property : UserDefinedInstanceProperty.values()) {
+            if (property.getPropertyName().equals(propertyName)) {
+                return Optional.of(property);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private Optional<TableProperty> getTableProperty(String propertyName) {
+        for (TableProperty property : TableProperty.values()) {
             if (property.getPropertyName().equals(propertyName)) {
                 return Optional.of(property);
             }
@@ -87,6 +113,12 @@ public class AdminConfigStore {
     public static class CouldNotSaveInstanceProperties extends RuntimeException {
         public CouldNotSaveInstanceProperties(String instanceId, Throwable e) {
             super("Could not save properties for instance " + instanceId, e);
+        }
+    }
+
+    public static class CouldNotSaveTableProperties extends RuntimeException {
+        public CouldNotSaveTableProperties(String instanceId, String tableName, Throwable e) {
+            super("Could not save properties for table " + tableName + " in instance " + instanceId, e);
         }
     }
 }

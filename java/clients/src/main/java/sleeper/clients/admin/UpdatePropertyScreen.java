@@ -39,8 +39,17 @@ public class UpdatePropertyScreen {
 
     public void choosePropertyAndUpdate(String instanceId) throws UserExitedException {
         chooseProperty().ifEnteredNonChoiceValue(propertyName ->
-                choosePropertyValue().ifEnteredNonChoiceValue(propertyValue ->
-                        store.updateInstanceProperty(instanceId, propertyName, propertyValue)));
+                choosePropertyValue().ifEnteredNonChoiceValue(propertyValue -> {
+                    if (propertyName.startsWith("sleeper.table")) {
+                        chooseTable().ifEnteredNonChoiceValue(tableName -> {
+                            store.updateTableProperty(instanceId, tableName, propertyName, propertyValue);
+                            out.println(propertyName + " has been updated to " + propertyValue);
+                        });
+                    } else {
+                        store.updateInstanceProperty(instanceId, propertyName, propertyValue);
+                        out.println(propertyName + " has been updated to " + propertyValue);
+                    }
+                }));
     }
 
     private Chosen<ConsoleChoice> chooseProperty() throws UserExitedException {
@@ -68,6 +77,20 @@ public class UpdatePropertyScreen {
         out.println("What is the new PROPERTY VALUE?\n");
         return chooseOne.chooseWithMessageFrom(
                 "Please enter the PROPERTY VALUE now or use the following options:",
+                RETURN_TO_MAIN_MENU);
+    }
+
+    private Chosen<ConsoleChoice> chooseTable() throws UserExitedException {
+        return chooseTable("")
+                .chooseUntilSomethingEntered(() ->
+                        chooseTable(INPUT_EMPTY));
+    }
+
+    private Chosen<ConsoleChoice> chooseTable(String message) {
+        out.clearScreen(message);
+        out.println("As the property name begins with sleeper.table we also need to know the TABLE you want to update\n");
+        return chooseOne.chooseWithMessageFrom(
+                "Please enter the TABLE NAME now or use the following options:",
                 RETURN_TO_MAIN_MENU);
     }
 }
