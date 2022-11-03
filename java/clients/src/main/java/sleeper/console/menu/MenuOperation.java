@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.console;
+package sleeper.console.menu;
 
-public class UserExitedException extends Exception {
+import sleeper.console.UserExitedException;
 
-    public UserExitedException() {
-        super("User chose to exit");
-    }
+@FunctionalInterface
+public interface MenuOperation {
+
+    void run() throws UserExitedException;
 }

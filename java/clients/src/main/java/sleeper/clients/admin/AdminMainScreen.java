@@ -16,13 +16,15 @@
 package sleeper.clients.admin;
 
 import sleeper.clients.AdminClient;
-import sleeper.console.ChooseOne;
-import sleeper.console.Chosen;
-import sleeper.console.ConsoleChoice;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
+import sleeper.console.UserExitedException;
+import sleeper.console.menu.ChooseOne;
+import sleeper.console.menu.Chosen;
+import sleeper.console.menu.MenuOption;
 
-import java.util.Optional;
+import java.util.Arrays;
+import java.util.List;
 
 public class AdminMainScreen {
 
@@ -36,53 +38,41 @@ public class AdminMainScreen {
         this.chooseOne = new ChooseOne(out, in);
     }
 
-    public enum Option implements ConsoleChoice {
-        PRINT_PROPERTY_REPORT("Print Sleeper instance property report"),
-        PRINT_TABLE_NAMES("Print Sleeper table names"),
-        PRINT_TABLE_PROPERTY_REPORT("Print Sleeper table property report"),
-        UPDATE_A_PROPERTY("Update an instance or table property");
-
-        private final String description;
-
-        Option(String description) {
-            this.description = description;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-    }
-
     public void mainLoop(AdminClient client, String instanceId) {
-        Chosen<Option> chosen = chooseOption("");
-        while (!chosen.isExit()) {
-            Optional<Option> choice = chosen.getChoice();
-            if (choice.isPresent()) {
-                switch (choice.get()) {
-                    case PRINT_PROPERTY_REPORT:
-                        client.instancePropertyReport().print(instanceId);
-                        confirmReturnToMainScreen();
-                        break;
-                    case PRINT_TABLE_PROPERTY_REPORT:
-                        if (client.tablePropertyReportScreen().chooseTableAndPrint(instanceId)
-                                .isExit()) {
-                            return;
-                        }
-                        confirmReturnToMainScreen();
-                        break;
-                    case PRINT_TABLE_NAMES:
-                    case UPDATE_A_PROPERTY:
-                        break;
-                }
+        List<MenuOption> options = Arrays.asList(
+                new MenuOption("Print Sleeper instance property report", () -> {
+                    client.instancePropertyReport().print(instanceId);
+                    confirmReturnToMainScreen();
+                }),
+                new MenuOption("Print Sleeper table names", () -> {
+                }),
+                new MenuOption("Print Sleeper table property report", () -> {
+                    client.tablePropertyReportScreen()
+                            .chooseTableAndPrint(instanceId);
+                    confirmReturnToMainScreen();
+                }),
+                new MenuOption("Update an instance or table property", () -> {
+                })
+        );
+        while (true) {
+            try {
+                chooseOption(options).run();
+            } catch (UserExitedException e) {
+                break;
             }
-            chosen = chooseOption("");
         }
     }
 
-    private Chosen<Option> chooseOption(String message) {
+    private MenuOption chooseOption(List<MenuOption> options) throws UserExitedException {
+        return chooseOption("", options)
+                .chooseUntilChoiceFound(() ->
+                        chooseOption("Input not recognised please try again\n", options));
+    }
+
+    private Chosen<MenuOption> chooseOption(String message, List<MenuOption> options) {
         out.clearScreen(message);
         out.println("ADMINISTRATION COMMAND LINE CLIENT\n----------------------------------\n");
-        return chooseOne.chooseFrom(Option.values());
+        return chooseOne.chooseFrom(options);
     }
 
     private void confirmReturnToMainScreen() {

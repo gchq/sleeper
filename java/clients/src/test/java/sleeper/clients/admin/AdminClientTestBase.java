@@ -48,6 +48,28 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public abstract class AdminClientTestBase {
 
+    protected static final String MAIN_SCREEN = "\n" +
+            "ADMINISTRATION COMMAND LINE CLIENT\n" +
+            "----------------------------------\n" +
+            "\n" +
+            "Please select from the below options and hit return:\n" +
+            "[0] Exit program\n" +
+            "[1] Print Sleeper instance property report\n" +
+            "[2] Print Sleeper table names\n" +
+            "[3] Print Sleeper table property report\n" +
+            "[4] Update an instance or table property\n" +
+            "\n";
+
+    protected static final String EXIT_OPTION = "0";
+    protected static final String INSTANCE_PROPERTY_REPORT_OPTION = "1";
+    protected static final String TABLE_NAMES_REPORT_OPTION = "2";
+    protected static final String TABLE_PROPERTY_REPORT_OPTION = "3";
+    protected static final String UPDATE_PROPERTY_OPTION = "4";
+
+    protected static final String PROMPT_INPUT_NOT_RECOGNISED = "Input not recognised please try again\n";
+
+    protected static final String PROMPT_RETURN_TO_MAIN = "Hit enter to return to main screen\n";
+
     private final AdminConfigStore store = mock(AdminConfigStore.class);
     protected final TestConsoleInput in = new TestConsoleInput();
     private final ToStringPrintStream out = new ToStringPrintStream();

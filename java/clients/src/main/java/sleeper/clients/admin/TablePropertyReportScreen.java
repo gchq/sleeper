@@ -15,11 +15,12 @@
  */
 package sleeper.clients.admin;
 
-import sleeper.console.ChooseOne;
-import sleeper.console.Chosen;
-import sleeper.console.ConsoleChoice;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
+import sleeper.console.UserExitedException;
+import sleeper.console.menu.ChooseOne;
+import sleeper.console.menu.Chosen;
+import sleeper.console.menu.ConsoleChoice;
 
 public class TablePropertyReportScreen {
 
@@ -33,41 +34,26 @@ public class TablePropertyReportScreen {
         this.store = store;
     }
 
-    public enum Option implements ConsoleChoice {
-        RETURN_TO_MAIN_MENU("Return to Main Menu");
+    private static final ConsoleChoice RETURN_TO_MAIN_MENU = ConsoleChoice.describedAs("Return to Main Menu");
 
-        private final String description;
-
-        Option(String description) {
-            this.description = description;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-    }
-
-    public Chosen<TablePropertyReportScreen.Option> chooseTableAndPrint(String instanceId) {
-        Chosen<TablePropertyReportScreen.Option> chosen = chooseTable();
-        if (!chosen.isExit() && !chosen.getChoice().isPresent()) {
+    public void chooseTableAndPrint(String instanceId) throws UserExitedException {
+        Chosen<ConsoleChoice> chosen = chooseTable();
+        if (!chosen.getChoice().isPresent()) {
             new TablePropertyReport(out, store).print(instanceId, chosen.getEntered());
         }
-        return chosen;
     }
 
-    public Chosen<TablePropertyReportScreen.Option> chooseTable() {
-        return chooseTable("");
+    public Chosen<ConsoleChoice> chooseTable() throws UserExitedException {
+        return chooseTable("")
+                .chooseUntilSomethingEntered(() ->
+                        chooseTable("\nYou did not enter anything please try again\n"));
     }
 
-    private Chosen<TablePropertyReportScreen.Option> chooseTable(String message) {
+    private Chosen<ConsoleChoice> chooseTable(String message) {
         out.clearScreen(message);
         out.println("Which TABLE do you want to check?\n");
-        Chosen<TablePropertyReportScreen.Option> chosen = chooseOne.chooseWithMessageFrom(
+        return chooseOne.chooseWithMessageFrom(
                 "Please enter the TABLE NAME now or use the following options:",
-                TablePropertyReportScreen.Option.values());
-        if ("".equals(chosen.getEntered())) {
-            return chooseTable("\nYou did not enter anything please try again\n");
-        }
-        return chosen;
+                RETURN_TO_MAIN_MENU);
     }
 }

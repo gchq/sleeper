@@ -13,20 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.console;
+package sleeper.console.menu;
 
 import org.junit.Test;
-import sleeper.ToStringPrintStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ChooseOneTest {
-
-    private final ToStringPrintStream out = new ToStringPrintStream();
-    private final TestConsoleInput in = new TestConsoleInput();
+public class ChooseOneTest extends ChooseOneTestBase {
 
     @Test
-    public void shouldOutputOptions() throws Exception {
+    public void shouldOutputOptions() {
         // When
         chooseTestOption();
 
@@ -40,7 +36,7 @@ public class ChooseOneTest {
     }
 
     @Test
-    public void shouldOutputSpecifiedMessage() throws Exception {
+    public void shouldOutputSpecifiedMessage() {
         // When
         chooseTestOptionWithMessage("Please enter your name or choose an option and hit return:");
 
@@ -54,7 +50,7 @@ public class ChooseOneTest {
     }
 
     @Test
-    public void shouldReturnFirstOptionWhenChosen() throws Exception {
+    public void shouldReturnFirstOptionWhenChosen() {
         // Given
         in.enterNextPrompt("1");
 
@@ -68,7 +64,7 @@ public class ChooseOneTest {
     }
 
     @Test
-    public void shouldReturnSecondOptionWhenChosen() throws Exception {
+    public void shouldReturnSecondOptionWhenChosen() {
         // Given
         in.enterNextPrompt("2");
 
@@ -82,7 +78,7 @@ public class ChooseOneTest {
     }
 
     @Test
-    public void shouldExitWhenChosen() throws Exception {
+    public void shouldExitWhenChosen() {
         // Given
         in.enterNextPrompt("0");
 
@@ -95,7 +91,7 @@ public class ChooseOneTest {
     }
 
     @Test
-    public void shouldReturnNoChoiceWhenNoneEntered() throws Exception {
+    public void shouldReturnNoChoiceWhenNoneEntered() {
         // Given
         in.enterNextPrompt("");
 
@@ -109,7 +105,7 @@ public class ChooseOneTest {
     }
 
     @Test
-    public void shouldReturnEnteredString() throws Exception {
+    public void shouldReturnEnteredString() {
         // Given
         in.enterNextPrompt("test value");
 
@@ -123,7 +119,7 @@ public class ChooseOneTest {
     }
 
     @Test
-    public void shouldReturnNoChoiceWhenEnteredNumberTooLarge() throws Exception {
+    public void shouldReturnNoChoiceWhenEnteredNumberTooLarge() {
         // Given
         in.enterNextPrompt("10");
 
@@ -137,7 +133,7 @@ public class ChooseOneTest {
     }
 
     @Test
-    public void shouldReturnNoChoiceWhenEnteredNumberTooSmall() throws Exception {
+    public void shouldReturnNoChoiceWhenEnteredNumberTooSmall() {
         // Given
         in.enterNextPrompt("-1");
 
@@ -151,7 +147,7 @@ public class ChooseOneTest {
     }
 
     @Test
-    public void shouldChooseAnOptionUsingAnEnum() throws Exception {
+    public void shouldChooseAnOptionUsingAnEnum() {
         // Given
         in.enterNextPrompt("1");
 
@@ -162,36 +158,5 @@ public class ChooseOneTest {
         assertThat(chosen.isExit()).isFalse();
         assertThat(chosen.getChoice()).containsSame(TestOption.ONE);
         assertThat(chosen.getEntered()).isEqualTo("1");
-    }
-
-    private Chosen<ConsoleChoice> chooseTestOption() throws Exception {
-        return chooseOne().chooseFrom(OPTION_ONE, OPTION_TWO);
-    }
-
-    private Chosen<ConsoleChoice> chooseTestOptionWithMessage(String message) throws Exception {
-        return chooseOne().chooseWithMessageFrom(message, OPTION_ONE, OPTION_TWO);
-    }
-
-    private ChooseOne chooseOne() throws Exception {
-        return new ChooseOne(out.consoleOut(), in.consoleIn());
-    }
-
-    private final ConsoleChoice OPTION_ONE = ConsoleChoice.describedAs("Option 1");
-    private final ConsoleChoice OPTION_TWO = ConsoleChoice.describedAs("Option 2");
-
-    private enum TestOption implements ConsoleChoice {
-        ONE("Option 1"),
-        TWO("Option 2");
-
-        private final String description;
-
-        TestOption(String description) {
-            this.description = description;
-        }
-
-        @Override
-        public String getDescription() {
-            return description;
-        }
     }
 }
