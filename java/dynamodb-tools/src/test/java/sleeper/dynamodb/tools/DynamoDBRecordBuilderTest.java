@@ -57,8 +57,7 @@ public class DynamoDBRecordBuilderTest extends DynamoDBTestBase {
         dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record));
         // Then we should be able to retrieve the record from dynamodb
         ScanResult result = dynamoDBClient.scan(new ScanRequest().withTableName(TEST_TABLE_NAME));
-        assertThat(result.getItems()).hasSize(1);
-        assertThat(result.getItems().get(0)).isEqualTo(record);
+        assertThat(result.getItems()).containsExactly(record);
     }
 
 
@@ -74,8 +73,7 @@ public class DynamoDBRecordBuilderTest extends DynamoDBTestBase {
         dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record));
         // Then we should be able to retrieve the record from dynamodb
         ScanResult result = dynamoDBClient.scan(new ScanRequest().withTableName(TEST_TABLE_NAME));
-        assertThat(result.getItems()).hasSize(1);
-        assertThat(result.getItems().get(0)).isEqualTo(record);
+        assertThat(result.getItems()).containsExactly(record);
     }
 
     @Test
@@ -90,8 +88,7 @@ public class DynamoDBRecordBuilderTest extends DynamoDBTestBase {
         dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record));
         // Then we should be able to retrieve the record from dynamodb
         ScanResult result = dynamoDBClient.scan(new ScanRequest().withTableName(TEST_TABLE_NAME));
-        assertThat(result.getItems()).hasSize(1);
-        assertThat(result.getItems().get(0)).isEqualTo(record);
+        assertThat(result.getItems()).containsExactly(record);
     }
 
     @Test
@@ -106,8 +103,7 @@ public class DynamoDBRecordBuilderTest extends DynamoDBTestBase {
         dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record));
         // Then we should be able to retrieve the record from dynamodb
         ScanResult result = dynamoDBClient.scan(new ScanRequest().withTableName(TEST_TABLE_NAME));
-        assertThat(result.getItems()).hasSize(1);
-        assertThat(result.getItems().get(0)).isEqualTo(record);
+        assertThat(result.getItems()).containsExactly(record);
     }
 
     private void createStringTable() {
