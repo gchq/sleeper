@@ -44,6 +44,8 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COM
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
@@ -69,13 +71,14 @@ public class RunTasks {
     private final int maximumRunningTasks;
     private final String subnet;
     private final String fargateVersion;
+    private final Scaler scaler;
 
     public RunTasks(AmazonSQS sqsClient,
-                    AmazonECS ecsClient,
-                    AmazonS3 s3Client,
-                    AmazonAutoScaling asClient,
-                    String s3Bucket,
-                    String type) throws IOException {
+            AmazonECS ecsClient,
+            AmazonS3 s3Client,
+            AmazonAutoScaling asClient,
+            String s3Bucket,
+            String type) throws IOException {
         this.sqsClient = sqsClient;
         this.ecsClient = ecsClient;
         this.s3Bucket = s3Bucket;
@@ -101,6 +104,9 @@ public class RunTasks {
         this.maximumRunningTasks = instanceProperties.getInt(MAXIMUM_CONCURRENT_COMPACTION_TASKS);
         this.subnet = instanceProperties.get(SUBNET);
         this.fargateVersion = instanceProperties.get(FARGATE_VERSION);
+        this.scaler = new Scaler(asClient, ecsClient, "FIXME", this.clusterName,
+                instanceProperties.getInt(COMPACTION_TASK_CPU),
+                instanceProperties.getInt(COMPACTION_TASK_MEMORY));
     }
 
     public void run() throws InterruptedException {
@@ -120,6 +126,10 @@ public class RunTasks {
 
         int maxNumTasksToCreate = maximumRunningTasks - numRunningTasks;
         LOGGER.info("Maximum number of tasks to create is {}", maxNumTasksToCreate);
+
+        // Do we need to scale out?
+        int maxNumTasksThatWillBeCreated = Math.min(maxNumTasksToCreate, queueSize);
+        scaler.possiblyScaleOut(maxNumTasksThatWillBeCreated);
 
         // Create 1 task for each item on the queue
         int numTasksCreated = 0;
@@ -145,11 +155,11 @@ public class RunTasks {
                     .withCluster(clusterName)
                     .withLaunchType(LaunchType.FARGATE)
                     .withTaskDefinition(taskDefinition)
-                    .withNetworkConfiguration(networkConfiguration) //Don't set this on EC2 tasks
+                    .withNetworkConfiguration(networkConfiguration) // Don't set this on EC2 tasks
                     .withOverrides(override)
                     .withPropagateTags(PropagateTags.TASK_DEFINITION)
 //                    .withPlatformVersion(null); //Set to null for EC2 tasks
-                    .withPlatformVersion(fargateVersion); //Don't set this on EC2 tasks
+                    .withPlatformVersion(fargateVersion); // Don't set this on EC2 tasks
 
             RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
             LOGGER.info("Submitted RunTaskRequest (cluster = {}, container name = {}, task definition = {})",
@@ -170,7 +180,8 @@ public class RunTasks {
             }
 
             if (0 == numTasksCreated % 10) {
-                // Sleep for 10 seconds - API allows 1 job per second with a burst of 10 jobs in a second
+                // Sleep for 10 seconds - API allows 1 job per second with a burst of 10 jobs in
+                // a second
                 // so run 10 every 11 seconds for safety
                 LOGGER.info("Sleeping for 11 seconds as 10 tasks have been created");
                 Thread.sleep(11000L);
