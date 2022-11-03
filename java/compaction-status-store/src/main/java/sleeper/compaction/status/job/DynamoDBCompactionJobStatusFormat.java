@@ -28,7 +28,7 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusUpdate;
 import sleeper.compaction.job.status.CompactionJobStatusUpdateRecord;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
-import sleeper.compaction.status.DynamoDBRecordBuilder;
+import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -37,11 +37,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static sleeper.compaction.status.DynamoDBAttributes.getInstantAttribute;
-import static sleeper.compaction.status.DynamoDBAttributes.getIntAttribute;
-import static sleeper.compaction.status.DynamoDBAttributes.getLongAttribute;
-import static sleeper.compaction.status.DynamoDBAttributes.getStringAttribute;
-import static sleeper.compaction.status.DynamoDBUtils.EXPIRY_DATE;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBUtils.EXPIRY_DATE;
 
 public class DynamoDBCompactionJobStatusFormat {
 

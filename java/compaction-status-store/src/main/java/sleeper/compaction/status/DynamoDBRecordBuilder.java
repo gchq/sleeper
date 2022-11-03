@@ -23,8 +23,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static sleeper.compaction.status.DynamoDBAttributes.createNumberAttribute;
-import static sleeper.compaction.status.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
 public class DynamoDBRecordBuilder {
 

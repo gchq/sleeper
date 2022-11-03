@@ -24,11 +24,11 @@ import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.Arrays;
 
-import static sleeper.compaction.status.DynamoDBUtils.initialiseTable;
 import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusFormat.TASK_ID;
 import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusFormat.UPDATE_TIME;
 import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore.taskStatusTableName;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 
 public class DynamoDBCompactionTaskStatusStoreCreator {
 

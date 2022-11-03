@@ -18,22 +18,22 @@ package sleeper.compaction.status.task;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sleeper.compaction.status.DynamoDBRecordBuilder;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusesBuilder;
+import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static sleeper.compaction.status.DynamoDBAttributes.getInstantAttribute;
-import static sleeper.compaction.status.DynamoDBAttributes.getIntAttribute;
-import static sleeper.compaction.status.DynamoDBAttributes.getLongAttribute;
-import static sleeper.compaction.status.DynamoDBAttributes.getNumberAttribute;
-import static sleeper.compaction.status.DynamoDBAttributes.getStringAttribute;
-import static sleeper.compaction.status.DynamoDBUtils.EXPIRY_DATE;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getNumberAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBUtils.EXPIRY_DATE;
 
 public class DynamoDBCompactionTaskStatusFormat {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskStatusFormat.class);
