@@ -18,12 +18,17 @@ package sleeper.clients.admin;
 import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
+import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_PROPERTY_REPORT_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
-public class InstancePropertyReportTest extends AdminClientTestBase {
+public class InstancePropertyReportTest extends AdminClientMockStoreBase {
 
     @Test
     public void shouldPrintInstancePropertyReportWhenChosen() throws Exception {
@@ -44,10 +49,10 @@ public class InstancePropertyReportTest extends AdminClientTestBase {
                 .contains("sleeper.default.page.size")
                 .contains("sleeper.query.tracker.ttl.days")
                 // Then check some set property values are present in the output
-                .contains("sleeper.account: 1234567890")
-                .contains("sleeper.log.retention.days: 1")
-                .contains("sleeper.tags: name,abc,project,test")
-                .contains("sleeper.vpc: aVPC");
+                .contains("sleeper.account: 1234567890\n")
+                .contains("sleeper.log.retention.days: 1\n")
+                .contains("sleeper.tags: name,abc,project,test\n")
+                .contains("sleeper.vpc: aVPC\n");
 
         // Then check the ordering of some property names are correct
         assertThat(output.indexOf("sleeper.account"))

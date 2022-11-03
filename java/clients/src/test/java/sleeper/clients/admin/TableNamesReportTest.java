@@ -18,12 +18,17 @@ package sleeper.clients.admin;
 import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
+import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_NAMES_REPORT_OPTION;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
-public class TableNamesReportTest extends AdminClientTestBase {
+public class TableNamesReportTest extends AdminClientMockStoreBase {
 
     @Test
     public void shouldPrintTableNamesReportWhenChosen() throws Exception {

@@ -18,31 +18,27 @@ package sleeper.clients.admin;
 import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
+import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-
-import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_PROPERTY_REPORT_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_PROPERTY_REPORT_SCREEN;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
-public class TablePropertyReportTest extends AdminClientTestBase {
-
-    private static final String TABLE_PROPERTY_REPORT_SCREEN = "\n" +
-            "Which TABLE do you want to check?\n" +
-            "\n" +
-            "Please enter the TABLE NAME now or use the following options:\n" +
-            "[0] Exit program\n" +
-            "[1] Return to Main Menu\n" +
-            "\n";
+public class TablePropertyReportTest extends AdminClientMockStoreBase {
 
     @Test
-    public void shouldPrintTablePropertyReportWhenChosen() throws IOException {
+    public void shouldPrintTablePropertyReportWhenChosen() throws Exception {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
         TableProperties tableProperties = createValidTableProperties(instanceProperties);
@@ -62,12 +58,12 @@ public class TablePropertyReportTest extends AdminClientTestBase {
                 .contains("sleeper.table.statestore.classname")
                 .contains("sleeper.table.fs.s3a.readahead.range")
                 // Then check some set table property values are present in the output
-                .contains("sleeper.table.name: test")
-                .contains("sleeper.table.encrypted: false")
+                .contains("sleeper.table.name: test-table\n")
+                .contains("sleeper.table.encrypted: false\n")
                 .contains("sleeper.table.schema: " +
                         "{\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]," +
                         "\"sortKeyFields\":[]," +
-                        "\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}");
+                        "\"valueFields\":[{\"name\":\"value\",\"type\":\"StringType\"}]}\n");
 
         // Then check the ordering of some property names are correct
         assertThat(output.indexOf("sleeper.table.encrypted"))
@@ -84,7 +80,7 @@ public class TablePropertyReportTest extends AdminClientTestBase {
     }
 
     @Test
-    public void shouldExitWhenChosenOnTablePropertyReportScreen() throws IOException {
+    public void shouldExitWhenChosenOnTablePropertyReportScreen() throws Exception {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
         TableProperties tableProperties = createValidTableProperties(instanceProperties);

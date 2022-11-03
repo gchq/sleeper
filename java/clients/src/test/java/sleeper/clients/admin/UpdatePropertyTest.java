@@ -18,10 +18,9 @@ package sleeper.clients.admin;
 import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
+import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperty;
-
-import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -29,40 +28,20 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_PROPERTY;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.UPDATE_PROPERTY_ENTER_TABLE_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.UPDATE_PROPERTY_ENTER_VALUE_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.UPDATE_PROPERTY_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.UPDATE_PROPERTY_SCREEN;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
-public class UpdatePropertyTest extends AdminClientTestBase {
-
-    private static final String UPDATE_PROPERTY_SCREEN = "\n" +
-            "What is the PROPERTY NAME of the property that you would like to update?\n" +
-            "\n" +
-            "Please enter the PROPERTY NAME now or use the following options:\n" +
-            "[0] Exit program\n" +
-            "[1] Return to Main Menu\n" +
-            "\n";
-
-    private static final String UPDATE_PROPERTY_ENTER_VALUE_SCREEN = "\n" +
-            "What is the new PROPERTY VALUE?\n" +
-            "\n" +
-            "Please enter the PROPERTY VALUE now or use the following options:\n" +
-            "[0] Exit program\n" +
-            "[1] Return to Main Menu\n" +
-            "\n";
-
-    private static final String UPDATE_PROPERTY_ENTER_TABLE_SCREEN = "\n" +
-            "As the property name begins with sleeper.table we also need to know the TABLE you want to update\n" +
-            "\n" +
-            "Please enter the TABLE NAME now or use the following options:\n" +
-            "[0] Exit program\n" +
-            "[1] Return to Main Menu\n" +
-            "\n";
-
-    protected static final String PROMPT_RETURN_TO_PROPERTY = "" +
-            "\n\n----------------------------------\n" +
-            "Hit enter to return to the property screen so you can adjust the property and continue\n";
+public class UpdatePropertyTest extends AdminClientMockStoreBase {
 
     @Test
-    public void shouldExitWhenChosenOnUpdatePropertyScreen() throws IOException {
+    public void shouldExitWhenChosenOnUpdatePropertyScreen() throws Exception {
         // Given
         in.enterNextPrompts(UPDATE_PROPERTY_OPTION, EXIT_OPTION);
 
@@ -79,7 +58,7 @@ public class UpdatePropertyTest extends AdminClientTestBase {
     }
 
     @Test
-    public void shouldUpdateInstancePropertyWhenNameAndValueEntered() throws IOException {
+    public void shouldUpdateInstancePropertyWhenNameAndValueEntered() throws Exception {
         // Given
         in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.retain.infra.after.destroy", "false", EXIT_OPTION);
 
@@ -103,7 +82,7 @@ public class UpdatePropertyTest extends AdminClientTestBase {
     }
 
     @Test
-    public void shouldUpdateTablePropertyWhenNameValueAndTableEntered() throws IOException {
+    public void shouldUpdateTablePropertyWhenNameValueAndTableEntered() throws Exception {
         // Given
         in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.table.iterator.class.name", "SomeIteratorClass", "update-table", EXIT_OPTION);
 
@@ -128,7 +107,7 @@ public class UpdatePropertyTest extends AdminClientTestBase {
     }
 
     @Test
-    public void shouldRefuseUpdatingInstancePropertyWithInvalidValue() throws IOException {
+    public void shouldRefuseUpdatingInstancePropertyWithInvalidValue() throws Exception {
         // Given
         in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.retain.infra.after.destroy", "ABC", EXIT_OPTION);
 
@@ -151,7 +130,7 @@ public class UpdatePropertyTest extends AdminClientTestBase {
     }
 
     @Test
-    public void shouldRefuseUpdatingUneditableInstanceProperty() throws IOException {
+    public void shouldRefuseUpdatingUneditableInstanceProperty() throws Exception {
         // Given
         in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.config.bucket", "some-bucket", EXIT_OPTION);
 
@@ -174,7 +153,7 @@ public class UpdatePropertyTest extends AdminClientTestBase {
     }
 
     @Test
-    public void shouldRefuseUpdatingTablePropertyWithInvalidValue() throws IOException {
+    public void shouldRefuseUpdatingTablePropertyWithInvalidValue() throws Exception {
         // Given
         in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.table.fs.s3a.readahead.range", "ABC", "update-table", EXIT_OPTION);
 
@@ -198,7 +177,7 @@ public class UpdatePropertyTest extends AdminClientTestBase {
     }
 
     @Test
-    public void shouldRefuseUpdatingNonExistingTableProperty() throws IOException {
+    public void shouldRefuseUpdatingNonExistingTableProperty() throws Exception {
         // Given
         in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.table.abc", "def", "update-table", EXIT_OPTION);
 

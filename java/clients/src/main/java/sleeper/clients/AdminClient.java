@@ -17,20 +17,14 @@ package sleeper.clients;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import sleeper.clients.admin.AdminConfigStore;
 import sleeper.clients.admin.AdminMainScreen;
 import sleeper.clients.admin.InstancePropertyReport;
 import sleeper.clients.admin.TableNamesReport;
-import sleeper.clients.admin.TablePropertyReport;
 import sleeper.clients.admin.TablePropertyReportScreen;
-import sleeper.clients.admin.UpdateProperty;
 import sleeper.clients.admin.UpdatePropertyScreen;
-import sleeper.configuration.properties.InstanceProperties;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
-
-import java.io.IOException;
 
 public class AdminClient {
 
@@ -44,48 +38,18 @@ public class AdminClient {
         this.in = in;
     }
 
-    public static AdminClient client(AmazonS3 s3Client) {
-        return new AdminClient(
-                new AdminConfigStore(s3Client),
-                new ConsoleOutput(System.out),
-                new ConsoleInput(System.console()));
-    }
-
-    static void printTablePropertiesReport(AmazonS3 s3Client, String instanceId, String tableName) {
-        client(s3Client).printTablePropertiesReport(instanceId, tableName);
-    }
-
-    private void printTablePropertiesReport(String instanceId, String tableName) {
-        new TablePropertyReport(out, store).print(instanceId, tableName);
-    }
-
-    static void printTablesReport(AmazonS3 s3Client, String instanceId) {
-        client(s3Client).tableNamesReport().print(instanceId);
-    }
-
-    static void updateProperty(AmazonS3 s3Client, String instanceId, String propertyName, String propertyValue, String tableName)
-            throws IOException, AmazonS3Exception {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-
-        if (propertyName.startsWith("sleeper.table.") && tableName == null) {
-            throw new IllegalArgumentException("When a table property is being updated e.g. sleeper.table.* " +
-                    "then a Table Name must be provided in the parameters");
-        }
-        if (tableName == null) {
-            client(s3Client).store.updateInstanceProperty(instanceId,
-                    UpdateProperty.getValidInstanceProperty(propertyName, propertyValue), propertyValue);
-        } else {
-            client(s3Client).store.updateTableProperty(instanceId, tableName,
-                    UpdateProperty.getValidTableProperty(propertyName, propertyValue), propertyValue);
-        }
-    }
-
     public static void main(String[] args) {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance id>");
         }
         client(AmazonS3ClientBuilder.defaultClient()).start(args[0]);
+    }
+
+    public static AdminClient client(AmazonS3 s3Client) {
+        return new AdminClient(
+                new AdminConfigStore(s3Client),
+                new ConsoleOutput(System.out),
+                new ConsoleInput(System.console()));
     }
 
     public void start(String instanceId) {
