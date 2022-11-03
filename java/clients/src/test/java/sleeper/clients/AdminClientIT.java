@@ -87,7 +87,7 @@ public class AdminClientIT {
         validInstanceProperties.saveToS3(getS3Client());
 
         // When
-        AdminClient.printInstancePropertiesReport(getS3Client(), INSTANCE_ID);
+        AdminClient.client(getS3Client()).instancePropertyReport().print(INSTANCE_ID);
 
         // Then check some default property values are present in the output, don't check values in case they change
         assertThat(outputStreamCaptor.toString())

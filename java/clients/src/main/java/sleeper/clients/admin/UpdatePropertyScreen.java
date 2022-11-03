@@ -28,28 +28,40 @@ import static sleeper.clients.admin.AdminCommonPrompts.RETURN_TO_MAIN_MENU;
 public class UpdatePropertyScreen {
 
     private final ConsoleOutput out;
+    private final ConsoleInput in;
     private final ChooseOne chooseOne;
     private final AdminConfigStore store;
 
     public UpdatePropertyScreen(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
         this.out = out;
+        this.in = in;
         this.chooseOne = new ChooseOne(out, in);
         this.store = store;
     }
 
     public void choosePropertyAndUpdate(String instanceId) throws UserExitedException {
-        chooseProperty().ifEnteredNonChoiceValue(propertyName ->
-                choosePropertyValue().ifEnteredNonChoiceValue(propertyValue -> {
-                    if (propertyName.startsWith("sleeper.table")) {
-                        chooseTable().ifEnteredNonChoiceValue(tableName -> {
-                            store.updateTableProperty(instanceId, tableName, propertyName, propertyValue);
-                            out.println(propertyName + " has been updated to " + propertyValue);
-                        });
-                    } else {
-                        store.updateInstanceProperty(instanceId, propertyName, propertyValue);
-                        out.println(propertyName + " has been updated to " + propertyValue);
-                    }
-                }));
+        while (true) {
+            try {
+                chooseProperty().ifEnteredNonChoiceValue(propertyName ->
+                        choosePropertyValue().ifEnteredNonChoiceValue(propertyValue -> {
+                            if (propertyName.startsWith("sleeper.table")) {
+                                chooseTable().ifEnteredNonChoiceValue(tableName -> {
+                                    store.updateTableProperty(instanceId, tableName,
+                                            UpdateProperty.getValidTableProperty(propertyName, propertyValue), propertyValue);
+                                    out.println(propertyName + " has been updated to " + propertyValue);
+                                });
+                            } else {
+                                store.updateInstanceProperty(instanceId,
+                                        UpdateProperty.getValidInstanceProperty(propertyName, propertyValue), propertyValue);
+                                out.println(propertyName + " has been updated to " + propertyValue);
+                            }
+                        }));
+                break;
+            } catch (IllegalArgumentException e) {
+                out.println(e.getMessage());
+                confirmReturnToEnterProperty();
+            }
+        }
     }
 
     private Chosen<ConsoleChoice> chooseProperty() throws UserExitedException {
@@ -92,5 +104,11 @@ public class UpdatePropertyScreen {
         return chooseOne.chooseWithMessageFrom(
                 "Please enter the TABLE NAME now or use the following options:",
                 RETURN_TO_MAIN_MENU);
+    }
+
+    private void confirmReturnToEnterProperty() {
+        out.println("\n\n----------------------------------");
+        out.println("Hit enter to return to the property screen so you can adjust the property and continue");
+        in.waitForLine();
     }
 }

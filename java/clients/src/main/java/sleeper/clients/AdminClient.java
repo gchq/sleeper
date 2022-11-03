@@ -24,6 +24,7 @@ import sleeper.clients.admin.InstancePropertyReport;
 import sleeper.clients.admin.TableNamesReport;
 import sleeper.clients.admin.TablePropertyReport;
 import sleeper.clients.admin.TablePropertyReportScreen;
+import sleeper.clients.admin.UpdateProperty;
 import sleeper.clients.admin.UpdatePropertyScreen;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.console.ConsoleInput;
@@ -86,11 +87,12 @@ public class AdminClient {
             throw new IllegalArgumentException(TABLE_NULL_ERROR);
         }
         if (tableName == null) {
-            client(s3Client).store.updateInstanceProperty(instanceId, propertyName, propertyValue);
+            client(s3Client).store.updateInstanceProperty(instanceId,
+                    UpdateProperty.getValidInstanceProperty(propertyName, propertyValue), propertyValue);
         } else {
-            client(s3Client).store.updateTableProperty(instanceId, tableName, propertyName, propertyValue);
+            client(s3Client).store.updateTableProperty(instanceId, tableName,
+                    UpdateProperty.getValidTableProperty(propertyName, propertyValue), propertyValue);
         }
-        System.out.println(propertyName + " has been updated to " + propertyValue);
     }
 
     public static void main(String[] args) {

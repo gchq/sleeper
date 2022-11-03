@@ -18,6 +18,8 @@ package sleeper.clients.admin;
 import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
+import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.table.TableProperty;
 
 import java.io.IOException;
 
@@ -55,6 +57,10 @@ public class UpdatePropertyTest extends AdminClientTestBase {
             "[1] Return to Main Menu\n" +
             "\n";
 
+    protected static final String PROMPT_RETURN_TO_PROPERTY = "" +
+            "\n\n----------------------------------\n" +
+            "Hit enter to return to the property screen so you can adjust the property and continue\n";
+
     @Test
     public void shouldExitWhenChosenOnUpdatePropertyScreen() throws IOException {
         // Given
@@ -89,7 +95,8 @@ public class UpdatePropertyTest extends AdminClientTestBase {
 
         InOrder order = Mockito.inOrder(in.mock, store);
         order.verify(in.mock, times(3)).promptLine(any());
-        order.verify(store).updateInstanceProperty(INSTANCE_ID, "sleeper.retain.infra.after.destroy", "false");
+        order.verify(store).updateInstanceProperty(INSTANCE_ID,
+                UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY, "false");
         order.verify(in.mock).waitForLine();
         order.verify(in.mock).promptLine(any());
         order.verifyNoMoreInteractions();
@@ -113,7 +120,102 @@ public class UpdatePropertyTest extends AdminClientTestBase {
 
         InOrder order = Mockito.inOrder(in.mock, store);
         order.verify(in.mock, times(4)).promptLine(any());
-        order.verify(store).updateTableProperty(INSTANCE_ID, "update-table", "sleeper.table.iterator.class.name", "SomeIteratorClass");
+        order.verify(store).updateTableProperty(INSTANCE_ID, "update-table",
+                TableProperty.ITERATOR_CLASS_NAME, "SomeIteratorClass");
+        order.verify(in.mock).waitForLine();
+        order.verify(in.mock).promptLine(any());
+        order.verifyNoMoreInteractions();
+    }
+
+    @Test
+    public void shouldRefuseUpdatingInstancePropertyWithInvalidValue() throws IOException {
+        // Given
+        in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.retain.infra.after.destroy", "ABC", EXIT_OPTION);
+
+        // When
+        String output = runClientGetOutput();
+
+        // Then
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_ENTER_VALUE_SCREEN
+                + "Sleeper property sleeper.retain.infra.after.destroy is invalid\n"
+                + PROMPT_RETURN_TO_PROPERTY
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN);
+
+        InOrder order = Mockito.inOrder(in.mock, store);
+        order.verify(in.mock, times(3)).promptLine(any());
+        order.verify(in.mock).waitForLine();
+        order.verify(in.mock).promptLine(any());
+        order.verifyNoMoreInteractions();
+    }
+
+    @Test
+    public void shouldRefuseUpdatingUneditableInstanceProperty() throws IOException {
+        // Given
+        in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.config.bucket", "some-bucket", EXIT_OPTION);
+
+        // When
+        String output = runClientGetOutput();
+
+        // Then
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_ENTER_VALUE_SCREEN
+                + "Sleeper property sleeper.config.bucket does not exist and cannot be updated\n"
+                + PROMPT_RETURN_TO_PROPERTY
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN);
+
+        InOrder order = Mockito.inOrder(in.mock, store);
+        order.verify(in.mock, times(3)).promptLine(any());
+        order.verify(in.mock).waitForLine();
+        order.verify(in.mock).promptLine(any());
+        order.verifyNoMoreInteractions();
+    }
+
+    @Test
+    public void shouldRefuseUpdatingTablePropertyWithInvalidValue() throws IOException {
+        // Given
+        in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.table.fs.s3a.readahead.range", "ABC", "update-table", EXIT_OPTION);
+
+        // When
+        String output = runClientGetOutput();
+
+        // Then
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_ENTER_VALUE_SCREEN
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_ENTER_TABLE_SCREEN
+                + "Sleeper property sleeper.table.fs.s3a.readahead.range is invalid\n"
+                + PROMPT_RETURN_TO_PROPERTY
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN);
+
+        InOrder order = Mockito.inOrder(in.mock, store);
+        order.verify(in.mock, times(4)).promptLine(any());
+        order.verify(in.mock).waitForLine();
+        order.verify(in.mock).promptLine(any());
+        order.verifyNoMoreInteractions();
+    }
+
+    @Test
+    public void shouldRefuseUpdatingNonExistingTableProperty() throws IOException {
+        // Given
+        in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.table.abc", "def", "update-table", EXIT_OPTION);
+
+        // When
+        String output = runClientGetOutput();
+
+        // Then
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_ENTER_VALUE_SCREEN
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_ENTER_TABLE_SCREEN
+                + "Sleeper property sleeper.table.abc does not exist and cannot be updated\n"
+                + PROMPT_RETURN_TO_PROPERTY
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN);
+
+        InOrder order = Mockito.inOrder(in.mock, store);
+        order.verify(in.mock, times(4)).promptLine(any());
         order.verify(in.mock).waitForLine();
         order.verify(in.mock).promptLine(any());
         order.verifyNoMoreInteractions();
