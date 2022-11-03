@@ -45,6 +45,8 @@ public class AdminMainScreen {
                     confirmReturnToMainScreen();
                 }),
                 new MenuOption("Print Sleeper table names", () -> {
+                    client.tableNamesReport().print(instanceId);
+                    confirmReturnToMainScreen();
                 }),
                 new MenuOption("Print Sleeper table property report", () -> {
                     client.tablePropertyReportScreen()
