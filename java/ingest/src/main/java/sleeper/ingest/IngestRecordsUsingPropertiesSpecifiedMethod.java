@@ -18,7 +18,6 @@ package sleeper.ingest;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.parquet.hadoop.ParquetWriter;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -46,6 +45,8 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_I
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 
 /**
  * This class provide methods to support ingest into Sleeper, where the way in which that ingest should take place is
@@ -189,8 +190,8 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
         return IngestProperties.builder()
                 .objectFactory(objectFactory)
                 .localDir(localWorkingDirectory)
-                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
-                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
+                .rowGroupSize(tableProperties.getInt(ROW_GROUP_SIZE))
+                .pageSize(tableProperties.getInt(PAGE_SIZE))
                 .stateStore(sleeperStateStore)
                 .schema(tableProperties.getSchema())
                 .iteratorClassName(sleeperIteratorClassName)
