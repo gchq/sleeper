@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.console;
+package sleeper.console.menu;
+
+import sleeper.console.UserExitedException;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 public class Chosen<T extends ConsoleChoice> {
 
@@ -33,6 +36,14 @@ public class Chosen<T extends ConsoleChoice> {
         this.exit = exit;
     }
 
+    public static <T extends ConsoleChoice> Chosen<T> exit(String entered) {
+        return new Chosen<>(entered, null, true);
+    }
+
+    public static <T extends ConsoleChoice> Chosen<T> nothing(String entered) {
+        return new Chosen<>(entered, null);
+    }
+
     public String getEntered() {
         return entered;
     }
@@ -45,11 +56,23 @@ public class Chosen<T extends ConsoleChoice> {
         return exit;
     }
 
-    public static <T extends ConsoleChoice> Chosen<T> exit(String entered) {
-        return new Chosen<>(entered, null, true);
+    public T chooseUntilChoiceFound(Supplier<Chosen<T>> chooseAgain) throws UserExitedException {
+        if (exit) {
+            throw new UserExitedException();
+        } else if (choice != null) {
+            return choice;
+        } else {
+            return chooseAgain.get().chooseUntilChoiceFound(chooseAgain);
+        }
     }
 
-    public static <T extends ConsoleChoice> Chosen<T> nothing(String entered) {
-        return new Chosen<>(entered, null);
+    public Chosen<T> chooseUntilSomethingEntered(Supplier<Chosen<T>> chooseAgain) throws UserExitedException {
+        if (exit) {
+            throw new UserExitedException();
+        } else if ("".equals(entered)) {
+            return chooseAgain.get().chooseUntilSomethingEntered(chooseAgain);
+        } else {
+            return this;
+        }
     }
 }

@@ -13,11 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.console;
+package sleeper.console.menu;
 
-public class UserExitedException extends Exception {
+import sleeper.console.UserExitedException;
 
-    public UserExitedException() {
-        super("User chose to exit");
+public class MenuOption implements ConsoleChoice {
+
+    private final String description;
+    private final MenuOperation operation;
+
+    public MenuOption(String description, MenuOperation operation) {
+        this.description = description;
+        this.operation = operation;
+    }
+
+    @Override
+    public String getDescription() {
+        return description;
+    }
+
+    public void run() throws UserExitedException {
+        operation.run();
     }
 }

@@ -30,6 +30,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
+import sleeper.console.UserExitedException;
 import sleeper.table.job.TableLister;
 
 import java.io.IOException;
@@ -187,7 +188,11 @@ public class AdminClient {
     }
 
     private static void tablePropertyReportScreen(String instanceId) {
-        client(defaultS3Client).tablePropertyReportScreen().chooseTableAndPrint(instanceId);
+        try {
+            client(defaultS3Client).tablePropertyReportScreen().chooseTableAndPrint(instanceId);
+        } catch (UserExitedException e) {
+            closeProgram();
+        }
     }
 
     private static void updatePropertyScreen(String message, String instanceId) throws IOException {
