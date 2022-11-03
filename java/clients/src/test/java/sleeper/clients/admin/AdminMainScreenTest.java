@@ -16,11 +16,15 @@
 package sleeper.clients.admin;
 
 import org.junit.Test;
+import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_INPUT_NOT_RECOGNISED;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
-public class AdminMainScreenTest extends AdminClientTestBase {
+public class AdminMainScreenTest extends AdminClientMockStoreBase {
 
     @Test
     public void shouldDisplayMainScreenAndExitWhenChosen() throws Exception {
