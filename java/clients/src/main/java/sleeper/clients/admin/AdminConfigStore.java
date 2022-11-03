@@ -54,13 +54,7 @@ public class AdminConfigStore {
         return new TableLister(s3, loadInstanceProperties(instanceId)).listTables();
     }
 
-    public void updateInstanceProperty(String instanceId, String propertyName, String propertyValue) {
-        UserDefinedInstanceProperty property = getUserDefinedInstanceProperty(propertyName)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Sleeper property " + propertyName + " does not exist and cannot be updated"));
-        if (!property.validationPredicate().test(propertyValue)) {
-            throw new IllegalArgumentException("Sleeper property " + propertyName + " is invalid");
-        }
+    public void updateInstanceProperty(String instanceId, UserDefinedInstanceProperty property, String propertyValue) {
         InstanceProperties properties = loadInstanceProperties(instanceId);
         properties.set(property, propertyValue);
         try {
@@ -70,13 +64,7 @@ public class AdminConfigStore {
         }
     }
 
-    public void updateTableProperty(String instanceId, String tableName, String propertyName, String propertyValue) {
-        TableProperty property = getTableProperty(propertyName)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Sleeper property " + propertyName + " does not exist and cannot be updated"));
-        if (!property.validationPredicate().test(propertyValue)) {
-            throw new IllegalArgumentException("Sleeper property " + propertyName + " is invalid");
-        }
+    public void updateTableProperty(String instanceId, String tableName, TableProperty property, String propertyValue) {
         TableProperties properties = loadTableProperties(instanceId, tableName);
         properties.set(property, propertyValue);
         try {
