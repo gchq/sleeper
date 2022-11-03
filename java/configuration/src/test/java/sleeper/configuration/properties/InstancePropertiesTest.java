@@ -27,6 +27,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
@@ -39,6 +40,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUE
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_LAMBDA_ROLE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
@@ -237,6 +239,8 @@ public class InstancePropertiesTest {
         instanceProperties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, "url5");
         instanceProperties.set(SPLITTING_COMPACTION_JOB_DLQ_URL, "url6");
         instanceProperties.set(COMPACTION_CLUSTER, "ecsCluster1");
+        instanceProperties.set(COMPACTION_AUTO_SCALING_GROUP, "autoScalingGroup1");
+        instanceProperties.set(SPLITTING_COMPACTION_AUTO_SCALING_GROUP, "autoScalingGroup2");
         instanceProperties.set(SPLITTING_COMPACTION_CLUSTER, "ecsCluster2");
         instanceProperties.set(EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION, "user@domain");
         instanceProperties.set(QUERY_QUEUE_URL, "url7");

@@ -38,9 +38,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
@@ -53,7 +55,7 @@ import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
 import static sleeper.core.ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME;
 
 /**
- * Finds the number of messages on a queue, and starts up one Fargate task for
+ * Finds the number of messages on a queue, and starts up one EC2 or Fargate task for
  * each, up to a configurable maximum.
  */
 public class RunTasks {
@@ -61,7 +63,6 @@ public class RunTasks {
 
     private final AmazonSQS sqsClient;
     private final AmazonECS ecsClient;
-    private final AmazonAutoScaling asClient;
     private final String s3Bucket;
     private final String type;
     private final String sqsJobQueueUrl;
@@ -82,29 +83,31 @@ public class RunTasks {
         this.sqsClient = sqsClient;
         this.ecsClient = ecsClient;
         this.s3Bucket = s3Bucket;
-        this.asClient = asClient;
         this.type = type;
 
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
-
+        String autoScalingGroupName;
         if (type.equals("compaction")) {
             this.sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
             this.clusterName = instanceProperties.get(COMPACTION_CLUSTER);
             this.containerName = COMPACTION_CONTAINER_NAME;
             this.taskDefinition = instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
+            autoScalingGroupName = instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP);
         } else if (type.equals("splittingcompaction")) {
             this.sqsJobQueueUrl = instanceProperties.get(SPLITTING_COMPACTION_JOB_QUEUE_URL);
             this.clusterName = instanceProperties.get(SPLITTING_COMPACTION_CLUSTER);
             this.containerName = SPLITTING_COMPACTION_CONTAINER_NAME;
             this.taskDefinition = instanceProperties.get(SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
+            autoScalingGroupName = instanceProperties.get(SPLITTING_COMPACTION_AUTO_SCALING_GROUP);
         } else {
             throw new RuntimeException("type should be 'compaction' or 'splittingcompaction'");
         }
         this.maximumRunningTasks = instanceProperties.getInt(MAXIMUM_CONCURRENT_COMPACTION_TASKS);
         this.subnet = instanceProperties.get(SUBNET);
         this.fargateVersion = instanceProperties.get(FARGATE_VERSION);
-        this.scaler = new Scaler(asClient, ecsClient, "FIXME", this.clusterName,
+
+        this.scaler = new Scaler(asClient, ecsClient, autoScalingGroupName, this.clusterName,
                 instanceProperties.getInt(COMPACTION_TASK_CPU),
                 instanceProperties.getInt(COMPACTION_TASK_MEMORY));
     }

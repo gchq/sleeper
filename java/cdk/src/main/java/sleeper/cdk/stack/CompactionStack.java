@@ -18,6 +18,7 @@ package sleeper.cdk.stack;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.core.ContainerConstants;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
@@ -80,6 +81,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
@@ -88,6 +90,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COM
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
@@ -450,7 +453,7 @@ public class CompactionStack extends NestedStack {
         grantPermissions.accept(fargateTaskDefinition);
         grantPermissions.accept(ec2TaskDefinition);
 
-        addEC2CapacityProvider(cluster, "MergeCompaction", vpc);
+        addEC2CapacityProvider(cluster, "MergeCompaction", vpc, COMPACTION_AUTO_SCALING_GROUP);
 
         CfnOutputProps compactionClusterProps = new CfnOutputProps.Builder()
                 .value(cluster.getClusterName())
@@ -540,7 +543,7 @@ public class CompactionStack extends NestedStack {
         grantPermissions.accept(fargateTaskDefinition);
         grantPermissions.accept(ec2TaskDefinition);
 
-        addEC2CapacityProvider(cluster, "SplittingMergeCompaction", vpc);
+        addEC2CapacityProvider(cluster, "SplittingMergeCompaction", vpc, SPLITTING_COMPACTION_AUTO_SCALING_GROUP);
 
         CfnOutputProps splittingCompactionClusterProps = new CfnOutputProps.Builder()
                 .value(cluster.getClusterName())
@@ -550,7 +553,8 @@ public class CompactionStack extends NestedStack {
         return cluster;
     }
 
-    private void addEC2CapacityProvider(Cluster cluster, String clusterName, IVpc vpc) {
+    private void addEC2CapacityProvider(Cluster cluster, String clusterName, IVpc vpc,
+            SystemDefinedInstanceProperty scalingProperty) {
         AutoScalingGroup ec2scalingGroup = AutoScalingGroup.Builder.create(this, clusterName + "ScalingGroup").vpc(vpc)
                 .allowAllOutbound(true)
                 .associatePublicIpAddress(false)
@@ -590,6 +594,8 @@ public class CompactionStack extends NestedStack {
                         .machineImageType(MachineImageType.AMAZON_LINUX_2)
                         .spotInstanceDraining(true)
                         .build());
+
+        instanceProperties.set(scalingProperty, ec2scalingGroup.getAutoScalingGroupName());
     }
 
     public static InstanceType lookupEC2InstanceType(String ec2InstanceType) {
