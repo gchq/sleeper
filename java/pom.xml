@@ -50,6 +50,7 @@
         <module>distribution</module>
         <module>dynamodb-tools</module>
         <module>build</module>
+        <module>ingest-status-store</module>
     </modules>
 
     <properties>
