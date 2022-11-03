@@ -15,7 +15,6 @@
  */
 package sleeper.clients.admin;
 
-import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.console.ConsoleOutput;
@@ -35,8 +34,7 @@ public class TablePropertyReport {
     }
 
     public void print(String instanceId, String tableName) {
-        InstanceProperties instanceProperties = store.loadInstanceProperties(instanceId);
-        print(store.tablePropertiesProvider(instanceProperties).getTableProperties(tableName));
+        print(store.getTableProperties(instanceId, tableName));
     }
 
     private void print(TableProperties tableProperties) {

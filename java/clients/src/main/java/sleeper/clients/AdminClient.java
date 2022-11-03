@@ -21,6 +21,7 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
 import sleeper.clients.admin.AdminConfigStore;
 import sleeper.clients.admin.AdminMainScreen;
 import sleeper.clients.admin.InstancePropertyReport;
+import sleeper.clients.admin.TableNamesReport;
 import sleeper.clients.admin.TablePropertyReport;
 import sleeper.clients.admin.TablePropertyReportScreen;
 import sleeper.configuration.properties.InstanceProperties;
@@ -31,10 +32,8 @@ import sleeper.configuration.properties.table.TableProperty;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.console.UserExitedException;
-import sleeper.table.job.TableLister;
 
 import java.io.IOException;
-import java.util.List;
 
 public class AdminClient {
     private static final String CLEAR_CONSOLE = "\033[H\033[2J";
@@ -78,17 +77,8 @@ public class AdminClient {
         new TablePropertyReport(out, store).print(instanceId, tableName);
     }
 
-    static void printTablesReport(AmazonS3 s3Client, String instanceId) throws IOException, AmazonS3Exception {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-
-        TableLister tableLister = new TableLister(s3Client, instanceProperties);
-        List<String> tableList = tableLister.listTables();
-
-        System.out.println("\n\n Table Names Report \n -------------------------");
-        for (String tableName : tableList) {
-            System.out.println(tableName);
-        }
+    static void printTablesReport(AmazonS3 s3Client, String instanceId) {
+        client(s3Client).tableNamesReport().print(instanceId);
     }
 
     static void updateProperty(AmazonS3 s3Client, String instanceId, String propertyName, String propertyValue, String tableName)
@@ -326,6 +316,10 @@ public class AdminClient {
 
     public InstancePropertyReport instancePropertyReport() {
         return new InstancePropertyReport(out, store);
+    }
+
+    public TableNamesReport tableNamesReport() {
+        return new TableNamesReport(out, store);
     }
 
     public TablePropertyReportScreen tablePropertyReportScreen() {

@@ -18,7 +18,6 @@ package sleeper.clients.admin;
 import sleeper.ToStringPrintStream;
 import sleeper.clients.AdminClient;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.console.TestConsoleInput;
 import sleeper.core.schema.Field;
@@ -27,6 +26,7 @@ import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -68,7 +68,9 @@ public abstract class AdminClientTestBase {
 
     protected static final String PROMPT_INPUT_NOT_RECOGNISED = "Input not recognised please try again\n";
 
-    protected static final String PROMPT_RETURN_TO_MAIN = "Hit enter to return to main screen\n";
+    protected static final String PROMPT_RETURN_TO_MAIN = "" +
+            "\n\n----------------------------------\n" +
+            "Hit enter to return to main screen\n";
 
     private final AdminConfigStore store = mock(AdminConfigStore.class);
     protected final TestConsoleInput in = new TestConsoleInput();
@@ -99,8 +101,13 @@ public abstract class AdminClientTestBase {
 
     protected void setInstanceProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
         setInstanceProperties(instanceProperties);
-        when(store.tablePropertiesProvider(instanceProperties))
-                .thenReturn(new FixedTablePropertiesProvider(tableProperties));
+        when(store.getTableProperties(instanceProperties.get(ID), tableProperties.get(TABLE_NAME)))
+                .thenReturn(tableProperties);
+    }
+
+    protected void setInstanceTables(InstanceProperties instanceProperties, String... tableNames) {
+        setInstanceProperties(instanceProperties);
+        when(store.listTables(instanceProperties.get(ID))).thenReturn(Arrays.asList(tableNames));
     }
 
     protected InstanceProperties createValidInstanceProperties() {
