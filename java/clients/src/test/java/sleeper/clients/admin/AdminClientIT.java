@@ -32,6 +32,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.UPDATE_
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.UPDATE_PROPERTY_ENTER_VALUE_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.UPDATE_PROPERTY_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.UPDATE_PROPERTY_SCREEN;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -120,6 +121,10 @@ public class AdminClientIT extends AdminClientITBase {
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Instance Property Report")
                 .contains("sleeper.retain.infra.after.destroy: false\n");
+
+        InstanceProperties instancePropertiesAfter = new InstanceProperties();
+        instancePropertiesAfter.loadFromS3(s3, instanceProperties.get(CONFIG_BUCKET));
+        assertThat(instancePropertiesAfter.getBoolean(RETAIN_INFRA_AFTER_DESTROY)).isFalse();
     }
 
     @Test
@@ -147,5 +152,9 @@ public class AdminClientIT extends AdminClientITBase {
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Table Property Report")
                 .contains("sleeper.table.iterator.class.name: AfterIteratorClass\n");
+
+        TableProperties tablePropertiesAfter = new TableProperties(instanceProperties);
+        tablePropertiesAfter.loadFromS3(s3, tableProperties.get(TABLE_NAME));
+        assertThat(tablePropertiesAfter.get(ITERATOR_CLASS_NAME)).isEqualTo("AfterIteratorClass");
     }
 }
