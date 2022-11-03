@@ -32,6 +32,8 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.UPDATE_
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.UPDATE_PROPERTY_ENTER_VALUE_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.UPDATE_PROPERTY_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.UPDATE_PROPERTY_SCREEN;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
@@ -101,18 +103,23 @@ public class AdminClientIT extends AdminClientITBase {
     public void shouldUpdateInstancePropertyWhenNameAndValueEntered() throws Exception {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
+        instanceProperties.set(RETAIN_INFRA_AFTER_DESTROY, "true");
         instanceProperties.saveToS3(s3);
-        in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.retain.infra.after.destroy", "false", EXIT_OPTION);
+        in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.retain.infra.after.destroy", "false",
+                INSTANCE_PROPERTY_REPORT_OPTION, EXIT_OPTION);
 
         // When
         String output = runClientGetOutput();
 
         // Then
-        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN
-                + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN
-                + CLEAR_CONSOLE + UPDATE_PROPERTY_ENTER_VALUE_SCREEN
-                + "sleeper.retain.infra.after.destroy has been updated to false\n"
-                + PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN);
+        assertThat(output).startsWith(CLEAR_CONSOLE + MAIN_SCREEN
+                        + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN
+                        + CLEAR_CONSOLE + UPDATE_PROPERTY_ENTER_VALUE_SCREEN
+                        + "sleeper.retain.infra.after.destroy has been updated to false\n"
+                        + PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
+                .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
+                .contains("Instance Property Report")
+                .contains("sleeper.retain.infra.after.destroy: false\n");
     }
 
     @Test
@@ -121,18 +128,24 @@ public class AdminClientIT extends AdminClientITBase {
         InstanceProperties instanceProperties = createValidInstanceProperties();
         instanceProperties.saveToS3(s3);
         TableProperties tableProperties = createValidTableProperties(instanceProperties);
+        tableProperties.set(ITERATOR_CLASS_NAME, "BeforeIteratorClass");
         tableProperties.saveToS3(s3);
-        in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.table.iterator.class.name", "SomeIteratorClass", TABLE_NAME_VALUE, EXIT_OPTION);
+        in.enterNextPrompts(UPDATE_PROPERTY_OPTION,
+                "sleeper.table.iterator.class.name", "AfterIteratorClass", TABLE_NAME_VALUE,
+                TABLE_PROPERTY_REPORT_OPTION, tableProperties.get(TABLE_NAME), EXIT_OPTION);
 
         // When
         String output = runClientGetOutput();
 
         // Then
-        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN
-                + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN
-                + CLEAR_CONSOLE + UPDATE_PROPERTY_ENTER_VALUE_SCREEN
-                + CLEAR_CONSOLE + UPDATE_PROPERTY_ENTER_TABLE_SCREEN
-                + "sleeper.table.iterator.class.name has been updated to SomeIteratorClass\n"
-                + PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN);
+        assertThat(output).startsWith(CLEAR_CONSOLE + MAIN_SCREEN
+                        + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN
+                        + CLEAR_CONSOLE + UPDATE_PROPERTY_ENTER_VALUE_SCREEN
+                        + CLEAR_CONSOLE + UPDATE_PROPERTY_ENTER_TABLE_SCREEN
+                        + "sleeper.table.iterator.class.name has been updated to AfterIteratorClass\n"
+                        + PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
+                .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
+                .contains("Table Property Report")
+                .contains("sleeper.table.iterator.class.name: AfterIteratorClass\n");
     }
 }
