@@ -72,7 +72,7 @@ public abstract class AdminClientTestBase {
             "\n\n----------------------------------\n" +
             "Hit enter to return to main screen\n";
 
-    private final AdminConfigStore store = mock(AdminConfigStore.class);
+    protected final AdminConfigStore store = mock(AdminConfigStore.class);
     protected final TestConsoleInput in = new TestConsoleInput();
     private final ToStringPrintStream out = new ToStringPrintStream();
 
@@ -81,7 +81,7 @@ public abstract class AdminClientTestBase {
             .valueFields(new Field("value", new StringType()))
             .build();
 
-    private static final String INSTANCE_ID = "test-instance";
+    protected static final String INSTANCE_ID = "test-instance";
     private static final String CONFIG_BUCKET_NAME = "sleeper-" + INSTANCE_ID + "-config";
     private static final String TABLE_NAME_VALUE = "test";
 
