@@ -40,6 +40,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
@@ -202,7 +203,7 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
                 .hadoopConfiguration(hadoopConfiguration)
                 .maxInMemoryBatchSize(instanceProperties.getInt(MAX_IN_MEMORY_BATCH_SIZE))
                 .maxRecordsToWriteLocally(instanceProperties.getLong(MAX_RECORDS_TO_WRITE_LOCALLY))
-                .ingestPartitionRefreshFrequencyInSecond(120).build();
+                .ingestPartitionRefreshFrequencyInSecond(instanceProperties.getInt(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS)).build();
     }
 
     /**
