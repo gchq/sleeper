@@ -19,9 +19,9 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.console.ConsoleOutput;
 
-import java.util.Iterator;
+import java.util.Arrays;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.NavigableMap;
 
 public class TablePropertyReport {
 
@@ -39,19 +39,10 @@ public class TablePropertyReport {
 
     private void print(TableProperties tableProperties) {
 
-        Iterator<Map.Entry<Object, Object>> propertyIterator = tableProperties.getPropertyIterator();
-        TreeMap<Object, Object> tablePropertyTreeMap = new TreeMap<>();
-        while (propertyIterator.hasNext()) {
-            Map.Entry<Object, Object> mapElement = propertyIterator.next();
-            tablePropertyTreeMap.put(mapElement.getKey(), mapElement.getValue());
-        }
-        for (TableProperty tableProperty : TableProperty.values()) {
-            if (!tablePropertyTreeMap.containsKey(tableProperty.getPropertyName())) {
-                tablePropertyTreeMap.put(tableProperty.getPropertyName(), tableProperties.get(tableProperty));
-            }
-        }
+        NavigableMap<Object, Object> orderedProperties = SleeperPropertyUtils.orderedPropertyMapWithIncludes(
+                tableProperties, Arrays.asList(TableProperty.values()));
         out.println("\n\n Table Property Report \n -------------------------");
-        for (Map.Entry<Object, Object> entry : tablePropertyTreeMap.entrySet()) {
+        for (Map.Entry<Object, Object> entry : orderedProperties.entrySet()) {
             out.println(entry.getKey() + ": " + entry.getValue());
         }
     }
