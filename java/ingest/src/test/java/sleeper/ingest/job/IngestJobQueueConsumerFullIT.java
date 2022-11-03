@@ -81,9 +81,9 @@ public class IngestJobQueueConsumerFullIT {
     private static final String CONFIG_BUCKET_NAME = TEST_INSTANCE_NAME + "-configbucket";
     private static final String INGEST_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-ingestdata";
     private static final String TABLE_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-tabledata";
+    private static final String FILE_SYSTEM_PREFIX = "s3a://";
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
-    public static final String FILE_SYSTEM_PREFIX = "s3a://";
 
     @Before
     public void before() throws IOException {
