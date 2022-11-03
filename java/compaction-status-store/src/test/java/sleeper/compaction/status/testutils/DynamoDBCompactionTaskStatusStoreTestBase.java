@@ -26,6 +26,7 @@ import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import java.time.Instant;
 import java.util.UUID;
