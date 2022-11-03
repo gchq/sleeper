@@ -24,6 +24,7 @@ import sleeper.clients.admin.InstancePropertyReport;
 import sleeper.clients.admin.TableNamesReport;
 import sleeper.clients.admin.TablePropertyReport;
 import sleeper.clients.admin.TablePropertyReportScreen;
+import sleeper.clients.admin.UpdatePropertyScreen;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
@@ -324,5 +325,9 @@ public class AdminClient {
 
     public TablePropertyReportScreen tablePropertyReportScreen() {
         return new TablePropertyReportScreen(out, in, store);
+    }
+
+    public UpdatePropertyScreen updatePropertyScreen() {
+        return new UpdatePropertyScreen(out, in, store);
     }
 }

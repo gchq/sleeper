@@ -22,38 +22,36 @@ import sleeper.console.menu.ChooseOne;
 import sleeper.console.menu.Chosen;
 import sleeper.console.menu.ConsoleChoice;
 
+import static sleeper.clients.admin.AdminCommonPrompts.INPUT_EMPTY;
 import static sleeper.clients.admin.AdminCommonPrompts.RETURN_TO_MAIN_MENU;
 
-public class TablePropertyReportScreen {
+public class UpdatePropertyScreen {
 
     private final ConsoleOutput out;
     private final ChooseOne chooseOne;
     private final AdminConfigStore store;
 
-    public TablePropertyReportScreen(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
+    public UpdatePropertyScreen(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
         this.out = out;
         this.chooseOne = new ChooseOne(out, in);
         this.store = store;
     }
 
-    public void chooseTableAndPrint(String instanceId) throws UserExitedException {
-        Chosen<ConsoleChoice> chosen = chooseTable();
-        if (!chosen.getChoice().isPresent()) {
-            new TablePropertyReport(out, store).print(instanceId, chosen.getEntered());
-        }
+    public void choosePropertyAndUpdate(String instanceId) throws UserExitedException {
+        chooseProperty();
     }
 
-    private Chosen<ConsoleChoice> chooseTable() throws UserExitedException {
-        return chooseTable("")
+    private Chosen<ConsoleChoice> chooseProperty() throws UserExitedException {
+        return chooseProperty("")
                 .chooseUntilSomethingEntered(() ->
-                        chooseTable("\nYou did not enter anything please try again\n"));
+                        chooseProperty(INPUT_EMPTY));
     }
 
-    private Chosen<ConsoleChoice> chooseTable(String message) {
+    private Chosen<ConsoleChoice> chooseProperty(String message) {
         out.clearScreen(message);
-        out.println("Which TABLE do you want to check?\n");
+        out.println("What is the PROPERTY NAME of the property that you would like to update?\n");
         return chooseOne.chooseWithMessageFrom(
-                "Please enter the TABLE NAME now or use the following options:",
+                "Please enter the PROPERTY NAME now or use the following options:",
                 RETURN_TO_MAIN_MENU);
     }
 }

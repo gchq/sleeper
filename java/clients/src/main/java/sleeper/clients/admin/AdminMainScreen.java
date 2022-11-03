@@ -26,6 +26,8 @@ import sleeper.console.menu.MenuOption;
 import java.util.Arrays;
 import java.util.List;
 
+import static sleeper.clients.admin.AdminCommonPrompts.INPUT_EMPTY;
+
 public class AdminMainScreen {
 
     private final ConsoleOutput out;
@@ -54,6 +56,7 @@ public class AdminMainScreen {
                     confirmReturnToMainScreen();
                 }),
                 new MenuOption("Update an instance or table property", () -> {
+                    client.updatePropertyScreen().choosePropertyAndUpdate(instanceId);
                 })
         );
         while (true) {
@@ -68,7 +71,7 @@ public class AdminMainScreen {
     private MenuOption chooseOption(List<MenuOption> options) throws UserExitedException {
         return chooseOption("", options)
                 .chooseUntilChoiceFound(() ->
-                        chooseOption("Input not recognised please try again\n", options));
+                        chooseOption(INPUT_EMPTY, options));
     }
 
     private Chosen<MenuOption> chooseOption(String message, List<MenuOption> options) {

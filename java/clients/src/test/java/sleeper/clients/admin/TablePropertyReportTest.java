@@ -26,6 +26,8 @@ import java.io.IOException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 
@@ -96,8 +98,7 @@ public class TablePropertyReportTest extends AdminClientTestBase {
         assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN
                 + CLEAR_CONSOLE + TABLE_PROPERTY_REPORT_SCREEN);
 
-        InOrder order = Mockito.inOrder(in.mock);
-        order.verify(in.mock, times(2)).promptLine(any());
-        order.verifyNoMoreInteractions();
+        verify(in.mock, times(2)).promptLine(any());
+        verifyNoMoreInteractions(in.mock);
     }
 }
