@@ -15,14 +15,37 @@
  */
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperty;
 
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.TreeMap;
 
-public class UpdateProperty {
+public class SleeperPropertyUtils {
 
-    private UpdateProperty() {
+    private SleeperPropertyUtils() {
+    }
+
+    public static <T extends SleeperProperty> NavigableMap<Object, Object> orderedPropertyMapWithIncludes(
+            SleeperProperties<T> properties, List<T> includeIfMissing) {
+        TreeMap<Object, Object> orderedMap = new TreeMap<>();
+        Iterator<Map.Entry<Object, Object>> iterator = properties.getPropertyIterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Object, Object> entry = iterator.next();
+            orderedMap.put(entry.getKey(), entry.getValue());
+        }
+        for (T property : includeIfMissing) {
+            if (!orderedMap.containsKey(property.getPropertyName())) {
+                orderedMap.put(property.getPropertyName(), properties.get(property));
+            }
+        }
+        return orderedMap;
     }
 
     public static UserDefinedInstanceProperty getValidInstanceProperty(String propertyName, String propertyValue) {

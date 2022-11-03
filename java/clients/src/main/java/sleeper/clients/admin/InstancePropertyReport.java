@@ -19,9 +19,9 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.console.ConsoleOutput;
 
-import java.util.Iterator;
+import java.util.Arrays;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.NavigableMap;
 
 public class InstancePropertyReport {
 
@@ -39,19 +39,10 @@ public class InstancePropertyReport {
 
     private void print(InstanceProperties instanceProperties) {
 
-        Iterator<Map.Entry<Object, Object>> propertyIterator = instanceProperties.getPropertyIterator();
-        TreeMap<Object, Object> instancePropertyTreeMap = new TreeMap<>();
-        while (propertyIterator.hasNext()) {
-            Map.Entry<Object, Object> mapElement = propertyIterator.next();
-            instancePropertyTreeMap.put(mapElement.getKey(), mapElement.getValue());
-        }
-        for (UserDefinedInstanceProperty userDefinedInstanceProperty : UserDefinedInstanceProperty.values()) {
-            if (!instancePropertyTreeMap.containsKey(userDefinedInstanceProperty.getPropertyName())) {
-                instancePropertyTreeMap.put(userDefinedInstanceProperty.getPropertyName(), instanceProperties.get(userDefinedInstanceProperty));
-            }
-        }
+        NavigableMap<Object, Object> orderedProperties = SleeperPropertyUtils.orderedPropertyMapWithIncludes(
+                instanceProperties, Arrays.asList(UserDefinedInstanceProperty.values()));
         out.println("\n\n Instance Property Report \n -------------------------");
-        for (Map.Entry<Object, Object> entry : instancePropertyTreeMap.entrySet()) {
+        for (Map.Entry<Object, Object> entry : orderedProperties.entrySet()) {
             out.println(entry.getKey() + ": " + entry.getValue());
         }
     }

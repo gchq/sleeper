@@ -15,6 +15,8 @@
  */
 package sleeper.clients.admin;
 
+import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.console.UserExitedException;
@@ -43,24 +45,27 @@ public class UpdatePropertyScreen {
         while (true) {
             try {
                 chooseProperty().ifEnteredNonChoiceValue(propertyName ->
-                        choosePropertyValue().ifEnteredNonChoiceValue(propertyValue -> {
-                            if (propertyName.startsWith("sleeper.table")) {
-                                chooseTable().ifEnteredNonChoiceValue(tableName -> {
-                                    store.updateTableProperty(instanceId, tableName,
-                                            UpdateProperty.getValidTableProperty(propertyName, propertyValue), propertyValue);
-                                    out.println(propertyName + " has been updated to " + propertyValue);
-                                });
-                            } else {
-                                store.updateInstanceProperty(instanceId,
-                                        UpdateProperty.getValidInstanceProperty(propertyName, propertyValue), propertyValue);
-                                out.println(propertyName + " has been updated to " + propertyValue);
-                            }
-                        }));
+                        choosePropertyValue().ifEnteredNonChoiceValue(propertyValue ->
+                                updatePropertyIfValid(instanceId, propertyName, propertyValue)));
                 break;
             } catch (IllegalArgumentException e) {
                 out.println(e.getMessage());
                 confirmReturnToEnterProperty();
             }
+        }
+    }
+
+    private void updatePropertyIfValid(String instanceId, String propertyName, String propertyValue) {
+        if (propertyName.startsWith("sleeper.table")) {
+            chooseTable().ifEnteredNonChoiceValue(tableName -> {
+                TableProperty property = SleeperPropertyUtils.getValidTableProperty(propertyName, propertyValue);
+                store.updateTableProperty(instanceId, tableName, property, propertyValue);
+                out.println(propertyName + " has been updated to " + propertyValue);
+            });
+        } else {
+            UserDefinedInstanceProperty property = SleeperPropertyUtils.getValidInstanceProperty(propertyName, propertyValue);
+            store.updateInstanceProperty(instanceId, property, propertyValue);
+            out.println(propertyName + " has been updated to " + propertyValue);
         }
     }
 
