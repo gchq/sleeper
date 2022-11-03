@@ -101,7 +101,7 @@ public abstract class AdminClientTestBase {
 
     protected void setInstanceProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
         setInstanceProperties(instanceProperties);
-        when(store.getTableProperties(instanceProperties.get(ID), tableProperties.get(TABLE_NAME)))
+        when(store.loadTableProperties(instanceProperties.get(ID), tableProperties.get(TABLE_NAME)))
                 .thenReturn(tableProperties);
     }
 

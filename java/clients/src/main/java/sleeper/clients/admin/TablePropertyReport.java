@@ -34,7 +34,7 @@ public class TablePropertyReport {
     }
 
     public void print(String instanceId, String tableName) {
-        print(store.getTableProperties(instanceId, tableName));
+        print(store.loadTableProperties(instanceId, tableName));
     }
 
     private void print(TableProperties tableProperties) {

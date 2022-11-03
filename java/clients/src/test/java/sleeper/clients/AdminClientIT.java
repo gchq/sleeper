@@ -215,7 +215,7 @@ public class AdminClientIT {
         validInstanceProperties.saveToS3(getS3Client());
 
         // When / Then
-        String expectedMessage = "Sleeper property: " + LOG_RETENTION_IN_DAYS.getPropertyName() + " is invalid";
+        String expectedMessage = "Sleeper property " + LOG_RETENTION_IN_DAYS.getPropertyName() + " is invalid";
         assertThatThrownBy(() ->
                 AdminClient.updateProperty(getS3Client(), INSTANCE_ID, LOG_RETENTION_IN_DAYS.getPropertyName(), "abc", null))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -232,7 +232,7 @@ public class AdminClientIT {
         validTableProperties.saveToS3(getS3Client());
 
         // When / Then
-        String expectedMessage = "Sleeper property: " + ENCRYPTED.getPropertyName() + " is invalid";
+        String expectedMessage = "Sleeper property " + ENCRYPTED.getPropertyName() + " is invalid";
         assertThatThrownBy(() ->
                 AdminClient.updateProperty(getS3Client(), INSTANCE_ID, ENCRYPTED.getPropertyName(),
                         "abc", TABLE_NAME_VALUE))
@@ -248,7 +248,7 @@ public class AdminClientIT {
         validInstanceProperties.saveToS3(getS3Client());
 
         // When / Then
-        String expectedMessage = "Sleeper property: sleeper.log.ret.day does not exist and cannot be updated";
+        String expectedMessage = "Sleeper property sleeper.log.ret.day does not exist and cannot be updated";
         assertThatThrownBy(() ->
                 AdminClient.updateProperty(getS3Client(), INSTANCE_ID,
                         "sleeper.log.ret.day", "3", null))
@@ -266,7 +266,7 @@ public class AdminClientIT {
         validTableProperties.saveToS3(getS3Client());
 
         // When / Then
-        String expectedMessage = "Sleeper property: sleeper.table.encrypt does not exist and cannot be updated";
+        String expectedMessage = "Sleeper property sleeper.table.encrypt does not exist and cannot be updated";
         assertThatThrownBy(() ->
                 AdminClient.updateProperty(getS3Client(), INSTANCE_ID, "sleeper.table.encrypt",
                         "true", TABLE_NAME_VALUE))
