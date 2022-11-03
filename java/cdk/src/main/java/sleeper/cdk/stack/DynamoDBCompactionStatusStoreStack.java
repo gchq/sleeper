@@ -15,12 +15,12 @@
  */
 package sleeper.cdk.stack;
 
-import sleeper.compaction.status.DynamoDBUtils;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusFormat;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.dynamodb.tools.DynamoDBUtils;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
