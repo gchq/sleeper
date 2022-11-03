@@ -51,7 +51,7 @@ public class AdminClientIT extends AdminClientITBase {
                 .startsWith(CLEAR_CONSOLE + MAIN_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Instance Property Report")
-                .contains("sleeper.account: 1234567890");
+                .contains("sleeper.account: 1234567890\n");
     }
 
     @Test
@@ -94,7 +94,7 @@ public class AdminClientIT extends AdminClientITBase {
                 .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_PROPERTY_REPORT_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Table Property Report")
-                .contains("sleeper.table.name: test");
+                .contains("sleeper.table.name: test-table\n");
     }
 
     @Test
