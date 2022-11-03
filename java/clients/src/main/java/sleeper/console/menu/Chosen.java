@@ -18,6 +18,7 @@ package sleeper.console.menu;
 import sleeper.console.UserExitedException;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class Chosen<T extends ConsoleChoice> {
@@ -73,6 +74,12 @@ public class Chosen<T extends ConsoleChoice> {
             return chooseAgain.get().chooseUntilSomethingEntered(chooseAgain);
         } else {
             return this;
+        }
+    }
+
+    public void ifEnteredNonChoiceValue(Consumer<String> doWithEnteredValue) {
+        if (!exit && choice == null) {
+            doWithEnteredValue.accept(entered);
         }
     }
 }

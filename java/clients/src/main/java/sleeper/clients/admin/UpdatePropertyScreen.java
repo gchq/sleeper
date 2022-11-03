@@ -38,7 +38,9 @@ public class UpdatePropertyScreen {
     }
 
     public void choosePropertyAndUpdate(String instanceId) throws UserExitedException {
-        chooseProperty();
+        chooseProperty().ifEnteredNonChoiceValue(propertyName ->
+                choosePropertyValue().ifEnteredNonChoiceValue(propertyValue ->
+                        store.updateInstanceProperty(instanceId, propertyName, propertyValue)));
     }
 
     private Chosen<ConsoleChoice> chooseProperty() throws UserExitedException {
@@ -52,6 +54,20 @@ public class UpdatePropertyScreen {
         out.println("What is the PROPERTY NAME of the property that you would like to update?\n");
         return chooseOne.chooseWithMessageFrom(
                 "Please enter the PROPERTY NAME now or use the following options:",
+                RETURN_TO_MAIN_MENU);
+    }
+
+    private Chosen<ConsoleChoice> choosePropertyValue() throws UserExitedException {
+        return choosePropertyValue("")
+                .chooseUntilSomethingEntered(() ->
+                        choosePropertyValue(INPUT_EMPTY));
+    }
+
+    private Chosen<ConsoleChoice> choosePropertyValue(String message) {
+        out.clearScreen(message);
+        out.println("What is the new PROPERTY VALUE?\n");
+        return chooseOne.chooseWithMessageFrom(
+                "Please enter the PROPERTY VALUE now or use the following options:",
                 RETURN_TO_MAIN_MENU);
     }
 }

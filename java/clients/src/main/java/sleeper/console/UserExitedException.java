@@ -15,7 +15,7 @@
  */
 package sleeper.console;
 
-public class UserExitedException extends Exception {
+public class UserExitedException extends RuntimeException {
 
     public UserExitedException() {
         super("User chose to exit");
