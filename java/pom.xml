@@ -48,6 +48,7 @@
         <module>cdk-environment</module>
         <module>metrics</module>
         <module>distribution</module>
+        <module>dynamodb-tools</module>
         <module>build</module>
     </modules>
 
