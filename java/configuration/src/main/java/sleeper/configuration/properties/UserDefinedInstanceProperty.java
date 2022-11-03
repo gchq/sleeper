@@ -192,7 +192,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     COMPACTION_EC2_POOL_DESIRED("sleeper.compaction.ec2.pool.desired", "0", Utils::isNonNegativeInteger),
     COMPACTION_EC2_POOL_MAXIMUM("sleeper.compaction.ec2.pool.maximum", "3", Utils::isNonNegativeInteger),
     COMPACTION_EC2_ROOT_SIZE("sleeper.compaction.ec2.root.size", "50", Utils::isPositiveInteger),
-    COMPACTION_ECS_LAUNCHTYPE("sleeper.compaction.ecs.launch.type", "FARGATE", Arrays.asList("EC2","FARGATE")::contains),
+    COMPACTION_ECS_LAUNCHTYPE("sleeper.compaction.ecs.launch.type", "FARGATE", Arrays.asList("EC2", "FARGATE")::contains),
     COMPACTION_EC2_SCALING_GRACE_PERIOD("sleeper.compaction.ec2.scaling.grace", "120", Utils::isNonNegativeInteger),
 
     // Query
