@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.jobexecution;
 
+import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.AwsVpcConfiguration;
 import com.amazonaws.services.ecs.model.ContainerOverride;
@@ -58,6 +59,7 @@ public class RunTasks {
 
     private final AmazonSQS sqsClient;
     private final AmazonECS ecsClient;
+    private final AmazonAutoScaling asClient;
     private final String s3Bucket;
     private final String type;
     private final String sqsJobQueueUrl;
@@ -71,11 +73,13 @@ public class RunTasks {
     public RunTasks(AmazonSQS sqsClient,
                     AmazonECS ecsClient,
                     AmazonS3 s3Client,
+                    AmazonAutoScaling asClient,
                     String s3Bucket,
                     String type) throws IOException {
         this.sqsClient = sqsClient;
         this.ecsClient = ecsClient;
         this.s3Bucket = s3Bucket;
+        this.asClient = asClient;
         this.type = type;
 
         InstanceProperties instanceProperties = new InstanceProperties();

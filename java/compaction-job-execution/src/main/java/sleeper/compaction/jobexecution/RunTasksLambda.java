@@ -15,6 +15,8 @@
  */
 package sleeper.compaction.jobexecution;
 
+import com.amazonaws.services.autoscaling.AmazonAutoScaling;
+import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -36,6 +38,7 @@ public class RunTasksLambda {
     private final AmazonSQS sqsClient;
     private final AmazonECS ecsClient;
     private final AmazonS3 s3Client;
+    private final AmazonAutoScaling asClient;
     private final String s3Bucket;
     private final String type;
     private final RunTasks runTasks;
@@ -47,7 +50,8 @@ public class RunTasksLambda {
         this.sqsClient = AmazonSQSClientBuilder.defaultClient();
         this.ecsClient = AmazonECSClientBuilder.defaultClient();
         this.s3Client = AmazonS3ClientBuilder.defaultClient();
-        this.runTasks = new RunTasks(sqsClient, ecsClient, s3Client, s3Bucket, type);
+        this.asClient = AmazonAutoScalingClientBuilder.defaultClient();
+        this.runTasks = new RunTasks(sqsClient, ecsClient, s3Client, asClient, s3Bucket, type);
     }
 
     public void eventHandler(ScheduledEvent event, Context context) throws InterruptedException {

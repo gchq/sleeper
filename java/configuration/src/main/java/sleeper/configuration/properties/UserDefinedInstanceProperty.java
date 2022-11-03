@@ -192,6 +192,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     COMPACTION_EC2_POOL_MAXIMUM("sleeper.compaction.ec2.pool.maximum", "3", Utils::isNonNegativeInteger),
     COMPACTION_EC2_ROOT_SIZE("sleeper.compaction.ec2.root.size", "50", Utils::isPositiveInteger),
 
+
     // Query
     MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES("sleeper.query.s3.max-connections", "1024", Utils::isPositiveInteger),
     QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB("sleeper.query.processor.memory", "2048"),
