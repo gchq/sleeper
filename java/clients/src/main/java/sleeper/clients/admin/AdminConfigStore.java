@@ -26,7 +26,6 @@ import sleeper.table.job.TableLister;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 
 public class AdminConfigStore {
 
@@ -72,24 +71,6 @@ public class AdminConfigStore {
         } catch (IOException | AmazonS3Exception e) {
             throw new CouldNotSaveTableProperties(instanceId, tableName, e);
         }
-    }
-
-    private Optional<UserDefinedInstanceProperty> getUserDefinedInstanceProperty(String propertyName) {
-        for (UserDefinedInstanceProperty property : UserDefinedInstanceProperty.values()) {
-            if (property.getPropertyName().equals(propertyName)) {
-                return Optional.of(property);
-            }
-        }
-        return Optional.empty();
-    }
-
-    private Optional<TableProperty> getTableProperty(String propertyName) {
-        for (TableProperty property : TableProperty.values()) {
-            if (property.getPropertyName().equals(propertyName)) {
-                return Optional.of(property);
-            }
-        }
-        return Optional.empty();
     }
 
     public static class CouldNotLoadInstanceProperties extends RuntimeException {
