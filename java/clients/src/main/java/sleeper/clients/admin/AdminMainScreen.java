@@ -70,10 +70,4 @@ public class AdminMainScreen {
         return chooseOne.chooseFrom(options);
     }
 
-    private void confirmReturnToMainScreen() {
-        out.println("\n\n----------------------------------");
-        out.println("Hit enter to return to main screen");
-        in.waitForLine();
-    }
-
 }
