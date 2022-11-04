@@ -25,8 +25,6 @@ import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.parquet.hadoop.ParquetReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactory;
@@ -34,28 +32,19 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.ConcatenatingIterator;
 import sleeper.core.iterator.IteratorException;
-import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.ingest.IngestRecordsUsingPropertiesSpecifiedMethod;
-import sleeper.io.parquet.record.ParquetReaderIterator;
-import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.DeleteMessageAction;
 import sleeper.job.common.action.MessageReference;
 import sleeper.job.common.action.thread.PeriodicActionRunnable;
 import sleeper.statestore.FileInfo;
-import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
@@ -65,8 +54,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_I
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.S3A_INPUT_FADVISE;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
 /**
  * An IngestJobQueueConsumer pulls ingest jobs off an SQS queue and runs them.
@@ -172,40 +159,6 @@ public class IngestJobQueueConsumer {
     }
 
     public long ingest(IngestJob job, Schema schema, TableProperties tableProperties, String receiptHandle) throws InterruptedException, IteratorException, StateStoreException, IOException {
-        // Create list of all files to be read
-        List<Path> paths = IngestJobUtils.getPaths(job.getFiles(), hadoopConfiguration, fs);
-        LOGGER.info("There are {} files to ingest", paths.size());
-        LOGGER.debug("Files to ingest are: {}", paths);
-        LOGGER.info("Max number of records to read into memory is {}", maxInMemoryBatchSize);
-        LOGGER.info("Max number of records to write to local disk is {}", maxLinesInLocalFile);
-
-        // Create supplier of iterator of records from each file (using a supplier avoids having multiple files open
-        // at the same time)
-        List<Supplier<CloseableIterator<Record>>> inputIterators = new ArrayList<>();
-        for (Path path : paths) {
-            String pathString = path.toString();
-            if (pathString.endsWith(".parquet")) {
-                inputIterators.add(() -> {
-                    try {
-                        ParquetReader<Record> reader = new ParquetRecordReader.Builder(path, schema).withConf(hadoopConfiguration).build();
-                        return new ParquetReaderIterator(reader);
-                    } catch (IOException e) {
-                        throw new RuntimeException("Ingest job: " + job.getId() + " IOException creating reader for file "
-                                + path + ": " + e.getMessage());
-                    }
-                });
-            } else {
-                LOGGER.error("A file with a currently unsupported format has been found on ingest, file path: {}"
-                        + ". This file will be ignored and will not be ingested.", pathString);
-            }
-        }
-
-        // Concatenate iterators into one iterator
-        CloseableIterator<Record> concatenatingIterator = new ConcatenatingIterator(inputIterators);
-
-        // Get StateStore for this table
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-
         // Create background thread to keep messages alive
         MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl, "Ingest job " + job.getId(), receiptHandle);
         PeriodicActionRunnable changeTimeoutRunnable = new PeriodicActionRunnable(
@@ -215,17 +168,15 @@ public class IngestJobQueueConsumer {
                 job.getId(), keepAlivePeriod);
 
         // Run the ingest
-        List<FileInfo> ingestedFileInfoList = IngestRecordsUsingPropertiesSpecifiedMethod.ingestFromRecordIterator(
+        IngestJobRunner ingestJobRunner = new IngestJobRunner(
                 objectFactory,
-                stateStore,
                 instanceProperties,
                 tableProperties,
+                stateStoreProvider,
                 localDir,
                 s3AsyncClient,
-                hadoopConfiguration,
-                tableProperties.get(ITERATOR_CLASS_NAME),
-                tableProperties.get(ITERATOR_CONFIG),
-                concatenatingIterator);
+                schema);
+        List<FileInfo> ingestedFileInfoList = ingestJobRunner.ingest(job);
         long numRecordsWritten = ingestedFileInfoList.stream().mapToLong(FileInfo::getNumberOfRecords).sum();
         LOGGER.info("Ingest job {}: Stopping background thread to keep SQS messages alive",
                 job.getId());
