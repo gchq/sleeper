@@ -35,7 +35,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 
-public class DynamoDBToolsTest extends DynamoDBTestBase {
+public class DynamoDBRecordBuilderTest extends DynamoDBTestBase {
     private final static String TEST_KEY = "test-key";
     private final static String TEST_VALUE = "test-value";
     private final static String TEST_TABLE_NAME = "dynamodb-tools-test-table";
@@ -57,8 +57,7 @@ public class DynamoDBToolsTest extends DynamoDBTestBase {
         dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record));
         // Then we should be able to retrieve the record from dynamodb
         ScanResult result = dynamoDBClient.scan(new ScanRequest().withTableName(TEST_TABLE_NAME));
-        assertThat(result.getItems()).hasSize(1);
-        assertThat(result.getItems().get(0)).isEqualTo(record);
+        assertThat(result.getItems()).containsExactly(record);
     }
 
 
@@ -74,8 +73,7 @@ public class DynamoDBToolsTest extends DynamoDBTestBase {
         dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record));
         // Then we should be able to retrieve the record from dynamodb
         ScanResult result = dynamoDBClient.scan(new ScanRequest().withTableName(TEST_TABLE_NAME));
-        assertThat(result.getItems()).hasSize(1);
-        assertThat(result.getItems().get(0)).isEqualTo(record);
+        assertThat(result.getItems()).containsExactly(record);
     }
 
     @Test
@@ -90,8 +88,7 @@ public class DynamoDBToolsTest extends DynamoDBTestBase {
         dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record));
         // Then we should be able to retrieve the record from dynamodb
         ScanResult result = dynamoDBClient.scan(new ScanRequest().withTableName(TEST_TABLE_NAME));
-        assertThat(result.getItems()).hasSize(1);
-        assertThat(result.getItems().get(0)).isEqualTo(record);
+        assertThat(result.getItems()).containsExactly(record);
     }
 
     @Test
@@ -106,8 +103,7 @@ public class DynamoDBToolsTest extends DynamoDBTestBase {
         dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record));
         // Then we should be able to retrieve the record from dynamodb
         ScanResult result = dynamoDBClient.scan(new ScanRequest().withTableName(TEST_TABLE_NAME));
-        assertThat(result.getItems()).hasSize(1);
-        assertThat(result.getItems().get(0)).isEqualTo(record);
+        assertThat(result.getItems()).containsExactly(record);
     }
 
     private void createStringTable() {

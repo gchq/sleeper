@@ -41,7 +41,6 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
-import static sleeper.dynamodb.tools.DynamoDBUtils.EXPIRY_DATE;
 
 public class DynamoDBCompactionJobStatusFormat {
 
@@ -62,7 +61,7 @@ public class DynamoDBCompactionJobStatusFormat {
     public static final String RECORDS_READ = "RecordsRead";
     public static final String RECORDS_WRITTEN = "RecordsWritten";
     public static final String TASK_ID = "TaskId";
-
+    public static final String EXPIRY_DATE = "ExpiryDate";
     public static final String UPDATE_TYPE_CREATED = "created";
     public static final String UPDATE_TYPE_STARTED = "started";
     public static final String UPDATE_TYPE_FINISHED = "finished";
