@@ -50,7 +50,7 @@ import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLAS
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
 /**
- * An IngestJobQueueConsumer pulls ingest jobs off an SQS queue and runs them.
+ * An IngestJobRunner takes ingest jobs and runs them.
  */
 public class IngestJobRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobRunner.class);
