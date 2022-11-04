@@ -17,19 +17,24 @@ package sleeper.clients.admin;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 
 import java.util.Arrays;
 import java.util.Map;
 import java.util.NavigableMap;
 
+import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
+
 public class TablePropertyReport {
 
     private final ConsoleOutput out;
+    private final ConsoleInput in;
     private final AdminConfigStore store;
 
-    public TablePropertyReport(ConsoleOutput out, AdminConfigStore store) {
+    public TablePropertyReport(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
         this.out = out;
+        this.in = in;
         this.store = store;
     }
 
@@ -45,5 +50,6 @@ public class TablePropertyReport {
         for (Map.Entry<Object, Object> entry : orderedProperties.entrySet()) {
             out.println(entry.getKey() + ": " + entry.getValue());
         }
+        confirmReturnToMainScreen(out, in);
     }
 }

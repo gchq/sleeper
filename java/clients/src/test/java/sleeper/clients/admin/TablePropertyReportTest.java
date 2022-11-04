@@ -30,6 +30,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.RETURN_TO_MAIN_SCREEN_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_PROPERTY_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_PROPERTY_REPORT_SCREEN;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -95,6 +96,26 @@ public class TablePropertyReportTest extends AdminClientMockStoreBase {
                 + CLEAR_CONSOLE + TABLE_PROPERTY_REPORT_SCREEN);
 
         verify(in.mock, times(2)).promptLine(any());
+        verifyNoMoreInteractions(in.mock);
+    }
+
+    @Test
+    public void shouldReturnToMainScreenWhenChosenOnTablePropertyReportScreen() throws Exception {
+        // Given
+        InstanceProperties instanceProperties = createValidInstanceProperties();
+        TableProperties tableProperties = createValidTableProperties(instanceProperties);
+        setInstanceProperties(instanceProperties, tableProperties);
+        in.enterNextPrompts(TABLE_PROPERTY_REPORT_OPTION, RETURN_TO_MAIN_SCREEN_OPTION, EXIT_OPTION);
+
+        // When
+        String output = runClientGetOutput();
+
+        // Then
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN
+                + CLEAR_CONSOLE + TABLE_PROPERTY_REPORT_SCREEN
+                + CLEAR_CONSOLE + MAIN_SCREEN);
+
+        verify(in.mock, times(3)).promptLine(any());
         verifyNoMoreInteractions(in.mock);
     }
 }

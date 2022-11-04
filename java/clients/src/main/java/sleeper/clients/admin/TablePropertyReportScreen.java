@@ -27,11 +27,13 @@ import static sleeper.clients.admin.AdminCommonPrompts.RETURN_TO_MAIN_MENU;
 public class TablePropertyReportScreen {
 
     private final ConsoleOutput out;
+    private final ConsoleInput in;
     private final ChooseOne chooseOne;
     private final AdminConfigStore store;
 
     public TablePropertyReportScreen(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
         this.out = out;
+        this.in = in;
         this.chooseOne = new ChooseOne(out, in);
         this.store = store;
     }
@@ -39,7 +41,7 @@ public class TablePropertyReportScreen {
     public void chooseTableAndPrint(String instanceId) throws UserExitedException {
         Chosen<ConsoleChoice> chosen = chooseTable();
         if (!chosen.getChoice().isPresent()) {
-            new TablePropertyReport(out, store).print(instanceId, chosen.getEntered());
+            new TablePropertyReport(out, in, store).print(instanceId, chosen.getEntered());
         }
     }
 

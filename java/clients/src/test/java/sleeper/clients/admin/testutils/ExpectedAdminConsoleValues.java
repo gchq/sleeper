@@ -65,6 +65,7 @@ public class ExpectedAdminConsoleValues {
             "\n";
 
     public static final String EXIT_OPTION = "0";
+    public static final String RETURN_TO_MAIN_SCREEN_OPTION = "1";
     public static final String INSTANCE_PROPERTY_REPORT_OPTION = "1";
     public static final String TABLE_NAMES_REPORT_OPTION = "2";
     public static final String TABLE_PROPERTY_REPORT_OPTION = "3";

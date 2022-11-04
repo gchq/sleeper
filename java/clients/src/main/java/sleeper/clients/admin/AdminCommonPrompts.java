@@ -15,6 +15,8 @@
  */
 package sleeper.clients.admin;
 
+import sleeper.console.ConsoleInput;
+import sleeper.console.ConsoleOutput;
 import sleeper.console.menu.ConsoleChoice;
 
 public class AdminCommonPrompts {
@@ -23,4 +25,10 @@ public class AdminCommonPrompts {
 
     public static final String INPUT_EMPTY = "\nYou did not enter anything please try again\n";
     public static final ConsoleChoice RETURN_TO_MAIN_MENU = ConsoleChoice.describedAs("Return to Main Menu");
+
+    public static void confirmReturnToMainScreen(ConsoleOutput out, ConsoleInput in) {
+        out.println("\n\n----------------------------------");
+        out.println("Hit enter to return to main screen");
+        in.waitForLine();
+    }
 }

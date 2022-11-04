@@ -52,7 +52,6 @@ public class AdminMainScreen {
         while (true) {
             try {
                 chooseOption(options).run();
-                confirmReturnToMainScreen();
             } catch (UserExitedException e) {
                 break;
             }
