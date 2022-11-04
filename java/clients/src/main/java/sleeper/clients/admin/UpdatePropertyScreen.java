@@ -26,6 +26,7 @@ import sleeper.console.menu.ConsoleChoice;
 
 import static sleeper.clients.admin.AdminCommonPrompts.INPUT_EMPTY;
 import static sleeper.clients.admin.AdminCommonPrompts.RETURN_TO_MAIN_MENU;
+import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 
 public class UpdatePropertyScreen {
 
@@ -61,11 +62,13 @@ public class UpdatePropertyScreen {
                 TableProperty property = SleeperPropertyUtils.getValidTableProperty(propertyName, propertyValue);
                 store.updateTableProperty(instanceId, tableName, property, propertyValue);
                 out.println(propertyName + " has been updated to " + propertyValue);
+                confirmReturnToMainScreen(out, in);
             });
         } else {
             UserDefinedInstanceProperty property = SleeperPropertyUtils.getValidInstanceProperty(propertyName, propertyValue);
             store.updateInstanceProperty(instanceId, property, propertyValue);
             out.println(propertyName + " has been updated to " + propertyValue);
+            confirmReturnToMainScreen(out, in);
         }
     }
 

@@ -57,11 +57,11 @@ public class AdminClient {
     }
 
     public InstancePropertyReport instancePropertyReport() {
-        return new InstancePropertyReport(out, store);
+        return new InstancePropertyReport(out, in, store);
     }
 
     public TableNamesReport tableNamesReport() {
-        return new TableNamesReport(out, store);
+        return new TableNamesReport(out, in, store);
     }
 
     public TablePropertyReportScreen tablePropertyReportScreen() {

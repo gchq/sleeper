@@ -15,17 +15,22 @@
  */
 package sleeper.clients.admin;
 
+import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 
 import java.util.List;
 
+import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
+
 public class TableNamesReport {
 
     private final ConsoleOutput out;
+    private final ConsoleInput in;
     private final AdminConfigStore store;
 
-    public TableNamesReport(ConsoleOutput out, AdminConfigStore store) {
+    public TableNamesReport(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
         this.out = out;
+        this.in = in;
         this.store = store;
     }
 
@@ -39,5 +44,6 @@ public class TableNamesReport {
         for (String tableName : tableNames) {
             out.println(tableName);
         }
+        confirmReturnToMainScreen(out, in);
     }
 }

@@ -17,19 +17,24 @@ package sleeper.clients.admin;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 
 import java.util.Arrays;
 import java.util.Map;
 import java.util.NavigableMap;
 
+import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
+
 public class InstancePropertyReport {
 
     private final ConsoleOutput out;
+    private final ConsoleInput in;
     private final AdminConfigStore store;
 
-    public InstancePropertyReport(ConsoleOutput out, AdminConfigStore store) {
+    public InstancePropertyReport(ConsoleOutput out, ConsoleInput in, AdminConfigStore store) {
         this.out = out;
+        this.in = in;
         this.store = store;
     }
 
@@ -45,5 +50,6 @@ public class InstancePropertyReport {
         for (Map.Entry<Object, Object> entry : orderedProperties.entrySet()) {
             out.println(entry.getKey() + ": " + entry.getValue());
         }
+        confirmReturnToMainScreen(out, in);
     }
 }
