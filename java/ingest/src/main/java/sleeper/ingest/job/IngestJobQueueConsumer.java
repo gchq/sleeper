@@ -30,10 +30,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
-import sleeper.core.schema.Schema;
 import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.DeleteMessageAction;
 import sleeper.job.common.action.MessageReference;
@@ -69,6 +67,7 @@ public class IngestJobQueueConsumer {
     private final IngestJobSerDe ingestJobSerDe;
     private final S3AsyncClient s3AsyncClient;
     private final Configuration hadoopConfiguration;
+    private final IngestJobRunner ingestJobRunner;
 
     public IngestJobQueueConsumer(ObjectFactory objectFactory,
                                   AmazonSQS sqsClient,
@@ -110,6 +109,14 @@ public class IngestJobQueueConsumer {
         this.ingestJobSerDe = new IngestJobSerDe();
         this.s3AsyncClient = s3AsyncClient;
         this.hadoopConfiguration = hadoopConfiguration;
+        this.ingestJobRunner = new IngestJobRunner(
+                objectFactory,
+                instanceProperties,
+                tablePropertiesProvider,
+                stateStoreProvider,
+                localDir,
+                s3AsyncClient,
+                hadoopConfiguration);
     }
 
     private static Configuration defaultHadoopConfiguration(String fadvise) {
@@ -135,15 +142,12 @@ public class IngestJobQueueConsumer {
             IngestJob ingestJob = ingestJobSerDe.fromJson(messages.get(0).getBody());
             LOGGER.info("Deserialised message to ingest job {}", ingestJob);
 
-            TableProperties tableProperties = tablePropertiesProvider.getTableProperties(ingestJob.getTableName());
-            Schema schema = tableProperties.getSchema();
-
-            long recordsWritten = ingest(ingestJob, schema, tableProperties, messages.get(0).getReceiptHandle());
+            long recordsWritten = ingest(ingestJob, messages.get(0).getReceiptHandle());
             LOGGER.info("{} records were written", recordsWritten);
         }
     }
 
-    public long ingest(IngestJob job, Schema schema, TableProperties tableProperties, String receiptHandle) throws InterruptedException, IteratorException, StateStoreException, IOException {
+    public long ingest(IngestJob job, String receiptHandle) throws InterruptedException, IteratorException, StateStoreException, IOException {
         // Create background thread to keep messages alive
         MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl, "Ingest job " + job.getId(), receiptHandle);
         PeriodicActionRunnable changeTimeoutRunnable = new PeriodicActionRunnable(
@@ -153,15 +157,6 @@ public class IngestJobQueueConsumer {
                 job.getId(), keepAlivePeriod);
 
         // Run the ingest
-        IngestJobRunner ingestJobRunner = new IngestJobRunner(
-                objectFactory,
-                instanceProperties,
-                tableProperties,
-                stateStoreProvider,
-                localDir,
-                s3AsyncClient,
-                hadoopConfiguration,
-                schema);
         IngestJobRunnerResult result = ingestJobRunner.ingest(job);
         LOGGER.info("Ingest job {}: Stopping background thread to keep SQS messages alive",
                 job.getId());

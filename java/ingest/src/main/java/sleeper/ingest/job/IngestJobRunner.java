@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.ConcatenatingIterator;
 import sleeper.core.iterator.IteratorException;
@@ -57,7 +58,7 @@ public class IngestJobRunner {
 
     private final ObjectFactory objectFactory;
     private final InstanceProperties instanceProperties;
-    private final TableProperties tableProperties;
+    private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final String localDir;
     private final long maxLinesInLocalFile;
@@ -65,36 +66,32 @@ public class IngestJobRunner {
     private final String fs;
     private final S3AsyncClient s3AsyncClient;
     private final Configuration hadoopConfiguration;
-    private final Schema schema;
 
     public IngestJobRunner(ObjectFactory objectFactory,
                            InstanceProperties instanceProperties,
-                           TableProperties tableProperties,
+                           TablePropertiesProvider tablePropertiesProvider,
                            StateStoreProvider stateStoreProvider,
                            String localDir,
-                           S3AsyncClient s3AsyncClient,
-                           Schema schema) {
+                           S3AsyncClient s3AsyncClient) {
         this(objectFactory,
                 instanceProperties,
-                tableProperties,
+                tablePropertiesProvider,
                 stateStoreProvider,
                 localDir,
                 s3AsyncClient,
-                defaultHadoopConfiguration(instanceProperties.get(S3A_INPUT_FADVISE)),
-                schema);
+                defaultHadoopConfiguration(instanceProperties.get(S3A_INPUT_FADVISE)));
     }
 
     public IngestJobRunner(ObjectFactory objectFactory,
                            InstanceProperties instanceProperties,
-                           TableProperties tableProperties,
+                           TablePropertiesProvider tablePropertiesProvider,
                            StateStoreProvider stateStoreProvider,
                            String localDir,
                            S3AsyncClient s3AsyncClient,
-                           Configuration hadoopConfiguration,
-                           Schema schema) {
+                           Configuration hadoopConfiguration) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
-        this.tableProperties = tableProperties;
+        this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.localDir = localDir;
         this.maxLinesInLocalFile = instanceProperties.getLong(MAX_RECORDS_TO_WRITE_LOCALLY);
@@ -102,7 +99,6 @@ public class IngestJobRunner {
         this.fs = instanceProperties.get(FILE_SYSTEM);
         this.hadoopConfiguration = hadoopConfiguration;
         this.s3AsyncClient = s3AsyncClient;
-        this.schema = schema;
     }
 
     private static Configuration defaultHadoopConfiguration(String fadvise) {
@@ -114,6 +110,9 @@ public class IngestJobRunner {
     }
 
     public IngestJobRunnerResult ingest(IngestJob job) throws InterruptedException, IteratorException, StateStoreException, IOException {
+        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(job.getTableName());
+        Schema schema = tableProperties.getSchema();
+
         // Create list of all files to be read
         List<Path> paths = IngestJobUtils.getPaths(job.getFiles(), hadoopConfiguration, fs);
         LOGGER.info("There are {} files to ingest", paths.size());

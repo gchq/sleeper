@@ -208,12 +208,11 @@ public class IngestJobRunnerTest {
         IngestJobRunner ingestJobRunner = new IngestJobRunner(
                 new ObjectFactory(instanceProperties, null, temporaryFolder.newFolder().getAbsolutePath()),
                 instanceProperties,
-                tablePropertiesProvider.getTableProperties(TEST_TABLE_NAME),
+                tablePropertiesProvider,
                 stateStoreProvider,
                 localDir,
                 AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
-                AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
-                sleeperSchema);
+                AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
 
         for (IngestJob job : ingestJobList) {
             ingestJobRunner.ingest(job);
