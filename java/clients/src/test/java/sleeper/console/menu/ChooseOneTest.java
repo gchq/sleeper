@@ -32,7 +32,8 @@ public class ChooseOneTest extends ChooseOneTestBase {
                 "[0] Exit program\n" +
                 "[1] Option 1\n" +
                 "[2] Option 2\n" +
-                "\n");
+                "\n" +
+                "Input: \n");
     }
 
     @Test
@@ -46,7 +47,8 @@ public class ChooseOneTest extends ChooseOneTestBase {
                 "[0] Exit program\n" +
                 "[1] Option 1\n" +
                 "[2] Option 2\n" +
-                "\n");
+                "\n" +
+                "Input: \n");
     }
 
     @Test

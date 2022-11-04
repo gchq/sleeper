@@ -30,7 +30,8 @@ public class ExpectedAdminConsoleValues {
             "[2] Print Sleeper table names\n" +
             "[3] Print Sleeper table property report\n" +
             "[4] Update an instance or table property\n" +
-            "\n";
+            "\n" +
+            "Input: \n";
 
     public static final String TABLE_PROPERTY_REPORT_SCREEN = "\n" +
             "Which TABLE do you want to check?\n" +
@@ -38,7 +39,8 @@ public class ExpectedAdminConsoleValues {
             "Please enter the TABLE NAME now or use the following options:\n" +
             "[0] Exit program\n" +
             "[1] Return to Main Menu\n" +
-            "\n";
+            "\n" +
+            "Input: \n";
 
     public static final String UPDATE_PROPERTY_SCREEN = "\n" +
             "What is the PROPERTY NAME of the property that you would like to update?\n" +
@@ -46,7 +48,8 @@ public class ExpectedAdminConsoleValues {
             "Please enter the PROPERTY NAME now or use the following options:\n" +
             "[0] Exit program\n" +
             "[1] Return to Main Menu\n" +
-            "\n";
+            "\n" +
+            "Input: \n";
 
     public static final String UPDATE_PROPERTY_ENTER_VALUE_SCREEN = "\n" +
             "What is the new PROPERTY VALUE?\n" +
@@ -54,7 +57,8 @@ public class ExpectedAdminConsoleValues {
             "Please enter the PROPERTY VALUE now or use the following options:\n" +
             "[0] Exit program\n" +
             "[1] Return to Main Menu\n" +
-            "\n";
+            "\n" +
+            "Input: \n";
 
     public static final String UPDATE_PROPERTY_ENTER_TABLE_SCREEN = "\n" +
             "As the property name begins with sleeper.table we also need to know the TABLE you want to update\n" +
@@ -62,7 +66,8 @@ public class ExpectedAdminConsoleValues {
             "Please enter the TABLE NAME now or use the following options:\n" +
             "[0] Exit program\n" +
             "[1] Return to Main Menu\n" +
-            "\n";
+            "\n" +
+            "Input: \n";
 
     public static final String EXIT_OPTION = "0";
     public static final String RETURN_TO_MAIN_SCREEN_OPTION = "1";

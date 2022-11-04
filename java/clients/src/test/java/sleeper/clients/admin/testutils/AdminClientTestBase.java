@@ -43,8 +43,8 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public abstract class AdminClientTestBase {
 
-    protected final TestConsoleInput in = new TestConsoleInput();
     protected final ToStringPrintStream out = new ToStringPrintStream();
+    protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
 
     private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))

@@ -15,6 +15,10 @@
  */
 package sleeper.console;
 
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Queue;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -22,6 +26,15 @@ import static org.mockito.Mockito.when;
 public class TestConsoleInput {
 
     public final ConsoleInput mock = mock(ConsoleInput.class);
+    private final Queue<String> nextPrompts = new LinkedList<>();
+
+    public TestConsoleInput(ConsoleOutput out) {
+        when(mock.promptLine(any())).thenAnswer(invocation -> {
+            String prompt = invocation.getArgument(0);
+            out.println(prompt);
+            return nextPrompts.poll();
+        });
+    }
 
     public ConsoleInput consoleIn() {
         return mock;
@@ -31,7 +44,7 @@ public class TestConsoleInput {
         enterNextPrompts(entered);
     }
 
-    public void enterNextPrompts(String entered, String... otherEntered) {
-        when(mock.promptLine(any())).thenReturn(entered, otherEntered);
+    public void enterNextPrompts(String... entered) {
+        nextPrompts.addAll(Arrays.asList(entered));
     }
 }
