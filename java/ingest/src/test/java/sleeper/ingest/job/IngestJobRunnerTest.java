@@ -210,16 +210,19 @@ public class IngestJobRunnerTest {
         stateStore.initialise();
 
         // Run the job consumer
-        IngestJobRunner ingestJobQueueConsumer = new IngestJobRunner(
+        IngestJobRunner ingestJobRunner = new IngestJobRunner(
                 new ObjectFactory(instanceProperties, null, temporaryFolder.newFolder().getAbsolutePath()),
                 instanceProperties,
-                tablePropertiesProvider,
+                tablePropertiesProvider.getTableProperties(TEST_TABLE_NAME),
                 stateStoreProvider,
                 localDir,
                 AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
-                ingestJobList);
-        ingestJobQueueConsumer.run();
+                sleeperSchema);
+
+        for (IngestJob job : ingestJobList) {
+            ingestJobRunner.ingest(job);
+        }
 
         // Verify the results
         ResultVerifier.verify(
