@@ -17,6 +17,7 @@ package sleeper.clients.admin;
 
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperty;
 
@@ -49,7 +50,11 @@ public class SleeperPropertyUtils {
     }
 
     public static UserDefinedInstanceProperty getValidInstanceProperty(String propertyName, String propertyValue) {
-        UserDefinedInstanceProperty property = getUserDefinedInstanceProperty(propertyName)
+        getProperty(propertyName, SystemDefinedInstanceProperty.values())
+                .ifPresent(property -> {
+                    throw new IllegalArgumentException("Sleeper property " + propertyName + " is a system-defined property and cannot be updated");
+                });
+        UserDefinedInstanceProperty property = getProperty(propertyName, UserDefinedInstanceProperty.values())
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Sleeper property " + propertyName + " does not exist and cannot be updated"));
         if (!property.validationPredicate().test(propertyValue)) {
@@ -59,7 +64,7 @@ public class SleeperPropertyUtils {
     }
 
     public static TableProperty getValidTableProperty(String propertyName, String propertyValue) {
-        TableProperty property = getTableProperty(propertyName)
+        TableProperty property = getProperty(propertyName, TableProperty.values())
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Sleeper property " + propertyName + " does not exist and cannot be updated"));
         if (!property.validationPredicate().test(propertyValue)) {
@@ -68,17 +73,8 @@ public class SleeperPropertyUtils {
         return property;
     }
 
-    private static Optional<UserDefinedInstanceProperty> getUserDefinedInstanceProperty(String propertyName) {
-        for (UserDefinedInstanceProperty property : UserDefinedInstanceProperty.values()) {
-            if (property.getPropertyName().equals(propertyName)) {
-                return Optional.of(property);
-            }
-        }
-        return Optional.empty();
-    }
-
-    private static Optional<TableProperty> getTableProperty(String propertyName) {
-        for (TableProperty property : TableProperty.values()) {
+    private static <T extends SleeperProperty> Optional<T> getProperty(String propertyName, T[] properties) {
+        for (T property : properties) {
             if (property.getPropertyName().equals(propertyName)) {
                 return Optional.of(property);
             }

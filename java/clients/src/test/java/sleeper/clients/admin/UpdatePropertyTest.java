@@ -124,7 +124,30 @@ public class UpdatePropertyTest extends AdminClientMockStoreBase {
         assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN
                 + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN
                 + CLEAR_CONSOLE + UPDATE_PROPERTY_ENTER_VALUE_SCREEN
-                + "Sleeper property sleeper.config.bucket does not exist and cannot be updated\n"
+                + "Sleeper property sleeper.config.bucket is a system-defined property and cannot be updated\n"
+                + PROMPT_RETURN_TO_PROPERTY
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN);
+
+        InOrder order = Mockito.inOrder(in.mock, store);
+        order.verify(in.mock, times(3)).promptLine(any());
+        order.verify(in.mock).waitForLine();
+        order.verify(in.mock).promptLine(any());
+        order.verifyNoMoreInteractions();
+    }
+
+    @Test
+    public void shouldRefuseUpdatingNonExistingInstanceProperty() throws Exception {
+        // Given
+        in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.abc", "some-bucket", EXIT_OPTION);
+
+        // When
+        String output = runClientGetOutput();
+
+        // Then
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_ENTER_VALUE_SCREEN
+                + "Sleeper property sleeper.abc does not exist and cannot be updated\n"
                 + PROMPT_RETURN_TO_PROPERTY
                 + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN);
 
