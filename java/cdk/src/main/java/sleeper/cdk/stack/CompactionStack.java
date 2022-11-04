@@ -357,17 +357,7 @@ public class CompactionStack extends NestedStack {
                 .build();
         instanceProperties.set(COMPACTION_CLUSTER, cluster.getClusterName());
 
-        FargateTaskDefinition taskDefinition = FargateTaskDefinition.Builder
-                .create(this, "MergeCompactionTaskDefinition")
-                .family(instanceProperties.get(ID) + "MergeCompactionTaskFamily")
-                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
-                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
-                .runtimePlatform(RuntimePlatform.builder()
-                        .cpuArchitecture(CpuArchitecture.of(
-                                instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT)))
-                        .operatingSystemFamily(OperatingSystemFamily.LINUX)
-                        .build())
-                .build();
+        FargateTaskDefinition taskDefinition = compactionFargateTaskDefinition("Merge");
         this.compactionFamily = taskDefinition.getFamily();
         instanceProperties.set(COMPACTION_TASK_DEFINITION_FAMILY, compactionFamily);
 
@@ -424,17 +414,7 @@ public class CompactionStack extends NestedStack {
                 .build();
         instanceProperties.set(SPLITTING_COMPACTION_CLUSTER, cluster.getClusterName());
 
-        FargateTaskDefinition taskDefinition = FargateTaskDefinition.Builder
-                .create(this, "SplittingMergeCompactionTaskDefinition")
-                .family(instanceProperties.get(ID) + "SplittingMergeCompactionTaskFamily")
-                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
-                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
-                .runtimePlatform(RuntimePlatform.builder()
-                        .cpuArchitecture(CpuArchitecture.of(
-                                instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT)))
-                        .operatingSystemFamily(OperatingSystemFamily.LINUX)
-                        .build())
-                .build();
+        FargateTaskDefinition taskDefinition = compactionFargateTaskDefinition("SplittingMerge");
         splittingCompactionFamily = taskDefinition.getFamily();
         instanceProperties.set(SPLITTING_COMPACTION_TASK_DEFINITION_FAMILY, splittingCompactionFamily);
 
@@ -470,6 +450,20 @@ public class CompactionStack extends NestedStack {
         new CfnOutput(this, SPLITTING_COMPACTION_CLUSTER_NAME, splittingCompactionClusterProps);
 
         return cluster;
+    }
+
+    private FargateTaskDefinition compactionFargateTaskDefinition(String compactionTypeName) {
+        return FargateTaskDefinition.Builder
+                .create(this, compactionTypeName + "CompactionTaskDefinition")
+                .family(instanceProperties.get(ID) + compactionTypeName + "CompactionTaskFamily")
+                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
+                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
+                .runtimePlatform(RuntimePlatform.builder()
+                        .cpuArchitecture(CpuArchitecture.of(
+                                instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT)))
+                        .operatingSystemFamily(OperatingSystemFamily.LINUX)
+                        .build())
+                .build();
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
