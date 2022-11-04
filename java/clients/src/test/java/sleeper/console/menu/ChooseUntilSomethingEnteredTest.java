@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class ChooseUntilSomethingEnteredTest extends ChooseOneTestBase {
 
     @Test
-    public void shouldChooseAgainOnceWhenNothingEnteredFirstTime() throws Exception {
+    public void shouldChooseAgainOnceWhenNothingEnteredFirstTime() {
         // Given
         in.enterNextPrompts("", "1");
 
@@ -37,7 +37,7 @@ public class ChooseUntilSomethingEnteredTest extends ChooseOneTestBase {
     }
 
     @Test
-    public void shouldChooseAgainTwiceWhenNothingEnteredFirstTwoTimes() throws Exception {
+    public void shouldChooseAgainTwiceWhenNothingEnteredFirstTwoTimes() {
         // Given
         in.enterNextPrompts("", "", "2");
 
@@ -50,7 +50,7 @@ public class ChooseUntilSomethingEnteredTest extends ChooseOneTestBase {
     }
 
     @Test
-    public void shouldEnterValueWhenNothingEnteredFirstTime() throws Exception {
+    public void shouldEnterValueWhenNothingEnteredFirstTime() {
         // Given
         in.enterNextPrompts("", "second entry");
 
@@ -64,7 +64,7 @@ public class ChooseUntilSomethingEnteredTest extends ChooseOneTestBase {
     }
 
     @Test
-    public void shouldEnterValueWhenNothingEnteredFirstTwoTimes() throws Exception {
+    public void shouldEnterValueWhenNothingEnteredFirstTwoTimes() {
         // Given
         in.enterNextPrompts("", "", "third entry");
 

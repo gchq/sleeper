@@ -39,11 +39,11 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
             .withCredentials(localStackContainer.getDefaultCredentialsProvider())
             .build();
 
-    protected String runClientGetOutput() throws Exception {
+    protected String runClientGetOutput() {
         return runClientGetOutput(client());
     }
 
-    protected AdminClient client() throws Exception {
+    protected AdminClient client() {
         return new AdminClient(store(), out.consoleOut(), in.consoleIn());
     }
 
