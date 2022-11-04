@@ -19,6 +19,11 @@ import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
+import sleeper.configuration.properties.SystemDefinedInstanceProperty;
+import sleeper.configuration.properties.UserDefinedInstanceProperty;
+
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,10 +49,14 @@ public class InstancePropertyReportTest extends AdminClientMockStoreBase {
                 .startsWith(CLEAR_CONSOLE + MAIN_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Instance Property Report")
-                // Then check some default property values are present in the output, don't check values in case they change
-                .contains("sleeper.athena.handler.memory")
-                .contains("sleeper.default.page.size")
-                .contains("sleeper.query.tracker.ttl.days")
+                // Then check all the user defined properties are present in the output
+                .contains(Stream.of(UserDefinedInstanceProperty.values())
+                        .map(UserDefinedInstanceProperty::getPropertyName)
+                        .collect(Collectors.toList()))
+                // Then check at least one system-defined property is present in the output
+                .containsAnyOf(Stream.of(SystemDefinedInstanceProperty.values())
+                        .map(SystemDefinedInstanceProperty::getPropertyName)
+                        .toArray(String[]::new))
                 // Then check some set property values are present in the output
                 .contains("sleeper.account: 1234567890\n")
                 .contains("sleeper.log.retention.days: 1\n")
