@@ -57,7 +57,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -232,7 +231,7 @@ public class IngestJobRunnerTest {
     }
 
     @Test
-    public void shouldIngestParquetFilesPutOnTheQueue() throws Exception {
+    public void shouldIngestParquetFiles() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -246,7 +245,7 @@ public class IngestJobRunnerTest {
     }
 
     @Test
-    public void shouldBeAbleToHandleAllFileFormatsPutOnTheQueue() throws Exception {
+    public void shouldBeAbleToHandleAllFileFormats() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -262,7 +261,7 @@ public class IngestJobRunnerTest {
     }
 
     @Test
-    public void shouldIngestParquetFilesInNestedDirectoriesPutOnTheQueue() throws Exception {
+    public void shouldIngestParquetFilesInNestedDirectories() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -286,28 +285,5 @@ public class IngestJobRunnerTest {
                 .collect(Collectors.toList());
         IngestJob ingestJob = new IngestJob(TEST_TABLE_NAME, "id", files);
         consumeAndVerify(recordListAndSchema.sleeperSchema, Collections.singletonList(ingestJob), expectedRecords, 1);
-    }
-
-    @Test
-    public void shouldContinueReadingFromQueueWhileMoreMessagesExist() throws Exception {
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
-                new LongType(),
-                LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        int noOfJobs = 10;
-        int noOfFilesPerJob = 4;
-        List<IngestJob> ingestJobs = IntStream.range(0, noOfJobs)
-                .mapToObj(jobNo -> {
-                    try {
-                        List<String> files = writeParquetFilesForIngest(recordListAndSchema, "job-" + jobNo, noOfFilesPerJob);
-                        return new IngestJob(TEST_TABLE_NAME, UUID.randomUUID().toString(), files);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }).collect(Collectors.toList());
-        List<Record> expectedRecords = Stream.of(Collections.nCopies(noOfJobs * noOfFilesPerJob, recordListAndSchema.recordList))
-                .flatMap(List::stream)
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
-        consumeAndVerify(recordListAndSchema.sleeperSchema, ingestJobs, expectedRecords, noOfJobs);
     }
 }
