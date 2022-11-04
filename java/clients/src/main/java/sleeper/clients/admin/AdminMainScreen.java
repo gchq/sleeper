@@ -62,7 +62,7 @@ public class AdminMainScreen {
     private MenuOption chooseOption(List<MenuOption> options) throws UserExitedException {
         return chooseOption("", options)
                 .chooseUntilChoiceFound(() ->
-                        chooseOption("Input not recognised please try again\n", options));
+                        chooseOption("\nInput not recognised please try again\n", options));
     }
 
     private Chosen<MenuOption> chooseOption(String message, List<MenuOption> options) {
