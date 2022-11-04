@@ -26,11 +26,15 @@ public class ToStringPrintStream {
 
     private final OutputStream outputStream = new ByteArrayOutputStream();
 
-    public PrintStream getPrintStream() throws UnsupportedEncodingException {
-        return new PrintStream(outputStream, false, "UTF-8");
+    public PrintStream getPrintStream() {
+        try {
+            return new PrintStream(outputStream, false, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new UnsupportedOperationException("Cannot run without UTF-8 encoding", e);
+        }
     }
 
-    public ConsoleOutput consoleOut() throws UnsupportedEncodingException {
+    public ConsoleOutput consoleOut() {
         return new ConsoleOutput(getPrintStream());
     }
 

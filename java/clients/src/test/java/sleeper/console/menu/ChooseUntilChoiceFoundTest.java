@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class ChooseUntilChoiceFoundTest extends ChooseOneTestBase {
 
     @Test
-    public void shouldChooseAgainOnceWhenNothingChosenFirstTime() throws Exception {
+    public void shouldChooseAgainOnceWhenNothingChosenFirstTime() {
         // Given
         in.enterNextPrompts("123", "1");
 
@@ -35,7 +35,7 @@ public class ChooseUntilChoiceFoundTest extends ChooseOneTestBase {
     }
 
     @Test
-    public void shouldChooseAgainTwiceWhenNothingChosenFirstTwoTimes() throws Exception {
+    public void shouldChooseAgainTwiceWhenNothingChosenFirstTwoTimes() {
         // Given
         in.enterNextPrompts("123", "456", "2");
 

@@ -41,7 +41,7 @@ import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 public class UpdatePropertyTest extends AdminClientMockStoreBase {
 
     @Test
-    public void shouldUpdateInstancePropertyWhenNameAndValueEntered() throws Exception {
+    public void shouldUpdateInstancePropertyWhenNameAndValueEntered() {
         // Given
         in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.retain.infra.after.destroy", "false", EXIT_OPTION);
 
@@ -65,7 +65,7 @@ public class UpdatePropertyTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    public void shouldUpdateTablePropertyWhenNameValueAndTableEntered() throws Exception {
+    public void shouldUpdateTablePropertyWhenNameValueAndTableEntered() {
         // Given
         in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.table.iterator.class.name", "SomeIteratorClass", "update-table", EXIT_OPTION);
 
@@ -90,7 +90,7 @@ public class UpdatePropertyTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    public void shouldRefuseUpdatingInstancePropertyWithInvalidValue() throws Exception {
+    public void shouldRefuseUpdatingInstancePropertyWithInvalidValue() {
         // Given
         in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.retain.infra.after.destroy", "ABC", EXIT_OPTION);
 
@@ -113,7 +113,7 @@ public class UpdatePropertyTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    public void shouldRefuseUpdatingUneditableInstanceProperty() throws Exception {
+    public void shouldRefuseUpdatingUneditableInstanceProperty() {
         // Given
         in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.config.bucket", "some-bucket", EXIT_OPTION);
 
@@ -136,7 +136,7 @@ public class UpdatePropertyTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    public void shouldRefuseUpdatingNonExistingInstanceProperty() throws Exception {
+    public void shouldRefuseUpdatingNonExistingInstanceProperty() {
         // Given
         in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.abc", "some-bucket", EXIT_OPTION);
 
@@ -159,7 +159,7 @@ public class UpdatePropertyTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    public void shouldRefuseUpdatingTablePropertyWithInvalidValue() throws Exception {
+    public void shouldRefuseUpdatingTablePropertyWithInvalidValue() {
         // Given
         in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.table.fs.s3a.readahead.range", "ABC", "update-table", EXIT_OPTION);
 
@@ -183,7 +183,7 @@ public class UpdatePropertyTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    public void shouldRefuseUpdatingNonExistingTableProperty() throws Exception {
+    public void shouldRefuseUpdatingNonExistingTableProperty() {
         // Given
         in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.table.abc", "def", "update-table", EXIT_OPTION);
 

@@ -31,7 +31,7 @@ import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 public class TableNamesReportTest extends AdminClientMockStoreBase {
 
     @Test
-    public void shouldPrintTableNamesReportWhenChosen() throws Exception {
+    public void shouldPrintTableNamesReportWhenChosen() {
         // Given
         setInstanceTables(createValidInstanceProperties(), "test-table-1", "test-table-2");
         in.enterNextPrompts(TABLE_NAMES_REPORT_OPTION, EXIT_OPTION);

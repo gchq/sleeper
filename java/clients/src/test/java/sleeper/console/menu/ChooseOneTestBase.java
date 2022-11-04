@@ -15,7 +15,6 @@
  */
 package sleeper.console.menu;
 
-import org.junit.Before;
 import sleeper.ToStringPrintStream;
 import sleeper.console.TestConsoleInput;
 
@@ -23,12 +22,7 @@ public abstract class ChooseOneTestBase {
 
     protected final ToStringPrintStream out = new ToStringPrintStream();
     protected final TestConsoleInput in = new TestConsoleInput();
-    private ChooseOne chooseOne;
-
-    @Before
-    public void setUp() throws Exception {
-        chooseOne = new ChooseOne(out.consoleOut(), in.consoleIn());
-    }
+    private final ChooseOne chooseOne = new ChooseOne(out.consoleOut(), in.consoleIn());
 
     protected Chosen<ConsoleChoice> chooseTestOption() {
         return chooseOne().chooseFrom(OPTION_ONE, OPTION_TWO);
