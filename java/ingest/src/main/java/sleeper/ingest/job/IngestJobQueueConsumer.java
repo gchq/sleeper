@@ -54,19 +54,13 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.S3A_I
 public class IngestJobQueueConsumer {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobQueueConsumer.class);
 
-    private final ObjectFactory objectFactory;
     private final AmazonSQS sqsClient;
     private final AmazonCloudWatch cloudWatchClient;
     private final InstanceProperties instanceProperties;
-    private final TablePropertiesProvider tablePropertiesProvider;
-    private final StateStoreProvider stateStoreProvider;
     private final String sqsJobQueueUrl;
     private final int keepAlivePeriod;
     private final int visibilityTimeoutInSeconds;
-    private final String localDir;
     private final IngestJobSerDe ingestJobSerDe;
-    private final S3AsyncClient s3AsyncClient;
-    private final Configuration hadoopConfiguration;
     private final IngestJobRunner ingestJobRunner;
 
     public IngestJobQueueConsumer(ObjectFactory objectFactory,
@@ -96,19 +90,13 @@ public class IngestJobQueueConsumer {
                                   String localDir,
                                   S3AsyncClient s3AsyncClient,
                                   Configuration hadoopConfiguration) {
-        this.objectFactory = objectFactory;
         this.sqsClient = sqsClient;
         this.cloudWatchClient = cloudWatchClient;
         this.instanceProperties = instanceProperties;
-        this.tablePropertiesProvider = tablePropertiesProvider;
-        this.stateStoreProvider = stateStoreProvider;
         this.sqsJobQueueUrl = instanceProperties.get(INGEST_JOB_QUEUE_URL);
         this.keepAlivePeriod = instanceProperties.getInt(INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS);
         this.visibilityTimeoutInSeconds = instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS);
-        this.localDir = localDir;
         this.ingestJobSerDe = new IngestJobSerDe();
-        this.s3AsyncClient = s3AsyncClient;
-        this.hadoopConfiguration = hadoopConfiguration;
         this.ingestJobRunner = new IngestJobRunner(
                 objectFactory,
                 instanceProperties,
