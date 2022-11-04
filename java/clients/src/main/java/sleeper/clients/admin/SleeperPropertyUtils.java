@@ -52,13 +52,14 @@ public class SleeperPropertyUtils {
     public static UserDefinedInstanceProperty getValidInstanceProperty(String propertyName, String propertyValue) {
         getProperty(propertyName, SystemDefinedInstanceProperty.values())
                 .ifPresent(property -> {
-                    throw new IllegalArgumentException("Sleeper property " + propertyName + " is a system-defined property and cannot be updated");
+                    throw new IllegalArgumentException(
+                            String.format("Sleeper property %s is a system-defined property and cannot be updated", propertyName));
                 });
         UserDefinedInstanceProperty property = getProperty(propertyName, UserDefinedInstanceProperty.values())
                 .orElseThrow(() -> new IllegalArgumentException(
-                        "Sleeper property " + propertyName + " does not exist and cannot be updated"));
+                        String.format("Sleeper property %s does not exist and cannot be updated", propertyName)));
         if (!property.validationPredicate().test(propertyValue)) {
-            throw new IllegalArgumentException("Sleeper property " + propertyName + " is invalid");
+            throw new IllegalArgumentException(String.format("Sleeper property %s is invalid", propertyName));
         }
         return property;
     }
@@ -66,9 +67,9 @@ public class SleeperPropertyUtils {
     public static TableProperty getValidTableProperty(String propertyName, String propertyValue) {
         TableProperty property = getProperty(propertyName, TableProperty.values())
                 .orElseThrow(() -> new IllegalArgumentException(
-                        "Sleeper property " + propertyName + " does not exist and cannot be updated"));
+                        String.format("Sleeper property %s does not exist and cannot be updated", propertyName)));
         if (!property.validationPredicate().test(propertyValue)) {
-            throw new IllegalArgumentException("Sleeper property " + propertyName + " is invalid");
+            throw new IllegalArgumentException(String.format("Sleeper property %s is invalid", propertyName));
         }
         return property;
     }
