@@ -41,11 +41,14 @@ import java.util.List;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
@@ -55,7 +58,8 @@ import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
 import static sleeper.core.ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME;
 
 /**
- * Finds the number of messages on a queue, and starts up one EC2 or Fargate task for
+ * Finds the number of messages on a queue, and starts up one EC2 or Fargate
+ * task for
  * each, up to a configurable maximum.
  */
 public class RunTasks {
@@ -68,7 +72,9 @@ public class RunTasks {
     private final String sqsJobQueueUrl;
     private final String clusterName;
     private final String containerName;
-    private final String taskDefinition;
+    private final String fargateTaskDefinition;
+    private final String ec2TaskDefinition;
+    private final String launchType;
     private final int maximumRunningTasks;
     private final String subnet;
     private final String fargateVersion;
@@ -92,13 +98,15 @@ public class RunTasks {
             this.sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
             this.clusterName = instanceProperties.get(COMPACTION_CLUSTER);
             this.containerName = COMPACTION_CONTAINER_NAME;
-            this.taskDefinition = instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
+            this.fargateTaskDefinition = instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
+            this.ec2TaskDefinition = instanceProperties.get(COMPACTION_TASK_EC2_DEFINITION_FAMILY);
             autoScalingGroupName = instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP);
         } else if (type.equals("splittingcompaction")) {
             this.sqsJobQueueUrl = instanceProperties.get(SPLITTING_COMPACTION_JOB_QUEUE_URL);
             this.clusterName = instanceProperties.get(SPLITTING_COMPACTION_CLUSTER);
             this.containerName = SPLITTING_COMPACTION_CONTAINER_NAME;
-            this.taskDefinition = instanceProperties.get(SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
+            this.fargateTaskDefinition = instanceProperties.get(SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
+            this.ec2TaskDefinition = instanceProperties.get(SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY);
             autoScalingGroupName = instanceProperties.get(SPLITTING_COMPACTION_AUTO_SCALING_GROUP);
         } else {
             throw new RuntimeException("type should be 'compaction' or 'splittingcompaction'");
@@ -106,6 +114,7 @@ public class RunTasks {
         this.maximumRunningTasks = instanceProperties.getInt(MAXIMUM_CONCURRENT_COMPACTION_TASKS);
         this.subnet = instanceProperties.get(SUBNET);
         this.fargateVersion = instanceProperties.get(FARGATE_VERSION);
+        this.launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
 
         this.scaler = new Scaler(asClient, ecsClient, autoScalingGroupName, this.clusterName,
                 instanceProperties.getInt(COMPACTION_TASK_CPU),
@@ -132,7 +141,11 @@ public class RunTasks {
 
         // Do we need to scale out?
         int maxNumTasksThatWillBeCreated = Math.min(maxNumTasksToCreate, queueSize);
-        scaler.possiblyScaleOut(maxNumTasksThatWillBeCreated);
+        ScaleOutResult scaleResult = scaler.possiblyScaleOut(maxNumTasksThatWillBeCreated);
+        if (scaleResult == ScaleOutResult.SCALING_IN_PROGRESS || scaleResult == ScaleOutResult.SCALING_INITIATED) {
+            LOGGER.info("Scaling out operation in progress or just launched, don't launch tasks");
+            return;
+        }
 
         // Create 1 task for each item on the queue
         int numTasksCreated = 0;
@@ -156,17 +169,25 @@ public class RunTasks {
 
             RunTaskRequest runTaskRequest = new RunTaskRequest()
                     .withCluster(clusterName)
-                    .withLaunchType(LaunchType.FARGATE)
-                    .withTaskDefinition(taskDefinition)
-                    .withNetworkConfiguration(networkConfiguration) // Don't set this on EC2 tasks
                     .withOverrides(override)
-                    .withPropagateTags(PropagateTags.TASK_DEFINITION)
-//                    .withPlatformVersion(null); //Set to null for EC2 tasks
-                    .withPlatformVersion(fargateVersion); // Don't set this on EC2 tasks
+                    .withPropagateTags(PropagateTags.TASK_DEFINITION);
+
+            if (launchType.equals("FARGATE")) {
+                runTaskRequest = runTaskRequest
+                        .withTaskDefinition(fargateTaskDefinition)
+                        .withNetworkConfiguration(networkConfiguration)
+                        .withPlatformVersion(fargateVersion)
+                        .withLaunchType(LaunchType.FARGATE);
+            } else {
+                runTaskRequest = runTaskRequest
+                        .withTaskDefinition(ec2TaskDefinition)
+                        .withPlatformVersion(null)
+                        .withLaunchType(LaunchType.EC2);
+            }
 
             RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
-            LOGGER.info("Submitted RunTaskRequest (cluster = {}, container name = {}, task definition = {})",
-                    clusterName, containerName, taskDefinition);
+            LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
+                    clusterName, launchType, containerName, fargateTaskDefinition);
             if (runTaskResult.getFailures().size() > 0) {
                 LOGGER.warn("Run task request has {} failures", runTaskResult.getFailures().size());
                 for (Failure f : runTaskResult.getFailures()) {
