@@ -70,7 +70,7 @@ public class ExpectedAdminConsoleValues {
     public static final String TABLE_PROPERTY_REPORT_OPTION = "3";
     public static final String UPDATE_PROPERTY_OPTION = "4";
 
-    public static final String PROMPT_INPUT_NOT_RECOGNISED = "Input not recognised please try again\n";
+    public static final String PROMPT_INPUT_NOT_RECOGNISED = "\nInput not recognised please try again\n";
 
     public static final String PROMPT_RETURN_TO_MAIN = "" +
             "\n\n----------------------------------\n" +
