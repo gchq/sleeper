@@ -46,7 +46,6 @@ import java.util.function.Supplier;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.S3A_INPUT_FADVISE;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
@@ -72,21 +71,6 @@ public class IngestJobRunner {
                            TablePropertiesProvider tablePropertiesProvider,
                            StateStoreProvider stateStoreProvider,
                            String localDir,
-                           S3AsyncClient s3AsyncClient) {
-        this(objectFactory,
-                instanceProperties,
-                tablePropertiesProvider,
-                stateStoreProvider,
-                localDir,
-                s3AsyncClient,
-                defaultHadoopConfiguration(instanceProperties.get(S3A_INPUT_FADVISE)));
-    }
-
-    public IngestJobRunner(ObjectFactory objectFactory,
-                           InstanceProperties instanceProperties,
-                           TablePropertiesProvider tablePropertiesProvider,
-                           StateStoreProvider stateStoreProvider,
-                           String localDir,
                            S3AsyncClient s3AsyncClient,
                            Configuration hadoopConfiguration) {
         this.objectFactory = objectFactory;
@@ -99,14 +83,6 @@ public class IngestJobRunner {
         this.fs = instanceProperties.get(FILE_SYSTEM);
         this.hadoopConfiguration = hadoopConfiguration;
         this.s3AsyncClient = s3AsyncClient;
-    }
-
-    private static Configuration defaultHadoopConfiguration(String fadvise) {
-        Configuration conf = new Configuration();
-        conf.set("fs.s3a.connection.maximum", "10");
-        conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
-        conf.set("fs.s3a.experimental.input.fadvise", fadvise);
-        return conf;
     }
 
     public IngestResult ingest(IngestJob job) throws InterruptedException, IteratorException, StateStoreException, IOException {
