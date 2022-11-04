@@ -113,7 +113,7 @@ public class IngestJobRunner {
         return conf;
     }
 
-    public List<FileInfo> ingest(IngestJob job) throws InterruptedException, IteratorException, StateStoreException, IOException {
+    public IngestJobRunnerResult ingest(IngestJob job) throws InterruptedException, IteratorException, StateStoreException, IOException {
         // Create list of all files to be read
         List<Path> paths = IngestJobUtils.getPaths(job.getFiles(), hadoopConfiguration, fs);
         LOGGER.info("There are {} files to ingest", paths.size());
@@ -149,7 +149,7 @@ public class IngestJobRunner {
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
         // Run the ingest
-        return IngestRecordsUsingPropertiesSpecifiedMethod.ingestFromRecordIterator(
+        List<FileInfo> fileInfoList = IngestRecordsUsingPropertiesSpecifiedMethod.ingestFromRecordIterator(
                 objectFactory,
                 stateStore,
                 instanceProperties,
@@ -160,5 +160,9 @@ public class IngestJobRunner {
                 tableProperties.get(ITERATOR_CLASS_NAME),
                 tableProperties.get(ITERATOR_CONFIG),
                 concatenatingIterator);
+        long numRecordsWritten = fileInfoList.stream().mapToLong(FileInfo::getNumberOfRecords).sum();
+        return IngestJobRunnerResult.builder()
+                .numRecordsWritten(numRecordsWritten)
+                .pathList(paths).build();
     }
 }

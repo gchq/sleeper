@@ -38,7 +38,6 @@ import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.DeleteMessageAction;
 import sleeper.job.common.action.MessageReference;
 import sleeper.job.common.action.thread.PeriodicActionRunnable;
-import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -176,12 +175,11 @@ public class IngestJobQueueConsumer {
                 localDir,
                 s3AsyncClient,
                 schema);
-        List<FileInfo> ingestedFileInfoList = ingestJobRunner.ingest(job);
-        long numRecordsWritten = ingestedFileInfoList.stream().mapToLong(FileInfo::getNumberOfRecords).sum();
+        IngestJobRunnerResult result = ingestJobRunner.ingest(job);
         LOGGER.info("Ingest job {}: Stopping background thread to keep SQS messages alive",
                 job.getId());
         changeTimeoutRunnable.stop();
-        LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), numRecordsWritten, paths);
+        LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getNumRecordsWritten(), result.getPathList());
 
         // Delete messages from SQS queue
         LOGGER.info("Ingest job {}: Deleting messages from queue", job.getId());
@@ -199,13 +197,13 @@ public class IngestJobQueueConsumer {
                 .withNamespace(metricsNamespace)
                 .withMetricData(new MetricDatum()
                         .withMetricName("StandardIngestRecordsWritten")
-                        .withValue((double) numRecordsWritten)
+                        .withValue((double) result.getNumRecordsWritten())
                         .withUnit(StandardUnit.Count)
                         .withDimensions(
                                 new Dimension().withName("instanceId").withValue(instanceId),
                                 new Dimension().withName("tableName").withValue(job.getTableName())
                         )));
 
-        return numRecordsWritten;
+        return result.getNumRecordsWritten();
     }
 }
