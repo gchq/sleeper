@@ -174,6 +174,7 @@ public class IngestJobQueueConsumer {
                 stateStoreProvider,
                 localDir,
                 s3AsyncClient,
+                hadoopConfiguration,
                 schema);
         IngestJobRunnerResult result = ingestJobRunner.ingest(job);
         LOGGER.info("Ingest job {}: Stopping background thread to keep SQS messages alive",
