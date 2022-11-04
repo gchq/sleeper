@@ -46,11 +46,7 @@ import java.io.IOException;
 import java.util.List;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.S3A_INPUT_FADVISE;
 
@@ -70,12 +66,7 @@ public class IngestJobQueueConsumer {
     private final int keepAlivePeriod;
     private final int visibilityTimeoutInSeconds;
     private final String localDir;
-    private final long maxLinesInLocalFile;
-    private final long maxInMemoryBatchSize;
-    private final String fs;
-    private final int ingestPartitionRefreshFrequencyInSeconds;
     private final IngestJobSerDe ingestJobSerDe;
-    private final String fadvise;
     private final S3AsyncClient s3AsyncClient;
     private final Configuration hadoopConfiguration;
 
@@ -116,11 +107,6 @@ public class IngestJobQueueConsumer {
         this.keepAlivePeriod = instanceProperties.getInt(INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS);
         this.visibilityTimeoutInSeconds = instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS);
         this.localDir = localDir;
-        this.maxLinesInLocalFile = instanceProperties.getLong(MAX_RECORDS_TO_WRITE_LOCALLY);
-        this.maxInMemoryBatchSize = instanceProperties.getLong(MAX_IN_MEMORY_BATCH_SIZE);
-        this.fs = instanceProperties.get(FILE_SYSTEM);
-        this.fadvise = instanceProperties.get(S3A_INPUT_FADVISE);
-        this.ingestPartitionRefreshFrequencyInSeconds = instanceProperties.getInt(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS);
         this.ingestJobSerDe = new IngestJobSerDe();
         this.s3AsyncClient = s3AsyncClient;
         this.hadoopConfiguration = hadoopConfiguration;
