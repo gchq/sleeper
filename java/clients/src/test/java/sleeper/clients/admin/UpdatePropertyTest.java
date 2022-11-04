@@ -41,23 +41,6 @@ import static sleeper.console.ConsoleOutput.CLEAR_CONSOLE;
 public class UpdatePropertyTest extends AdminClientMockStoreBase {
 
     @Test
-    public void shouldExitWhenChosenOnUpdatePropertyScreen() throws Exception {
-        // Given
-        in.enterNextPrompts(UPDATE_PROPERTY_OPTION, EXIT_OPTION);
-
-        // When
-        String output = runClientGetOutput();
-
-        // Then
-        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN
-                + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN);
-
-        verify(in.mock, times(2)).promptLine(any());
-        verifyNoMoreInteractions(in.mock);
-        verifyNoInteractions(store);
-    }
-
-    @Test
     public void shouldUpdateInstancePropertyWhenNameAndValueEntered() throws Exception {
         // Given
         in.enterNextPrompts(UPDATE_PROPERTY_OPTION, "sleeper.retain.infra.after.destroy", "false", EXIT_OPTION);
@@ -198,5 +181,22 @@ public class UpdatePropertyTest extends AdminClientMockStoreBase {
         order.verify(in.mock).waitForLine();
         order.verify(in.mock).promptLine(any());
         order.verifyNoMoreInteractions();
+    }
+
+    @Test
+    public void shouldExitWhenChosenOnUpdatePropertyScreen() throws Exception {
+        // Given
+        in.enterNextPrompts(UPDATE_PROPERTY_OPTION, EXIT_OPTION);
+
+        // When
+        String output = runClientGetOutput();
+
+        // Then
+        assertThat(output).isEqualTo(CLEAR_CONSOLE + MAIN_SCREEN
+                + CLEAR_CONSOLE + UPDATE_PROPERTY_SCREEN);
+
+        verify(in.mock, times(2)).promptLine(any());
+        verifyNoMoreInteractions(in.mock);
+        verifyNoInteractions(store);
     }
 }
