@@ -18,7 +18,6 @@ package sleeper.ingest;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.parquet.hadoop.ParquetWriter;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -41,11 +40,14 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 
 /**
  * This class provide methods to support ingest into Sleeper, where the way in which that ingest should take place is
@@ -129,7 +131,7 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
 
     /**
      * Create an {@link IngestCoordinator} object that is configured using Sleeper {@link InstanceProperties} and {@link
-     * TableProperties}
+     * TableProperties}.
      *
      * @param ingestProperties   The ingest properties to use to configure the ingest
      * @param instanceProperties The instance properties to use to configure the ingest
@@ -189,8 +191,8 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
         return IngestProperties.builder()
                 .objectFactory(objectFactory)
                 .localDir(localWorkingDirectory)
-                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
-                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
+                .rowGroupSize(tableProperties.getInt(ROW_GROUP_SIZE))
+                .pageSize(tableProperties.getInt(PAGE_SIZE))
                 .stateStore(sleeperStateStore)
                 .schema(tableProperties.getSchema())
                 .iteratorClassName(sleeperIteratorClassName)
@@ -201,7 +203,7 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
                 .hadoopConfiguration(hadoopConfiguration)
                 .maxInMemoryBatchSize(instanceProperties.getInt(MAX_IN_MEMORY_BATCH_SIZE))
                 .maxRecordsToWriteLocally(instanceProperties.getLong(MAX_RECORDS_TO_WRITE_LOCALLY))
-                .ingestPartitionRefreshFrequencyInSecond(120).build();
+                .ingestPartitionRefreshFrequencyInSecond(instanceProperties.getInt(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS)).build();
     }
 
     /**

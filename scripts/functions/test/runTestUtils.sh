@@ -12,9 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+source "$(dirname "${BASH_SOURCE[0]}")/../stringUtils.sh"
+
 fail_test() {
-  echo "$@"
+  echo "$(find_test_source_ref)" "$@"
   ((TEST_FAILURES++))
+}
+
+find_test_source_ref() {
+  local NUM_SOURCES=${#BASH_SOURCE[@]}
+  local SOURCE_INDEX
+  if [[ "${BASH_SOURCE[$((NUM_SOURCES-1))]}" == *runAllTests.sh ]]; then
+    SOURCE_INDEX=$((NUM_SOURCES-2))
+  else
+    SOURCE_INDEX=$((NUM_SOURCES-1))
+  fi
+  echo "$(basename "${BASH_SOURCE[$SOURCE_INDEX]}"):${BASH_LINENO[$SOURCE_INDEX-1]}"
 }
 
 start_tests() {
@@ -29,15 +42,32 @@ end_tests() {
 }
 
 report_test_results() {
-  echo "$((TEST_FAILURES)) failures"
+  pluralise $((TEST_FAILURES)) "failure"
   if [[ $TEST_FAILURES -gt 0 ]]; then
     exit 1
   fi
 }
 
 expect_string_for_actual() {
+  expect_arguments 2 "$@"
   if [[ "$1" != "$2" ]]; then
     fail_test "Expected '$1', got $2"
+  fi
+}
+
+expect_non_empty_string() {
+  expect_arguments 1 "$@"
+  local STRING=$1
+  if [[ ${#STRING} -lt 1 ]]; then
+    fail_test "Expected non-empty string"
+  fi
+}
+
+expect_arguments() {
+  local EXPECTED=$1
+  local FOUND=$(($#-1))
+  if [[ ${FOUND} -ne ${EXPECTED} ]]; then
+    fail_test "${FUNCNAME[1]} needs ${EXPECTED} argument(s), got ${FOUND}"
   fi
 }
 

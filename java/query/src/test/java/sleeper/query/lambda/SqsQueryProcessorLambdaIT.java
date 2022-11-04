@@ -701,7 +701,7 @@ public class SqsQueryProcessorLambdaIT {
                     .bucketName(tableProperties.get(DATA_BUCKET))
                     .ingestPartitionRefreshFrequencyInSecond(10)
                     .build();
-            new IngestRecordsFromIterator(properties, generateTimeSeriesData(minYear, maxYear).iterator()).write().getNumberOfRecords();
+            new IngestRecordsFromIterator(properties, generateTimeSeriesData(minYear, maxYear).iterator()).write();
         } catch (IOException | StateStoreException | IteratorException |
                  ObjectFactoryException e) {
             throw new RuntimeException("Failed to Ingest data", e);

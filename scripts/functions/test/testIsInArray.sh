@@ -13,9 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-THIS_DIR=$(cd $(dirname $0) && pwd)
-source "${THIS_DIR}/arrayUtils.sh"
-source "${THIS_DIR}/runTestUtils.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../arrayUtils.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/runTestUtils.sh"
 
 A_B_C=("A" "B" "C")
 is_in_array "A" A_B_C || fail_test "A should be in A_B_C"
