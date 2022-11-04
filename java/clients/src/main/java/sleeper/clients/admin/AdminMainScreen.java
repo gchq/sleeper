@@ -29,12 +29,10 @@ import java.util.List;
 public class AdminMainScreen {
 
     private final ConsoleOutput out;
-    private final ConsoleInput in;
     private final ChooseOne chooseOne;
 
     public AdminMainScreen(ConsoleOutput out, ConsoleInput in) {
         this.out = out;
-        this.in = in;
         this.chooseOne = new ChooseOne(out, in);
     }
 
