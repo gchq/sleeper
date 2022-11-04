@@ -26,13 +26,11 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.StandardIngestCoordinator;
-import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Locale;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
@@ -83,7 +81,7 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
      * @throws IteratorException   -
      * @throws IOException         -
      */
-    public static List<FileInfo> ingestFromRecordIterator(
+    public static IngestResult ingestFromRecordIterator(
             ObjectFactory objectFactory,
             StateStore sleeperStateStore,
             InstanceProperties instanceProperties,
@@ -118,7 +116,7 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
              IngestCoordinator<Record> ingestCoordinator = createIngestCoordinatorWithProperties(
                      ingestProperties, instanceProperties, arrowBufferAllocator,
                      internalS3AsyncClient)) {
-            return new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write().getFileInfoList();
+            return new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
             // The Arrow buffer will be auto-closed
         } finally {
             recordIterator.close();

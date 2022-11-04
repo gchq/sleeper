@@ -30,9 +30,9 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.IngestRecordsUsingPropertiesSpecifiedMethod;
+import sleeper.ingest.IngestResult;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
@@ -109,7 +109,7 @@ public class IngestJobRunner {
         return conf;
     }
 
-    public IngestJobRunnerResult ingest(IngestJob job) throws InterruptedException, IteratorException, StateStoreException, IOException {
+    public IngestResult ingest(IngestJob job) throws InterruptedException, IteratorException, StateStoreException, IOException {
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(job.getTableName());
         Schema schema = tableProperties.getSchema();
 
@@ -148,7 +148,7 @@ public class IngestJobRunner {
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
         // Run the ingest
-        List<FileInfo> fileInfoList = IngestRecordsUsingPropertiesSpecifiedMethod.ingestFromRecordIterator(
+        IngestResult result = IngestRecordsUsingPropertiesSpecifiedMethod.ingestFromRecordIterator(
                 objectFactory,
                 stateStore,
                 instanceProperties,
@@ -159,9 +159,7 @@ public class IngestJobRunner {
                 tableProperties.get(ITERATOR_CLASS_NAME),
                 tableProperties.get(ITERATOR_CONFIG),
                 concatenatingIterator);
-        long numRecordsWritten = fileInfoList.stream().mapToLong(FileInfo::getNumberOfRecords).sum();
-        return IngestJobRunnerResult.builder()
-                .numRecordsWritten(numRecordsWritten)
-                .pathList(paths).build();
+        LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getNumberOfRecords(), paths);
+        return result;
     }
 }

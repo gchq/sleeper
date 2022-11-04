@@ -32,6 +32,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
+import sleeper.ingest.IngestResult;
 import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.DeleteMessageAction;
 import sleeper.job.common.action.MessageReference;
@@ -145,11 +146,10 @@ public class IngestJobQueueConsumer {
                 job.getId(), keepAlivePeriod);
 
         // Run the ingest
-        IngestJobRunnerResult result = ingestJobRunner.ingest(job);
+        IngestResult result = ingestJobRunner.ingest(job);
         LOGGER.info("Ingest job {}: Stopping background thread to keep SQS messages alive",
                 job.getId());
         changeTimeoutRunnable.stop();
-        LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getNumRecordsWritten(), result.getPathList());
 
         // Delete messages from SQS queue
         LOGGER.info("Ingest job {}: Deleting messages from queue", job.getId());
@@ -167,13 +167,13 @@ public class IngestJobQueueConsumer {
                 .withNamespace(metricsNamespace)
                 .withMetricData(new MetricDatum()
                         .withMetricName("StandardIngestRecordsWritten")
-                        .withValue((double) result.getNumRecordsWritten())
+                        .withValue((double) result.getNumberOfRecords())
                         .withUnit(StandardUnit.Count)
                         .withDimensions(
                                 new Dimension().withName("instanceId").withValue(instanceId),
                                 new Dimension().withName("tableName").withValue(job.getTableName())
                         )));
 
-        return result.getNumRecordsWritten();
+        return result.getNumberOfRecords();
     }
 }
