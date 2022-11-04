@@ -24,8 +24,8 @@ import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.dynamodb.tools.DynamoDBTestUtils.createInstanceProperties;
 import static sleeper.ingest.status.DynamoDBIngestJobStatusStore.jobStatusTableName;
+import static sleeper.ingest.status.testutils.IngestStatusStoreTestUtils.createInstanceProperties;
 
 public class DynamoDBIngestJobStatusStoreCreatorIT extends DynamoDBTestBase {
     private final InstanceProperties instanceProperties = createInstanceProperties();
