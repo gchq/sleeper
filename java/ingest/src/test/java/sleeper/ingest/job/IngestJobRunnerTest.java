@@ -63,7 +63,6 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
@@ -81,7 +80,6 @@ public class IngestJobRunnerTest {
             LocalStackContainer.Service.S3);
     private static final String TEST_INSTANCE_NAME = "myinstance";
     private static final String TEST_TABLE_NAME = "mytable";
-    private static final String CONFIG_BUCKET_NAME = TEST_INSTANCE_NAME + "-configbucket";
     private static final String INGEST_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-ingestdata";
     private static final String TABLE_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-tabledata";
     private final String recordBatchType;
@@ -113,7 +111,6 @@ public class IngestJobRunnerTest {
 
     @Before
     public void before() throws IOException {
-        AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(CONFIG_BUCKET_NAME);
         AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(TABLE_DATA_BUCKET_NAME);
         AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(INGEST_DATA_BUCKET_NAME);
         currentLocalIngestDirectory = temporaryFolder.newFolder().getAbsolutePath();
@@ -128,14 +125,13 @@ public class IngestJobRunnerTest {
     private InstanceProperties getInstanceProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, TEST_INSTANCE_NAME);
-        instanceProperties.set(CONFIG_BUCKET, CONFIG_BUCKET_NAME);
         instanceProperties.set(FILE_SYSTEM, fileSystemPrefix);
         instanceProperties.set(INGEST_RECORD_BATCH_TYPE, recordBatchType);
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, partitionFileWriterType);
         return instanceProperties;
     }
 
-    private TableProperties createTable(Schema schema) throws IOException {
+    private TableProperties createTable(Schema schema) {
         InstanceProperties instanceProperties = getInstanceProperties();
 
         TableProperties tableProperties = new TableProperties(instanceProperties);
@@ -145,7 +141,6 @@ public class IngestJobRunnerTest {
         tableProperties.set(ACTIVE_FILEINFO_TABLENAME, TEST_TABLE_NAME + "-af");
         tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, TEST_TABLE_NAME + "-rfgcf");
         tableProperties.set(PARTITION_TABLENAME, TEST_TABLE_NAME + "-p");
-        tableProperties.saveToS3(AWS_EXTERNAL_RESOURCE.getS3Client());
 
         return tableProperties;
     }
