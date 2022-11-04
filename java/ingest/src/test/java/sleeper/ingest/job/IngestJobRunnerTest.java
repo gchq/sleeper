@@ -193,7 +193,7 @@ public class IngestJobRunnerTest {
     }
 
     private void consumeAndVerify(Schema sleeperSchema,
-                                  List<IngestJob> ingestJobList,
+                                  IngestJob job,
                                   List<Record> expectedRecordList,
                                   int expectedNoOfFiles) throws Exception {
         String localDir = temporaryFolder.newFolder().getAbsolutePath();
@@ -213,10 +213,7 @@ public class IngestJobRunnerTest {
                 localDir,
                 AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
-
-        for (IngestJob job : ingestJobList) {
-            ingestJobRunner.ingest(job);
-        }
+        ingestJobRunner.ingest(job);
 
         // Verify the results
         ResultVerifier.verify(
@@ -240,7 +237,7 @@ public class IngestJobRunnerTest {
                 .sorted(new RecordComparator(recordListAndSchema.sleeperSchema))
                 .collect(Collectors.toList());
         IngestJob ingestJob = new IngestJob(TEST_TABLE_NAME, "id", files);
-        consumeAndVerify(recordListAndSchema.sleeperSchema, Collections.singletonList(ingestJob), doubledRecords, 1);
+        consumeAndVerify(recordListAndSchema.sleeperSchema, ingestJob, doubledRecords, 1);
     }
 
     @Test
@@ -256,7 +253,7 @@ public class IngestJobRunnerTest {
         FileSystem.get(uri2, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration()).createNewFile(new Path(uri2));
         files.add(getIngestBucket() + "/file-2.csv");
         IngestJob ingestJob = new IngestJob(TEST_TABLE_NAME, "id", files);
-        consumeAndVerify(recordListAndSchema.sleeperSchema, Collections.singletonList(ingestJob), recordListAndSchema.recordList, 1);
+        consumeAndVerify(recordListAndSchema.sleeperSchema, ingestJob, recordListAndSchema.recordList, 1);
     }
 
     @Test
@@ -283,6 +280,6 @@ public class IngestJobRunnerTest {
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
         IngestJob ingestJob = new IngestJob(TEST_TABLE_NAME, "id", files);
-        consumeAndVerify(recordListAndSchema.sleeperSchema, Collections.singletonList(ingestJob), expectedRecords, 1);
+        consumeAndVerify(recordListAndSchema.sleeperSchema, ingestJob, expectedRecords, 1);
     }
 }
