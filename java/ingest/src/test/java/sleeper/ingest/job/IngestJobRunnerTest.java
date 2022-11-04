@@ -29,6 +29,7 @@ import org.junit.runners.Parameterized;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
@@ -204,7 +205,7 @@ public class IngestJobRunnerTest {
         String localDir = temporaryFolder.newFolder().getAbsolutePath();
         InstanceProperties instanceProperties = getInstanceProperties();
         TableProperties tableProperties = createTable(sleeperSchema);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(AWS_EXTERNAL_RESOURCE.getS3Client(), instanceProperties);
+        TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
         StateStore stateStore = new DelegatingStateStore(new InMemoryFileInfoStore(), new FixedPartitionStore(sleeperSchema));
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tablePropertiesProvider.getTableProperties(TEST_TABLE_NAME), stateStore);
         stateStore.initialise();
