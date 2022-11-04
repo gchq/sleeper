@@ -137,7 +137,7 @@ public class TestUtils {
                     .bucketName(table.get(DATA_BUCKET))
                     .ingestPartitionRefreshFrequencyInSecond(10)
                     .build();
-            new IngestRecordsFromIterator(properties, generateTimeSeriesData().iterator()).write().getNumberOfRecords();
+            new IngestRecordsFromIterator(properties, generateTimeSeriesData().iterator()).write();
         } catch (IOException | StateStoreException | IteratorException |
                  ObjectFactoryException e) {
             throw new RuntimeException("Failed to Ingest data", e);
