@@ -21,6 +21,10 @@ import org.mockito.Mockito;
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
+
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -54,10 +58,10 @@ public class TablePropertyReportTest extends AdminClientMockStoreBase {
                 .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE + TABLE_PROPERTY_REPORT_SCREEN)
                 .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
                 .contains("Table Property Report")
-                // Then check some default table property values are present in the output, don't check values in case they change
-                .contains("sleeper.table.splits.base64.encoded")
-                .contains("sleeper.table.statestore.classname")
-                .contains("sleeper.table.fs.s3a.readahead.range")
+                // Then check all table properties are present in the output
+                .contains(Stream.of(TableProperty.values())
+                        .map(TableProperty::getPropertyName)
+                        .collect(Collectors.toList()))
                 // Then check some set table property values are present in the output
                 .contains("sleeper.table.name: test-table\n")
                 .contains("sleeper.table.encrypted: false\n")
