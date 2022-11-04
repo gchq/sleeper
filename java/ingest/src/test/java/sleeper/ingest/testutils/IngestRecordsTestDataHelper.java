@@ -22,7 +22,6 @@ import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.partition.Partition;
-import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.record.CloneRecord;
 import sleeper.core.record.Record;
@@ -41,7 +40,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -94,20 +92,6 @@ public class IngestRecordsTestDataHelper {
                 .parentPartitionId("root")
                 .childPartitionIds(Collections.emptyList())
                 .build();
-    }
-
-    public static List<Partition> createPartitionListWithLongType(Schema schema, Field field) {
-        Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
-        Region rootRegion = new Region(rootRange);
-        Partition rootPartition = createRootPartition(rootRegion, new LongType());
-        Range range1 = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, 2L);
-        Region region1 = new Region(range1);
-        Partition partition1 = createLeafPartition("partition1", region1, new LongType());
-        Range range2 = new Range.RangeFactory(schema).createRange(field, 2L, null);
-        Region region2 = new Region(range2);
-        Partition partition2 = createLeafPartition("partition2", region2, new LongType());
-        rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
-        return Arrays.asList(rootPartition, partition1, partition2);
     }
 
     public static List<Record> getSingleRecord() {
