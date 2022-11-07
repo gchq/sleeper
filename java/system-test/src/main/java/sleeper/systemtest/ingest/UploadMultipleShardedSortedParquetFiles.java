@@ -62,7 +62,6 @@ public class UploadMultipleShardedSortedParquetFiles extends WriteRandomDataJob 
                     null,
                     null,
                     null,
-                    null,
                     recordIterator);
         } catch (StateStoreException | IteratorException e) {
             throw new IOException("Failed to write records using iterator", e);

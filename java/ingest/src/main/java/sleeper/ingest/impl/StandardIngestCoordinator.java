@@ -142,6 +142,56 @@ public class StandardIngestCoordinator {
                 partitionFileFactoryFn);
     }
 
+    public static IngestCoordinator<Record> asyncS3WriteBackedByArrayList(IngestProperties ingestProperties,
+                                                                          String s3BucketName,
+                                                                          S3AsyncClient s3AsyncClient) {
+        return builder()
+                .fromProperties(ingestProperties)
+                .backedByArrayList()
+                .maxNoOfRecordsInMemory((int) ingestProperties.getMaxInMemoryBatchSize())
+                .maxNoOfRecordsInLocalStore(ingestProperties.getMaxRecordsToWriteLocally())
+                .buildAsyncS3Write(s3BucketName, s3AsyncClient);
+    }
+
+    private static IngestCoordinator<Record> asyncS3WriteBackedByArrayList(
+            Builder builder, BackedByArrayBuilder arrayBuilder, String s3BucketName, S3AsyncClient s3AsyncClient) {
+        Supplier<RecordBatch<Record>> recordBatchFactoryFn = () ->
+                new ArrayListRecordBatchAcceptingRecords(
+                        builder.schema,
+                        builder.localWorkingDirectory,
+                        arrayBuilder.maxNoOfRecordsInMemory,
+                        arrayBuilder.maxNoOfRecordsInLocalStore,
+                        builder.parquetRowGroupSize,
+                        builder.parquetPageSize,
+                        builder.parquetCompressionCodec,
+                        builder.hadoopConfiguration);
+        Function<Partition, PartitionFileWriter> partitionFileFactoryFn = partition -> {
+            try {
+                return new AsyncS3PartitionFileWriter(
+                        builder.schema,
+                        partition,
+                        builder.parquetRowGroupSize,
+                        builder.parquetPageSize,
+                        builder.parquetCompressionCodec,
+                        builder.hadoopConfiguration,
+                        s3BucketName,
+                        s3AsyncClient,
+                        builder.localWorkingDirectory);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        };
+        return new IngestCoordinator<>(
+                builder.objectFactory,
+                builder.stateStore,
+                builder.schema,
+                builder.iteratorClassName,
+                builder.iteratorConfig,
+                builder.ingestPartitionRefreshFrequencyInSeconds,
+                recordBatchFactoryFn,
+                partitionFileFactoryFn);
+    }
+
     public static IngestCoordinator<Record> asyncS3WriteBackedByArrow(IngestProperties ingestProperties,
                                                                       String s3BucketName,
                                                                       S3AsyncClient s3AsyncClient,
@@ -201,7 +251,7 @@ public class StandardIngestCoordinator {
                 partitionFileFactoryFn);
     }
 
-    public static class BackedByArrayBuilder {
+    public static class BackedByArrayBuilder implements BackedBuilder {
         private final Builder builder;
         private int maxNoOfRecordsInMemory;
         private long maxNoOfRecordsInLocalStore;
@@ -223,9 +273,13 @@ public class StandardIngestCoordinator {
         public IngestCoordinator<Record> buildDirectWrite(String filePathPrefix) {
             return directWriteBackedByArrayList(builder, this, filePathPrefix);
         }
+
+        public IngestCoordinator<Record> buildAsyncS3Write(String s3BucketName, S3AsyncClient s3AsyncClient) {
+            return asyncS3WriteBackedByArrayList(builder, this, s3BucketName, s3AsyncClient);
+        }
     }
 
-    public static class BackedByArrowBuilder {
+    public static class BackedByArrowBuilder implements BackedBuilder {
         private final Builder builder;
         private BufferAllocator arrowBufferAllocator;
         private int maxNoOfRecordsToWriteToArrowFileAtOnce;
@@ -275,6 +329,12 @@ public class StandardIngestCoordinator {
         public IngestCoordinator<Record> buildAsyncS3Write(String s3BucketName, S3AsyncClient s3AsyncClient) {
             return asyncS3WriteBackedByArrow(builder, this, s3BucketName, s3AsyncClient);
         }
+    }
+
+    public interface BackedBuilder {
+        IngestCoordinator<Record> buildDirectWrite(String filePathPrefix);
+
+        IngestCoordinator<Record> buildAsyncS3Write(String s3BucketName, S3AsyncClient s3AsyncClient);
     }
 
     public static class Builder {
