@@ -351,6 +351,14 @@
                             <goal>integration-test</goal>
                             <goal>verify</goal>
                         </goals>
+                        <configuration>
+		                    <!--
+		                    This flag avoids an error in Arrow 8.0.0 on Java 17: see https://arrow.apache.org/docs/java/install.html
+		                    "When using Java 17 or later, some JDK internals must be exposed by adding - - add-opens=java.base/java.nio=ALL-UNNAMED.
+		                    Otherwise, you may see errors like module java.base does not "opens java.nio" to unnamed module."
+		                    -->
+		                    <argLine>--add-opens=java.base/java.nio=ALL-UNNAMED</argLine>
+		                </configuration>
                     </execution>
                 </executions>
             </plugin>
