@@ -28,7 +28,7 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusUpdate;
 import sleeper.compaction.job.status.CompactionJobStatusUpdateRecord;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
-import sleeper.compaction.status.DynamoDBRecordBuilder;
+import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -37,11 +37,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static sleeper.compaction.status.DynamoDBAttributes.getInstantAttribute;
-import static sleeper.compaction.status.DynamoDBAttributes.getIntAttribute;
-import static sleeper.compaction.status.DynamoDBAttributes.getLongAttribute;
-import static sleeper.compaction.status.DynamoDBAttributes.getStringAttribute;
-import static sleeper.compaction.status.DynamoDBUtils.EXPIRY_DATE;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 
 public class DynamoDBCompactionJobStatusFormat {
 
@@ -62,7 +61,7 @@ public class DynamoDBCompactionJobStatusFormat {
     public static final String RECORDS_READ = "RecordsRead";
     public static final String RECORDS_WRITTEN = "RecordsWritten";
     public static final String TASK_ID = "TaskId";
-
+    public static final String EXPIRY_DATE = "ExpiryDate";
     public static final String UPDATE_TYPE_CREATED = "created";
     public static final String UPDATE_TYPE_STARTED = "started";
     public static final String UPDATE_TYPE_FINISHED = "finished";

@@ -18,8 +18,8 @@ package sleeper.compaction.status.job;
 import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
 import org.junit.After;
 import org.junit.Test;
-import sleeper.compaction.status.testutils.DynamoDBTestBase;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;

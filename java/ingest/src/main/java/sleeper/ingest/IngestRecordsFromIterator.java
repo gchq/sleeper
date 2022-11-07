@@ -17,6 +17,7 @@ package sleeper.ingest;
 
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
+import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
@@ -28,22 +29,20 @@ import java.util.Iterator;
  * This class is an adaptor to {@link sleeper.ingest.impl.IngestCoordinator}.
  */
 public class IngestRecordsFromIterator {
-    private final IngestProperties properties;
     private final Iterator<Record> recordsIterator;
+    private final IngestRecords ingestRecords;
 
     public IngestRecordsFromIterator(IngestProperties properties, Iterator<Record> recordsIterator) {
-        this.properties = properties;
         this.recordsIterator = recordsIterator;
+        this.ingestRecords = new IngestRecords(properties);
     }
-    /**
-     * @return numbers of records written
-     * @throws StateStoreException  -
-     * @throws IOException          -
-     * @throws InterruptedException -
-     * @throws IteratorException    -
-     */
-    public long write() throws StateStoreException, IOException, InterruptedException, IteratorException {
-        IngestRecords ingestRecords = new IngestRecords(properties);
+
+    public IngestRecordsFromIterator(IngestCoordinator<Record> ingestCoordinator, Iterator<Record> recordsIterator) {
+        this.recordsIterator = recordsIterator;
+        this.ingestRecords = new IngestRecords(ingestCoordinator);
+    }
+
+    public IngestResult write() throws StateStoreException, IteratorException, IOException {
         ingestRecords.init();
         while (recordsIterator.hasNext()) {
             ingestRecords.write(recordsIterator.next());

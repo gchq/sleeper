@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sleeper.ingest.job;
 
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.After;
@@ -24,8 +24,6 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
@@ -41,21 +39,15 @@ import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.io.parquet.record.ParquetRecordWriter;
 import sleeper.io.parquet.record.SchemaConverter;
-import sleeper.statestore.DelegatingStateStore;
-import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.inmemory.FixedPartitionStore;
-import sleeper.statestore.inmemory.InMemoryFileInfoStore;
+import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -74,13 +66,12 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_TAB
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-@RunWith(Parameterized.class)
-public class IngestJobQueueConsumerIT {
-
+public class IngestJobQueueConsumerFullIT {
     @ClassRule
     public static final AwsExternalResource AWS_EXTERNAL_RESOURCE = new AwsExternalResource(
             LocalStackContainer.Service.S3,
             LocalStackContainer.Service.SQS,
+            LocalStackContainer.Service.DYNAMODB,
             LocalStackContainer.Service.CLOUDWATCH);
     private static final String TEST_INSTANCE_NAME = "myinstance";
     private static final String TEST_TABLE_NAME = "mytable";
@@ -88,32 +79,9 @@ public class IngestJobQueueConsumerIT {
     private static final String CONFIG_BUCKET_NAME = TEST_INSTANCE_NAME + "-configbucket";
     private static final String INGEST_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-ingestdata";
     private static final String TABLE_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-tabledata";
-    private final String recordBatchType;
-    private final String partitionFileWriterType;
-    private final String fileSystemPrefix;
+    private static final String FILE_SYSTEM_PREFIX = "s3a://";
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
-    private String currentLocalIngestDirectory;
-    private String currentLocalTableDataDirectory;
-
-    public IngestJobQueueConsumerIT(String recordBatchType,
-                                    String partitionFileWriterType,
-                                    String fileSystemPrefix) {
-        this.recordBatchType = recordBatchType;
-        this.partitionFileWriterType = partitionFileWriterType;
-        this.fileSystemPrefix = fileSystemPrefix;
-    }
-
-    @Parameterized.Parameters(name = "batchType={0}, fileWriterType={1}, fileSystemPrefix=\"{2}\"")
-    public static Collection<Object[]> parametersForTests() {
-        return Arrays.asList(new Object[][]{
-                {"arrow", "async", "s3a://"},
-                {"arrow", "direct", "s3a://"},
-                {"arrow", "direct", ""},
-                {"arraylist", "async", "s3a://"},
-                {"arraylist", "direct", "s3a://"},
-                {"arraylist", "direct", ""}});
-    }
 
     @Before
     public void before() throws IOException {
@@ -121,8 +89,6 @@ public class IngestJobQueueConsumerIT {
         AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(TABLE_DATA_BUCKET_NAME);
         AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(INGEST_DATA_BUCKET_NAME);
         AWS_EXTERNAL_RESOURCE.getSqsClient().createQueue(INGEST_QUEUE_NAME);
-        currentLocalIngestDirectory = temporaryFolder.newFolder().getAbsolutePath();
-        currentLocalTableDataDirectory = temporaryFolder.newFolder().getAbsolutePath();
     }
 
     @After
@@ -135,13 +101,13 @@ public class IngestJobQueueConsumerIT {
         instanceProperties.set(ID, TEST_INSTANCE_NAME);
         instanceProperties.set(CONFIG_BUCKET, CONFIG_BUCKET_NAME);
         instanceProperties.set(INGEST_JOB_QUEUE_URL, AWS_EXTERNAL_RESOURCE.getSqsClient().getQueueUrl(INGEST_QUEUE_NAME).getQueueUrl());
-        instanceProperties.set(FILE_SYSTEM, fileSystemPrefix);
-        instanceProperties.set(INGEST_RECORD_BATCH_TYPE, recordBatchType);
-        instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, partitionFileWriterType);
+        instanceProperties.set(FILE_SYSTEM, FILE_SYSTEM_PREFIX);
+        instanceProperties.set(INGEST_RECORD_BATCH_TYPE, "arraylist");
+        instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         return instanceProperties;
     }
 
-    private TableProperties createTable(Schema schema) throws IOException {
+    private TableProperties createTable(Schema schema) throws IOException, StateStoreException {
         InstanceProperties instanceProperties = getInstanceProperties();
 
         TableProperties tableProperties = new TableProperties(instanceProperties);
@@ -153,31 +119,21 @@ public class IngestJobQueueConsumerIT {
         tableProperties.set(PARTITION_TABLENAME, TEST_TABLE_NAME + "-p");
         tableProperties.saveToS3(AWS_EXTERNAL_RESOURCE.getS3Client());
 
+        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(
+                instanceProperties,
+                tableProperties,
+                AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
+        dynamoDBStateStoreCreator.create();
+
         return tableProperties;
     }
 
     private String getTableDataBucket() {
-        String fileSystemPrefix = getInstanceProperties().get(FILE_SYSTEM).toLowerCase(Locale.ROOT);
-        switch (fileSystemPrefix) {
-            case "s3a://":
-                return TABLE_DATA_BUCKET_NAME;
-            case "":
-                return currentLocalTableDataDirectory;
-            default:
-                throw new AssertionError(String.format("File system %s is not supported", fileSystemPrefix));
-        }
+        return TABLE_DATA_BUCKET_NAME;
     }
 
     private String getIngestBucket() {
-        String fileSystemPrefix = getInstanceProperties().get(FILE_SYSTEM).toLowerCase(Locale.ROOT);
-        switch (fileSystemPrefix) {
-            case "s3a://":
-                return INGEST_DATA_BUCKET_NAME;
-            case "":
-                return currentLocalIngestDirectory;
-            default:
-                throw new AssertionError(String.format("File system %s is not supported", fileSystemPrefix));
-        }
+        return INGEST_DATA_BUCKET_NAME;
     }
 
     private List<String> writeParquetFilesForIngest(
@@ -189,7 +145,7 @@ public class IngestJobQueueConsumerIT {
         for (int fileNo = 0; fileNo < numberOfFiles; fileNo++) {
             String fileWithoutSystemPrefix = String.format("%s/%s/file-%d.parquet", getIngestBucket(), subDirectory, fileNo);
             files.add(fileWithoutSystemPrefix);
-            ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(new Path(fileSystemPrefix + fileWithoutSystemPrefix),
+            ParquetWriter<Record> writer = new ParquetRecordWriter.Builder(new Path(FILE_SYSTEM_PREFIX + fileWithoutSystemPrefix),
                     SchemaConverter.getSchema(recordListAndSchema.sleeperSchema), recordListAndSchema.sleeperSchema)
                     .withRowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
                     .withPageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
@@ -204,7 +160,6 @@ public class IngestJobQueueConsumerIT {
         return files;
     }
 
-
     private void consumeAndVerify(Schema sleeperSchema,
                                   List<Record> expectedRecordList,
                                   int expectedNoOfFiles) throws Exception {
@@ -212,8 +167,8 @@ public class IngestJobQueueConsumerIT {
         InstanceProperties instanceProperties = getInstanceProperties();
         TableProperties tableProperties = createTable(sleeperSchema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(AWS_EXTERNAL_RESOURCE.getS3Client(), instanceProperties);
-        StateStore stateStore = new DelegatingStateStore(new InMemoryFileInfoStore(), new FixedPartitionStore(sleeperSchema));
-        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tablePropertiesProvider.getTableProperties(TEST_TABLE_NAME), stateStore);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), new InstanceProperties());
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
 
         // Run the job consumer
@@ -254,53 +209,6 @@ public class IngestJobQueueConsumerIT {
         AWS_EXTERNAL_RESOURCE.getSqsClient()
                 .sendMessage(getInstanceProperties().get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(ingestJob));
         consumeAndVerify(recordListAndSchema.sleeperSchema, doubledRecords, 1);
-    }
-
-    @Test
-    public void shouldBeAbleToHandleAllFileFormatsPutOnTheQueue() throws Exception {
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
-                new LongType(),
-                LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        List<String> files = writeParquetFilesForIngest(recordListAndSchema, "", 1);
-        URI uri1 = new URI(fileSystemPrefix + getIngestBucket() + "/file-1.crc");
-        FileSystem.get(uri1, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration()).createNewFile(new Path(uri1));
-        files.add(getIngestBucket() + "/file-1.crc");
-        URI uri2 = new URI(fileSystemPrefix + getIngestBucket() + "/file-2.csv");
-        FileSystem.get(uri2, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration()).createNewFile(new Path(uri2));
-        files.add(getIngestBucket() + "/file-2.csv");
-        IngestJob ingestJob = new IngestJob(TEST_TABLE_NAME, "id", files);
-        AWS_EXTERNAL_RESOURCE.getSqsClient()
-                .sendMessage(getInstanceProperties().get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(ingestJob));
-        consumeAndVerify(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList, 1);
-    }
-
-    @Test
-    public void shouldIngestParquetFilesInNestedDirectoriesPutOnTheQueue() throws Exception {
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
-                new LongType(),
-                LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        int noOfTopLevelDirectories = 5;
-        int noOfNestings = 4;
-        int noOfFilesPerDirectory = 3;
-        List<String> files = IntStream.range(0, noOfTopLevelDirectories)
-                .mapToObj(topLevelDirNo ->
-                        IntStream.range(0, noOfNestings).mapToObj(nestingNo -> {
-                            try {
-                                String dirName = String.format("dir-%d%s", topLevelDirNo, String.join("", Collections.nCopies(nestingNo, "/nested-dir")));
-                                return writeParquetFilesForIngest(recordListAndSchema, dirName, noOfFilesPerDirectory);
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
-                        }).flatMap(List::stream).collect(Collectors.toList()))
-                .flatMap(List::stream).collect(Collectors.toList());
-        List<Record> expectedRecords = Stream.of(Collections.nCopies(noOfTopLevelDirectories * noOfNestings * noOfFilesPerDirectory, recordListAndSchema.recordList))
-                .flatMap(List::stream)
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
-        IngestJob ingestJob = new IngestJob(TEST_TABLE_NAME, "id", files);
-        AWS_EXTERNAL_RESOURCE.getSqsClient()
-                .sendMessage(getInstanceProperties().get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(ingestJob));
-        consumeAndVerify(recordListAndSchema.sleeperSchema, expectedRecords, 1);
     }
 
     @Test
