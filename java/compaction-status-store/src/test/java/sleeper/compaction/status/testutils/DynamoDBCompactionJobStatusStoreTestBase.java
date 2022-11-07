@@ -36,6 +36,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
+import sleeper.dynamodb.tools.DynamoDBTestBase;
 import sleeper.statestore.FileInfoFactory;
 
 import java.time.Instant;
