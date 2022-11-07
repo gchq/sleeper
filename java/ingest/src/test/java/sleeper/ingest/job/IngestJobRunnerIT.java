@@ -230,7 +230,7 @@ public class IngestJobRunnerIT {
     public void shouldIngestParquetFiles() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
-                LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
+                LongStream.range(-5, 5).boxed().collect(Collectors.toList()));
         List<String> files = writeParquetFilesForIngest(recordListAndSchema, "", 2);
         List<Record> doubledRecords = Stream.of(recordListAndSchema.recordList, recordListAndSchema.recordList)
                 .flatMap(List::stream)
@@ -260,10 +260,10 @@ public class IngestJobRunnerIT {
     public void shouldIngestParquetFilesInNestedDirectories() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
-                LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        int noOfTopLevelDirectories = 5;
+                LongStream.range(-5, 5).boxed().collect(Collectors.toList()));
+        int noOfTopLevelDirectories = 2;
         int noOfNestings = 4;
-        int noOfFilesPerDirectory = 3;
+        int noOfFilesPerDirectory = 2;
         List<String> files = IntStream.range(0, noOfTopLevelDirectories)
                 .mapToObj(topLevelDirNo ->
                         IntStream.range(0, noOfNestings).mapToObj(nestingNo -> {
