@@ -19,7 +19,6 @@ package sleeper.ingest.impl;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
@@ -46,12 +45,13 @@ import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 
 public class IngestCoordinatorFactory {
-    private ObjectFactory objectFactory;
-    private String localDir;
-    private StateStore stateStore;
-    private Configuration hadoopConfiguration;
-    private BufferAllocator bufferAllocator;
-    private S3AsyncClient s3AsyncClient;
+
+    private final ObjectFactory objectFactory;
+    private final String localDir;
+    private final StateStore stateStore;
+    private final Configuration hadoopConfiguration;
+    private final BufferAllocator bufferAllocator;
+    private final S3AsyncClient s3AsyncClient;
 
     private IngestCoordinatorFactory(Builder builder) {
         this.objectFactory = builder.objectFactory;
@@ -66,44 +66,52 @@ public class IngestCoordinatorFactory {
         return new Builder();
     }
 
-    public IngestCoordinator<Record> createIngestCoordinator(InstanceProperties instanceProperties, TableProperties tableProperties) throws ObjectFactoryException {
+    public IngestCoordinator<Record> createIngestCoordinator(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        S3AsyncClient internalS3AsyncClient =
+                instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT).equals("async") ?
+                        ((s3AsyncClient == null) ? S3AsyncClient.create() : s3AsyncClient) :
+                        null;
         IngestProperties ingestProperties = createIngestProperties(instanceProperties, tableProperties);
         String recordBatchType = instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
         String fileWriterType = instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
         StandardIngestCoordinator.BackedBuilder ingestCoordinatorBuilder;
-        if (recordBatchType.equals("arraylist")) {
-            ingestCoordinatorBuilder = StandardIngestCoordinator.builder().fromProperties(ingestProperties)
-                    .backedByArrayList()
-                    .maxNoOfRecordsInMemory((int) ingestProperties.getMaxInMemoryBatchSize())
-                    .maxNoOfRecordsInLocalStore(ingestProperties.getMaxRecordsToWriteLocally());
-        } else if (recordBatchType.equals("arrow")) {
-            ingestCoordinatorBuilder = StandardIngestCoordinator.builder().fromProperties(ingestProperties)
-                    .backedByArrow()
-                    .arrowBufferAllocator(bufferAllocator)
-                    .maxNoOfRecordsToWriteToArrowFileAtOnce(instanceProperties.getInt(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS))
-                    .workingArrowBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES))
-                    .minBatchArrowBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
-                    .maxBatchArrowBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
-                    .maxNoOfBytesToWriteLocally(ingestProperties.getMaxRecordsToWriteLocally());
-        } else {
-            throw new UnsupportedOperationException(String.format("Record batch type %s not supported", recordBatchType));
-        }
-        if (fileWriterType.equals("direct")) {
-            return ingestCoordinatorBuilder.buildDirectWrite(ingestProperties.getFilePrefix() + ingestProperties.getBucketName());
-        } else if (fileWriterType.equals("async")) {
-            if (!instanceProperties.get(FILE_SYSTEM).toLowerCase(Locale.ROOT).equals("s3a://")) {
-                throw new UnsupportedOperationException("Attempting an asynchronous write to a file system that is not s3a://");
+        try {
+            if (recordBatchType.equals("arraylist")) {
+                ingestCoordinatorBuilder = StandardIngestCoordinator.builder().fromProperties(ingestProperties)
+                        .backedByArrayList()
+                        .maxNoOfRecordsInMemory((int) ingestProperties.getMaxInMemoryBatchSize())
+                        .maxNoOfRecordsInLocalStore(ingestProperties.getMaxRecordsToWriteLocally());
+            } else if (recordBatchType.equals("arrow")) {
+                ingestCoordinatorBuilder = StandardIngestCoordinator.builder().fromProperties(ingestProperties)
+                        .backedByArrow()
+                        .arrowBufferAllocator(bufferAllocator)
+                        .maxNoOfRecordsToWriteToArrowFileAtOnce(instanceProperties.getInt(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS))
+                        .workingArrowBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES))
+                        .minBatchArrowBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
+                        .maxBatchArrowBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
+                        .maxNoOfBytesToWriteLocally(ingestProperties.getMaxRecordsToWriteLocally());
             } else {
-                return ingestCoordinatorBuilder.buildAsyncS3Write(ingestProperties.getBucketName(), s3AsyncClient);
+                throw new UnsupportedOperationException(String.format("Record batch type %s not supported", recordBatchType));
             }
-        } else {
-            throw new UnsupportedOperationException(String.format("Record batch type %s not supported", recordBatchType));
+            if (fileWriterType.equals("direct")) {
+                return ingestCoordinatorBuilder.buildDirectWrite(ingestProperties.getFilePrefix() + ingestProperties.getBucketName());
+            } else if (fileWriterType.equals("async")) {
+                if (!instanceProperties.get(FILE_SYSTEM).toLowerCase(Locale.ROOT).equals("s3a://")) {
+                    throw new UnsupportedOperationException("Attempting an asynchronous write to a file system that is not s3a://");
+                } else {
+                    return ingestCoordinatorBuilder.buildAsyncS3Write(ingestProperties.getBucketName(), internalS3AsyncClient);
+                }
+            } else {
+                throw new UnsupportedOperationException(String.format("Record batch type %s not supported", recordBatchType));
+            }
+        } finally {
+            if (s3AsyncClient == null && internalS3AsyncClient != null) {
+                internalS3AsyncClient.close();
+            }
         }
     }
 
-    private IngestProperties createIngestProperties(
-            InstanceProperties instanceProperties, TableProperties tableProperties) {
-
+    public IngestProperties createIngestProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
         return IngestProperties.builder()
                 .objectFactory(objectFactory)
                 .localDir(localDir)
