@@ -15,6 +15,8 @@
  */
 package sleeper.ingest.job;
 
+import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.memory.RootAllocator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
@@ -29,8 +31,9 @@ import sleeper.core.iterator.ConcatenatingIterator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.ingest.IngestRecordsUsingPropertiesSpecifiedMethod;
+import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.ingest.IngestResult;
+import sleeper.ingest.impl.IngestCoordinatorFactory;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.statestore.StateStore;
@@ -46,8 +49,6 @@ import java.util.function.Supplier;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
 /**
  * An IngestJobRunner takes ingest jobs and runs them.
@@ -116,26 +117,26 @@ public class IngestJobRunner {
                         + ". This file will be ignored and will not be ingested.", pathString);
             }
         }
-
-        // Concatenate iterators into one iterator
-        CloseableIterator<Record> concatenatingIterator = new ConcatenatingIterator(inputIterators);
-
         // Get StateStore for this table
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-
         // Run the ingest
-        IngestResult result = IngestRecordsUsingPropertiesSpecifiedMethod.ingestFromRecordIterator(
-                objectFactory,
-                stateStore,
-                instanceProperties,
-                tableProperties,
-                localDir,
-                s3AsyncClient,
-                hadoopConfiguration,
-                tableProperties.get(ITERATOR_CLASS_NAME),
-                tableProperties.get(ITERATOR_CONFIG),
-                concatenatingIterator);
-        LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getNumberOfRecords(), paths);
-        return result;
+        try (CloseableIterator<Record> recordIterator = new ConcatenatingIterator(inputIterators);
+             BufferAllocator bufferAllocator = new RootAllocator()) {
+
+            IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
+                    .objectFactory(objectFactory)
+                    .stateStore(stateStore)
+                    .localDir(localDir)
+                    .s3AsyncClient(s3AsyncClient)
+                    .hadoopConfiguration(hadoopConfiguration)
+                    .bufferAllocator(bufferAllocator)
+                    .build();
+            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(
+                    factory.createIngestCoordinator(instanceProperties, tableProperties), recordIterator);
+            IngestResult result = ingestRecordsFromIterator.write();
+
+            LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getNumberOfRecords(), paths);
+            return result;
+        }
     }
 }
