@@ -78,10 +78,12 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPA
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_MEMORY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
@@ -438,14 +440,24 @@ public class CompactionStack extends NestedStack {
     }
 
     private FargateTaskDefinition compactionFargateTaskDefinition(String compactionTypeName) {
+
+        String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
+        int cpu;
+        int memoryLimitMiB;
+        if (architecture.startsWith("ARM")) {
+            cpu = instanceProperties.getInt(COMPACTION_TASK_ARM_CPU);
+            memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_ARM_MEMORY);
+        } else {
+            cpu = instanceProperties.getInt(COMPACTION_TASK_X86_CPU);
+            memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_X86_MEMORY);
+        }
+
         return FargateTaskDefinition.Builder
                 .create(this, compactionTypeName + "CompactionTaskDefinition")
                 .family(instanceProperties.get(ID) + compactionTypeName + "CompactionTaskFamily")
-                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
-                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
+                .cpu(cpu).memoryLimitMiB(memoryLimitMiB)
                 .runtimePlatform(RuntimePlatform.builder()
-                        .cpuArchitecture(CpuArchitecture.of(
-                                instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT)))
+                        .cpuArchitecture(CpuArchitecture.of(architecture))
                         .operatingSystemFamily(OperatingSystemFamily.LINUX)
                         .build())
                 .build();
