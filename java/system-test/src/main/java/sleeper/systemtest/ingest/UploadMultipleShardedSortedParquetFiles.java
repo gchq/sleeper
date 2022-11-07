@@ -24,7 +24,8 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.ingest.IngestRecordsUsingPropertiesSpecifiedMethod;
+import sleeper.ingest.IngestRecordsFromIterator;
+import sleeper.ingest.impl.IngestCoordinatorFactory;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.systemtest.SystemTestProperties;
@@ -52,17 +53,13 @@ public class UploadMultipleShardedSortedParquetFiles extends WriteRandomDataJob 
         CloseableIterator<Record> recordIterator = new WrappedIterator<>(createRecordIterator(schema));
 
         try {
-            IngestRecordsUsingPropertiesSpecifiedMethod.ingestFromRecordIterator(
-                    getClassFactory(),
-                    getStateStore(),
-                    getSystemTestProperties(),
-                    getTableProperties(),
-                    "/mnt/scratch",
-                    null,
-                    null,
-                    null,
-                    null,
-                    recordIterator);
+            IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
+                    .objectFactory(getClassFactory())
+                    .stateStore(getStateStore())
+                    .localDir("/mnt/scratch")
+                    .build();
+            new IngestRecordsFromIterator(
+                    factory.createIngestCoordinator(getSystemTestProperties(), getTableProperties()), recordIterator).write();
         } catch (StateStoreException | IteratorException e) {
             throw new IOException("Failed to write records using iterator", e);
         }
