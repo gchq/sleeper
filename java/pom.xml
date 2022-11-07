@@ -338,6 +338,7 @@
                     Otherwise, you may see errors like module java.base does not "opens java.nio" to unnamed module."
                     -->
                     <argLine>--add-opens=java.base/java.nio=ALL-UNNAMED</argLine>
+                    <argLine>--add-opens=java.base/java.util=ALL-UNNAMED</argLine>
                 </configuration>
             </plugin>
             <plugin>
@@ -358,6 +359,7 @@
 		                    Otherwise, you may see errors like module java.base does not "opens java.nio" to unnamed module."
 		                    -->
 		                    <argLine>--add-opens=java.base/java.nio=ALL-UNNAMED</argLine>
+		                    <argLine>--add-opens=java.base/java.util=ALL-UNNAMED</argLine>
 		                </configuration>
                     </execution>
                 </executions>
