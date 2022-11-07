@@ -59,7 +59,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
 
         // When
         IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
-        long numWritten = new IngestRecordsFromIterator(properties, getRecords().iterator()).write();
+        long numWritten = new IngestRecordsFromIterator(properties, getRecords().iterator()).write().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -120,7 +120,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
 
         // When
         IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
-        long numWritten = new IngestRecordsFromIterator(properties, getSingleRecord().iterator()).write();
+        long numWritten = new IngestRecordsFromIterator(properties, getSingleRecord().iterator()).write().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -157,7 +157,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
 
         // When
         IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
-        long numWritten = new IngestRecordsFromIterator(properties, Collections.emptyIterator()).write();
+        long numWritten = new IngestRecordsFromIterator(properties, Collections.emptyIterator()).write().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
