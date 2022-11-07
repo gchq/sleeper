@@ -365,6 +365,9 @@
                                 <exclude>*log4j*:*log4j*</exclude>
                                 <exclude>org.slf4j:slf4j-log4j12</exclude>
                             </excludes>
+                            <includes>
+                                <include>org.apache.logging.log4j:*</include>
+                            </includes>
                             <message>Log4j conflicts with reload4j, add an exclusion</message>
                         </bannedDependencies>
                     </rules>
