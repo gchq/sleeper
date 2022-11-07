@@ -36,9 +36,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 
 public class DynamoDBRecordBuilderTest extends DynamoDBTestBase {
-    private final static String TEST_KEY = "test-key";
-    private final static String TEST_VALUE = "test-value";
-    private final static String TEST_TABLE_NAME = "dynamodb-tools-test-table";
+    private static final String TEST_KEY = "test-key";
+    private static final String TEST_VALUE = "test-value";
+    private static final String TEST_TABLE_NAME = "dynamodb-tools-test-table";
 
     @After
     public void tearDown() {

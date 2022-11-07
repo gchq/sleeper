@@ -12,6 +12,7 @@ on:
       - 'java/sketches/**'
       - 'java/tables/**'
       - 'java/statestore/**'
+      - 'java/dynamodb-tools/**'
       - 'java/parquet/**'
       - 'java/configuration/**'
       - 'java/core/**'
