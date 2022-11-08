@@ -68,6 +68,9 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
@@ -162,18 +165,23 @@ public class IngestCoordinatorCommonIT {
             TemporaryFolder temporaryFolder) {
         try {
             BufferAllocator bufferAllocator = new RootAllocator();
-            IngestProperties properties = defaultPropertiesBuilder(temporaryFolder, stateStore, sleeperSchema, sleeperIteratorClassName, ingestLocalWorkingDirectory)
-                    .filePathPrefix(filePathPrefix)
-                    .maxRecordsToWriteLocally(512 * 1024 * 1024L)
+            InstanceProperties instanceProperties = createInstanceProperties("test-instance", filePathPrefix, "arrow", "direct");
+            instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 512 * 1024 * 1024L);
+            instanceProperties.setNumber(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS, 128);
+            instanceProperties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 16 * 1024 * 1024L);
+            instanceProperties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 16 * 1024 * 1024L);
+            instanceProperties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 16 * 1024 * 1024L);
+            TableProperties tableProperties = createTableProperties(instanceProperties, sleeperSchema, "");
+            tableProperties.set(ITERATOR_CLASS_NAME, sleeperIteratorClassName);
+            String objectFactoryLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
+            IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
+                    .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
+                    .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                    .localDir(ingestLocalWorkingDirectory)
+                    .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
+                    .bufferAllocator(bufferAllocator)
                     .build();
-            return StandardIngestCoordinator.directWriteBackedByArrow(
-                    properties,
-                    bufferAllocator,
-                    128,
-                    16 * 1024 * 1024L,
-                    16 * 1024 * 1024L,
-                    16 * 1024 * 1024L
-            );
+            return factory.createIngestCoordinator(instanceProperties, tableProperties);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -189,19 +197,24 @@ public class IngestCoordinatorCommonIT {
             TemporaryFolder temporaryFolder) {
         try {
             BufferAllocator bufferAllocator = new RootAllocator();
-            IngestProperties properties = defaultPropertiesBuilder(temporaryFolder, stateStore, sleeperSchema, sleeperIteratorClassName, ingestLocalWorkingDirectory)
-                    .maxRecordsToWriteLocally(16 * 1024 * 1024L)
+            InstanceProperties instanceProperties = createInstanceProperties("test-instance", "s3a://", "arrow", "async");
+            instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 16 * 1024 * 1024L);
+            instanceProperties.setNumber(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS, 10);
+            instanceProperties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 16 * 1024 * 1024L);
+            instanceProperties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 16 * 1024 * 1024L);
+            instanceProperties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 16 * 1024 * 1024L);
+            TableProperties tableProperties = createTableProperties(instanceProperties, sleeperSchema, s3BucketName);
+            tableProperties.set(ITERATOR_CLASS_NAME, sleeperIteratorClassName);
+            String objectFactoryLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
+            IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
+                    .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
+                    .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                    .localDir(ingestLocalWorkingDirectory)
+                    .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
+                    .s3AsyncClient(AWS_EXTERNAL_RESOURCE.getS3AsyncClient())
+                    .bufferAllocator(bufferAllocator)
                     .build();
-            return StandardIngestCoordinator.asyncS3WriteBackedByArrow(
-                    properties,
-                    s3BucketName,
-                    AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
-                    bufferAllocator,
-                    10,
-                    16 * 1024 * 1024L,
-                    16 * 1024 * 1024L,
-                    16 * 1024 * 1024L
-            );
+            return factory.createIngestCoordinator(instanceProperties, tableProperties);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
