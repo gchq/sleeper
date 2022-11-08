@@ -33,4 +33,11 @@ public class GetChunkConfigTest {
         assertThat(GetChunkConfig.get(CHUNKS.getById("common"), "maven_project_list"))
                 .isEqualTo("core,configuration,sketches,parquet,common-job,build,dynamodb-tools");
     }
+
+    @Test
+    public void shouldGetGitHubActionsOutputs() {
+        assertThat(GetChunkConfig.get(CHUNKS.getById("common"), "github_actions_outputs"))
+                .isEqualTo("chunkName=Common\n" +
+                        "moduleList=core,configuration,sketches,parquet,common-job,build,dynamodb-tools");
+    }
 }

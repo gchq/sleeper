@@ -41,8 +41,15 @@ public class GetChunkConfig {
                 .getter.apply(chunk);
     }
 
+    private static String gitHubActionsOutputs(ProjectChunk chunk) {
+        return String.format("chunkName=%s%nmoduleList=%s",
+                chunk.getName(), chunk.getMavenProjectList());
+    }
+
     private enum Property {
-        NAME(ProjectChunk::getName), MAVEN_PROJECT_LIST(ProjectChunk::getMavenProjectList);
+        NAME(ProjectChunk::getName),
+        MAVEN_PROJECT_LIST(ProjectChunk::getMavenProjectList),
+        GITHUB_ACTIONS_OUTPUTS(GetChunkConfig::gitHubActionsOutputs);
 
         private final Function<ProjectChunk, String> getter;
 

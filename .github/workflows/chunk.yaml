@@ -33,13 +33,10 @@ jobs:
         id: config
         working-directory: ./java/build
         run: |
-          get_property() {
-            mvn compile exec:java -q -Dexec.mainClass=sleeper.build.chunks.GetChunkConfig \
-              -Dmaven.repo.local=../.m2/repository \
-              -Dexec.args="${{ inputs.chunkId }} $1 ${{ github.workspace }}/.github/config/chunks.yaml"
-          }
-          echo "chunkName=$(get_property name)" >> $GITHUB_OUTPUT
-          echo "moduleList=$(get_property maven_project_list)" >> $GITHUB_OUTPUT
+          mvn compile exec:java -q -Dexec.mainClass=sleeper.build.chunks.GetChunkConfig \
+            -Dmaven.repo.local=../.m2/repository \
+            -Dexec.args="${{ inputs.chunkId }} github_actions_outputs ${{ github.workspace }}/.github/config/chunks.yaml" \
+            >> $GITHUB_OUTPUT
       - name: Compile
         run: mvn --batch-mode clean install -am -pl ${{ steps.config.outputs.moduleList }} -Pquick,skipShade -Dmaven.repo.local=.m2/repository
         working-directory: ./java
