@@ -70,8 +70,7 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
-import sleeper.ingest.IngestProperties;
-import sleeper.ingest.IngestRecordsFromIterator;
+import sleeper.ingest.impl.IngestCoordinatorFactory;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.query.model.Query;
@@ -86,6 +85,7 @@ import sleeper.query.tracker.QueryStatusReportListener;
 import sleeper.query.tracker.TrackedQuery;
 import sleeper.query.tracker.WebSocketQueryStatusReportDestination;
 import sleeper.query.tracker.exception.QueryTrackerException;
+import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.InitialiseStateStore;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -122,16 +122,16 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUE
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
-import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.query.tracker.QueryState.COMPLETED;
 import static sleeper.query.tracker.QueryState.IN_PROGRESS;
@@ -687,21 +687,17 @@ public class SqsQueryProcessorLambdaIT {
         AmazonS3 s3Client = createS3Client();
         DynamoDBStateStore stateStore = new DynamoDBStateStore(tableProperties, dynamoClient);
         try {
-            IngestProperties properties = IngestProperties.builder()
+            instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 10L);
+            instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1000L);
+            instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, 10);
+
+            IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
                     .objectFactory(new ObjectFactory(instanceProperties, null, "/tmp"))
                     .localDir(dataDir)
-                    .maxRecordsToWriteLocally(10L)
-                    .maxInMemoryBatchSize(1000L)
-                    .rowGroupSize(tableProperties.getInt(ROW_GROUP_SIZE))
-                    .pageSize(tableProperties.getInt(PAGE_SIZE))
-                    .compressionCodec(tableProperties.get(COMPRESSION_CODEC))
-                    .stateStore(stateStore)
-                    .schema(tableProperties.getSchema())
-                    .filePathPrefix("file://")
-                    .bucketName(tableProperties.get(DATA_BUCKET))
-                    .ingestPartitionRefreshFrequencyInSecond(10)
+                    .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                    .hadoopConfiguration(new Configuration())
                     .build();
-            new IngestRecordsFromIterator(properties, generateTimeSeriesData(minYear, maxYear).iterator()).write();
+            factory.createIngestRecordsFromIterator(instanceProperties, tableProperties, generateTimeSeriesData(minYear, maxYear).iterator()).write();
         } catch (IOException | StateStoreException | IteratorException |
                  ObjectFactoryException e) {
             throw new RuntimeException("Failed to Ingest data", e);
