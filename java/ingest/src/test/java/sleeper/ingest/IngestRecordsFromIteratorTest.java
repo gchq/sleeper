@@ -17,13 +17,16 @@
 package sleeper.ingest;
 
 import org.junit.Test;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.type.LongType;
+import sleeper.ingest.impl.IngestCoordinatorFactory;
 import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
 
 import java.util.Arrays;
@@ -34,6 +37,8 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createLeafPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createRootPartition;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createTableProperties;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultFactory;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSingleRecord;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
@@ -58,8 +63,10 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
-        long numWritten = new IngestRecordsFromIterator(properties, getRecords().iterator()).write().getNumberOfRecords();
+        TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
+        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore));
+        IngestRecordsFromIterator ingestRecordsFromIterator = factory.createIngestRecordsFromIterator(instanceProperties, tableProperties, getRecords().iterator());
+        long numWritten = ingestRecordsFromIterator.write().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -119,8 +126,10 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
-        long numWritten = new IngestRecordsFromIterator(properties, getSingleRecord().iterator()).write().getNumberOfRecords();
+        TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
+        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore));
+        IngestRecordsFromIterator ingestRecordsFromIterator = factory.createIngestRecordsFromIterator(instanceProperties, tableProperties, getSingleRecord().iterator());
+        long numWritten = ingestRecordsFromIterator.write().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -156,8 +165,10 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         StateStore stateStore = getStateStore(schema);
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
-        long numWritten = new IngestRecordsFromIterator(properties, Collections.emptyIterator()).write().getNumberOfRecords();
+        TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
+        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore));
+        IngestRecordsFromIterator ingestRecordsFromIterator = factory.createIngestRecordsFromIterator(instanceProperties, tableProperties, Collections.emptyIterator());
+        long numWritten = ingestRecordsFromIterator.write().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
