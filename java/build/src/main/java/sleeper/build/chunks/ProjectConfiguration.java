@@ -21,6 +21,7 @@ import sleeper.build.status.ChunksStatus;
 import sleeper.build.status.GitHubStatusProvider;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
@@ -51,6 +52,14 @@ public class ProjectConfiguration {
                 .token(properties.getProperty("token"))
                 .head(GitHubHead.from(properties))
                 .chunks(ProjectChunk.listFrom(properties))
+                .build();
+    }
+
+    public static ProjectConfiguration fromGitHubAndChunks(Properties gitHubProperties, Reader chunksReader) {
+        return builder()
+                .token(gitHubProperties.getProperty("token"))
+                .head(GitHubHead.from(gitHubProperties))
+                .chunks(ProjectChunk.listFromYaml(chunksReader))
                 .build();
     }
 

@@ -121,6 +121,10 @@ GitHub API for Java (org.kohsuke:github-api:1.308):
 
 - MIT License (https://github-api.kohsuke.org/licenses.html)
 
+SnakeYAML Engine (org.snakeyaml:snakeyaml-engine:2.5):
+
+- Apache License, Version 2.0 (https://bitbucket.org/snakeyaml/snakeyaml-engine/src/master/LICENSE.txt)
+
 Go Offline Maven Plugin (de.qaware.maven:go-offline-maven-plugin:1.2.8):
 
 - Apache License, Version 2.0

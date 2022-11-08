@@ -18,6 +18,7 @@ package sleeper.build.chunks;
 import org.junit.Test;
 import sleeper.build.github.GitHubHead;
 
+import java.io.Reader;
 import java.util.Arrays;
 import java.util.Properties;
 
@@ -39,6 +40,28 @@ public class ProjectConfigurationTest {
                         .chunks(Arrays.asList(
                                 ProjectChunk.chunk("common").name("Common").workflow("chunk-common.yaml").build(),
                                 ProjectChunk.chunk("data").name("Data").workflow("chunk-data.yaml").build()))
+                        .build());
+    }
+
+    @Test
+    public void shouldLoadFromYamlAndGitHubProperties() throws Exception {
+        ProjectConfiguration configuration;
+        try (Reader chunksReader = TestResources.exampleReader("example-chunks.yaml")) {
+            configuration = ProjectConfiguration.fromGitHubAndChunks(
+                    TestProperties.example("github-example.properties"),
+                    chunksReader);
+        }
+
+        assertThat(configuration).isEqualTo(
+                ProjectConfiguration.builder()
+                        .token("test-token")
+                        .head(GitHubHead.builder()
+                                .owner("test-owner").repository("test-repo").branch("test-branch").sha("test-sha")
+                                .build())
+                        .chunks(Arrays.asList(
+                                ProjectChunk.chunk("bulk-import").name("Bulk Import").workflow("chunk-bulk-import.yaml").build(),
+                                ProjectChunk.chunk("common").name("Common").workflow("chunk-common.yaml").build(),
+                                ProjectChunk.chunk("ingest").name("Ingest").workflow("chunk-ingest.yaml").build()))
                         .build());
     }
 }

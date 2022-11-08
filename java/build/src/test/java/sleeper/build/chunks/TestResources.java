@@ -15,28 +15,23 @@
  */
 package sleeper.build.chunks;
 
-import sleeper.build.github.GitHubHead;
-
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.Properties;
+import java.net.URL;
+import java.util.Objects;
 
-import static sleeper.build.chunks.TestResources.exampleReader;
+public class TestResources {
 
-public class TestProperties {
-
-    private TestProperties() {
+    public static Reader exampleReader(String path) {
+        return new InputStreamReader(exampleInputStream(path));
     }
 
-    public static GitHubHead exampleHead() {
-        return GitHubHead.from(example("github-example.properties"));
-    }
-
-    public static Properties example(String path) {
-        try (Reader reader = exampleReader(path)) {
-            Properties properties = new Properties();
-            properties.load(reader);
-            return properties;
+    public static InputStream exampleInputStream(String path) {
+        URL resource = Objects.requireNonNull(TestProperties.class.getClassLoader().getResource(path));
+        try {
+            return resource.openStream();
         } catch (IOException e) {
             throw new IllegalStateException("Failed to load test example: " + path, e);
         }

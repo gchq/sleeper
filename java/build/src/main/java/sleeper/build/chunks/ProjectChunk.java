@@ -15,8 +15,13 @@
  */
 package sleeper.build.chunks;
 
+import org.snakeyaml.engine.v2.api.Load;
+import org.snakeyaml.engine.v2.api.LoadSettings;
+
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -55,10 +60,31 @@ public class ProjectChunk {
         return chunks;
     }
 
+    public static List<ProjectChunk> listFromYaml(Reader reader) {
+        LoadSettings settings = LoadSettings.builder().build();
+        Load load = new Load(settings);
+        Map<String, Object> root = (Map<String, Object>) load.loadFromReader(reader);
+        Map<String, Object> chunksMap = (Map<String, Object>) root.get("chunks");
+        List<ProjectChunk> chunks = new ArrayList<>(chunksMap.size());
+        for (Map.Entry<String, Object> entry : chunksMap.entrySet()) {
+            String id = entry.getKey();
+            Map<String, Object> config = (Map<String, Object>) entry.getValue();
+            chunks.add(fromYaml(config, id));
+        }
+        return chunks;
+    }
+
     private static ProjectChunk from(Properties properties, String id) {
         return chunk(id)
                 .name(properties.getProperty("chunk." + id + ".name"))
                 .workflow(properties.getProperty("chunk." + id + ".workflow"))
+                .build();
+    }
+
+    private static ProjectChunk fromYaml(Map<String, Object> config, String id) {
+        return chunk(id)
+                .name((String) config.get("name"))
+                .workflow((String) config.get("workflow"))
                 .build();
     }
 
