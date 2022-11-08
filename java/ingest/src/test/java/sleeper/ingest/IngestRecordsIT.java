@@ -17,8 +17,10 @@ package sleeper.ingest;
 
 import org.junit.Test;
 import sleeper.core.record.Record;
+import sleeper.ingest.impl.IngestCoordinatorFactory;
 import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import java.nio.file.Files;
@@ -26,6 +28,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultFactory;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
@@ -37,8 +40,8 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
-        IngestRecords ingestRecords = new IngestRecords(properties);
+        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore));
+        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(instanceProperties, tableProperties));
         ingestRecords.init();
         for (Record record : getRecords()) {
             ingestRecords.write(record);
@@ -79,8 +82,8 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
-        IngestRecords ingestRecords = new IngestRecords(properties);
+        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore));
+        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(instanceProperties, tableProperties));
         ingestRecords.init();
         long numWritten = ingestRecords.close().getNumberOfRecords();
 

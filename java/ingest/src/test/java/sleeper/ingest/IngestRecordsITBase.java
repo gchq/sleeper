@@ -26,6 +26,8 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.GenericContainer;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -38,6 +40,8 @@ import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.util.UUID;
 
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createInstanceProperties;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createTableProperties;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
 
 public class IngestRecordsITBase {
@@ -53,11 +57,15 @@ public class IngestRecordsITBase {
     protected final Schema schema = schemaWithRowKeys(field);
     protected String inputFolderName;
     protected String sketchFolderName;
+    protected InstanceProperties instanceProperties;
+    protected TableProperties tableProperties;
 
     @Before
     public void setUpBase() throws Exception {
         inputFolderName = folder.newFolder().getAbsolutePath();
         sketchFolderName = folder.newFolder().getAbsolutePath();
+        instanceProperties = createInstanceProperties("test-instance", sketchFolderName, "arraylist", "direct");
+        tableProperties = createTableProperties(instanceProperties, schema, "");
     }
 
     protected static DynamoDBStateStore getStateStore(Schema schema)
