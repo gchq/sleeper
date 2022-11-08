@@ -18,9 +18,13 @@ package sleeper.build.chunks;
 import org.snakeyaml.engine.v2.api.Load;
 import org.snakeyaml.engine.v2.api.LoadSettings;
 
+import java.io.IOException;
 import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -63,9 +67,14 @@ public class ProjectChunk {
         return chunks;
     }
 
+    public static List<ProjectChunk> listFromYamlPath(String path) throws IOException {
+        try (Reader reader = Files.newBufferedReader(Paths.get(path))) {
+            return listFromYaml(reader);
+        }
+    }
+
     public static List<ProjectChunk> listFromYaml(Reader reader) {
-        LoadSettings settings = LoadSettings.builder().build();
-        Load load = new Load(settings);
+        Load load = new Load(LoadSettings.builder().build());
         Map<String, Object> root = (Map<String, Object>) load.loadFromReader(reader);
         Map<String, Object> chunksMap = (Map<String, Object>) root.get("chunks");
         List<ProjectChunk> chunks = new ArrayList<>(chunksMap.size());
@@ -128,7 +137,7 @@ public class ProjectChunk {
         private String id;
         private String name;
         private String workflow;
-        private List<String> modules;
+        private List<String> modules = Collections.emptyList();
 
         private Builder() {
         }

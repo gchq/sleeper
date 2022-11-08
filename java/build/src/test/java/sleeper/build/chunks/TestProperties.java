@@ -29,7 +29,7 @@ public class TestProperties {
     }
 
     public static GitHubHead exampleHead() {
-        return GitHubHead.from(example("github-example.properties"));
+        return GitHubHead.from(example("example-github.properties"));
     }
 
     public static Properties example(String path) {

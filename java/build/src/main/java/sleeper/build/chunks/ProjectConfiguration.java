@@ -22,6 +22,8 @@ import sleeper.build.status.GitHubStatusProvider;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
@@ -55,12 +57,30 @@ public class ProjectConfiguration {
                 .build();
     }
 
-    public static ProjectConfiguration fromGitHubAndChunks(Properties gitHubProperties, Reader chunksReader) {
+    public static ProjectConfiguration fromGitHubAndChunks(Properties gitHubProperties, List<ProjectChunk> chunks) {
         return builder()
                 .token(gitHubProperties.getProperty("token"))
                 .head(GitHubHead.from(gitHubProperties))
-                .chunks(ProjectChunk.listFromYaml(chunksReader))
+                .chunks(chunks)
                 .build();
+    }
+
+    public static ProjectConfiguration fromProperties(String propertiesPath) throws IOException {
+        return from(loadProperties(propertiesPath));
+    }
+
+    public static ProjectConfiguration fromGitHubAndChunks(String gitHubPropertiesPath, String chunksYamlPath) throws IOException {
+        return fromGitHubAndChunks(
+                loadProperties(gitHubPropertiesPath),
+                ProjectChunk.listFromYamlPath(chunksYamlPath));
+    }
+
+    private static Properties loadProperties(String path) throws IOException {
+        Properties properties = new Properties();
+        try (Reader reader = Files.newBufferedReader(Paths.get(path))) {
+            properties.load(reader);
+        }
+        return properties;
     }
 
     public ChunksStatus checkStatus() throws IOException {

@@ -18,9 +18,7 @@ package sleeper.build.chunks;
 import org.junit.Test;
 import sleeper.build.github.GitHubHead;
 
-import java.io.Reader;
 import java.util.Arrays;
-import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,8 +26,8 @@ public class ProjectConfigurationTest {
 
     @Test
     public void shouldLoadPropertiesForSeveralChunks() {
-        Properties properties = TestProperties.example("github-example.properties");
-        ProjectConfiguration configuration = ProjectConfiguration.from(properties);
+        ProjectConfiguration configuration = ProjectConfiguration.from(
+                TestProperties.example("example-github.properties"));
 
         assertThat(configuration).isEqualTo(
                 ProjectConfiguration.builder()
@@ -45,12 +43,9 @@ public class ProjectConfigurationTest {
 
     @Test
     public void shouldLoadFromYamlAndGitHubProperties() throws Exception {
-        ProjectConfiguration configuration;
-        try (Reader chunksReader = TestResources.exampleReader("example-chunks.yaml")) {
-            configuration = ProjectConfiguration.fromGitHubAndChunks(
-                    TestProperties.example("github-example.properties"),
-                    chunksReader);
-        }
+        ProjectConfiguration configuration = ProjectConfiguration.fromGitHubAndChunks(
+                TestProperties.example("example-github.properties"),
+                TestChunks.example("example-chunks.yaml"));
 
         assertThat(configuration).isEqualTo(
                 ProjectConfiguration.builder()

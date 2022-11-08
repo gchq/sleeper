@@ -16,27 +16,17 @@
 package sleeper.build.chunks;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
-import java.net.URL;
-import java.util.Objects;
+import java.util.List;
 
-public class TestResources {
+public class TestChunks {
 
-    private TestResources() {
+    private TestChunks() {
     }
 
-    public static Reader exampleReader(String path) {
-        return new InputStreamReader(exampleInputStream(path));
-    }
-
-    public static InputStream exampleInputStream(String path) {
-        URL resource = Objects.requireNonNull(TestProperties.class.getClassLoader().getResource(path));
-        try {
-            return resource.openStream();
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to load test example: " + path, e);
+    public static List<ProjectChunk> example(String path) throws IOException {
+        try (Reader chunksReader = TestResources.exampleReader(path)) {
+            return ProjectChunk.listFromYaml(chunksReader);
         }
     }
 }
