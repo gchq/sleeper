@@ -17,8 +17,10 @@ package sleeper.ingest;
 
 import org.junit.Test;
 import sleeper.core.record.Record;
+import sleeper.ingest.impl.IngestCoordinatorFactory;
 import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import java.nio.file.Files;
@@ -26,6 +28,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultFactory;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
@@ -37,8 +40,9 @@ public class IngestRecordsFromIteratorIT extends IngestRecordsITBase {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
-        long numWritten = new IngestRecordsFromIterator(properties, getRecords().iterator()).write().getNumberOfRecords();
+        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore));
+        IngestRecordsFromIterator ingestRecordsFromIterator = factory.createIngestRecordsFromIterator(instanceProperties, tableProperties, getRecords().iterator());
+        long numWritten = ingestRecordsFromIterator.write().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
