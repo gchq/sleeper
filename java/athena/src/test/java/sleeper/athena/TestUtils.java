@@ -19,6 +19,7 @@ import com.amazonaws.athena.connector.lambda.security.FederatedIdentity;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.Lists;
+import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
@@ -125,11 +126,11 @@ public class TestUtils {
             IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
                     .objectFactory(new ObjectFactory(instanceProperties, s3Client, "/tmp"))
                     .localDir(dataDir)
-                    .stateStoreProvider(new StateStoreProvider(dynamoClient, instanceProperties)).build();
+                    .stateStoreProvider(new StateStoreProvider(dynamoClient, instanceProperties))
+                    .hadoopConfiguration(new Configuration()).build();
             instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 1000L);
             instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1024L);
             instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, 10);
-            instanceProperties.set(FILE_SYSTEM, "file://");
 
             factory.createIngestRecordsFromIterator(instanceProperties, table, generateTimeSeriesData().iterator()).write();
         } catch (IOException | StateStoreException | IteratorException |
