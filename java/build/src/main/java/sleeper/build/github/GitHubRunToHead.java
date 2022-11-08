@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.status.github;
+package sleeper.build.github;
 
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHWorkflowRun;
-import sleeper.build.status.GitHubHead;
 
 import java.io.IOException;
 

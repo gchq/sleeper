@@ -15,6 +15,8 @@
  */
 package sleeper.build.status;
 
+import sleeper.build.chunks.ProjectConfiguration;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;

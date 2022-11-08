@@ -13,16 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.status;
+package sleeper.build.chunks;
 
-import sleeper.build.status.github.GitHubProvider;
+import sleeper.build.github.GitHubHead;
+import sleeper.build.status.CheckGitHubStatus;
+import sleeper.build.status.ChunksStatus;
+import sleeper.build.status.GitHubStatusProvider;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
-import static sleeper.build.status.ValidationUtils.ignoreEmpty;
+import static sleeper.build.util.ValidationUtils.ignoreEmpty;
 
 public class ProjectConfiguration {
 
@@ -52,10 +55,10 @@ public class ProjectConfiguration {
     }
 
     public ChunksStatus checkStatus() throws IOException {
-        return checkStatus(new GitHubProvider(token));
+        return checkStatus(new GitHubStatusProvider(token));
     }
 
-    public ChunksStatus checkStatus(GitHubProvider gitHub) {
+    public ChunksStatus checkStatus(GitHubStatusProvider gitHub) {
         return new CheckGitHubStatus(this, gitHub).checkStatus();
     }
 

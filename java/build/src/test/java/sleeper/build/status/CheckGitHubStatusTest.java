@@ -16,7 +16,9 @@
 package sleeper.build.status;
 
 import org.junit.Test;
-import sleeper.build.status.github.GitHubProvider;
+import sleeper.build.chunks.ProjectChunk;
+import sleeper.build.chunks.ProjectConfiguration;
+import sleeper.build.github.GitHubHead;
 
 import java.util.Collections;
 
@@ -38,7 +40,7 @@ public class CheckGitHubStatusTest {
                 .token("test-token").head(branch)
                 .chunks(Collections.singletonList(chunk))
                 .build();
-        GitHubProvider gitHub = mock(GitHubProvider.class);
+        GitHubStatusProvider gitHub = mock(GitHubStatusProvider.class);
         when(gitHub.workflowStatus(branch, chunk)).thenReturn(ChunkStatus.chunk(chunk).commitSha("test-sha").success());
 
         ChunksStatus status = configuration.checkStatus(gitHub);
@@ -61,7 +63,7 @@ public class CheckGitHubStatusTest {
                 .build();
         ChunkStatus status1 = ChunkStatus.chunk(chunk).commitSha("old-sha").inProgress();
         ChunkStatus status2 = ChunkStatus.chunk(chunk).commitSha("old-sha").success();
-        GitHubProvider gitHub = mock(GitHubProvider.class);
+        GitHubStatusProvider gitHub = mock(GitHubStatusProvider.class);
         when(gitHub.workflowStatus(branch, chunk)).thenReturn(status1);
         when(gitHub.recheckRun(branch, status1)).thenReturn(status2);
 
@@ -84,7 +86,7 @@ public class CheckGitHubStatusTest {
                 .retrySeconds(0).maxRetries(1)
                 .build();
         ChunkStatus status1 = ChunkStatus.chunk(chunk).commitSha("old-sha").inProgress();
-        GitHubProvider gitHub = mock(GitHubProvider.class);
+        GitHubStatusProvider gitHub = mock(GitHubStatusProvider.class);
         when(gitHub.workflowStatus(branch, chunk)).thenReturn(status1);
         when(gitHub.recheckRun(branch, status1)).thenReturn(status1);
 

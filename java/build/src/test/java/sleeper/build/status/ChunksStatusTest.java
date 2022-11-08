@@ -16,6 +16,8 @@
 package sleeper.build.status;
 
 import org.junit.Test;
+import sleeper.build.chunks.TestProperties;
+import sleeper.build.github.GitHubHead;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.status;
+package sleeper.build.chunks;
+
+import sleeper.build.github.GitHubHead;
+import sleeper.build.status.ChunksStatusTest;
 
 import java.io.IOException;
 import java.io.InputStream;
