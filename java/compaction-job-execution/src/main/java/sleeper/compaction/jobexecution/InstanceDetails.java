@@ -107,6 +107,10 @@ public class InstanceDetails {
             // More to come?
             more = result.getNextToken() != null;
             req = req.withNextToken(result.getNextToken());
+            // check to see if there are any at all
+            if (result.getContainerInstanceArns().isEmpty()) {
+                continue;
+            }
             // now get a description of these instances
             DescribeContainerInstancesRequest conReq = new DescribeContainerInstancesRequest()
                     .withCluster(ecsClusterName)

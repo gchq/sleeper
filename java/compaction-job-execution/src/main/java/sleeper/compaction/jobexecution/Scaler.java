@@ -112,6 +112,7 @@ public class Scaler {
      */
     public ScaleOutResult possiblyScaleOut(int newContainerCount) {
         Map<String, InstanceDetails> details = InstanceDetails.fetchInstanceDetails(ecsClusterName, ecsClient);
+        LOGGER.debug("Instance details {}",details);
 
         // If we have any information set the number of containers per instance
         checkContainersPerInstance(details);
@@ -121,18 +122,18 @@ public class Scaler {
 
         int availableContainerCount = calculateAvailableClusterContainerCapacity(details);
 
-        LOGGER.debug("newContainerCount %d containersPerInstance %d availableContainerCount %d", newContainerCount,
+        LOGGER.debug("newContainerCount {} containersPerInstance {} availableContainerCount {}", newContainerCount,
                 containersPerInstance, availableContainerCount);
         // Do we need to scale out?
         if (newContainerCount <= availableContainerCount) {
             LOGGER.debug("No scale out required");
             return ScaleOutResult.NOT_REQUIRED;
         }
-        LOGGER.info("Containers to launch %d, cluster capacity %d", newContainerCount, availableContainerCount);
+        LOGGER.info("Containers to launch {}, cluster capacity {}", newContainerCount, availableContainerCount);
         // Retrieve the details of the scaling group
         AutoScalingGroup asg = getAutoScalingGroupInfo(asGroupName, asClient);
         LOGGER.info(
-                "Auto scaling group current minimum %d, desired size %d, maximum size %d, containers per instance %d",
+                "Auto scaling group current minimum {}, desired size {}, maximum size {}, containers per instance {}",
                 asg.getMinSize(), asg.getDesiredCapacity(), asg.getMaxSize(), containersPerInstance);
 
         // Are we able to provision any more instances?
@@ -151,9 +152,9 @@ public class Scaler {
         // How many instances should we start?
         int instancesDesired = (int) (Math.ceil(newContainerCount / (double) containersPerInstance));
         int instancesAvailable = Math.min(instancesDesired, remainingHeadroom);
-        LOGGER.info("Want to launch %d instances, but only have capacity for %d", instancesDesired, instancesAvailable);
         int newClusterSize = asg.getDesiredCapacity() + instancesAvailable;
-
+        LOGGER.info("Want to launch {} instances, but only have capacity for {}", instancesDesired, instancesAvailable);
+        LOGGER.info("Setting auto scaling group {} desired size to {}", this.asGroupName, newClusterSize);
         // Set the new desired size on the cluster
         setClusterDesiredSize(newClusterSize);
         return ScaleOutResult.SCALING_INITIATED;
