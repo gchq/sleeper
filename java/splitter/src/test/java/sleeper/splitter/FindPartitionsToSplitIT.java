@@ -21,7 +21,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.CreateQueueResult;
 import com.amazonaws.services.sqs.model.Message;
-import org.apache.parquet.hadoop.ParquetWriter;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -39,9 +39,9 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
-import sleeper.ingest.IngestProperties;
-import sleeper.ingest.IngestRecordsFromIterator;
+import sleeper.ingest.impl.IngestCoordinatorFactory;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
@@ -55,6 +55,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 
 public class FindPartitionsToSplitIT {
@@ -130,21 +137,23 @@ public class FindPartitionsToSplitIT {
             try {
                 File stagingArea = tempDir.newFolder();
                 File directory = tempDir.newFolder();
-                IngestProperties properties = IngestProperties.builder()
+                InstanceProperties instanceProperties = new InstanceProperties();
+                instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 0L);
+                instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1_000_000L);
+                instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, 1_000_000);
+                instanceProperties.set(FILE_SYSTEM, "file://");
+                TableProperties tableProperties = new TableProperties(instanceProperties);
+                tableProperties.set(COMPRESSION_CODEC, "zstd");
+                tableProperties.set(DATA_BUCKET, directory.getAbsolutePath());
+                tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "10");
+                tableProperties.setSchema(schema);
+                IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
                         .objectFactory(new ObjectFactory(new InstanceProperties(), null, ""))
                         .localDir(stagingArea.getAbsolutePath())
-                        .maxRecordsToWriteLocally(0L)
-                        .maxInMemoryBatchSize(1_000_000L)
-                        .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
-                        .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
-                        .compressionCodec("zstd")
-                        .stateStore(stateStore)
-                        .schema(schema)
-                        .filePathPrefix("file://")
-                        .bucketName(directory.getAbsolutePath())
-                        .ingestPartitionRefreshFrequencyInSecond(1_000_000)
+                        .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                        .hadoopConfiguration(new Configuration())
                         .build();
-                new IngestRecordsFromIterator(properties, list.iterator()).write();
+                factory.createIngestRecordsFromIterator(instanceProperties, tableProperties, list.iterator()).write();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

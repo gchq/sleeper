@@ -22,7 +22,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.facebook.collections.ByteArray;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -33,6 +32,7 @@ import org.testcontainers.containers.GenericContainer;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.Partition;
@@ -47,9 +47,10 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.ingest.IngestProperties;
 import sleeper.ingest.IngestRecordsFromIterator;
+import sleeper.ingest.impl.IngestCoordinatorFactory;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
@@ -68,6 +69,12 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 
 public class SplitPartitionIT {
     private static final int DYNAMO_PORT = 8000;
@@ -124,10 +131,7 @@ public class SplitPartitionIT {
                 record.put("key", r);
                 records.add(record);
             }
-            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                    records.iterator()
-            );
+            IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
             ingestRecordsFromIterator.write();
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -239,10 +243,7 @@ public class SplitPartitionIT {
                     record.put("key", r);
                     records.add(record);
                 }
-                IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-                IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                        records.iterator()
-                );
+                IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
                 ingestRecordsFromIterator.write();
             }
         }
@@ -347,10 +348,7 @@ public class SplitPartitionIT {
                         records.add(record);
                     }
                 }
-                IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-                IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                        records.iterator()
-                );
+                IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
                 ingestRecordsFromIterator.write();
             }
         }
@@ -388,10 +386,7 @@ public class SplitPartitionIT {
                 record.put("key2", 10);
                 records.add(record);
             }
-            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                    records.iterator()
-            );
+            IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
             ingestRecordsFromIterator.write();
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -457,10 +452,7 @@ public class SplitPartitionIT {
                 record.put("key2", r);
                 records.add(record);
             }
-            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                    records.iterator()
-            );
+            IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
             ingestRecordsFromIterator.write();
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -531,10 +523,7 @@ public class SplitPartitionIT {
                 record.put("key2", r);
                 records.add(record);
             }
-            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                    records.iterator()
-            );
+            IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
             ingestRecordsFromIterator.write();
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -597,10 +586,7 @@ public class SplitPartitionIT {
                 record.put("key", r);
                 records.add(record);
             }
-            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                    records.iterator()
-            );
+            IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
             ingestRecordsFromIterator.write();
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -654,10 +640,7 @@ public class SplitPartitionIT {
                 record.put("key", "A" + i + "" + r);
                 records.add(record);
             }
-            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                    records.iterator()
-            );
+            IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
             ingestRecordsFromIterator.write();
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -721,10 +704,7 @@ public class SplitPartitionIT {
                 record.put("key", new byte[]{(byte) r});
                 records.add(record);
             }
-            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                    records.iterator()
-            );
+            IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
             ingestRecordsFromIterator.write();
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -862,10 +842,7 @@ public class SplitPartitionIT {
                         records.add(record);
                     }
                 }
-                IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-                IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                        records.iterator()
-                );
+                IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
                 ingestRecordsFromIterator.write();
             }
         }
@@ -978,10 +955,7 @@ public class SplitPartitionIT {
                         records.add(record);
                     }
                 }
-                IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-                IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                        records.iterator()
-                );
+                IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
                 ingestRecordsFromIterator.write();
             }
         }
@@ -1019,10 +993,7 @@ public class SplitPartitionIT {
                 record.put("key2", new byte[]{(byte) -100});
                 records.add(record);
             }
-            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                    records.iterator()
-            );
+            IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
             ingestRecordsFromIterator.write();
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -1090,10 +1061,7 @@ public class SplitPartitionIT {
                 record.put("key2", new byte[]{(byte) r});
                 records.add(record);
             }
-            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                    records.iterator()
-            );
+            IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
             ingestRecordsFromIterator.write();
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -1155,23 +1123,22 @@ public class SplitPartitionIT {
         }
     }
 
-    private static IngestProperties defaultPropertiesBuilder(StateStore stateStore,
-                                                             Schema sleeperSchema,
-                                                             String path,
-                                                             String path2) throws IOException, ObjectFactoryException {
-        return IngestProperties.builder()
+    private static IngestRecordsFromIterator createIngestRecordsFromIterator(StateStore stateStore, Schema schema, String localDir, String bucketName, Iterator<Record> recordIterator) throws ObjectFactoryException {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 1_000_000);
+        instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1_000_000);
+        instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, 1_000_000);
+        instanceProperties.set(FILE_SYSTEM, "");
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(COMPRESSION_CODEC, "zstd");
+        tableProperties.set(DATA_BUCKET, bucketName);
+        tableProperties.setSchema(schema);
+        IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
                 .objectFactory(new ObjectFactory(new InstanceProperties(), null, ""))
-                .localDir(path)
-                .maxRecordsToWriteLocally(1_000_000)
-                .maxInMemoryBatchSize(1_000_000)
-                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
-                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
-                .compressionCodec("zstd")
-                .stateStore(stateStore)
-                .schema(sleeperSchema)
-                .filePathPrefix("")
-                .bucketName(path2)
-                .ingestPartitionRefreshFrequencyInSecond(1_000_000)
+                .localDir(localDir)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .hadoopConfiguration(new Configuration())
                 .build();
+        return factory.createIngestRecordsFromIterator(instanceProperties, tableProperties, recordIterator);
     }
 }
