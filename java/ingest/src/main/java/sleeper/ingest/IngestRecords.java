@@ -15,13 +15,11 @@
  */
 package sleeper.ingest;
 
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.ingest.impl.StandardIngestCoordinator;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
@@ -36,22 +34,8 @@ public class IngestRecords {
 
     private final IngestCoordinator<Record> ingestCoordinator;
 
-    public IngestRecords(IngestProperties properties) {
-        if (null == properties.getHadoopConfiguration()) {
-            properties = properties.toBuilder().hadoopConfiguration(defaultHadoopConfiguration()).build();
-        }
-        this.ingestCoordinator = StandardIngestCoordinator.directWriteBackedByArrayList(properties);
-    }
-
     public IngestRecords(IngestCoordinator<Record> ingestCoordinator) {
         this.ingestCoordinator = ingestCoordinator;
-    }
-
-    private static Configuration defaultHadoopConfiguration() {
-        Configuration conf = new Configuration();
-        conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
-        conf.set("fs.s3a.fast.upload", "true");
-        return conf;
     }
 
     public void init() throws StateStoreException {
