@@ -20,6 +20,7 @@ import org.snakeyaml.engine.v2.api.LoadSettings;
 
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,11 +33,13 @@ public class ProjectChunk {
     private final String id;
     private final String name;
     private final String workflow;
+    private final List<String> modules;
 
     private ProjectChunk(Builder builder) {
         id = Objects.requireNonNull(ignoreEmpty(builder.id), "id must not be null");
         name = Objects.requireNonNull(ignoreEmpty(builder.name), "name must not be null");
         workflow = Objects.requireNonNull(ignoreEmpty(builder.workflow), "workflow must not be null");
+        modules = Objects.requireNonNull(builder.modules, "modules must not be null");
     }
 
     public String getId() {
@@ -78,6 +81,7 @@ public class ProjectChunk {
         return chunk(id)
                 .name(properties.getProperty("chunk." + id + ".name"))
                 .workflow(properties.getProperty("chunk." + id + ".workflow"))
+                .modulesArray()
                 .build();
     }
 
@@ -85,6 +89,7 @@ public class ProjectChunk {
         return chunk(id)
                 .name((String) config.get("name"))
                 .workflow((String) config.get("workflow"))
+                .modules((List<String>) config.get("modules"))
                 .build();
     }
 
@@ -101,20 +106,21 @@ public class ProjectChunk {
             return false;
         }
         ProjectChunk that = (ProjectChunk) o;
-        return id.equals(that.id) && name.equals(that.name) && workflow.equals(that.workflow);
+        return id.equals(that.id) && name.equals(that.name) && workflow.equals(that.workflow) && modules.equals(that.modules);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, workflow);
+        return Objects.hash(id, name, workflow, modules);
     }
 
     @Override
     public String toString() {
-        return "ChunkProperties{" +
+        return "ProjectChunk{" +
                 "id='" + id + '\'' +
                 ", name='" + name + '\'' +
                 ", workflow='" + workflow + '\'' +
+                ", modules=" + modules +
                 '}';
     }
 
@@ -122,6 +128,7 @@ public class ProjectChunk {
         private String id;
         private String name;
         private String workflow;
+        private List<String> modules;
 
         private Builder() {
         }
@@ -139,6 +146,15 @@ public class ProjectChunk {
         public Builder workflow(String workflow) {
             this.workflow = workflow;
             return this;
+        }
+
+        public Builder modules(List<String> modules) {
+            this.modules = modules;
+            return this;
+        }
+
+        public Builder modulesArray(String... modules) {
+            return modules(Arrays.asList(modules));
         }
 
         public ProjectChunk build() {

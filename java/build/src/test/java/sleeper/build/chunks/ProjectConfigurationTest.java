@@ -38,8 +38,8 @@ public class ProjectConfigurationTest {
                                 .owner("test-owner").repository("test-repo").branch("test-branch").sha("test-sha")
                                 .build())
                         .chunks(Arrays.asList(
-                                ProjectChunk.chunk("common").name("Common").workflow("chunk-common.yaml").build(),
-                                ProjectChunk.chunk("data").name("Data").workflow("chunk-data.yaml").build()))
+                                ProjectChunk.chunk("common").name("Common").workflow("chunk-common.yaml").modulesArray().build(),
+                                ProjectChunk.chunk("data").name("Data").workflow("chunk-data.yaml").modulesArray().build()))
                         .build());
     }
 
@@ -59,9 +59,19 @@ public class ProjectConfigurationTest {
                                 .owner("test-owner").repository("test-repo").branch("test-branch").sha("test-sha")
                                 .build())
                         .chunks(Arrays.asList(
-                                ProjectChunk.chunk("bulk-import").name("Bulk Import").workflow("chunk-bulk-import.yaml").build(),
-                                ProjectChunk.chunk("common").name("Common").workflow("chunk-common.yaml").build(),
-                                ProjectChunk.chunk("ingest").name("Ingest").workflow("chunk-ingest.yaml").build()))
+                                ProjectChunk.chunk("bulk-import").name("Bulk Import")
+                                        .workflow("chunk-bulk-import.yaml").modulesArray(
+                                                "bulk-import/bulk-import-common",
+                                                "bulk-import/bulk-import-starter",
+                                                "bulk-import/bulk-import-runner")
+                                        .build(),
+                                ProjectChunk.chunk("common").name("Common")
+                                        .workflow("chunk-common.yaml").modulesArray(
+                                                "core", "configuration", "sketches", "parquet",
+                                                "common-job", "build", "dynamodb-tools")
+                                        .build(),
+                                ProjectChunk.chunk("ingest").name("Ingest")
+                                        .workflow("chunk-ingest.yaml").modulesArray("ingest").build()))
                         .build());
     }
 }
