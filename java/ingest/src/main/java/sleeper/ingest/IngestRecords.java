@@ -22,7 +22,6 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.StandardIngestCoordinator;
-import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
@@ -44,6 +43,10 @@ public class IngestRecords {
         this.ingestCoordinator = StandardIngestCoordinator.directWriteBackedByArrayList(properties);
     }
 
+    public IngestRecords(IngestCoordinator<Record> ingestCoordinator) {
+        this.ingestCoordinator = ingestCoordinator;
+    }
+
     private static Configuration defaultHadoopConfiguration() {
         Configuration conf = new Configuration();
         conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
@@ -55,13 +58,11 @@ public class IngestRecords {
         // Do nothing
     }
 
-    public void write(Record record) throws IOException, IteratorException, InterruptedException, StateStoreException {
+    public void write(Record record) throws IOException, IteratorException, StateStoreException {
         ingestCoordinator.write(record);
     }
 
-    public long close() throws IOException, IteratorException, InterruptedException, StateStoreException {
-        return ingestCoordinator.closeReturningFileInfoList().stream()
-                .mapToLong(FileInfo::getNumberOfRecords)
-                .sum();
+    public IngestResult close() throws StateStoreException, IteratorException, IOException {
+        return IngestResult.from(ingestCoordinator.closeReturningFileInfoList());
     }
 }
