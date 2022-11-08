@@ -26,7 +26,6 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
 import sleeper.statestore.DelegatingStateStore;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -64,9 +63,5 @@ public class IngestRecordsTestBase {
         StateStore stateStore = new DelegatingStateStore(new InMemoryFileInfoStore(), new FixedPartitionStore(schema));
         stateStore.initialise(initialPartitions);
         return stateStore;
-    }
-
-    protected IngestProperties.Builder defaultPropertiesBuilder(StateStore stateStore, Schema sleeperSchema) {
-        return IngestRecordsTestDataHelper.defaultPropertiesBuilder(stateStore, sleeperSchema, inputFolderName, sketchFolderName);
     }
 }

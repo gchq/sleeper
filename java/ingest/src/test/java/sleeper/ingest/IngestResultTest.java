@@ -17,14 +17,19 @@
 package sleeper.ingest;
 
 import org.junit.Test;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
+import sleeper.ingest.impl.IngestCoordinatorFactory;
+import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createTableProperties;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultFactory;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 
 public class IngestResultTest extends IngestRecordsTestBase {
@@ -32,7 +37,9 @@ public class IngestResultTest extends IngestRecordsTestBase {
     public void shouldReturnNumberOfRecordsFromIngestResult() throws StateStoreException, IteratorException, IOException {
         // Given
         StateStore stateStore = getStateStore(schema);
-        IngestRecords ingestRecords = new IngestRecords(defaultPropertiesBuilder(stateStore, schema).build());
+        TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
+        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore));
+        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(instanceProperties, tableProperties));
 
         // When
         for (Record record : getRecords()) {
@@ -49,7 +56,9 @@ public class IngestResultTest extends IngestRecordsTestBase {
     public void shouldReturnFileInfoListFromIngestResult() throws StateStoreException, IteratorException, IOException {
         // Given
         StateStore stateStore = getStateStore(schema);
-        IngestRecords ingestRecords = new IngestRecords(defaultPropertiesBuilder(stateStore, schema).build());
+        TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
+        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore));
+        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(instanceProperties, tableProperties));
 
         // When
         for (Record record : getRecords()) {
