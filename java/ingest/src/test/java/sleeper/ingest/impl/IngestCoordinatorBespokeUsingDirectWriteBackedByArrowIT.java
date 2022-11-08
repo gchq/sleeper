@@ -18,7 +18,6 @@ package sleeper.ingest.impl;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -34,9 +33,7 @@ import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.key.Key;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.ingest.IngestProperties;
 import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.PartitionedTableCreator;
 import sleeper.ingest.testutils.RecordGenerator;
@@ -198,25 +195,5 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                 partitionNoToExpectedNoOfFilesMap,
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
                 ingestLocalWorkingDirectory);
-    }
-
-    private static IngestProperties.Builder defaultPropertiesBuilder(String objectFactoryLocalWorkingDirectory,
-                                                                     StateStore stateStore,
-                                                                     Schema sleeperSchema,
-                                                                     String sleeperIteratorClassName,
-                                                                     String ingestLocalWorkingDirectory) throws IOException, ObjectFactoryException {
-        return IngestProperties.builder()
-                .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
-                .localDir(ingestLocalWorkingDirectory)
-                .maxRecordsToWriteLocally(10L)
-                .maxInMemoryBatchSize(1000L)
-                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
-                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
-                .compressionCodec("zstd")
-                .stateStore(stateStore)
-                .schema(sleeperSchema)
-                .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
-                .iteratorClassName(sleeperIteratorClassName)
-                .ingestPartitionRefreshFrequencyInSecond(Integer.MAX_VALUE);
     }
 }

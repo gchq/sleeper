@@ -43,14 +43,6 @@ public class StandardIngestCoordinator {
         return new Builder();
     }
 
-    public static IngestCoordinator<Record> directWriteBackedByArrayList(IngestProperties ingestProperties) {
-        return builder().fromProperties(ingestProperties)
-                .backedByArrayList()
-                .maxNoOfRecordsInMemory((int) ingestProperties.getMaxInMemoryBatchSize())
-                .maxNoOfRecordsInLocalStore(ingestProperties.getMaxRecordsToWriteLocally())
-                .buildDirectWrite(ingestProperties.getFilePrefix() + ingestProperties.getBucketName());
-    }
-
     private static IngestCoordinator<Record> directWriteBackedByArrayList(
             Builder builder, BackedByArrayBuilder arrayBuilder, String filePathPrefix) {
         Supplier<RecordBatch<Record>> recordBatchFactoryFn = () -> new ArrayListRecordBatchAcceptingRecords(
@@ -85,24 +77,6 @@ public class StandardIngestCoordinator {
                 builder.ingestPartitionRefreshFrequencyInSeconds,
                 recordBatchFactoryFn,
                 partitionFileFactoryFn);
-    }
-
-    public static IngestCoordinator<Record> directWriteBackedByArrow(IngestProperties ingestProperties,
-                                                                     BufferAllocator arrowBufferAllocator,
-                                                                     int maxNoOfRecordsToWriteToArrowFileAtOnce,
-                                                                     long workingArrowBufferAllocatorBytes,
-                                                                     long minBatchArrowBufferAllocatorBytes,
-                                                                     long maxBatchArrowBufferAllocatorBytes) {
-        return builder()
-                .fromProperties(ingestProperties)
-                .backedByArrow()
-                .arrowBufferAllocator(arrowBufferAllocator)
-                .maxNoOfRecordsToWriteToArrowFileAtOnce(maxNoOfRecordsToWriteToArrowFileAtOnce)
-                .workingArrowBufferAllocatorBytes(workingArrowBufferAllocatorBytes)
-                .minBatchArrowBufferAllocatorBytes(minBatchArrowBufferAllocatorBytes)
-                .maxBatchArrowBufferAllocatorBytes(maxBatchArrowBufferAllocatorBytes)
-                .maxNoOfBytesToWriteLocally(ingestProperties.getMaxRecordsToWriteLocally())
-                .buildDirectWrite(ingestProperties.getFilePrefix() + ingestProperties.getBucketName());
     }
 
     private static IngestCoordinator<Record> directWriteBackedByArrow(
@@ -142,17 +116,6 @@ public class StandardIngestCoordinator {
                 partitionFileFactoryFn);
     }
 
-    public static IngestCoordinator<Record> asyncS3WriteBackedByArrayList(IngestProperties ingestProperties,
-                                                                          String s3BucketName,
-                                                                          S3AsyncClient s3AsyncClient) {
-        return builder()
-                .fromProperties(ingestProperties)
-                .backedByArrayList()
-                .maxNoOfRecordsInMemory((int) ingestProperties.getMaxInMemoryBatchSize())
-                .maxNoOfRecordsInLocalStore(ingestProperties.getMaxRecordsToWriteLocally())
-                .buildAsyncS3Write(s3BucketName, s3AsyncClient);
-    }
-
     private static IngestCoordinator<Record> asyncS3WriteBackedByArrayList(
             Builder builder, BackedByArrayBuilder arrayBuilder, String s3BucketName, S3AsyncClient s3AsyncClient) {
         Supplier<RecordBatch<Record>> recordBatchFactoryFn = () ->
@@ -190,26 +153,6 @@ public class StandardIngestCoordinator {
                 builder.ingestPartitionRefreshFrequencyInSeconds,
                 recordBatchFactoryFn,
                 partitionFileFactoryFn);
-    }
-
-    public static IngestCoordinator<Record> asyncS3WriteBackedByArrow(IngestProperties ingestProperties,
-                                                                      String s3BucketName,
-                                                                      S3AsyncClient s3AsyncClient,
-                                                                      BufferAllocator arrowBufferAllocator,
-                                                                      int maxNoOfRecordsToWriteToArrowFileAtOnce,
-                                                                      long workingArrowBufferAllocatorBytes,
-                                                                      long minBatchArrowBufferAllocatorBytes,
-                                                                      long maxBatchArrowBufferAllocatorBytes) {
-        return builder()
-                .fromProperties(ingestProperties)
-                .backedByArrow()
-                .arrowBufferAllocator(arrowBufferAllocator)
-                .maxNoOfRecordsToWriteToArrowFileAtOnce(maxNoOfRecordsToWriteToArrowFileAtOnce)
-                .workingArrowBufferAllocatorBytes(workingArrowBufferAllocatorBytes)
-                .minBatchArrowBufferAllocatorBytes(minBatchArrowBufferAllocatorBytes)
-                .maxBatchArrowBufferAllocatorBytes(maxBatchArrowBufferAllocatorBytes)
-                .maxNoOfBytesToWriteLocally(ingestProperties.getMaxRecordsToWriteLocally())
-                .buildAsyncS3Write(s3BucketName, s3AsyncClient);
     }
 
     private static IngestCoordinator<Record> asyncS3WriteBackedByArrow(
