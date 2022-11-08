@@ -16,7 +16,6 @@
 package sleeper.ingest.impl;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -27,16 +26,17 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.key.Key;
-import sleeper.core.record.Record;
 import sleeper.core.schema.type.LongType;
-import sleeper.ingest.IngestProperties;
+import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.PartitionedTableCreator;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
+import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
@@ -49,6 +49,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createInstanceProperties;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createTableProperties;
 
 public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrayListIT {
     @ClassRule
@@ -124,29 +129,19 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrayListIT {
                 keyAndDimensionToSplitOnInOrder);
         String objectFactoryLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
         String ingestLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
-        IngestProperties properties = IngestProperties.builder()
+        InstanceProperties instanceProperties = createInstanceProperties("test-instance", "s3a://", "arraylist", "direct");
+        instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, maxNoOfRecordsInMemory);
+        instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, maxNoOfRecordsInLocalStore);
+        TableProperties tableProperties = createTableProperties(instanceProperties, recordListAndSchema.sleeperSchema, DATA_BUCKET_NAME);
+        IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
                 .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
-                .stateStore(stateStore)
-                .schema(recordListAndSchema.sleeperSchema)
                 .localDir(ingestLocalWorkingDirectory)
-                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
-                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
-                .compressionCodec("zstd")
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
-                .ingestPartitionRefreshFrequencyInSecond(Integer.MAX_VALUE)
-                .filePathPrefix("s3a://" + DATA_BUCKET_NAME)
-                .maxInMemoryBatchSize(maxNoOfRecordsInMemory)
-                .maxRecordsToWriteLocally(maxNoOfRecordsInLocalStore)
                 .build();
-        IngestCoordinator<Record> ingestCoordinator = StandardIngestCoordinator.directWriteBackedByArrayList(properties);
-
-        try {
-            for (Record record : recordListAndSchema.recordList) {
-                ingestCoordinator.write(record);
-            }
-        } finally {
-            ingestCoordinator.close();
-        }
+        IngestRecordsFromIterator recordsFromIterator = factory.createIngestRecordsFromIterator(
+                instanceProperties, tableProperties, recordListAndSchema.recordList.iterator());
+        recordsFromIterator.write();
 
         ResultVerifier.verify(
                 stateStore,

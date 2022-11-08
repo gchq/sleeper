@@ -32,6 +32,7 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.impl.AdditionIterator;
@@ -48,6 +49,7 @@ import sleeper.ingest.testutils.PartitionedTableCreator;
 import sleeper.ingest.testutils.QuinFunction;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
+import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
@@ -65,6 +67,12 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createInstanceProperties;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createTableProperties;
 
 @RunWith(Parameterized.class)
 public class IngestCoordinatorCommonIT {
@@ -207,12 +215,20 @@ public class IngestCoordinatorCommonIT {
             String ingestLocalWorkingDirectory,
             TemporaryFolder temporaryFolder) {
         try {
-            IngestProperties properties = defaultPropertiesBuilder(temporaryFolder, stateStore, sleeperSchema, sleeperIteratorClassName, ingestLocalWorkingDirectory)
-                    .filePathPrefix(filePathPrefix)
-                    .maxRecordsToWriteLocally(1000)
-                    .maxInMemoryBatchSize(100000L)
+            InstanceProperties instanceProperties = createInstanceProperties("test-instance", filePathPrefix, "arraylist", "direct");
+            instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 1000);
+            instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 100000L);
+            TableProperties tableProperties = createTableProperties(instanceProperties, sleeperSchema, "");
+            tableProperties.set(ITERATOR_CLASS_NAME, sleeperIteratorClassName);
+
+            String objectFactoryLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
+            IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
+                    .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
+                    .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                    .localDir(ingestLocalWorkingDirectory)
+                    .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
                     .build();
-            return StandardIngestCoordinator.directWriteBackedByArrayList(properties);
+            return factory.createIngestCoordinator(instanceProperties, tableProperties);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

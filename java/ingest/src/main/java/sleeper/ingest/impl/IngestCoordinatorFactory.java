@@ -68,7 +68,7 @@ public class IngestCoordinatorFactory {
         return new Builder();
     }
 
-    private IngestCoordinator<Record> createIngestCoordinator(InstanceProperties instanceProperties, TableProperties tableProperties) {
+    public IngestCoordinator<Record> createIngestCoordinator(InstanceProperties instanceProperties, TableProperties tableProperties) {
         S3AsyncClient internalS3AsyncClient =
                 instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT).equals("async") ?
                         ((s3AsyncClient == null) ? S3AsyncClient.create() : s3AsyncClient) :

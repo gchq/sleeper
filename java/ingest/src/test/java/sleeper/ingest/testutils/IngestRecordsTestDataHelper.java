@@ -21,6 +21,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Region;
 import sleeper.core.record.CloneRecord;
@@ -30,10 +32,12 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.ingest.IngestProperties;
+import sleeper.ingest.impl.IngestCoordinatorFactory;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreProvider;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,6 +48,21 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class IngestRecordsTestDataHelper {
     private IngestRecordsTestDataHelper() {
@@ -287,5 +306,51 @@ public class IngestRecordsTestDataHelper {
         String sketchFile = filename.replace(".parquet", ".sketches");
         assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
         return new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
+    }
+
+    public static InstanceProperties createInstanceProperties(String instanceName, String fileSystemPrefix, String recordBatchType, String partitionFileWriterType) {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(ID, instanceName);
+        instanceProperties.set(FILE_SYSTEM, fileSystemPrefix);
+        instanceProperties.set(INGEST_RECORD_BATCH_TYPE, recordBatchType);
+        instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, partitionFileWriterType);
+        instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, Integer.MAX_VALUE);
+        instanceProperties.setNumber(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS, 10);
+        instanceProperties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 16 * 1024 * 1024L);
+        instanceProperties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 16 * 1024 * 1024L);
+        instanceProperties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 16 * 1024 * 1024L);
+        instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 128);
+        instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 100000L);
+        return instanceProperties;
+    }
+
+    public static TableProperties createTableProperties(InstanceProperties instanceProperties, Schema schema, String bucketName) {
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(TABLE_NAME, "test-table");
+        tableProperties.setSchema(schema);
+        tableProperties.set(DATA_BUCKET, bucketName);
+        tableProperties.set(COMPRESSION_CODEC, "zstd");
+        tableProperties.setNumber(PAGE_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE);
+        tableProperties.setNumber(ROW_GROUP_SIZE, ParquetWriter.DEFAULT_BLOCK_SIZE);
+        return tableProperties;
+    }
+
+    public static Configuration defaultHadoopConfiguration() {
+        Configuration conf = new Configuration();
+        conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
+        conf.set("fs.s3a.fast.upload", "true");
+        return conf;
+    }
+
+    public static IngestCoordinatorFactory defaultFactory(String localDir, StateStoreProvider stateStoreProvider, Configuration hadoopConfiguration) {
+        return IngestCoordinatorFactory.builder()
+                .objectFactory(ObjectFactory.noUserJars())
+                .localDir(localDir)
+                .stateStoreProvider(stateStoreProvider)
+                .hadoopConfiguration(hadoopConfiguration).build();
+    }
+
+    public static IngestCoordinatorFactory defaultFactory(String localDir, StateStoreProvider stateStoreProvider) {
+        return defaultFactory(localDir, stateStoreProvider, defaultHadoopConfiguration());
     }
 }
