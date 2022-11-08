@@ -19,6 +19,7 @@ package sleeper.ingest;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
@@ -35,6 +36,7 @@ import sleeper.statestore.inmemory.InMemoryFileInfoStore;
 import java.util.Collections;
 import java.util.List;
 
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createInstanceProperties;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
 
 public class IngestRecordsTestBase {
@@ -45,11 +47,13 @@ public class IngestRecordsTestBase {
     protected final Schema schema = schemaWithRowKeys(field);
     protected String inputFolderName;
     protected String sketchFolderName;
+    protected InstanceProperties instanceProperties;
 
     @Before
     public void setUpBase() throws Exception {
         inputFolderName = folder.newFolder().getAbsolutePath();
         sketchFolderName = folder.newFolder().getAbsolutePath();
+        instanceProperties = createInstanceProperties("test-instance", sketchFolderName, "arraylist", "direct");
     }
 
     protected static StateStore getStateStore(Schema schema) throws StateStoreException {
