@@ -49,38 +49,12 @@ public class ProjectConfiguration {
         maxRetries = builder.maxRetries;
     }
 
-    public static ProjectConfiguration from(Properties properties) {
-        return builder()
-                .token(properties.getProperty("token"))
-                .head(GitHubHead.from(properties))
-                .chunks(ProjectChunk.listFrom(properties))
-                .build();
-    }
-
     public static ProjectConfiguration fromGitHubAndChunks(Properties gitHubProperties, List<ProjectChunk> chunks) {
         return builder()
                 .token(gitHubProperties.getProperty("token"))
                 .head(GitHubHead.from(gitHubProperties))
                 .chunks(chunks)
                 .build();
-    }
-
-    public static ProjectConfiguration fromProperties(String propertiesPath) throws IOException {
-        return from(loadProperties(propertiesPath));
-    }
-
-    public static ProjectConfiguration fromGitHubAndChunks(String gitHubPropertiesPath, String chunksYamlPath) throws IOException {
-        return fromGitHubAndChunks(
-                loadProperties(gitHubPropertiesPath),
-                ProjectChunk.listFromYamlPath(chunksYamlPath));
-    }
-
-    private static Properties loadProperties(String path) throws IOException {
-        Properties properties = new Properties();
-        try (Reader reader = Files.newBufferedReader(Paths.get(path))) {
-            properties.load(reader);
-        }
-        return properties;
     }
 
     public ChunksStatus checkStatus() throws IOException {
@@ -109,6 +83,20 @@ public class ProjectConfiguration {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static ProjectConfiguration fromGitHubAndChunks(String gitHubPropertiesPath, String chunksYamlPath) throws IOException {
+        return fromGitHubAndChunks(
+                loadProperties(gitHubPropertiesPath),
+                ProjectChunk.listFromYamlPath(chunksYamlPath));
+    }
+
+    private static Properties loadProperties(String path) throws IOException {
+        Properties properties = new Properties();
+        try (Reader reader = Files.newBufferedReader(Paths.get(path))) {
+            properties.load(reader);
+        }
+        return properties;
     }
 
     @Override

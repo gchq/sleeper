@@ -26,13 +26,10 @@ public class CheckGitHubStatusMain {
 
     public static void main(String[] args) throws IOException {
         ProjectConfiguration configuration;
-        if (args.length == 1) {
-            configuration = ProjectConfiguration.fromProperties(args[0]);
-        } else if (args.length == 2) {
+        if (args.length == 2) {
             configuration = ProjectConfiguration.fromGitHubAndChunks(args[1], args[0]);
         } else {
-            System.out.println("Expected arguments: <chunks.yaml path> <github.properties path>");
-            System.out.println("Alternative argument: <status.properties path>");
+            System.out.println("Usage: <chunks.yaml path> <github.properties path>");
             System.exit(1);
             return;
         }

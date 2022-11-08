@@ -28,7 +28,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 
 import static sleeper.build.util.ValidationUtils.ignoreEmpty;
 
@@ -58,15 +57,6 @@ public class ProjectChunk {
         return new Builder().id(id);
     }
 
-    public static List<ProjectChunk> listFrom(Properties properties) {
-        String[] chunkIds = properties.getProperty("chunks").split(",");
-        List<ProjectChunk> chunks = new ArrayList<>(chunkIds.length);
-        for (String id : chunkIds) {
-            chunks.add(from(properties, id));
-        }
-        return chunks;
-    }
-
     public static List<ProjectChunk> listFromYamlPath(String path) throws IOException {
         try (Reader reader = Files.newBufferedReader(Paths.get(path))) {
             return listFromYaml(reader);
@@ -84,14 +74,6 @@ public class ProjectChunk {
             chunks.add(fromYaml(config, id));
         }
         return chunks;
-    }
-
-    private static ProjectChunk from(Properties properties, String id) {
-        return chunk(id)
-                .name(properties.getProperty("chunk." + id + ".name"))
-                .workflow(properties.getProperty("chunk." + id + ".workflow"))
-                .modulesArray()
-                .build();
     }
 
     private static ProjectChunk fromYaml(Map<String, Object> config, String id) {

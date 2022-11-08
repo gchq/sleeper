@@ -25,23 +25,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ProjectConfigurationTest {
 
     @Test
-    public void shouldLoadPropertiesForSeveralChunks() {
-        ProjectConfiguration configuration = ProjectConfiguration.from(
-                TestProperties.example("example-github.properties"));
-
-        assertThat(configuration).isEqualTo(
-                ProjectConfiguration.builder()
-                        .token("test-token")
-                        .head(GitHubHead.builder()
-                                .owner("test-owner").repository("test-repo").branch("test-branch").sha("test-sha")
-                                .build())
-                        .chunks(Arrays.asList(
-                                ProjectChunk.chunk("common").name("Common").workflow("chunk-common.yaml").modulesArray().build(),
-                                ProjectChunk.chunk("data").name("Data").workflow("chunk-data.yaml").modulesArray().build()))
-                        .build());
-    }
-
-    @Test
     public void shouldLoadFromYamlAndGitHubProperties() throws Exception {
         ProjectConfiguration configuration = ProjectConfiguration.fromGitHubAndChunks(
                 TestProperties.example("example-github.properties"),
