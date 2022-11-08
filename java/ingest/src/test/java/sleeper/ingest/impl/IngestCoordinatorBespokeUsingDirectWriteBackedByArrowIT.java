@@ -29,6 +29,7 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.key.Key;
@@ -40,6 +41,7 @@ import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.PartitionedTableCreator;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
+import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
@@ -54,6 +56,12 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createInstanceProperties;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createTableProperties;
 
 public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
     @ClassRule
@@ -157,17 +165,22 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                 keyAndDimensionToSplitOnInOrder);
         String objectFactoryLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
         String ingestLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
-        IngestProperties properties = defaultPropertiesBuilder(objectFactoryLocalWorkingDirectory, stateStore, recordListAndSchema.sleeperSchema, null, ingestLocalWorkingDirectory)
-                .filePathPrefix("s3a://" + DATA_BUCKET_NAME)
-                .maxRecordsToWriteLocally(localStoreBytes).build();
-        IngestCoordinator<sleeper.core.record.Record> ingestCoordinator = StandardIngestCoordinator.directWriteBackedByArrow(
-                properties,
-                bufferAllocator,
-                128,
-                arrowWorkingBytes,
-                arrowBatchBytes,
-                arrowBatchBytes
-        );
+        InstanceProperties instanceProperties = createInstanceProperties("test-instance", "s3a://", "arrow", "direct");
+        instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, localStoreBytes);
+        instanceProperties.setNumber(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS, 128);
+        instanceProperties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, arrowWorkingBytes);
+        instanceProperties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, arrowBatchBytes);
+        instanceProperties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, arrowBatchBytes);
+        TableProperties tableProperties = createTableProperties(instanceProperties, recordListAndSchema.sleeperSchema, DATA_BUCKET_NAME);
+        IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
+                .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .localDir(ingestLocalWorkingDirectory)
+                .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
+                .s3AsyncClient(AWS_EXTERNAL_RESOURCE.getS3AsyncClient())
+                .bufferAllocator(bufferAllocator)
+                .build();
+        IngestCoordinator<Record> ingestCoordinator = factory.createIngestCoordinator(instanceProperties, tableProperties);
 
         try {
             for (Record record : recordListAndSchema.recordList) {
