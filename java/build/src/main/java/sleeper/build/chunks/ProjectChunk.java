@@ -15,18 +15,9 @@
  */
 package sleeper.build.chunks;
 
-import org.snakeyaml.engine.v2.api.Load;
-import org.snakeyaml.engine.v2.api.LoadSettings;
-
-import java.io.IOException;
-import java.io.Reader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 import static sleeper.build.util.ValidationUtils.ignoreEmpty;
@@ -42,7 +33,7 @@ public class ProjectChunk {
         id = Objects.requireNonNull(ignoreEmpty(builder.id), "id must not be null");
         name = Objects.requireNonNull(ignoreEmpty(builder.name), "name must not be null");
         workflow = Objects.requireNonNull(ignoreEmpty(builder.workflow), "workflow must not be null");
-        modules = Objects.requireNonNull(builder.modules, "modules must not be null");
+        modules = Collections.unmodifiableList(Objects.requireNonNull(builder.modules, "modules must not be null"));
     }
 
     public String getId() {
@@ -53,39 +44,20 @@ public class ProjectChunk {
         return name;
     }
 
-    public static Builder chunk(String id) {
-        return new Builder().id(id);
-    }
-
-    public static List<ProjectChunk> listFromYamlPath(String path) throws IOException {
-        try (Reader reader = Files.newBufferedReader(Paths.get(path))) {
-            return listFromYaml(reader);
-        }
-    }
-
-    public static List<ProjectChunk> listFromYaml(Reader reader) {
-        Load load = new Load(LoadSettings.builder().build());
-        Map<String, Object> root = (Map<String, Object>) load.loadFromReader(reader);
-        Map<String, Object> chunksMap = (Map<String, Object>) root.get("chunks");
-        List<ProjectChunk> chunks = new ArrayList<>(chunksMap.size());
-        for (Map.Entry<String, Object> entry : chunksMap.entrySet()) {
-            String id = entry.getKey();
-            Map<String, Object> config = (Map<String, Object>) entry.getValue();
-            chunks.add(fromYaml(config, id));
-        }
-        return chunks;
-    }
-
-    private static ProjectChunk fromYaml(Map<String, Object> config, String id) {
-        return chunk(id)
-                .name((String) config.get("name"))
-                .workflow((String) config.get("workflow"))
-                .modules((List<String>) config.get("modules"))
-                .build();
-    }
-
     public String getWorkflow() {
         return workflow;
+    }
+
+    public List<String> getModules() {
+        return modules;
+    }
+
+    public String getMavenProjectList() {
+        return String.join(",", getModules());
+    }
+
+    public static Builder chunk(String id) {
+        return new Builder().id(id);
     }
 
     @Override

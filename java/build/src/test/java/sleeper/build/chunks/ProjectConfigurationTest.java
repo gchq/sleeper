@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ProjectConfigurationTest {
 
     @Test
-    public void shouldLoadFromYamlAndGitHubProperties() throws Exception {
+    public void shouldLoadFromYamlAndGitHubProperties() {
         ProjectConfiguration configuration = ProjectConfiguration.fromGitHubAndChunks(
                 TestProperties.example("example-github.properties"),
                 TestChunks.example("example-chunks.yaml"));

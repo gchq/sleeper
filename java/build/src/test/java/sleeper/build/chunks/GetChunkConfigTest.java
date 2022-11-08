@@ -15,19 +15,22 @@
  */
 package sleeper.build.chunks;
 
-import java.io.IOException;
-import java.io.Reader;
+import org.junit.Test;
 
-public class TestChunks {
+import static org.assertj.core.api.Assertions.assertThat;
 
-    private TestChunks() {
+public class GetChunkConfigTest {
+
+    private static final ProjectChunks CHUNKS = TestChunks.example("example-chunks.yaml");
+
+    @Test
+    public void shouldGetChunkName() {
+        assertThat(GetChunkConfig.get(CHUNKS.getById("ingest"), "name")).isEqualTo("Ingest");
     }
 
-    public static ProjectChunks example(String path) {
-        try (Reader chunksReader = TestResources.exampleReader(path)) {
-            return ProjectChunks.fromYaml(chunksReader);
-        } catch (IOException e) {
-            throw new IllegalStateException("Could not load example chunks", e);
-        }
+    @Test
+    public void shouldGetChunkProjectList() {
+        assertThat(GetChunkConfig.get(CHUNKS.getById("common"), "maven_project_list"))
+                .isEqualTo("core,configuration,sketches,parquet,common-job,build,dynamodb-tools");
     }
 }

@@ -37,7 +37,7 @@ public class ProjectConfiguration {
 
     private final String token;
     private final GitHubHead head;
-    private final List<ProjectChunk> chunks;
+    private final ProjectChunks chunks;
     private final long retrySeconds;
     private final long maxRetries;
 
@@ -49,7 +49,7 @@ public class ProjectConfiguration {
         maxRetries = builder.maxRetries;
     }
 
-    public static ProjectConfiguration fromGitHubAndChunks(Properties gitHubProperties, List<ProjectChunk> chunks) {
+    public static ProjectConfiguration fromGitHubAndChunks(Properties gitHubProperties, ProjectChunks chunks) {
         return builder()
                 .token(gitHubProperties.getProperty("token"))
                 .head(GitHubHead.from(gitHubProperties))
@@ -69,7 +69,7 @@ public class ProjectConfiguration {
         return head;
     }
 
-    public List<ProjectChunk> getChunks() {
+    public ProjectChunks getChunks() {
         return chunks;
     }
 
@@ -88,7 +88,7 @@ public class ProjectConfiguration {
     public static ProjectConfiguration fromGitHubAndChunks(String gitHubPropertiesPath, String chunksYamlPath) throws IOException {
         return fromGitHubAndChunks(
                 loadProperties(gitHubPropertiesPath),
-                ProjectChunk.listFromYamlPath(chunksYamlPath));
+                ProjectChunks.fromYamlPath(chunksYamlPath));
     }
 
     private static Properties loadProperties(String path) throws IOException {
@@ -130,7 +130,7 @@ public class ProjectConfiguration {
     public static final class Builder {
         private String token;
         private GitHubHead head;
-        private List<ProjectChunk> chunks;
+        private ProjectChunks chunks;
         private long retrySeconds = DEFAULT_RETRY_SECONDS;
         private long maxRetries = DEFAULT_MAX_RETRIES;
 
@@ -147,9 +147,13 @@ public class ProjectConfiguration {
             return this;
         }
 
-        public Builder chunks(List<ProjectChunk> chunks) {
+        public Builder chunks(ProjectChunks chunks) {
             this.chunks = chunks;
             return this;
+        }
+
+        public Builder chunks(List<ProjectChunk> chunks) {
+            return chunks(new ProjectChunks(chunks));
         }
 
         public Builder retrySeconds(long retrySeconds) {
