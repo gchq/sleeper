@@ -25,5 +25,4 @@ jobs:
   module-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkName: Bulk Import
-      moduleList: bulk-import/bulk-import-common,bulk-import/bulk-import-starter,bulk-import/bulk-import-runner
+      chunkId: bulk-import
