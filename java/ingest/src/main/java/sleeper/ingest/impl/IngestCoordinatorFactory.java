@@ -23,7 +23,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.ingest.IngestProperties;
-import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreProvider;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.util.Locale;
@@ -48,7 +48,7 @@ public class IngestCoordinatorFactory {
 
     private final ObjectFactory objectFactory;
     private final String localDir;
-    private final StateStore stateStore;
+    private final StateStoreProvider stateStoreProvider;
     private final Configuration hadoopConfiguration;
     private final BufferAllocator bufferAllocator;
     private final S3AsyncClient s3AsyncClient;
@@ -56,7 +56,7 @@ public class IngestCoordinatorFactory {
     private IngestCoordinatorFactory(Builder builder) {
         this.objectFactory = builder.objectFactory;
         this.localDir = builder.localDir;
-        this.stateStore = builder.stateStore;
+        this.stateStoreProvider = builder.stateStoreProvider;
         this.hadoopConfiguration = builder.hadoopConfiguration;
         this.bufferAllocator = builder.bufferAllocator;
         this.s3AsyncClient = builder.s3AsyncClient;
@@ -117,7 +117,7 @@ public class IngestCoordinatorFactory {
                 .localDir(localDir)
                 .rowGroupSize(tableProperties.getInt(ROW_GROUP_SIZE))
                 .pageSize(tableProperties.getInt(PAGE_SIZE))
-                .stateStore(stateStore)
+                .stateStore(stateStoreProvider.getStateStore(tableProperties))
                 .schema(tableProperties.getSchema())
                 .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
                 .iteratorConfig(tableProperties.get(ITERATOR_CONFIG))
@@ -133,7 +133,7 @@ public class IngestCoordinatorFactory {
     public static final class Builder {
         private ObjectFactory objectFactory;
         private String localDir;
-        private StateStore stateStore;
+        private StateStoreProvider stateStoreProvider;
         private Configuration hadoopConfiguration;
         private BufferAllocator bufferAllocator;
         private S3AsyncClient s3AsyncClient;
@@ -151,8 +151,8 @@ public class IngestCoordinatorFactory {
             return this;
         }
 
-        public Builder stateStore(StateStore stateStore) {
-            this.stateStore = stateStore;
+        public Builder stateStoreProvider(StateStoreProvider stateStore) {
+            this.stateStoreProvider = stateStore;
             return this;
         }
 

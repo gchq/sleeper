@@ -36,7 +36,6 @@ import sleeper.ingest.IngestResult;
 import sleeper.ingest.impl.IngestCoordinatorFactory;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -117,15 +116,13 @@ public class IngestJobRunner {
                         + ". This file will be ignored and will not be ingested.", pathString);
             }
         }
-        // Get StateStore for this table
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         // Run the ingest
         try (CloseableIterator<Record> recordIterator = new ConcatenatingIterator(inputIterators);
              BufferAllocator bufferAllocator = new RootAllocator()) {
 
             IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
                     .objectFactory(objectFactory)
-                    .stateStore(stateStore)
+                    .stateStoreProvider(stateStoreProvider)
                     .localDir(localDir)
                     .s3AsyncClient(s3AsyncClient)
                     .hadoopConfiguration(hadoopConfiguration)

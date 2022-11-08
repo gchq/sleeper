@@ -28,6 +28,7 @@ import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.ingest.impl.IngestCoordinatorFactory;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
@@ -55,7 +56,7 @@ public class UploadMultipleShardedSortedParquetFiles extends WriteRandomDataJob 
         try {
             IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
                     .objectFactory(getClassFactory())
-                    .stateStore(getStateStore())
+                    .stateStoreProvider(new StateStoreProvider(dynamoDBClient, getSystemTestProperties()))
                     .localDir("/mnt/scratch")
                     .build();
             new IngestRecordsFromIterator(
