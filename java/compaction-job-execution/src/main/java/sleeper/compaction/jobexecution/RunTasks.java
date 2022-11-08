@@ -181,7 +181,6 @@ public class RunTasks {
             } else {
                 runTaskRequest = runTaskRequest
                         .withTaskDefinition(ec2TaskDefinition)
-                        .withPlatformVersion(null)
                         .withLaunchType(LaunchType.EC2);
             }
 

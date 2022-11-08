@@ -120,6 +120,9 @@ public class Scaler {
         int containersPerInstance = (containerPerInstanceKnown()) ? this.cachedInstanceContainers : 1;
 
         int availableContainerCount = calculateAvailableClusterContainerCapacity(details);
+
+        LOGGER.debug("newContainerCount %d containersPerInstance %d availableContainerCount %d", newContainerCount,
+                containersPerInstance, availableContainerCount);
         // Do we need to scale out?
         if (newContainerCount <= availableContainerCount) {
             LOGGER.debug("No scale out required");
