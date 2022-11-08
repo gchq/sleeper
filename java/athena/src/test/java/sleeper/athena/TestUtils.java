@@ -26,10 +26,10 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.ingest.IngestProperties;
-import sleeper.ingest.IngestRecordsFromIterator;
+import sleeper.ingest.impl.IngestCoordinatorFactory;
 import sleeper.statestore.InitialiseStateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
@@ -46,19 +46,19 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CON
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TestUtils {
@@ -121,23 +121,17 @@ public class TestUtils {
 
     public static void ingestData(AmazonDynamoDB dynamoClient, AmazonS3 s3Client, String dataDir, InstanceProperties instanceProperties,
                                   TableProperties table) {
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(table, dynamoClient);
         try {
-            IngestProperties properties = IngestProperties.builder()
+            IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
                     .objectFactory(new ObjectFactory(instanceProperties, s3Client, "/tmp"))
                     .localDir(dataDir)
-                    .maxRecordsToWriteLocally(1000L)
-                    .maxInMemoryBatchSize(1024L)
-                    .rowGroupSize(table.getInt(ROW_GROUP_SIZE))
-                    .pageSize(table.getInt(PAGE_SIZE))
-                    .compressionCodec(table.get(COMPRESSION_CODEC))
-                    .stateStore(stateStore)
-                    .schema(table.getSchema())
-                    .filePathPrefix("file://")
-                    .bucketName(table.get(DATA_BUCKET))
-                    .ingestPartitionRefreshFrequencyInSecond(10)
-                    .build();
-            new IngestRecordsFromIterator(properties, generateTimeSeriesData().iterator()).write();
+                    .stateStoreProvider(new StateStoreProvider(dynamoClient, instanceProperties)).build();
+            instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 1000L);
+            instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1024L);
+            instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, 10);
+            instanceProperties.set(FILE_SYSTEM, "file://");
+
+            factory.createIngestRecordsFromIterator(instanceProperties, table, generateTimeSeriesData().iterator()).write();
         } catch (IOException | StateStoreException | IteratorException |
                  ObjectFactoryException e) {
             throw new RuntimeException("Failed to Ingest data", e);
