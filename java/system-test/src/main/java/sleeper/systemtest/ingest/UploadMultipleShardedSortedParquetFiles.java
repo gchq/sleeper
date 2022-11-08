@@ -24,7 +24,6 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.ingest.impl.IngestCoordinatorFactory;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -59,8 +58,7 @@ public class UploadMultipleShardedSortedParquetFiles extends WriteRandomDataJob 
                     .stateStoreProvider(new StateStoreProvider(dynamoDBClient, getSystemTestProperties()))
                     .localDir("/mnt/scratch")
                     .build();
-            new IngestRecordsFromIterator(
-                    factory.createIngestCoordinator(getSystemTestProperties(), getTableProperties()), recordIterator).write();
+            factory.createIngestRecordsFromIterator(getSystemTestProperties(), getTableProperties(), recordIterator).write();
         } catch (StateStoreException | IteratorException e) {
             throw new IOException("Failed to write records using iterator", e);
         }

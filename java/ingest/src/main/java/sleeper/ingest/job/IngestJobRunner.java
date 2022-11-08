@@ -31,7 +31,6 @@ import sleeper.core.iterator.ConcatenatingIterator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.impl.IngestCoordinatorFactory;
 import sleeper.io.parquet.record.ParquetReaderIterator;
@@ -128,9 +127,7 @@ public class IngestJobRunner {
                     .hadoopConfiguration(hadoopConfiguration)
                     .bufferAllocator(bufferAllocator)
                     .build();
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(
-                    factory.createIngestCoordinator(instanceProperties, tableProperties), recordIterator);
-            IngestResult result = ingestRecordsFromIterator.write();
+            IngestResult result = factory.createIngestRecordsFromIterator(instanceProperties, tableProperties, recordIterator).write();
 
             LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getNumberOfRecords(), paths);
             return result;

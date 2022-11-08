@@ -23,9 +23,11 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.ingest.IngestProperties;
+import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.statestore.StateStoreProvider;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
+import java.util.Iterator;
 import java.util.Locale;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
@@ -66,7 +68,7 @@ public class IngestCoordinatorFactory {
         return new Builder();
     }
 
-    public IngestCoordinator<Record> createIngestCoordinator(InstanceProperties instanceProperties, TableProperties tableProperties) {
+    private IngestCoordinator<Record> createIngestCoordinator(InstanceProperties instanceProperties, TableProperties tableProperties) {
         S3AsyncClient internalS3AsyncClient =
                 instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT).equals("async") ?
                         ((s3AsyncClient == null) ? S3AsyncClient.create() : s3AsyncClient) :
@@ -109,6 +111,10 @@ public class IngestCoordinatorFactory {
                 internalS3AsyncClient.close();
             }
         }
+    }
+
+    public IngestRecordsFromIterator createIngestRecordsFromIterator(InstanceProperties instanceProperties, TableProperties tableProperties, Iterator<Record> recordIterator) {
+        return new IngestRecordsFromIterator(createIngestCoordinator(instanceProperties, tableProperties), recordIterator);
     }
 
     public IngestProperties createIngestProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
