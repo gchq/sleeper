@@ -22,6 +22,9 @@ import java.util.function.Function;
 
 public class GetChunkConfig {
 
+    private GetChunkConfig() {
+    }
+
     public static void main(String[] args) throws IOException {
         if (args.length != 3) {
             System.out.println("Usage: <chunk ID> <property name> <chunks.yaml path>");
