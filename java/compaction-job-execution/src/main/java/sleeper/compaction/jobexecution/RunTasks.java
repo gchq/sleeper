@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.jobexecution;
 
+import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.AwsVpcConfiguration;
@@ -35,9 +36,12 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.job.common.CommonJobUtils;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
@@ -49,6 +53,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_SCALING_GRACE_PERIOD;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_MEMORY;
@@ -119,7 +124,8 @@ public class RunTasks {
 
         this.scaler = new Scaler(asClient, ecsClient, autoScalingGroupName, this.clusterName,
                 instanceProperties.getInt(COMPACTION_TASK_CPU),
-                instanceProperties.getInt(COMPACTION_TASK_MEMORY));
+                instanceProperties.getInt(COMPACTION_TASK_MEMORY),
+                Duration.ofSeconds(instanceProperties.getInt(COMPACTION_EC2_SCALING_GRACE_PERIOD)));
     }
 
     public void run() throws InterruptedException {
@@ -153,6 +159,7 @@ public class RunTasks {
         }
 
         // Create 1 task for each item on the queue
+        Set<String> recentContainerInstanceARNs = new HashSet<>();
         int numTasksCreated = 0;
         for (int i = 0; i < queueSize && i < maxNumTasksToCreate; i++) {
             List<String> args = new ArrayList<>();
@@ -177,34 +184,43 @@ public class RunTasks {
                     .withOverrides(override)
                     .withPropagateTags(PropagateTags.TASK_DEFINITION);
 
+            String defUsed;
             if (launchType.equals("FARGATE")) {
+                defUsed = fargateTaskDefinition;
                 runTaskRequest = runTaskRequest
-                        .withTaskDefinition(fargateTaskDefinition)
+                        .withTaskDefinition(defUsed)
                         .withNetworkConfiguration(networkConfiguration)
                         .withPlatformVersion(fargateVersion)
                         .withLaunchType(LaunchType.FARGATE);
             } else {
+                defUsed = ec2TaskDefinition;
                 runTaskRequest = runTaskRequest
-                        .withTaskDefinition(ec2TaskDefinition)
+                        .withTaskDefinition(defUsed)
                         .withLaunchType(LaunchType.EC2);
             }
 
             RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
             LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
-                    clusterName, launchType, containerName, fargateTaskDefinition);
+                    clusterName, launchType, containerName, defUsed);
+            runTaskResult.getTasks().stream()
+                    .filter(task -> task.getContainerInstanceArn() != null)
+                    .forEach(task -> {
+                        recentContainerInstanceARNs.add(task.getContainerInstanceArn());
+                    });
+
             if (runTaskResult.getFailures().size() > 0) {
                 LOGGER.warn("Run task request has {} failures", runTaskResult.getFailures().size());
                 for (Failure f : runTaskResult.getFailures()) {
                     LOGGER.error("Failure: ARN {} Reason {} Detail {}", f.getArn(), f.getReason(), f.getDetail());
                 }
-                return;
+                break;
             }
             numTasksCreated++;
 
             // This lambda is triggered every minute so abort once get close to 1 minute
             if (System.currentTimeMillis() - startTime > 50 * 1000L) {
                 LOGGER.info("RunTasks has been running for more than 50 seconds, aborting");
-                return;
+                break;
             }
 
             if (0 == numTasksCreated % 10) {
@@ -214,6 +230,12 @@ public class RunTasks {
                 LOGGER.info("Sleeping for 11 seconds as 10 tasks have been created");
                 Thread.sleep(11000L);
             }
+        }
+
+        try {
+            scaler.possiblyScaleIn(this.ec2TaskDefinition, details, recentContainerInstanceARNs);
+        } catch (AmazonClientException e) {
+            LOGGER.error("Scale in exception", e);
         }
     }
 }

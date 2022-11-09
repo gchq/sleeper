@@ -63,12 +63,17 @@ public class Scaler {
     private final int cpuReservation;
     /** The memory reservation for tasks. */
     private final int memoryReservation;
+    /**
+     * The length of time an EC2 can be idle before being a candidate for
+     * termination.
+     */
+    private final Duration gracePeriod;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Scaler.class);
 
     public Scaler(AmazonAutoScaling asClient, AmazonECS ecsClient, String asGroupName,
             String ecsClusterName,
-            int cpuReservation, int memoryReservation) {
+            int cpuReservation, int memoryReservation, Duration gracePeriod) {
         super();
         this.asClient = asClient;
         this.ecsClient = ecsClient;
@@ -76,6 +81,7 @@ public class Scaler {
         this.ecsClusterName = ecsClusterName;
         this.cpuReservation = cpuReservation;
         this.memoryReservation = memoryReservation;
+        this.gracePeriod = gracePeriod;
     }
 
     /**
@@ -246,12 +252,9 @@ public class Scaler {
      * that haven't run a task recently and are not running any now.
      * 
      * @param clusterTasks the list of tasks this cluster is running/has run
-     * @param gracePeriod  the length of time that an EC2 instance won't be
-     *                     terminated for if idle
      * @return set of EC2 instances to terminate
      */
-    public Set<String> determineSafeInstanceContainerARNs(List<String> clusterTasks,
-            Duration gracePeriod) {
+    public Set<String> determineSafeInstanceContainerARNs(List<String> clusterTasks) {
         // Set of instance container ARNs that are either running tasks
         // or have recently stopped running a task
         Set<String> safeInstanceARNs = new HashSet<>();
@@ -310,14 +313,12 @@ public class Scaler {
      * grace
      * period.
      * 
-     * @param safeARNs    the list of container instance ARNs that are safe from
-     *                    termination
-     * @param details     the cluster instance details
-     * @param gracePeriod the safe period for EC2 instances
+     * @param safeARNs the list of container instance ARNs that are safe from
+     *                 termination
+     * @param details  the cluster instance details
      * @return list of EC2 IDs to terminate
      */
-    public List<String> findEC2IDsToTerminate(Set<String> safeARNs, Map<String, InstanceDetails> details,
-            Duration gracePeriod) {
+    public List<String> findEC2IDsToTerminate(Set<String> safeARNs, Map<String, InstanceDetails> details) {
         List<String> terminationIDs = new ArrayList<>();
         Instant now = Instant.now();
         // If an instance's ARN is not in the safe list AND it's registration time is
@@ -345,16 +346,16 @@ public class Scaler {
     /**
      * Attempt to scale the cluster in.
      * 
-     * @param taskFamilyName        the EC2 task family name
-     * @param gracePeriod           how long EC2 instances can safely be idle
-     * @param details               the cluster details
-     * @param containerArnsLaunched list of instance container ARNs from recently
-     *                              launched tasks
+     * @param taskFamilyName            the EC2 task family name
+     * @param details                   the cluster details
+     * @param containerInstanceARNsUsed list of instance container ARNs from
+     *                                  recently
+     *                                  launched tasks
      */
-    public void possiblyScaleIn(String taskFamilyName, Duration gracePeriod, Map<String, InstanceDetails> details,
-            List<String> containerArnsLaunched) {
+    public void possiblyScaleIn(String taskFamilyName, Map<String, InstanceDetails> details,
+            Set<String> containerInstanceARNsUsed) {
         // List of container instance ARNs that are safe from termination
-        Set<String> safeARNs = new HashSet<>(containerArnsLaunched);
+        Set<String> safeARNs = new HashSet<>(containerInstanceARNsUsed);
 
         // Get a list of all running and stopped tasks on the cluster
         List<String> clusterTasks = getTasks(taskFamilyName, "RUNNING");
@@ -362,11 +363,11 @@ public class Scaler {
 
         // Find the set of EC2 instance container ARNs that are running tasks
         // or recently stopped running tasks
-        safeARNs.addAll(determineSafeInstanceContainerARNs(clusterTasks, gracePeriod));
+        safeARNs.addAll(determineSafeInstanceContainerARNs(clusterTasks));
 
         // Take this list of safe ARNs and wash it against the list of all EC2s
         // to find ones to terminate
-        List<String> terminationIDs = findEC2IDsToTerminate(safeARNs, details, gracePeriod);
+        List<String> terminationIDs = findEC2IDsToTerminate(safeARNs, details);
 
         // Terminate the IDs in the given list
         terminateInstances(terminationIDs);
