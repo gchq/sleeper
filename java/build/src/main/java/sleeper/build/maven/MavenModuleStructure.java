@@ -36,6 +36,7 @@ import java.util.stream.Stream;
 public class MavenModuleStructure {
 
     private final String artifactId;
+    private final String groupId;
     private final String packaging;
     private final String moduleRef;
     private final boolean hasSrcTestFolder;
@@ -43,6 +44,7 @@ public class MavenModuleStructure {
 
     private MavenModuleStructure(Builder builder) {
         artifactId = builder.artifactId;
+        groupId = builder.groupId;
         packaging = builder.packaging;
         moduleRef = builder.moduleRef;
         hasSrcTestFolder = builder.hasSrcTestFolder;
@@ -60,6 +62,10 @@ public class MavenModuleStructure {
 
     public Stream<String> allTestedModulesForProjectList() {
         return allTestedModulesForProjectList(null);
+    }
+
+    public InternalDependencyIndex internalDependencies() {
+        return new InternalDependencyIndex();
     }
 
     private Stream<String> allTestedModulesForProjectList(String parentPath) {
@@ -94,7 +100,7 @@ public class MavenModuleStructure {
     private static Builder builderFromPath(ObjectMapper mapper, Path path) throws IOException {
         Pom pom = Pom.from(mapper, path.resolve("pom.xml"));
         return builder()
-                .artifactId(pom.artifactId).packaging(pom.packaging)
+                .artifactId(pom.artifactId).groupId(pom.getGroupId()).packaging(pom.packaging)
                 .hasSrcTestFolder(Files.isDirectory(path.resolve("src/test")))
                 .modules(readChildModules(mapper, path, pom));
     }
@@ -135,17 +141,33 @@ public class MavenModuleStructure {
     public static class Pom {
 
         private final String artifactId;
+        private final String groupId;
+        private final PomParentRef parent;
         private final String packaging;
         private final List<String> modules;
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public Pom(
                 @JsonProperty("artifactId") String artifactId,
+                @JsonProperty("groupId") String groupId,
+                @JsonProperty("parent") PomParentRef parent,
                 @JsonProperty("packaging") String packaging,
                 @JsonProperty("modules") List<String> modules) {
             this.artifactId = artifactId;
+            this.groupId = groupId;
+            this.parent = parent;
             this.packaging = packaging;
             this.modules = modules == null ? Collections.emptyList() : modules;
+        }
+
+        public String getGroupId() {
+            if (groupId != null) {
+                return groupId;
+            }
+            if (parent != null) {
+                return parent.groupId;
+            }
+            return null;
         }
 
         public static Pom from(ObjectMapper mapper, Path path) throws IOException {
@@ -155,8 +177,23 @@ public class MavenModuleStructure {
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class PomParentRef {
+        private final String artifactId;
+        private final String groupId;
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public PomParentRef(
+                @JsonProperty("artifactId") String artifactId,
+                @JsonProperty("groupId") String groupId) {
+            this.artifactId = artifactId;
+            this.groupId = groupId;
+        }
+    }
+
     public static final class Builder {
         private String artifactId;
+        private String groupId;
         private String packaging;
         private String moduleRef;
         private boolean hasSrcTestFolder;
@@ -167,6 +204,11 @@ public class MavenModuleStructure {
 
         public Builder artifactId(String artifactId) {
             this.artifactId = artifactId;
+            return this;
+        }
+
+        public Builder groupId(String groupId) {
+            this.groupId = groupId;
             return this;
         }
 

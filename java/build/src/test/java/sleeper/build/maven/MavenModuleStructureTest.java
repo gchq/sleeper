@@ -40,4 +40,24 @@ public class MavenModuleStructureTest {
                 "bulk-import/bulk-import-runner",
                 "bulk-import/bulk-import-starter");
     }
+
+    @Test
+    public void shouldProduceListOfDependenciesFromModuleWithNoInternalDependencies() {
+        // Given
+        InternalDependencyIndex index = TestMavenModuleStructure.example().internalDependencies();
+
+        // When / Then
+        assertThat(index.dependenciesForModules("core"))
+                .containsExactly("core");
+    }
+
+    @Test
+    public void shouldProduceListOfDependenciesFromModulesWithNoOtherInternalDependencies() {
+        // Given
+        InternalDependencyIndex index = TestMavenModuleStructure.example().internalDependencies();
+
+        // When / Then
+        assertThat(index.dependenciesForModules("core", "configuration"))
+                .containsExactly("core", "configuration");
+    }
 }
