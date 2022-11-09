@@ -21,6 +21,7 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.Record;
 import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.statestore.StateStoreProvider;
@@ -28,6 +29,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.Objects;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS;
@@ -47,25 +49,30 @@ public class IngestCoordinatorFactory {
     private final Configuration hadoopConfiguration;
     private final BufferAllocator bufferAllocator;
     private final S3AsyncClient s3AsyncClient;
+    private final InstanceProperties instanceProperties;
+    private final TablePropertiesProvider tablePropertiesProvider;
 
     private IngestCoordinatorFactory(Builder builder) {
-        this.objectFactory = builder.objectFactory;
-        this.localDir = builder.localDir;
-        this.stateStoreProvider = builder.stateStoreProvider;
-        this.hadoopConfiguration = builder.hadoopConfiguration;
+        this.objectFactory = Objects.requireNonNull(builder.objectFactory);
+        this.localDir = Objects.requireNonNull(builder.localDir);
+        this.stateStoreProvider = Objects.requireNonNull(builder.stateStoreProvider);
+        this.hadoopConfiguration = Objects.requireNonNull(builder.hadoopConfiguration);
         this.bufferAllocator = builder.bufferAllocator;
         this.s3AsyncClient = builder.s3AsyncClient;
+        this.instanceProperties = Objects.requireNonNull(builder.instanceProperties);
+        this.tablePropertiesProvider = Objects.requireNonNull(builder.tablePropertiesProvider);
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public IngestCoordinator<Record> createIngestCoordinator(InstanceProperties instanceProperties, TableProperties tableProperties) {
+    public IngestCoordinator<Record> createIngestCoordinator(String tableName) {
         S3AsyncClient internalS3AsyncClient =
                 instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT).equals("async") ?
                         ((s3AsyncClient == null) ? S3AsyncClient.create() : s3AsyncClient) :
                         null;
+        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
         String recordBatchType = instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
         String fileWriterType = instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
         StandardIngestCoordinator.BackedBuilder ingestCoordinatorBuilder;
@@ -111,8 +118,8 @@ public class IngestCoordinatorFactory {
         }
     }
 
-    public IngestRecordsFromIterator createIngestRecordsFromIterator(InstanceProperties instanceProperties, TableProperties tableProperties, Iterator<Record> recordIterator) {
-        return new IngestRecordsFromIterator(createIngestCoordinator(instanceProperties, tableProperties), recordIterator);
+    public IngestRecordsFromIterator createIngestRecordsFromIterator(String tableName, Iterator<Record> recordIterator) {
+        return new IngestRecordsFromIterator(createIngestCoordinator(tableName), recordIterator);
     }
 
     public static final class Builder {
@@ -122,6 +129,8 @@ public class IngestCoordinatorFactory {
         private Configuration hadoopConfiguration;
         private BufferAllocator bufferAllocator;
         private S3AsyncClient s3AsyncClient;
+        private InstanceProperties instanceProperties;
+        private TablePropertiesProvider tablePropertiesProvider;
 
         private Builder() {
         }
@@ -153,6 +162,16 @@ public class IngestCoordinatorFactory {
 
         public Builder s3AsyncClient(S3AsyncClient s3AsyncClient) {
             this.s3AsyncClient = s3AsyncClient;
+            return this;
+        }
+
+        public Builder instanceProperties(InstanceProperties instanceProperties) {
+            this.instanceProperties = instanceProperties;
+            return this;
+        }
+
+        public Builder tablePropertiesProvider(TablePropertiesProvider tablePropertiesProvider) {
+            this.tablePropertiesProvider = tablePropertiesProvider;
             return this;
         }
 
