@@ -172,7 +172,7 @@ public class Scaler {
         int instancesAvailable = Math.min(instancesDesired, remainingHeadroom);
         int newClusterSize = asg.getDesiredCapacity() + instancesAvailable;
         LOGGER.info("Current scaling group size is {}, want to launch {} instances, spare capacity is {}",
-                asg.getDesiredCapacity(), instancesDesired, instancesAvailable);
+                asg.getDesiredCapacity(), instancesDesired, remainingHeadroom);
         LOGGER.info("Setting auto scaling group {} desired size to {}", this.asGroupName, newClusterSize);
         // Set the new desired size on the cluster
         setClusterDesiredSize(newClusterSize);
@@ -275,7 +275,7 @@ public class Scaler {
 
                 // Should we keep this task's EC2
                 boolean shouldKeepEC2 = false;
-                LOGGER.debug("Task {} running on {}", t.getTaskArn(), instanceArn);
+                LOGGER.debug("Task {} running on {}, keep its EC2", t.getTaskArn(), instanceArn);
                 // Keep running tasks
                 if (t.getLastStatus().equals("RUNNING")) {
                     shouldKeepEC2 = true;
@@ -326,16 +326,16 @@ public class Scaler {
         // than the grace period, it should be terminated
         for (Map.Entry<String, InstanceDetails> machine : details.entrySet()) {
             if (safeARNs.contains(machine.getValue().instanceArn)) {
-                LOGGER.debug("Instance ARN {} ID {} is in safe list, so keep it.",
+                LOGGER.info("Instance ARN {} ID {} is in safe list, so keep it.",
                         machine.getValue().instanceArn, machine.getKey());
             } else {
                 Duration uptime = Duration.between(machine.getValue().registered, now);
                 if (uptime.compareTo(gracePeriod) >= 0) {
-                    LOGGER.debug("Instance ARN {} ID {} idle longer than grace period, so terminate it",
+                    LOGGER.info("Instance ARN {} ID {} idle longer than grace period, so terminate it",
                             machine.getValue().instanceArn, machine.getKey());
                     terminationIDs.add(machine.getKey());
                 } else {
-                    LOGGER.debug("Instance ARN {} ID {} still in grace period ({} seconds) so keep it",
+                    LOGGER.info("Instance ARN {} ID {} still in grace period ({} seconds) so keep it",
                             machine.getValue().instanceArn, machine.getKey(), uptime.getSeconds());
                 }
             }
@@ -380,7 +380,7 @@ public class Scaler {
      */
     public void terminateInstances(List<String> terminationIDs) {
         for (String id : terminationIDs) {
-            LOGGER.debug("Attempting to terminate EC2 ID {}", id);
+            LOGGER.info("Attempting to terminate EC2 ID {}", id);
             try {
                 TerminateInstanceInAutoScalingGroupRequest request = new TerminateInstanceInAutoScalingGroupRequest()
                         .withInstanceId(id)
