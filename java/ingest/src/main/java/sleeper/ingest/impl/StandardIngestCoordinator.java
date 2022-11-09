@@ -23,7 +23,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.ingest.IngestProperties;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriter;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriter;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriter;
@@ -313,20 +312,6 @@ public class StandardIngestCoordinator {
                     .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
                     .iteratorConfig(tableProperties.get(ITERATOR_CONFIG))
                     .ingestPartitionRefreshFrequencyInSeconds(instanceProperties.getInt(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS));
-        }
-
-        public Builder fromProperties(IngestProperties ingestProperties) {
-            return this.objectFactory(ingestProperties.getObjectFactory())
-                    .localWorkingDirectory(ingestProperties.getLocalDir())
-                    .parquetRowGroupSize(ingestProperties.getRowGroupSize())
-                    .parquetPageSize(ingestProperties.getPageSize())
-                    .stateStore(ingestProperties.getStateStore())
-                    .schema(ingestProperties.getSchema())
-                    .parquetCompressionCodec(ingestProperties.getCompressionCodec())
-                    .iteratorClassName(ingestProperties.getIteratorClassName())
-                    .iteratorConfig(ingestProperties.getIteratorConfig())
-                    .ingestPartitionRefreshFrequencyInSeconds(ingestProperties.getIngestPartitionRefreshFrequencyInSecond())
-                    .hadoopConfiguration(ingestProperties.getHadoopConfiguration());
         }
 
         public Builder objectFactory(ObjectFactory objectFactory) {

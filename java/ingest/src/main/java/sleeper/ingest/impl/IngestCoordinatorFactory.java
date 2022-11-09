@@ -22,7 +22,6 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
-import sleeper.ingest.IngestProperties;
 import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.statestore.StateStoreProvider;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -35,16 +34,10 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
-import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
-import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 
 public class IngestCoordinatorFactory {
 
@@ -120,25 +113,6 @@ public class IngestCoordinatorFactory {
 
     public IngestRecordsFromIterator createIngestRecordsFromIterator(InstanceProperties instanceProperties, TableProperties tableProperties, Iterator<Record> recordIterator) {
         return new IngestRecordsFromIterator(createIngestCoordinator(instanceProperties, tableProperties), recordIterator);
-    }
-
-    public IngestProperties createIngestProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        return IngestProperties.builder()
-                .objectFactory(objectFactory)
-                .localDir(localDir)
-                .rowGroupSize(tableProperties.getInt(ROW_GROUP_SIZE))
-                .pageSize(tableProperties.getInt(PAGE_SIZE))
-                .stateStore(stateStoreProvider.getStateStore(tableProperties))
-                .schema(tableProperties.getSchema())
-                .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
-                .iteratorConfig(tableProperties.get(ITERATOR_CONFIG))
-                .compressionCodec(tableProperties.get(COMPRESSION_CODEC))
-                .filePathPrefix(instanceProperties.get(FILE_SYSTEM))
-                .bucketName(tableProperties.get(DATA_BUCKET))
-                .hadoopConfiguration(hadoopConfiguration)
-                .maxInMemoryBatchSize(instanceProperties.getInt(MAX_IN_MEMORY_BATCH_SIZE))
-                .maxRecordsToWriteLocally(instanceProperties.getLong(MAX_RECORDS_TO_WRITE_LOCALLY))
-                .ingestPartitionRefreshFrequencyInSecond(instanceProperties.getInt(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS)).build();
     }
 
     public static final class Builder {
