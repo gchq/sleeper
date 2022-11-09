@@ -143,7 +143,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     DEFAULT_BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS("sleeper.default.bulk.import.emr.executor.max.instances", "10"),
 
     // Bulk import using a persistent EMR cluster
-    BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL("sleeper.bulk.import.persistent.emr.release.label", "emr-6.4.0"),
+    BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL("sleeper.bulk.import.persistent.emr.release.label", DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL.defaultValue),
     BULK_IMPORT_PERSISTENT_EMR_MASTER_INSTANCE_TYPE("sleeper.bulk.import.persistent.emr.master.instance.type", DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE.defaultValue),
     BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPE("sleeper.bulk.import.persistent.emr.core.instance.type", DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE.defaultValue),
     BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING("sleeper.bulk.import.persistent.emr.use.managed.scaling", "true"),
