@@ -89,7 +89,7 @@ public class IngestCoordinatorFactory {
                         .workingArrowBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES))
                         .minBatchArrowBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
                         .maxBatchArrowBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
-                        .maxNoOfBytesToWriteLocally(instanceProperties.getInt(MAX_IN_MEMORY_BATCH_SIZE));
+                        .maxNoOfBytesToWriteLocally(instanceProperties.getInt(MAX_RECORDS_TO_WRITE_LOCALLY));
             } else {
                 throw new UnsupportedOperationException(String.format("Record batch type %s not supported", recordBatchType));
             }
