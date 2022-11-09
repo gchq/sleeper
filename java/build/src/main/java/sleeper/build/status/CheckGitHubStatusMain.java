@@ -16,8 +16,10 @@
 package sleeper.build.status;
 
 import sleeper.build.chunks.ProjectConfiguration;
+import sleeper.build.maven.MavenModuleStructure;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 
 public class CheckGitHubStatusMain {
 
@@ -25,14 +27,14 @@ public class CheckGitHubStatusMain {
     }
 
     public static void main(String[] args) throws IOException {
-        ProjectConfiguration configuration;
-        if (args.length == 2) {
-            configuration = ProjectConfiguration.fromGitHubAndChunks(args[1], args[0]);
-        } else {
-            System.out.println("Usage: <chunks.yaml path> <github.properties path>");
+        if (args.length != 3) {
+            System.out.println("Usage: <github.properties path> <chunks.yaml path> <Maven project base path>");
             System.exit(1);
             return;
         }
+        ProjectConfiguration configuration = ProjectConfiguration.fromGitHubAndChunks(args[0], args[1]);
+        MavenModuleStructure mavenProject = MavenModuleStructure.fromProjectBase(Paths.get(args[2]));
+        configuration.getChunks().validateAllConfigured(mavenProject);
         ChunksStatus status = configuration.checkStatus();
         status.report(System.out);
         if (status.isFailCheck()) {
