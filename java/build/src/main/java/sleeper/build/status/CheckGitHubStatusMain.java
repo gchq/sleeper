@@ -15,10 +15,13 @@
  */
 package sleeper.build.status;
 
+import sleeper.build.chunks.NotAllMavenModulesConfiguredException;
 import sleeper.build.chunks.ProjectConfiguration;
 import sleeper.build.maven.MavenModuleStructure;
+import sleeper.build.util.PathUtils;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class CheckGitHubStatusMain {
@@ -32,9 +35,20 @@ public class CheckGitHubStatusMain {
             System.exit(1);
             return;
         }
-        ProjectConfiguration configuration = ProjectConfiguration.fromGitHubAndChunks(args[0], args[1]);
-        MavenModuleStructure mavenProject = MavenModuleStructure.fromProjectBase(Paths.get(args[2]));
-        configuration.getChunks().validateAllConfigured(mavenProject);
+        Path gitHubPropertiesPath = Paths.get(args[0]);
+        Path chunksPath = Paths.get(args[1]);
+        Path mavenPath = Paths.get(args[2]);
+        ProjectConfiguration configuration = ProjectConfiguration.fromGitHubAndChunks(gitHubPropertiesPath, chunksPath);
+        MavenModuleStructure mavenProject = MavenModuleStructure.fromProjectBase(mavenPath);
+        try {
+            configuration.getChunks().validateAllConfigured(mavenProject);
+        } catch (NotAllMavenModulesConfiguredException e) {
+            System.out.println(e.getMessage());
+            System.out.println("Please ensure chunks are configured correctly at " +
+                    PathUtils.commonPath(chunksPath, mavenPath).relativize(chunksPath));
+            System.exit(1);
+            return;
+        }
         ChunksStatus status = configuration.checkStatus();
         status.report(System.out);
         if (status.isFailCheck()) {

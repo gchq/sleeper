@@ -23,7 +23,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -37,8 +37,8 @@ public class ProjectChunksYaml {
         this.chunks = chunks;
     }
 
-    public static ProjectChunks readPath(String path) throws IOException {
-        try (Reader reader = Files.newBufferedReader(Paths.get(path))) {
+    public static ProjectChunks readPath(Path path) throws IOException {
+        try (Reader reader = Files.newBufferedReader(path)) {
             return read(reader);
         }
     }
