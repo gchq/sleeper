@@ -19,7 +19,6 @@ import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.RandomStringGenerator;
-import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -30,7 +29,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
@@ -43,7 +41,6 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.ingest.IngestProperties;
 import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.PartitionedTableCreator;
 import sleeper.ingest.testutils.QuinFunction;
@@ -245,25 +242,6 @@ public class IngestCoordinatorCommonIT {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static IngestProperties.Builder defaultPropertiesBuilder(TemporaryFolder temporaryFolder,
-                                                                     StateStore stateStore,
-                                                                     Schema sleeperSchema,
-                                                                     String sleeperIteratorClassName,
-                                                                     String ingestLocalWorkingDirectory) throws IOException, ObjectFactoryException {
-        String objectFactoryLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
-        return IngestProperties.builder()
-                .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
-                .localDir(ingestLocalWorkingDirectory)
-                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
-                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
-                .compressionCodec("zstd")
-                .stateStore(stateStore)
-                .schema(sleeperSchema)
-                .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
-                .iteratorClassName(sleeperIteratorClassName)
-                .ingestPartitionRefreshFrequencyInSecond(Integer.MAX_VALUE);
     }
 
     @Before
