@@ -26,6 +26,7 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
@@ -52,6 +53,7 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.TEST_TABLE_NAME;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createInstanceProperties;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createTableProperties;
 
@@ -138,9 +140,11 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrayListIT {
                 .localDir(ingestLocalWorkingDirectory)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
+                .instanceProperties(instanceProperties)
+                .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
                 .build();
         IngestRecordsFromIterator recordsFromIterator = factory.createIngestRecordsFromIterator(
-                instanceProperties, tableProperties, recordListAndSchema.recordList.iterator());
+                TEST_TABLE_NAME, recordListAndSchema.recordList.iterator());
         recordsFromIterator.write();
 
         ResultVerifier.verify(
