@@ -21,6 +21,7 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.Record;
 import sleeper.ingest.IngestProperties;
 import sleeper.ingest.IngestRecordsFromIterator;
@@ -29,6 +30,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.Objects;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS;
@@ -54,18 +56,26 @@ public class IngestCoordinatorFactory {
     private final Configuration hadoopConfiguration;
     private final BufferAllocator bufferAllocator;
     private final S3AsyncClient s3AsyncClient;
+    private final InstanceProperties instanceProperties;
+    private final TablePropertiesProvider tablePropertiesProvider;
 
     private IngestCoordinatorFactory(Builder builder) {
-        this.objectFactory = builder.objectFactory;
-        this.localDir = builder.localDir;
-        this.stateStoreProvider = builder.stateStoreProvider;
-        this.hadoopConfiguration = builder.hadoopConfiguration;
+        this.objectFactory = Objects.requireNonNull(builder.objectFactory);
+        this.localDir = Objects.requireNonNull(builder.localDir);
+        this.stateStoreProvider = Objects.requireNonNull(builder.stateStoreProvider);
+        this.hadoopConfiguration = Objects.requireNonNull(builder.hadoopConfiguration);
         this.bufferAllocator = builder.bufferAllocator;
         this.s3AsyncClient = builder.s3AsyncClient;
+        this.instanceProperties = Objects.requireNonNull(builder.instanceProperties);
+        this.tablePropertiesProvider = Objects.requireNonNull(builder.tablePropertiesProvider);
     }
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public IngestCoordinator<Record> createIngestCoordinator(String tableName) {
+        return createIngestCoordinator(instanceProperties, tablePropertiesProvider.getTableProperties(tableName));
     }
 
     public IngestCoordinator<Record> createIngestCoordinator(InstanceProperties instanceProperties, TableProperties tableProperties) {
@@ -113,6 +123,10 @@ public class IngestCoordinatorFactory {
         }
     }
 
+    public IngestRecordsFromIterator createIngestRecordsFromIterator(String tableName, Iterator<Record> recordIterator) {
+        return createIngestRecordsFromIterator(instanceProperties, tablePropertiesProvider.getTableProperties(tableName), recordIterator);
+    }
+
     public IngestRecordsFromIterator createIngestRecordsFromIterator(InstanceProperties instanceProperties, TableProperties tableProperties, Iterator<Record> recordIterator) {
         return new IngestRecordsFromIterator(createIngestCoordinator(instanceProperties, tableProperties), recordIterator);
     }
@@ -143,6 +157,8 @@ public class IngestCoordinatorFactory {
         private Configuration hadoopConfiguration;
         private BufferAllocator bufferAllocator;
         private S3AsyncClient s3AsyncClient;
+        private InstanceProperties instanceProperties;
+        private TablePropertiesProvider tablePropertiesProvider;
 
         private Builder() {
         }
@@ -174,6 +190,16 @@ public class IngestCoordinatorFactory {
 
         public Builder s3AsyncClient(S3AsyncClient s3AsyncClient) {
             this.s3AsyncClient = s3AsyncClient;
+            return this;
+        }
+
+        public Builder instanceProperties(InstanceProperties instanceProperties) {
+            this.instanceProperties = instanceProperties;
+            return this;
+        }
+
+        public Builder tablePropertiesProvider(TablePropertiesProvider tablePropertiesProvider) {
+            this.tablePropertiesProvider = tablePropertiesProvider;
             return this;
         }
 
