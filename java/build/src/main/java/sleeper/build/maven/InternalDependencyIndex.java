@@ -15,10 +15,57 @@
  */
 package sleeper.build.maven;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class InternalDependencyIndex {
-    public Stream<String> dependenciesForModules(String... moduleRefs) {
-        return Stream.of(moduleRefs);
+
+    private final Map<DependencyReference, MavenProjectListPath> modulesByDependencyRef;
+    private final Map<String, MavenProjectListPath> modulesByPath;
+
+    InternalDependencyIndex(List<MavenProjectListPath> paths) {
+        modulesByDependencyRef = paths.stream()
+                .collect(Collectors.toMap(path -> path.getStructure().asDependency(), path -> path));
+        modulesByPath = paths.stream()
+                .collect(Collectors.toMap(MavenProjectListPath::getPath, path -> path));
+    }
+
+    public Stream<String> dependenciesForModules(String... paths) {
+        return Stream.of(paths)
+                .flatMap(this::dependenciesOfPath)
+                .distinct();
+    }
+
+    private Stream<String> dependenciesOfPath(String path) {
+        MavenProjectListPath module = moduleByPath(path)
+                .orElseThrow(() -> new IllegalArgumentException("Module not found: " + path));
+        return moduleAndDependencyPaths(module);
+    }
+
+    private Optional<MavenProjectListPath> moduleByPath(String path) {
+        return Optional.ofNullable(modulesByPath.get(path));
+    }
+
+    private Optional<MavenProjectListPath> moduleByDependencyRef(DependencyReference reference) {
+        return Optional.ofNullable(modulesByDependencyRef.get(reference));
+    }
+
+    private Stream<MavenProjectListPath> moduleByDependencyRefAsStream(DependencyReference reference) {
+        return Stream.of(moduleByDependencyRef(reference))
+                .filter(Optional::isPresent)
+                .map(Optional::get);
+    }
+
+    private Stream<String> moduleAndDependencyPaths(MavenProjectListPath path) {
+        return Stream.concat(Stream.of(path.getPath()), dependencyPaths(path));
+    }
+
+    private Stream<String> dependencyPaths(MavenProjectListPath path) {
+        return path.getStructure().dependencies()
+                .flatMap(this::moduleByDependencyRefAsStream)
+                .map(MavenProjectListPath::getPath);
     }
 }

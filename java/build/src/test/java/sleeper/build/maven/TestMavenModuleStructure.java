@@ -21,49 +21,51 @@ public class TestMavenModuleStructure {
     }
 
     public static MavenModuleStructure example() {
-        return rootArtifactIdAndModules("parent",
-                leafArtifactIdAndRef("core"),
-                leafArtifactIdAndRef("configuration"),
-                leafArtifactIdAndRef("ingest"),
-                middleArtifactIdRefAndModules("bulk-import",
-                        leafArtifactIdAndRef("bulk-import-common"),
-                        leafArtifactIdAndRef("bulk-import-runner"),
-                        leafArtifactIdAndRef("bulk-import-starter")),
-                untestedLeafArtifactIdAndRef("distribution"));
+        return artifactIdAndRefBuilder("parent", null).packaging("pom").modulesArray(
+                artifactIdAndRefBuilder("core").hasSrcTestFolder(true).build(),
+                artifactIdAndRefBuilder("configuration").hasSrcTestFolder(true).dependenciesArray(
+                        dependency("org.apache.datasketches:datasketches-java"),
+                        dependency("sleeper:core"),
+                        dependency("junit:junit"),
+                        dependency("sleeper:core")
+                ).build(),
+                artifactIdAndRefBuilder("ingest").hasSrcTestFolder(true).dependenciesArray(
+                        dependency("org.apache.commons:commons-lang3"),
+                        dependency("sleeper:configuration"),
+                        dependency("org.testcontainers:testcontainers"),
+                        dependency("sleeper:core"),
+                        dependency("sleeper:configuration")
+                ).build(),
+                artifactIdAndRefBuilder("bulk-import").packaging("pom").modulesArray(
+                        artifactIdAndRefBuilder("bulk-import-common").hasSrcTestFolder(true).dependenciesArray(
+                                dependency("sleeper:configuration"),
+                                dependency("net.javacrumbs.json-unit:json-unit-assertj")
+                        ).build(),
+                        artifactIdAndRefBuilder("bulk-import-runner").hasSrcTestFolder(true).dependenciesArray(
+                                dependency("sleeper:bulk-import-common"),
+                                dependency("sleeper:ingest"),
+                                dependency("sleeper:configuration"),
+                                dependency("sleeper:core")
+                        ).build(),
+                        artifactIdAndRefBuilder("bulk-import-starter").hasSrcTestFolder(true).dependenciesArray(
+                                dependency("sleeper:bulk-import-common"),
+                                dependency("sleeper:core")
+                        ).build()
+                ).build(),
+                artifactIdAndRefBuilder("distribution").build()
+        ).build();
     }
 
-    public static MavenModuleStructure rootArtifactIdAndModules(
-            String artifactId, MavenModuleStructure... modules) {
-        return MavenModuleStructure.builder().artifactId(artifactId).packaging("pom")
-                .modulesArray(modules)
-                .build();
+    public static MavenModuleStructure.Builder artifactIdAndRefBuilder(String artifactId) {
+        return artifactIdAndRefBuilder(artifactId, artifactId);
     }
 
-    public static MavenModuleStructure middleArtifactIdRefAndModules(
-            String artifactId, MavenModuleStructure... modules) {
-        return middleArtifactIdRefAndModules(artifactId, artifactId, modules);
+    public static MavenModuleStructure.Builder artifactIdAndRefBuilder(String artifactId, String moduleRef) {
+        return MavenModuleStructure.builder().artifactId(artifactId).moduleRef(moduleRef).groupId("sleeper");
     }
 
-    public static MavenModuleStructure middleArtifactIdRefAndModules(
-            String artifactId, String moduleRef, MavenModuleStructure... modules) {
-        return MavenModuleStructure.builder().artifactId(artifactId).moduleRef(moduleRef).packaging("pom")
-                .modulesArray(modules)
-                .build();
-    }
-
-    public static MavenModuleStructure leafArtifactIdAndRef(String artifactId) {
-        return leafArtifactIdAndRef(artifactId, artifactId);
-    }
-
-    public static MavenModuleStructure untestedLeafArtifactIdAndRef(String artifactId) {
-        return leafArtifactIdAndRefBuilder(artifactId, artifactId).hasSrcTestFolder(false).build();
-    }
-
-    public static MavenModuleStructure leafArtifactIdAndRef(String artifactId, String moduleRef) {
-        return leafArtifactIdAndRefBuilder(artifactId, moduleRef).hasSrcTestFolder(true).build();
-    }
-
-    public static MavenModuleStructure.Builder leafArtifactIdAndRefBuilder(String artifactId, String moduleRef) {
-        return MavenModuleStructure.builder().artifactId(artifactId).moduleRef(moduleRef);
+    public static DependencyReference dependency(String ref) {
+        String[] parts = ref.split(":");
+        return DependencyReference.groupAndArtifact(parts[0], parts[1]);
     }
 }
