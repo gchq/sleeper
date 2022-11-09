@@ -22,7 +22,7 @@ public class NotAllMavenModulesConfiguredException extends RuntimeException {
     private final List<String> unconfiguredModuleRefs;
 
     public NotAllMavenModulesConfiguredException(List<String> unconfiguredModuleRefs) {
-        super("Compiled Maven modules not configured in any chunk: " + unconfiguredModuleRefs);
+        super("Maven modules not configured in any chunk: " + unconfiguredModuleRefs);
         this.unconfiguredModuleRefs = unconfiguredModuleRefs;
     }
 
