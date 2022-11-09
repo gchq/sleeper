@@ -64,7 +64,7 @@ import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZ
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class IngestRecordsTestDataHelper {
-    public static String TEST_TABLE_NAME = "test-table";
+    public static final String TEST_TABLE_NAME = "test-table";
 
     private IngestRecordsTestDataHelper() {
     }
