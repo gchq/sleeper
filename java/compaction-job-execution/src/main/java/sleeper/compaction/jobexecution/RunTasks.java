@@ -135,100 +135,101 @@ public class RunTasks {
         int queueSize = CommonJobUtils.getNumberOfMessagesInQueue(sqsJobQueueUrl, sqsClient)
                 .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
         LOGGER.info("Queue size is {}", queueSize);
-        if (0 == queueSize) {
-            LOGGER.info("Finishing as queue size is 0");
-            return;
-        }
-
-        int numRunningTasks = CommonJobUtils.getNumRunningTasks(clusterName, ecsClient);
-        LOGGER.info("Number of running tasks is {}", numRunningTasks);
-
-        int maxNumTasksToCreate = maximumRunningTasks - numRunningTasks;
-        LOGGER.info("Maximum number of tasks to create is {}", maxNumTasksToCreate);
 
         // Obtain details of instances in this cluster
         Map<String, InstanceDetails> details = InstanceDetails.fetchInstanceDetails(this.clusterName, ecsClient);
-        LOGGER.debug("Instance details {}", details);
-
-        // Do we need to scale out?
-        int maxNumTasksThatWillBeCreated = Math.min(maxNumTasksToCreate, queueSize);
-        ScaleOutResult scaleResult = scaler.possiblyScaleOut(maxNumTasksThatWillBeCreated, details);
-        if (scaleResult == ScaleOutResult.SCALING_IN_PROGRESS || scaleResult == ScaleOutResult.SCALING_INITIATED) {
-            LOGGER.info("Scaling out operation in progress or just launched, don't launch tasks");
-            return;
-        }
-
-        // Create 1 task for each item on the queue
         Set<String> recentContainerInstanceARNs = new HashSet<>();
-        int numTasksCreated = 0;
-        for (int i = 0; i < queueSize && i < maxNumTasksToCreate; i++) {
-            List<String> args = new ArrayList<>();
-            args.add(s3Bucket);
-            args.add(type);
 
-            ContainerOverride containerOverride = new ContainerOverride()
-                    .withName(containerName)
-                    .withCommand(args);
+        if (0 == queueSize) {
+            LOGGER.info("No tasks to launch as queue size is 0");
+        } else {
 
-            TaskOverride override = new TaskOverride()
-                    .withContainerOverrides(containerOverride);
+            int numRunningTasks = CommonJobUtils.getNumRunningTasks(clusterName, ecsClient);
+            LOGGER.info("Number of running tasks is {}", numRunningTasks);
 
-            AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
-                    .withSubnets(subnet);
+            int maxNumTasksToCreate = maximumRunningTasks - numRunningTasks;
+            LOGGER.info("Maximum number of tasks to create is {}", maxNumTasksToCreate);
 
-            NetworkConfiguration networkConfiguration = new NetworkConfiguration()
-                    .withAwsvpcConfiguration(vpcConfiguration);
-
-            RunTaskRequest runTaskRequest = new RunTaskRequest()
-                    .withCluster(clusterName)
-                    .withOverrides(override)
-                    .withPropagateTags(PropagateTags.TASK_DEFINITION);
-
-            String defUsed;
-            if (launchType.equals("FARGATE")) {
-                defUsed = fargateTaskDefinition;
-                runTaskRequest = runTaskRequest
-                        .withTaskDefinition(defUsed)
-                        .withNetworkConfiguration(networkConfiguration)
-                        .withPlatformVersion(fargateVersion)
-                        .withLaunchType(LaunchType.FARGATE);
-            } else {
-                defUsed = ec2TaskDefinition;
-                runTaskRequest = runTaskRequest
-                        .withTaskDefinition(defUsed)
-                        .withLaunchType(LaunchType.EC2);
+            // Do we need to scale out?
+            int maxNumTasksThatWillBeCreated = Math.min(maxNumTasksToCreate, queueSize);
+            ScaleOutResult scaleResult = scaler.possiblyScaleOut(maxNumTasksThatWillBeCreated, details);
+            if (scaleResult == ScaleOutResult.SCALING_IN_PROGRESS || scaleResult == ScaleOutResult.SCALING_INITIATED) {
+                LOGGER.info("Scaling out operation in progress or just launched, don't launch tasks");
+                return;
             }
 
-            RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
-            LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
-                    clusterName, launchType, containerName, defUsed);
-            runTaskResult.getTasks().stream()
-                    .filter(task -> task.getContainerInstanceArn() != null)
-                    .forEach(task -> {
-                        recentContainerInstanceARNs.add(task.getContainerInstanceArn());
-                    });
+            // Create 1 task for each item on the queue
+            int numTasksCreated = 0;
+            for (int i = 0; i < queueSize && i < maxNumTasksToCreate; i++) {
+                List<String> args = new ArrayList<>();
+                args.add(s3Bucket);
+                args.add(type);
 
-            if (runTaskResult.getFailures().size() > 0) {
-                LOGGER.warn("Run task request has {} failures", runTaskResult.getFailures().size());
-                for (Failure f : runTaskResult.getFailures()) {
-                    LOGGER.error("Failure: ARN {} Reason {} Detail {}", f.getArn(), f.getReason(), f.getDetail());
+                ContainerOverride containerOverride = new ContainerOverride()
+                        .withName(containerName)
+                        .withCommand(args);
+
+                TaskOverride override = new TaskOverride()
+                        .withContainerOverrides(containerOverride);
+
+                AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
+                        .withSubnets(subnet);
+
+                NetworkConfiguration networkConfiguration = new NetworkConfiguration()
+                        .withAwsvpcConfiguration(vpcConfiguration);
+
+                RunTaskRequest runTaskRequest = new RunTaskRequest()
+                        .withCluster(clusterName)
+                        .withOverrides(override)
+                        .withPropagateTags(PropagateTags.TASK_DEFINITION);
+
+                String defUsed;
+                if (launchType.equals("FARGATE")) {
+                    defUsed = fargateTaskDefinition;
+                    runTaskRequest = runTaskRequest
+                            .withTaskDefinition(defUsed)
+                            .withNetworkConfiguration(networkConfiguration)
+                            .withPlatformVersion(fargateVersion)
+                            .withLaunchType(LaunchType.FARGATE);
+                } else {
+                    defUsed = ec2TaskDefinition;
+                    runTaskRequest = runTaskRequest
+                            .withTaskDefinition(defUsed)
+                            .withLaunchType(LaunchType.EC2);
                 }
-                break;
-            }
-            numTasksCreated++;
 
-            // This lambda is triggered every minute so abort once get close to 1 minute
-            if (System.currentTimeMillis() - startTime > 50 * 1000L) {
-                LOGGER.info("RunTasks has been running for more than 50 seconds, aborting");
-                break;
-            }
+                RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
+                LOGGER.info(
+                        "Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
+                        clusterName, launchType, containerName, defUsed);
+                runTaskResult.getTasks().stream()
+                        .filter(task -> task.getContainerInstanceArn() != null)
+                        .forEach(task -> {
+                            recentContainerInstanceARNs.add(task.getContainerInstanceArn());
+                        });
 
-            if (0 == numTasksCreated % 10) {
-                // Sleep for 10 seconds - API allows 1 job per second with a burst of 10 jobs in
-                // a second
-                // so run 10 every 11 seconds for safety
-                LOGGER.info("Sleeping for 11 seconds as 10 tasks have been created");
-                Thread.sleep(11000L);
+                if (runTaskResult.getFailures().size() > 0) {
+                    LOGGER.warn("Run task request has {} failures", runTaskResult.getFailures().size());
+                    for (Failure f : runTaskResult.getFailures()) {
+                        LOGGER.error("Failure: ARN {} Reason {} Detail {}", f.getArn(), f.getReason(), f.getDetail());
+                    }
+                    break;
+                }
+                numTasksCreated++;
+
+                // This lambda is triggered every minute so abort once get close to 1 minute
+                if (System.currentTimeMillis() - startTime > 50 * 1000L) {
+                    LOGGER.info("RunTasks has been running for more than 50 seconds, aborting");
+                    break;
+                }
+
+                if (0 == numTasksCreated % 10) {
+                    // Sleep for 10 seconds - API allows 1 job per second with a burst of 10 jobs in
+                    // a second
+                    // so run 10 every 11 seconds for safety
+                    LOGGER.info("Sleeping for 11 seconds as 10 tasks have been created");
+                    Thread.sleep(11000L);
+                }
             }
         }
 
