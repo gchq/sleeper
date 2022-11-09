@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
@@ -126,8 +127,10 @@ public class IngestJobRunner {
                     .s3AsyncClient(s3AsyncClient)
                     .hadoopConfiguration(hadoopConfiguration)
                     .bufferAllocator(bufferAllocator)
+                    .instanceProperties(instanceProperties)
+                    .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
                     .build();
-            IngestResult result = factory.createIngestRecordsFromIterator(instanceProperties, tableProperties, recordIterator).write();
+            IngestResult result = factory.createIngestRecordsFromIterator(job.getTableName(), recordIterator).write();
 
             LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getNumberOfRecords(), paths);
             return result;

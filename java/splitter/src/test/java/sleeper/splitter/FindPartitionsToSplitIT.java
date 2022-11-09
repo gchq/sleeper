@@ -30,6 +30,7 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
@@ -63,6 +64,7 @@ import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_C
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class FindPartitionsToSplitIT {
     @ClassRule
@@ -143,6 +145,7 @@ public class FindPartitionsToSplitIT {
                 instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, 1_000_000);
                 instanceProperties.set(FILE_SYSTEM, "file://");
                 TableProperties tableProperties = new TableProperties(instanceProperties);
+                tableProperties.set(TABLE_NAME, "test-table");
                 tableProperties.set(COMPRESSION_CODEC, "zstd");
                 tableProperties.set(DATA_BUCKET, directory.getAbsolutePath());
                 tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "10");
@@ -152,8 +155,10 @@ public class FindPartitionsToSplitIT {
                         .localDir(stagingArea.getAbsolutePath())
                         .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                         .hadoopConfiguration(new Configuration())
+                        .instanceProperties(instanceProperties)
+                        .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
                         .build();
-                factory.createIngestRecordsFromIterator(instanceProperties, tableProperties, list.iterator()).write();
+                factory.createIngestRecordsFromIterator(tableProperties.get(TABLE_NAME), list.iterator()).write();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

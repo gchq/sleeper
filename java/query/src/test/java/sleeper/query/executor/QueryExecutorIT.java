@@ -32,6 +32,7 @@ import org.testcontainers.containers.GenericContainer;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.CloseableIterator;
@@ -83,6 +84,7 @@ import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class QueryExecutorIT {
     protected static final int DYNAMO_PORT = 8000;
@@ -1343,6 +1345,7 @@ public class QueryExecutorIT {
     protected void ingestData(InstanceProperties instanceProperties, StateStore stateStore, Schema schema, Iterator<Record> recordIterator)
             throws IOException, ObjectFactoryException, IteratorException, StateStoreException {
         TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(TABLE_NAME, "test-table");
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         tableProperties.set(DATA_BUCKET, folder.newFolder().getAbsolutePath());
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "10");
@@ -1358,8 +1361,10 @@ public class QueryExecutorIT {
                 .localDir(folder.newFolder().getAbsolutePath())
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .hadoopConfiguration(new Configuration())
+                .instanceProperties(instanceProperties)
+                .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
                 .build();
-        factory.createIngestRecordsFromIterator(instanceProperties, tableProperties, recordIterator).write();
+        factory.createIngestRecordsFromIterator("test-table", recordIterator).write();
     }
 
     protected List<Record> getRecords() {

@@ -32,6 +32,7 @@ import org.testcontainers.containers.GenericContainer;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
@@ -75,6 +76,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_I
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SplitPartitionIT {
     private static final int DYNAMO_PORT = 8000;
@@ -1130,6 +1132,7 @@ public class SplitPartitionIT {
         instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, 1_000_000);
         instanceProperties.set(FILE_SYSTEM, "");
         TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(TABLE_NAME, "test-table");
         tableProperties.set(COMPRESSION_CODEC, "zstd");
         tableProperties.set(DATA_BUCKET, bucketName);
         tableProperties.setSchema(schema);
@@ -1138,7 +1141,9 @@ public class SplitPartitionIT {
                 .localDir(localDir)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .hadoopConfiguration(new Configuration())
+                .instanceProperties(instanceProperties)
+                .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
                 .build();
-        return factory.createIngestRecordsFromIterator(instanceProperties, tableProperties, recordIterator);
+        return factory.createIngestRecordsFromIterator(tableProperties.get(TABLE_NAME), recordIterator);
     }
 }

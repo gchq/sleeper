@@ -55,6 +55,7 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
@@ -696,8 +697,10 @@ public class SqsQueryProcessorLambdaIT {
                     .localDir(dataDir)
                     .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                     .hadoopConfiguration(new Configuration())
+                    .instanceProperties(instanceProperties)
+                    .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
                     .build();
-            factory.createIngestRecordsFromIterator(instanceProperties, tableProperties, generateTimeSeriesData(minYear, maxYear).iterator()).write();
+            factory.createIngestRecordsFromIterator(tableProperties.get(TABLE_NAME), generateTimeSeriesData(minYear, maxYear).iterator()).write();
         } catch (IOException | StateStoreException | IteratorException |
                  ObjectFactoryException e) {
             throw new RuntimeException("Failed to Ingest data", e);
