@@ -32,8 +32,6 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 
-import java.util.UUID;
-
 /**
  *
  */
