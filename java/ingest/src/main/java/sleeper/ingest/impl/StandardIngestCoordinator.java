@@ -18,6 +18,8 @@ package sleeper.ingest.impl;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
@@ -34,6 +36,13 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import java.io.IOException;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
+import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
+import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 
 public class StandardIngestCoordinator {
     private StandardIngestCoordinator() {
@@ -294,6 +303,16 @@ public class StandardIngestCoordinator {
         private Configuration hadoopConfiguration;
 
         private Builder() {
+        }
+
+        public Builder fromProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
+            return this.parquetRowGroupSize(tableProperties.getInt(ROW_GROUP_SIZE))
+                    .parquetPageSize(tableProperties.getInt(PAGE_SIZE))
+                    .schema(tableProperties.getSchema())
+                    .parquetCompressionCodec(tableProperties.get(COMPRESSION_CODEC))
+                    .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
+                    .iteratorConfig(tableProperties.get(ITERATOR_CONFIG))
+                    .ingestPartitionRefreshFrequencyInSeconds(instanceProperties.getInt(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS));
         }
 
         public Builder fromProperties(IngestProperties ingestProperties) {
