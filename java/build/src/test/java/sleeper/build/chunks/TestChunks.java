@@ -25,7 +25,7 @@ public class TestChunks {
 
     public static ProjectChunks example(String path) {
         try (Reader chunksReader = TestResources.exampleReader(path)) {
-            return ProjectChunks.fromYaml(chunksReader);
+            return ProjectChunksYaml.read(chunksReader);
         } catch (IOException e) {
             throw new IllegalStateException("Could not load example chunks", e);
         }

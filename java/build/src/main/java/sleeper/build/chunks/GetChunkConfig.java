@@ -32,7 +32,7 @@ public class GetChunkConfig {
             System.exit(1);
         }
 
-        ProjectChunk chunk = ProjectChunks.fromYamlPath(args[2]).getById(args[0]);
+        ProjectChunk chunk = ProjectChunksYaml.readPath(args[2]).getById(args[0]);
         System.out.println(get(chunk, args[1]));
     }
 

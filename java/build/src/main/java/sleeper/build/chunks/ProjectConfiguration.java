@@ -88,7 +88,7 @@ public class ProjectConfiguration {
     public static ProjectConfiguration fromGitHubAndChunks(String gitHubPropertiesPath, String chunksYamlPath) throws IOException {
         return fromGitHubAndChunks(
                 loadProperties(gitHubPropertiesPath),
-                ProjectChunks.fromYamlPath(chunksYamlPath));
+                ProjectChunksYaml.readPath(chunksYamlPath));
     }
 
     private static Properties loadProperties(String path) throws IOException {

@@ -15,17 +15,8 @@
  */
 package sleeper.build.chunks;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-
-import java.io.IOException;
-import java.io.Reader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -68,34 +59,4 @@ public class ProjectChunks {
         return chunks.toString();
     }
 
-    public static ProjectChunks fromYaml(Reader reader) throws IOException {
-        return new ProjectChunks(listFromYaml(reader));
-    }
-
-    public static ProjectChunks fromYamlPath(String path) throws IOException {
-        try (Reader reader = Files.newBufferedReader(Paths.get(path))) {
-            return fromYaml(reader);
-        }
-    }
-
-    private static List<ProjectChunk> listFromYaml(Reader reader) throws IOException {
-        ObjectMapper mapper = new YAMLMapper();
-        Map<String, Object> root = (Map<String, Object>) mapper.readValue(reader, Map.class);
-        Map<String, Object> chunksMap = (Map<String, Object>) root.get("chunks");
-        List<ProjectChunk> chunks = new ArrayList<>(chunksMap.size());
-        for (Map.Entry<String, Object> entry : chunksMap.entrySet()) {
-            String id = entry.getKey();
-            Map<String, Object> config = (Map<String, Object>) entry.getValue();
-            chunks.add(fromYaml(config, id));
-        }
-        return chunks;
-    }
-
-    private static ProjectChunk fromYaml(Map<String, Object> config, String id) {
-        return ProjectChunk.chunk(id)
-                .name((String) config.get("name"))
-                .workflow((String) config.get("workflow"))
-                .modules((List<String>) config.get("modules"))
-                .build();
-    }
 }
