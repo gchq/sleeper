@@ -18,16 +18,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>sleeper</groupId>
-    <artifactId>parent</artifactId>
-    <packaging>pom</packaging>
-    <version>TEST</version>
+    <parent>
+        <artifactId>parent</artifactId>
+        <groupId>sleeper</groupId>
+        <version>TEST</version>
+    </parent>
 
-    <modules>
-        <module>core</module>
-        <module>configuration</module>
-        <module>ingest</module>
-        <module>bulk-import</module>
-        <module>distribution</module>
-    </modules>
+    <artifactId>distribution</artifactId>
+
 </project>

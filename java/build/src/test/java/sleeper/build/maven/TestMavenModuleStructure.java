@@ -28,7 +28,8 @@ public class TestMavenModuleStructure {
                 middleArtifactIdRefAndModules("bulk-import",
                         leafArtifactIdAndRef("bulk-import-common"),
                         leafArtifactIdAndRef("bulk-import-runner"),
-                        leafArtifactIdAndRef("bulk-import-starter")));
+                        leafArtifactIdAndRef("bulk-import-starter")),
+                untestedLeafArtifactIdAndRef("distribution"));
     }
 
     public static MavenModuleStructure rootArtifactIdAndModules(
@@ -54,7 +55,15 @@ public class TestMavenModuleStructure {
         return leafArtifactIdAndRef(artifactId, artifactId);
     }
 
+    public static MavenModuleStructure untestedLeafArtifactIdAndRef(String artifactId) {
+        return leafArtifactIdAndRefBuilder(artifactId, artifactId).hasSrcTestFolder(false).build();
+    }
+
     public static MavenModuleStructure leafArtifactIdAndRef(String artifactId, String moduleRef) {
-        return MavenModuleStructure.builder().artifactId(artifactId).moduleRef(moduleRef).build();
+        return leafArtifactIdAndRefBuilder(artifactId, moduleRef).hasSrcTestFolder(true).build();
+    }
+
+    public static MavenModuleStructure.Builder leafArtifactIdAndRefBuilder(String artifactId, String moduleRef) {
+        return MavenModuleStructure.builder().artifactId(artifactId).moduleRef(moduleRef);
     }
 }

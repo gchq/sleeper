@@ -32,9 +32,9 @@ public class MavenModuleStructureTest {
     }
 
     @Test
-    public void shouldProduceListOfCompiledModulesForMavenProjectListArguments() {
+    public void shouldProduceListOfTestedModulesForMavenProjectListArguments() {
         // When / Then
-        assertThat(TestMavenModuleStructure.example().allCompiledModulesForProjectList()).containsExactly(
+        assertThat(TestMavenModuleStructure.example().allTestedModulesForProjectList()).containsExactly(
                 "core", "configuration", "ingest",
                 "bulk-import/bulk-import-common",
                 "bulk-import/bulk-import-runner",

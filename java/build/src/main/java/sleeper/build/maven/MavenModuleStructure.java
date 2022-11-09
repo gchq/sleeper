@@ -38,12 +38,14 @@ public class MavenModuleStructure {
     private final String artifactId;
     private final String packaging;
     private final String moduleRef;
+    private final boolean hasSrcTestFolder;
     private final List<MavenModuleStructure> modules;
 
     private MavenModuleStructure(Builder builder) {
         artifactId = builder.artifactId;
         packaging = builder.packaging;
         moduleRef = builder.moduleRef;
+        hasSrcTestFolder = builder.hasSrcTestFolder;
         modules = Objects.requireNonNull(builder.modules, "modules must not be null");
     }
 
@@ -53,23 +55,22 @@ public class MavenModuleStructure {
 
     public static MavenModuleStructure fromProjectBase(Path path) throws IOException {
         ObjectMapper mapper = new XmlMapper();
-        Pom parent = Pom.from(mapper, path.resolve("pom.xml"));
-        return builder().artifactId(parent.artifactId).packaging(parent.packaging)
-                .modules(readChildModules(mapper, path, parent))
-                .build();
+        return builderFromPath(mapper, path).build();
     }
 
-    public Stream<String> allCompiledModulesForProjectList() {
-        return allCompiledModulesForProjectList(null);
+    public Stream<String> allTestedModulesForProjectList() {
+        return allTestedModulesForProjectList(null);
     }
 
-    private Stream<String> allCompiledModulesForProjectList(String parentPath) {
+    private Stream<String> allTestedModulesForProjectList(String parentPath) {
         String projectListPath = projectListPathFromParent(parentPath);
         if ("pom".equals(packaging)) {
             return modules.stream()
-                    .flatMap(module -> module.allCompiledModulesForProjectList(projectListPath));
-        } else {
+                    .flatMap(module -> module.allTestedModulesForProjectList(projectListPath));
+        } else if (hasSrcTestFolder) {
             return Stream.of(projectListPath);
+        } else {
+            return Stream.empty();
         }
     }
 
@@ -84,14 +85,18 @@ public class MavenModuleStructure {
     private static List<MavenModuleStructure> readChildModules(ObjectMapper mapper, Path path, Pom parent) throws IOException {
         List<MavenModuleStructure> modules = new ArrayList<>(parent.modules.size());
         for (String moduleRef : parent.modules) {
-            Path modulePath = path.resolve(moduleRef);
-            Pom module = Pom.from(mapper, modulePath.resolve("pom.xml"));
-            modules.add(builder()
-                    .artifactId(module.artifactId).packaging(module.packaging).moduleRef(moduleRef)
-                    .modules(readChildModules(mapper, modulePath, module))
-                    .build());
+            modules.add(builderFromPath(mapper, path.resolve(moduleRef))
+                    .moduleRef(moduleRef).build());
         }
         return modules;
+    }
+
+    private static Builder builderFromPath(ObjectMapper mapper, Path path) throws IOException {
+        Pom pom = Pom.from(mapper, path.resolve("pom.xml"));
+        return builder()
+                .artifactId(pom.artifactId).packaging(pom.packaging)
+                .hasSrcTestFolder(Files.isDirectory(path.resolve("src/test")))
+                .modules(readChildModules(mapper, path, pom));
     }
 
     @Override
@@ -103,7 +108,8 @@ public class MavenModuleStructure {
             return false;
         }
         MavenModuleStructure that = (MavenModuleStructure) o;
-        return Objects.equals(artifactId, that.artifactId)
+        return hasSrcTestFolder == that.hasSrcTestFolder
+                && Objects.equals(artifactId, that.artifactId)
                 && Objects.equals(packaging, that.packaging)
                 && Objects.equals(moduleRef, that.moduleRef)
                 && modules.equals(that.modules);
@@ -111,7 +117,7 @@ public class MavenModuleStructure {
 
     @Override
     public int hashCode() {
-        return Objects.hash(artifactId, packaging, moduleRef, modules);
+        return Objects.hash(artifactId, packaging, moduleRef, hasSrcTestFolder, modules);
     }
 
     @Override
@@ -120,6 +126,7 @@ public class MavenModuleStructure {
                 "artifactId='" + artifactId + '\'' +
                 ", packaging='" + packaging + '\'' +
                 ", moduleRef='" + moduleRef + '\'' +
+                ", hasSrcTestFolder=" + hasSrcTestFolder +
                 ", modules=" + modules +
                 '}';
     }
@@ -152,6 +159,7 @@ public class MavenModuleStructure {
         private String artifactId;
         private String packaging;
         private String moduleRef;
+        private boolean hasSrcTestFolder;
         private List<MavenModuleStructure> modules = Collections.emptyList();
 
         private Builder() {
@@ -169,6 +177,11 @@ public class MavenModuleStructure {
 
         public Builder moduleRef(String moduleRef) {
             this.moduleRef = moduleRef;
+            return this;
+        }
+
+        public Builder hasSrcTestFolder(boolean hasSrcTestFolder) {
+            this.hasSrcTestFolder = hasSrcTestFolder;
             return this;
         }
 

@@ -41,7 +41,7 @@ public class ProjectChunks {
         Set<String> configuredModuleRefs = stream()
                 .flatMap(chunk -> chunk.getModules().stream())
                 .collect(Collectors.toSet());
-        List<String> unconfiguredModuleRefs = project.allCompiledModulesForProjectList()
+        List<String> unconfiguredModuleRefs = project.allTestedModulesForProjectList()
                 .filter(moduleRef -> !configuredModuleRefs.contains(moduleRef))
                 .collect(Collectors.toList());
         if (!unconfiguredModuleRefs.isEmpty()) {
