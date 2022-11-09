@@ -16,6 +16,7 @@
 package sleeper.ingest;
 
 import org.junit.Test;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinatorFactory;
 import sleeper.ingest.testutils.AssertQuantiles;
@@ -28,6 +29,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.TEST_TABLE_NAME;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultFactory;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
@@ -40,8 +42,9 @@ public class IngestRecordsFromIteratorIT extends IngestRecordsITBase {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore));
-        IngestRecordsFromIterator ingestRecordsFromIterator = factory.createIngestRecordsFromIterator(instanceProperties, tableProperties, getRecords().iterator());
+        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
+                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
+        IngestRecordsFromIterator ingestRecordsFromIterator = factory.createIngestRecordsFromIterator(TEST_TABLE_NAME, getRecords().iterator());
         long numWritten = ingestRecordsFromIterator.write().getNumberOfRecords();
 
         // Then:

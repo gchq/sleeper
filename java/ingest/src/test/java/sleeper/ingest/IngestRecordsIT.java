@@ -16,6 +16,7 @@
 package sleeper.ingest;
 
 import org.junit.Test;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinatorFactory;
 import sleeper.ingest.testutils.AssertQuantiles;
@@ -28,6 +29,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.TEST_TABLE_NAME;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultFactory;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
@@ -40,8 +42,9 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore));
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(instanceProperties, tableProperties));
+        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
+                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
+        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(TEST_TABLE_NAME));
         ingestRecords.init();
         for (Record record : getRecords()) {
             ingestRecords.write(record);
@@ -82,8 +85,9 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore));
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(instanceProperties, tableProperties));
+        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
+                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
+        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(TEST_TABLE_NAME));
         ingestRecords.init();
         long numWritten = ingestRecords.close().getNumberOfRecords();
 

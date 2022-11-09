@@ -23,6 +23,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Region;
 import sleeper.core.record.CloneRecord;
@@ -65,9 +66,10 @@ import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZ
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class IngestRecordsTestDataHelper {
+    public static String TEST_TABLE_NAME = "test-table";
+
     private IngestRecordsTestDataHelper() {
     }
-
 
     public static IngestProperties.Builder defaultPropertiesBuilder(
             StateStore stateStore, Schema sleeperSchema, String ingestLocalWorkingDirectory, String sketchDirectory) {
@@ -326,7 +328,7 @@ public class IngestRecordsTestDataHelper {
 
     public static TableProperties createTableProperties(InstanceProperties instanceProperties, Schema schema, String bucketName) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, "test-table");
+        tableProperties.set(TABLE_NAME, TEST_TABLE_NAME);
         tableProperties.setSchema(schema);
         tableProperties.set(DATA_BUCKET, bucketName);
         tableProperties.set(COMPRESSION_CODEC, "zstd");
@@ -342,15 +344,17 @@ public class IngestRecordsTestDataHelper {
         return conf;
     }
 
-    public static IngestCoordinatorFactory defaultFactory(String localDir, StateStoreProvider stateStoreProvider, Configuration hadoopConfiguration) {
+    public static IngestCoordinatorFactory defaultFactory(String localDir, StateStoreProvider stateStoreProvider, InstanceProperties instanceProperties,
+                                                          TablePropertiesProvider tablePropertiesProvider, Configuration hadoopConfiguration) {
         return IngestCoordinatorFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(localDir)
                 .stateStoreProvider(stateStoreProvider)
+                .instanceProperties(instanceProperties)
                 .hadoopConfiguration(hadoopConfiguration).build();
     }
 
-    public static IngestCoordinatorFactory defaultFactory(String localDir, StateStoreProvider stateStoreProvider) {
-        return defaultFactory(localDir, stateStoreProvider, defaultHadoopConfiguration());
+    public static IngestCoordinatorFactory defaultFactory(String localDir, StateStoreProvider stateStoreProvider, InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
+        return defaultFactory(localDir, stateStoreProvider, instanceProperties, tablePropertiesProvider, defaultHadoopConfiguration());
     }
 }

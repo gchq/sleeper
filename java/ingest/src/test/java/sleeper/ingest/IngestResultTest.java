@@ -17,6 +17,7 @@
 package sleeper.ingest;
 
 import org.junit.Test;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
@@ -38,7 +39,8 @@ public class IngestResultTest extends IngestRecordsTestBase {
         // Given
         StateStore stateStore = getStateStore(schema);
         TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore));
+        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
+                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
         IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(instanceProperties, tableProperties));
 
         // When
@@ -57,7 +59,8 @@ public class IngestResultTest extends IngestRecordsTestBase {
         // Given
         StateStore stateStore = getStateStore(schema);
         TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore));
+        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
+                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
         IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(instanceProperties, tableProperties));
 
         // When
