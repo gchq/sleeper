@@ -29,7 +29,6 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
 
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -206,7 +205,7 @@ public abstract class StatusReporterTestBase {
     }
 
     public String verboseReportString(Function<PrintStream, CompactionJobStatusReporter> getReporter, List<CompactionJobStatus> statusList,
-                                      QueryType queryType) throws UnsupportedEncodingException {
+                                      QueryType queryType) {
         ToStringPrintStream out = new ToStringPrintStream();
         getReporter.apply(out.getPrintStream())
                 .report(statusList, queryType);
