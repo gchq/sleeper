@@ -37,6 +37,7 @@ import sleeper.job.common.CommonJobUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
@@ -139,9 +140,13 @@ public class RunTasks {
         int maxNumTasksToCreate = maximumRunningTasks - numRunningTasks;
         LOGGER.info("Maximum number of tasks to create is {}", maxNumTasksToCreate);
 
+        // Obtain details of instances in this cluster
+        Map<String, InstanceDetails> details = InstanceDetails.fetchInstanceDetails(this.clusterName, ecsClient);
+        LOGGER.debug("Instance details {}", details);
+
         // Do we need to scale out?
         int maxNumTasksThatWillBeCreated = Math.min(maxNumTasksToCreate, queueSize);
-        ScaleOutResult scaleResult = scaler.possiblyScaleOut(maxNumTasksThatWillBeCreated);
+        ScaleOutResult scaleResult = scaler.possiblyScaleOut(maxNumTasksThatWillBeCreated, details);
         if (scaleResult == ScaleOutResult.SCALING_IN_PROGRESS || scaleResult == ScaleOutResult.SCALING_INITIATED) {
             LOGGER.info("Scaling out operation in progress or just launched, don't launch tasks");
             return;

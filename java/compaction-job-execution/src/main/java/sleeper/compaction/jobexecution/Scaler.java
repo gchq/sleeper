@@ -15,18 +15,31 @@
  */
 package sleeper.compaction.jobexecution;
 
+import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
 import com.amazonaws.services.autoscaling.model.SetDesiredCapacityRequest;
-import com.amazonaws.services.autoscaling.model.SetDesiredCapacityResult;
+import com.amazonaws.services.autoscaling.model.TerminateInstanceInAutoScalingGroupRequest;
 import com.amazonaws.services.ecs.AmazonECS;
+import com.amazonaws.services.ecs.model.DescribeTasksRequest;
+import com.amazonaws.services.ecs.model.DescribeTasksResult;
+import com.amazonaws.services.ecs.model.ListTasksRequest;
+import com.amazonaws.services.ecs.model.ListTasksResult;
+import com.amazonaws.services.ecs.model.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * ECS EC2 auto scaler. This makes decisions on how many instances to start and
@@ -108,12 +121,11 @@ public class Scaler {
      * type in the auto scaling group.
      *
      * @param newContainerCount the number of new containers desired
+     * @param details           map from EC2 instance ID to details about that
+     *                          instance
      * @return result stating what action was taken
      */
-    public ScaleOutResult possiblyScaleOut(int newContainerCount) {
-        Map<String, InstanceDetails> details = InstanceDetails.fetchInstanceDetails(ecsClusterName, ecsClient);
-        LOGGER.debug("Instance details {}",details);
-
+    public ScaleOutResult possiblyScaleOut(int newContainerCount, Map<String, InstanceDetails> details) {
         // If we have any information set the number of containers per instance
         checkContainersPerInstance(details);
 
@@ -153,7 +165,8 @@ public class Scaler {
         int instancesDesired = (int) (Math.ceil(newContainerCount / (double) containersPerInstance));
         int instancesAvailable = Math.min(instancesDesired, remainingHeadroom);
         int newClusterSize = asg.getDesiredCapacity() + instancesAvailable;
-        LOGGER.info("Want to launch {} instances, but only have capacity for {}", instancesDesired, instancesAvailable);
+        LOGGER.info("Current scaling group size is {}, want to launch {} instances, spare capacity is {}",
+                asg.getDesiredCapacity(), instancesDesired, instancesAvailable);
         LOGGER.info("Setting auto scaling group {} desired size to {}", this.asGroupName, newClusterSize);
         // Set the new desired size on the cluster
         setClusterDesiredSize(newClusterSize);
@@ -200,5 +213,181 @@ public class Scaler {
                 .withAutoScalingGroupName(asGroupName)
                 .withDesiredCapacity(newClusterSize);
         asClient.setDesiredCapacity(req);
+    }
+
+    /**
+     * Fetch a list of tasks from the ECS cluster that have the given task family
+     * name and desired status.
+     *
+     * @param taskFamilyName the task family name to filter on
+     * @param desiredStatus  task status should be RUNNING or STOPPED
+     * @return the list of matching tasks
+     */
+    public List<String> getTasks(String taskFamilyName, String desiredStatus) {
+        List<String> taskARNs = new ArrayList<>();
+        ListTasksRequest request = new ListTasksRequest()
+                .withCluster(ecsClusterName)
+                .withFamily(taskFamilyName)
+                .withDesiredStatus(desiredStatus);
+        boolean more = true;
+        while (more) {
+            ListTasksResult result = ecsClient.listTasks(request);
+            // More to come?
+            more = result.getNextToken() != null;
+            request = request.withNextToken(result.getNextToken());
+            taskARNs.addAll(result.getTaskArns());
+        }
+        return taskARNs;
+    }
+
+    /**
+     * Creates a list of EC2 container instance ARNs that are safe from termination.
+     * Looking at the list of tasks, we enumerate the instances and find those
+     * that haven't run a task recently and are not running any now.
+     * 
+     * @param clusterTasks the list of tasks this cluster is running/has run
+     * @param gracePeriod  the length of time that an EC2 instance won't be
+     *                     terminated for if idle
+     * @return set of EC2 instances to terminate
+     */
+    public Set<String> determineSafeInstanceContainerARNs(List<String> clusterTasks,
+            Duration gracePeriod) {
+        // Set of instance container ARNs that are either running tasks
+        // or have recently stopped running a task
+        Set<String> safeInstanceARNs = new HashSet<>();
+        Instant now = Instant.now();
+        // Step through in groups of 100
+        for (int i = 0; i < clusterTasks.size(); i += 100) {
+            List<String> subTaskList = clusterTasks.subList(i, Math.min(i + 100, clusterTasks.size()));
+            DescribeTasksRequest request = new DescribeTasksRequest()
+                    .withCluster(ecsClusterName)
+                    .withTasks(subTaskList);
+            DescribeTasksResult result = ecsClient.describeTasks(request);
+            for (Task t : result.getTasks()) {
+
+                String instanceArn = t.getContainerInstanceArn();
+                if (instanceArn == null || instanceArn.trim().isEmpty()) {
+                    continue; // Fargate tasks have no container instance
+                }
+
+                // Should we keep this task's EC2
+                boolean shouldKeepEC2 = false;
+                LOGGER.debug("Task {} running on {}", t.getTaskArn(), instanceArn);
+                // Keep running tasks
+                if (t.getLastStatus().equals("RUNNING")) {
+                    shouldKeepEC2 = true;
+                } else if (t.getLastStatus().equals("STOPPED")) {
+                    // When did the task stop?
+                    Date stopped = t.getStoppedAt();
+                    if (stopped == null) {
+                        LOGGER.warn("Task has no stop time, but status is stopped!");
+                        continue; // this shouldn't happen
+                    }
+                    Instant stopInstant = stopped.toInstant();
+                    Duration stopDuration = Duration.between(stopInstant, now);
+                    if (stopDuration.compareTo(gracePeriod) >= 0) {
+                        LOGGER.debug("Task stopped longer than {} seconds, so don't keep its EC2",
+                                gracePeriod.getSeconds());
+                    } else {
+                        LOGGER.debug("Task stopped recently ({} seconds), keep its EC2", stopDuration.getSeconds());
+                        shouldKeepEC2 = true;
+                    }
+                }
+
+                // Should we keep this EC2?
+                if (shouldKeepEC2) {
+                    safeInstanceARNs.add(instanceArn);
+                }
+            }
+        }
+        return safeInstanceARNs;
+    }
+
+    /**
+     * Given a list of container instance ARNs that are safe, find EC2 IDs that are
+     * not
+     * on the safe list and haven't been registered with the cluster inside the
+     * grace
+     * period.
+     * 
+     * @param safeARNs    the list of container instance ARNs that are safe from
+     *                    termination
+     * @param details     the cluster instance details
+     * @param gracePeriod the safe period for EC2 instances
+     * @return list of EC2 IDs to terminate
+     */
+    public List<String> findEC2IDsToTerminate(Set<String> safeARNs, Map<String, InstanceDetails> details,
+            Duration gracePeriod) {
+        List<String> terminationIDs = new ArrayList<>();
+        Instant now = Instant.now();
+        // If an instance's ARN is not in the safe list AND it's registration time is
+        // older
+        // than the grace period, it should be terminated
+        for (Map.Entry<String, InstanceDetails> machine : details.entrySet()) {
+            if (safeARNs.contains(machine.getValue().instanceArn)) {
+                LOGGER.debug("Instance ARN {} ID {} is in safe list, so keep it.",
+                        machine.getValue().instanceArn, machine.getKey());
+            } else {
+                Duration uptime = Duration.between(machine.getValue().registered, now);
+                if (uptime.compareTo(gracePeriod) >= 0) {
+                    LOGGER.debug("Instance ARN {} ID {} idle longer than grace period, so terminate it",
+                            machine.getValue().instanceArn, machine.getKey());
+                    terminationIDs.add(machine.getKey());
+                } else {
+                    LOGGER.debug("Instance ARN {} ID {} still in grace period ({} seconds) so keep it",
+                            machine.getValue().instanceArn, machine.getKey(), uptime.getSeconds());
+                }
+            }
+        }
+        return terminationIDs;
+    }
+
+    /**
+     * Attempt to scale the cluster in.
+     * 
+     * @param taskFamilyName        the EC2 task family name
+     * @param gracePeriod           how long EC2 instances can safely be idle
+     * @param details               the cluster details
+     * @param containerArnsLaunched list of instance container ARNs from recently
+     *                              launched tasks
+     */
+    public void possiblyScaleIn(String taskFamilyName, Duration gracePeriod, Map<String, InstanceDetails> details,
+            List<String> containerArnsLaunched) {
+        // List of container instance ARNs that are safe from termination
+        Set<String> safeARNs = new HashSet<>(containerArnsLaunched);
+
+        // Get a list of all running and stopped tasks on the cluster
+        List<String> clusterTasks = getTasks(taskFamilyName, "RUNNING");
+        clusterTasks.addAll(getTasks(taskFamilyName, "STOPPED"));
+
+        // Find the set of EC2 instance container ARNs that are running tasks
+        // or recently stopped running tasks
+        safeARNs.addAll(determineSafeInstanceContainerARNs(clusterTasks, gracePeriod));
+
+        // Take this list of safe ARNs and wash it against the list of all EC2s
+        // to find ones to terminate
+        List<String> terminationIDs = findEC2IDsToTerminate(safeARNs, details, gracePeriod);
+
+        // Terminate the IDs in the given list
+        terminateInstances(terminationIDs);
+    }
+
+    /**
+     * Terminate the EC2 IDs in the given list.
+     * 
+     * @param terminationIDs termination IDs
+     */
+    public void terminateInstances(List<String> terminationIDs) {
+        for (String id : terminationIDs) {
+            LOGGER.debug("Attempting to terminate EC2 ID {}", id);
+            try {
+                TerminateInstanceInAutoScalingGroupRequest request = new TerminateInstanceInAutoScalingGroupRequest()
+                        .withInstanceId(id)
+                        .withShouldDecrementDesiredCapacity(true);
+                asClient.terminateInstanceInAutoScalingGroup(request);
+            } catch (AmazonClientException e) {
+                LOGGER.error("Couldn't terminate EC2 ID " + id, e);
+            }
+        }
     }
 }
