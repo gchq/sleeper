@@ -25,6 +25,5 @@
     </parent>
 
     <artifactId>core</artifactId>
-    <packaging>pom</packaging>
 
 </project>

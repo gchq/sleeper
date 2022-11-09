@@ -25,6 +25,5 @@
     </parent>
 
     <artifactId>bulk-import-runner</artifactId>
-    <packaging>pom</packaging>
 
 </project>

@@ -25,6 +25,5 @@
     </parent>
 
     <artifactId>bulk-import-common</artifactId>
-    <packaging>pom</packaging>
 
 </project>
