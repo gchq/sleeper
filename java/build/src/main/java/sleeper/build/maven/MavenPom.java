@@ -101,14 +101,11 @@ public class MavenPom {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ParentRef {
-        private final String artifactId;
         private final String groupId;
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public ParentRef(
-                @JsonProperty("artifactId") String artifactId,
                 @JsonProperty("groupId") String groupId) {
-            this.artifactId = artifactId;
             this.groupId = groupId;
         }
     }
