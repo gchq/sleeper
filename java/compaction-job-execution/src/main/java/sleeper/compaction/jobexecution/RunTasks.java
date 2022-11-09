@@ -152,11 +152,7 @@ public class RunTasks {
 
             // Do we need to scale out?
             int maxNumTasksThatWillBeCreated = Math.min(maxNumTasksToCreate, queueSize);
-            ScaleOutResult scaleResult = scaler.possiblyScaleOut(maxNumTasksThatWillBeCreated, details);
-            if (scaleResult == ScaleOutResult.SCALING_IN_PROGRESS || scaleResult == ScaleOutResult.SCALING_INITIATED) {
-                LOGGER.info("Scaling out operation in progress or just launched, don't launch tasks");
-                return;
-            }
+            scaler.possiblyScaleOut(maxNumTasksThatWillBeCreated, details);
 
             // Create 1 task for each item on the queue
             int numTasksCreated = 0;
