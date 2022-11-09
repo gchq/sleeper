@@ -75,15 +75,11 @@ public class IngestCoordinatorFactory {
     }
 
     public IngestCoordinator<Record> createIngestCoordinator(String tableName) {
-        return createIngestCoordinator(instanceProperties, tablePropertiesProvider.getTableProperties(tableName));
-    }
-
-    public IngestCoordinator<Record> createIngestCoordinator(InstanceProperties instanceProperties, TableProperties tableProperties) {
         S3AsyncClient internalS3AsyncClient =
                 instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT).equals("async") ?
                         ((s3AsyncClient == null) ? S3AsyncClient.create() : s3AsyncClient) :
                         null;
-        IngestProperties ingestProperties = createIngestProperties(instanceProperties, tableProperties);
+        IngestProperties ingestProperties = createIngestProperties(instanceProperties, tablePropertiesProvider.getTableProperties(tableName));
         String recordBatchType = instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
         String fileWriterType = instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
         StandardIngestCoordinator.BackedBuilder ingestCoordinatorBuilder;
@@ -124,11 +120,7 @@ public class IngestCoordinatorFactory {
     }
 
     public IngestRecordsFromIterator createIngestRecordsFromIterator(String tableName, Iterator<Record> recordIterator) {
-        return createIngestRecordsFromIterator(instanceProperties, tablePropertiesProvider.getTableProperties(tableName), recordIterator);
-    }
-
-    public IngestRecordsFromIterator createIngestRecordsFromIterator(InstanceProperties instanceProperties, TableProperties tableProperties, Iterator<Record> recordIterator) {
-        return new IngestRecordsFromIterator(createIngestCoordinator(instanceProperties, tableProperties), recordIterator);
+        return new IngestRecordsFromIterator(createIngestCoordinator(tableName), recordIterator);
     }
 
     public IngestProperties createIngestProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
