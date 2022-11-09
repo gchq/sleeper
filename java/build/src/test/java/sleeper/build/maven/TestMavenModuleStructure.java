@@ -17,6 +17,9 @@ package sleeper.build.maven;
 
 public class TestMavenModuleStructure {
 
+    private TestMavenModuleStructure() {
+    }
+
     public static MavenModuleStructure example() {
         return rootArtifactIdAndModules("parent",
                 leafArtifactIdAndRef("core"),
