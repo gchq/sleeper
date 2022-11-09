@@ -23,9 +23,13 @@ import java.util.List;
 
 public class IngestResult {
     private final List<FileInfo> fileInfoList;
+    private final long numberOfRecords;
 
     private IngestResult(List<FileInfo> fileInfoList) {
         this.fileInfoList = fileInfoList;
+        this.numberOfRecords = fileInfoList.stream()
+                .mapToLong(FileInfo::getNumberOfRecords)
+                .sum();
     }
 
     public static IngestResult from(List<FileInfo> fileInfoList) {
@@ -33,9 +37,7 @@ public class IngestResult {
     }
 
     public long getNumberOfRecords() {
-        return fileInfoList.stream()
-                .mapToLong(FileInfo::getNumberOfRecords)
-                .sum();
+        return numberOfRecords;
     }
 
     public List<FileInfo> getFileInfoList() {
