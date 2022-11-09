@@ -11,6 +11,7 @@ on:
       - 'java/garbage-collector/**'
       - 'java/tables/**'
       - 'java/statestore/**'
+      - 'java/dynamodb-tools/**'
       - 'java/parquet/**'
       - 'java/configuration/**'
       - 'java/core/**'
