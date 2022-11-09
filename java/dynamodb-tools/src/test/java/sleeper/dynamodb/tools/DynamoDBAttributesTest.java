@@ -64,8 +64,8 @@ public class DynamoDBAttributesTest {
     @Test
     public void shouldCreateNumberAttributeWithInstant() {
         // Given we have a long attribute based on an Instant
-        Instant time = Instant.now();
-        AttributeValue value = DynamoDBAttributes.createNumberAttribute(Instant.now().toEpochMilli());
+        Instant time = Instant.parse("2022-11-07T16:00:00.001Z");
+        AttributeValue value = DynamoDBAttributes.createNumberAttribute(time.toEpochMilli());
         // When we construct a record with a key for the attribute value
         Map<String, AttributeValue> item = new HashMap<>();
         item.put(TEST_KEY, value);
