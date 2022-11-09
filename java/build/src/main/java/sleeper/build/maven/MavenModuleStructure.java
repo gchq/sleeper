@@ -26,9 +26,10 @@ import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -39,32 +40,27 @@ public class MavenModuleStructure {
     private final String moduleRef;
     private final List<MavenModuleStructure> modules;
 
-    public MavenModuleStructure(Pom pom, String moduleRef, List<MavenModuleStructure> modules) {
-        this.artifactId = pom.artifactId;
-        this.packaging = pom.packaging;
-        this.moduleRef = moduleRef;
-        this.modules = modules;
+    private MavenModuleStructure(Builder builder) {
+        artifactId = builder.artifactId;
+        packaging = builder.packaging;
+        moduleRef = builder.moduleRef;
+        modules = Objects.requireNonNull(builder.modules, "modules must not be null");
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public static MavenModuleStructure fromProjectBase(Path path) throws IOException {
         ObjectMapper mapper = new XmlMapper();
         Pom parent = Pom.from(mapper, path.resolve("pom.xml"));
-        return new MavenModuleStructure(parent, null, readChildModules(mapper, path, parent));
+        return builder().artifactId(parent.artifactId).packaging(parent.packaging)
+                .modules(readChildModules(mapper, path, parent))
+                .build();
     }
 
-    private static List<MavenModuleStructure> readChildModules(ObjectMapper mapper, Path path, Pom parent) throws IOException {
-        List<MavenModuleStructure> modules = new ArrayList<>(parent.modules.size());
-        for (String moduleRef : parent.modules) {
-            Path modulePath = path.resolve(moduleRef);
-            Pom module = Pom.from(mapper, modulePath.resolve("pom.xml"));
-            modules.add(new MavenModuleStructure(module, moduleRef, readChildModules(mapper, modulePath, module)));
-        }
-        return modules;
-    }
-
-    public List<String> getProjectListOfAllCompiledModules() {
-        return allCompiledModulesForProjectList(null)
-                .collect(Collectors.toList());
+    public Stream<String> allCompiledModulesForProjectList() {
+        return allCompiledModulesForProjectList(null);
     }
 
     private Stream<String> allCompiledModulesForProjectList(String parentPath) {
@@ -83,6 +79,49 @@ public class MavenModuleStructure {
         } else {
             return moduleRef;
         }
+    }
+
+    private static List<MavenModuleStructure> readChildModules(ObjectMapper mapper, Path path, Pom parent) throws IOException {
+        List<MavenModuleStructure> modules = new ArrayList<>(parent.modules.size());
+        for (String moduleRef : parent.modules) {
+            Path modulePath = path.resolve(moduleRef);
+            Pom module = Pom.from(mapper, modulePath.resolve("pom.xml"));
+            modules.add(builder()
+                    .artifactId(module.artifactId).packaging(module.packaging).moduleRef(moduleRef)
+                    .modules(readChildModules(mapper, modulePath, module))
+                    .build());
+        }
+        return modules;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        MavenModuleStructure that = (MavenModuleStructure) o;
+        return Objects.equals(artifactId, that.artifactId)
+                && Objects.equals(packaging, that.packaging)
+                && Objects.equals(moduleRef, that.moduleRef)
+                && modules.equals(that.modules);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(artifactId, packaging, moduleRef, modules);
+    }
+
+    @Override
+    public String toString() {
+        return "MavenModuleStructure{" +
+                "artifactId='" + artifactId + '\'' +
+                ", packaging='" + packaging + '\'' +
+                ", moduleRef='" + moduleRef + '\'' +
+                ", modules=" + modules +
+                '}';
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -106,6 +145,44 @@ public class MavenModuleStructure {
             try (Reader reader = Files.newBufferedReader(path)) {
                 return mapper.readValue(reader, Pom.class);
             }
+        }
+    }
+
+    public static final class Builder {
+        private String artifactId;
+        private String packaging;
+        private String moduleRef;
+        private List<MavenModuleStructure> modules = Collections.emptyList();
+
+        private Builder() {
+        }
+
+        public Builder artifactId(String artifactId) {
+            this.artifactId = artifactId;
+            return this;
+        }
+
+        public Builder packaging(String packaging) {
+            this.packaging = packaging;
+            return this;
+        }
+
+        public Builder moduleRef(String moduleRef) {
+            this.moduleRef = moduleRef;
+            return this;
+        }
+
+        public Builder modules(List<MavenModuleStructure> modules) {
+            this.modules = modules;
+            return this;
+        }
+
+        public Builder modulesArray(MavenModuleStructure... modules) {
+            return modules(Arrays.asList(modules));
+        }
+
+        public MavenModuleStructure build() {
+            return new MavenModuleStructure(this);
         }
     }
 }

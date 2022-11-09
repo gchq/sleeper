@@ -24,11 +24,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class MavenModuleStructureTest {
 
     @Test
-    public void shouldFindAllModules() throws Exception {
-        MavenModuleStructure structure = MavenModuleStructure.fromProjectBase(
-                Paths.get("src/test/resources/maven-example"));
+    public void shouldLoadExampleStructureFromPomFiles() throws Exception {
+        assertThat(MavenModuleStructure.fromProjectBase(
+                Paths.get("src/test/resources/maven-example")))
+                .isEqualTo(TestMavenModuleStructure.example());
+    }
 
-        assertThat(structure.getProjectListOfAllCompiledModules()).containsExactlyInAnyOrder(
+    @Test
+    public void shouldProduceListOfCompiledModulesForMavenProjectListArguments() {
+        assertThat(TestMavenModuleStructure.example().allCompiledModulesForProjectList()).containsExactly(
                 "core", "configuration", "ingest",
                 "bulk-import/bulk-import-common",
                 "bulk-import/bulk-import-runner",
