@@ -15,8 +15,8 @@
  */
 package sleeper.build.chunks;
 
-import org.snakeyaml.engine.v2.api.Load;
-import org.snakeyaml.engine.v2.api.LoadSettings;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -68,7 +68,7 @@ public class ProjectChunks {
         return chunks.toString();
     }
 
-    public static ProjectChunks fromYaml(Reader reader) {
+    public static ProjectChunks fromYaml(Reader reader) throws IOException {
         return new ProjectChunks(listFromYaml(reader));
     }
 
@@ -78,9 +78,9 @@ public class ProjectChunks {
         }
     }
 
-    private static List<ProjectChunk> listFromYaml(Reader reader) {
-        Load load = new Load(LoadSettings.builder().build());
-        Map<String, Object> root = (Map<String, Object>) load.loadFromReader(reader);
+    private static List<ProjectChunk> listFromYaml(Reader reader) throws IOException {
+        ObjectMapper mapper = new YAMLMapper();
+        Map<String, Object> root = (Map<String, Object>) mapper.readValue(reader, Map.class);
         Map<String, Object> chunksMap = (Map<String, Object>) root.get("chunks");
         List<ProjectChunk> chunks = new ArrayList<>(chunksMap.size());
         for (Map.Entry<String, Object> entry : chunksMap.entrySet()) {

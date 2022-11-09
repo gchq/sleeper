@@ -82,7 +82,6 @@
         <arrow.version>8.0.0</arrow.version>
         <bouncycastle.version>1.71.1</bouncycastle.version>
         <github-api.version>1.308</github-api.version>
-        <snakeyaml-engine.version>2.5</snakeyaml-engine.version>
         <!-- Testing -->
         <junit.version>4.13</junit.version>
         <mockito.version>3.3.3</mockito.version>
@@ -170,11 +169,6 @@
                 <groupId>org.kohsuke</groupId>
                 <artifactId>github-api</artifactId>
                 <version>${github-api.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.snakeyaml</groupId>
-                <artifactId>snakeyaml-engine</artifactId>
-                <version>${snakeyaml-engine.version}</version>
             </dependency>
             <!-- Cryptography -->
             <dependency>
