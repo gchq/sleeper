@@ -304,6 +304,8 @@ servers in the cluster.
 ```
 
 You can then use the instructions [here](https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-web-interfaces.html) to access the pages.
+Also see [this link](https://aws.amazon.com/premiumsupport/knowledge-center/spark-driver-logs-emr-cluster/) for instructions on how to access
+the logs of the Spark driver.
 
 #### An example of using bulk import
 
