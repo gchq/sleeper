@@ -143,7 +143,6 @@ public class RunTasks {
         if (0 == queueSize) {
             LOGGER.info("No tasks to launch as queue size is 0");
         } else {
-
             int numRunningTasks = CommonJobUtils.getNumRunningTasks(clusterName, ecsClient);
             LOGGER.info("Number of running tasks is {}", numRunningTasks);
 
@@ -194,37 +193,42 @@ public class RunTasks {
                             .withLaunchType(LaunchType.EC2);
                 }
 
-                RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
-                LOGGER.info(
-                        "Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
-                        clusterName, launchType, containerName, defUsed);
-                runTaskResult.getTasks().stream()
-                        .filter(task -> task.getContainerInstanceArn() != null)
-                        .forEach(task -> {
-                            recentContainerInstanceARNs.add(task.getContainerInstanceArn());
-                        });
+                try {
+                    RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
+                    LOGGER.info(
+                            "Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
+                            clusterName, launchType, containerName, defUsed);
+                    runTaskResult.getTasks().stream()
+                            .filter(task -> task.getContainerInstanceArn() != null)
+                            .forEach(task -> {
+                                recentContainerInstanceARNs.add(task.getContainerInstanceArn());
+                            });
 
-                if (runTaskResult.getFailures().size() > 0) {
-                    LOGGER.warn("Run task request has {} failures", runTaskResult.getFailures().size());
-                    for (Failure f : runTaskResult.getFailures()) {
-                        LOGGER.error("Failure: ARN {} Reason {} Detail {}", f.getArn(), f.getReason(), f.getDetail());
+                    if (runTaskResult.getFailures().size() > 0) {
+                        LOGGER.warn("Run task request has {} failures", runTaskResult.getFailures().size());
+                        for (Failure f : runTaskResult.getFailures()) {
+                            LOGGER.error("Failure: ARN {} Reason {} Detail {}", f.getArn(), f.getReason(),
+                                    f.getDetail());
+                        }
+                        break;
                     }
-                    break;
-                }
-                numTasksCreated++;
+                    numTasksCreated++;
 
-                // This lambda is triggered every minute so abort once get close to 1 minute
-                if (System.currentTimeMillis() - startTime > 50 * 1000L) {
-                    LOGGER.info("RunTasks has been running for more than 50 seconds, aborting");
-                    break;
-                }
+                    // This lambda is triggered every minute so abort once get close to 1 minute
+                    if (System.currentTimeMillis() - startTime > 50 * 1000L) {
+                        LOGGER.info("RunTasks has been running for more than 50 seconds, aborting");
+                        break;
+                    }
 
-                if (0 == numTasksCreated % 10) {
-                    // Sleep for 10 seconds - API allows 1 job per second with a burst of 10 jobs in
-                    // a second
-                    // so run 10 every 11 seconds for safety
-                    LOGGER.info("Sleeping for 11 seconds as 10 tasks have been created");
-                    Thread.sleep(11000L);
+                    if (0 == numTasksCreated % 10) {
+                        // Sleep for 10 seconds - API allows 1 job per second with a burst of 10 jobs in
+                        // a second
+                        // so run 10 every 11 seconds for safety
+                        LOGGER.info("Sleeping for 11 seconds as 10 tasks have been created");
+                        Thread.sleep(11000L);
+                    }
+                } catch (AmazonClientException e) {
+                    LOGGER.error("Couldn't launch tasks", e);
                 }
             }
         }
