@@ -15,7 +15,6 @@
  */
 package sleeper.build.maven;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.nio.file.Paths;
@@ -25,10 +24,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class MavenModuleStructureTest {
 
     @Test
-    @Ignore("TODO")
-    public void shouldFindAllModules() {
+    public void shouldFindAllModules() throws Exception {
         MavenModuleStructure structure = MavenModuleStructure.fromProjectBase(
-                Paths.get("/src/test/resources/maven-example"));
+                Paths.get("src/test/resources/maven-example"));
 
         assertThat(structure.getProjectListOfAllCompiledModules()).containsExactlyInAnyOrder(
                 "parent");

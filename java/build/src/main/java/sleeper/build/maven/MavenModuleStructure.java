@@ -15,16 +15,41 @@
  */
 package sleeper.build.maven;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class MavenModuleStructure {
 
-    public static MavenModuleStructure fromProjectBase(Path path) {
-        return new MavenModuleStructure();
+    private final String artifactId;
+
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+    public MavenModuleStructure(@JsonProperty("artifactId") String artifactId) {
+        this.artifactId = artifactId;
+    }
+
+    public static MavenModuleStructure fromProjectBase(Path path) throws IOException {
+        return fromPom(path.resolve("pom.xml"));
+    }
+
+    public static MavenModuleStructure fromPom(Path path) throws IOException {
+        ObjectMapper mapper = new XmlMapper();
+        try (Reader reader = Files.newBufferedReader(path)) {
+            return mapper.readValue(reader, MavenModuleStructure.class);
+        }
     }
 
     public List<String> getProjectListOfAllCompiledModules() {
-        return null;
+        return Collections.singletonList(artifactId);
     }
 }
