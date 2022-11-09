@@ -25,31 +25,87 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class MavenModuleStructure {
 
     private final String artifactId;
+    private final String packaging;
+    private final String moduleRef;
+    private final List<MavenModuleStructure> modules;
 
-    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public MavenModuleStructure(@JsonProperty("artifactId") String artifactId) {
-        this.artifactId = artifactId;
+    public MavenModuleStructure(Pom pom, String moduleRef, List<MavenModuleStructure> modules) {
+        this.artifactId = pom.artifactId;
+        this.packaging = pom.packaging;
+        this.moduleRef = moduleRef;
+        this.modules = modules;
     }
 
     public static MavenModuleStructure fromProjectBase(Path path) throws IOException {
-        return fromPom(path.resolve("pom.xml"));
+        ObjectMapper mapper = new XmlMapper();
+        Pom parent = Pom.from(mapper, path.resolve("pom.xml"));
+        return new MavenModuleStructure(parent, null, readChildModules(mapper, path, parent));
     }
 
-    public static MavenModuleStructure fromPom(Path path) throws IOException {
-        ObjectMapper mapper = new XmlMapper();
-        try (Reader reader = Files.newBufferedReader(path)) {
-            return mapper.readValue(reader, MavenModuleStructure.class);
+    private static List<MavenModuleStructure> readChildModules(ObjectMapper mapper, Path path, Pom parent) throws IOException {
+        List<MavenModuleStructure> modules = new ArrayList<>(parent.modules.size());
+        for (String moduleRef : parent.modules) {
+            Path modulePath = path.resolve(moduleRef);
+            Pom module = Pom.from(mapper, modulePath.resolve("pom.xml"));
+            modules.add(new MavenModuleStructure(module, moduleRef, readChildModules(mapper, modulePath, module)));
         }
+        return modules;
     }
 
     public List<String> getProjectListOfAllCompiledModules() {
-        return Collections.singletonList(artifactId);
+        return allCompiledModulesForProjectList(null)
+                .collect(Collectors.toList());
+    }
+
+    private Stream<String> allCompiledModulesForProjectList(String parentPath) {
+        String projectListPath = projectListPathFromParent(parentPath);
+        if ("pom".equals(packaging)) {
+            return modules.stream()
+                    .flatMap(module -> module.allCompiledModulesForProjectList(projectListPath));
+        } else {
+            return Stream.of(projectListPath);
+        }
+    }
+
+    private String projectListPathFromParent(String parentPath) {
+        if (parentPath != null) {
+            return parentPath + "/" + moduleRef;
+        } else {
+            return moduleRef;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Pom {
+
+        private final String artifactId;
+        private final String packaging;
+        private final List<String> modules;
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public Pom(
+                @JsonProperty("artifactId") String artifactId,
+                @JsonProperty("packaging") String packaging,
+                @JsonProperty("modules") List<String> modules) {
+            this.artifactId = artifactId;
+            this.packaging = packaging;
+            this.modules = modules == null ? Collections.emptyList() : modules;
+        }
+
+        public static Pom from(ObjectMapper mapper, Path path) throws IOException {
+            try (Reader reader = Files.newBufferedReader(path)) {
+                return mapper.readValue(reader, Pom.class);
+            }
+        }
     }
 }

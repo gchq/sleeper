@@ -29,6 +29,9 @@ public class MavenModuleStructureTest {
                 Paths.get("src/test/resources/maven-example"));
 
         assertThat(structure.getProjectListOfAllCompiledModules()).containsExactlyInAnyOrder(
-                "parent");
+                "core", "configuration", "ingest",
+                "bulk-import/bulk-import-common",
+                "bulk-import/bulk-import-runner",
+                "bulk-import/bulk-import-starter");
     }
 }
