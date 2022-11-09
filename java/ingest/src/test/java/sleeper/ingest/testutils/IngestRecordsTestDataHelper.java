@@ -351,6 +351,7 @@ public class IngestRecordsTestDataHelper {
                 .localDir(localDir)
                 .stateStoreProvider(stateStoreProvider)
                 .instanceProperties(instanceProperties)
+                .tablePropertiesProvider(tablePropertiesProvider)
                 .hadoopConfiguration(hadoopConfiguration).build();
     }
 
