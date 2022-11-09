@@ -25,6 +25,7 @@ public class MavenModuleStructureTest {
 
     @Test
     public void shouldLoadExampleStructureFromPomFiles() throws Exception {
+        // When / Then
         assertThat(MavenModuleStructure.fromProjectBase(
                 Paths.get("src/test/resources/maven-example")))
                 .isEqualTo(TestMavenModuleStructure.example());
@@ -32,6 +33,7 @@ public class MavenModuleStructureTest {
 
     @Test
     public void shouldProduceListOfCompiledModulesForMavenProjectListArguments() {
+        // When / Then
         assertThat(TestMavenModuleStructure.example().allCompiledModulesForProjectList()).containsExactly(
                 "core", "configuration", "ingest",
                 "bulk-import/bulk-import-common",
