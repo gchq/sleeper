@@ -21,6 +21,7 @@ import sleeper.build.chunks.ProjectChunk;
 import sleeper.build.chunks.ProjectChunks;
 import sleeper.build.chunks.ProjectConfiguration;
 import sleeper.build.github.GitHubHead;
+import sleeper.build.github.GitHubWorkflowRuns;
 
 import java.util.List;
 import java.util.Map;
@@ -35,12 +36,12 @@ public class CheckGitHubStatus {
     private final long maxRetries;
     private final GitHubStatusProvider gitHub;
 
-    public CheckGitHubStatus(ProjectConfiguration configuration, GitHubStatusProvider gitHub) {
+    public CheckGitHubStatus(ProjectConfiguration configuration, GitHubWorkflowRuns runs) {
         this.head = configuration.getHead();
         this.chunks = configuration.getChunks();
         this.retrySeconds = configuration.getRetrySeconds();
         this.maxRetries = configuration.getMaxRetries();
-        this.gitHub = gitHub;
+        this.gitHub = new GitHubStatusProvider(runs);
     }
 
     public ChunksStatus checkStatus() {

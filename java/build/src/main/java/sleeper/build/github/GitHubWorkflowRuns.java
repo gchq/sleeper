@@ -18,6 +18,7 @@ package sleeper.build.github;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHWorkflowRun;
 import org.kohsuke.github.GitHub;
+import org.kohsuke.github.GitHubBuilder;
 import org.kohsuke.github.PagedIterable;
 
 import java.io.IOException;
@@ -32,6 +33,10 @@ public class GitHubWorkflowRuns {
 
     public GitHubWorkflowRuns(GitHub gitHub) {
         this.gitHub = gitHub;
+    }
+
+    public GitHubWorkflowRuns(String token) throws IOException {
+        this.gitHub = new GitHubBuilder().withJwtToken(token).build();
     }
 
     public Optional<GitHubWorkflowRun> getLatestRun(GitHubHead head, String workflow) {

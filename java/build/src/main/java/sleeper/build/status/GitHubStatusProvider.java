@@ -15,21 +15,14 @@
  */
 package sleeper.build.status;
 
-import org.kohsuke.github.GitHubBuilder;
 import sleeper.build.chunks.ProjectChunk;
 import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubWorkflowRun;
 import sleeper.build.github.GitHubWorkflowRuns;
 
-import java.io.IOException;
-
 public class GitHubStatusProvider {
 
     private final GitHubWorkflowRuns runs;
-
-    public GitHubStatusProvider(String token) throws IOException {
-        this(new GitHubWorkflowRuns(new GitHubBuilder().withJwtToken(token).build()));
-    }
 
     public GitHubStatusProvider(GitHubWorkflowRuns runs) {
         this.runs = runs;
