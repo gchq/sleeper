@@ -4,7 +4,6 @@ name: Full Maven Compile
 #    paths:
 #      - '.github/workflows/build.yaml'
 #      - 'java/**'
-#      - '!java/cdk-environment/**'
 
 jobs:
   check-status:
