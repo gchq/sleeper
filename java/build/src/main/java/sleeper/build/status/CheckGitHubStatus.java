@@ -21,6 +21,7 @@ import sleeper.build.chunks.ProjectChunk;
 import sleeper.build.chunks.ProjectChunks;
 import sleeper.build.chunks.ProjectConfiguration;
 import sleeper.build.github.GitHubHead;
+import sleeper.build.github.GitHubWorkflowRun;
 import sleeper.build.github.GitHubWorkflowRuns;
 
 import java.util.List;
@@ -34,7 +35,6 @@ public class CheckGitHubStatus {
     private final ProjectChunks chunks;
     private final long retrySeconds;
     private final long maxRetries;
-    private final GitHubStatusProvider gitHub;
     private final GitHubWorkflowRuns runs;
 
     public CheckGitHubStatus(ProjectConfiguration configuration, GitHubWorkflowRuns runs) {
@@ -42,7 +42,6 @@ public class CheckGitHubStatus {
         this.chunks = configuration.getChunks();
         this.retrySeconds = configuration.getRetrySeconds();
         this.maxRetries = configuration.getMaxRetries();
-        this.gitHub = new GitHubStatusProvider(runs);
         this.runs = runs;
     }
 
@@ -76,7 +75,9 @@ public class CheckGitHubStatus {
                 LOGGER.info("Link to old build: {}", status.getRunUrl());
 
                 Thread.sleep(retrySeconds * 1000);
-                status = gitHub.recheckRun(head, status);
+
+                GitHubWorkflowRun run = runs.recheckRun(head, status.getRunId());
+                status = ChunkStatus.chunk(status.getChunk()).run(run).build();
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
