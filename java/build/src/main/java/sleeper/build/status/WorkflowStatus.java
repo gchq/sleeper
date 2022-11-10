@@ -15,19 +15,28 @@
  */
 package sleeper.build.status;
 
-import java.util.Collections;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 public class WorkflowStatus {
-    public boolean hasPreviousFailures() {
-        return false;
+
+    private final ChunksStatus chunks;
+    private final List<String> chunkIdsToBuild;
+
+    public WorkflowStatus(ChunksStatus chunks, List<String> chunkIdsToBuild) {
+        this.chunks = chunks;
+        this.chunkIdsToBuild = chunkIdsToBuild;
     }
 
-    public List<String> previousBuildsReportLines() {
-        return Collections.emptyList();
+    public boolean hasPreviousFailures() {
+        return chunks.isFailCheck();
+    }
+
+    public List<String> previousBuildsReportLines() throws UnsupportedEncodingException {
+        return chunks.reportLines();
     }
 
     public List<String> chunkIdsToBuild() {
-        return Collections.emptyList();
+        return chunkIdsToBuild;
     }
 }

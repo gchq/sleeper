@@ -51,7 +51,11 @@ public class CheckGitHubStatus {
     }
 
     public WorkflowStatus checkStatusSingleWorkflow(String workflow) {
-        return null;
+        ChunksStatus chunksStatus = fetchChunksStatus(chunk -> getStatusFromWorkflow(chunk, workflow));
+        return new WorkflowStatus(chunksStatus,
+                chunks.stream()
+                        .map(ProjectChunk::getId)
+                        .collect(Collectors.toList()));
     }
 
     private ChunksStatus fetchChunksStatus(Function<ProjectChunk, ChunkStatus> getChunkStatus) {
@@ -95,7 +99,11 @@ public class CheckGitHubStatus {
     }
 
     private ChunkStatus getStatusFromChunkWorkflow(ProjectChunk chunk) {
-        return runs.getLatestRun(head, chunk.getWorkflow())
+        return getStatusFromWorkflow(chunk, chunk.getWorkflow());
+    }
+
+    private ChunkStatus getStatusFromWorkflow(ProjectChunk chunk, String workflow) {
+        return runs.getLatestRun(head, workflow)
                 .map(run -> ChunkStatus.chunk(chunk).run(run).build())
                 .orElseGet(() -> ChunkStatus.chunk(chunk).noBuild());
     }

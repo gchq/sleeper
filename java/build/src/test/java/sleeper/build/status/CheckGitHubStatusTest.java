@@ -15,7 +15,6 @@
  */
 package sleeper.build.status;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import sleeper.build.chunks.ProjectChunks;
 import sleeper.build.chunks.ProjectConfiguration;
@@ -41,14 +40,15 @@ public class CheckGitHubStatusTest {
     }
 
     @Test
-    @Ignore("TODO")
-    public void shouldBuildAllChunksWhenNoWorkflowRunsYet() {
+    public void shouldBuildAllChunksWhenNoWorkflowRunsYet() throws Exception {
 
         WorkflowStatus status = configurationBuilder().build().checkStatusSingleWorkflow(workflowRuns, WORKFLOW);
         assertThat(status.hasPreviousFailures()).isFalse();
         assertThat(status.previousBuildsReportLines()).containsExactly("",
                 "Bulk Import: null",
+                "",
                 "Common: null",
+                "",
                 "Ingest: null");
         assertThat(status.chunkIdsToBuild()).containsExactly("bulk-import", "common", "ingest");
     }
