@@ -236,7 +236,7 @@ public class RunTasks {
         try {
             scaler.possiblyScaleIn(this.ec2TaskDefinition, details, recentContainerInstanceARNs);
         } catch (AmazonClientException e) {
-            LOGGER.error("Scale in exception", e);
+            LOGGER.error("Scale-in exception", e);
         }
     }
 }
