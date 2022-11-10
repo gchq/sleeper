@@ -22,14 +22,19 @@ import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
+import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.StructField;
+import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.bulkimport.job.runner.AddPartitionFunction;
 import sleeper.bulkimport.job.runner.BulkImportJobRunner;
-import sleeper.bulkimport.job.runner.WriteParquetFiles;
+import sleeper.bulkimport.job.runner.StructTypeFactory;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.SchemaSerDe;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -53,6 +58,10 @@ public class BulkImportJobDataframeRunner extends BulkImportJobRunner {
             TableProperties tableProperties,
             Broadcast<List<Partition>> broadcastedPartitions, Configuration conf) throws IOException {
         Schema schema = tableProperties.getSchema();
+        String schemaAsString = new SchemaSerDe().toJson(schema);
+        StructType convertedSchema = new StructTypeFactory().getStructType(schema);
+        StructType schemaWithPartitionField = createEnhancedSchema(convertedSchema);
+        Dataset<Row> dataWithPartition = rows.mapPartitions(new AddPartitionFunction(schemaAsString, broadcastedPartitions), RowEncoder.apply(schemaWithPartitionField));
 
         LOGGER.info("Running bulk import job with id {}", job.getId());
         Column[] sortColumns = Lists.newArrayList(
@@ -72,12 +81,12 @@ public class BulkImportJobDataframeRunner extends BulkImportJobRunner {
 
         if (numLeafPartitions < minPartitionsToUseCoalesce) {
             LOGGER.info("Not using coalesce");
-            return rows
+            return dataWithPartition
                     .sort(sortColumns)
                     .mapPartitions(new WriteParquetFiles(getInstanceProperties().saveAsString(), tableProperties.saveAsString(), conf), RowEncoder.apply(createFileInfoSchema()));
         } else {
             LOGGER.info("Coalescing data to {} partitions", numLeafPartitions);
-            return rows
+            return dataWithPartition
                     .sort(sortColumns)
                     .coalesce(numLeafPartitions)
                     .mapPartitions(new WriteParquetFiles(getInstanceProperties().saveAsString(), tableProperties.saveAsString(), conf), RowEncoder.apply(createFileInfoSchema()));
@@ -86,5 +95,11 @@ public class BulkImportJobDataframeRunner extends BulkImportJobRunner {
 
     public static void main(String[] args) throws Exception {
         BulkImportJobRunner.start(args, new BulkImportJobDataframeRunner());
+    }
+
+    private StructType createEnhancedSchema(StructType convertedSchema) {
+        StructType structTypeWithPartition = new StructType(convertedSchema.fields());
+        return structTypeWithPartition
+              .add(new StructField(PARTITION_FIELD_NAME, DataTypes.StringType, false, null));
     }
 }

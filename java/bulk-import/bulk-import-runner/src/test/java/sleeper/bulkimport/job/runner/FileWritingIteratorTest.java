@@ -23,6 +23,8 @@ import org.apache.spark.sql.RowFactory;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
+import sleeper.bulkimport.job.runner.dataframe.FileWritingIterator;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.job.runner;
+package sleeper.bulkimport.job.runner.rdd;
 
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
@@ -21,6 +21,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
+import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.slf4j.Logger;
@@ -29,6 +30,9 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.core.key.Key;
+import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -49,8 +53,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-public class FileWritingIterator implements Iterator<Row> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(FileWritingIterator.class);
+public class SingleFileWritingIterator implements Iterator<Row> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SingleFileWritingIterator.class);
 
     private final Iterator<Row> input;
     private final Schema schema;
@@ -58,28 +62,33 @@ public class FileWritingIterator implements Iterator<Row> {
     private final Configuration conf;
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
-    private String currentPartitionId;
     private ParquetWriter<Record> parquetWriter;
     private Map<String, ItemsSketch> sketches;
     private String path;
     private long numRecords;
-    private boolean hasMore = false;
+    private final PartitionTree partitionTree;
+    private String partitionId;
 
-    public FileWritingIterator(Iterator<Row> input, InstanceProperties instanceProperties, TableProperties tableProperties, Configuration conf) {
+    public SingleFileWritingIterator(Iterator<Row> input,
+            InstanceProperties instanceProperties,
+            TableProperties tableProperties,
+            Configuration conf,
+            Broadcast<List<Partition>> broadcastPartitions) {
         this.input = input;
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.schema = tableProperties.getSchema();
         this.allSchemaFields = schema.getAllFields();
         this.conf = conf;
-        LOGGER.info("Initialised FileWritingIterator");
+        this.partitionTree = new PartitionTree(schema, broadcastPartitions.getValue());
+        LOGGER.info("Initialised FileWritingIteratorPartitionNotPrecomputed");
         LOGGER.info("Schema is {}", schema);
         LOGGER.info("Configuration is {}", conf);
     }
 
     @Override
     public boolean hasNext() {
-        return input.hasNext() || hasMore;
+        return input.hasNext();
     }
 
     @Override
@@ -90,37 +99,20 @@ public class FileWritingIterator implements Iterator<Row> {
         try {
             while (input.hasNext()) {
                 Row row = input.next();
-                // Get Partition Id for this row
-                String partitionId = getPartitionId(row);
-
-                if (!partitionId.equals(currentPartitionId)) {
-                    if (currentPartitionId != null) {
-                        // Write file and sketches
-                        writeFiles();
-                        Row fileInfo = RowFactory.create(currentPartitionId, path, numRecords);
-                        initialiseState(partitionId);
-                        write(row);
-                        // Set flag in case this is the last record in the iterator
-                        hasMore = true;
-                        return fileInfo;
-                    } else {
-                        initialiseState(partitionId);
-                    }
+                if (null == parquetWriter) {
+                    initialiseState(partitionId);
+                    partitionId = getPartitionId(row);
                 }
                 write(row);
             }
-
-            // Flush final file
             writeFiles();
-            hasMore = false;
-            return RowFactory.create(currentPartitionId, path, numRecords);
+            return RowFactory.create(partitionId, path, numRecords);
         } catch (IOException e) {
             throw new RuntimeException("Encountered error while writing files", e);
         }
     }
 
     private void write(Row row) throws IOException {
-        // Append to current writer
         Record record = getRecord(row);
         parquetWriter.write(record);
         numRecords++;
@@ -131,7 +123,6 @@ public class FileWritingIterator implements Iterator<Row> {
     }
 
     private void initialiseState(String partitionId) throws IOException {
-        currentPartitionId = partitionId;
         // Create writer;
         parquetWriter = createWriter(partitionId);
         // Intialize sketches
@@ -139,7 +130,7 @@ public class FileWritingIterator implements Iterator<Row> {
     }
 
     private void writeFiles() throws IOException {
-        LOGGER.info("Flushing files to S3 containing {} records", numRecords);
+        LOGGER.info("Flushing file to S3 containing {} records", numRecords);
         if (parquetWriter == null) {
             return;
         }
@@ -210,6 +201,10 @@ public class FileWritingIterator implements Iterator<Row> {
     }
 
     private String getPartitionId(Row row) {
-        return row.getString(row.length() - 1);
+        Record record = getRecord(row);
+        List<String> rowKeyFieldNames = schema.getRowKeyFieldNames();
+        Key key = Key.create(record.getValues(rowKeyFieldNames));
+        Partition partition = partitionTree.getLeafPartition(key);
+        return partition.getId();
     }
 }

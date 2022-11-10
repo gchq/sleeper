@@ -33,9 +33,7 @@ import org.apache.spark.serializer.KryoSerializer;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +44,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.SchemaSerDe;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -113,10 +110,7 @@ public abstract class BulkImportJobRunner {
         LOGGER.info("Loading table properties and schema for table {}", job.getTableName());
         TableProperties tableProperties = new TablePropertiesProvider(s3Client, instanceProperties).getTableProperties(job.getTableName());
         Schema schema = tableProperties.getSchema();
-        String schemaAsString = new SchemaSerDe().toJson(schema);
-
         StructType convertedSchema = new StructTypeFactory().getStructType(schema);
-        StructType schemaWithPartitionField = createEnhancedSchema(convertedSchema);
 
         // Load statestore and partitions
         LOGGER.info("Loading statestore and partitions");
@@ -142,14 +136,12 @@ public abstract class BulkImportJobRunner {
         LOGGER.info("Paths to be read are {}", pathsWithFs);
 
         // Run bulk import
-        Dataset<Row> dataWithPartition = session.read()
+        Dataset<Row> inputData = session.read()
                 .schema(convertedSchema)
                 .option("pathGlobFilter", "*.parquet")
                 .option("recursiveFileLookup", "true")
-                .parquet(pathsWithFs.toArray(new String[0]))
-                .mapPartitions(new AddPartitionFunction(schemaAsString, broadcastedPartitions), RowEncoder.apply(schemaWithPartitionField));
-
-        List<FileInfo> fileInfos = createFileInfos(dataWithPartition, job, tableProperties, broadcastedPartitions, conf).collectAsList()
+                .parquet(pathsWithFs.toArray(new String[0]));
+        List<FileInfo> fileInfos = createFileInfos(inputData, job, tableProperties, broadcastedPartitions, conf).collectAsList()
                 .stream()
                 .map(this::createFileInfo)
                 .collect(Collectors.toList());
@@ -182,12 +174,6 @@ public abstract class BulkImportJobRunner {
                 .add(PARTITION_FIELD_NAME, DataTypes.StringType)
                 .add(FILENAME_FIELD_NAME, DataTypes.StringType)
                 .add(NUM_RECORDS_FIELD_NAME, DataTypes.LongType);
-    }
-
-    private StructType createEnhancedSchema(StructType convertedSchema) {
-        StructType structTypeWithPartition = new StructType(convertedSchema.fields());
-        return structTypeWithPartition
-                .add(new StructField(PARTITION_FIELD_NAME, DataTypes.StringType, false, null));
     }
 
     public static void start(String[] args, BulkImportJobRunner runner) throws Exception {
