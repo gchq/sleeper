@@ -31,10 +31,6 @@ public class GitHubWorkflowRuns {
 
     private final GitHub gitHub;
 
-    public GitHubWorkflowRuns(GitHub gitHub) {
-        this.gitHub = gitHub;
-    }
-
     public GitHubWorkflowRuns(String token) throws IOException {
         this.gitHub = new GitHubBuilder().withJwtToken(token).build();
     }
