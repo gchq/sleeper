@@ -250,7 +250,7 @@ public class Scaler {
      * Creates a list of EC2 container instance ARNs that are safe from termination.
      * Looking at the list of tasks, we enumerate the instances and find those
      * that haven't run a task recently and are not running any now.
-     * 
+     *
      * @param clusterTasks the list of tasks this cluster is running/has run
      * @return set of EC2 instances to terminate
      */
@@ -312,7 +312,7 @@ public class Scaler {
      * on the safe list and haven't been registered with the cluster inside the
      * grace
      * period.
-     * 
+     *
      * @param safeARNs the list of container instance ARNs that are safe from
      *                 termination
      * @param details  the cluster instance details
@@ -345,7 +345,7 @@ public class Scaler {
 
     /**
      * Attempt to scale the cluster in.
-     * 
+     *
      * @param taskFamilyName            the EC2 task family name
      * @param details                   the cluster details
      * @param containerInstanceARNsUsed list of instance container ARNs from
@@ -375,7 +375,7 @@ public class Scaler {
 
     /**
      * Terminate the EC2 IDs in the given list.
-     * 
+     *
      * @param terminationIDs termination IDs
      */
     public void terminateInstances(List<String> terminationIDs) {
