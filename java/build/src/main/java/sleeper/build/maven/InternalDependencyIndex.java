@@ -42,30 +42,31 @@ public class InternalDependencyIndex {
     private Stream<String> dependenciesOfPath(String path) {
         MavenProjectListPath module = moduleByPath(path)
                 .orElseThrow(() -> new IllegalArgumentException("Module not found: " + path));
-        return moduleAndDependencyPaths(module);
+        return moduleAndDependencies(module)
+                .map(MavenProjectListPath::getPath);
     }
 
     private Optional<MavenProjectListPath> moduleByPath(String path) {
         return Optional.ofNullable(modulesByPath.get(path));
     }
 
+    private Stream<MavenProjectListPath> moduleAndDependencies(MavenProjectListPath path) {
+        return Stream.concat(Stream.of(path), dependencies(path));
+    }
+
+    private Stream<MavenProjectListPath> dependencies(MavenProjectListPath path) {
+        return path.getStructure().dependencies()
+                .flatMap(this::dependenciesByRef);
+    }
+
     private Optional<MavenProjectListPath> moduleByDependencyRef(DependencyReference reference) {
         return Optional.ofNullable(modulesByDependencyRef.get(reference));
     }
 
-    private Stream<MavenProjectListPath> moduleByDependencyRefAsStream(DependencyReference reference) {
+    private Stream<MavenProjectListPath> dependenciesByRef(DependencyReference reference) {
         return Stream.of(moduleByDependencyRef(reference))
                 .filter(Optional::isPresent)
-                .map(Optional::get);
-    }
-
-    private Stream<String> moduleAndDependencyPaths(MavenProjectListPath path) {
-        return Stream.concat(Stream.of(path.getPath()), dependencyPaths(path));
-    }
-
-    private Stream<String> dependencyPaths(MavenProjectListPath path) {
-        return path.getStructure().dependencies()
-                .flatMap(this::moduleByDependencyRefAsStream)
-                .map(MavenProjectListPath::getPath);
+                .map(Optional::get)
+                .flatMap(this::moduleAndDependencies);
     }
 }

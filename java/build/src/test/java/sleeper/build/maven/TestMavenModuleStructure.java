@@ -21,39 +21,55 @@ public class TestMavenModuleStructure {
     }
 
     public static MavenModuleStructure example() {
-        return artifactIdAndRefBuilder("parent", null).packaging("pom").modulesArray(
-                artifactIdAndRefBuilder("core").hasSrcTestFolder(true).build(),
-                artifactIdAndRefBuilder("configuration").hasSrcTestFolder(true).dependenciesArray(
+        return rootBuilder().modulesArray(
+                testedModuleBuilder("core").build(),
+                testedModuleBuilder("configuration").dependenciesArray(
                         dependency("org.apache.datasketches:datasketches-java"),
                         dependency("sleeper:core"),
                         dependency("junit:junit"),
                         dependency("sleeper:core")
                 ).build(),
-                artifactIdAndRefBuilder("ingest").hasSrcTestFolder(true).dependenciesArray(
+                testedModuleBuilder("ingest").dependenciesArray(
                         dependency("org.apache.commons:commons-lang3"),
                         dependency("sleeper:configuration"),
                         dependency("org.testcontainers:testcontainers"),
                         dependency("sleeper:core"),
                         dependency("sleeper:configuration")
                 ).build(),
-                artifactIdAndRefBuilder("bulk-import").packaging("pom").modulesArray(
-                        artifactIdAndRefBuilder("bulk-import-common").hasSrcTestFolder(true).dependenciesArray(
+                midParentBuilder("bulk-import").modulesArray(
+                        testedModuleBuilder("bulk-import-common").dependenciesArray(
                                 dependency("sleeper:configuration"),
                                 dependency("net.javacrumbs.json-unit:json-unit-assertj")
                         ).build(),
-                        artifactIdAndRefBuilder("bulk-import-runner").hasSrcTestFolder(true).dependenciesArray(
+                        testedModuleBuilder("bulk-import-runner").dependenciesArray(
                                 dependency("sleeper:bulk-import-common"),
                                 dependency("sleeper:ingest"),
                                 dependency("sleeper:configuration"),
                                 dependency("sleeper:core")
                         ).build(),
-                        artifactIdAndRefBuilder("bulk-import-starter").hasSrcTestFolder(true).dependenciesArray(
+                        testedModuleBuilder("bulk-import-starter").dependenciesArray(
                                 dependency("sleeper:bulk-import-common"),
                                 dependency("sleeper:core")
                         ).build()
                 ).build(),
-                artifactIdAndRefBuilder("distribution").build()
+                untestedModuleBuilder("distribution").build()
         ).build();
+    }
+
+    public static MavenModuleStructure.Builder rootBuilder() {
+        return artifactIdAndRefBuilder("parent", null).packaging("pom");
+    }
+
+    public static MavenModuleStructure.Builder midParentBuilder(String artifactId) {
+        return artifactIdAndRefBuilder(artifactId, artifactId).packaging("pom");
+    }
+
+    public static MavenModuleStructure.Builder testedModuleBuilder(String artifactId) {
+        return artifactIdAndRefBuilder(artifactId, artifactId).hasSrcTestFolder(true);
+    }
+
+    public static MavenModuleStructure.Builder untestedModuleBuilder(String artifactId) {
+        return artifactIdAndRefBuilder(artifactId, artifactId).hasSrcTestFolder(false);
     }
 
     public static MavenModuleStructure.Builder artifactIdAndRefBuilder(String artifactId) {

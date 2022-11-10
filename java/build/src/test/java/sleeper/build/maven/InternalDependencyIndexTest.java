@@ -18,6 +18,8 @@ package sleeper.build.maven;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.build.maven.TestMavenModuleStructure.dependency;
+import static sleeper.build.maven.TestMavenModuleStructure.testedModuleBuilder;
 
 public class InternalDependencyIndexTest {
 
@@ -62,10 +64,22 @@ public class InternalDependencyIndexTest {
                 "bulk-import/bulk-import-runner",
                 "bulk-import/bulk-import-starter"))
                 .containsExactly(
-                        "bulk-import/bulk-import-common", "configuration",
-                        "bulk-import/bulk-import-runner", "ingest", "core",
+                        "bulk-import/bulk-import-common", "configuration", "core",
+                        "bulk-import/bulk-import-runner", "ingest",
                         "bulk-import/bulk-import-starter");
     }
 
-    // TODO: test transitive-only dependencies
+    @Test
+    public void shouldIncludeTransitiveOnlyDependency() {
+        // Given
+        InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
+                testedModuleBuilder("a").build(),
+                testedModuleBuilder("b").dependenciesArray(dependency("sleeper:a")).build(),
+                testedModuleBuilder("c").dependenciesArray(dependency("sleeper:b")).build()
+        ).build().internalDependencies();
+
+        // When / Then
+        assertThat(index.dependenciesForModules("c"))
+                .containsExactly("c", "b", "a");
+    }
 }
