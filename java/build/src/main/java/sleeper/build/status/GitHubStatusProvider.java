@@ -15,7 +15,6 @@
  */
 package sleeper.build.status;
 
-import sleeper.build.chunks.ProjectChunk;
 import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubWorkflowRun;
 import sleeper.build.github.GitHubWorkflowRuns;
@@ -28,22 +27,11 @@ public class GitHubStatusProvider {
         this.runs = runs;
     }
 
-    public ChunkStatus workflowStatus(GitHubHead head, ProjectChunk chunk) {
-        return runs.getLatestRun(head, chunk.getWorkflow())
-                .map(run -> statusFrom(chunk, run))
-                .orElseGet(() -> ChunkStatus.chunk(chunk).noBuild());
-    }
-
     public ChunkStatus recheckRun(GitHubHead head, ChunkStatus status) {
         return statusFrom(status, runs.recheckRun(head, status.getRunId()));
-    }
-
-    private static ChunkStatus statusFrom(ProjectChunk chunk, GitHubWorkflowRun run) {
-        return ChunkStatus.chunk(chunk).run(run).build();
     }
 
     private static ChunkStatus statusFrom(ChunkStatus status, GitHubWorkflowRun run) {
         return ChunkStatus.chunk(status.getChunk()).run(run).build();
     }
-
 }

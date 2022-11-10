@@ -35,6 +35,7 @@ public class CheckGitHubStatus {
     private final long retrySeconds;
     private final long maxRetries;
     private final GitHubStatusProvider gitHub;
+    private final GitHubWorkflowRuns runs;
 
     public CheckGitHubStatus(ProjectConfiguration configuration, GitHubWorkflowRuns runs) {
         this.head = configuration.getHead();
@@ -42,6 +43,7 @@ public class CheckGitHubStatus {
         this.retrySeconds = configuration.getRetrySeconds();
         this.maxRetries = configuration.getMaxRetries();
         this.gitHub = new GitHubStatusProvider(runs);
+        this.runs = runs;
     }
 
     public ChunksStatus checkStatus() {
@@ -63,7 +65,7 @@ public class CheckGitHubStatus {
     }
 
     private ChunkStatus retrieveStatusWaitingForOldBuilds(ProjectChunk chunk) {
-        ChunkStatus status = gitHub.workflowStatus(head, chunk);
+        ChunkStatus status = getWorkflowStatus(chunk);
         try {
             for (int retries = 0;
                  status.isWaitForOldBuildWithHead(head)
@@ -80,5 +82,11 @@ public class CheckGitHubStatus {
             Thread.currentThread().interrupt();
         }
         return status;
+    }
+
+    private ChunkStatus getWorkflowStatus(ProjectChunk chunk) {
+        return runs.getLatestRun(head, chunk.getWorkflow())
+                .map(run -> ChunkStatus.chunk(chunk).run(run).build())
+                .orElseGet(() -> ChunkStatus.chunk(chunk).noBuild());
     }
 }
