@@ -15,54 +15,40 @@
  */
 package sleeper.build.github;
 
-import org.kohsuke.github.GHCommit;
-import org.kohsuke.github.GHCompare;
-import org.kohsuke.github.GHRepository;
-import org.kohsuke.github.GHWorkflowRun;
+import jakarta.ws.rs.client.Invocation;
+import jakarta.ws.rs.client.WebTarget;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.function.Function;
 
 public class GitHubRunToHead {
 
-    private final GHCompare compare;
-    private final GHWorkflowRun run;
-    private final GitHubHead head;
+    private final GitHubWorkflowRun run;
+    private final boolean runForHeadOrBehind;
 
-    private GitHubRunToHead(GHCompare compare, GHWorkflowRun run, GitHubHead head) {
-        this.compare = compare;
+    public GitHubRunToHead(GitHubWorkflowRun run, boolean runForHeadOrBehind) {
         this.run = run;
-        this.head = head;
+        this.runForHeadOrBehind = runForHeadOrBehind;
     }
 
-    public GHWorkflowRun getRun() {
+    public GitHubWorkflowRun getRun() {
         return run;
     }
 
     public boolean isRunForHeadOrBehind() {
-        // Ignore builds for commits that are not in the history of the head commit.
-        // If a rebase or other forced push leaves a build that is disconnected from the new head, it should be ignored.
-        return head.getBranch().equals(run.getHeadBranch())
-                && (head.getSha().equals(run.getHeadSha()) || numCommitsHeadBehindRun() < 1);
+        return runForHeadOrBehind;
     }
 
-    private int numCommitsHeadBehindRun() {
-        return compare.getBehindBy();
-    }
-
-    public List<String> buildChangedPaths() {
-        return Arrays.stream(compare.getFiles())
-                .map(GHCommit.File::getFileName)
-                .collect(Collectors.toList());
-    }
-
-    public static GitHubRunToHead compare(GHRepository repository, GHWorkflowRun run, GitHubHead head) {
-        try {
-            return new GitHubRunToHead(repository.getCompare(run.getHeadSha(), head.getSha()), run, head);
-        } catch (IOException e) {
-            throw new GitHubException(e);
+    public static GitHubRunToHead compare(
+            WebTarget repository, Function<WebTarget, Invocation.Builder> request,
+            GitHubWorkflowRun run, GitHubHead head) {
+        if (run.isSameCommit(head)) {
+            return new GitHubRunToHead(run, true);
+        } else if (!run.isSameBranch(head)) {
+            return new GitHubRunToHead(run, false);
+        } else {
+            WebTarget compare = repository.path("compare").path(run.getCommitSha() + "..." + head.getSha());
+            GitHubCompareResponse response = request.apply(compare).buildGet().invoke(GitHubCompareResponse.class);
+            return response.toRunToHead(run);
         }
     }
 }

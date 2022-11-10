@@ -27,6 +27,7 @@
 
     <properties>
         <jackson.build.version>2.14.0</jackson.build.version>
+        <jersey.build.version>3.1.0</jersey.build.version>
     </properties>
 
     <dependencies>
@@ -58,6 +59,16 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
             <version>${jackson.build.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-client</artifactId>
+            <version>${jersey.build.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-json-jackson</artifactId>
+            <version>${jersey.build.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

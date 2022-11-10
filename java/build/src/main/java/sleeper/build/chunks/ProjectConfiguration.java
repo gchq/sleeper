@@ -61,8 +61,8 @@ public class ProjectConfiguration {
                 .build();
     }
 
-    public ChunkStatuses checkStatus() throws IOException {
-        return checkStatus(new GitHubWorkflowRunsImpl(token));
+    public GitHubWorkflowRunsImpl gitHubWorkflowRuns() {
+        return new GitHubWorkflowRunsImpl(token);
     }
 
     public ChunkStatuses checkStatus(GitHubWorkflowRuns runs) {

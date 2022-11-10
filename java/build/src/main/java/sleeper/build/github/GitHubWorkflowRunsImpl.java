@@ -15,68 +15,59 @@
  */
 package sleeper.build.github;
 
-import org.kohsuke.github.GHRepository;
-import org.kohsuke.github.GHWorkflowRun;
-import org.kohsuke.github.GitHub;
-import org.kohsuke.github.GitHubBuilder;
-import org.kohsuke.github.PagedIterable;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.Invocation;
+import jakarta.ws.rs.client.WebTarget;
 
-import java.io.IOException;
-import java.util.Objects;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
-public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns {
+public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns, AutoCloseable {
 
-    private final GitHub gitHub;
+    private final String token;
+    private final Client client;
+    private final WebTarget gitHubApi;
 
-    public GitHubWorkflowRunsImpl(String token) throws IOException {
-        this.gitHub = new GitHubBuilder().withJwtToken(token).build();
+    public GitHubWorkflowRunsImpl(String token) {
+        this.token = token;
+        client = ClientBuilder.newClient();
+        gitHubApi = client.target("https://api.github.com");
     }
 
     @Override
     public Stream<GitHubWorkflowRun> getRunsForHeadOrBehindLatestFirst(GitHubHead head, String workflow) {
-        try {
-            GHRepository repository = repository(head);
-            PagedIterable<GHWorkflowRun> iterable = repository.getWorkflow(workflow).listRuns();
-            return StreamSupport.stream(iterable.spliterator(), false)
-                    .map(run -> GitHubRunToHead.compare(repository, run, head))
-                    .filter(GitHubRunToHead::isRunForHeadOrBehind)
-                    .map(GitHubWorkflowRunsImpl::convertToInternalRun);
-        } catch (IOException e) {
-            throw new GitHubException(e);
-        }
+        WebTarget repository = repository(head);
+        WebTarget runs = repository.path("actions/workflows").path(workflow)
+                .path("runs").queryParam("branch", head.getBranch());
+        GitHubWorkflowRunsResponse response = request(runs).buildGet()
+                .invoke(GitHubWorkflowRunsResponse.class);
+        return response.getWorkflowRuns().stream()
+                .map(GitHubWorkflowRunsResponse.Run::toInternalRun)
+                .map(run -> GitHubRunToHead.compare(repository, this::request, run, head))
+                .filter(GitHubRunToHead::isRunForHeadOrBehind)
+                .map(GitHubRunToHead::getRun);
     }
 
     @Override
     public GitHubWorkflowRun recheckRun(GitHubHead head, Long runId) {
-        try {
-            return convertToInternalRun(repository(head).getWorkflowRun(runId));
-        } catch (IOException e) {
-            throw new GitHubException(e);
-        }
+        WebTarget repository = repository(head);
+        WebTarget run = repository.path("actions/runs").path("" + runId);
+        GitHubWorkflowRunsResponse.Run response = request(run).buildGet()
+                .invoke(GitHubWorkflowRunsResponse.Run.class);
+        return response.toInternalRun();
     }
 
-    private GHRepository repository(GitHubHead head) throws IOException {
-        return gitHub.getRepository(head.getOwnerAndRepository());
+    private WebTarget repository(GitHubHead head) {
+        return gitHubApi.path("repos").path(head.getOwnerAndRepository());
     }
 
-    private static GitHubWorkflowRun convertToInternalRun(GitHubRunToHead run) {
-        return convertToInternalRun(run.getRun());
+    private Invocation.Builder request(WebTarget target) {
+        return target.request("application/vnd.github+json")
+                .header("Authorization", "Bearer " + token);
     }
 
-    private static GitHubWorkflowRun convertToInternalRun(GHWorkflowRun run) {
-        try {
-            return GitHubWorkflowRun.builder().runId(run.getId())
-                    .runUrl(Objects.toString(run.getHtmlUrl(), null))
-                    .runStarted(run.getRunStartedAt())
-                    .commitSha(run.getHeadSha())
-                    .commitMessage(run.getHeadCommit().getMessage())
-                    .status(Objects.toString(run.getStatus(), null))
-                    .conclusion(Objects.toString(run.getConclusion(), null))
-                    .build();
-        } catch (IOException e) {
-            throw new GitHubException(e);
-        }
+    @Override
+    public void close() {
+        client.close();
     }
 }
