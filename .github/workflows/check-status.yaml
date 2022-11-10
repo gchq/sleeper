@@ -21,6 +21,12 @@ jobs:
       - name: Resolve Dependencies
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=.m2/repository
         working-directory: ./java
+      - name: Check rate limits before
+        run: |
+          curl \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/rate_limit
       - name: Query GitHub
         working-directory: ./java/build
         run: |
@@ -50,3 +56,9 @@ jobs:
           echo "chunk.statestore.name=State Store" >> status.properties
           echo "chunk.statestore.workflow=chunk-statestore.yaml" >> status.properties
           mvn compile exec:java -q -Dexec.mainClass=sleeper.build.status.CheckGitHubStatusMain -Dexec.args=status.properties -Dmaven.repo.local=../.m2/repository
+      - name: Check rate limits after
+        run: |
+          curl \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/rate_limit

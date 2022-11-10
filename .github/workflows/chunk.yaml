@@ -38,20 +38,44 @@ jobs:
       - name: Test
         run: mvn --batch-mode --fail-at-end verify -pl ${{ inputs.moduleList }} -Dmaven.repo.local=.m2/repository
         working-directory: ./java
+      - name: Check rate limits before
+        run: |
+          curl \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/rate_limit
       - name: Publish Test Report
         if: ${{ always() && inputs.publishTestReport }}
         uses: scacap/action-surefire-report@v1
         with:
           check_name: Tests for ${{ inputs.chunkName }}
+      - name: Check rate limits after test report
+        run: |
+          curl \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/rate_limit
       - name: Publish Checkstyle Report
         if: ${{ always() }}
         uses: jwgmeligmeyling/checkstyle-github-action@v1.2
         with:
           path: '**/checkstyle-result.xml'
           name: Checkstyle for ${{ inputs.chunkName }}
+      - name: Check rate limits after Checkstyle report
+        run: |
+          curl \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/rate_limit
       - name: Publish Spotbugs Report
         if: ${{ always() }}
         uses: jwgmeligmeyling/spotbugs-github-action@v1.2
         with:
           path: '**/spotbugsXml.xml'
           name: Spotbugs for ${{ inputs.chunkName }}
+      - name: Check rate limits at end
+        run: |
+          curl \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/rate_limit
