@@ -26,6 +26,7 @@ import sleeper.build.github.GitHubWorkflowRuns;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -47,34 +48,45 @@ public class CheckGitHubStatus {
     }
 
     public ChunksStatus checkStatus() {
-        return fetchChunksStatus(this::getStatusFromChunkWorkflow);
+        return fetchChunksStatus(this::getRunFromChunkWorkflow);
     }
 
     public WorkflowStatus checkStatusSingleWorkflow(String workflow) {
-        ChunksStatus chunksStatus = fetchChunksStatus(chunk -> getStatusFromWorkflow(chunk, workflow));
+        ChunksStatus chunksStatus = fetchChunksStatus(chunk -> getRunFromWorkflow(workflow));
         return new WorkflowStatus(chunksStatus,
                 chunks.stream()
                         .map(ProjectChunk::getId)
                         .collect(Collectors.toList()));
     }
 
-    private ChunksStatus fetchChunksStatus(Function<ProjectChunk, ChunkStatus> getChunkStatus) {
-        return ChunksStatus.chunksForHead(head, listChunkStatusInOrder(getChunkStatus));
+    private ChunksStatus fetchChunksStatus(
+            Function<ProjectChunk, Optional<GitHubWorkflowRun>> getLatestChunkRun) {
+        return ChunksStatus.chunksForHead(head, listChunkStatusInOrder(getLatestChunkRun));
     }
 
-    private List<ChunkStatus> listChunkStatusInOrder(Function<ProjectChunk, ChunkStatus> getChunkStatus) {
+    private List<ChunkStatus> listChunkStatusInOrder(
+            Function<ProjectChunk, Optional<GitHubWorkflowRun>> getLatestChunkRun) {
         // Since checks are done in parallel, re-order them after they are complete
-        Map<String, ChunkStatus> statusByChunkId = retrieveStatusByChunkId(getChunkStatus);
+        Map<String, ChunkStatus> statusByChunkId = retrieveStatusByChunkId(getLatestChunkRun);
         return chunks.stream()
                 .map(chunk -> statusByChunkId.get(chunk.getId()))
                 .collect(Collectors.toList());
     }
 
-    private Map<String, ChunkStatus> retrieveStatusByChunkId(Function<ProjectChunk, ChunkStatus> getChunkStatus) {
+    private Map<String, ChunkStatus> retrieveStatusByChunkId(
+            Function<ProjectChunk, Optional<GitHubWorkflowRun>> getLatestChunkRun) {
         return chunks.stream().parallel()
-                .map(getChunkStatus)
+                .map(chunk -> getChunkStatus(chunk, getLatestChunkRun))
                 .map(this::waitForOldBuild)
                 .collect(Collectors.toMap(ChunkStatus::getChunkId, c -> c));
+    }
+
+    private ChunkStatus getChunkStatus(
+            ProjectChunk chunk, Function<ProjectChunk, Optional<GitHubWorkflowRun>> getLatestChunkRun) {
+
+        return getLatestChunkRun.apply(chunk)
+                .map(run -> ChunkStatus.chunk(chunk).run(run).build())
+                .orElseGet(() -> ChunkStatus.chunk(chunk).noBuild());
     }
 
     private ChunkStatus waitForOldBuild(ChunkStatus status) {
@@ -98,13 +110,11 @@ public class CheckGitHubStatus {
         return status;
     }
 
-    private ChunkStatus getStatusFromChunkWorkflow(ProjectChunk chunk) {
-        return getStatusFromWorkflow(chunk, chunk.getWorkflow());
+    private Optional<GitHubWorkflowRun> getRunFromChunkWorkflow(ProjectChunk chunk) {
+        return getRunFromWorkflow(chunk.getWorkflow());
     }
 
-    private ChunkStatus getStatusFromWorkflow(ProjectChunk chunk, String workflow) {
-        return runs.getLatestRun(head, workflow)
-                .map(run -> ChunkStatus.chunk(chunk).run(run).build())
-                .orElseGet(() -> ChunkStatus.chunk(chunk).noBuild());
+    private Optional<GitHubWorkflowRun> getRunFromWorkflow(String workflow) {
+        return runs.getLatestRun(head, workflow);
     }
 }
