@@ -20,11 +20,8 @@ import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubWorkflowRun;
 
 import java.io.PrintStream;
-import java.time.Instant;
 import java.util.Objects;
 import java.util.function.Function;
-
-import static sleeper.build.util.ValidationUtils.ignoreEmpty;
 
 public class ChunkStatus {
 
@@ -33,25 +30,11 @@ public class ChunkStatus {
     private static final String IN_PROGRESS = "in_progress";
 
     private final ProjectChunk chunk;
-    private final String status;
-    private final String conclusion;
-    private final Long runId;
-    private final String runUrl;
-    private final Instant runStarted;
-    private final String commitSha;
-    private final String commitMessage;
     private final GitHubWorkflowRun run;
 
     private ChunkStatus(Builder builder) {
         chunk = Objects.requireNonNull(builder.chunk, "chunk must not be null");
-        status = ignoreEmpty(builder.status);
-        conclusion = ignoreEmpty(builder.conclusion);
-        runId = builder.runId;
-        runUrl = ignoreEmpty(builder.runUrl);
-        runStarted = builder.runStarted;
-        commitSha = ignoreEmpty(builder.commitSha);
-        commitMessage = ignoreEmpty(builder.commitMessage);
-        run = Objects.requireNonNull(builder.run);
+        run = Objects.requireNonNull(builder.run, "run must not be null");
     }
 
     public static Builder builder() {
@@ -150,13 +133,6 @@ public class ChunkStatus {
 
     public static final class Builder {
         private ProjectChunk chunk;
-        private String status;
-        private String conclusion;
-        private Long runId;
-        private String runUrl;
-        private Instant runStarted;
-        private String commitSha;
-        private String commitMessage;
         public GitHubWorkflowRun run;
 
         private Builder() {
@@ -185,41 +161,6 @@ public class ChunkStatus {
 
         public ChunkStatus noBuild() {
             return buildWithRun(GitHubWorkflowRun.Builder::noBuild);
-        }
-
-        public Builder status(String status) {
-            this.status = status;
-            return this;
-        }
-
-        public Builder conclusion(String conclusion) {
-            this.conclusion = conclusion;
-            return this;
-        }
-
-        public Builder runId(Long runId) {
-            this.runId = runId;
-            return this;
-        }
-
-        public Builder runUrl(String runUrl) {
-            this.runUrl = runUrl;
-            return this;
-        }
-
-        public Builder runStarted(Instant runStarted) {
-            this.runStarted = runStarted;
-            return this;
-        }
-
-        public Builder commitSha(String commitSha) {
-            this.commitSha = commitSha;
-            return this;
-        }
-
-        public Builder commitMessage(String commitMessage) {
-            this.commitMessage = commitMessage;
-            return this;
         }
 
         public Builder run(GitHubWorkflowRun run) {
