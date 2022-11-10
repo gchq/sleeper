@@ -23,6 +23,7 @@ import org.kohsuke.github.PagedIterable;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class GitHubWorkflowRuns {
@@ -34,13 +35,17 @@ public class GitHubWorkflowRuns {
     }
 
     public Optional<GitHubWorkflowRun> getLatestRun(GitHubHead head, String workflow) {
+        return getRunsForHeadOrBehind(head, workflow).findFirst();
+    }
+
+    public Stream<GitHubWorkflowRun> getRunsForHeadOrBehind(GitHubHead head, String workflow) {
         try {
             GHRepository repository = repository(head);
             PagedIterable<GHWorkflowRun> iterable = repository.getWorkflow(workflow).listRuns();
             return StreamSupport.stream(iterable.spliterator(), false)
                     .map(run -> GitHubRunToHead.compare(repository, run, head))
                     .filter(GitHubRunToHead::isRunForHeadOrBehind)
-                    .findFirst().map(GitHubWorkflowRuns::convertToInternalRun);
+                    .map(GitHubWorkflowRuns::convertToInternalRun);
         } catch (IOException e) {
             throw new GitHubException(e);
         }
