@@ -27,7 +27,7 @@
 
     <properties>
         <jackson.build.version>2.14.0</jackson.build.version>
-        <jersey.build.version>3.1.0</jersey.build.version>
+        <jersey.build.version>3.0.8</jersey.build.version>
     </properties>
 
     <dependencies>
