@@ -29,14 +29,14 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class TestGitHubWorkflowRuns implements GitHubWorkflowRuns {
+public class InMemoryGitHubWorkflowRuns implements GitHubWorkflowRuns {
 
     private final GitHubHead head;
     private final String workflow;
     private final List<GitHubWorkflowRun> runsLatestFirst = new ArrayList<>();
     private final Map<Long, Queue<GitHubWorkflowRun>> recheckResultsByRunId = new HashMap<>();
 
-    public TestGitHubWorkflowRuns(GitHubHead head, String workflow) {
+    public InMemoryGitHubWorkflowRuns(GitHubHead head, String workflow) {
         this.head = head;
         this.workflow = workflow;
     }
@@ -77,6 +77,11 @@ public class TestGitHubWorkflowRuns implements GitHubWorkflowRuns {
     public void setLatestRun(GitHubWorkflowRun run) {
         runsLatestFirst.clear();
         runsLatestFirst.add(run);
+    }
+
+    public void setRunsLatestFirst(GitHubWorkflowRun... runs) {
+        runsLatestFirst.clear();
+        runsLatestFirst.addAll(Arrays.asList(runs));
     }
 
     public void setLatestRunAndRecheck(GitHubWorkflowRun run, GitHubWorkflowRun recheck) {

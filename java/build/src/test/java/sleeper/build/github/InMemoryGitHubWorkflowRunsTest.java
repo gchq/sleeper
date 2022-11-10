@@ -20,7 +20,7 @@ import org.junit.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class TestGitHubWorkflowRunsTest {
+public class InMemoryGitHubWorkflowRunsTest {
     private static final GitHubHead BRANCH = branchBuilder().build();
     private static final String WORKFLOW = "test-workflow";
 
@@ -31,7 +31,7 @@ public class TestGitHubWorkflowRunsTest {
     @Test
     public void shouldReturnSpecifiedRunAndRecheck() {
         // Given
-        TestGitHubWorkflowRuns runs = new TestGitHubWorkflowRuns(BRANCH, WORKFLOW);
+        InMemoryGitHubWorkflowRuns runs = new InMemoryGitHubWorkflowRuns(BRANCH, WORKFLOW);
         long runId = 123;
         GitHubWorkflowRun.Builder runBuilder = GitHubWorkflowRun.withCommitSha("some-sha").runId(runId);
 
@@ -45,7 +45,7 @@ public class TestGitHubWorkflowRunsTest {
     @Test
     public void shouldFailWhenUnspecifiedRecheckMade() {
         // Given
-        TestGitHubWorkflowRuns runs = new TestGitHubWorkflowRuns(BRANCH, WORKFLOW);
+        InMemoryGitHubWorkflowRuns runs = new InMemoryGitHubWorkflowRuns(BRANCH, WORKFLOW);
 
         // When / Then
         assertThatThrownBy(() -> runs.recheckRun(BRANCH, 123L))
@@ -55,7 +55,7 @@ public class TestGitHubWorkflowRunsTest {
     @Test
     public void shouldFailWhenTooManyRechecksMade() {
         // Given
-        TestGitHubWorkflowRuns runs = new TestGitHubWorkflowRuns(BRANCH, WORKFLOW);
+        InMemoryGitHubWorkflowRuns runs = new InMemoryGitHubWorkflowRuns(BRANCH, WORKFLOW);
         long runId = 123;
         GitHubWorkflowRun.Builder runBuilder = GitHubWorkflowRun.withCommitSha("some-sha").runId(runId);
 
@@ -70,7 +70,7 @@ public class TestGitHubWorkflowRunsTest {
     @Test
     public void shouldFailWhenRunQueriedForWrongCommit() {
         // Given
-        TestGitHubWorkflowRuns runs = new TestGitHubWorkflowRuns(BRANCH, WORKFLOW);
+        InMemoryGitHubWorkflowRuns runs = new InMemoryGitHubWorkflowRuns(BRANCH, WORKFLOW);
         GitHubHead queryHead = branchBuilder().sha("other-sha").build();
         runs.setLatestRun(GitHubWorkflowRun.withCommitSha("some-sha").runId(123L).inProgress());
 
@@ -83,7 +83,7 @@ public class TestGitHubWorkflowRunsTest {
     @Test
     public void shouldFailWhenRunRecheckedForWrongCommit() {
         // Given
-        TestGitHubWorkflowRuns runs = new TestGitHubWorkflowRuns(BRANCH, WORKFLOW);
+        InMemoryGitHubWorkflowRuns runs = new InMemoryGitHubWorkflowRuns(BRANCH, WORKFLOW);
         long runId = 123;
         GitHubHead queryHead = branchBuilder().sha("other-sha").build();
         GitHubWorkflowRun run = GitHubWorkflowRun.withCommitSha("some-sha").runId(runId).inProgress();
@@ -98,7 +98,7 @@ public class TestGitHubWorkflowRunsTest {
     @Test
     public void shouldFailWhenRunQueriedForWrongWorkflow() {
         // Given
-        TestGitHubWorkflowRuns runs = new TestGitHubWorkflowRuns(BRANCH, WORKFLOW);
+        InMemoryGitHubWorkflowRuns runs = new InMemoryGitHubWorkflowRuns(BRANCH, WORKFLOW);
         runs.setLatestRun(GitHubWorkflowRun.withCommitSha("some-sha").runId(123L).inProgress());
 
         // When / Then

@@ -20,7 +20,7 @@ import sleeper.build.chunks.ProjectChunk;
 import sleeper.build.chunks.ProjectConfiguration;
 import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubWorkflowRun;
-import sleeper.build.github.TestGitHubWorkflowRuns;
+import sleeper.build.github.InMemoryGitHubWorkflowRuns;
 
 import java.util.Collections;
 
@@ -32,7 +32,7 @@ public class CheckGitHubStatusSplitWorkflowTest {
             .owner("test-owner").repository("test-repo").branch("test-branch").sha("test-sha")
             .build();
     private final ProjectChunk chunk = ProjectChunk.chunk("common").name("Common").workflow("chunk-common.yaml").build();
-    private final TestGitHubWorkflowRuns workflowRuns = new TestGitHubWorkflowRuns(branch, chunk.getWorkflow());
+    private final InMemoryGitHubWorkflowRuns workflowRuns = new InMemoryGitHubWorkflowRuns(branch, chunk.getWorkflow());
 
     private ProjectConfiguration.Builder configurationBuilder() {
         return ProjectConfiguration.builder()
