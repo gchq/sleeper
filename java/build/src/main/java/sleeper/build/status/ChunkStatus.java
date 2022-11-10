@@ -40,6 +40,7 @@ public class ChunkStatus {
     private final Instant runStarted;
     private final String commitSha;
     private final String commitMessage;
+    private final GitHubWorkflowRun run;
 
     private ChunkStatus(Builder builder) {
         chunk = Objects.requireNonNull(builder.chunk, "chunk must not be null");
@@ -50,6 +51,7 @@ public class ChunkStatus {
         runStarted = builder.runStarted;
         commitSha = ignoreEmpty(builder.commitSha);
         commitMessage = ignoreEmpty(builder.commitMessage);
+        run = Objects.requireNonNull(builder.run);
     }
 
     public static Builder builder() {
@@ -58,31 +60,31 @@ public class ChunkStatus {
 
     public void report(GitHubHead head, PrintStream out) {
         out.println();
-        if (conclusion != null) {
-            out.println(chunk.getName() + ": " + status + ", " + conclusion);
+        if (run.getConclusion() != null) {
+            out.println(chunk.getName() + ": " + run.getStatus() + ", " + run.getConclusion());
         } else {
-            out.println(chunk.getName() + ": " + status);
+            out.println(chunk.getName() + ": " + run.getStatus());
         }
-        if (runUrl != null) {
-            out.println("Run: " + runUrl);
+        if (run.getRunUrl() != null) {
+            out.println("Run: " + run.getRunUrl());
         }
-        if (runStarted != null) {
-            out.println("Started at: " + runStarted);
+        if (run.getRunStarted() != null) {
+            out.println("Started at: " + run.getRunStarted());
         }
         if (isRunForHead(head)) {
             out.println("Build is for current commit");
         } else {
-            if (commitMessage != null) {
-                out.println("Message: " + commitMessage);
+            if (run.getCommitMessage() != null) {
+                out.println("Message: " + run.getCommitMessage());
             }
-            if (commitSha != null) {
-                out.println("Commit: " + commitSha);
+            if (run.getCommitSha() != null) {
+                out.println("Commit: " + run.getCommitSha());
             }
         }
     }
 
     public boolean isFailCheckWithHead(GitHubHead head) {
-        return (COMPLETED.equals(status) && !SUCCESS.equals(conclusion))
+        return (COMPLETED.equals(run.getStatus()) && !SUCCESS.equals(run.getConclusion()))
                 // Fail if there's an old build we want to wait for but the wait timed out
                 || isWaitForOldBuildWithHead(head);
     }
@@ -90,11 +92,11 @@ public class ChunkStatus {
     public boolean isWaitForOldBuildWithHead(GitHubHead head) {
         // If the run is not for the head commit, that should mean it is for a previous commit.
         // The GitHubProvider should ignore any builds for commits that are not in the history of the head commit.
-        return IN_PROGRESS.equals(status) && !isRunForHead(head);
+        return IN_PROGRESS.equals(run.getStatus()) && !isRunForHead(head);
     }
 
     private boolean isRunForHead(GitHubHead head) {
-        return head.getSha().equals(commitSha);
+        return head.getSha().equals(run.getCommitSha());
     }
 
     public String getChunkId() {
@@ -106,11 +108,11 @@ public class ChunkStatus {
     }
 
     public Long getRunId() {
-        return runId;
+        return run.getRunId();
     }
 
     public String getRunUrl() {
-        return runUrl;
+        return run.getRunUrl();
     }
 
     public static Builder chunk(String chunk) {
@@ -130,28 +132,19 @@ public class ChunkStatus {
             return false;
         }
         ChunkStatus that = (ChunkStatus) o;
-        return chunk.equals(that.chunk) && Objects.equals(status, that.status)
-                && Objects.equals(conclusion, that.conclusion) && Objects.equals(runId, that.runId)
-                && Objects.equals(runUrl, that.runUrl) && Objects.equals(runStarted, that.runStarted)
-                && Objects.equals(commitSha, that.commitSha) && Objects.equals(commitMessage, that.commitMessage);
+        return chunk.equals(that.chunk) && run.equals(that.run);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(chunk, status, conclusion, runId, runUrl, runStarted, commitSha, commitMessage);
+        return Objects.hash(chunk, run);
     }
 
     @Override
     public String toString() {
         return "ChunkStatus{" +
                 "chunk=" + chunk +
-                ", status='" + status + '\'' +
-                ", conclusion='" + conclusion + '\'' +
-                ", runId=" + runId +
-                ", runUrl='" + runUrl + '\'' +
-                ", runStarted=" + runStarted +
-                ", commitSha='" + commitSha + '\'' +
-                ", commitMessage='" + commitMessage + '\'' +
+                ", run=" + run +
                 '}';
     }
 
@@ -164,6 +157,7 @@ public class ChunkStatus {
         private Instant runStarted;
         private String commitSha;
         private String commitMessage;
+        public GitHubWorkflowRun run;
 
         private Builder() {
         }
@@ -229,13 +223,8 @@ public class ChunkStatus {
         }
 
         public Builder run(GitHubWorkflowRun run) {
-            return status(run.getStatus())
-                    .conclusion(run.getConclusion())
-                    .runId(run.getRunId())
-                    .runUrl(run.getRunUrl())
-                    .runStarted(run.getRunStarted())
-                    .commitSha(run.getCommitSha())
-                    .commitMessage(run.getCommitMessage());
+            this.run = run;
+            return this;
         }
 
         public ChunkStatus buildWithRun(Function<GitHubWorkflowRun.Builder, GitHubWorkflowRun> runConfig) {
