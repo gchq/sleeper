@@ -45,8 +45,6 @@ import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecs.AddAutoScalingGroupCapacityOptions;
 import software.amazon.awscdk.services.ecs.AmiHardwareType;
 import software.amazon.awscdk.services.ecs.AsgCapacityProvider;
-import software.amazon.awscdk.services.ecs.AwsLogDriver;
-import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
 import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerDefinitionOptions;
 import software.amazon.awscdk.services.ecs.ContainerImage;
@@ -55,7 +53,6 @@ import software.amazon.awscdk.services.ecs.EcsOptimizedImage;
 import software.amazon.awscdk.services.ecs.EcsOptimizedImageOptions;
 import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
 import software.amazon.awscdk.services.ecs.ITaskDefinition;
-import software.amazon.awscdk.services.ecs.LogDriver;
 import software.amazon.awscdk.services.ecs.MachineImageType;
 import software.amazon.awscdk.services.ecs.NetworkMode;
 import software.amazon.awscdk.services.events.Rule;
@@ -79,6 +76,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Stack;
 import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
@@ -425,7 +423,7 @@ public class CompactionStack extends NestedStack {
                 .environment(environmentVariables)
                 .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
                 .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
-                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties, "MergeCompactionTasks"))                
+                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties, "MergeCompactionTasks"))
                 .build();
         fargateTaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
         ec2TaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
@@ -507,7 +505,8 @@ public class CompactionStack extends NestedStack {
                 .environment(environmentVariables)
                 .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
                 .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
-                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties, "SplittingMergeCompactionTasks"))
+                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties,
+                        "SplittingMergeCompactionTasks"))
                 .build();
         fargateTaskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME,
                 containerDefinitionOptions);
