@@ -46,6 +46,7 @@ public class GitHubWorkflowRunsResponse {
         return workflowRuns;
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Run {
         private final long id;
         private final String headSha;
@@ -85,6 +86,7 @@ public class GitHubWorkflowRunsResponse {
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Commit {
         private final String message;
 

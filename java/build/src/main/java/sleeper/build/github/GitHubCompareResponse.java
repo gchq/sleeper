@@ -43,6 +43,7 @@ public class GitHubCompareResponse {
         return new GitHubRunToHead(run, behindBy < 1);
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class File {
         private final String filename;
 
