@@ -17,10 +17,10 @@ package sleeper.build.status;
 
 import sleeper.build.chunks.ProjectChunk;
 import sleeper.build.github.GitHubHead;
+import sleeper.build.github.GitHubWorkflowRun;
 
 import java.io.PrintStream;
 import java.time.Instant;
-import java.util.Date;
 import java.util.Objects;
 
 import static sleeper.build.util.ValidationUtils.ignoreEmpty;
@@ -212,8 +212,8 @@ public class ChunkStatus {
             return this;
         }
 
-        public Builder runStarted(Date runStarted) {
-            this.runStarted = runStarted.toInstant();
+        public Builder runStarted(Instant runStarted) {
+            this.runStarted = runStarted;
             return this;
         }
 
@@ -225,6 +225,16 @@ public class ChunkStatus {
         public Builder commitMessage(String commitMessage) {
             this.commitMessage = commitMessage;
             return this;
+        }
+
+        public Builder run(GitHubWorkflowRun run) {
+            return status(run.getStatus())
+                    .conclusion(run.getConclusion())
+                    .runId(run.getRunId())
+                    .runUrl(run.getRunUrl())
+                    .runStarted(run.getRunStarted())
+                    .commitSha(run.getCommitSha())
+                    .commitMessage(run.getCommitMessage());
         }
 
         public ChunkStatus build() {
