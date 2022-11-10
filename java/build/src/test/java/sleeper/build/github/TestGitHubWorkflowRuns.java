@@ -89,9 +89,7 @@ public class TestGitHubWorkflowRuns implements GitHubWorkflowRuns {
     public void setLatestRunAndRechecks(GitHubWorkflowRun run, List<GitHubWorkflowRun> rechecks) {
         runsLatestFirst.clear();
         runsLatestFirst.add(run);
-        Queue<GitHubWorkflowRun> rechecksQueue = new LinkedList<>();
-        rechecksQueue.addAll(rechecks);
-        recheckResultsByRunId.put(run.getRunId(), rechecksQueue);
+        recheckResultsByRunId.put(run.getRunId(), new LinkedList<>(rechecks));
     }
 
     public ChunksStatus checkStatus(ProjectConfiguration configuration) {
