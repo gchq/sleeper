@@ -45,8 +45,7 @@ public class ProjectConfigurationTest {
                                         .build(),
                                 ProjectChunk.chunk("common").name("Common")
                                         .workflow("chunk-common.yaml").modulesArray(
-                                                "core", "configuration", "sketches", "parquet",
-                                                "common-job", "build", "dynamodb-tools")
+                                                "core", "configuration")
                                         .build(),
                                 ProjectChunk.chunk("ingest").name("Ingest")
                                         .workflow("chunk-ingest.yaml").modulesArray("ingest").build()))
