@@ -18,10 +18,15 @@ package sleeper.build.status;
 import org.junit.Test;
 import sleeper.build.chunks.ProjectChunks;
 import sleeper.build.chunks.ProjectConfiguration;
+import sleeper.build.chunks.ProjectStructure;
 import sleeper.build.chunks.TestChunks;
 import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubWorkflowRun;
 import sleeper.build.github.InMemoryGitHubWorkflowRuns;
+import sleeper.build.maven.MavenModuleStructure;
+import sleeper.build.maven.TestMavenModuleStructure;
+
+import java.nio.file.Paths;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,18 +37,24 @@ public class CheckGitHubStatusSingleWorkflowTest {
             .owner("test-owner").repository("test-repo").branch("test-branch").sha("test-sha")
             .build();
     private static final String WORKFLOW = "test-workflow.yaml";
+    private static final MavenModuleStructure MAVEN_PROJECT = TestMavenModuleStructure.example();
     private final InMemoryGitHubWorkflowRuns workflowRuns = new InMemoryGitHubWorkflowRuns(BRANCH, WORKFLOW);
 
     private ProjectConfiguration.Builder configurationBuilder() {
         return ProjectConfiguration.builder()
                 .token("test-token").head(BRANCH)
-                .chunks(CHUNKS);
+                .chunks(CHUNKS).structure(ProjectStructure.builder()
+                        .mavenPathInRepository(Paths.get("java"))
+                        .mavenProject(MAVEN_PROJECT)
+                        .build());
     }
 
     @Test
     public void shouldBuildAllChunksWhenNoWorkflowRunsYet() throws Exception {
-
+        // When
         WorkflowStatus status = configurationBuilder().build().checkStatusSingleWorkflow(workflowRuns, WORKFLOW);
+
+        // Then
         assertThat(status.hasPreviousFailures()).isFalse();
         assertThat(status.previousBuildsReportLines()).containsExactly("",
                 "Bulk Import: null",
@@ -55,10 +66,24 @@ public class CheckGitHubStatusSingleWorkflowTest {
     }
 
     @Test
-    public void shouldBuildNoChunksWhenNoChangesSinceLastBuild() throws Exception {
+    public void shouldBuildNoChunksWhenNoChangesSinceLastRun() throws Exception {
+        // Given
         workflowRuns.setLatestRun(GitHubWorkflowRun.builder()
-                .changedPathsArray("scripts/build/build.sh").build());
+                .pathsChangedSinceThisRunArray(".github/workflows/build.yaml")
+                .success());
+
+        // When
         WorkflowStatus status = configurationBuilder().build().checkStatusSingleWorkflow(workflowRuns, WORKFLOW);
 
+        // Then
+        // TODO stop assuming the previous build built all the chunks!
+        assertThat(status.hasPreviousFailures()).isFalse();
+        assertThat(status.previousBuildsReportLines()).containsExactly("",
+                "Bulk Import: completed, success",
+                "",
+                "Common: completed, success",
+                "",
+                "Ingest: completed, success");
+        assertThat(status.chunkIdsToBuild()).isEmpty();
     }
 }

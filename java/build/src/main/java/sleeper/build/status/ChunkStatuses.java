@@ -16,11 +16,10 @@
 package sleeper.build.status;
 
 import sleeper.build.github.GitHubHead;
+import sleeper.build.util.PrintUtils;
 
-import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -44,10 +43,7 @@ public class ChunkStatuses {
     }
 
     public List<String> reportLines() throws UnsupportedEncodingException {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        report(new PrintStream(os, false, StandardCharsets.UTF_8.displayName()));
-        String report = os.toString(StandardCharsets.UTF_8.displayName());
-        return Arrays.asList(report.split(System.lineSeparator()));
+        return PrintUtils.printLines(this::report);
     }
 
     public static ChunkStatuses chunksForHead(GitHubHead head, ChunkStatus... chunks) {

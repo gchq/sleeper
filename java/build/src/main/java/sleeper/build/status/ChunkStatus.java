@@ -25,10 +25,6 @@ import java.util.function.Function;
 
 public class ChunkStatus {
 
-    private static final String COMPLETED = "completed";
-    private static final String SUCCESS = "success";
-    private static final String IN_PROGRESS = "in_progress";
-
     private final ProjectChunk chunk;
     private final GitHubWorkflowRun run;
 
@@ -42,44 +38,15 @@ public class ChunkStatus {
     }
 
     public void report(GitHubHead head, PrintStream out) {
-        out.println();
-        if (run.getConclusion() != null) {
-            out.println(chunk.getName() + ": " + run.getStatus() + ", " + run.getConclusion());
-        } else {
-            out.println(chunk.getName() + ": " + run.getStatus());
-        }
-        if (run.getRunUrl() != null) {
-            out.println("Run: " + run.getRunUrl());
-        }
-        if (run.getRunStarted() != null) {
-            out.println("Started at: " + run.getRunStarted());
-        }
-        if (isRunForHead(head)) {
-            out.println("Build is for current commit");
-        } else {
-            if (run.getCommitMessage() != null) {
-                out.println("Message: " + run.getCommitMessage());
-            }
-            if (run.getCommitSha() != null) {
-                out.println("Commit: " + run.getCommitSha());
-            }
-        }
+        run.report(head, chunk.getName(), out);
     }
 
     public boolean isFailCheckWithHead(GitHubHead head) {
-        return (COMPLETED.equals(run.getStatus()) && !SUCCESS.equals(run.getConclusion()))
-                // Fail if there's an old build we want to wait for but the wait timed out
-                || isWaitForOldBuildWithHead(head);
+        return run.isFailCheckWithHead(head);
     }
 
     public boolean isWaitForOldBuildWithHead(GitHubHead head) {
-        // If the run is not for the head commit, that should mean it is for a previous commit.
-        // The GitHubProvider should ignore any builds for commits that are not in the history of the head commit.
-        return IN_PROGRESS.equals(run.getStatus()) && !isRunForHead(head);
-    }
-
-    private boolean isRunForHead(GitHubHead head) {
-        return head.getSha().equals(run.getCommitSha());
+        return run.isWaitForOldBuildWithHead(head);
     }
 
     public String getChunkId() {

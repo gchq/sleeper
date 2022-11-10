@@ -24,6 +24,7 @@ import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubWorkflowRun;
 import sleeper.build.github.GitHubWorkflowRuns;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,9 +53,11 @@ public class CheckGitHubStatus {
     }
 
     public WorkflowStatus checkStatusSingleWorkflow(String workflow) {
-        ChunkStatuses chunkStatuses = fetchStatusForEachChunk(chunk -> getRunFromWorkflow(workflow));
-        return new WorkflowStatus(chunkStatuses,
-                chunks.stream()
+        GitHubWorkflowRun lastRun = getRunFromWorkflow(workflow).orElse(null);
+        return new WorkflowStatus(head, lastRun,
+                fetchStatusForEachChunk(chunk -> Optional.ofNullable(lastRun)),
+                lastRun != null ? Collections.emptyList()
+                        : chunks.stream()
                         .map(ProjectChunk::getId)
                         .collect(Collectors.toList()));
     }

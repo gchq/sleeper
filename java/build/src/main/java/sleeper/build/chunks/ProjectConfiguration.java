@@ -40,6 +40,7 @@ public class ProjectConfiguration {
     private final String token;
     private final GitHubHead head;
     private final ProjectChunks chunks;
+    private final ProjectStructure structure;
     private final long retrySeconds;
     private final long maxRetries;
 
@@ -47,6 +48,7 @@ public class ProjectConfiguration {
         token = Objects.requireNonNull(ignoreEmpty(builder.token), "token must not be null");
         head = Objects.requireNonNull(builder.head, "head must not be null");
         chunks = Objects.requireNonNull(builder.chunks, "chunks must not be null");
+        structure = builder.structure;
         retrySeconds = builder.retrySeconds;
         maxRetries = builder.maxRetries;
     }
@@ -137,6 +139,7 @@ public class ProjectConfiguration {
         private String token;
         private GitHubHead head;
         private ProjectChunks chunks;
+        private ProjectStructure structure;
         private long retrySeconds = DEFAULT_RETRY_SECONDS;
         private long maxRetries = DEFAULT_MAX_RETRIES;
 
@@ -155,6 +158,11 @@ public class ProjectConfiguration {
 
         public Builder chunks(ProjectChunks chunks) {
             this.chunks = chunks;
+            return this;
+        }
+
+        public Builder structure(ProjectStructure structure) {
+            this.structure = structure;
             return this;
         }
 

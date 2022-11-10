@@ -15,6 +15,7 @@
  */
 package sleeper.build.github;
 
+import java.io.PrintStream;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,7 +38,7 @@ public class GitHubWorkflowRun {
     private final Instant runStarted;
     private final String commitSha;
     private final String commitMessage;
-    private final List<String> changedPaths;
+    private final List<String> pathsChangedSinceThisRun;
 
     private GitHubWorkflowRun(Builder builder) {
         status = ignoreEmpty(builder.status);
@@ -47,7 +48,7 @@ public class GitHubWorkflowRun {
         runStarted = builder.runStarted;
         commitSha = ignoreEmpty(builder.commitSha);
         commitMessage = ignoreEmpty(builder.commitMessage);
-        changedPaths = Collections.unmodifiableList(Objects.requireNonNull(builder.changedPaths, "changedPaths must not be null"));
+        pathsChangedSinceThisRun = Collections.unmodifiableList(Objects.requireNonNull(builder.pathsChangedSinceThisRun, "pathsChangedSinceThisRun must not be null"));
     }
 
     public static Builder builder() {
@@ -56,6 +57,47 @@ public class GitHubWorkflowRun {
 
     public static Builder withCommitSha(String commitSha) {
         return builder().commitSha(commitSha);
+    }
+
+    public void report(GitHubHead head, String buildName, PrintStream out) {
+        out.println();
+        if (conclusion != null) {
+            out.println(buildName + ": " + status + ", " + conclusion);
+        } else {
+            out.println(buildName + ": " + status);
+        }
+        if (runUrl != null) {
+            out.println("Run: " + runUrl);
+        }
+        if (runStarted != null) {
+            out.println("Started at: " + runStarted);
+        }
+        if (isRunForHead(head)) {
+            out.println("Build is for current commit");
+        } else {
+            if (commitMessage != null) {
+                out.println("Message: " + commitMessage);
+            }
+            if (commitSha != null) {
+                out.println("Commit: " + commitSha);
+            }
+        }
+    }
+
+    public boolean isFailCheckWithHead(GitHubHead head) {
+        return (COMPLETED.equals(status) && !SUCCESS.equals(conclusion))
+                // Fail if there's an old build we want to wait for but the wait timed out
+                || isWaitForOldBuildWithHead(head);
+    }
+
+    public boolean isWaitForOldBuildWithHead(GitHubHead head) {
+        // If the run is not for the head commit, that should mean it is for a previous commit.
+        // The GitHubProvider should ignore any builds for commits that are not in the history of the head commit.
+        return IN_PROGRESS.equals(status) && !isRunForHead(head);
+    }
+
+    private boolean isRunForHead(GitHubHead head) {
+        return head.getSha().equals(commitSha);
     }
 
     public String getStatus() {
@@ -86,24 +128,28 @@ public class GitHubWorkflowRun {
         return commitMessage;
     }
 
-    public List<String> getChangedPaths() {
-        return changedPaths;
+    public List<String> getPathsChangedSinceThisRun() {
+        return pathsChangedSinceThisRun;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         GitHubWorkflowRun that = (GitHubWorkflowRun) o;
         return Objects.equals(status, that.status) && Objects.equals(conclusion, that.conclusion)
                 && Objects.equals(runId, that.runId) && Objects.equals(runUrl, that.runUrl)
                 && Objects.equals(runStarted, that.runStarted) && Objects.equals(commitSha, that.commitSha)
-                && Objects.equals(commitMessage, that.commitMessage) && changedPaths.equals(that.changedPaths);
+                && Objects.equals(commitMessage, that.commitMessage) && pathsChangedSinceThisRun.equals(that.pathsChangedSinceThisRun);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(status, conclusion, runId, runUrl, runStarted, commitSha, commitMessage, changedPaths);
+        return Objects.hash(status, conclusion, runId, runUrl, runStarted, commitSha, commitMessage, pathsChangedSinceThisRun);
     }
 
     @Override
@@ -116,7 +162,7 @@ public class GitHubWorkflowRun {
                 ", runStarted=" + runStarted +
                 ", commitSha='" + commitSha + '\'' +
                 ", commitMessage='" + commitMessage + '\'' +
-                ", changedPaths=" + changedPaths +
+                ", changedPaths=" + pathsChangedSinceThisRun +
                 '}';
     }
 
@@ -128,7 +174,7 @@ public class GitHubWorkflowRun {
         private Instant runStarted;
         private String commitSha;
         private String commitMessage;
-        private List<String> changedPaths = Collections.emptyList();
+        private List<String> pathsChangedSinceThisRun = Collections.emptyList();
 
         private Builder() {
         }
@@ -192,13 +238,13 @@ public class GitHubWorkflowRun {
             return this;
         }
 
-        public Builder changedPaths(List<String> changedPaths) {
-            this.changedPaths = changedPaths;
+        public Builder pathsChangedSinceThisRun(List<String> changedPaths) {
+            this.pathsChangedSinceThisRun = changedPaths;
             return this;
         }
 
-        public Builder changedPathsArray(String... changedPaths) {
-            return changedPaths(Arrays.asList(changedPaths));
+        public Builder pathsChangedSinceThisRunArray(String... changedPaths) {
+            return pathsChangedSinceThisRun(Arrays.asList(changedPaths));
         }
 
         public GitHubWorkflowRun build() {

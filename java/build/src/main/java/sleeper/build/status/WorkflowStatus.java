@@ -15,17 +15,27 @@
  */
 package sleeper.build.status;
 
+import sleeper.build.github.GitHubHead;
+import sleeper.build.github.GitHubWorkflowRun;
+
 import java.io.UnsupportedEncodingException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class WorkflowStatus {
 
+    private final GitHubHead head;
     private final ChunkStatuses chunks;
+    private final GitHubWorkflowRun lastRun;
     private final List<String> chunkIdsToBuild;
 
-    public WorkflowStatus(ChunkStatuses chunks, List<String> chunkIdsToBuild) {
-        this.chunks = chunks;
-        this.chunkIdsToBuild = chunkIdsToBuild;
+    public WorkflowStatus(GitHubHead head, GitHubWorkflowRun lastRun, ChunkStatuses chunks, List<String> chunkIdsToBuild) {
+        this.head = Objects.requireNonNull(head, "head must not be null");
+        this.lastRun = lastRun;
+        this.chunks = Objects.requireNonNull(chunks, "chunks must not be null");
+        this.chunkIdsToBuild = Collections.unmodifiableList(
+                Objects.requireNonNull(chunkIdsToBuild, "chunkIdsToBuild must not be null"));
     }
 
     public boolean hasPreviousFailures() {
