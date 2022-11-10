@@ -185,6 +185,13 @@ public class CompactSortedFiles {
         return new CompactionJobRecordsProcessed(linesRead, linesWritten);
     }
 
+    /**
+     * Writes the compaction configuration data to the given file in MessagePack
+     * format.
+     * 
+     * @param tempFile file to write to
+     * @throws IOException if an I/O error occurs
+     */
     @SuppressWarnings("resource")
     private void writeMsgPack(java.nio.file.Path tempFile) throws IOException {
         try (MessagePacker packer = MessagePack.newDefaultPacker(Files.newOutputStream(tempFile))) {
