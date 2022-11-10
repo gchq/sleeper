@@ -75,7 +75,8 @@ public class TestGitHubWorkflowRuns implements GitHubWorkflowRuns {
     }
 
     public void setLatestRun(GitHubWorkflowRun run) {
-        setLatestRunAndRechecks(run, run);
+        runsLatestFirst.clear();
+        runsLatestFirst.add(run);
     }
 
     public void setLatestRunAndRecheck(GitHubWorkflowRun run, GitHubWorkflowRun recheck) {
@@ -87,8 +88,7 @@ public class TestGitHubWorkflowRuns implements GitHubWorkflowRuns {
     }
 
     public void setLatestRunAndRechecks(GitHubWorkflowRun run, List<GitHubWorkflowRun> rechecks) {
-        runsLatestFirst.clear();
-        runsLatestFirst.add(run);
+        setLatestRun(run);
         recheckResultsByRunId.put(run.getRunId(), new LinkedList<>(rechecks));
     }
 

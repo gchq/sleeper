@@ -21,17 +21,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class TestGitHubWorkflowRunsTest {
-    private static final GitHubHead BRANCH = GitHubHead.builder()
-            .owner("test-owner").repository("test-repo").branch("test-branch").sha("test-sha")
-            .build();
+    private static final GitHubHead BRANCH = branchBuilder().build();
     private static final String WORKFLOW = "test-workflow";
+
+    private static GitHubHead.Builder branchBuilder() {
+        return GitHubHead.builder().owner("test-owner").repository("test-repo").branch("test-branch").sha("test-sha");
+    }
 
     @Test
     public void shouldReturnSpecifiedRunAndRecheck() {
         // Given
         TestGitHubWorkflowRuns runs = new TestGitHubWorkflowRuns(BRANCH, WORKFLOW);
         long runId = 123;
-        GitHubWorkflowRun.Builder runBuilder = GitHubWorkflowRun.withCommitSha("test-sha").runId(runId);
+        GitHubWorkflowRun.Builder runBuilder = GitHubWorkflowRun.withCommitSha("some-sha").runId(runId);
 
         runs.setLatestRunAndRechecks(runBuilder.inProgress(), runBuilder.success());
 
@@ -55,7 +57,7 @@ public class TestGitHubWorkflowRunsTest {
         // Given
         TestGitHubWorkflowRuns runs = new TestGitHubWorkflowRuns(BRANCH, WORKFLOW);
         long runId = 123;
-        GitHubWorkflowRun.Builder runBuilder = GitHubWorkflowRun.withCommitSha("test-sha").runId(runId);
+        GitHubWorkflowRun.Builder runBuilder = GitHubWorkflowRun.withCommitSha("some-sha").runId(runId);
 
         runs.setLatestRunAndRechecks(runBuilder.inProgress(), runBuilder.success());
         runs.recheckRun(BRANCH, runId);
@@ -63,5 +65,45 @@ public class TestGitHubWorkflowRunsTest {
         // When / Then
         assertThatThrownBy(() -> runs.recheckRun(BRANCH, runId))
                 .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    public void shouldFailWhenRunQueriedForWrongCommit() {
+        // Given
+        TestGitHubWorkflowRuns runs = new TestGitHubWorkflowRuns(BRANCH, WORKFLOW);
+        GitHubHead queryHead = branchBuilder().sha("other-sha").build();
+        runs.setLatestRun(GitHubWorkflowRun.withCommitSha("some-sha").runId(123L).inProgress());
+
+        // When / Then
+        assertThatThrownBy(() -> runs.getLatestRun(queryHead, WORKFLOW))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("head");
+    }
+
+    @Test
+    public void shouldFailWhenRunRecheckedForWrongCommit() {
+        // Given
+        TestGitHubWorkflowRuns runs = new TestGitHubWorkflowRuns(BRANCH, WORKFLOW);
+        long runId = 123;
+        GitHubHead queryHead = branchBuilder().sha("other-sha").build();
+        GitHubWorkflowRun run = GitHubWorkflowRun.withCommitSha("some-sha").runId(runId).inProgress();
+        runs.setLatestRunAndRecheck(run, run);
+
+        // When / Then
+        assertThatThrownBy(() -> runs.recheckRun(queryHead, runId))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("head");
+    }
+
+    @Test
+    public void shouldFailWhenRunQueriedForWrongWorkflow() {
+        // Given
+        TestGitHubWorkflowRuns runs = new TestGitHubWorkflowRuns(BRANCH, WORKFLOW);
+        runs.setLatestRun(GitHubWorkflowRun.withCommitSha("some-sha").runId(123L).inProgress());
+
+        // When / Then
+        assertThatThrownBy(() -> runs.getLatestRun(BRANCH, "other-workflow"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("workflow");
     }
 }
