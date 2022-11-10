@@ -15,71 +15,16 @@
  */
 package sleeper.build.github;
 
-import org.kohsuke.github.GHRepository;
-import org.kohsuke.github.GHWorkflowRun;
-import org.kohsuke.github.GitHub;
-import org.kohsuke.github.GitHubBuilder;
-import org.kohsuke.github.PagedIterable;
-
-import java.io.IOException;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
-public class GitHubWorkflowRuns {
+public interface GitHubWorkflowRuns {
 
-    private final GitHub gitHub;
-
-    public GitHubWorkflowRuns(String token) throws IOException {
-        this.gitHub = new GitHubBuilder().withJwtToken(token).build();
+    default Optional<GitHubWorkflowRun> getLatestRun(GitHubHead head, String workflow) {
+        return getRunsForHeadOrBehindLatestFirst(head, workflow).findFirst();
     }
 
-    public Optional<GitHubWorkflowRun> getLatestRun(GitHubHead head, String workflow) {
-        return getRunsForHeadOrBehind(head, workflow).findFirst();
-    }
+    Stream<GitHubWorkflowRun> getRunsForHeadOrBehindLatestFirst(GitHubHead head, String workflow);
 
-    public Stream<GitHubWorkflowRun> getRunsForHeadOrBehind(GitHubHead head, String workflow) {
-        try {
-            GHRepository repository = repository(head);
-            PagedIterable<GHWorkflowRun> iterable = repository.getWorkflow(workflow).listRuns();
-            return StreamSupport.stream(iterable.spliterator(), false)
-                    .map(run -> GitHubRunToHead.compare(repository, run, head))
-                    .filter(GitHubRunToHead::isRunForHeadOrBehind)
-                    .map(GitHubWorkflowRuns::convertToInternalRun);
-        } catch (IOException e) {
-            throw new GitHubException(e);
-        }
-    }
-
-    public GitHubWorkflowRun recheckRun(GitHubHead head, Long runId) {
-        try {
-            return convertToInternalRun(repository(head).getWorkflowRun(runId));
-        } catch (IOException e) {
-            throw new GitHubException(e);
-        }
-    }
-
-    private GHRepository repository(GitHubHead head) throws IOException {
-        return gitHub.getRepository(head.getOwnerAndRepository());
-    }
-
-    private static GitHubWorkflowRun convertToInternalRun(GitHubRunToHead run) {
-        return convertToInternalRun(run.getRun());
-    }
-
-    private static GitHubWorkflowRun convertToInternalRun(GHWorkflowRun run) {
-        try {
-            return GitHubWorkflowRun.builder().runId(run.getId())
-                    .runUrl(Objects.toString(run.getHtmlUrl(), null))
-                    .runStarted(run.getRunStartedAt())
-                    .commitSha(run.getHeadSha())
-                    .commitMessage(run.getHeadCommit().getMessage())
-                    .status(Objects.toString(run.getStatus(), null))
-                    .conclusion(Objects.toString(run.getConclusion(), null))
-                    .build();
-        } catch (IOException e) {
-            throw new GitHubException(e);
-        }
-    }
+    GitHubWorkflowRun recheckRun(GitHubHead head, Long runId);
 }
