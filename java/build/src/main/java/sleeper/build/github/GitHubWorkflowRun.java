@@ -16,7 +16,10 @@
 package sleeper.build.github;
 
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 
 import static sleeper.build.util.ValidationUtils.ignoreEmpty;
@@ -34,6 +37,7 @@ public class GitHubWorkflowRun {
     private final Instant runStarted;
     private final String commitSha;
     private final String commitMessage;
+    private final List<String> changedPaths;
 
     private GitHubWorkflowRun(Builder builder) {
         status = ignoreEmpty(builder.status);
@@ -43,6 +47,7 @@ public class GitHubWorkflowRun {
         runStarted = builder.runStarted;
         commitSha = ignoreEmpty(builder.commitSha);
         commitMessage = ignoreEmpty(builder.commitMessage);
+        changedPaths = Collections.unmodifiableList(Objects.requireNonNull(builder.changedPaths, "changedPaths must not be null"));
     }
 
     public static Builder builder() {
@@ -81,6 +86,10 @@ public class GitHubWorkflowRun {
         return commitMessage;
     }
 
+    public List<String> getChangedPaths() {
+        return changedPaths;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -89,12 +98,12 @@ public class GitHubWorkflowRun {
         return Objects.equals(status, that.status) && Objects.equals(conclusion, that.conclusion)
                 && Objects.equals(runId, that.runId) && Objects.equals(runUrl, that.runUrl)
                 && Objects.equals(runStarted, that.runStarted) && Objects.equals(commitSha, that.commitSha)
-                && Objects.equals(commitMessage, that.commitMessage);
+                && Objects.equals(commitMessage, that.commitMessage) && changedPaths.equals(that.changedPaths);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(status, conclusion, runId, runUrl, runStarted, commitSha, commitMessage);
+        return Objects.hash(status, conclusion, runId, runUrl, runStarted, commitSha, commitMessage, changedPaths);
     }
 
     @Override
@@ -107,6 +116,7 @@ public class GitHubWorkflowRun {
                 ", runStarted=" + runStarted +
                 ", commitSha='" + commitSha + '\'' +
                 ", commitMessage='" + commitMessage + '\'' +
+                ", changedPaths=" + changedPaths +
                 '}';
     }
 
@@ -118,6 +128,7 @@ public class GitHubWorkflowRun {
         private Instant runStarted;
         private String commitSha;
         private String commitMessage;
+        private List<String> changedPaths = Collections.emptyList();
 
         private Builder() {
         }
@@ -179,6 +190,15 @@ public class GitHubWorkflowRun {
         public Builder commitMessage(String commitMessage) {
             this.commitMessage = commitMessage;
             return this;
+        }
+
+        public Builder changedPaths(List<String> changedPaths) {
+            this.changedPaths = changedPaths;
+            return this;
+        }
+
+        public Builder changedPathsArray(String... changedPaths) {
+            return changedPaths(Arrays.asList(changedPaths));
         }
 
         public GitHubWorkflowRun build() {

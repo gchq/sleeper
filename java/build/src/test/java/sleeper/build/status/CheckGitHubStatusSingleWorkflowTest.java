@@ -20,11 +20,12 @@ import sleeper.build.chunks.ProjectChunks;
 import sleeper.build.chunks.ProjectConfiguration;
 import sleeper.build.chunks.TestChunks;
 import sleeper.build.github.GitHubHead;
+import sleeper.build.github.GitHubWorkflowRun;
 import sleeper.build.github.InMemoryGitHubWorkflowRuns;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class CheckGitHubStatusTest {
+public class CheckGitHubStatusSingleWorkflowTest {
 
     private static final ProjectChunks CHUNKS = TestChunks.example("example-chunks.yaml");
     private static final GitHubHead BRANCH = GitHubHead.builder()
@@ -53,4 +54,11 @@ public class CheckGitHubStatusTest {
         assertThat(status.chunkIdsToBuild()).containsExactly("bulk-import", "common", "ingest");
     }
 
+    @Test
+    public void shouldBuildNoChunksWhenNoChangesSinceLastBuild() throws Exception {
+        workflowRuns.setLatestRun(GitHubWorkflowRun.builder()
+                .changedPathsArray("scripts/build/build.sh").build());
+        WorkflowStatus status = configurationBuilder().build().checkStatusSingleWorkflow(workflowRuns, WORKFLOW);
+
+    }
 }
