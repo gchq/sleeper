@@ -28,9 +28,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.statestore.dynamodb.DynamoDBAttributes.createBinaryAttribute;
-import static sleeper.statestore.dynamodb.DynamoDBAttributes.createNumberAttribute;
-import static sleeper.statestore.dynamodb.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createBinaryAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
 class DynamoDBFileInfoFormat {
 
