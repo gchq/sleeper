@@ -1,5 +1,7 @@
-name: Chunk Build Status
-on: push
+name: Check chunk status
+on:
+  push:
+#  workflow_call:
 
 jobs:
   build:
