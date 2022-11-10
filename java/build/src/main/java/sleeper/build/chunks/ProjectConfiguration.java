@@ -16,6 +16,7 @@
 package sleeper.build.chunks;
 
 import sleeper.build.github.GitHubHead;
+import sleeper.build.github.GitHubWorkflowRuns;
 import sleeper.build.status.CheckGitHubStatus;
 import sleeper.build.status.ChunksStatus;
 import sleeper.build.status.GitHubStatusProvider;
@@ -59,6 +60,10 @@ public class ProjectConfiguration {
 
     public ChunksStatus checkStatus() throws IOException {
         return checkStatus(new GitHubStatusProvider(token));
+    }
+
+    public ChunksStatus checkStatus(GitHubWorkflowRuns runs) {
+        return checkStatus(new GitHubStatusProvider(runs));
     }
 
     public ChunksStatus checkStatus(GitHubStatusProvider gitHub) {

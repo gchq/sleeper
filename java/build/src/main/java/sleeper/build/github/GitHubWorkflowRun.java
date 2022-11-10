@@ -20,6 +20,10 @@ import java.util.Date;
 
 public class GitHubWorkflowRun {
 
+    private static final String COMPLETED = "completed";
+    private static final String SUCCESS = "success";
+    private static final String IN_PROGRESS = "in_progress";
+
     private final String status;
     private final String conclusion;
     private final Long runId;
@@ -80,6 +84,26 @@ public class GitHubWorkflowRun {
         private String commitMessage;
 
         private Builder() {
+        }
+
+        public GitHubWorkflowRun success() {
+            return status(COMPLETED).conclusion(SUCCESS).build();
+        }
+
+        public GitHubWorkflowRun inProgress() {
+            return status(IN_PROGRESS).conclusion(null).build();
+        }
+
+        public GitHubWorkflowRun failure() {
+            return status(COMPLETED).conclusion("failure").build();
+        }
+
+        public GitHubWorkflowRun cancelled() {
+            return status(COMPLETED).conclusion("cancelled").build();
+        }
+
+        public GitHubWorkflowRun noBuild() {
+            return status(null).conclusion(null).build();
         }
 
         public Builder status(String status) {

@@ -15,7 +15,6 @@
  */
 package sleeper.build.status;
 
-import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
 import sleeper.build.chunks.ProjectChunk;
 import sleeper.build.github.GitHubHead;
@@ -29,11 +28,11 @@ public class GitHubStatusProvider {
     private final GitHubWorkflowRuns runs;
 
     public GitHubStatusProvider(String token) throws IOException {
-        this(new GitHubBuilder().withJwtToken(token).build());
+        this(new GitHubWorkflowRuns(new GitHubBuilder().withJwtToken(token).build()));
     }
 
-    public GitHubStatusProvider(GitHub gitHub) {
-        this.runs = new GitHubWorkflowRuns(gitHub);
+    public GitHubStatusProvider(GitHubWorkflowRuns runs) {
+        this.runs = runs;
     }
 
     public ChunkStatus workflowStatus(GitHubHead head, ProjectChunk chunk) {

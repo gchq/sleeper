@@ -19,16 +19,16 @@ import org.junit.Test;
 import sleeper.build.chunks.ProjectChunk;
 import sleeper.build.chunks.ProjectConfiguration;
 import sleeper.build.github.GitHubHead;
+import sleeper.build.github.GitHubWorkflowRun;
+import sleeper.build.github.TestGitHubWorkflowRuns;
 
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class CheckGitHubStatusTest {
+
+    private final TestGitHubWorkflowRuns workflowRuns = new TestGitHubWorkflowRuns();
 
     @Test
     public void shouldPassWhenSingleChunkSuccessful() throws Exception {
@@ -40,10 +40,10 @@ public class CheckGitHubStatusTest {
                 .token("test-token").head(branch)
                 .chunks(Collections.singletonList(chunk))
                 .build();
-        GitHubStatusProvider gitHub = mock(GitHubStatusProvider.class);
-        when(gitHub.workflowStatus(branch, chunk)).thenReturn(ChunkStatus.chunk(chunk).commitSha("test-sha").success());
+        workflowRuns.setLatestRun(branch, chunk.getWorkflow(),
+                GitHubWorkflowRun.builder().runId(123L).commitSha("test-sha").success());
 
-        ChunksStatus status = configuration.checkStatus(gitHub);
+        ChunksStatus status = workflowRuns.checkStatus(configuration);
         assertThat(status.isFailCheck()).isFalse();
         assertThat(status.reportLines()).containsExactly("",
                 "Common: completed, success",
@@ -61,17 +61,39 @@ public class CheckGitHubStatusTest {
                 .chunks(Collections.singletonList(chunk))
                 .retrySeconds(0)
                 .build();
-        ChunkStatus status1 = ChunkStatus.chunk(chunk).commitSha("old-sha").inProgress();
-        ChunkStatus status2 = ChunkStatus.chunk(chunk).commitSha("old-sha").success();
-        GitHubStatusProvider gitHub = mock(GitHubStatusProvider.class);
-        when(gitHub.workflowStatus(branch, chunk)).thenReturn(status1);
-        when(gitHub.recheckRun(branch, status1)).thenReturn(status2);
+        GitHubWorkflowRun.Builder runBuilder = GitHubWorkflowRun.builder().runId(123L).commitSha("old-sha");
+        workflowRuns.setLatestRunAndRecheck(branch, chunk.getWorkflow(),
+                runBuilder.inProgress(), runBuilder.success());
 
-        ChunksStatus status = configuration.checkStatus(gitHub);
+        ChunksStatus status = workflowRuns.checkStatus(configuration);
         assertThat(status.isFailCheck()).isFalse();
         assertThat(status.reportLines()).containsExactly("",
                 "Common: completed, success",
                 "Commit: old-sha");
+    }
+
+    @Test
+    public void shouldRetryMultipleTimes() throws Exception {
+        GitHubHead branch = GitHubHead.builder()
+                .owner("test-owner").repository("test-repo").branch("test-branch").sha("test-sha")
+                .build();
+        ProjectChunk chunk = ProjectChunk.chunk("common").name("Common").workflow("chunk-common.yaml").build();
+        ProjectConfiguration configuration = ProjectConfiguration.builder()
+                .token("test-token").head(branch)
+                .chunks(Collections.singletonList(chunk))
+                .retrySeconds(0).maxRetries(10)
+                .build();
+        GitHubWorkflowRun.Builder runBuilder = GitHubWorkflowRun.builder().runId(12L).commitSha("old-sha");
+        workflowRuns.setLatestRunAndRecheck(branch, chunk.getWorkflow(),
+                runBuilder.inProgress(), runBuilder.inProgress(), runBuilder.success());
+
+        ChunksStatus status = workflowRuns.checkStatus(configuration);
+        assertThat(status.isFailCheck()).isFalse();
+        assertThat(status.reportLines()).containsExactly("",
+                "Common: completed, success",
+                "Commit: old-sha");
+
+        workflowRuns.verifyTimesRechecked(branch, runBuilder.inProgress(), 2);
     }
 
     @Test
@@ -85,17 +107,15 @@ public class CheckGitHubStatusTest {
                 .chunks(Collections.singletonList(chunk))
                 .retrySeconds(0).maxRetries(1)
                 .build();
-        ChunkStatus status1 = ChunkStatus.chunk(chunk).commitSha("old-sha").inProgress();
-        GitHubStatusProvider gitHub = mock(GitHubStatusProvider.class);
-        when(gitHub.workflowStatus(branch, chunk)).thenReturn(status1);
-        when(gitHub.recheckRun(branch, status1)).thenReturn(status1);
+        GitHubWorkflowRun run = GitHubWorkflowRun.builder().runId(12L).commitSha("old-sha").inProgress();
+        workflowRuns.setLatestRunAndRecheck(branch, chunk.getWorkflow(), run);
 
-        ChunksStatus status = configuration.checkStatus(gitHub);
+        ChunksStatus status = workflowRuns.checkStatus(configuration);
         assertThat(status.isFailCheck()).isTrue();
         assertThat(status.reportLines()).containsExactly("",
                 "Common: in_progress",
                 "Commit: old-sha");
 
-        verify(gitHub, times(1)).recheckRun(branch, status1);
+        workflowRuns.verifyTimesRechecked(branch, run, 1);
     }
 }
