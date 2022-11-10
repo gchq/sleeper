@@ -34,6 +34,7 @@ public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns {
         this.gitHub = new GitHubBuilder().withJwtToken(token).build();
     }
 
+    @Override
     public Stream<GitHubWorkflowRun> getRunsForHeadOrBehindLatestFirst(GitHubHead head, String workflow) {
         try {
             GHRepository repository = repository(head);
@@ -47,6 +48,7 @@ public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns {
         }
     }
 
+    @Override
     public GitHubWorkflowRun recheckRun(GitHubHead head, Long runId) {
         try {
             return convertToInternalRun(repository(head).getWorkflowRun(runId));

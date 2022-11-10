@@ -18,39 +18,87 @@ package sleeper.build.github;
 import sleeper.build.chunks.ProjectConfiguration;
 import sleeper.build.status.ChunksStatus;
 
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.stream.Stream;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public class TestGitHubWorkflowRuns {
+public class TestGitHubWorkflowRuns implements GitHubWorkflowRuns {
 
-    private final GitHubWorkflowRuns mock = mock(GitHubWorkflowRuns.class);
+    private final GitHubHead head;
+    private final String workflow;
+    private final List<GitHubWorkflowRun> runsLatestFirst = new ArrayList<>();
+    private final Map<Long, Queue<GitHubWorkflowRun>> recheckResultsByRunId = new HashMap<>();
 
-    public void setLatestRun(
-            GitHubHead branch, String workflow, GitHubWorkflowRun run) {
-        setLatestRunAndRecheck(branch, workflow, run);
+    public TestGitHubWorkflowRuns(GitHubHead head, String workflow) {
+        this.head = head;
+        this.workflow = workflow;
     }
 
-    public void setLatestRunAndRecheck(
-            GitHubHead branch, String workflow, GitHubWorkflowRun run) {
-        setLatestRunAndRecheck(branch, workflow, run, run);
+    @Override
+    public Stream<GitHubWorkflowRun> getRunsForHeadOrBehindLatestFirst(GitHubHead head, String workflow) {
+        validateHead(head);
+        validateWorkflow(workflow);
+        return runsLatestFirst.stream();
     }
 
-    public void setLatestRunAndRecheck(
-            GitHubHead branch, String workflow, GitHubWorkflowRun run,
-            GitHubWorkflowRun recheckRun, GitHubWorkflowRun... otherRechecks) {
-        when(mock.getLatestRun(branch, workflow)).thenReturn(Optional.of(run));
-        when(mock.recheckRun(branch, run.getRunId())).thenReturn(recheckRun, otherRechecks);
+    @Override
+    public GitHubWorkflowRun recheckRun(GitHubHead head, Long runId) {
+        validateHead(head);
+        Queue<GitHubWorkflowRun> resultsQueue = recheckResultsByRunId.get(runId);
+        if (resultsQueue == null) {
+            throw new IllegalStateException("Unexpected recheck for run " + runId);
+        }
+        GitHubWorkflowRun run = resultsQueue.poll();
+        if (resultsQueue.isEmpty()) {
+            recheckResultsByRunId.remove(runId);
+        }
+        return run;
+    }
+
+    private void validateHead(GitHubHead head) {
+        if (!this.head.equals(head)) {
+            throw new IllegalStateException("Found unexpected Git head: " + head);
+        }
+    }
+
+    private void validateWorkflow(String workflow) {
+        if (!this.workflow.equals(workflow)) {
+            throw new IllegalStateException("Found unexpected workflow: " + workflow);
+        }
+    }
+
+    public void setLatestRun(GitHubWorkflowRun run) {
+        setLatestRunAndRechecks(run, run);
+    }
+
+    public void setLatestRunAndRecheck(GitHubWorkflowRun run, GitHubWorkflowRun recheck) {
+        setLatestRunAndRechecks(run, recheck);
+    }
+
+    public void setLatestRunAndRechecks(GitHubWorkflowRun run, GitHubWorkflowRun... rechecks) {
+        setLatestRunAndRechecks(run, Arrays.asList(rechecks));
+    }
+
+    public void setLatestRunAndRechecks(GitHubWorkflowRun run, List<GitHubWorkflowRun> rechecks) {
+        runsLatestFirst.clear();
+        runsLatestFirst.add(run);
+        Queue<GitHubWorkflowRun> rechecksQueue = new LinkedList<>();
+        rechecksQueue.addAll(rechecks);
+        recheckResultsByRunId.put(run.getRunId(), rechecksQueue);
     }
 
     public ChunksStatus checkStatus(ProjectConfiguration configuration) {
-        return configuration.checkStatus(mock);
+        return configuration.checkStatus(this);
     }
 
-    public void verifyTimesRechecked(GitHubHead branch, GitHubWorkflowRun run, int times) {
-        verify(mock, times(times)).recheckRun(branch, run.getRunId());
+    public void verifyExactlySpecifiedRechecksDone() {
+        assertThat(recheckResultsByRunId).isEmpty();
     }
 }
