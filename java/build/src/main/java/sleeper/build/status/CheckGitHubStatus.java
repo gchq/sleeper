@@ -26,6 +26,7 @@ import sleeper.build.github.GitHubWorkflowRuns;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class CheckGitHubStatus {
@@ -46,36 +47,40 @@ public class CheckGitHubStatus {
     }
 
     public ChunksStatus checkStatus() {
-        return ChunksStatus.chunksForHead(head, listChunkStatusInOrder());
+        return fetchChunksStatus(this::getStatusFromChunkWorkflow);
     }
 
     public WorkflowStatus checkStatusSingleWorkflow(String workflow) {
         return null;
     }
 
-    private List<ChunkStatus> listChunkStatusInOrder() {
+    private ChunksStatus fetchChunksStatus(Function<ProjectChunk, ChunkStatus> getChunkStatus) {
+        return ChunksStatus.chunksForHead(head, listChunkStatusInOrder(getChunkStatus));
+    }
+
+    private List<ChunkStatus> listChunkStatusInOrder(Function<ProjectChunk, ChunkStatus> getChunkStatus) {
         // Since checks are done in parallel, re-order them after they are complete
-        Map<String, ChunkStatus> statusByChunkId = retrieveStatusByChunkId();
+        Map<String, ChunkStatus> statusByChunkId = retrieveStatusByChunkId(getChunkStatus);
         return chunks.stream()
                 .map(chunk -> statusByChunkId.get(chunk.getId()))
                 .collect(Collectors.toList());
     }
 
-    private Map<String, ChunkStatus> retrieveStatusByChunkId() {
+    private Map<String, ChunkStatus> retrieveStatusByChunkId(Function<ProjectChunk, ChunkStatus> getChunkStatus) {
         return chunks.stream().parallel()
-                .map(this::retrieveStatusWaitingForOldBuilds)
+                .map(getChunkStatus)
+                .map(this::waitForOldBuild)
                 .collect(Collectors.toMap(ChunkStatus::getChunkId, c -> c));
     }
 
-    private ChunkStatus retrieveStatusWaitingForOldBuilds(ProjectChunk chunk) {
-        ChunkStatus status = getWorkflowStatus(chunk);
+    private ChunkStatus waitForOldBuild(ChunkStatus status) {
         try {
             for (int retries = 0;
                  status.isWaitForOldBuildWithHead(head)
                          && retries < maxRetries;
                  retries++) {
 
-                LOGGER.info("Waiting for old build to finish, {} retries, chunk: {}", retries, chunk.getName());
+                LOGGER.info("Waiting for old build to finish, {} retries, chunk: {}", retries, status.getChunk().getName());
                 LOGGER.info("Link to old build: {}", status.getRunUrl());
 
                 Thread.sleep(retrySeconds * 1000);
@@ -89,7 +94,7 @@ public class CheckGitHubStatus {
         return status;
     }
 
-    private ChunkStatus getWorkflowStatus(ProjectChunk chunk) {
+    private ChunkStatus getStatusFromChunkWorkflow(ProjectChunk chunk) {
         return runs.getLatestRun(head, chunk.getWorkflow())
                 .map(run -> ChunkStatus.chunk(chunk).run(run).build())
                 .orElseGet(() -> ChunkStatus.chunk(chunk).noBuild());
