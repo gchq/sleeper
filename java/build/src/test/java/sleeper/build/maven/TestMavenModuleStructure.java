@@ -61,15 +61,15 @@ public class TestMavenModuleStructure {
     }
 
     public static MavenModuleStructure.Builder midParentBuilder(String artifactId) {
-        return artifactIdAndRefBuilder(artifactId, artifactId).packaging("pom");
+        return artifactIdAndRefBuilder(artifactId).packaging("pom");
     }
 
     public static MavenModuleStructure.Builder testedModuleBuilder(String artifactId) {
-        return artifactIdAndRefBuilder(artifactId, artifactId).hasSrcTestFolder(true);
+        return artifactIdAndRefBuilder(artifactId).hasSrcTestFolder(true);
     }
 
     public static MavenModuleStructure.Builder untestedModuleBuilder(String artifactId) {
-        return artifactIdAndRefBuilder(artifactId, artifactId).hasSrcTestFolder(false);
+        return artifactIdAndRefBuilder(artifactId).hasSrcTestFolder(false);
     }
 
     public static MavenModuleStructure.Builder artifactIdAndRefBuilder(String artifactId) {
