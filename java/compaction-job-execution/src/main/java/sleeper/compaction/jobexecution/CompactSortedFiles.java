@@ -26,6 +26,8 @@ import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.schema.MessageType;
+import org.msgpack.core.MessagePack;
+import org.msgpack.core.MessagePacker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
@@ -57,6 +59,7 @@ import sleeper.statestore.StateStoreException;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -68,7 +71,8 @@ import java.util.Map;
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 
 /**
- * Executes a compaction {@link CompactionJob}, i.e. compacts N input files into a single
+ * Executes a compaction {@link CompactionJob}, i.e. compacts N input files into
+ * a single
  * output file (in the case of a compaction job within a partition) or into
  * two output files (in the case of a splitting compaction job which reads
  * files in one partition and outputs files to the split partition).
@@ -85,21 +89,25 @@ public class CompactSortedFiles {
     private final int rowGroupSize;
     private final int pageSize;
     private final String compressionCodec;
+    private final boolean gpuEnabled;
     private final String taskId;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFiles.class);
 
+    public static final int GPU_MAX_ROW_GROUP_ROWS = 5_000_000;
+
     public CompactSortedFiles(InstanceProperties instanceProperties,
-                              ObjectFactory objectFactory,
-                              Schema schema,
-                              MessageType messageType,
-                              CompactionJob compactionJob,
-                              StateStore stateStore,
-                              CompactionJobStatusStore jobStatusStore,
-                              int rowGroupSize,
-                              int pageSize,
-                              String compressionCodec,
-                              String taskId) {
+            ObjectFactory objectFactory,
+            Schema schema,
+            MessageType messageType,
+            CompactionJob compactionJob,
+            StateStore stateStore,
+            CompactionJobStatusStore jobStatusStore,
+            int rowGroupSize,
+            int pageSize,
+            String compressionCodec,
+            boolean gpuEnabled,
+            String taskId) {
         this.instanceProperties = instanceProperties;
         this.objectFactory = objectFactory;
         this.schema = schema;
@@ -111,6 +119,7 @@ public class CompactSortedFiles {
         this.rowGroupSize = rowGroupSize;
         this.pageSize = pageSize;
         this.compressionCodec = compressionCodec;
+        this.gpuEnabled = gpuEnabled;
         this.taskId = taskId;
     }
 
@@ -121,10 +130,14 @@ public class CompactSortedFiles {
         jobStatusStore.jobStarted(compactionJob, startTime, taskId);
 
         CompactionJobRecordsProcessed recordsProcessed;
-        if (!compactionJob.isSplittingJob()) {
-            recordsProcessed = compactNoSplitting();
+        if (this.gpuEnabled) {
+            recordsProcessed = gpuCompact();
         } else {
-            recordsProcessed = compactSplitting();
+            if (!compactionJob.isSplittingJob()) {
+                recordsProcessed = compactNoSplitting();
+            } else {
+                recordsProcessed = compactSplitting();
+            }
         }
 
         Instant finishTime = Instant.now();
@@ -137,6 +150,60 @@ public class CompactSortedFiles {
         METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", id, summary.getLinesWritten(), String.format("%.1f", summary.getRecordsWrittenPerSecond()));
         jobStatusStore.jobFinished(compactionJob, summary, taskId);
         return summary;
+    }
+
+    private CompactionJobRecordsProcessed gpuCompact() throws IOException {
+        // for now we only support single field sorting on GPU
+        if (schema.getRowKeyFields().size() > 1) {
+            throw new IllegalStateException("can't use GPU compaction on table " + compactionJob.getTableName() + " as its schema has more than one row key. Only single dimension row key tables can be GPU compacted.");
+        }
+
+        // Write config data to msgpack
+        java.nio.file.Path tempFile = Files.createTempFile(null, null);
+        writeMsgPack(tempFile);
+
+        // Run GPU sorter
+        LOGGER.info("<<<GPU accelerated compaction to launch here>>>");
+        LOGGER.info("{} {} {} {} {}", compactionJob.getInputFiles(), compactionJob.getOutputFile(), this.compressionCodec, this.rowGroupSize, this.pageSize);
+
+        long linesRead = 0;
+        long linesWritten = 0;
+        String minKey = "a";
+        String maxKey = "z";
+
+        long finishTime = System.currentTimeMillis();
+        updateStateStoreSuccess(compactionJob.getInputFiles(),
+                compactionJob.getOutputFile(),
+                compactionJob.getPartitionId(),
+                linesWritten,
+                minKey,
+                maxKey,
+                finishTime,
+                stateStore,
+                schema.getRowKeyTypes());
+
+        return new CompactionJobRecordsProcessed(linesRead, linesWritten);
+    }
+
+    @SuppressWarnings("resource")
+    private void writeMsgPack(java.nio.file.Path tempFile) throws IOException {
+        try (MessagePacker packer = MessagePack.newDefaultPacker(Files.newOutputStream(tempFile))) {
+            packer.packArrayHeader(compactionJob.getInputFiles().size());
+            for (String f : compactionJob.getInputFiles()) {
+                packer.packString(f);
+            }
+            // since we currently only support sorting on a single column, we
+            // assume the first row key is column 0
+            packer.packString(compactionJob.getOutputFile())
+                    .packString(this.compressionCodec)
+                    .packInt(this.rowGroupSize)
+                    .packInt(GPU_MAX_ROW_GROUP_ROWS)
+                    .packInt(this.pageSize)
+                    .packArrayHeader(1) // assume only a single sort column
+                    .packInt(0) // sort column number
+                    .packArrayHeader(0); // TODO: support split points!
+            LOGGER.debug("Wrote {} bytes of Msgpack to {}", packer.getTotalWrittenBytes(), tempFile);
+        }
     }
 
     private CompactionJobRecordsProcessed compactNoSplitting() throws IOException, IteratorException {
@@ -152,16 +219,17 @@ public class CompactSortedFiles {
         LOGGER.debug("Creating writer for file {}", compactionJob.getOutputFile());
         ParquetRecordWriter.Builder builder = new ParquetRecordWriter.Builder(new Path(compactionJob.getOutputFile()),
                 messageType, schema)
-                .withCompressionCodec(CompressionCodecName.fromConf(compressionCodec))
-                .withRowGroupSize(rowGroupSize)
-                .withPageSize(pageSize)
-                .withConf(conf);
+                        .withCompressionCodec(CompressionCodecName.fromConf(compressionCodec))
+                        .withRowGroupSize(rowGroupSize)
+                        .withPageSize(pageSize)
+                        .withConf(conf);
         ParquetWriter<Record> writer = builder.build();
         LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFile());
         Map<String, ItemsSketch> keyFieldToSketch = getSketches();
 
         long linesWritten = 0L;
-        // Record min and max of the first dimension of the row key (the min is from the first record, the max is from
+        // Record min and max of the first dimension of the row key (the min is
+        // from the first record, the max is from
         // the last).
         Object minKey = null;
         Object maxKey = null;
@@ -229,10 +297,20 @@ public class CompactSortedFiles {
 
         // Create writers
         ParquetRecordWriter leftWriter = new ParquetRecordWriter(new Path(compactionJob.getOutputFiles().getLeft()), messageType, schema,
-                CompressionCodecName.fromConf(compressionCodec), rowGroupSize, pageSize); //4 * 1024 * 1024, DEFAULT_PAGE_SIZE);
+                CompressionCodecName.fromConf(compressionCodec), rowGroupSize, pageSize); // 4
+                                                                                          // *
+                                                                                          // 1024
+                                                                                          // *
+                                                                                          // 1024,
+                                                                                          // DEFAULT_PAGE_SIZE);
         LOGGER.debug("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFiles().getLeft());
         ParquetRecordWriter rightWriter = new ParquetRecordWriter(new Path(compactionJob.getOutputFiles().getRight()), messageType, schema,
-                CompressionCodecName.fromConf(compressionCodec), rowGroupSize, pageSize); //4 * 1024 * 1024, DEFAULT_PAGE_SIZE);
+                CompressionCodecName.fromConf(compressionCodec), rowGroupSize, pageSize); // 4
+                                                                                          // *
+                                                                                          // 1024
+                                                                                          // *
+                                                                                          // 1024,
+                                                                                          // DEFAULT_PAGE_SIZE);
         LOGGER.debug("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFiles().getRight());
 
         Map<String, ItemsSketch> leftKeyFieldToSketch = getSketches();
@@ -240,14 +318,16 @@ public class CompactSortedFiles {
 
         long linesWrittenToLeftFile = 0L;
         long linesWrittenToRightFile = 0L;
-        // Record min and max of the first dimension of the row key (the min is from the first record, the max is from
+        // Record min and max of the first dimension of the row key (the min is
+        // from the first record, the max is from
         // the last) from both files.
         Object minKeyLeftFile = null;
         Object minKeyRightFile = null;
         Object maxKeyLeftFile = null;
         Object maxKeyRightFile = null;
         int dimension = compactionJob.getDimension();
-        // Compare using the key of dimension compactionJob.getDimension(), i.e. of that position in the list
+        // Compare using the key of dimension compactionJob.getDimension(), i.e.
+        // of that position in the list
         SingleKeyComparator keyComparator = new SingleKeyComparator(schema.getRowKeyTypes().get(dimension));
         String comparisonKeyFieldName = schema.getRowKeyFieldNames().get(dimension);
         LOGGER.debug("Splitting on dimension {} (field name {})", dimension, comparisonKeyFieldName);
@@ -255,7 +335,8 @@ public class CompactSortedFiles {
         Object splitPoint = compactionJob.getSplitPoint();
         LOGGER.info("Split point is " + splitPoint);
 
-        // TODO This is unnecessarily complicated as the records for the left file will all be written in one go,
+        // TODO This is unnecessarily complicated as the records for the left
+        // file will all be written in one go,
         // followed by the records to the right file.
         while (mergingIterator.hasNext()) {
             Record record = mergingIterator.next();
@@ -366,14 +447,14 @@ public class CompactSortedFiles {
     }
 
     private static boolean updateStateStoreSuccess(List<String> inputFiles,
-                                                   String outputFile,
-                                                   String partitionId,
-                                                   long linesWritten,
-                                                   Object minRowKey0,
-                                                   Object maxRowKey0,
-                                                   long finishTime,
-                                                   StateStore stateStore,
-                                                   List<PrimitiveType> rowKeyTypes) {
+            String outputFile,
+            String partitionId,
+            long linesWritten,
+            Object minRowKey0,
+            Object maxRowKey0,
+            long finishTime,
+            StateStore stateStore,
+            List<PrimitiveType> rowKeyTypes) {
         List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
         for (String file : inputFiles) {
             FileInfo fileInfo = FileInfo.builder()
@@ -406,15 +487,15 @@ public class CompactSortedFiles {
     }
 
     private static boolean updateStateStoreSuccess(List<String> inputFiles,
-                                                   Pair<String, String> outputFiles,
-                                                   String partition,
-                                                   List<String> childPartitions,
-                                                   Pair<Long, Long> linesWritten,
-                                                   Pair<Object, Object> minKeys,
-                                                   Pair<Object, Object> maxKeys,
-                                                   long finishTime,
-                                                   StateStore stateStore,
-                                                   List<PrimitiveType> rowKeyTypes) {
+            Pair<String, String> outputFiles,
+            String partition,
+            List<String> childPartitions,
+            Pair<Long, Long> linesWritten,
+            Pair<Object, Object> minKeys,
+            Pair<Object, Object> maxKeys,
+            long finishTime,
+            StateStore stateStore,
+            List<PrimitiveType> rowKeyTypes) {
         List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
         for (String file : inputFiles) {
             FileInfo fileInfo = FileInfo.builder()
@@ -456,7 +537,8 @@ public class CompactSortedFiles {
         }
     }
 
-    // TODO These methods are copies of the same ones in IngestRecordsFromIterator - move to sketches module
+    // TODO These methods are copies of the same ones in
+    // IngestRecordsFromIterator - move to sketches module
     private Map<String, ItemsSketch> getSketches() {
         Map<String, ItemsSketch> keyFieldToSketch = new HashMap<>();
         for (Field rowKeyField : schema.getRowKeyFields()) {

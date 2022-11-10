@@ -60,14 +60,19 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_EXPERIMENTAL_GPU_ENABLE;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 
 /**
- * Retrieves compaction {@link CompactionJob}s from an SQS queue, and executes them. It
- * delegates the actual execution of the job to an instance of {@link CompactSortedFiles}.
- * It passes a {@link sleeper.job.common.action.ChangeMessageVisibilityTimeoutAction} to that class so that the message on the
+ * Retrieves compaction {@link CompactionJob}s from an SQS queue, and executes
+ * them. It
+ * delegates the actual execution of the job to an instance of
+ * {@link CompactSortedFiles}.
+ * It passes a
+ * {@link sleeper.job.common.action.ChangeMessageVisibilityTimeoutAction} to
+ * that class so that the message on the
  * SQS queue can be kept alive whilst the job is executing. It also handles
  * deletion of the message when the job is completed.
  */
@@ -127,7 +132,8 @@ public class CompactSortedFilesRunner {
             String taskId,
             String sqsJobQueueUrl,
             AmazonSQS sqsClient) {
-        this(instanceProperties, objectFactory, tablePropertiesProvider, stateStoreProvider, jobStatusStore, taskStatusStore, taskId, sqsJobQueueUrl, sqsClient, 3, 20);
+        this(instanceProperties, objectFactory, tablePropertiesProvider, stateStoreProvider, jobStatusStore,
+                taskStatusStore, taskId, sqsJobQueueUrl, sqsClient, 3, 20);
     }
 
     public void run() throws InterruptedException, IOException, ActionException {
@@ -176,7 +182,8 @@ public class CompactSortedFilesRunner {
         taskStatusStore.taskFinished(taskFinished);
     }
 
-    private CompactionJobSummary compact(CompactionJob compactionJob, Message message) throws IOException, IteratorException, ActionException {
+    private CompactionJobSummary compact(CompactionJob compactionJob, Message message)
+            throws IOException, IteratorException, ActionException {
         MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl,
                 "Compaction job " + compactionJob.getId(), message.getReceiptHandle());
         // Create background thread to keep messages alive
@@ -193,7 +200,8 @@ public class CompactSortedFilesRunner {
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, objectFactory,
                 tableProperties.getSchema(), SchemaConverter.getSchema(tableProperties.getSchema()), compactionJob,
                 stateStore, jobStatusStore, tableProperties.getInt(ROW_GROUP_SIZE), tableProperties.getInt(PAGE_SIZE),
-                tableProperties.get(COMPRESSION_CODEC), taskId);
+                tableProperties.get(COMPRESSION_CODEC), tableProperties.getBoolean(COMPACTION_EXPERIMENTAL_GPU_ENABLE),
+                taskId);
         CompactionJobSummary summary = compactSortedFiles.compact();
 
         // Delete message from queue
@@ -206,11 +214,13 @@ public class CompactSortedFilesRunner {
         return summary;
     }
 
-    public static void main(String[] args) throws InterruptedException, IOException, ObjectFactoryException, ActionException {
+    public static void main(String[] args)
+            throws InterruptedException, IOException, ObjectFactoryException, ActionException {
         if (2 != args.length) {
-            System.err.println("Error: must have 2 arguments (config bucket and compaction type (compaction or splittingcompaction)), got "
-                    + args.length
-                    + " arguments (" + StringUtils.join(args, ',') + ")");
+            System.err.println(
+                    "Error: must have 2 arguments (config bucket and compaction type (compaction or splittingcompaction)), got "
+                            + args.length
+                            + " arguments (" + StringUtils.join(args, ',') + ")");
             System.exit(1);
         }
 
@@ -223,9 +233,12 @@ public class CompactSortedFilesRunner {
         instanceProperties.loadFromS3(s3Client, s3Bucket);
 
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-        CompactionJobStatusStore jobStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
-        CompactionTaskStatusStore taskStatusStore = DynamoDBCompactionTaskStatusStore.from(dynamoDBClient, instanceProperties);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties,
+                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+        CompactionJobStatusStore jobStatusStore = DynamoDBCompactionJobStatusStore.from(dynamoDBClient,
+                instanceProperties);
+        CompactionTaskStatusStore taskStatusStore = DynamoDBCompactionTaskStatusStore.from(dynamoDBClient,
+                instanceProperties);
 
         String sqsJobQueueUrl;
         String type = args[1];
@@ -234,7 +247,8 @@ public class CompactSortedFilesRunner {
         } else if (type.equals("splittingcompaction")) {
             sqsJobQueueUrl = instanceProperties.get(SPLITTING_COMPACTION_JOB_QUEUE_URL);
         } else {
-            throw new RuntimeException("Invalid type: got " + type + ", should be 'compaction' or 'splittingcompaction'");
+            throw new RuntimeException(
+                    "Invalid type: got " + type + ", should be 'compaction' or 'splittingcompaction'");
         }
 
         ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");

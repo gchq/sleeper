@@ -19,7 +19,7 @@ sleeper.table.rowgroup.size=4194304
 sleeper.table.page.size=1048576
 
 # The compression codec to use in the Parquet files
-sleeper.table.compression.codec=zstd
+sleeper.table.compression.codec=snappy
 
 # The minimum time, in seconds, after a file is marked as ready for garbage collection before it can be deleted
 sleeper.gc.delay.seconds=60
@@ -28,4 +28,4 @@ sleeper.gc.delay.seconds=60
 sleeper.table.statestore.classname=sleeper.statestore.dynamodb.DynamoDBStateStore
 
 # Should experimental GPU accelerated compactions be enabled for this table?
-sleeper.table.experimental.compactions.gpu.enabled=false
+sleeper.table.experimental.compactions.gpu.enabled=true
