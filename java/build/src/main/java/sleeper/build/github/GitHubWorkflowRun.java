@@ -46,6 +46,10 @@ public class GitHubWorkflowRun {
         return new Builder();
     }
 
+    public static Builder withCommitSha(String commitSha) {
+        return builder().commitSha(commitSha);
+    }
+
     public String getStatus() {
         return status;
     }

@@ -41,7 +41,7 @@ public class CheckGitHubStatusTest {
                 .chunks(Collections.singletonList(chunk))
                 .build();
         workflowRuns.setLatestRun(branch, chunk.getWorkflow(),
-                GitHubWorkflowRun.builder().runId(123L).commitSha("test-sha").success());
+                GitHubWorkflowRun.withCommitSha("test-sha").runId(123L).success());
 
         ChunksStatus status = workflowRuns.checkStatus(configuration);
         assertThat(status.isFailCheck()).isFalse();
@@ -61,7 +61,7 @@ public class CheckGitHubStatusTest {
                 .chunks(Collections.singletonList(chunk))
                 .retrySeconds(0)
                 .build();
-        GitHubWorkflowRun.Builder runBuilder = GitHubWorkflowRun.builder().runId(123L).commitSha("old-sha");
+        GitHubWorkflowRun.Builder runBuilder = GitHubWorkflowRun.withCommitSha("old-sha").runId(123L);
         workflowRuns.setLatestRunAndRecheck(branch, chunk.getWorkflow(),
                 runBuilder.inProgress(), runBuilder.success());
 
@@ -83,7 +83,7 @@ public class CheckGitHubStatusTest {
                 .chunks(Collections.singletonList(chunk))
                 .retrySeconds(0).maxRetries(10)
                 .build();
-        GitHubWorkflowRun.Builder runBuilder = GitHubWorkflowRun.builder().runId(12L).commitSha("old-sha");
+        GitHubWorkflowRun.Builder runBuilder = GitHubWorkflowRun.withCommitSha("old-sha").runId(12L);
         workflowRuns.setLatestRunAndRecheck(branch, chunk.getWorkflow(),
                 runBuilder.inProgress(), runBuilder.inProgress(), runBuilder.success());
 
@@ -107,7 +107,7 @@ public class CheckGitHubStatusTest {
                 .chunks(Collections.singletonList(chunk))
                 .retrySeconds(0).maxRetries(1)
                 .build();
-        GitHubWorkflowRun run = GitHubWorkflowRun.builder().runId(12L).commitSha("old-sha").inProgress();
+        GitHubWorkflowRun run = GitHubWorkflowRun.withCommitSha("old-sha").runId(12L).inProgress();
         workflowRuns.setLatestRunAndRecheck(branch, chunk.getWorkflow(), run);
 
         ChunksStatus status = workflowRuns.checkStatus(configuration);

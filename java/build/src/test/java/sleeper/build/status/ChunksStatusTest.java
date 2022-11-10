@@ -41,7 +41,7 @@ public class ChunksStatusTest {
         GitHubHead head = TestProperties.exampleHead();
         ChunksStatus status = ChunksStatus.chunksForHead(head,
                 ChunkStatus.chunk("common").success(),
-                ChunkStatus.chunk("data").commitSha(head.getSha()).inProgress());
+                ChunkStatus.chunk("data").inProgressWithSha(head.getSha()));
 
         assertThat(status.isFailCheck()).isFalse();
         assertThat(status.reportLines()).containsExactly("",
@@ -56,7 +56,7 @@ public class ChunksStatusTest {
         GitHubHead head = TestProperties.exampleHead();
         ChunksStatus status = ChunksStatus.chunksForHead(head,
                 ChunkStatus.chunk("common").success(),
-                ChunkStatus.chunk("data").commitSha("old-sha").inProgress());
+                ChunkStatus.chunk("data").inProgressWithSha("old-sha"));
 
         assertThat(status.isFailCheck()).isTrue();
         assertThat(status.reportLines()).containsExactly("",

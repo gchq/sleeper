@@ -22,6 +22,7 @@ import sleeper.build.github.GitHubWorkflowRun;
 import java.io.PrintStream;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.function.Function;
 
 import static sleeper.build.util.ValidationUtils.ignoreEmpty;
 
@@ -173,23 +174,23 @@ public class ChunkStatus {
         }
 
         public ChunkStatus success() {
-            return status(COMPLETED).conclusion(SUCCESS).build();
+            return buildWithRun(GitHubWorkflowRun.Builder::success);
         }
 
-        public ChunkStatus inProgress() {
-            return status(IN_PROGRESS).conclusion(null).build();
+        public ChunkStatus inProgressWithSha(String commitSha) {
+            return buildWithRun(builder -> builder.commitSha(commitSha).inProgress());
         }
 
         public ChunkStatus failure() {
-            return status(COMPLETED).conclusion("failure").build();
+            return buildWithRun(GitHubWorkflowRun.Builder::failure);
         }
 
         public ChunkStatus cancelled() {
-            return status(COMPLETED).conclusion("cancelled").build();
+            return buildWithRun(GitHubWorkflowRun.Builder::cancelled);
         }
 
         public ChunkStatus noBuild() {
-            return status(null).conclusion(null).build();
+            return buildWithRun(GitHubWorkflowRun.Builder::noBuild);
         }
 
         public Builder status(String status) {
@@ -235,6 +236,11 @@ public class ChunkStatus {
                     .runStarted(run.getRunStarted())
                     .commitSha(run.getCommitSha())
                     .commitMessage(run.getCommitMessage());
+        }
+
+        public ChunkStatus buildWithRun(Function<GitHubWorkflowRun.Builder, GitHubWorkflowRun> runConfig) {
+            GitHubWorkflowRun.Builder builder = GitHubWorkflowRun.builder();
+            return run(runConfig.apply(builder)).build();
         }
 
         public ChunkStatus build() {
