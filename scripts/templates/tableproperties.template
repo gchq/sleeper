@@ -26,3 +26,6 @@ sleeper.gc.delay.seconds=60
 
 # The name of the class used for the metadata store
 sleeper.table.statestore.classname=sleeper.statestore.dynamodb.DynamoDBStateStore
+
+# Should experimental GPU accelerated compactions be enabled for this table?
+sleeper.table.experimental.compactions.gpu.enabled=false
