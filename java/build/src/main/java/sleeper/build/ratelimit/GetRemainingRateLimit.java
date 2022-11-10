@@ -23,6 +23,9 @@ import java.io.IOException;
 
 public class GetRemainingRateLimit {
 
+    private GetRemainingRateLimit() {
+    }
+
     public static void main(String[] args) throws IOException {
         GitHub gitHub = new GitHubBuilder().withJwtToken(args[0]).build();
         GHRateLimit limit = gitHub.getRateLimit();
