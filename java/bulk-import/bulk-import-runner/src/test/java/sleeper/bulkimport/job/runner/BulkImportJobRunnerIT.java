@@ -210,7 +210,7 @@ public class BulkImportJobRunnerIT {
         String localDir = UUID.randomUUID().toString();
         TableProperties tableProperties = createTable(s3Client, dynamoDBClient, instanceProperties, tableName, localDir, schema);
         //  - Write some data to be imported
-        List<Record> records = new ArrayList<>(100);
+        List<Record> records = new ArrayList<>(200);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
             record.put("key", i);
@@ -221,6 +221,10 @@ public class BulkImportJobRunnerIT {
             map.put("A", 1L);
             record.put("value3", map);
             records.add(record);
+            // Add record again but with the sort field set to a different value
+            Record record2 = new Record(record);
+            record2.put("sort", ((long) record.get("sort")) - 1L);
+            records.add(record2);
         }
         Collections.shuffle(records);
         ParquetRecordWriter writer = new ParquetRecordWriter(new Path(dataDir + "/import/a.parquet"),
@@ -260,9 +264,7 @@ public class BulkImportJobRunnerIT {
                     recordsInThisFile.add(clonedRecord);
                     record = reader.read();
                 }
-                List<Record> sortedRecordsInThisFile = new ArrayList<>(recordsInThisFile);
-                sortRecords(sortedRecordsInThisFile);
-                assertThat(recordsInThisFile).isEqualTo(sortedRecordsInThisFile);
+                assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
             }
         }
         assertThat(readRecords).hasSameSizeAs(records);
@@ -274,7 +276,7 @@ public class BulkImportJobRunnerIT {
     }
 
     @Test
-    public void shouldNotCoalesceIfSmallNumberOfLeafPartitions() throws IOException, StateStoreException {
+    public void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys() throws IOException, StateStoreException {
         // Given
         //  - AWS Clients
         AmazonS3 s3Client = createS3Client();
@@ -290,10 +292,10 @@ public class BulkImportJobRunnerIT {
         String localDir = UUID.randomUUID().toString();
         TableProperties tableProperties = createTable(s3Client, dynamoDBClient, instanceProperties, tableName, localDir, schema);
         //  - Write some data to be imported
-        List<Record> records = new ArrayList<>();
+        List<Record> records = new ArrayList<>(100);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
-            record.put("key", i);
+            record.put("key", 1);
             record.put("sort", (long) i);
             record.put("value1", "" + i);
             record.put("value2", Arrays.asList(1, 2, 3));
@@ -309,17 +311,8 @@ public class BulkImportJobRunnerIT {
             writer.write(record);
         }
         writer.close();
-        // Shuffle again so that the data is sorted differently in the two files
-        Collections.shuffle(records);
-        writer = new ParquetRecordWriter(new Path(dataDir + "/import/b.parquet"),
-                SchemaConverter.getSchema(getSchema()), getSchema(), CompressionCodecName.SNAPPY, 10000, 10000);
-        for (Record record : records) {
-            writer.write(record);
-        }
-        writer.close();
         List<String> inputFiles = new ArrayList<>();
         inputFiles.add("/import/a.parquet");
-        inputFiles.add("/import/b.parquet");
         //  - State store
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
@@ -331,7 +324,6 @@ public class BulkImportJobRunnerIT {
 
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-
         //  - Currently only BulkImportJobDataframeRunner supports not coalescing to the number of leaf partitions
         if (runner instanceof BulkImportJobDataframeRunner) {
             assertThat(activeFiles).hasSizeGreaterThan(1);
@@ -350,16 +342,12 @@ public class BulkImportJobRunnerIT {
                     recordsInThisFile.add(clonedRecord);
                     record = reader.read();
                 }
-                List<Record> sortedRecordsInThisFile = new ArrayList<>(recordsInThisFile);
-                sortRecords(sortedRecordsInThisFile);
-                assertThat(recordsInThisFile).isEqualTo(sortedRecordsInThisFile);
+                assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
             }
         }
-        assertThat(readRecords).hasSize(2 * records.size());
+        assertThat(readRecords).hasSameSizeAs(records);
 
-        List<Record> expectedRecords = new ArrayList<>();
-        expectedRecords.addAll(records);
-        expectedRecords.addAll(records);
+        List<Record> expectedRecords = new ArrayList<>(records);
         sortRecords(expectedRecords);
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
@@ -380,7 +368,7 @@ public class BulkImportJobRunnerIT {
         String localDir = UUID.randomUUID().toString();
         TableProperties tableProperties = createTable(s3Client, dynamoDBClient, instanceProperties, tableName, localDir, schema);
         //  - Write some data to be imported
-        List<Record> records = new ArrayList<>(100);
+        List<Record> records = new ArrayList<>(200);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
             record.put("key", i);
@@ -391,6 +379,10 @@ public class BulkImportJobRunnerIT {
             map.put("A", 1L);
             record.put("value3", map);
             records.add(record);
+            // Add record again but with the sort field set to a different value
+            Record record2 = new Record(record);
+            record2.put("sort", ((long) record.get("sort")) - 1L);
+            records.add(record2);
         }
         Collections.shuffle(records);
         ParquetRecordWriter writer = new ParquetRecordWriter(new Path(dataDir + "/import/a.parquet"),
@@ -413,26 +405,18 @@ public class BulkImportJobRunnerIT {
         // Then
         List<Record> leftPartition = records.stream()
                 .filter(record -> ((int) record.get("key")) < 50)
-                .sorted((record1, record2) -> {
-                    int key1 = (int) record1.get("key");
-                    int key2 = (int) record2.get("key");
-                    return key1 - key2;
-                })
                 .collect(Collectors.toList());
+        sortRecords(leftPartition);
         List<Record> rightPartition = records.stream()
                 .filter(record -> ((int) record.get("key")) >= 50)
-                .sorted((record1, record2) -> {
-                    int key1 = (int) record1.get("key");
-                    int key2 = (int) record2.get("key");
-                    return key1 - key2;
-                })
                 .collect(Collectors.toList());
+        sortRecords(rightPartition);
         assertThat(stateStore.getActiveFiles())
                 .extracting(FileInfo::getNumberOfRecords,
                         file -> readRecords(file.getFilename(), schema))
                 .containsExactlyInAnyOrder(
-                        tuple(50L, leftPartition),
-                        tuple(50L, rightPartition));
+                        tuple(100L, leftPartition),
+                        tuple(100L, rightPartition));
     }
 
     @Test
@@ -452,7 +436,7 @@ public class BulkImportJobRunnerIT {
         //  - Write some data to be imported
         List<Record> records = new ArrayList<>(100000);
         List<Object> splitPoints = new ArrayList<>();
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 50000; i++) {
             if (i % 1000 == 0) {
                 splitPoints.add(i);
             }
@@ -465,7 +449,10 @@ public class BulkImportJobRunnerIT {
             map.put("A", 1L);
             record.put("value3", map);
             records.add(record);
-
+            // Add record again but with the sort field set to a different value
+            Record record2 = new Record(record);
+            record2.put("sort", ((long) record.get("sort")) - 1L);
+            records.add(record2);
         }
         Collections.shuffle(records);
         ParquetRecordWriter writer = new ParquetRecordWriter(new Path(dataDir + "/import/a.parquet"),
@@ -502,7 +489,7 @@ public class BulkImportJobRunnerIT {
                     .reduce(Long::sum)
                     .get();
 
-            assertThat(totalRecords).isEqualTo(1000L);
+            assertThat(totalRecords).isEqualTo(2000L);
 
             relevantFiles.stream()
                     .map(af -> {
@@ -528,11 +515,7 @@ public class BulkImportJobRunnerIT {
                         return recordsRead;
                     })
                     .forEach(read -> {
-                        List<Record> sorted = read.stream()
-                                .sorted(new RecordComparator(schema))
-                                .collect(Collectors.toList());
-
-                        assertThat(read).isEqualTo(sorted);
+                        assertThat(read).isSortedAccordingTo(new RecordComparator(getSchema()));
                     });
         }
     }
@@ -609,10 +592,7 @@ public class BulkImportJobRunnerIT {
     }
 
     private void sortRecords(List<Record> records) {
-        records.sort((record1, record2) -> {
-            int key1 = (int) record1.get("key");
-            int key2 = (int) record2.get("key");
-            return key1 - key2;
-        });
+        RecordComparator recordComparator = new RecordComparator(getSchema());
+        records.sort(recordComparator);
     }
 }
