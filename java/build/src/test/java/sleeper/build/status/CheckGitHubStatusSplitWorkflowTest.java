@@ -26,7 +26,7 @@ import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class CheckGitHubStatusTest {
+public class CheckGitHubStatusSplitWorkflowTest {
 
     private final TestGitHubWorkflowRuns workflowRuns = new TestGitHubWorkflowRuns();
 
