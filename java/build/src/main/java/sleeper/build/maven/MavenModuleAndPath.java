@@ -17,33 +17,33 @@ package sleeper.build.maven;
 
 import java.util.stream.Stream;
 
-public class MavenProjectListPath {
+public class MavenModuleAndPath {
 
     private final String path;
     private final MavenModuleStructure structure;
 
-    private MavenProjectListPath(String path, MavenModuleStructure structure) {
+    private MavenModuleAndPath(String path, MavenModuleStructure structure) {
         this.path = path;
         this.structure = structure;
     }
 
-    public MavenProjectListPath child(MavenModuleStructure structure) {
-        return new MavenProjectListPath(
+    public MavenModuleAndPath child(MavenModuleStructure structure) {
+        return new MavenModuleAndPath(
                 projectListPathFromParent(this, structure),
                 structure);
     }
 
-    public static MavenProjectListPath root(MavenModuleStructure structure) {
-        return new MavenProjectListPath(null, structure);
+    public static MavenModuleAndPath root(MavenModuleStructure structure) {
+        return new MavenModuleAndPath(null, structure);
     }
 
-    public Stream<MavenProjectListPath> thisAndDescendents() {
+    public Stream<MavenModuleAndPath> thisAndDescendents() {
         return Stream.concat(Stream.of(this), descendents());
     }
 
-    public Stream<MavenProjectListPath> descendents() {
+    public Stream<MavenModuleAndPath> descendents() {
         return structure.childModules().map(this::child)
-                .flatMap(MavenProjectListPath::thisAndDescendents);
+                .flatMap(MavenModuleAndPath::thisAndDescendents);
     }
 
     public String getPath() {
@@ -54,7 +54,7 @@ public class MavenProjectListPath {
         return structure;
     }
 
-    private static String projectListPathFromParent(MavenProjectListPath parent, MavenModuleStructure structure) {
+    private static String projectListPathFromParent(MavenModuleAndPath parent, MavenModuleStructure structure) {
         if (parent.path != null) {
             return parent.path + "/" + structure.getModuleRef();
         } else {

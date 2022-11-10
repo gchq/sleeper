@@ -23,14 +23,14 @@ import java.util.stream.Stream;
 
 public class InternalDependencyIndex {
 
-    private final Map<DependencyReference, MavenProjectListPath> modulesByDependencyRef;
-    private final Map<String, MavenProjectListPath> modulesByPath;
+    private final Map<DependencyReference, MavenModuleAndPath> modulesByDependencyRef;
+    private final Map<String, MavenModuleAndPath> modulesByPath;
 
-    InternalDependencyIndex(List<MavenProjectListPath> paths) {
+    InternalDependencyIndex(List<MavenModuleAndPath> paths) {
         modulesByDependencyRef = paths.stream()
                 .collect(Collectors.toMap(path -> path.getStructure().asDependency(), path -> path));
         modulesByPath = paths.stream()
-                .collect(Collectors.toMap(MavenProjectListPath::getPath, path -> path));
+                .collect(Collectors.toMap(MavenModuleAndPath::getPath, path -> path));
     }
 
     public Stream<String> dependenciesForModules(String... paths) {
@@ -40,30 +40,30 @@ public class InternalDependencyIndex {
     }
 
     private Stream<String> dependenciesOfPath(String path) {
-        MavenProjectListPath module = moduleByPath(path)
+        MavenModuleAndPath module = moduleByPath(path)
                 .orElseThrow(() -> new IllegalArgumentException("Module not found: " + path));
         return moduleAndDependencies(module)
-                .map(MavenProjectListPath::getPath);
+                .map(MavenModuleAndPath::getPath);
     }
 
-    private Optional<MavenProjectListPath> moduleByPath(String path) {
+    private Optional<MavenModuleAndPath> moduleByPath(String path) {
         return Optional.ofNullable(modulesByPath.get(path));
     }
 
-    private Stream<MavenProjectListPath> moduleAndDependencies(MavenProjectListPath path) {
+    private Stream<MavenModuleAndPath> moduleAndDependencies(MavenModuleAndPath path) {
         return Stream.concat(Stream.of(path), dependencies(path));
     }
 
-    private Stream<MavenProjectListPath> dependencies(MavenProjectListPath path) {
+    private Stream<MavenModuleAndPath> dependencies(MavenModuleAndPath path) {
         return path.getStructure().dependencies()
                 .flatMap(this::dependenciesByRef);
     }
 
-    private Optional<MavenProjectListPath> moduleByDependencyRef(DependencyReference reference) {
+    private Optional<MavenModuleAndPath> moduleByDependencyRef(DependencyReference reference) {
         return Optional.ofNullable(modulesByDependencyRef.get(reference));
     }
 
-    private Stream<MavenProjectListPath> dependenciesByRef(DependencyReference reference) {
+    private Stream<MavenModuleAndPath> dependenciesByRef(DependencyReference reference) {
         return Stream.of(moduleByDependencyRef(reference))
                 .filter(Optional::isPresent)
                 .map(Optional::get)

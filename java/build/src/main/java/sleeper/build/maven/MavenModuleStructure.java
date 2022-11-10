@@ -61,11 +61,11 @@ public class MavenModuleStructure {
     }
 
     public Stream<String> allTestedModulesForProjectList() {
-        return allTestedModulesForProjectList(MavenProjectListPath.root(this));
+        return allTestedModulesForProjectList(MavenModuleAndPath.root(this));
     }
 
     public InternalDependencyIndex internalDependencies() {
-        MavenProjectListPath root = MavenProjectListPath.root(this);
+        MavenModuleAndPath root = MavenModuleAndPath.root(this);
         return new InternalDependencyIndex(
                 root.thisAndDescendents().collect(Collectors.toList()));
     }
@@ -74,8 +74,8 @@ public class MavenModuleStructure {
         return DependencyReference.groupAndArtifact(groupId, artifactId);
     }
 
-    private Stream<String> allTestedModulesForProjectList(MavenProjectListPath parent) {
-        MavenProjectListPath projectListPath = parent.child(this);
+    private Stream<String> allTestedModulesForProjectList(MavenModuleAndPath parent) {
+        MavenModuleAndPath projectListPath = parent.child(this);
         if ("pom".equals(packaging)) {
             return modules.stream()
                     .flatMap(module -> module.allTestedModulesForProjectList(projectListPath));
