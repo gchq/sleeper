@@ -28,7 +28,6 @@ import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.bulkimport.job.runner.AddPartitionFunction;
 import sleeper.bulkimport.job.runner.BulkImportJobRunner;
 import sleeper.bulkimport.job.runner.StructTypeFactory;
 import sleeper.configuration.properties.table.TableProperties;

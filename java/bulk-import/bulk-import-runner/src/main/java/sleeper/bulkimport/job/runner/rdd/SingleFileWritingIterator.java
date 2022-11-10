@@ -73,15 +73,15 @@ public class SingleFileWritingIterator implements Iterator<Row> {
             InstanceProperties instanceProperties,
             TableProperties tableProperties,
             Configuration conf,
-            Broadcast<List<Partition>> broadcastPartitions) {
+            PartitionTree partitionTree) {
         this.input = input;
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.schema = tableProperties.getSchema();
         this.allSchemaFields = schema.getAllFields();
         this.conf = conf;
-        this.partitionTree = new PartitionTree(schema, broadcastPartitions.getValue());
-        LOGGER.info("Initialised FileWritingIteratorPartitionNotPrecomputed");
+        this.partitionTree = partitionTree;
+        LOGGER.info("Initialised SingleFileWritingIterator");
         LOGGER.info("Schema is {}", schema);
         LOGGER.info("Configuration is {}", conf);
     }

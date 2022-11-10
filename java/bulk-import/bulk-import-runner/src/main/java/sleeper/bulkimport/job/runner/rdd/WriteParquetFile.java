@@ -24,6 +24,7 @@ import org.apache.spark.util.SerializableConfiguration;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -55,6 +56,8 @@ public class WriteParquetFile implements FlatMapFunction<Iterator<Row>, Row> {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.loadFromString(tablePropertiesStr);
 
-        return new SingleFileWritingIterator(rowIter, instanceProperties, tableProperties, serializableConf.value(), broadcastPartitions);
+        PartitionTree partitionTree = new PartitionTree(tableProperties.getSchema(), broadcastPartitions.getValue());
+
+        return new SingleFileWritingIterator(rowIter, instanceProperties, tableProperties, serializableConf.value(), partitionTree);
     }
 }
