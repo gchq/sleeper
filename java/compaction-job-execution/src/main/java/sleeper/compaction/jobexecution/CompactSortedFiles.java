@@ -207,8 +207,17 @@ public class CompactSortedFiles {
                     .packInt(GPU_MAX_ROW_GROUP_ROWS)
                     .packInt(this.pageSize)
                     .packArrayHeader(1) // assume only a single sort column
-                    .packInt(0) // sort column number
-                    .packArrayHeader(0); // TODO: support split points!
+                    .packInt(0); // sort column number //TODO check dimension
+                                 // for row key split
+
+            if (compactionJob.isSplittingJob()) {
+                packer.packArrayHeader(1);
+                // TODO check type for split point 
+                // .packString(compactionJob.getSplitPoint());
+            } else {
+                packer.packArrayHeader(0);
+            }
+
             LOGGER.debug("Wrote {} bytes of Msgpack to {}", packer.getTotalWrittenBytes(), tempFile);
         }
     }
