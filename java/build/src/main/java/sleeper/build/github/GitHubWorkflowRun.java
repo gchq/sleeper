@@ -17,6 +17,9 @@ package sleeper.build.github;
 
 import java.time.Instant;
 import java.util.Date;
+import java.util.Objects;
+
+import static sleeper.build.util.ValidationUtils.ignoreEmpty;
 
 public class GitHubWorkflowRun {
 
@@ -33,13 +36,13 @@ public class GitHubWorkflowRun {
     private final String commitMessage;
 
     private GitHubWorkflowRun(Builder builder) {
-        status = builder.status;
-        conclusion = builder.conclusion;
+        status = ignoreEmpty(builder.status);
+        conclusion = ignoreEmpty(builder.conclusion);
         runId = builder.runId;
-        runUrl = builder.runUrl;
+        runUrl = ignoreEmpty(builder.runUrl);
         runStarted = builder.runStarted;
-        commitSha = builder.commitSha;
-        commitMessage = builder.commitMessage;
+        commitSha = ignoreEmpty(builder.commitSha);
+        commitMessage = ignoreEmpty(builder.commitMessage);
     }
 
     public static Builder builder() {
@@ -76,6 +79,35 @@ public class GitHubWorkflowRun {
 
     public String getCommitMessage() {
         return commitMessage;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GitHubWorkflowRun that = (GitHubWorkflowRun) o;
+        return Objects.equals(status, that.status) && Objects.equals(conclusion, that.conclusion)
+                && Objects.equals(runId, that.runId) && Objects.equals(runUrl, that.runUrl)
+                && Objects.equals(runStarted, that.runStarted) && Objects.equals(commitSha, that.commitSha)
+                && Objects.equals(commitMessage, that.commitMessage);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(status, conclusion, runId, runUrl, runStarted, commitSha, commitMessage);
+    }
+
+    @Override
+    public String toString() {
+        return "GitHubWorkflowRun{" +
+                "status='" + status + '\'' +
+                ", conclusion='" + conclusion + '\'' +
+                ", runId=" + runId +
+                ", runUrl='" + runUrl + '\'' +
+                ", runStarted=" + runStarted +
+                ", commitSha='" + commitSha + '\'' +
+                ", commitMessage='" + commitMessage + '\'' +
+                '}';
     }
 
     public static final class Builder {
