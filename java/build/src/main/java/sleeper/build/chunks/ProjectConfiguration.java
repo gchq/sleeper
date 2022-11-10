@@ -20,6 +20,7 @@ import sleeper.build.github.GitHubWorkflowRuns;
 import sleeper.build.github.GitHubWorkflowRunsImpl;
 import sleeper.build.status.CheckGitHubStatus;
 import sleeper.build.status.ChunksStatus;
+import sleeper.build.status.WorkflowStatus;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -64,6 +65,10 @@ public class ProjectConfiguration {
 
     public ChunksStatus checkStatus(GitHubWorkflowRuns runs) {
         return new CheckGitHubStatus(this, runs).checkStatus();
+    }
+
+    public WorkflowStatus checkStatusSingleWorkflow(GitHubWorkflowRuns workflowRuns, String workflow) {
+        return new CheckGitHubStatus(this, workflowRuns).checkStatusSingleWorkflow(workflow);
     }
 
     public GitHubHead getHead() {

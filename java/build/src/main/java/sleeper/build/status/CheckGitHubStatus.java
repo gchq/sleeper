@@ -49,6 +49,10 @@ public class CheckGitHubStatus {
         return ChunksStatus.chunksForHead(head, listChunkStatusInOrder());
     }
 
+    public WorkflowStatus checkStatusSingleWorkflow(String workflow) {
+        return null;
+    }
+
     private List<ChunkStatus> listChunkStatusInOrder() {
         // Since checks are done in parallel, re-order them after they are complete
         Map<String, ChunkStatus> statusByChunkId = retrieveStatusByChunkId();
