@@ -25,7 +25,6 @@ import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.status.report.CompactionTaskStatusReport;
 
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -79,18 +78,15 @@ public class CompactionTaskStatusReportTest {
                 example("reports/compactiontaskstatus/unfinishedAndFinished.json"));
     }
 
-    private String getStandardReport(CompactionTaskQuery query)
-            throws UnsupportedEncodingException {
+    private String getStandardReport(CompactionTaskQuery query) {
         return getReport(query, StandardCompactionTaskStatusReporter::new);
     }
 
-    private String getJsonReport(CompactionTaskQuery query)
-            throws UnsupportedEncodingException {
+    private String getJsonReport(CompactionTaskQuery query) {
         return getReport(query, JsonCompactionTaskStatusReporter::new);
     }
 
-    private String getReport(CompactionTaskQuery query, Function<PrintStream, CompactionTaskStatusReporter> getReporter)
-            throws UnsupportedEncodingException {
+    private String getReport(CompactionTaskQuery query, Function<PrintStream, CompactionTaskStatusReporter> getReporter) {
         ToStringPrintStream output = new ToStringPrintStream();
         new CompactionTaskStatusReport(store,
                 getReporter.apply(output.getPrintStream()),
@@ -98,7 +94,4 @@ public class CompactionTaskStatusReportTest {
         return output.toString();
     }
 
-    private static CompactionTaskStatus.Builder startedStatusBuilder(Instant startTime) {
-        return CompactionTaskStatus.builder().taskId("test-task-id").started(startTime);
-    }
 }

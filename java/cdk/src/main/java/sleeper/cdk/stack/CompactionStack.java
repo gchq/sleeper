@@ -417,21 +417,15 @@ public class CompactionStack extends NestedStack {
                 instanceProperties.get(ECR_COMPACTION_REPO));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
-        AwsLogDriverProps logDriverProps = AwsLogDriverProps.builder()
-                .streamPrefix(instanceProperties.get(ID) + "-MergeTasks")
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-        LogDriver logDriver = AwsLogDriver.awsLogs(logDriverProps);
-
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
 
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
-                .logging(logDriver)
                 .environment(environmentVariables)
                 .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
                 .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
+                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties, "MergeCompactionTasks"))                
                 .build();
         fargateTaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
         ec2TaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
@@ -505,21 +499,15 @@ public class CompactionStack extends NestedStack {
                 instanceProperties.get(ECR_COMPACTION_REPO));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
-        AwsLogDriverProps logDriverProps = AwsLogDriverProps.builder()
-                .streamPrefix(instanceProperties.get(ID) + "-SplittingMergeTasks")
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-        LogDriver logDriver = AwsLogDriver.awsLogs(logDriverProps);
-
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
 
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
-                .logging(logDriver)
                 .environment(environmentVariables)
                 .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
                 .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
+                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties, "SplittingMergeCompactionTasks"))
                 .build();
         fargateTaskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME,
                 containerDefinitionOptions);

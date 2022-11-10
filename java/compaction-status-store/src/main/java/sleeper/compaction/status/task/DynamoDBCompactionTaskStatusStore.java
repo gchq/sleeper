@@ -39,10 +39,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.compaction.status.DynamoDBAttributes.createStringAttribute;
-import static sleeper.compaction.status.DynamoDBUtils.instanceTableName;
 import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusFormat.TASK_ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 
 public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskStatusStore.class);

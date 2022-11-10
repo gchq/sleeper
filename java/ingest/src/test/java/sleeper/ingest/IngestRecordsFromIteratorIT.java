@@ -38,7 +38,7 @@ public class IngestRecordsFromIteratorIT extends IngestRecordsITBase {
 
         // When
         IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
-        long numWritten = new IngestRecordsFromIterator(properties, getRecords().iterator()).write();
+        long numWritten = new IngestRecordsFromIterator(properties, getRecords().iterator()).write().getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
