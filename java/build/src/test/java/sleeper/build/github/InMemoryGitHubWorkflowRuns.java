@@ -16,7 +16,7 @@
 package sleeper.build.github;
 
 import sleeper.build.chunks.ProjectConfiguration;
-import sleeper.build.status.ChunksStatus;
+import sleeper.build.status.ChunkStatuses;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -97,7 +97,7 @@ public class InMemoryGitHubWorkflowRuns implements GitHubWorkflowRuns {
         recheckResultsByRunId.put(run.getRunId(), new LinkedList<>(rechecks));
     }
 
-    public ChunksStatus checkStatus(ProjectConfiguration configuration) {
+    public ChunkStatuses checkStatus(ProjectConfiguration configuration) {
         return configuration.checkStatus(this);
     }
 

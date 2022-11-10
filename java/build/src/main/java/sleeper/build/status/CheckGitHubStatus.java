@@ -47,21 +47,21 @@ public class CheckGitHubStatus {
         this.runs = runs;
     }
 
-    public ChunksStatus checkStatus() {
-        return fetchChunksStatus(this::getRunFromChunkWorkflow);
+    public ChunkStatuses checkStatus() {
+        return fetchStatusForEachChunk(this::getRunFromChunkWorkflow);
     }
 
     public WorkflowStatus checkStatusSingleWorkflow(String workflow) {
-        ChunksStatus chunksStatus = fetchChunksStatus(chunk -> getRunFromWorkflow(workflow));
-        return new WorkflowStatus(chunksStatus,
+        ChunkStatuses chunkStatuses = fetchStatusForEachChunk(chunk -> getRunFromWorkflow(workflow));
+        return new WorkflowStatus(chunkStatuses,
                 chunks.stream()
                         .map(ProjectChunk::getId)
                         .collect(Collectors.toList()));
     }
 
-    private ChunksStatus fetchChunksStatus(
+    private ChunkStatuses fetchStatusForEachChunk(
             Function<ProjectChunk, Optional<GitHubWorkflowRun>> getLatestChunkRun) {
-        return ChunksStatus.chunksForHead(head, listChunkStatusInOrder(getLatestChunkRun));
+        return ChunkStatuses.chunksForHead(head, listChunkStatusInOrder(getLatestChunkRun));
     }
 
     private List<ChunkStatus> listChunkStatusInOrder(

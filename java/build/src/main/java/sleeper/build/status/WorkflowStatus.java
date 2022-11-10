@@ -20,10 +20,10 @@ import java.util.List;
 
 public class WorkflowStatus {
 
-    private final ChunksStatus chunks;
+    private final ChunkStatuses chunks;
     private final List<String> chunkIdsToBuild;
 
-    public WorkflowStatus(ChunksStatus chunks, List<String> chunkIdsToBuild) {
+    public WorkflowStatus(ChunkStatuses chunks, List<String> chunkIdsToBuild) {
         this.chunks = chunks;
         this.chunkIdsToBuild = chunkIdsToBuild;
     }

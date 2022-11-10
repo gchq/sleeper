@@ -45,7 +45,7 @@ public class CheckGitHubStatusSplitWorkflowTest {
         ProjectConfiguration configuration = configurationBuilder().build();
         workflowRuns.setLatestRun(GitHubWorkflowRun.withCommitSha("test-sha").runId(123L).success());
 
-        ChunksStatus status = workflowRuns.checkStatus(configuration);
+        ChunkStatuses status = workflowRuns.checkStatus(configuration);
         assertThat(status.isFailCheck()).isFalse();
         assertThat(status.reportLines()).containsExactly("",
                 "Common: completed, success",
@@ -58,7 +58,7 @@ public class CheckGitHubStatusSplitWorkflowTest {
         GitHubWorkflowRun.Builder runBuilder = GitHubWorkflowRun.withCommitSha("old-sha").runId(123L);
         workflowRuns.setLatestRunAndRecheck(runBuilder.inProgress(), runBuilder.success());
 
-        ChunksStatus status = workflowRuns.checkStatus(configuration);
+        ChunkStatuses status = workflowRuns.checkStatus(configuration);
         assertThat(status.isFailCheck()).isFalse();
         assertThat(status.reportLines()).containsExactly("",
                 "Common: completed, success",
@@ -71,7 +71,7 @@ public class CheckGitHubStatusSplitWorkflowTest {
         GitHubWorkflowRun.Builder runBuilder = GitHubWorkflowRun.withCommitSha("old-sha").runId(12L);
         workflowRuns.setLatestRunAndRechecks(runBuilder.inProgress(), runBuilder.inProgress(), runBuilder.success());
 
-        ChunksStatus status = workflowRuns.checkStatus(configuration);
+        ChunkStatuses status = workflowRuns.checkStatus(configuration);
         assertThat(status.isFailCheck()).isFalse();
         assertThat(status.reportLines()).containsExactly("",
                 "Common: completed, success",
@@ -86,7 +86,7 @@ public class CheckGitHubStatusSplitWorkflowTest {
         GitHubWorkflowRun run = GitHubWorkflowRun.withCommitSha("old-sha").runId(12L).inProgress();
         workflowRuns.setLatestRunAndRecheck(run, run);
 
-        ChunksStatus status = workflowRuns.checkStatus(configuration);
+        ChunkStatuses status = workflowRuns.checkStatus(configuration);
         assertThat(status.isFailCheck()).isTrue();
         assertThat(status.reportLines()).containsExactly("",
                 "Common: in_progress",

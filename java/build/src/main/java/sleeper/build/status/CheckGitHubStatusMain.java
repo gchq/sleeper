@@ -49,7 +49,7 @@ public class CheckGitHubStatusMain {
             System.exit(1);
             return;
         }
-        ChunksStatus status = configuration.checkStatus();
+        ChunkStatuses status = configuration.checkStatus();
         status.report(System.out);
         if (status.isFailCheck()) {
             System.exit(1);

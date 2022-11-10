@@ -19,7 +19,7 @@ import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubWorkflowRuns;
 import sleeper.build.github.GitHubWorkflowRunsImpl;
 import sleeper.build.status.CheckGitHubStatus;
-import sleeper.build.status.ChunksStatus;
+import sleeper.build.status.ChunkStatuses;
 import sleeper.build.status.WorkflowStatus;
 
 import java.io.IOException;
@@ -59,11 +59,11 @@ public class ProjectConfiguration {
                 .build();
     }
 
-    public ChunksStatus checkStatus() throws IOException {
+    public ChunkStatuses checkStatus() throws IOException {
         return checkStatus(new GitHubWorkflowRunsImpl(token));
     }
 
-    public ChunksStatus checkStatus(GitHubWorkflowRuns runs) {
+    public ChunkStatuses checkStatus(GitHubWorkflowRuns runs) {
         return new CheckGitHubStatus(this, runs).checkStatus();
     }
 

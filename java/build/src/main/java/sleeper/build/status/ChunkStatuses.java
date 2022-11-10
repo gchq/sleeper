@@ -25,12 +25,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-public class ChunksStatus {
+public class ChunkStatuses {
 
     private final GitHubHead head;
     private final List<ChunkStatus> chunks;
 
-    private ChunksStatus(Builder builder) {
+    private ChunkStatuses(Builder builder) {
         head = Objects.requireNonNull(builder.head, "head must not be null");
         chunks = Objects.requireNonNull(builder.chunks, "chunks must not be null");
     }
@@ -50,11 +50,11 @@ public class ChunksStatus {
         return Arrays.asList(report.split(System.lineSeparator()));
     }
 
-    public static ChunksStatus chunksForHead(GitHubHead head, ChunkStatus... chunks) {
+    public static ChunkStatuses chunksForHead(GitHubHead head, ChunkStatus... chunks) {
         return builder().head(head).chunks(Arrays.asList(chunks)).build();
     }
 
-    public static ChunksStatus chunksForHead(GitHubHead head, List<ChunkStatus> chunks) {
+    public static ChunkStatuses chunksForHead(GitHubHead head, List<ChunkStatus> chunks) {
         return builder().head(head).chunks(chunks).build();
     }
 
@@ -70,7 +70,7 @@ public class ChunksStatus {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ChunksStatus that = (ChunksStatus) o;
+        ChunkStatuses that = (ChunkStatuses) o;
         return head.equals(that.head) && chunks.equals(that.chunks);
     }
 
@@ -104,8 +104,8 @@ public class ChunksStatus {
             return this;
         }
 
-        public ChunksStatus build() {
-            return new ChunksStatus(this);
+        public ChunkStatuses build() {
+            return new ChunkStatuses(this);
         }
     }
 }
