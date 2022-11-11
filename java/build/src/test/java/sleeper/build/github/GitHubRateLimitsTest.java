@@ -15,11 +15,10 @@
  */
 package sleeper.build.github;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Rule;
 import org.junit.Test;
-
-import java.time.Instant;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -28,37 +27,24 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.build.chunks.TestResources.exampleString;
 
-public class GitHubWorkflowRunsImplTest {
+public class GitHubRateLimitsTest {
 
-    private static final String TOKEN = "test-bearer-token";
-    private static final int PORT = 8083;
-    private static final GitHubHead GITHUB_EXAMPLE_HEAD = TestGitHubHead.exampleBuilder()
-            .sha("acb5820ced9479c074f688cc328bf03f341a511d").build();
+    private static final int PORT = 8084;
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(PORT);
 
-    private GitHubWorkflowRuns workflowRuns() {
-        return new GitHubWorkflowRunsImpl(TOKEN, "http://localhost:" + PORT);
-    }
-
     @Test
-    public void shouldGetSingleWorkflowRun() {
-        stubFor(get("/repos/test-owner/test-repo/actions/workflows/test-workflow.yaml/runs?branch=test-branch")
+    public void shouldGetExampleRateLimits() {
+        stubFor(get("/rate_limit")
                 .withHeader("Accept", equalTo("application/vnd.github+json"))
                 .withHeader("Authorization", equalTo("Bearer test-bearer-token"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/vnd.github+json")
-                        .withBody(exampleString("github-examples/workflow-runs-single.json"))));
+                        .withBody(exampleString("github-examples/rate-limit.json"))));
 
-        assertThat(workflowRuns().getLatestRun(GITHUB_EXAMPLE_HEAD, "test-workflow.yaml"))
-                .contains(GitHubWorkflowRun.builder()
-                        .status("queued").runId(30433642L)
-                        .runUrl("https://github.com/octo-org/octo-repo/actions/runs/30433642")
-                        .runStarted(Instant.parse("2020-01-22T19:33:08Z"))
-                        .commitSha(GITHUB_EXAMPLE_HEAD.getSha())
-                        .commitMessage("Create linter.yaml")
-                        .build());
+        JsonNode response = GitHubRateLimits.get("http://localhost:" + PORT, "test-bearer-token");
+        assertThat(GitHubRateLimits.remainingLimit(response)).isEqualTo(4999);
     }
 }

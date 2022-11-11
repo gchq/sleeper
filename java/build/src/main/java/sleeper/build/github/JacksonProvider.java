@@ -16,8 +16,9 @@
 package sleeper.build.github;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.ext.ContextResolver;
-import jakarta.ws.rs.ext.Provider;
+
+import javax.ws.rs.ext.ContextResolver;
+import javax.ws.rs.ext.Provider;
 
 @Provider
 public class JacksonProvider implements ContextResolver<ObjectMapper> {
