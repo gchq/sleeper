@@ -1,13 +1,10 @@
 on:
   workflow_call:
     inputs:
-      chunkName:
+      chunkId:
         required: true
         type: string
-      moduleList:
-        required: true
-        type: string
-      publishTestReport:
+      publishReports:
         default: true
         required: false
         type: boolean
@@ -22,36 +19,51 @@ jobs:
         with:
           java-version: '8'
           distribution: 'adopt'
-      - name: Cache Dependencies
+      - name: Cache dependencies
         uses: actions/cache@v3
         with:
           path: java/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
-      - name: Resolve Dependencies
+      - name: Resolve dependencies
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=.m2/repository
         working-directory: ./java
+      - name: Get chunk configuration
+        id: config
+        working-directory: ./java/build
+        run: |
+          mvn compile exec:java -q -Dexec.mainClass=sleeper.build.chunks.GetChunkConfig \
+            -Dmaven.repo.local=../.m2/repository \
+            -Dexec.args="${{ inputs.chunkId }} github_actions_outputs ${{ github.workspace }}/.github/config/chunks.yaml" \
+            >> $GITHUB_OUTPUT
       - name: Compile
-        run: mvn --batch-mode clean install -am -pl ${{ inputs.moduleList }} -Pquick,skipShade -Dmaven.repo.local=.m2/repository
+        run: mvn --batch-mode clean install -am -pl ${{ steps.config.outputs.moduleList }} -Pquick,skipShade -Dmaven.repo.local=.m2/repository
         working-directory: ./java
       - name: Test
-        run: mvn --batch-mode --fail-at-end verify -pl ${{ inputs.moduleList }} -Dmaven.repo.local=.m2/repository
+        run: mvn --batch-mode --fail-at-end verify -pl ${{ steps.config.outputs.moduleList }} -Dmaven.repo.local=.m2/repository
         working-directory: ./java
-      - name: Publish Test Report
-        if: ${{ always() && inputs.publishTestReport }}
+      - name: Check rate limits
+        id: rate-limit
+        working-directory: ./java/build
+        run: |
+          echo "remaining=$(mvn compile exec:java -q -Dexec.mainClass=sleeper.build.ratelimit.GetRemainingRateLimit \
+            -Dexec.args=${{ secrets.GITHUB_TOKEN }} -Dmaven.repo.local=../.m2/repository)" \
+            >> $GITHUB_OUTPUT
+      - name: Publish test report
+        if: ${{ always() && inputs.publishReports && steps.rate-limit.outputs.remaining > 50 }}
         uses: scacap/action-surefire-report@v1
         with:
-          check_name: Tests for ${{ inputs.chunkName }}
-      - name: Publish Checkstyle Report
-        if: ${{ always() }}
+          check_name: Tests for ${{ steps.config.outputs.chunkName }}
+      - name: Publish Checkstyle report
+        if: ${{ always() && inputs.publishReports && steps.rate-limit.outputs.remaining > 50 }}
         uses: jwgmeligmeyling/checkstyle-github-action@v1.2
         with:
           path: '**/checkstyle-result.xml'
-          name: Checkstyle for ${{ inputs.chunkName }}
-      - name: Publish Spotbugs Report
-        if: ${{ always() }}
+          name: Checkstyle for ${{ steps.config.outputs.chunkName }}
+      - name: Publish Spotbugs report
+        if: ${{ always() && inputs.publishReports && steps.rate-limit.outputs.remaining > 50 }}
         uses: jwgmeligmeyling/spotbugs-github-action@v1.2
         with:
           path: '**/spotbugsXml.xml'
-          name: Spotbugs for ${{ inputs.chunkName }}
+          name: Spotbugs for ${{ steps.config.outputs.chunkName }}
