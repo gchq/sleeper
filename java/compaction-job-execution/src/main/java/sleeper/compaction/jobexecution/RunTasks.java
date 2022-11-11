@@ -151,8 +151,9 @@ public class RunTasks {
 
             // Do we need to scale out?
             int maxNumTasksThatWillBeCreated = Math.min(maxNumTasksToCreate, queueSize);
-            scaler.possiblyScaleOut(maxNumTasksThatWillBeCreated, details);
-
+            if (launchType.equalsIgnoreCase("EC2")) {
+                scaler.possiblyScaleOut(maxNumTasksThatWillBeCreated, details);
+            }
             // Create 1 task for each item on the queue
             int numTasksCreated = 0;
             for (int i = 0; i < queueSize && i < maxNumTasksToCreate; i++) {
@@ -214,14 +215,16 @@ public class RunTasks {
                     }
                     numTasksCreated++;
 
-                    // This lambda is triggered every minute so abort once get close to 1 minute
+                    // This lambda is triggered every minute so abort once get
+                    // close to 1 minute
                     if (System.currentTimeMillis() - startTime > 50 * 1000L) {
                         LOGGER.info("RunTasks has been running for more than 50 seconds, aborting");
                         break;
                     }
 
                     if (0 == numTasksCreated % 10) {
-                        // Sleep for 10 seconds - API allows 1 job per second with a burst of 10 jobs in
+                        // Sleep for 10 seconds - API allows 1 job per second
+                        // with a burst of 10 jobs in
                         // a second
                         // so run 10 every 11 seconds for safety
                         LOGGER.info("Sleeping for 11 seconds as 10 tasks have been created");
@@ -234,7 +237,9 @@ public class RunTasks {
         }
 
         try {
-            scaler.possiblyScaleIn(this.ec2TaskDefinition, details, recentContainerInstanceARNs);
+            if (launchType.equalsIgnoreCase("EC2")) {
+                scaler.possiblyScaleIn(this.ec2TaskDefinition, details, recentContainerInstanceARNs);
+            }
         } catch (AmazonClientException e) {
             LOGGER.error("Scale-in exception", e);
         }

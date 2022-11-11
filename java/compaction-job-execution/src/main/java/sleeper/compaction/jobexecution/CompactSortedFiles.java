@@ -158,16 +158,19 @@ public class CompactSortedFiles {
     private CompactionJobRecordsProcessed gpuCompact() throws IOException {
         // for now we only support single field sorting on GPU
         if (schema.getRowKeyFields().size() > 1) {
-            throw new IllegalStateException("can't use GPU compaction on table " + compactionJob.getTableName() + " as its schema has more than one row key. Only single dimension row key tables can be GPU compacted.");
+            throw new IllegalStateException("can't use GPU compaction on table " + compactionJob.getTableName() +
+                    " as its schema has more than one row key. Only single dimension row key tables can be GPU compacted.");
         }
-
-        // Write config data to msgpack
-        java.nio.file.Path tempFile = Files.createTempFile(null, null);
-        writeMsgPack(tempFile);
 
         // Run GPU sorter
         LOGGER.info("<<<GPU accelerated compaction to launch here>>>");
-        LOGGER.info("{} {} {} {} {}", compactionJob.getInputFiles(), compactionJob.getOutputFile(), this.compressionCodec, this.rowGroupSize, this.pageSize);
+        LOGGER.info("{} {} {} {} {} {}", compactionJob.getInputFiles(), compactionJob.getOutputFile(), compactionJob.getOutputFiles(),
+                this.compressionCodec, this.rowGroupSize, this.pageSize);
+
+        // Write config data to msgpack
+        java.nio.file.Path tempFile = Files.createTempFile(null, null);
+        //TODO support multiple output files
+        //writeMsgPack(tempFile);
 
         long linesRead = 0;
         long linesWritten = 0;
