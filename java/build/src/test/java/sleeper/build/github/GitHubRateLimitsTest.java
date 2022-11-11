@@ -24,15 +24,14 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.build.chunks.TestResources.exampleString;
 
 public class GitHubRateLimitsTest {
 
-    private static final int PORT = 8084;
-
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(PORT);
+    public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
 
     @Test
     public void shouldGetExampleRateLimits() {
@@ -44,7 +43,7 @@ public class GitHubRateLimitsTest {
                         .withHeader("Content-Type", "application/vnd.github+json")
                         .withBody(exampleString("github-examples/rate-limit.json"))));
 
-        JsonNode response = GitHubRateLimits.get("http://localhost:" + PORT, "test-bearer-token");
+        JsonNode response = GitHubRateLimits.get("http://localhost:" + wireMockRule.port(), "test-bearer-token");
         assertThat(GitHubRateLimits.remainingLimit(response)).isEqualTo(4999);
     }
 }

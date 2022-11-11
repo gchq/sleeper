@@ -25,21 +25,21 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.build.chunks.TestResources.exampleString;
 
 public class GitHubWorkflowRunsImplTest {
 
     private static final String TOKEN = "test-bearer-token";
-    private static final int PORT = 8083;
     private static final GitHubHead GITHUB_EXAMPLE_HEAD = TestGitHubHead.exampleBuilder()
             .sha("acb5820ced9479c074f688cc328bf03f341a511d").build();
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(PORT);
+    public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().dynamicPort());
 
     private GitHubWorkflowRuns workflowRuns() {
-        return new GitHubWorkflowRunsImpl(TOKEN, "http://localhost:" + PORT);
+        return new GitHubWorkflowRunsImpl(TOKEN, "http://localhost:" + wireMockRule.port());
     }
 
     @Test
