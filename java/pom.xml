@@ -57,7 +57,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
         <scala.version>2.12</scala.version>
-        <spark.version>3.1.2</spark.version>
+        <spark.version>3.3.0</spark.version>
         <aws-java-sdk.version>1.11.1034</aws-java-sdk.version>
         <aws-java-sdk-v2.version>2.17.136</aws-java-sdk-v2.version>
         <aws-lambda-java-events.version>3.7.0</aws-lambda-java-events.version>
@@ -82,7 +82,6 @@
         <java-websocket.version>1.5.2</java-websocket.version>
         <arrow.version>8.0.0</arrow.version>
         <bouncycastle.version>1.71.1</bouncycastle.version>
-        <github-api.version>1.308</github-api.version>
         <!-- Testing -->
         <junit.version>4.13</junit.version>
         <mockito.version>3.3.3</mockito.version>
@@ -164,12 +163,6 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-reload4j</artifactId>
                 <version>${slf4j.version}</version>
-            </dependency>
-            <!-- Build -->
-            <dependency>
-                <groupId>org.kohsuke</groupId>
-                <artifactId>github-api</artifactId>
-                <version>${github-api.version}</version>
             </dependency>
             <!-- Cryptography -->
             <dependency>
@@ -366,6 +359,9 @@
                                 <exclude>*log4j*:*log4j*</exclude>
                                 <exclude>org.slf4j:slf4j-log4j12</exclude>
                             </excludes>
+                            <includes>
+                                <include>org.apache.logging.log4j:*</include>
+                            </includes>
                             <message>Log4j conflicts with reload4j, add an exclusion</message>
                         </bannedDependencies>
                     </rules>

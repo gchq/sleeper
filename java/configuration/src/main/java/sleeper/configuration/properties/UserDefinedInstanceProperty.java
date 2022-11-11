@@ -139,7 +139,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     BULK_IMPORT_EMR_SPARK_SHUFFLE_SPILL_COMPRESS("sleeper.bulk.import.emr.spark.shuffle.spill.compress", "true"),
 
     // Bulk import using the non-persistent EMR approach
-    DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL("sleeper.default.bulk.import.emr.release.label", "emr-6.4.0"),
+    DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL("sleeper.default.bulk.import.emr.release.label", "emr-6.8.0"),
     DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE("sleeper.default.bulk.import.emr.master.instance.type", "m5.xlarge"),
     DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE("sleeper.default.bulk.import.emr.executor.market.type", "SPOT", s -> ("SPOT".equals(s) || "ON_DEMAND".equals(s))),
     DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE("sleeper.default.bulk.import.emr.executor.instance.type", "m5.4xlarge"),
@@ -147,7 +147,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     DEFAULT_BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS("sleeper.default.bulk.import.emr.executor.max.instances", "10"),
 
     // Bulk import using a persistent EMR cluster
-    BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL("sleeper.bulk.import.persistent.emr.release.label", "emr-6.4.0"),
+    BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL("sleeper.bulk.import.persistent.emr.release.label", DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL.defaultValue),
     BULK_IMPORT_PERSISTENT_EMR_MASTER_INSTANCE_TYPE("sleeper.bulk.import.persistent.emr.master.instance.type", DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE.defaultValue),
     BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPE("sleeper.bulk.import.persistent.emr.core.instance.type", DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE.defaultValue),
     BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING("sleeper.bulk.import.persistent.emr.use.managed.scaling", "true"),
