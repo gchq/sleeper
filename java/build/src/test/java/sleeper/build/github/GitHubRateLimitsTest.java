@@ -20,6 +20,8 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.time.Instant;
+
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -45,5 +47,6 @@ public class GitHubRateLimitsTest {
 
         JsonNode response = GitHubRateLimits.get("http://localhost:" + wireMockRule.port(), "test-bearer-token");
         assertThat(GitHubRateLimits.remainingLimit(response)).isEqualTo(4999);
+        assertThat(GitHubRateLimits.resetTime(response)).isEqualTo(Instant.parse("2013-07-01T17:47:53Z"));
     }
 }

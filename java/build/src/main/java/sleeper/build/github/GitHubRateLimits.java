@@ -21,6 +21,8 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Invocation;
 
+import java.time.Instant;
+
 public class GitHubRateLimits {
 
     private GitHubRateLimits() {
@@ -45,4 +47,7 @@ public class GitHubRateLimits {
         return response.get("resources").get("core").get("remaining").asInt();
     }
 
+    public static Instant resetTime(JsonNode response) {
+        return Instant.ofEpochSecond(response.get("resources").get("core").get("reset").asLong());
+    }
 }
