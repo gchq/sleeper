@@ -67,20 +67,21 @@ public class GitHubHead {
             return false;
         }
         GitHubHead that = (GitHubHead) o;
-        return owner.equals(that.owner) && repository.equals(that.repository) && branch.equals(that.branch);
+        return owner.equals(that.owner) && repository.equals(that.repository) && branch.equals(that.branch) && sha.equals(that.sha);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(owner, repository, branch);
+        return Objects.hash(owner, repository, branch, sha);
     }
 
     @Override
     public String toString() {
-        return "GitHubRepository{" +
+        return "GitHubHead{" +
                 "owner='" + owner + '\'' +
                 ", repository='" + repository + '\'' +
                 ", branch='" + branch + '\'' +
+                ", sha='" + sha + '\'' +
                 '}';
     }
 

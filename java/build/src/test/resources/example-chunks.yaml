@@ -6,7 +6,7 @@ chunks:
   common:
     name: Common
     workflow: chunk-common.yaml
-    modules: [ core, configuration, sketches, parquet, common-job, build, dynamodb-tools ]
+    modules: [ core, configuration ]
   ingest:
     name: Ingest
     workflow: chunk-ingest.yaml

@@ -13,69 +13,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.status;
+package sleeper.build.github;
 
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHWorkflowRun;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
 import org.kohsuke.github.PagedIterable;
-import sleeper.build.chunks.ProjectChunk;
-import sleeper.build.github.GitHubException;
-import sleeper.build.github.GitHubHead;
-import sleeper.build.github.GitHubRunToHead;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class GitHubStatusProvider {
+public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns {
 
     private final GitHub gitHub;
 
-    public GitHubStatusProvider(String token) throws IOException {
+    public GitHubWorkflowRunsImpl(String token) throws IOException {
         this.gitHub = new GitHubBuilder().withJwtToken(token).build();
     }
 
-    public ChunkStatus workflowStatus(GitHubHead head, ProjectChunk chunk) {
+    @Override
+    public Stream<GitHubWorkflowRun> getRunsForHeadOrBehindLatestFirst(GitHubHead head, String workflow) {
         try {
             GHRepository repository = repository(head);
-            PagedIterable<GHWorkflowRun> iterable = repository.getWorkflow(chunk.getWorkflow()).listRuns();
+            PagedIterable<GHWorkflowRun> iterable = repository.getWorkflow(workflow).listRuns();
             return StreamSupport.stream(iterable.spliterator(), false)
                     .map(run -> GitHubRunToHead.compare(repository, run, head))
                     .filter(GitHubRunToHead::isRunForHeadOrBehind)
-                    .findFirst().map(runToHead -> statusFrom(chunk, runToHead))
-                    .orElseGet(() -> ChunkStatus.chunk(chunk).noBuild());
+                    .map(GitHubWorkflowRunsImpl::convertToInternalRun);
         } catch (IOException e) {
             throw new GitHubException(e);
         }
     }
 
-    public ChunkStatus recheckRun(GitHubHead head, ChunkStatus status) {
+    @Override
+    public GitHubWorkflowRun recheckRun(GitHubHead head, Long runId) {
         try {
-            return statusFrom(status, repository(head).getWorkflowRun(status.getRunId()));
-        } catch (IOException e) {
-            throw new GitHubException(e);
-        }
-    }
-
-    private static ChunkStatus statusFrom(ProjectChunk chunk, GitHubRunToHead runToHead) {
-        return setRun(ChunkStatus.chunk(chunk), runToHead.getRun()).build();
-    }
-
-    private static ChunkStatus statusFrom(ChunkStatus status, GHWorkflowRun run) {
-        return setRun(ChunkStatus.chunk(status.getChunk()), run).build();
-    }
-
-    private static ChunkStatus.Builder setRun(ChunkStatus.Builder builder, GHWorkflowRun run) {
-        try {
-            return builder.runId(run.getId())
-                    .runUrl(Objects.toString(run.getHtmlUrl(), null))
-                    .runStarted(run.getRunStartedAt())
-                    .commitSha(run.getHeadSha())
-                    .commitMessage(run.getHeadCommit().getMessage())
-                    .status(Objects.toString(run.getStatus(), null))
-                    .conclusion(Objects.toString(run.getConclusion(), null));
+            return convertToInternalRun(repository(head).getWorkflowRun(runId));
         } catch (IOException e) {
             throw new GitHubException(e);
         }
@@ -85,4 +61,22 @@ public class GitHubStatusProvider {
         return gitHub.getRepository(head.getOwnerAndRepository());
     }
 
+    private static GitHubWorkflowRun convertToInternalRun(GitHubRunToHead run) {
+        return convertToInternalRun(run.getRun());
+    }
+
+    private static GitHubWorkflowRun convertToInternalRun(GHWorkflowRun run) {
+        try {
+            return GitHubWorkflowRun.builder().runId(run.getId())
+                    .runUrl(Objects.toString(run.getHtmlUrl(), null))
+                    .runStarted(run.getRunStartedAt())
+                    .commitSha(run.getHeadSha())
+                    .commitMessage(run.getHeadCommit().getMessage())
+                    .status(Objects.toString(run.getStatus(), null))
+                    .conclusion(Objects.toString(run.getConclusion(), null))
+                    .build();
+        } catch (IOException e) {
+            throw new GitHubException(e);
+        }
+    }
 }
