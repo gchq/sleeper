@@ -67,7 +67,7 @@ public class IngestCoordinatorFactory {
         this.bufferAllocator = builder.bufferAllocator;
         this.s3AsyncClient = builder.s3AsyncClient;
         this.instanceProperties = Objects.requireNonNull(builder.instanceProperties);
-        this.tablePropertiesProvider = Objects.requireNonNull(builder.tablePropertiesProvider);
+        this.tablePropertiesProvider = builder.tablePropertiesProvider;
     }
 
     public static Builder builder() {
@@ -75,11 +75,15 @@ public class IngestCoordinatorFactory {
     }
 
     public IngestCoordinator<Record> createIngestCoordinator(String tableName) {
+        return createIngestCoordinator(tablePropertiesProvider.getTableProperties(tableName));
+    }
+
+    public IngestCoordinator<Record> createIngestCoordinator(TableProperties tableProperties) {
         S3AsyncClient internalS3AsyncClient =
                 instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT).equals("async") ?
                         ((s3AsyncClient == null) ? S3AsyncClient.create() : s3AsyncClient) :
                         null;
-        IngestProperties ingestProperties = createIngestProperties(instanceProperties, tablePropertiesProvider.getTableProperties(tableName));
+        IngestProperties ingestProperties = createIngestProperties(instanceProperties, tableProperties);
         String recordBatchType = instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
         String fileWriterType = instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
         StandardIngestCoordinator.BackedBuilder ingestCoordinatorBuilder;
@@ -119,8 +123,12 @@ public class IngestCoordinatorFactory {
         }
     }
 
+    public IngestRecordsFromIterator createIngestRecordsFromIterator(TableProperties tableProperties, Iterator<Record> recordIterator) {
+        return new IngestRecordsFromIterator(createIngestCoordinator(tableProperties), recordIterator);
+    }
+
     public IngestRecordsFromIterator createIngestRecordsFromIterator(String tableName, Iterator<Record> recordIterator) {
-        return new IngestRecordsFromIterator(createIngestCoordinator(tableName), recordIterator);
+        return createIngestRecordsFromIterator(tablePropertiesProvider.getTableProperties(tableName), recordIterator);
     }
 
     public IngestProperties createIngestProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
