@@ -67,6 +67,9 @@ public class CheckGitHubStatusSingleWorkflowTest {
 
     @Test
     public void shouldBuildNoChunksWhenNoChangesSinceLastRun() throws Exception {
+        // Note that this assumes the previous build built all the chunks.
+        // This will need to change when we add a way to tell which chunks were built without separate workflows.
+
         // Given
         workflowRuns.setLatestRun(GitHubWorkflowRun.builder()
                 .pathsChangedSinceThisRunArray(".github/workflows/build.yaml")
@@ -76,7 +79,6 @@ public class CheckGitHubStatusSingleWorkflowTest {
         WorkflowStatus status = configurationBuilder().build().checkStatusSingleWorkflow(workflowRuns, WORKFLOW);
 
         // Then
-        // TODO stop assuming the previous build built all the chunks!
         assertThat(status.hasPreviousFailures()).isFalse();
         assertThat(status.previousBuildsReportLines()).containsExactly("",
                 "Bulk Import: completed, success",
