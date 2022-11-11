@@ -43,7 +43,7 @@ public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns, AutoCloseable
                 .invoke(GitHubWorkflowRunsResponse.class);
         return response.getWorkflowRuns().stream()
                 .map(GitHubWorkflowRunsResponse.Run::toInternalRun)
-                .map(run -> GitHubRunToHead.compare(repository, this::request, run, head))
+                .map(run -> compare(repository, run, head))
                 .filter(GitHubRunToHead::isRunForHeadOrBehind)
                 .map(GitHubRunToHead::getRun);
     }
@@ -55,6 +55,13 @@ public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns, AutoCloseable
         GitHubWorkflowRunsResponse.Run response = request(run).buildGet()
                 .invoke(GitHubWorkflowRunsResponse.Run.class);
         return response.toInternalRun();
+    }
+
+    private GitHubRunToHead compare(
+            WebTarget repository, GitHubWorkflowRun run, GitHubHead head) {
+        WebTarget compare = repository.path("compare").path(run.getCommitSha() + "..." + head.getSha());
+        GitHubCompareResponse response = request(compare).buildGet().invoke(GitHubCompareResponse.class);
+        return response.toRunToHead(run);
     }
 
     private WebTarget repository(GitHubHead head) {

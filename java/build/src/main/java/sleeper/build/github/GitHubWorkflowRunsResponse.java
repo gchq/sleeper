@@ -27,19 +27,12 @@ import java.util.Objects;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GitHubWorkflowRunsResponse {
 
-    private final long totalCount;
     private final List<Run> workflowRuns;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public GitHubWorkflowRunsResponse(
-            @JsonProperty("total_count") long totalCount,
             @JsonProperty("workflow_runs") List<Run> workflowRuns) {
-        this.totalCount = totalCount;
         this.workflowRuns = workflowRuns == null ? Collections.emptyList() : workflowRuns;
-    }
-
-    public long getTotalCount() {
-        return totalCount;
     }
 
     public List<Run> getWorkflowRuns() {

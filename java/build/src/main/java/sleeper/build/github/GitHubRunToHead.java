@@ -15,19 +15,21 @@
  */
 package sleeper.build.github;
 
-import jakarta.ws.rs.client.Invocation;
-import jakarta.ws.rs.client.WebTarget;
-
-import java.util.function.Function;
+import java.util.List;
+import java.util.Objects;
 
 public class GitHubRunToHead {
 
     private final GitHubWorkflowRun run;
-    private final boolean runForHeadOrBehind;
+    private final int aheadBy;
+    private final int behindBy;
+    private final List<String> changedPaths;
 
-    public GitHubRunToHead(GitHubWorkflowRun run, boolean runForHeadOrBehind) {
-        this.run = run;
-        this.runForHeadOrBehind = runForHeadOrBehind;
+    public GitHubRunToHead(GitHubWorkflowRun run, int aheadBy, int behindBy, List<String> changedPaths) {
+        this.run = Objects.requireNonNull(run, "run must not be null");
+        this.aheadBy = aheadBy;
+        this.behindBy = behindBy;
+        this.changedPaths = Objects.requireNonNull(changedPaths, "changedPaths must not be null");
     }
 
     public GitHubWorkflowRun getRun() {
@@ -35,20 +37,33 @@ public class GitHubRunToHead {
     }
 
     public boolean isRunForHeadOrBehind() {
-        return runForHeadOrBehind;
+        return behindBy < 1;
     }
 
-    public static GitHubRunToHead compare(
-            WebTarget repository, Function<WebTarget, Invocation.Builder> request,
-            GitHubWorkflowRun run, GitHubHead head) {
-        if (run.isSameCommit(head)) {
-            return new GitHubRunToHead(run, true);
-        } else if (!run.isSameBranch(head)) {
-            return new GitHubRunToHead(run, false);
-        } else {
-            WebTarget compare = repository.path("compare").path(run.getCommitSha() + "..." + head.getSha());
-            GitHubCompareResponse response = request.apply(compare).buildGet().invoke(GitHubCompareResponse.class);
-            return response.toRunToHead(run);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
         }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        GitHubRunToHead that = (GitHubRunToHead) o;
+        return aheadBy == that.aheadBy && behindBy == that.behindBy && run.equals(that.run) && changedPaths.equals(that.changedPaths);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(run, aheadBy, behindBy, changedPaths);
+    }
+
+    @Override
+    public String toString() {
+        return "GitHubRunToHead{" +
+                "run=" + run +
+                ", aheadBy=" + aheadBy +
+                ", behindBy=" + behindBy +
+                ", changedPaths=" + changedPaths +
+                '}';
     }
 }

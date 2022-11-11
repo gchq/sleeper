@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GitHubCompareResponse {
@@ -40,7 +41,10 @@ public class GitHubCompareResponse {
     }
 
     public GitHubRunToHead toRunToHead(GitHubWorkflowRun run) {
-        return new GitHubRunToHead(run, behindBy < 1);
+        return new GitHubRunToHead(run, aheadBy, behindBy,
+                files.stream()
+                        .map(file -> file.filename)
+                        .collect(Collectors.toList()));
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
