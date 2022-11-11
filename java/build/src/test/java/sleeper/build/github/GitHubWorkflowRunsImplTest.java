@@ -61,4 +61,32 @@ public class GitHubWorkflowRunsImplTest {
                         .commitMessage("Create linter.yaml")
                         .build());
     }
+
+    @Test
+    public void shouldCompareOldBranchWithThisBranch() {
+        stubFor(get("/repos/test-owner/test-repo/actions/workflows/test-workflow.yaml/runs?branch=test-branch")
+                .withHeader("Accept", equalTo("application/vnd.github+json"))
+                .withHeader("Authorization", equalTo("Bearer test-bearer-token"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/vnd.github+json")
+                        .withBody(exampleString("github-examples/workflow-runs-single.json"))));
+
+        stubFor(get("/repos/test-owner/test-repo/compare/" + GITHUB_EXAMPLE_HEAD.getSha() + "...test-sha")
+                .withHeader("Accept", equalTo("application/vnd.github+json"))
+                .withHeader("Authorization", equalTo("Bearer test-bearer-token"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/vnd.github+json")
+                        .withBody(exampleString("github-examples/compare.json"))));
+
+        assertThat(workflowRuns().getLatestRun(TestGitHubHead.example(), "test-workflow.yaml"))
+                .contains(GitHubWorkflowRun.builder()
+                        .status("queued").runId(30433642L)
+                        .runUrl("https://github.com/octo-org/octo-repo/actions/runs/30433642")
+                        .runStarted(Instant.parse("2020-01-22T19:33:08Z"))
+                        .commitSha(GITHUB_EXAMPLE_HEAD.getSha())
+                        .commitMessage("Create linter.yaml")
+                        .build());
+    }
 }
