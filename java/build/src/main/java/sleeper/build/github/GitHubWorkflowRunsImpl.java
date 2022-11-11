@@ -20,6 +20,7 @@ import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.client.WebTarget;
 
+import java.util.Objects;
 import java.util.stream.Stream;
 
 public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns, AutoCloseable {
@@ -29,11 +30,15 @@ public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns, AutoCloseable
     private final WebTarget gitHubApi;
 
     public GitHubWorkflowRunsImpl(String token) {
+        this(token, "https://api.github.com");
+    }
+
+    public GitHubWorkflowRunsImpl(String token, String baseUrl) {
         this.token = token;
         client = ClientBuilder.newBuilder()
                 .register(JacksonProvider.class)
                 .build();
-        gitHubApi = client.target("https://api.github.com");
+        gitHubApi = client.target(baseUrl);
     }
 
     @Override
@@ -61,6 +66,9 @@ public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns, AutoCloseable
 
     private GitHubRunToHead compare(
             WebTarget repository, GitHubWorkflowRun run, GitHubHead head) {
+        if (Objects.equals(run.getCommitSha(), head.getSha())) {
+            return GitHubRunToHead.sameSha(run);
+        }
         WebTarget compare = repository.path("compare").path(run.getCommitSha() + "..." + head.getSha());
         GitHubCompareResponse response = request(compare).buildGet().invoke(GitHubCompareResponse.class);
         return response.toRunToHead(run);

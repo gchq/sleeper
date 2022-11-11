@@ -15,6 +15,7 @@
  */
 package sleeper.build.github;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -30,6 +31,10 @@ public class GitHubRunToHead {
         this.aheadBy = aheadBy;
         this.behindBy = behindBy;
         this.changedPaths = Objects.requireNonNull(changedPaths, "changedPaths must not be null");
+    }
+
+    public static GitHubRunToHead sameSha(GitHubWorkflowRun run) {
+        return new GitHubRunToHead(run, 0, 0, Collections.emptyList());
     }
 
     public GitHubWorkflowRun getRun() {

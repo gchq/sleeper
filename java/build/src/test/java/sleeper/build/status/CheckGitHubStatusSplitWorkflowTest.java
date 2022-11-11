@@ -21,6 +21,7 @@ import sleeper.build.chunks.ProjectConfiguration;
 import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubWorkflowRun;
 import sleeper.build.github.InMemoryGitHubWorkflowRuns;
+import sleeper.build.github.TestGitHubHead;
 
 import java.util.Collections;
 
@@ -28,9 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class CheckGitHubStatusSplitWorkflowTest {
 
-    private final GitHubHead branch = GitHubHead.builder()
-            .owner("test-owner").repository("test-repo").branch("test-branch").sha("test-sha")
-            .build();
+    private final GitHubHead branch = TestGitHubHead.example();
     private final ProjectChunk chunk = ProjectChunk.chunk("common").name("Common").workflow("chunk-common.yaml").build();
     private final InMemoryGitHubWorkflowRuns workflowRuns = new InMemoryGitHubWorkflowRuns(branch, chunk.getWorkflow());
 
