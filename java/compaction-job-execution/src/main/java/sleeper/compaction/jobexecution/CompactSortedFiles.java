@@ -182,7 +182,7 @@ public class CompactSortedFiles {
 
         long finishTime = System.currentTimeMillis();
         updateStateStoreSuccess(compactionJob.getInputFiles(),
-                compactionJob.getOutputFile(),
+                compactionJob.getOutputFile(), //REMIND: This can't be null
                 compactionJob.getPartitionId(),
                 linesWritten,
                 minKey,
