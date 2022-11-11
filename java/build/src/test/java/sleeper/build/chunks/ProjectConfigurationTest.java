@@ -16,7 +16,7 @@
 package sleeper.build.chunks;
 
 import org.junit.Test;
-import sleeper.build.github.GitHubHead;
+import sleeper.build.github.TestGitHubHead;
 
 import java.util.Arrays;
 
@@ -33,9 +33,7 @@ public class ProjectConfigurationTest {
         assertThat(configuration).isEqualTo(
                 ProjectConfiguration.builder()
                         .token("test-token")
-                        .head(GitHubHead.builder()
-                                .owner("test-owner").repository("test-repo").branch("test-branch").sha("test-sha")
-                                .build())
+                        .head(TestGitHubHead.example())
                         .chunks(Arrays.asList(
                                 ProjectChunk.chunk("bulk-import").name("Bulk Import")
                                         .workflow("chunk-bulk-import.yaml").modulesArray(
@@ -45,8 +43,7 @@ public class ProjectConfigurationTest {
                                         .build(),
                                 ProjectChunk.chunk("common").name("Common")
                                         .workflow("chunk-common.yaml").modulesArray(
-                                                "core", "configuration", "sketches", "parquet",
-                                                "common-job", "build", "dynamodb-tools")
+                                                "core", "configuration")
                                         .build(),
                                 ProjectChunk.chunk("ingest").name("Ingest")
                                         .workflow("chunk-ingest.yaml").modulesArray("ingest").build()))

@@ -30,14 +30,14 @@ public class GetChunkConfigTest {
 
     @Test
     public void shouldGetChunkProjectList() {
-        assertThat(GetChunkConfig.get(CHUNKS.getById("common"), "maven_project_list"))
-                .isEqualTo("core,configuration,sketches,parquet,common-job,build,dynamodb-tools");
+        assertThat(GetChunkConfig.get(CHUNKS.getById("bulk-import"), "maven_project_list"))
+                .isEqualTo("bulk-import/bulk-import-common,bulk-import/bulk-import-starter,bulk-import/bulk-import-runner");
     }
 
     @Test
     public void shouldGetGitHubActionsOutputs() {
         assertThat(GetChunkConfig.get(CHUNKS.getById("common"), "github_actions_outputs"))
                 .isEqualTo("chunkName=Common\n" +
-                        "moduleList=core,configuration,sketches,parquet,common-job,build,dynamodb-tools");
+                        "moduleList=core,configuration");
     }
 }

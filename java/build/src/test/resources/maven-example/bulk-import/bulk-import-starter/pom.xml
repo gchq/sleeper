@@ -26,4 +26,20 @@
 
     <artifactId>bulk-import-starter</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>bulk-import-common</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
 </project>

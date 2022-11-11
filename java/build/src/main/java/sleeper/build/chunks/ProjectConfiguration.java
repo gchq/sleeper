@@ -16,9 +16,11 @@
 package sleeper.build.chunks;
 
 import sleeper.build.github.GitHubHead;
+import sleeper.build.github.GitHubWorkflowRuns;
+import sleeper.build.github.GitHubWorkflowRunsImpl;
 import sleeper.build.status.CheckGitHubStatus;
-import sleeper.build.status.ChunksStatus;
-import sleeper.build.status.GitHubStatusProvider;
+import sleeper.build.status.ChunkStatuses;
+import sleeper.build.status.WorkflowStatus;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -38,6 +40,7 @@ public class ProjectConfiguration {
     private final String token;
     private final GitHubHead head;
     private final ProjectChunks chunks;
+    private final ProjectStructure structure;
     private final long retrySeconds;
     private final long maxRetries;
 
@@ -45,6 +48,7 @@ public class ProjectConfiguration {
         token = Objects.requireNonNull(ignoreEmpty(builder.token), "token must not be null");
         head = Objects.requireNonNull(builder.head, "head must not be null");
         chunks = Objects.requireNonNull(builder.chunks, "chunks must not be null");
+        structure = builder.structure;
         retrySeconds = builder.retrySeconds;
         maxRetries = builder.maxRetries;
     }
@@ -57,12 +61,16 @@ public class ProjectConfiguration {
                 .build();
     }
 
-    public ChunksStatus checkStatus() throws IOException {
-        return checkStatus(new GitHubStatusProvider(token));
+    public GitHubWorkflowRunsImpl gitHubWorkflowRuns() {
+        return new GitHubWorkflowRunsImpl(token);
     }
 
-    public ChunksStatus checkStatus(GitHubStatusProvider gitHub) {
-        return new CheckGitHubStatus(this, gitHub).checkStatus();
+    public ChunkStatuses checkStatus(GitHubWorkflowRuns runs) {
+        return new CheckGitHubStatus(this, runs).checkStatus();
+    }
+
+    public WorkflowStatus checkStatusSingleWorkflow(GitHubWorkflowRuns workflowRuns, String workflow) {
+        return new CheckGitHubStatus(this, workflowRuns).checkStatusSingleWorkflow(workflow);
     }
 
     public GitHubHead getHead() {
@@ -108,12 +116,12 @@ public class ProjectConfiguration {
             return false;
         }
         ProjectConfiguration that = (ProjectConfiguration) o;
-        return retrySeconds == that.retrySeconds && maxRetries == that.maxRetries && token.equals(that.token) && head.equals(that.head) && chunks.equals(that.chunks);
+        return retrySeconds == that.retrySeconds && maxRetries == that.maxRetries && token.equals(that.token) && head.equals(that.head) && chunks.equals(that.chunks) && Objects.equals(structure, that.structure);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(token, head, chunks, retrySeconds, maxRetries);
+        return Objects.hash(token, head, chunks, structure, retrySeconds, maxRetries);
     }
 
     @Override
@@ -122,6 +130,7 @@ public class ProjectConfiguration {
                 "token='" + token + '\'' +
                 ", head=" + head +
                 ", chunks=" + chunks +
+                ", structure=" + structure +
                 ", retrySeconds=" + retrySeconds +
                 ", maxRetries=" + maxRetries +
                 '}';
@@ -131,6 +140,7 @@ public class ProjectConfiguration {
         private String token;
         private GitHubHead head;
         private ProjectChunks chunks;
+        private ProjectStructure structure;
         private long retrySeconds = DEFAULT_RETRY_SECONDS;
         private long maxRetries = DEFAULT_MAX_RETRIES;
 
@@ -149,6 +159,11 @@ public class ProjectConfiguration {
 
         public Builder chunks(ProjectChunks chunks) {
             this.chunks = chunks;
+            return this;
+        }
+
+        public Builder structure(ProjectStructure structure) {
+            this.structure = structure;
             return this;
         }
 
