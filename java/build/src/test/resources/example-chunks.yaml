@@ -1,0 +1,13 @@
+chunks:
+  bulk-import:
+    name: Bulk Import
+    workflow: chunk-bulk-import.yaml
+    modules: [ bulk-import/bulk-import-common, bulk-import/bulk-import-starter, bulk-import/bulk-import-runner ]
+  common:
+    name: Common
+    workflow: chunk-common.yaml
+    modules: [ core, configuration, sketches, parquet, common-job, build, dynamodb-tools ]
+  ingest:
+    name: Ingest
+    workflow: chunk-ingest.yaml
+    modules: [ ingest ]

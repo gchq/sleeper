@@ -15,11 +15,9 @@
  */
 package sleeper.build.status;
 
+import sleeper.build.chunks.ProjectConfiguration;
+
 import java.io.IOException;
-import java.io.Reader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Properties;
 
 public class CheckGitHubStatusMain {
 
@@ -27,22 +25,18 @@ public class CheckGitHubStatusMain {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 1) {
-            throw new IllegalArgumentException("Usage: <properties file path>");
+        ProjectConfiguration configuration;
+        if (args.length == 2) {
+            configuration = ProjectConfiguration.fromGitHubAndChunks(args[1], args[0]);
+        } else {
+            System.out.println("Usage: <chunks.yaml path> <github.properties path>");
+            System.exit(1);
+            return;
         }
-        String propertiesFile = args[0];
-        ChunksStatus status = ProjectConfiguration.from(loadProperties(propertiesFile)).checkStatus();
+        ChunksStatus status = configuration.checkStatus();
         status.report(System.out);
         if (status.isFailCheck()) {
             System.exit(1);
         }
-    }
-
-    private static Properties loadProperties(String path) throws IOException {
-        Properties properties = new Properties();
-        try (Reader reader = Files.newBufferedReader(Paths.get(path))) {
-            properties.load(reader);
-        }
-        return properties;
     }
 }

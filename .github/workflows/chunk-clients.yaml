@@ -24,5 +24,4 @@ jobs:
   module-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkName: Clients
-      moduleList: clients
+      chunkId: clients
