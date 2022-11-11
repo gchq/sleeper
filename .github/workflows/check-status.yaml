@@ -1,4 +1,4 @@
-name: Check chunk status
+name: Chunk Build Status
 on: push
 
 jobs:
