@@ -15,11 +15,15 @@
  */
 package sleeper.build.status;
 
+import sleeper.build.chunks.NotAllMavenModulesConfiguredException;
+import sleeper.build.chunks.ProjectConfiguration;
+import sleeper.build.github.GitHubWorkflowRunsImpl;
+import sleeper.build.maven.MavenModuleStructure;
+import sleeper.build.util.PathUtils;
+
 import java.io.IOException;
-import java.io.Reader;
-import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Properties;
 
 public class CheckGitHubStatusMain {
 
@@ -27,22 +31,31 @@ public class CheckGitHubStatusMain {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 1) {
-            throw new IllegalArgumentException("Usage: <properties file path>");
-        }
-        String propertiesFile = args[0];
-        ChunksStatus status = ProjectConfiguration.from(loadProperties(propertiesFile)).checkStatus();
-        status.report(System.out);
-        if (status.isFailCheck()) {
+        if (args.length != 3) {
+            System.out.println("Usage: <github.properties path> <chunks.yaml path> <Maven project base path>");
             System.exit(1);
+            return;
         }
-    }
-
-    private static Properties loadProperties(String path) throws IOException {
-        Properties properties = new Properties();
-        try (Reader reader = Files.newBufferedReader(Paths.get(path))) {
-            properties.load(reader);
+        Path gitHubPropertiesPath = Paths.get(args[0]);
+        Path chunksPath = Paths.get(args[1]);
+        Path mavenPath = Paths.get(args[2]);
+        ProjectConfiguration configuration = ProjectConfiguration.fromGitHubAndChunks(gitHubPropertiesPath, chunksPath);
+        MavenModuleStructure mavenProject = MavenModuleStructure.fromProjectBase(mavenPath);
+        try {
+            configuration.getChunks().validateAllConfigured(mavenProject);
+        } catch (NotAllMavenModulesConfiguredException e) {
+            System.out.println(e.getMessage());
+            System.out.println("Please ensure chunks are configured correctly at " +
+                    PathUtils.commonPath(chunksPath, mavenPath).relativize(chunksPath));
+            System.exit(1);
+            return;
         }
-        return properties;
+        try (GitHubWorkflowRunsImpl gitHub = configuration.gitHubWorkflowRuns()) {
+            ChunkStatuses status = configuration.checkStatus(gitHub);
+            status.report(System.out);
+            if (status.isFailCheck()) {
+                System.exit(1);
+            }
+        }
     }
 }

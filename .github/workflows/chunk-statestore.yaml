@@ -17,5 +17,4 @@ jobs:
   module-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkName: State Store
-      moduleList: statestore
+      chunkId: statestore
