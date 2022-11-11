@@ -52,7 +52,7 @@ public class WrappedKeyComparatorTest {
         Key key6 = createKey(2, new byte[]{10}, "A", new byte[] {56}, "X");
         Key key7 = createKey(2, new byte[]{10}, "A", new byte[] {56}, "X");
         WrappedKeyComparator comparator = new WrappedKeyComparator(new SchemaSerDe().toJson(schema));
-        
+
         // When
         int compare12 = comparator.compare(key1, key2);
         int compare23 = comparator.compare(key2, key3);
@@ -60,7 +60,7 @@ public class WrappedKeyComparatorTest {
         int compare45 = comparator.compare(key4, key5);
         int compare56 = comparator.compare(key5, key6);
         int compare67 = comparator.compare(key6, key7);
-        
+
         // Then
         assertThat(compare12).isNegative();
         assertThat(compare23).isNegative();
@@ -68,7 +68,6 @@ public class WrappedKeyComparatorTest {
         assertThat(compare45).isNegative();
         assertThat(compare56).isNegative();
         assertThat(compare67).isZero();
-        
     }
 
     private static Key createKey(int k1, byte[] k2, String s1, byte[] s2, String s3) {

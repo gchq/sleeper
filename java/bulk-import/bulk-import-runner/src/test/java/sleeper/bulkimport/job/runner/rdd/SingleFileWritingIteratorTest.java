@@ -45,7 +45,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SingleFileWritingIteratorTesr {
+public class SingleFileWritingIteratorTest {
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -79,7 +79,7 @@ public class SingleFileWritingIteratorTesr {
     private PartitionTree getPartitionTree() {
         return PartitionsFromSplitPoints.treeFrom(createSchema(), Arrays.asList("T"));
     }
-    
+
     private Record createRecord(Object... values) {
         return createRecord(RowFactory.create(values), createSchema());
     }
@@ -108,7 +108,7 @@ public class SingleFileWritingIteratorTesr {
             throw new RuntimeException(ex);
         }
     }
-    
+
     @Test
     public void shouldReturnFalseForHasNextWithEmptyIterator() {
         // Given

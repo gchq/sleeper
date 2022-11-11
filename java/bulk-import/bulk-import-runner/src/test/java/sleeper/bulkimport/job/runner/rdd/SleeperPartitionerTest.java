@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 package sleeper.bulkimport.job.runner.rdd;
-    
+
 import org.apache.spark.broadcast.Broadcast;
 import org.junit.Test;
 import sleeper.core.key.Key;
@@ -60,14 +60,14 @@ public class SleeperPartitionerTest {
         Broadcast<List<Partition>> mockedBroadcast = mock(Broadcast.class);
         PartitionTree partitionTree = PartitionsFromSplitPoints.treeFrom(schema, Collections.emptyList());
         when(mockedBroadcast.getValue()).thenReturn(partitionTree.getAllPartitions());
-        
+
         // When
         SleeperPartitioner partitioner = new SleeperPartitioner(schemaAsString, mockedBroadcast);
-        
+
         // Then
         assertThat(partitioner.numPartitions()).isEqualTo(1);
         List<Key> keys = new ArrayList<>();
-        for (int i = Integer.MIN_VALUE; i < Integer.MAX_VALUE; i+=100_000_000) {
+        for (int i = -1_000_000; i < 1_000_000; i += 10_000_000) {
             List<Object> objs = new ArrayList<>();
             objs.add(i);
             objs.add(new byte[]{(byte) i});
@@ -78,7 +78,7 @@ public class SleeperPartitionerTest {
         assertThat(partitionIds).hasSize(1);
         assertThat(partitionIds).containsExactly(0);
     }
-    
+
     @Test
     public void shouldGiveCorrectResultsWith2LeafPartitions() {
         // Given
@@ -87,10 +87,10 @@ public class SleeperPartitionerTest {
         Broadcast<List<Partition>> mockedBroadcast = mock(Broadcast.class);
         PartitionTree partitionTree = PartitionsFromSplitPoints.treeFrom(schema, Collections.singletonList(50));
         when(mockedBroadcast.getValue()).thenReturn(partitionTree.getAllPartitions());
-        
+
         // When
         SleeperPartitioner partitioner = new SleeperPartitioner(schemaAsString, mockedBroadcast);
-        
+
         // Then
         assertThat(partitioner.numPartitions()).isEqualTo(2);
         //  - Keys in left-hand partition
@@ -106,7 +106,7 @@ public class SleeperPartitionerTest {
         assertThat(leftPartitionIds).hasSize(1);
         //  - Keys in right-hand partition
         keys.clear();
-        for (int i = 50; i < 10_000; i+=500) {
+        for (int i = 50; i < 10_000; i += 500) {
             List<Object> objs = new ArrayList<>();
             objs.add(i);
             objs.add(new byte[]{(byte) i});
@@ -128,7 +128,7 @@ public class SleeperPartitionerTest {
         Schema schema = getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
         RangeFactory rangeFactory = new RangeFactory(schema);
-        
+
         PartitionTree partitionTree = PartitionsFromSplitPoints.treeFrom(schema, Collections.singletonList(50));
         Partition leftLeafPartition = partitionTree.getLeafPartition(Key.create(Arrays.asList(0, new byte[]{0})));
         //  - Split the left-hand partition on the second dimension
@@ -145,7 +145,7 @@ public class SleeperPartitionerTest {
                 .rowKeyTypes(schema.getRowKeyTypes())
                 .leafPartition(true)
                 .build();
-        
+
         List<Range> leftLowerRanges = new ArrayList<>();
         leftLowerRanges.add(leftLeafRegion.getRange("key1"));
         leftLowerRanges.add(rangeFactory.createRange(schema.getRowKeyFields().get(1), new byte[]{}, new byte[]{20}));
@@ -157,10 +157,10 @@ public class SleeperPartitionerTest {
                 .rowKeyTypes(schema.getRowKeyTypes())
                 .leafPartition(true)
                 .build();
-        
+
         leftLeafPartition.setChildPartitionIds(Arrays.asList("leftupper", "leftlower"));
         leftLeafPartition.setLeafPartition(false);
-        
+
         List<Partition> partitionsAfterSplit = new ArrayList<>();
         partitionsAfterSplit.add(partitionTree.getRootPartition());
         partitionsAfterSplit.add(leftLeafPartition);
@@ -171,50 +171,47 @@ public class SleeperPartitionerTest {
 
         Broadcast<List<Partition>> mockedBroadcast = mock(Broadcast.class);
         when(mockedBroadcast.getValue()).thenReturn(newPartitionTree.getAllPartitions());
-        
+
         // When
         SleeperPartitioner partitioner = new SleeperPartitioner(schemaAsString, mockedBroadcast);
-        
+
         // Then
         assertThat(partitioner.numPartitions()).isEqualTo(3);
         //  - Keys in left-hand upper partition
         List<Key> keys = new ArrayList<>();
-        for (int i = -1000; i < 50; i+=100) {
-            for (byte b = 20; b < 100; b+=20) {
+        for (int i = -1000; i < 50; i += 100) {
+            for (byte b = 20; b < 100; b += 20) {
                 List<Object> objs = new ArrayList<>();
                 objs.add(i);
                 objs.add(new byte[]{b});
                 Key key = Key.create(objs);
                 keys.add(key);
-                
             }
         }
         Set<Integer> leftUpperPartitionIds = getPartitionNumbers(keys, partitioner);
         assertThat(leftUpperPartitionIds).hasSize(1);
         //  - Keys in left-hand lower partition
         keys.clear();
-        for (int i = -1000; i < 50; i+=100) {
-            for (byte b = -50; b < 2; b+=20) {
+        for (int i = -1000; i < 50; i += 100) {
+            for (byte b = -50; b < 2; b += 20) {
                 List<Object> objs = new ArrayList<>();
                 objs.add(i);
                 objs.add(new byte[]{b});
                 Key key = Key.create(objs);
                 keys.add(key);
-                
             }
         }
         Set<Integer> leftLowerPartitionIds = getPartitionNumbers(keys, partitioner);
         assertThat(leftLowerPartitionIds).hasSize(1);
         //  - Keys in right-hand partition
         keys.clear();
-        for (int i = 50; i < 1000; i+=100) {
-            for (byte b = -50; b < 100; b+=20) {
+        for (int i = 50; i < 1000; i += 100) {
+            for (byte b = -50; b < 100; b += 20) {
                 List<Object> objs = new ArrayList<>();
                 objs.add(i);
                 objs.add(new byte[]{b});
                 Key key = Key.create(objs);
                 keys.add(key);
-                
             }
         }
         Set<Integer> rightPartitionIds = getPartitionNumbers(keys, partitioner);
@@ -226,8 +223,7 @@ public class SleeperPartitionerTest {
         allPartitionNumbers.addAll(rightPartitionIds);
         assertThat(allPartitionNumbers).containsExactlyInAnyOrder(0, 1, 2);
     }
-    
-    
+
     private Set<Integer> getPartitionNumbers(List<Key> keys, SleeperPartitioner partitioner) {
         Set<Integer> partitionIds = new HashSet<>();
         for (Key key : keys) {
