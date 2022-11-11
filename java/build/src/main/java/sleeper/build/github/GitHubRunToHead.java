@@ -15,19 +15,24 @@
  */
 package sleeper.build.github;
 
+import org.kohsuke.github.GHCommit;
+import org.kohsuke.github.GHCompare;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHWorkflowRun;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class GitHubRunToHead {
 
-    private final GHRepository repository;
+    private final GHCompare compare;
     private final GHWorkflowRun run;
     private final GitHubHead head;
 
-    public GitHubRunToHead(GHRepository repository, GHWorkflowRun run, GitHubHead head) {
-        this.repository = repository;
+    private GitHubRunToHead(GHCompare compare, GHWorkflowRun run, GitHubHead head) {
+        this.compare = compare;
         this.run = run;
         this.head = head;
     }
@@ -44,8 +49,18 @@ public class GitHubRunToHead {
     }
 
     private int numCommitsHeadBehindRun() {
+        return compare.getBehindBy();
+    }
+
+    public List<String> buildChangedPaths() {
+        return Arrays.stream(compare.getFiles())
+                .map(GHCommit.File::getFileName)
+                .collect(Collectors.toList());
+    }
+
+    public static GitHubRunToHead compare(GHRepository repository, GHWorkflowRun run, GitHubHead head) {
         try {
-            return repository.getCompare(run.getHeadSha(), head.getSha()).getBehindBy();
+            return new GitHubRunToHead(repository.getCompare(run.getHeadSha(), head.getSha()), run, head);
         } catch (IOException e) {
             throw new GitHubException(e);
         }
