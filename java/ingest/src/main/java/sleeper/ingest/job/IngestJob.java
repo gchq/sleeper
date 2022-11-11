@@ -24,12 +24,6 @@ public class IngestJob {
     private final String id;
     private final List<String> files;
 
-    public IngestJob(String tableName, String id, List<String> files) {
-        this.tableName = tableName;
-        this.id = id;
-        this.files = files;
-    }
-
     private IngestJob(Builder builder) {
         tableName = builder.tableName;
         id = builder.id;
