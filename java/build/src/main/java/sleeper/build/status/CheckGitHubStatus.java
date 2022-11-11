@@ -54,7 +54,7 @@ public class CheckGitHubStatus {
 
     public WorkflowStatus checkStatusSingleWorkflow(String workflow) {
         GitHubWorkflowRun lastRun = getRunFromWorkflow(workflow).orElse(null);
-        return new WorkflowStatus(head, lastRun,
+        return new WorkflowStatus(
                 fetchStatusForEachChunk(chunk -> Optional.ofNullable(lastRun)),
                 lastRun != null ? Collections.emptyList()
                         : chunks.stream()
