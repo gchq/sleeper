@@ -25,10 +25,10 @@ public class GetRemainingRateLimit {
 
     public static void main(String[] args) {
         JsonNode response = GitHubRateLimits.get(args[0]);
-        System.err.println(response.toPrettyString());
         int remaining = GitHubRateLimits.remainingLimit(response);
         System.err.println("Core limit remaining: " + remaining);
         System.err.println("Core limit resets at: " + GitHubRateLimits.resetTime(response));
+        System.err.println(response.toPrettyString());
         System.out.println(remaining);
     }
 
