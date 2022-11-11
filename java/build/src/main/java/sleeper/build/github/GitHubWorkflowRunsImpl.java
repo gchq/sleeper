@@ -30,7 +30,9 @@ public class GitHubWorkflowRunsImpl implements GitHubWorkflowRuns, AutoCloseable
 
     public GitHubWorkflowRunsImpl(String token) {
         this.token = token;
-        client = ClientBuilder.newClient();
+        client = ClientBuilder.newBuilder()
+                .register(JacksonProvider.class)
+                .build();
         gitHubApi = client.target("https://api.github.com");
     }
 
