@@ -23,7 +23,7 @@ import sleeper.build.status.GitHubStatusProvider;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
@@ -85,15 +85,15 @@ public class ProjectConfiguration {
         return new Builder();
     }
 
-    public static ProjectConfiguration fromGitHubAndChunks(String gitHubPropertiesPath, String chunksYamlPath) throws IOException {
+    public static ProjectConfiguration fromGitHubAndChunks(Path gitHubProperties, Path chunksYaml) throws IOException {
         return fromGitHubAndChunks(
-                loadProperties(gitHubPropertiesPath),
-                ProjectChunksYaml.readPath(chunksYamlPath));
+                loadProperties(gitHubProperties),
+                ProjectChunksYaml.readPath(chunksYaml));
     }
 
-    private static Properties loadProperties(String path) throws IOException {
+    private static Properties loadProperties(Path path) throws IOException {
         Properties properties = new Properties();
-        try (Reader reader = Files.newBufferedReader(Paths.get(path))) {
+        try (Reader reader = Files.newBufferedReader(path)) {
             properties.load(reader);
         }
         return properties;

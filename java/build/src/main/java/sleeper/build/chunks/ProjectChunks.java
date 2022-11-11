@@ -15,9 +15,13 @@
  */
 package sleeper.build.chunks;
 
+import sleeper.build.maven.MavenModuleStructure;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ProjectChunks {
@@ -31,6 +35,18 @@ public class ProjectChunks {
     public ProjectChunk getById(String id) {
         return stream().filter(chunk -> id.equals(chunk.getId()))
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Chunk ID not found: " + id));
+    }
+
+    public void validateAllConfigured(MavenModuleStructure project) throws NotAllMavenModulesConfiguredException {
+        Set<String> configuredModuleRefs = stream()
+                .flatMap(chunk -> chunk.getModules().stream())
+                .collect(Collectors.toSet());
+        List<String> unconfiguredModuleRefs = project.allTestedModulesForProjectList()
+                .filter(moduleRef -> !configuredModuleRefs.contains(moduleRef))
+                .collect(Collectors.toList());
+        if (!unconfiguredModuleRefs.isEmpty()) {
+            throw new NotAllMavenModulesConfiguredException(unconfiguredModuleRefs);
+        }
     }
 
     public Stream<ProjectChunk> stream() {
