@@ -21,13 +21,21 @@ jobs:
       - name: Resolve dependencies
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=.m2/repository
         working-directory: ./java
-      - name: Query GitHub
+      - name: Check rate limits
+        id: rate-limit
         working-directory: ./java/build
+        run: |
+          echo "remaining=$(mvn compile exec:java -q -Dexec.mainClass=sleeper.build.ratelimit.GetRemainingRateLimit \
+            -Dexec.args=${{ secrets.GITHUB_TOKEN }} -Dmaven.repo.local=../.m2/repository)" \
+            >> $GITHUB_OUTPUT
+      - name: Query chunk status from GitHub API
+        working-directory: ./java/build
+        if: ${{ steps.rate-limit.outputs.remaining > 50 }}
         run: |
           echo "token=${{ secrets.GITHUB_TOKEN }}" >> github.properties
           echo "repository=${{ github.repository }}" >> github.properties
           echo "head.branch=${{ github.ref_name }}" >> github.properties
           echo "head.sha=${{ github.sha }}" >> github.properties
-          mvn compile exec:java -q -Dexec.mainClass=sleeper.build.status.CheckGitHubStatusMain \
+          mvn exec:java -q -Dexec.mainClass=sleeper.build.status.CheckGitHubStatusMain \
             -Dmaven.repo.local=../.m2/repository \
             -Dexec.args="${{ github.workspace }}/.github/config/chunks.yaml github.properties"
