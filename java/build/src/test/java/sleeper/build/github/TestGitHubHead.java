@@ -17,6 +17,9 @@ package sleeper.build.github;
 
 public class TestGitHubHead {
 
+    private TestGitHubHead() {
+    }
+
     public static GitHubHead example() {
         return exampleBuilder().build();
     }
