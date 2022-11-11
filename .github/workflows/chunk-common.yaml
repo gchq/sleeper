@@ -9,6 +9,7 @@ on:
       - 'java/pom.xml'
       - 'java/build/**'
       - 'java/common-job/**'
+      - 'java/dynamodb-tools/**'
       - 'java/parquet/**'
       - 'java/sketches/**'
       - 'java/configuration/**'
@@ -18,5 +19,4 @@ jobs:
   module-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkName: Common
-      moduleList: core,configuration,sketches,parquet,common-job,build
+      chunkId: common

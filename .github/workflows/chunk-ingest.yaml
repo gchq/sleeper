@@ -12,6 +12,7 @@ on:
       - 'java/sketches/**'
       - 'java/tables/**'
       - 'java/statestore/**'
+      - 'java/dynamodb-tools/**'
       - 'java/parquet/**'
       - 'java/configuration/**'
       - 'java/core/**'
@@ -20,5 +21,4 @@ jobs:
   module-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkName: Ingest
-      moduleList: ingest
+      chunkId: ingest
