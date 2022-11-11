@@ -23,6 +23,7 @@ import sleeper.build.chunks.TestChunks;
 import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubWorkflowRun;
 import sleeper.build.github.InMemoryGitHubWorkflowRuns;
+import sleeper.build.github.TestGitHubHead;
 import sleeper.build.maven.MavenModuleStructure;
 import sleeper.build.maven.TestMavenModuleStructure;
 
@@ -33,9 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class CheckGitHubStatusSingleWorkflowTest {
 
     private static final ProjectChunks CHUNKS = TestChunks.example("example-chunks.yaml");
-    private static final GitHubHead BRANCH = GitHubHead.builder()
-            .owner("test-owner").repository("test-repo").branch("test-branch").sha("test-sha")
-            .build();
+    private static final GitHubHead BRANCH = TestGitHubHead.example();
     private static final String WORKFLOW = "test-workflow.yaml";
     private static final MavenModuleStructure MAVEN_PROJECT = TestMavenModuleStructure.example();
     private final InMemoryGitHubWorkflowRuns workflowRuns = new InMemoryGitHubWorkflowRuns(BRANCH, WORKFLOW);

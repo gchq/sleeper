@@ -15,22 +15,21 @@
  */
 package sleeper.build.ratelimit;
 
-import org.kohsuke.github.GHRateLimit;
-import org.kohsuke.github.GitHub;
-import org.kohsuke.github.GitHubBuilder;
-
-import java.io.IOException;
+import com.fasterxml.jackson.databind.JsonNode;
+import sleeper.build.github.GitHubRateLimits;
 
 public class GetRemainingRateLimit {
 
     private GetRemainingRateLimit() {
     }
 
-    public static void main(String[] args) throws IOException {
-        GitHub gitHub = new GitHubBuilder().withJwtToken(args[0]).build();
-        GHRateLimit limit = gitHub.getRateLimit();
-        System.err.println(limit);
-        System.out.println(limit.getRemaining());
+    public static void main(String[] args) {
+        JsonNode response = GitHubRateLimits.get(args[0]);
+        int remaining = GitHubRateLimits.remainingLimit(response);
+        System.err.println("Core limit remaining: " + remaining);
+        System.err.println("Core limit resets at: " + GitHubRateLimits.resetTime(response));
+        System.err.println(response.toPrettyString());
+        System.out.println(remaining);
     }
 
 }

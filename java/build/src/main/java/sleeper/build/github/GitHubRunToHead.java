@@ -15,54 +15,60 @@
  */
 package sleeper.build.github;
 
-import org.kohsuke.github.GHCommit;
-import org.kohsuke.github.GHCompare;
-import org.kohsuke.github.GHRepository;
-import org.kohsuke.github.GHWorkflowRun;
-
-import java.io.IOException;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 public class GitHubRunToHead {
 
-    private final GHCompare compare;
-    private final GHWorkflowRun run;
-    private final GitHubHead head;
+    private final GitHubWorkflowRun run;
+    private final int aheadBy;
+    private final int behindBy;
+    private final List<String> changedPaths;
 
-    private GitHubRunToHead(GHCompare compare, GHWorkflowRun run, GitHubHead head) {
-        this.compare = compare;
-        this.run = run;
-        this.head = head;
+    public GitHubRunToHead(GitHubWorkflowRun run, int aheadBy, int behindBy, List<String> changedPaths) {
+        this.run = Objects.requireNonNull(run, "run must not be null");
+        this.aheadBy = aheadBy;
+        this.behindBy = behindBy;
+        this.changedPaths = Objects.requireNonNull(changedPaths, "changedPaths must not be null");
     }
 
-    public GHWorkflowRun getRun() {
+    public static GitHubRunToHead sameSha(GitHubWorkflowRun run) {
+        return new GitHubRunToHead(run, 0, 0, Collections.emptyList());
+    }
+
+    public GitHubWorkflowRun getRun() {
         return run;
     }
 
     public boolean isRunForHeadOrBehind() {
-        // Ignore builds for commits that are not in the history of the head commit.
-        // If a rebase or other forced push leaves a build that is disconnected from the new head, it should be ignored.
-        return head.getBranch().equals(run.getHeadBranch())
-                && (head.getSha().equals(run.getHeadSha()) || numCommitsHeadBehindRun() < 1);
+        return behindBy < 1;
     }
 
-    private int numCommitsHeadBehindRun() {
-        return compare.getBehindBy();
-    }
-
-    public List<String> buildChangedPaths() {
-        return Arrays.stream(compare.getFiles())
-                .map(GHCommit.File::getFileName)
-                .collect(Collectors.toList());
-    }
-
-    public static GitHubRunToHead compare(GHRepository repository, GHWorkflowRun run, GitHubHead head) {
-        try {
-            return new GitHubRunToHead(repository.getCompare(run.getHeadSha(), head.getSha()), run, head);
-        } catch (IOException e) {
-            throw new GitHubException(e);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
         }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        GitHubRunToHead that = (GitHubRunToHead) o;
+        return aheadBy == that.aheadBy && behindBy == that.behindBy && run.equals(that.run) && changedPaths.equals(that.changedPaths);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(run, aheadBy, behindBy, changedPaths);
+    }
+
+    @Override
+    public String toString() {
+        return "GitHubRunToHead{" +
+                "run=" + run +
+                ", aheadBy=" + aheadBy +
+                ", behindBy=" + behindBy +
+                ", changedPaths=" + changedPaths +
+                '}';
     }
 }

@@ -17,6 +17,7 @@ package sleeper.build.status;
 
 import sleeper.build.chunks.NotAllMavenModulesConfiguredException;
 import sleeper.build.chunks.ProjectConfiguration;
+import sleeper.build.github.GitHubWorkflowRunsImpl;
 import sleeper.build.maven.MavenModuleStructure;
 import sleeper.build.util.PathUtils;
 
@@ -49,10 +50,12 @@ public class CheckGitHubStatusMain {
             System.exit(1);
             return;
         }
-        ChunkStatuses status = configuration.checkStatus();
-        status.report(System.out);
-        if (status.isFailCheck()) {
-            System.exit(1);
+        try (GitHubWorkflowRunsImpl gitHub = configuration.gitHubWorkflowRuns()) {
+            ChunkStatuses status = configuration.checkStatus(gitHub);
+            status.report(System.out);
+            if (status.isFailCheck()) {
+                System.exit(1);
+            }
         }
     }
 }

@@ -19,7 +19,6 @@ import java.io.PrintStream;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -36,6 +35,7 @@ public class GitHubWorkflowRun {
     private final Long runId;
     private final String runUrl;
     private final Instant runStarted;
+    private final String branch;
     private final String commitSha;
     private final String commitMessage;
     private final List<String> pathsChangedSinceThisRun;
@@ -46,6 +46,7 @@ public class GitHubWorkflowRun {
         runId = builder.runId;
         runUrl = ignoreEmpty(builder.runUrl);
         runStarted = builder.runStarted;
+        branch = ignoreEmpty(builder.branch);
         commitSha = ignoreEmpty(builder.commitSha);
         commitMessage = ignoreEmpty(builder.commitMessage);
         pathsChangedSinceThisRun = Collections.unmodifiableList(Objects.requireNonNull(builder.pathsChangedSinceThisRun, "pathsChangedSinceThisRun must not be null"));
@@ -72,7 +73,7 @@ public class GitHubWorkflowRun {
         if (runStarted != null) {
             out.println("Started at: " + runStarted);
         }
-        if (isRunForHead(head)) {
+        if (isSameCommit(head)) {
             out.println("Build is for current commit");
         } else {
             if (commitMessage != null) {
@@ -93,11 +94,15 @@ public class GitHubWorkflowRun {
     public boolean isWaitForOldBuildWithHead(GitHubHead head) {
         // If the run is not for the head commit, that should mean it is for a previous commit.
         // The GitHubProvider should ignore any builds for commits that are not in the history of the head commit.
-        return IN_PROGRESS.equals(status) && !isRunForHead(head);
+        return IN_PROGRESS.equals(status) && !isSameCommit(head);
     }
 
-    private boolean isRunForHead(GitHubHead head) {
-        return head.getSha().equals(commitSha);
+    public boolean isSameCommit(GitHubHead head) {
+        return Objects.equals(head.getSha(), commitSha);
+    }
+
+    public boolean isSameBranch(GitHubHead head) {
+        return Objects.equals(head.getBranch(), branch);
     }
 
     public String getStatus() {
@@ -172,6 +177,7 @@ public class GitHubWorkflowRun {
         private Long runId;
         private String runUrl;
         private Instant runStarted;
+        private String branch;
         private String commitSha;
         private String commitMessage;
         private List<String> pathsChangedSinceThisRun = Collections.emptyList();
@@ -224,8 +230,9 @@ public class GitHubWorkflowRun {
             return this;
         }
 
-        public Builder runStarted(Date runStarted) {
-            return runStarted(runStarted.toInstant());
+        public Builder branch(String branch) {
+            this.branch = branch;
+            return this;
         }
 
         public Builder commitSha(String commitSha) {
