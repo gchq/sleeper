@@ -7,7 +7,7 @@ on:
       moduleList:
         required: true
         type: string
-      publishTestReport:
+      publishReports:
         default: true
         required: false
         type: boolean
@@ -38,19 +38,26 @@ jobs:
       - name: Test
         run: mvn --batch-mode --fail-at-end verify -pl ${{ inputs.moduleList }} -Dmaven.repo.local=.m2/repository
         working-directory: ./java
+      - name: Check rate limits
+        id: rate-limit
+        working-directory: ./java/build
+        run: |
+          echo "remaining=$(mvn compile exec:java -q -Dexec.mainClass=sleeper.build.ratelimit.GetRemainingRateLimit \
+            -Dexec.args=${{ secrets.GITHUB_TOKEN }} -Dmaven.repo.local=../.m2/repository)" \
+            >> $GITHUB_OUTPUT
       - name: Publish Test Report
-        if: ${{ always() && inputs.publishTestReport }}
+        if: ${{ always() && inputs.publishReports && steps.rate-limit.outputs.remaining > 50 }}
         uses: scacap/action-surefire-report@v1
         with:
           check_name: Tests for ${{ inputs.chunkName }}
       - name: Publish Checkstyle Report
-        if: ${{ always() }}
+        if: ${{ always() && inputs.publishReports && steps.rate-limit.outputs.remaining > 50 }}
         uses: jwgmeligmeyling/checkstyle-github-action@v1.2
         with:
           path: '**/checkstyle-result.xml'
           name: Checkstyle for ${{ inputs.chunkName }}
       - name: Publish Spotbugs Report
-        if: ${{ always() }}
+        if: ${{ always() && inputs.publishReports && steps.rate-limit.outputs.remaining > 50 }}
         uses: jwgmeligmeyling/spotbugs-github-action@v1.2
         with:
           path: '**/spotbugsXml.xml'
