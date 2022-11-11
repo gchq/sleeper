@@ -47,7 +47,10 @@ import sleeper.core.record.SingleKeyComparator;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
+import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriter;
@@ -168,8 +171,11 @@ public class CompactSortedFiles {
 
         long linesRead = 0;
         long linesWritten = 0;
-        String minKey = "a";
-        String maxKey = "z";
+        String min = "aaaa", max = "zzzzz";
+        // get type of rowkey zero
+        PrimitiveType rowKeyType0 = schema.getRowKeyTypes().get(0);
+        Object minKey = parseToType(min, rowKeyType0);
+        Object maxKey = parseToType(max, rowKeyType0);
 
         long finishTime = System.currentTimeMillis();
         updateStateStoreSuccess(compactionJob.getInputFiles(),
@@ -181,8 +187,22 @@ public class CompactSortedFiles {
                 finishTime,
                 stateStore,
                 schema.getRowKeyTypes());
+        // May as well explode here since nothing good is going to happen after
+        // this...
+        throw new UnsupportedOperationException();
+        // return new CompactionJobRecordsProcessed(linesRead, linesWritten);
+    }
 
-        return new CompactionJobRecordsProcessed(linesRead, linesWritten);
+    public static Object parseToType(String min, PrimitiveType rowKeyType0) {
+        if (rowKeyType0 instanceof IntType) {
+            return Integer.parseInt(min);
+        } else if (rowKeyType0 instanceof LongType) {
+            return Long.parseLong(min);
+        } else if (rowKeyType0 instanceof StringType) {
+            return min;
+        } else {
+            throw new UnsupportedOperationException("GPU acceleration unavailable with row key field type " + rowKeyType0.getClass());
+        }
     }
 
     /**
@@ -212,7 +232,7 @@ public class CompactSortedFiles {
 
             if (compactionJob.isSplittingJob()) {
                 packer.packArrayHeader(1);
-                // TODO check type for split point 
+                // TODO check type for split point
                 // .packString(compactionJob.getSplitPoint());
             } else {
                 packer.packArrayHeader(0);
