@@ -116,12 +116,12 @@ public class ProjectConfiguration {
             return false;
         }
         ProjectConfiguration that = (ProjectConfiguration) o;
-        return retrySeconds == that.retrySeconds && maxRetries == that.maxRetries && token.equals(that.token) && head.equals(that.head) && chunks.equals(that.chunks);
+        return retrySeconds == that.retrySeconds && maxRetries == that.maxRetries && token.equals(that.token) && head.equals(that.head) && chunks.equals(that.chunks) && Objects.equals(structure, that.structure);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(token, head, chunks, retrySeconds, maxRetries);
+        return Objects.hash(token, head, chunks, structure, retrySeconds, maxRetries);
     }
 
     @Override
@@ -130,6 +130,7 @@ public class ProjectConfiguration {
                 "token='" + token + '\'' +
                 ", head=" + head +
                 ", chunks=" + chunks +
+                ", structure=" + structure +
                 ", retrySeconds=" + retrySeconds +
                 ", maxRetries=" + maxRetries +
                 '}';

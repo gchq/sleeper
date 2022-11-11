@@ -18,6 +18,7 @@ package sleeper.build.chunks;
 import sleeper.build.maven.MavenModuleStructure;
 
 import java.nio.file.Path;
+import java.util.Objects;
 
 public class ProjectStructure {
 
@@ -25,12 +26,29 @@ public class ProjectStructure {
     private final MavenModuleStructure mavenProject;
 
     private ProjectStructure(Builder builder) {
-        mavenPathInRepository = builder.mavenPathInRepository;
-        mavenProject = builder.mavenProject;
+        mavenPathInRepository = Objects.requireNonNull(builder.mavenPathInRepository, "mavenPathInRepository must not be null");
+        mavenProject = Objects.requireNonNull(builder.mavenProject, "mavenProject must not be null");
     }
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ProjectStructure that = (ProjectStructure) o;
+        return mavenPathInRepository.equals(that.mavenPathInRepository) && mavenProject.equals(that.mavenProject);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mavenPathInRepository, mavenProject);
     }
 
     public static final class Builder {
