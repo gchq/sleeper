@@ -63,7 +63,7 @@ public class GitHubWorkflowRunsImplTest {
     }
 
     @Test
-    public void shouldCompareOldBranchWithThisBranch() {
+    public void shouldCompareOldCommitWithThisCommit() {
         stubFor(get("/repos/test-owner/test-repo/actions/workflows/test-workflow.yaml/runs?branch=test-branch")
                 .withHeader("Accept", equalTo("application/vnd.github+json"))
                 .withHeader("Authorization", equalTo("Bearer test-bearer-token"))
