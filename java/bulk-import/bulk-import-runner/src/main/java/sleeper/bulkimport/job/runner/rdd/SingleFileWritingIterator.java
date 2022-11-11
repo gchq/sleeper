@@ -123,9 +123,9 @@ public class SingleFileWritingIterator implements Iterator<Row> {
     }
 
     private void initialiseState(String partitionId) throws IOException {
-        // Create writer;
+        // Create writer
         parquetWriter = createWriter(partitionId);
-        // Intialize sketches
+        // Initialise sketches
         sketches = getSketches(schema.getRowKeyFields());
     }
 
