@@ -23,7 +23,6 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
@@ -133,9 +132,9 @@ public class TestUtils {
                     .stateStoreProvider(new StateStoreProvider(dynamoClient, instanceProperties))
                     .hadoopConfiguration(new Configuration())
                     .instanceProperties(instanceProperties)
-                    .tablePropertiesProvider(new FixedTablePropertiesProvider(table)).build();
+                    .build();
 
-            factory.createIngestRecordsFromIterator(table.get(TABLE_NAME), generateTimeSeriesData().iterator()).write();
+            factory.createIngestRecordsFromIterator(table, generateTimeSeriesData().iterator()).write();
         } catch (IOException | StateStoreException | IteratorException |
                  ObjectFactoryException e) {
             throw new RuntimeException("Failed to Ingest data", e);

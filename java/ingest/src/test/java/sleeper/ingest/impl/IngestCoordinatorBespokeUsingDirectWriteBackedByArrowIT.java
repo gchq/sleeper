@@ -28,7 +28,6 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
@@ -58,7 +57,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.TEST_TABLE_NAME;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createInstanceProperties;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createTableProperties;
 
@@ -179,9 +177,8 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                 .s3AsyncClient(AWS_EXTERNAL_RESOURCE.getS3AsyncClient())
                 .bufferAllocator(bufferAllocator)
                 .instanceProperties(instanceProperties)
-                .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
                 .build();
-        IngestCoordinator<Record> ingestCoordinator = factory.createIngestCoordinator(TEST_TABLE_NAME);
+        IngestCoordinator<Record> ingestCoordinator = factory.createIngestCoordinator(tableProperties);
 
         try {
             for (Record record : recordListAndSchema.recordList) {

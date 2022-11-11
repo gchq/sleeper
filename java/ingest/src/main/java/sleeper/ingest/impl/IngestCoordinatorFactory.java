@@ -57,7 +57,6 @@ public class IngestCoordinatorFactory {
     private final BufferAllocator bufferAllocator;
     private final S3AsyncClient s3AsyncClient;
     private final InstanceProperties instanceProperties;
-    private final TablePropertiesProvider tablePropertiesProvider;
 
     private IngestCoordinatorFactory(Builder builder) {
         this.objectFactory = Objects.requireNonNull(builder.objectFactory);
@@ -67,15 +66,15 @@ public class IngestCoordinatorFactory {
         this.bufferAllocator = builder.bufferAllocator;
         this.s3AsyncClient = builder.s3AsyncClient;
         this.instanceProperties = Objects.requireNonNull(builder.instanceProperties);
-        this.tablePropertiesProvider = builder.tablePropertiesProvider;
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public IngestCoordinator<Record> createIngestCoordinator(String tableName) {
-        return createIngestCoordinator(tablePropertiesProvider.getTableProperties(tableName));
+    public AllTablesIngestCoordinatorFactory withTablePropertiesProvider(
+            TablePropertiesProvider tablePropertiesProvider) {
+        return new AllTablesIngestCoordinatorFactory(this, tablePropertiesProvider);
     }
 
     public IngestCoordinator<Record> createIngestCoordinator(TableProperties tableProperties) {
@@ -127,10 +126,6 @@ public class IngestCoordinatorFactory {
         return new IngestRecordsFromIterator(createIngestCoordinator(tableProperties), recordIterator);
     }
 
-    public IngestRecordsFromIterator createIngestRecordsFromIterator(String tableName, Iterator<Record> recordIterator) {
-        return createIngestRecordsFromIterator(tablePropertiesProvider.getTableProperties(tableName), recordIterator);
-    }
-
     public IngestProperties createIngestProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
         return IngestProperties.builder()
                 .objectFactory(objectFactory)
@@ -158,7 +153,6 @@ public class IngestCoordinatorFactory {
         private BufferAllocator bufferAllocator;
         private S3AsyncClient s3AsyncClient;
         private InstanceProperties instanceProperties;
-        private TablePropertiesProvider tablePropertiesProvider;
 
         private Builder() {
         }
@@ -195,11 +189,6 @@ public class IngestCoordinatorFactory {
 
         public Builder instanceProperties(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
-            return this;
-        }
-
-        public Builder tablePropertiesProvider(TablePropertiesProvider tablePropertiesProvider) {
-            this.tablePropertiesProvider = tablePropertiesProvider;
             return this;
         }
 

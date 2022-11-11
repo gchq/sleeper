@@ -32,7 +32,6 @@ import org.testcontainers.containers.GenericContainer;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
@@ -1142,8 +1141,7 @@ public class SplitPartitionIT {
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .hadoopConfiguration(new Configuration())
                 .instanceProperties(instanceProperties)
-                .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
                 .build();
-        return factory.createIngestRecordsFromIterator(tableProperties.get(TABLE_NAME), recordIterator);
+        return factory.createIngestRecordsFromIterator(tableProperties, recordIterator);
     }
 }

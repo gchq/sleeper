@@ -17,7 +17,6 @@
 package sleeper.ingest;
 
 import org.junit.Test;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
@@ -29,9 +28,8 @@ import sleeper.statestore.StateStoreException;
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.TEST_TABLE_NAME;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createTableProperties;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultFactory;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultFactoryBuilder;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 
 public class IngestResultTest extends IngestRecordsTestBase {
@@ -40,9 +38,10 @@ public class IngestResultTest extends IngestRecordsTestBase {
         // Given
         StateStore stateStore = getStateStore(schema);
         TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(TEST_TABLE_NAME));
+        IngestCoordinatorFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .build();
+        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
 
         // When
         for (Record record : getRecords()) {
@@ -60,9 +59,10 @@ public class IngestResultTest extends IngestRecordsTestBase {
         // Given
         StateStore stateStore = getStateStore(schema);
         TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(TEST_TABLE_NAME));
+        IngestCoordinatorFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .build();
+        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
 
         // When
         for (Record record : getRecords()) {

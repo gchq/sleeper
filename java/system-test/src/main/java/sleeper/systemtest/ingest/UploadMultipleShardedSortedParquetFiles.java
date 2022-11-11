@@ -18,7 +18,6 @@ package sleeper.systemtest.ingest;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
@@ -32,8 +31,6 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
-
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
  * Runs {@link sleeper.ingest.IngestRecordsFromIterator} to write random data.
@@ -61,9 +58,8 @@ public class UploadMultipleShardedSortedParquetFiles extends WriteRandomDataJob 
                     .stateStoreProvider(new StateStoreProvider(dynamoDBClient, getSystemTestProperties()))
                     .localDir("/mnt/scratch")
                     .instanceProperties(getSystemTestProperties())
-                    .tablePropertiesProvider(new FixedTablePropertiesProvider(getTableProperties()))
                     .build();
-            factory.createIngestRecordsFromIterator(getTableProperties().get(TABLE_NAME), recordIterator).write();
+            factory.createIngestRecordsFromIterator(getTableProperties(), recordIterator).write();
         } catch (StateStoreException | IteratorException e) {
             throw new IOException("Failed to write records using iterator", e);
         }

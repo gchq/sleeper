@@ -32,7 +32,6 @@ import org.testcontainers.containers.GenericContainer;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.CloseableIterator;
@@ -1362,9 +1361,8 @@ public class QueryExecutorIT {
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .hadoopConfiguration(new Configuration())
                 .instanceProperties(instanceProperties)
-                .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
                 .build();
-        factory.createIngestRecordsFromIterator("test-table", recordIterator).write();
+        factory.createIngestRecordsFromIterator(tableProperties, recordIterator).write();
     }
 
     protected List<Record> getRecords() {

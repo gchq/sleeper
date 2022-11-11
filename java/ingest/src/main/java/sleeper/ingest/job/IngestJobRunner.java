@@ -24,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
@@ -33,6 +32,7 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.IngestResult;
+import sleeper.ingest.impl.AllTablesIngestCoordinatorFactory;
 import sleeper.ingest.impl.IngestCoordinatorFactory;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -120,7 +120,7 @@ public class IngestJobRunner {
         try (CloseableIterator<Record> recordIterator = new ConcatenatingIterator(inputIterators);
              BufferAllocator bufferAllocator = new RootAllocator()) {
 
-            IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
+            AllTablesIngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
                     .objectFactory(objectFactory)
                     .stateStoreProvider(stateStoreProvider)
                     .localDir(localDir)
@@ -128,8 +128,7 @@ public class IngestJobRunner {
                     .hadoopConfiguration(hadoopConfiguration)
                     .bufferAllocator(bufferAllocator)
                     .instanceProperties(instanceProperties)
-                    .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
-                    .build();
+                    .build().withTablePropertiesProvider(tablePropertiesProvider);
             IngestResult result = factory.createIngestRecordsFromIterator(job.getTableName(), recordIterator).write();
 
             LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getNumberOfRecords(), paths);

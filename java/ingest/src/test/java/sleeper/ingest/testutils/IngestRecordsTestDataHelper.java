@@ -23,7 +23,6 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Region;
 import sleeper.core.record.CloneRecord;
@@ -38,7 +37,6 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreProvider;
 
 import java.io.File;
 import java.io.IOException;
@@ -344,18 +342,11 @@ public class IngestRecordsTestDataHelper {
         return conf;
     }
 
-    public static IngestCoordinatorFactory defaultFactory(String localDir, StateStoreProvider stateStoreProvider, InstanceProperties instanceProperties,
-                                                          TablePropertiesProvider tablePropertiesProvider, Configuration hadoopConfiguration) {
+    public static IngestCoordinatorFactory.Builder defaultFactoryBuilder(
+            String localDir, InstanceProperties instanceProperties) {
         return IngestCoordinatorFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
-                .localDir(localDir)
-                .stateStoreProvider(stateStoreProvider)
-                .instanceProperties(instanceProperties)
-                .tablePropertiesProvider(tablePropertiesProvider)
-                .hadoopConfiguration(hadoopConfiguration).build();
-    }
-
-    public static IngestCoordinatorFactory defaultFactory(String localDir, StateStoreProvider stateStoreProvider, InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
-        return defaultFactory(localDir, stateStoreProvider, instanceProperties, tablePropertiesProvider, defaultHadoopConfiguration());
+                .hadoopConfiguration(defaultHadoopConfiguration())
+                .localDir(localDir).instanceProperties(instanceProperties);
     }
 }

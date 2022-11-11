@@ -17,7 +17,6 @@
 package sleeper.ingest;
 
 import org.junit.Test;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
@@ -36,11 +35,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.TEST_TABLE_NAME;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createLeafPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createRootPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createTableProperties;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultFactory;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultFactoryBuilder;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSingleRecord;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
@@ -66,9 +64,10 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
 
         // When
         TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
-        IngestRecordsFromIterator ingestRecordsFromIterator = factory.createIngestRecordsFromIterator(TEST_TABLE_NAME, getRecords().iterator());
+        IngestCoordinatorFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .build();
+        IngestRecordsFromIterator ingestRecordsFromIterator = factory.createIngestRecordsFromIterator(tableProperties, getRecords().iterator());
         long numWritten = ingestRecordsFromIterator.write().getNumberOfRecords();
 
         // Then:
@@ -130,9 +129,10 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
 
         // When
         TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
-        IngestRecordsFromIterator ingestRecordsFromIterator = factory.createIngestRecordsFromIterator(TEST_TABLE_NAME, getSingleRecord().iterator());
+        IngestCoordinatorFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .build();
+        IngestRecordsFromIterator ingestRecordsFromIterator = factory.createIngestRecordsFromIterator(tableProperties, getSingleRecord().iterator());
         long numWritten = ingestRecordsFromIterator.write().getNumberOfRecords();
 
         // Then:
@@ -170,9 +170,10 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
 
         // When
         TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
-        IngestRecordsFromIterator ingestRecordsFromIterator = factory.createIngestRecordsFromIterator(TEST_TABLE_NAME, Collections.emptyIterator());
+        IngestCoordinatorFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .build();
+        IngestRecordsFromIterator ingestRecordsFromIterator = factory.createIngestRecordsFromIterator(tableProperties, Collections.emptyIterator());
         long numWritten = ingestRecordsFromIterator.write().getNumberOfRecords();
 
         // Then:

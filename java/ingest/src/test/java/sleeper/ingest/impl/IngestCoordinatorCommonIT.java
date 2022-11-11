@@ -32,7 +32,6 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
@@ -75,7 +74,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.TEST_TABLE_NAME;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createInstanceProperties;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createTableProperties;
 
@@ -183,9 +181,8 @@ public class IngestCoordinatorCommonIT {
                     .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
                     .bufferAllocator(bufferAllocator)
                     .instanceProperties(instanceProperties)
-                    .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
                     .build();
-            return factory.createIngestCoordinator(TEST_TABLE_NAME);
+            return factory.createIngestCoordinator(tableProperties);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -218,9 +215,8 @@ public class IngestCoordinatorCommonIT {
                     .s3AsyncClient(AWS_EXTERNAL_RESOURCE.getS3AsyncClient())
                     .bufferAllocator(bufferAllocator)
                     .instanceProperties(instanceProperties)
-                    .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
                     .build();
-            return factory.createIngestCoordinator(TEST_TABLE_NAME);
+            return factory.createIngestCoordinator(tableProperties);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -247,9 +243,8 @@ public class IngestCoordinatorCommonIT {
                     .localDir(ingestLocalWorkingDirectory)
                     .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
                     .instanceProperties(instanceProperties)
-                    .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
                     .build();
-            return factory.createIngestCoordinator(TEST_TABLE_NAME);
+            return factory.createIngestCoordinator(tableProperties);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
