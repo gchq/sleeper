@@ -32,8 +32,8 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.IngestResult;
-import sleeper.ingest.impl.AllTablesIngestCoordinatorFactory;
-import sleeper.ingest.impl.IngestCoordinatorFactory;
+import sleeper.ingest.impl.AllTablesIngestFactory;
+import sleeper.ingest.impl.IngestFactory;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.statestore.StateStoreException;
@@ -120,7 +120,7 @@ public class IngestJobRunner {
         try (CloseableIterator<Record> recordIterator = new ConcatenatingIterator(inputIterators);
              BufferAllocator bufferAllocator = new RootAllocator()) {
 
-            AllTablesIngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
+            AllTablesIngestFactory factory = IngestFactory.builder()
                     .objectFactory(objectFactory)
                     .stateStoreProvider(stateStoreProvider)
                     .localDir(localDir)

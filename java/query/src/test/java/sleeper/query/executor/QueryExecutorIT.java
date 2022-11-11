@@ -49,7 +49,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
-import sleeper.ingest.impl.IngestCoordinatorFactory;
+import sleeper.ingest.impl.IngestFactory;
 import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
@@ -1355,7 +1355,7 @@ public class QueryExecutorIT {
         instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, 120);
         instanceProperties.set(FILE_SYSTEM, "");
 
-        IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
+        IngestFactory factory = IngestFactory.builder()
                 .objectFactory(new ObjectFactory(instanceProperties, null, "/tmp"))
                 .localDir(folder.newFolder().getAbsolutePath())
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))

@@ -169,7 +169,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
         instanceProperties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, arrowBatchBytes);
         instanceProperties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, arrowBatchBytes);
         TableProperties tableProperties = createTableProperties(instanceProperties, recordListAndSchema.sleeperSchema, DATA_BUCKET_NAME);
-        IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
+        IngestFactory factory = IngestFactory.builder()
                 .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .localDir(ingestLocalWorkingDirectory)

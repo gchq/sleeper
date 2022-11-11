@@ -174,7 +174,7 @@ public class IngestCoordinatorCommonIT {
             TableProperties tableProperties = createTableProperties(instanceProperties, sleeperSchema, "");
             tableProperties.set(ITERATOR_CLASS_NAME, sleeperIteratorClassName);
             String objectFactoryLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
-            IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
+            IngestFactory factory = IngestFactory.builder()
                     .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
                     .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                     .localDir(ingestLocalWorkingDirectory)
@@ -207,7 +207,7 @@ public class IngestCoordinatorCommonIT {
             TableProperties tableProperties = createTableProperties(instanceProperties, sleeperSchema, s3BucketName);
             tableProperties.set(ITERATOR_CLASS_NAME, sleeperIteratorClassName);
             String objectFactoryLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
-            IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
+            IngestFactory factory = IngestFactory.builder()
                     .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
                     .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                     .localDir(ingestLocalWorkingDirectory)
@@ -237,7 +237,7 @@ public class IngestCoordinatorCommonIT {
             tableProperties.set(ITERATOR_CLASS_NAME, sleeperIteratorClassName);
 
             String objectFactoryLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
-            IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
+            IngestFactory factory = IngestFactory.builder()
                     .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
                     .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                     .localDir(ingestLocalWorkingDirectory)

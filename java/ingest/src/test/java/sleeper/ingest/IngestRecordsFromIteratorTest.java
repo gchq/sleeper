@@ -23,7 +23,7 @@ import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.type.LongType;
-import sleeper.ingest.impl.IngestCoordinatorFactory;
+import sleeper.ingest.impl.IngestFactory;
 import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FixedStateStoreProvider;
@@ -64,7 +64,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
 
         // When
         TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
-        IngestCoordinatorFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
+        IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .build();
         IngestRecordsFromIterator ingestRecordsFromIterator = factory.createIngestRecordsFromIterator(tableProperties, getRecords().iterator());
@@ -129,7 +129,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
 
         // When
         TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
-        IngestCoordinatorFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
+        IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .build();
         IngestRecordsFromIterator ingestRecordsFromIterator = factory.createIngestRecordsFromIterator(tableProperties, getSingleRecord().iterator());
@@ -170,7 +170,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
 
         // When
         TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
-        IngestCoordinatorFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
+        IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .build();
         IngestRecordsFromIterator ingestRecordsFromIterator = factory.createIngestRecordsFromIterator(tableProperties, Collections.emptyIterator());

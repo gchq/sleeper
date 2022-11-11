@@ -48,7 +48,7 @@ import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONF
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 
-public class IngestCoordinatorFactory {
+public class IngestFactory {
 
     private final ObjectFactory objectFactory;
     private final String localDir;
@@ -58,7 +58,7 @@ public class IngestCoordinatorFactory {
     private final S3AsyncClient s3AsyncClient;
     private final InstanceProperties instanceProperties;
 
-    private IngestCoordinatorFactory(Builder builder) {
+    private IngestFactory(Builder builder) {
         this.objectFactory = Objects.requireNonNull(builder.objectFactory);
         this.localDir = Objects.requireNonNull(builder.localDir);
         this.stateStoreProvider = Objects.requireNonNull(builder.stateStoreProvider);
@@ -72,9 +72,9 @@ public class IngestCoordinatorFactory {
         return new Builder();
     }
 
-    public AllTablesIngestCoordinatorFactory withTablePropertiesProvider(
+    public AllTablesIngestFactory withTablePropertiesProvider(
             TablePropertiesProvider tablePropertiesProvider) {
-        return new AllTablesIngestCoordinatorFactory(this, tablePropertiesProvider);
+        return new AllTablesIngestFactory(this, tablePropertiesProvider);
     }
 
     public IngestCoordinator<Record> createIngestCoordinator(TableProperties tableProperties) {
@@ -192,8 +192,8 @@ public class IngestCoordinatorFactory {
             return this;
         }
 
-        public IngestCoordinatorFactory build() {
-            return new IngestCoordinatorFactory(this);
+        public IngestFactory build() {
+            return new IngestFactory(this);
         }
     }
 }

@@ -133,7 +133,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrayListIT {
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, maxNoOfRecordsInMemory);
         instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, maxNoOfRecordsInLocalStore);
         TableProperties tableProperties = createTableProperties(instanceProperties, recordListAndSchema.sleeperSchema, DATA_BUCKET_NAME);
-        IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
+        IngestFactory factory = IngestFactory.builder()
                 .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
                 .localDir(ingestLocalWorkingDirectory)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))

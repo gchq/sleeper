@@ -70,7 +70,7 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
-import sleeper.ingest.impl.IngestCoordinatorFactory;
+import sleeper.ingest.impl.IngestFactory;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.query.model.Query;
@@ -691,7 +691,7 @@ public class SqsQueryProcessorLambdaIT {
             instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1000L);
             instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, 10);
 
-            IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
+            IngestFactory factory = IngestFactory.builder()
                     .objectFactory(new ObjectFactory(instanceProperties, null, "/tmp"))
                     .localDir(dataDir)
                     .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))

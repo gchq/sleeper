@@ -48,7 +48,7 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.ingest.IngestRecordsFromIterator;
-import sleeper.ingest.impl.IngestCoordinatorFactory;
+import sleeper.ingest.impl.IngestFactory;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
@@ -1135,7 +1135,7 @@ public class SplitPartitionIT {
         tableProperties.set(COMPRESSION_CODEC, "zstd");
         tableProperties.set(DATA_BUCKET, bucketName);
         tableProperties.setSchema(schema);
-        IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
+        IngestFactory factory = IngestFactory.builder()
                 .objectFactory(new ObjectFactory(new InstanceProperties(), null, ""))
                 .localDir(localDir)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))

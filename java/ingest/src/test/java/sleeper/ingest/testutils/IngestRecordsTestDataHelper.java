@@ -32,7 +32,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.ingest.IngestProperties;
-import sleeper.ingest.impl.IngestCoordinatorFactory;
+import sleeper.ingest.impl.IngestFactory;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
@@ -342,9 +342,9 @@ public class IngestRecordsTestDataHelper {
         return conf;
     }
 
-    public static IngestCoordinatorFactory.Builder defaultFactoryBuilder(
+    public static IngestFactory.Builder defaultFactoryBuilder(
             String localDir, InstanceProperties instanceProperties) {
-        return IngestCoordinatorFactory.builder()
+        return IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .hadoopConfiguration(defaultHadoopConfiguration())
                 .localDir(localDir).instanceProperties(instanceProperties);

@@ -21,12 +21,12 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
 import sleeper.ingest.IngestRecordsFromIterator;
 
-public class AllTablesIngestCoordinatorFactory {
+public class AllTablesIngestFactory {
 
-    private final IngestCoordinatorFactory factory;
+    private final IngestFactory factory;
     private final TablePropertiesProvider tablePropertiesProvider;
 
-    AllTablesIngestCoordinatorFactory(IngestCoordinatorFactory factory, TablePropertiesProvider tablePropertiesProvider) {
+    AllTablesIngestFactory(IngestFactory factory, TablePropertiesProvider tablePropertiesProvider) {
         this.factory = factory;
         this.tablePropertiesProvider = tablePropertiesProvider;
     }

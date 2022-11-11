@@ -17,7 +17,7 @@ package sleeper.ingest;
 
 import org.junit.Test;
 import sleeper.core.record.Record;
-import sleeper.ingest.impl.IngestCoordinatorFactory;
+import sleeper.ingest.impl.IngestFactory;
 import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FixedStateStoreProvider;
@@ -40,7 +40,7 @@ public class IngestRecordsFromIteratorIT extends IngestRecordsITBase {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        IngestCoordinatorFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
+        IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .build();
         IngestRecordsFromIterator ingestRecordsFromIterator = factory.createIngestRecordsFromIterator(tableProperties, getRecords().iterator());
