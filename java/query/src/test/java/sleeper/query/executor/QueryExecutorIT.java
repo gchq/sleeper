@@ -1362,7 +1362,7 @@ public class QueryExecutorIT {
                 .hadoopConfiguration(new Configuration())
                 .instanceProperties(instanceProperties)
                 .build();
-        factory.createIngestRecordsFromIterator(tableProperties, recordIterator).write();
+        factory.ingestRecordsFromIterator(tableProperties, recordIterator);
     }
 
     protected List<Record> getRecords() {

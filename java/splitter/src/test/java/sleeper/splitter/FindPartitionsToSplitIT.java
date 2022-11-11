@@ -156,7 +156,7 @@ public class FindPartitionsToSplitIT {
                         .hadoopConfiguration(new Configuration())
                         .instanceProperties(instanceProperties)
                         .build();
-                factory.createIngestRecordsFromIterator(tableProperties, list.iterator()).write();
+                factory.ingestRecordsFromIterator(tableProperties, list.iterator());
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

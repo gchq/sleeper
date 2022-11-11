@@ -59,7 +59,7 @@ public class UploadMultipleShardedSortedParquetFiles extends WriteRandomDataJob 
                     .localDir("/mnt/scratch")
                     .instanceProperties(getSystemTestProperties())
                     .build();
-            factory.createIngestRecordsFromIterator(getTableProperties(), recordIterator).write();
+            factory.ingestRecordsFromIterator(getTableProperties(), recordIterator);
         } catch (StateStoreException | IteratorException e) {
             throw new IOException("Failed to write records using iterator", e);
         }

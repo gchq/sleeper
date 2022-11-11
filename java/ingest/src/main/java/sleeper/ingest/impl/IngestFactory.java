@@ -22,12 +22,16 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.ingest.IngestProperties;
 import sleeper.ingest.IngestRecordsFromIterator;
+import sleeper.ingest.IngestResult;
+import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Objects;
@@ -122,8 +126,9 @@ public class IngestFactory {
         }
     }
 
-    public IngestRecordsFromIterator createIngestRecordsFromIterator(TableProperties tableProperties, Iterator<Record> recordIterator) {
-        return new IngestRecordsFromIterator(createIngestCoordinator(tableProperties), recordIterator);
+    public IngestResult ingestRecordsFromIterator(TableProperties tableProperties, Iterator<Record> recordIterator)
+            throws StateStoreException, IteratorException, IOException {
+        return new IngestRecordsFromIterator(createIngestCoordinator(tableProperties), recordIterator).write();
     }
 
     public IngestProperties createIngestProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {

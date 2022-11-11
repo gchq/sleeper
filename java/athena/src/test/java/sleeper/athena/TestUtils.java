@@ -134,7 +134,7 @@ public class TestUtils {
                     .instanceProperties(instanceProperties)
                     .build();
 
-            factory.createIngestRecordsFromIterator(table, generateTimeSeriesData().iterator()).write();
+            factory.ingestRecordsFromIterator(table, generateTimeSeriesData().iterator());
         } catch (IOException | StateStoreException | IteratorException |
                  ObjectFactoryException e) {
             throw new RuntimeException("Failed to Ingest data", e);

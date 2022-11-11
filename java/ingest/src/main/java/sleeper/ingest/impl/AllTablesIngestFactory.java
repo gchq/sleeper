@@ -17,9 +17,13 @@ package sleeper.ingest.impl;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
-import sleeper.ingest.IngestRecordsFromIterator;
+import sleeper.ingest.IngestResult;
+import sleeper.statestore.StateStoreException;
+
+import java.io.IOException;
+import java.util.Iterator;
 
 public class AllTablesIngestFactory {
 
@@ -31,8 +35,9 @@ public class AllTablesIngestFactory {
         this.tablePropertiesProvider = tablePropertiesProvider;
     }
 
-    public IngestRecordsFromIterator createIngestRecordsFromIterator(String tableName, CloseableIterator<Record> recordIterator) {
+    public IngestResult ingestRecordsFromIterator(String tableName, Iterator<Record> recordIterator)
+            throws StateStoreException, IteratorException, IOException {
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
-        return factory.createIngestRecordsFromIterator(tableProperties, recordIterator);
+        return factory.ingestRecordsFromIterator(tableProperties, recordIterator);
     }
 }

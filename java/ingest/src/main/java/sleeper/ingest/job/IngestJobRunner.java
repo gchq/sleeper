@@ -129,7 +129,7 @@ public class IngestJobRunner {
                     .bufferAllocator(bufferAllocator)
                     .instanceProperties(instanceProperties)
                     .build().withTablePropertiesProvider(tablePropertiesProvider);
-            IngestResult result = factory.createIngestRecordsFromIterator(job.getTableName(), recordIterator).write();
+            IngestResult result = factory.ingestRecordsFromIterator(job.getTableName(), recordIterator);
 
             LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getNumberOfRecords(), paths);
             return result;

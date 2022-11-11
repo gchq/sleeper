@@ -43,8 +43,8 @@ public class IngestRecordsFromIteratorIT extends IngestRecordsITBase {
         IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .build();
-        IngestRecordsFromIterator ingestRecordsFromIterator = factory.createIngestRecordsFromIterator(tableProperties, getRecords().iterator());
-        long numWritten = ingestRecordsFromIterator.write().getNumberOfRecords();
+        long numWritten = factory.ingestRecordsFromIterator(
+                tableProperties, getRecords().iterator()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written

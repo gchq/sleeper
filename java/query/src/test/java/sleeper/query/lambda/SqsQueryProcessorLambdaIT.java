@@ -698,7 +698,7 @@ public class SqsQueryProcessorLambdaIT {
                     .hadoopConfiguration(new Configuration())
                     .instanceProperties(instanceProperties)
                     .build();
-            factory.createIngestRecordsFromIterator(tableProperties, generateTimeSeriesData(minYear, maxYear).iterator()).write();
+            factory.ingestRecordsFromIterator(tableProperties, generateTimeSeriesData(minYear, maxYear).iterator());
         } catch (IOException | StateStoreException | IteratorException |
                  ObjectFactoryException e) {
             throw new RuntimeException("Failed to Ingest data", e);

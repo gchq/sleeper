@@ -31,7 +31,6 @@ import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.key.Key;
 import sleeper.core.schema.type.LongType;
-import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.PartitionedTableCreator;
 import sleeper.ingest.testutils.RecordGenerator;
@@ -140,9 +139,8 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrayListIT {
                 .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
                 .instanceProperties(instanceProperties)
                 .build();
-        IngestRecordsFromIterator recordsFromIterator = factory.createIngestRecordsFromIterator(
+        factory.ingestRecordsFromIterator(
                 tableProperties, recordListAndSchema.recordList.iterator());
-        recordsFromIterator.write();
 
         ResultVerifier.verify(
                 stateStore,

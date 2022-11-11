@@ -47,7 +47,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.ingest.IngestRecordsFromIterator;
+import sleeper.ingest.IngestResult;
 import sleeper.ingest.impl.IngestFactory;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FixedStateStoreProvider;
@@ -132,8 +132,7 @@ public class SplitPartitionIT {
                 record.put("key", r);
                 records.add(record);
             }
-            IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
-            ingestRecordsFromIterator.write();
+            ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -244,8 +243,7 @@ public class SplitPartitionIT {
                     record.put("key", r);
                     records.add(record);
                 }
-                IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
-                ingestRecordsFromIterator.write();
+                ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
             }
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -349,8 +347,7 @@ public class SplitPartitionIT {
                         records.add(record);
                     }
                 }
-                IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
-                ingestRecordsFromIterator.write();
+                ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
             }
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -387,8 +384,7 @@ public class SplitPartitionIT {
                 record.put("key2", 10);
                 records.add(record);
             }
-            IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
-            ingestRecordsFromIterator.write();
+            ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -453,8 +449,7 @@ public class SplitPartitionIT {
                 record.put("key2", r);
                 records.add(record);
             }
-            IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
-            ingestRecordsFromIterator.write();
+            ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -524,8 +519,7 @@ public class SplitPartitionIT {
                 record.put("key2", r);
                 records.add(record);
             }
-            IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
-            ingestRecordsFromIterator.write();
+            ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -587,8 +581,7 @@ public class SplitPartitionIT {
                 record.put("key", r);
                 records.add(record);
             }
-            IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
-            ingestRecordsFromIterator.write();
+            ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -641,8 +634,7 @@ public class SplitPartitionIT {
                 record.put("key", "A" + i + "" + r);
                 records.add(record);
             }
-            IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
-            ingestRecordsFromIterator.write();
+            ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -705,8 +697,7 @@ public class SplitPartitionIT {
                 record.put("key", new byte[]{(byte) r});
                 records.add(record);
             }
-            IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
-            ingestRecordsFromIterator.write();
+            ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -843,8 +834,7 @@ public class SplitPartitionIT {
                         records.add(record);
                     }
                 }
-                IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
-                ingestRecordsFromIterator.write();
+                ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
             }
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -956,8 +946,7 @@ public class SplitPartitionIT {
                         records.add(record);
                     }
                 }
-                IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
-                ingestRecordsFromIterator.write();
+                ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
             }
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -994,8 +983,7 @@ public class SplitPartitionIT {
                 record.put("key2", new byte[]{(byte) -100});
                 records.add(record);
             }
-            IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
-            ingestRecordsFromIterator.write();
+            ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -1062,8 +1050,7 @@ public class SplitPartitionIT {
                 record.put("key2", new byte[]{(byte) r});
                 records.add(record);
             }
-            IngestRecordsFromIterator ingestRecordsFromIterator = createIngestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
-            ingestRecordsFromIterator.write();
+            ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -1124,7 +1111,9 @@ public class SplitPartitionIT {
         }
     }
 
-    private static IngestRecordsFromIterator createIngestRecordsFromIterator(StateStore stateStore, Schema schema, String localDir, String bucketName, Iterator<Record> recordIterator) throws ObjectFactoryException {
+    private static IngestResult ingestRecordsFromIterator(
+            StateStore stateStore, Schema schema, String localDir, String bucketName, Iterator<Record> recordIterator)
+            throws ObjectFactoryException, StateStoreException, IteratorException, IOException {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 1_000_000);
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1_000_000);
@@ -1142,6 +1131,6 @@ public class SplitPartitionIT {
                 .hadoopConfiguration(new Configuration())
                 .instanceProperties(instanceProperties)
                 .build();
-        return factory.createIngestRecordsFromIterator(tableProperties, recordIterator);
+        return factory.ingestRecordsFromIterator(tableProperties, recordIterator);
     }
 }
