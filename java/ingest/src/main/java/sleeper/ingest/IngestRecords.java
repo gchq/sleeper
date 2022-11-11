@@ -15,8 +15,6 @@
  */
 package sleeper.ingest;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
@@ -30,7 +28,6 @@ import java.io.IOException;
  * This class is an adaptor to {@link IngestCoordinator}.
  */
 public class IngestRecords {
-    private static final Logger LOGGER = LoggerFactory.getLogger(IngestRecords.class);
 
     private final IngestCoordinator<Record> ingestCoordinator;
 

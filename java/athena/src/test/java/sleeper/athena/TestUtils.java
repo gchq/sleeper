@@ -23,12 +23,11 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.ingest.impl.IngestCoordinatorFactory;
+import sleeper.ingest.impl.IngestFactory;
 import sleeper.statestore.InitialiseStateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
@@ -127,15 +126,15 @@ public class TestUtils {
             instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 1000L);
             instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1024L);
             instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, 10);
-            IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
+            IngestFactory factory = IngestFactory.builder()
                     .objectFactory(new ObjectFactory(instanceProperties, s3Client, "/tmp"))
                     .localDir(dataDir)
                     .stateStoreProvider(new StateStoreProvider(dynamoClient, instanceProperties))
                     .hadoopConfiguration(new Configuration())
                     .instanceProperties(instanceProperties)
-                    .tablePropertiesProvider(new FixedTablePropertiesProvider(table)).build();
+                    .build();
 
-            factory.createIngestRecordsFromIterator(table.get(TABLE_NAME), generateTimeSeriesData().iterator()).write();
+            factory.ingestRecordsFromIterator(table, generateTimeSeriesData().iterator());
         } catch (IOException | StateStoreException | IteratorException |
                  ObjectFactoryException e) {
             throw new RuntimeException("Failed to Ingest data", e);

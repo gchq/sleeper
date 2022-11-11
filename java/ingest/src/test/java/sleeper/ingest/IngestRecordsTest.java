@@ -22,7 +22,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.junit.Test;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.MergingIterator;
@@ -36,7 +35,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
-import sleeper.ingest.impl.IngestCoordinatorFactory;
+import sleeper.ingest.impl.IngestFactory;
 import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -62,11 +61,10 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_I
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.TEST_TABLE_NAME;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createLeafPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createRootPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createTableProperties;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultFactory;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultFactoryBuilder;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getLotsOfRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords2DimByteArrayKey;
@@ -98,9 +96,10 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
 
         // When
         TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(TEST_TABLE_NAME));
+        IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .build();
+        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
         ingestRecords.init();
         for (Record record : getRecords()) {
             ingestRecords.write(record);
@@ -170,9 +169,10 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
 
         // When
         TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(TEST_TABLE_NAME));
+        IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .build();
+        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
         ingestRecords.init();
         for (Record record : getRecordsByteArrayKey()) {
             ingestRecords.write(record);
@@ -249,9 +249,10 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
 
         // When
         TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(TEST_TABLE_NAME));
+        IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .build();
+        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
         ingestRecords.init();
         for (Record record : getRecords2DimByteArrayKey()) {
             ingestRecords.write(record);
@@ -373,9 +374,10 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         // When
         TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
         tableProperties.set(COMPRESSION_CODEC, "snappy");
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(TEST_TABLE_NAME));
+        IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .build();
+        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
         ingestRecords.init();
         //  - When sorted the records in getRecordsOscillateBetweenTwoPartitions
         //  appear in partition 1 then partition 2 then partition 1, then 2, etc
@@ -458,9 +460,10 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
 
         // When
         TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(TEST_TABLE_NAME));
+        IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .build();
+        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
         ingestRecords.init();
         for (Record record : getRecordsInFirstPartitionOnly()) {
             ingestRecords.write(record);
@@ -502,9 +505,10 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         List<Record> records = new ArrayList<>(getRecords());
         records.addAll(getRecords());
         TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(TEST_TABLE_NAME));
+        IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .build();
+        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
         ingestRecords.init();
         for (Record record : records) {
             ingestRecords.write(record);
@@ -560,9 +564,10 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1000L);
         instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 5L);
         TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(TEST_TABLE_NAME));
+        IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .build();
+        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
         ingestRecords.init();
         for (Record record : records) {
             ingestRecords.write(record);
@@ -684,9 +689,10 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 10L);
         instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 5L);
         TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(TEST_TABLE_NAME));
+        IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .build();
+        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
         ingestRecords.init();
         for (Record record : records) {
             ingestRecords.write(record);
@@ -778,9 +784,10 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
 
         // When
         TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(TEST_TABLE_NAME));
+        IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .build();
+        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
         ingestRecords.init();
         for (Record record : getUnsortedRecords()) {
             ingestRecords.write(record);
@@ -831,9 +838,10 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         // When
         TableProperties tableProperties = createTableProperties(instanceProperties, schema, "");
         tableProperties.set(ITERATOR_CLASS_NAME, AdditionIterator.class.getName());
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(TEST_TABLE_NAME));
+        IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .build();
+        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
         ingestRecords.init();
         for (Record record : getRecordsForAggregationIteratorTest()) {
             ingestRecords.write(record);

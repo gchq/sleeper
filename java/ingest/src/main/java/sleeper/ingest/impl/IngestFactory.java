@@ -22,11 +22,15 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.ingest.IngestRecordsFromIterator;
+import sleeper.ingest.IngestResult;
+import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Objects;
@@ -41,7 +45,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_I
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 
-public class IngestCoordinatorFactory {
+public class IngestFactory {
 
     private final ObjectFactory objectFactory;
     private final String localDir;
@@ -50,9 +54,8 @@ public class IngestCoordinatorFactory {
     private final BufferAllocator bufferAllocator;
     private final S3AsyncClient s3AsyncClient;
     private final InstanceProperties instanceProperties;
-    private final TablePropertiesProvider tablePropertiesProvider;
 
-    private IngestCoordinatorFactory(Builder builder) {
+    private IngestFactory(Builder builder) {
         this.objectFactory = Objects.requireNonNull(builder.objectFactory);
         this.localDir = Objects.requireNonNull(builder.localDir);
         this.stateStoreProvider = Objects.requireNonNull(builder.stateStoreProvider);
@@ -60,19 +63,22 @@ public class IngestCoordinatorFactory {
         this.bufferAllocator = builder.bufferAllocator;
         this.s3AsyncClient = builder.s3AsyncClient;
         this.instanceProperties = Objects.requireNonNull(builder.instanceProperties);
-        this.tablePropertiesProvider = Objects.requireNonNull(builder.tablePropertiesProvider);
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public IngestCoordinator<Record> createIngestCoordinator(String tableName) {
+    public AllTablesIngestFactory withTablePropertiesProvider(
+            TablePropertiesProvider tablePropertiesProvider) {
+        return new AllTablesIngestFactory(this, tablePropertiesProvider);
+    }
+
+    public IngestCoordinator<Record> createIngestCoordinator(TableProperties tableProperties) {
         S3AsyncClient internalS3AsyncClient =
                 instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT).equals("async") ?
                         ((s3AsyncClient == null) ? S3AsyncClient.create() : s3AsyncClient) :
                         null;
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
         String recordBatchType = instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
         String fileWriterType = instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
         StandardIngestCoordinator.BackedBuilder ingestCoordinatorBuilder;
@@ -118,8 +124,9 @@ public class IngestCoordinatorFactory {
         }
     }
 
-    public IngestRecordsFromIterator createIngestRecordsFromIterator(String tableName, Iterator<Record> recordIterator) {
-        return new IngestRecordsFromIterator(createIngestCoordinator(tableName), recordIterator);
+    public IngestResult ingestRecordsFromIterator(TableProperties tableProperties, Iterator<Record> recordIterator)
+            throws StateStoreException, IteratorException, IOException {
+        return new IngestRecordsFromIterator(createIngestCoordinator(tableProperties), recordIterator).write();
     }
 
     public static final class Builder {
@@ -130,7 +137,6 @@ public class IngestCoordinatorFactory {
         private BufferAllocator bufferAllocator;
         private S3AsyncClient s3AsyncClient;
         private InstanceProperties instanceProperties;
-        private TablePropertiesProvider tablePropertiesProvider;
 
         private Builder() {
         }
@@ -170,13 +176,8 @@ public class IngestCoordinatorFactory {
             return this;
         }
 
-        public Builder tablePropertiesProvider(TablePropertiesProvider tablePropertiesProvider) {
-            this.tablePropertiesProvider = tablePropertiesProvider;
-            return this;
-        }
-
-        public IngestCoordinatorFactory build() {
-            return new IngestCoordinatorFactory(this);
+        public IngestFactory build() {
+            return new IngestFactory(this);
         }
     }
 }

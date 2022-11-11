@@ -16,9 +16,8 @@
 package sleeper.ingest;
 
 import org.junit.Test;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.core.record.Record;
-import sleeper.ingest.impl.IngestCoordinatorFactory;
+import sleeper.ingest.impl.IngestFactory;
 import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FixedStateStoreProvider;
@@ -29,8 +28,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.TEST_TABLE_NAME;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultFactory;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultFactoryBuilder;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
@@ -42,10 +40,11 @@ public class IngestRecordsFromIteratorIT extends IngestRecordsITBase {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        IngestCoordinatorFactory factory = defaultFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore),
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
-        IngestRecordsFromIterator ingestRecordsFromIterator = factory.createIngestRecordsFromIterator(TEST_TABLE_NAME, getRecords().iterator());
-        long numWritten = ingestRecordsFromIterator.write().getNumberOfRecords();
+        IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .build();
+        long numWritten = factory.ingestRecordsFromIterator(
+                tableProperties, getRecords().iterator()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written

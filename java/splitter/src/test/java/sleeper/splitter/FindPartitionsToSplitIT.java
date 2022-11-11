@@ -30,7 +30,6 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
@@ -40,7 +39,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
-import sleeper.ingest.impl.IngestCoordinatorFactory;
+import sleeper.ingest.impl.IngestFactory;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
@@ -150,15 +149,14 @@ public class FindPartitionsToSplitIT {
                 tableProperties.set(DATA_BUCKET, directory.getAbsolutePath());
                 tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "10");
                 tableProperties.setSchema(schema);
-                IngestCoordinatorFactory factory = IngestCoordinatorFactory.builder()
+                IngestFactory factory = IngestFactory.builder()
                         .objectFactory(new ObjectFactory(new InstanceProperties(), null, ""))
                         .localDir(stagingArea.getAbsolutePath())
                         .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                         .hadoopConfiguration(new Configuration())
                         .instanceProperties(instanceProperties)
-                        .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
                         .build();
-                factory.createIngestRecordsFromIterator(tableProperties.get(TABLE_NAME), list.iterator()).write();
+                factory.ingestRecordsFromIterator(tableProperties, list.iterator());
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
