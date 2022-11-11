@@ -16,6 +16,7 @@
 package sleeper.build.github;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
@@ -26,7 +27,7 @@ public class JacksonProvider implements ContextResolver<ObjectMapper> {
     @Override
     public ObjectMapper getContext(Class<?> type) {
         ObjectMapper mapper = new ObjectMapper();
-        mapper.findAndRegisterModules();
+        mapper.registerModule(new JavaTimeModule());
         return mapper;
     }
 }
