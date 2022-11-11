@@ -15,6 +15,7 @@
  */
 package sleeper.ingest.job;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -27,6 +28,16 @@ public class IngestJob {
         this.tableName = tableName;
         this.id = id;
         this.files = files;
+    }
+
+    private IngestJob(Builder builder) {
+        tableName = builder.tableName;
+        id = builder.id;
+        files = builder.files;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public String getTableName() {
@@ -67,5 +78,37 @@ public class IngestJob {
                 ", tableName=" + tableName +
                 ", files=" + files +
                 '}';
+    }
+
+    public static final class Builder {
+        private String tableName;
+        private String id;
+        private List<String> files;
+
+        private Builder() {
+        }
+
+        public Builder tableName(String tableName) {
+            this.tableName = tableName;
+            return this;
+        }
+
+        public Builder id(String id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder files(List<String> files) {
+            this.files = files;
+            return this;
+        }
+
+        public Builder files(String... files) {
+            return files(Arrays.asList(files));
+        }
+
+        public IngestJob build() {
+            return new IngestJob(this);
+        }
     }
 }
