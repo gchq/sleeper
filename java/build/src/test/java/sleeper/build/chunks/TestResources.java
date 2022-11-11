@@ -13,29 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.status;
+package sleeper.build.chunks;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URL;
 import java.util.Objects;
-import java.util.Properties;
 
-public class TestProperties {
+public class TestResources {
 
-    private TestProperties() {
+    private TestResources() {
     }
 
-    public static GitHubHead exampleHead() {
-        return GitHubHead.from(example("github-example.properties"));
+    public static Reader exampleReader(String path) {
+        return new InputStreamReader(exampleInputStream(path));
     }
 
-    public static Properties example(String path) {
-        URL resource = Objects.requireNonNull(ChunksStatusTest.class.getClassLoader().getResource(path));
-        try (InputStream is = resource.openStream()) {
-            Properties properties = new Properties();
-            properties.load(is);
-            return properties;
+    public static InputStream exampleInputStream(String path) {
+        URL resource = Objects.requireNonNull(TestProperties.class.getClassLoader().getResource(path));
+        try {
+            return resource.openStream();
         } catch (IOException e) {
             throw new IllegalStateException("Failed to load test example: " + path, e);
         }

@@ -15,12 +15,15 @@
  */
 package sleeper.build.status;
 
+import sleeper.build.chunks.ProjectChunk;
+import sleeper.build.github.GitHubHead;
+
 import java.io.PrintStream;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
 
-import static sleeper.build.status.ValidationUtils.ignoreEmpty;
+import static sleeper.build.util.ValidationUtils.ignoreEmpty;
 
 public class ChunkStatus {
 

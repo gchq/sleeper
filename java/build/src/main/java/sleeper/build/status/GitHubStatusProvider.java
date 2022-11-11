@@ -13,26 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.status.github;
+package sleeper.build.status;
 
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHWorkflowRun;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
 import org.kohsuke.github.PagedIterable;
-import sleeper.build.status.ChunkStatus;
-import sleeper.build.status.GitHubHead;
-import sleeper.build.status.ProjectChunk;
+import sleeper.build.chunks.ProjectChunk;
+import sleeper.build.github.GitHubException;
+import sleeper.build.github.GitHubHead;
+import sleeper.build.github.GitHubRunToHead;
 
 import java.io.IOException;
 import java.util.Objects;
 import java.util.stream.StreamSupport;
 
-public class GitHubProvider {
+public class GitHubStatusProvider {
 
     private final GitHub gitHub;
 
-    public GitHubProvider(String token) throws IOException {
+    public GitHubStatusProvider(String token) throws IOException {
         this.gitHub = new GitHubBuilder().withJwtToken(token).build();
     }
 

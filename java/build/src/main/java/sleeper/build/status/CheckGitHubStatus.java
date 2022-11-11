@@ -17,7 +17,10 @@ package sleeper.build.status;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sleeper.build.status.github.GitHubProvider;
+import sleeper.build.chunks.ProjectChunk;
+import sleeper.build.chunks.ProjectChunks;
+import sleeper.build.chunks.ProjectConfiguration;
+import sleeper.build.github.GitHubHead;
 
 import java.util.List;
 import java.util.Map;
@@ -27,12 +30,12 @@ public class CheckGitHubStatus {
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckGitHubStatus.class);
 
     private final GitHubHead head;
-    private final List<ProjectChunk> chunks;
+    private final ProjectChunks chunks;
     private final long retrySeconds;
     private final long maxRetries;
-    private final GitHubProvider gitHub;
+    private final GitHubStatusProvider gitHub;
 
-    public CheckGitHubStatus(ProjectConfiguration configuration, GitHubProvider gitHub) {
+    public CheckGitHubStatus(ProjectConfiguration configuration, GitHubStatusProvider gitHub) {
         this.head = configuration.getHead();
         this.chunks = configuration.getChunks();
         this.retrySeconds = configuration.getRetrySeconds();

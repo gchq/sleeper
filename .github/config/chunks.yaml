@@ -1,0 +1,41 @@
+chunks:
+  athena:
+    name: Athena
+    workflow: chunk-athena.yaml
+    modules: [ athena ]
+  bulk-import:
+    name: Bulk Import
+    workflow: chunk-bulk-import.yaml
+    modules: [ bulk-import/bulk-import-common, bulk-import/bulk-import-starter, bulk-import/bulk-import-runner ]
+  cdk:
+    name: CDK
+    workflow: chunk-cdk.yaml
+    modules: [ cdk, cdk-custom-resources, cdk-environment, system-test ]
+  clients:
+    name: Clients
+    workflow: chunk-clients.yaml
+    modules: [ clients ]
+  common:
+    name: Common
+    workflow: chunk-common.yaml
+    modules: [ core, configuration, sketches, parquet, common-job, build, dynamodb-tools ]
+  compaction:
+    name: Compaction
+    workflow: chunk-compaction.yaml
+    modules: [ compaction-job-execution, compaction-job-creation, compaction-status-store, compaction-core, splitter ]
+  data:
+    name: Data
+    workflow: chunk-data.yaml
+    modules: [ tables, garbage-collector, metrics ]
+  ingest:
+    name: Ingest
+    workflow: chunk-ingest.yaml
+    modules: [ ingest ]
+  query:
+    name: Query
+    workflow: chunk-query.yaml
+    modules: [ query ]
+  statestore:
+    name: State Store
+    workflow: chunk-statestore.yaml
+    modules: [ statestore ]

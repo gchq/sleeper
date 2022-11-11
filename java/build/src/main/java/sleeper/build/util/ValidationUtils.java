@@ -13,11 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.status.github;
+package sleeper.build.util;
 
-public class GitHubException extends RuntimeException {
+public class ValidationUtils {
 
-    public GitHubException(Throwable cause) {
-        super("Failed calling GitHub", cause);
+    private ValidationUtils() {
+    }
+
+    public static String ignoreEmpty(String string) {
+        if (string == null || string.isEmpty()) {
+            return null;
+        } else {
+            return string;
+        }
     }
 }

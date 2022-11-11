@@ -24,5 +24,4 @@ jobs:
   module-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkName: Athena
-      moduleList: athena
+      chunkId: athena

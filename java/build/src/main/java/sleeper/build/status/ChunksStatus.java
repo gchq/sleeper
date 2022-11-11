@@ -15,6 +15,8 @@
  */
 package sleeper.build.status;
 
+import sleeper.build.github.GitHubHead;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;

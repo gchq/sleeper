@@ -19,5 +19,4 @@ jobs:
   module-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkName: Common
-      moduleList: core,configuration,sketches,parquet,common-job,build,dynamodb-tools
+      chunkId: common

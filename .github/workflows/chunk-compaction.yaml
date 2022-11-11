@@ -26,5 +26,4 @@ jobs:
   module-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkName: Compaction
-      moduleList: compaction-job-execution,compaction-job-creation,compaction-status-store,compaction-core,splitter
+      chunkId: compaction

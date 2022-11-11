@@ -136,12 +136,14 @@ public abstract class BulkImportJobRunner {
         LOGGER.info("Paths to be read are {}", pathsWithFs);
 
         // Run bulk import
-        Dataset<Row> inputData = session.read()
+        Dataset<Row> dataWithPartition = session.read()
                 .schema(convertedSchema)
                 .option("pathGlobFilter", "*.parquet")
                 .option("recursiveFileLookup", "true")
                 .parquet(pathsWithFs.toArray(new String[0]));
-        List<FileInfo> fileInfos = createFileInfos(inputData, job, tableProperties, broadcastedPartitions, conf).collectAsList()
+        LOGGER.info("Input Dataset has {} partitions", dataWithPartition.rdd().getNumPartitions());
+
+        List<FileInfo> fileInfos = createFileInfos(dataWithPartition, job, tableProperties, broadcastedPartitions, conf).collectAsList()
                 .stream()
                 .map(this::createFileInfo)
                 .collect(Collectors.toList());

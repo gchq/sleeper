@@ -22,5 +22,4 @@ jobs:
   module-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkName: Query
-      moduleList: query
+      chunkId: query

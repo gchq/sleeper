@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.status;
+package sleeper.build.github;
 
 import java.util.Objects;
 import java.util.Properties;
 
-import static sleeper.build.status.ValidationUtils.ignoreEmpty;
+import static sleeper.build.util.ValidationUtils.ignoreEmpty;
 
 public class GitHubHead {
 

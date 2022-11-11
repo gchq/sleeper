@@ -13,16 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.status;
+package sleeper.build.chunks;
 
-import sleeper.build.status.github.GitHubProvider;
+import sleeper.build.github.GitHubHead;
+import sleeper.build.status.CheckGitHubStatus;
+import sleeper.build.status.ChunksStatus;
+import sleeper.build.status.GitHubStatusProvider;
 
 import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
-import static sleeper.build.status.ValidationUtils.ignoreEmpty;
+import static sleeper.build.util.ValidationUtils.ignoreEmpty;
 
 public class ProjectConfiguration {
 
@@ -31,7 +37,7 @@ public class ProjectConfiguration {
 
     private final String token;
     private final GitHubHead head;
-    private final List<ProjectChunk> chunks;
+    private final ProjectChunks chunks;
     private final long retrySeconds;
     private final long maxRetries;
 
@@ -43,19 +49,19 @@ public class ProjectConfiguration {
         maxRetries = builder.maxRetries;
     }
 
-    public static ProjectConfiguration from(Properties properties) {
+    public static ProjectConfiguration fromGitHubAndChunks(Properties gitHubProperties, ProjectChunks chunks) {
         return builder()
-                .token(properties.getProperty("token"))
-                .head(GitHubHead.from(properties))
-                .chunks(ProjectChunk.listFrom(properties))
+                .token(gitHubProperties.getProperty("token"))
+                .head(GitHubHead.from(gitHubProperties))
+                .chunks(chunks)
                 .build();
     }
 
     public ChunksStatus checkStatus() throws IOException {
-        return checkStatus(new GitHubProvider(token));
+        return checkStatus(new GitHubStatusProvider(token));
     }
 
-    public ChunksStatus checkStatus(GitHubProvider gitHub) {
+    public ChunksStatus checkStatus(GitHubStatusProvider gitHub) {
         return new CheckGitHubStatus(this, gitHub).checkStatus();
     }
 
@@ -63,7 +69,7 @@ public class ProjectConfiguration {
         return head;
     }
 
-    public List<ProjectChunk> getChunks() {
+    public ProjectChunks getChunks() {
         return chunks;
     }
 
@@ -77,6 +83,20 @@ public class ProjectConfiguration {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static ProjectConfiguration fromGitHubAndChunks(Path gitHubProperties, Path chunksYaml) throws IOException {
+        return fromGitHubAndChunks(
+                loadProperties(gitHubProperties),
+                ProjectChunksYaml.readPath(chunksYaml));
+    }
+
+    private static Properties loadProperties(Path path) throws IOException {
+        Properties properties = new Properties();
+        try (Reader reader = Files.newBufferedReader(path)) {
+            properties.load(reader);
+        }
+        return properties;
     }
 
     @Override
@@ -110,7 +130,7 @@ public class ProjectConfiguration {
     public static final class Builder {
         private String token;
         private GitHubHead head;
-        private List<ProjectChunk> chunks;
+        private ProjectChunks chunks;
         private long retrySeconds = DEFAULT_RETRY_SECONDS;
         private long maxRetries = DEFAULT_MAX_RETRIES;
 
@@ -127,9 +147,13 @@ public class ProjectConfiguration {
             return this;
         }
 
-        public Builder chunks(List<ProjectChunk> chunks) {
+        public Builder chunks(ProjectChunks chunks) {
             this.chunks = chunks;
             return this;
+        }
+
+        public Builder chunks(List<ProjectChunk> chunks) {
+            return chunks(new ProjectChunks(chunks));
         }
 
         public Builder retrySeconds(long retrySeconds) {

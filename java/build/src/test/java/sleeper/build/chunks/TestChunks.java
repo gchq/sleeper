@@ -13,18 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.status;
+package sleeper.build.chunks;
 
-public class ValidationUtils {
+import java.io.IOException;
+import java.io.Reader;
 
-    private ValidationUtils() {
+public class TestChunks {
+
+    private TestChunks() {
     }
 
-    public static String ignoreEmpty(String string) {
-        if (string == null || string.isEmpty()) {
-            return null;
-        } else {
-            return string;
+    public static ProjectChunks example(String path) {
+        try (Reader chunksReader = TestResources.exampleReader(path)) {
+            return ProjectChunksYaml.read(chunksReader);
+        } catch (IOException e) {
+            throw new IllegalStateException("Could not load example chunks", e);
         }
     }
 }

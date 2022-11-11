@@ -331,13 +331,6 @@ public class BulkImportJobRunnerIT {
 
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        //  - Currently only BulkImportJobDataframeRunner supports not coalescing to the number of leaf partitions
-        if (runner instanceof BulkImportJobDataframeRunner) {
-            assertThat(activeFiles).hasSizeGreaterThan(1);
-        } else {
-            assertThat(activeFiles).hasSize(1);
-        }
-
         List<Record> readRecords = new ArrayList<>();
         for (FileInfo fileInfo : activeFiles) {
             try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileInfo.getFilename()), schema)) {
@@ -390,13 +383,6 @@ public class BulkImportJobRunnerIT {
 
         // Then
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        //  - Currently only BulkImportJobDataframeRunner supports not coalescing to the number of leaf partitions
-        if (runner instanceof BulkImportJobDataframeRunner) {
-            assertThat(activeFiles).hasSizeGreaterThan(1);
-        } else {
-            assertThat(activeFiles).hasSize(1);
-        }
-
         List<Record> readRecords = new ArrayList<>();
         for (FileInfo fileInfo : activeFiles) {
             try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileInfo.getFilename()), schema)) {
