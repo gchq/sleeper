@@ -112,7 +112,7 @@ public class EmrExecutor extends AbstractEmrExecutor {
                 .withJobFlowRole(instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME))
                 .withConfigurations(getConfigurations())
                 .withSteps(new StepConfig()
-                        .withName("Bulk Load")
+                        .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
                         .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar").withArgs(constructArgs(bulkImportJob))))
                 .withTags(instanceProperties.getTags().entrySet().stream()
                         .map(entry -> new Tag(entry.getKey(), entry.getValue()))
