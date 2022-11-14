@@ -44,13 +44,13 @@ public class WrappedKeyComparatorTest {
                 .sortKeyFields(new Field("sort1", new StringType()), new Field("sort2", new ByteArrayType()), new Field("sort3", new StringType()))
                 .valueFields(new Field("value", new StringType()))
                 .build();
-        Key key1 = createKey(1, new byte[]{10}, "A", new byte[] {56}, "X");
-        Key key2 = createKey(1, new byte[]{10}, "A", new byte[] {56}, "Y");
-        Key key3 = createKey(1, new byte[]{10}, "A", new byte[] {57}, "X");
-        Key key4 = createKey(1, new byte[]{10}, "B", new byte[] {56}, "X");
-        Key key5 = createKey(1, new byte[]{11}, "A", new byte[] {56}, "X");
-        Key key6 = createKey(2, new byte[]{10}, "A", new byte[] {56}, "X");
-        Key key7 = createKey(2, new byte[]{10}, "A", new byte[] {56}, "X");
+        Key key1 = createKey(1, new byte[]{10}, "A", new byte[]{56}, "X");
+        Key key2 = createKey(1, new byte[]{10}, "A", new byte[]{56}, "Y");
+        Key key3 = createKey(1, new byte[]{10}, "A", new byte[]{57}, "X");
+        Key key4 = createKey(1, new byte[]{10}, "B", new byte[]{56}, "X");
+        Key key5 = createKey(1, new byte[]{11}, "A", new byte[]{56}, "X");
+        Key key6 = createKey(2, new byte[]{10}, "A", new byte[]{56}, "X");
+        Key key7 = createKey(2, new byte[]{10}, "A", new byte[]{56}, "X");
         WrappedKeyComparator comparator = new WrappedKeyComparator(new SchemaSerDe().toJson(schema));
 
         // When
