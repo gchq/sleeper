@@ -53,6 +53,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFileAttributes;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -77,6 +79,7 @@ public abstract class BulkImportJobRunner {
     private InstanceProperties instanceProperties;
     private AmazonS3 s3Client;
     private AmazonDynamoDB dynamoClient;
+    private Instant startTime;
 
     public void init(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
         this.instanceProperties = instanceProperties;
@@ -94,7 +97,9 @@ public abstract class BulkImportJobRunner {
             Configuration conf) throws IOException;
 
     public void run(BulkImportJob job) throws IOException {
-        LOGGER.info("Received job: " + job);
+        startTime = Instant.now();
+        LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
+        LOGGER.info("Job is {}", job);
 
         // Initialise Spark
         LOGGER.info("Initialising Spark");
@@ -148,6 +153,9 @@ public abstract class BulkImportJobRunner {
                 .map(this::createFileInfo)
                 .collect(Collectors.toList());
 
+        long numRecords = fileInfos.stream()
+                .mapToLong(FileInfo::getNumberOfRecords)
+                .sum();
         try {
             stateStore.addFiles(fileInfos);
         } catch (StateStoreException e) {
@@ -155,7 +163,11 @@ public abstract class BulkImportJobRunner {
                     + "be re-imported for clients to accesss data");
         }
         LOGGER.info("Added {} files to statestore", fileInfos.size());
-        LOGGER.info("Finished Bulk import job {}", job.getId());
+        Instant finishTime = Instant.now();
+        LOGGER.info("Finished bulk import job {} at time {}", job.getId(), finishTime);
+        long durationInSeconds = Duration.between(startTime, finishTime).getSeconds();
+        double rate = numRecords / (double) durationInSeconds;
+        LOGGER.info("Bulk import job {} took {} seconds (rate of {} per second)", job.getId(), durationInSeconds, rate);
 
         sparkContext.stop(); // Calling this manually stops it potentially timing out after 10 seconds.
 

@@ -139,10 +139,9 @@ public class SingleFileWritingIterator implements Iterator<Row> {
         }
         parquetWriter.close();
         new SketchesSerDeToS3(schema).saveToHadoopFS(new Path(path.replace(".parquet", ".sketches")), new Sketches(sketches), conf);
-        Instant finishTime = Instant.now();
-        long durationInSeconds = Duration.between(startTime, finishTime).getSeconds();
+        long durationInSeconds = Duration.between(startTime, Instant.now()).getSeconds();
         double rate = numRecords / (double) durationInSeconds;
-        LOGGER.info("Finished writing {} records to file {} in {} seconds (rate was {})",
+        LOGGER.info("Finished writing {} records to file {} in {} seconds (rate was {} per second)",
                 numRecords, path, durationInSeconds, rate);
     }
 
