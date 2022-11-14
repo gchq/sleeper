@@ -12,6 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM eclipse-temurin:8-jre-alpine
+FROM ubuntu:22.04
 
+RUN apt-get update
+RUN apt-get install -y curl
+
+# Install NodeJS (for AWS CDK)
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash
+RUN apt-get install -y nodejs
+
+# Install AWS CDK CLI
+RUN npm install -g aws-cdk
+
+# Install AWS CLI
+WORKDIR /aws
+RUN apt-get install -y unzip
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+RUN unzip awscliv2.zip
+RUN ./aws/install
+RUN rm -rf /aws
+WORKDIR /
+
+# Install Java
+RUN apt-get install -y openjdk-17-jre
+
+WORKDIR /sleeper
 COPY . .
+
+CMD bash
