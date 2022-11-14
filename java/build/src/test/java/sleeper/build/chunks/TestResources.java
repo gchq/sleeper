@@ -15,6 +15,8 @@
  */
 package sleeper.build.chunks;
 
+import org.apache.commons.io.IOUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -25,6 +27,14 @@ import java.util.Objects;
 public class TestResources {
 
     private TestResources() {
+    }
+
+    public static String exampleString(String path) {
+        try (Reader reader = exampleReader(path)) {
+            return IOUtils.toString(reader);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to load example: " + path, e);
+        }
     }
 
     public static Reader exampleReader(String path) {
