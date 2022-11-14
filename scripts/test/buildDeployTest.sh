@@ -25,34 +25,23 @@ VPC=$2
 SUBNET=$3
 
 TABLE_NAME="system-test"
-THIS_DIR=$(cd $(dirname $0) && pwd)
-PROJECT_ROOT=$(dirname $(dirname ${THIS_DIR}))
-source ${PROJECT_ROOT}/scripts/functions/timeUtils.sh
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+PROJECT_ROOT=$(dirname "$(dirname "$THIS_DIR")")
+SCRIPTS_DIR="$PROJECT_ROOT/scripts"
+
+source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
-echo "Started at $(recorded_time_str "$START_TIME")"
 
-
-echo "-------------------------------------------------------------------------------"
-echo "Building Project"
-echo "-------------------------------------------------------------------------------"
-pushd ${PROJECT_ROOT}/java
-VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
-mvn -q clean install -Pquick
-mkdir -p ${PROJECT_ROOT}/scripts/jars
-mkdir -p ${PROJECT_ROOT}/scripts/docker
-cp  ${PROJECT_ROOT}/java/distribution/target/distribution-${VERSION}-bin/scripts/jars/* ${PROJECT_ROOT}/scripts/jars/
-cp -r ${PROJECT_ROOT}/java/distribution/target/distribution-${VERSION}-bin/scripts/docker/* ${PROJECT_ROOT}/scripts/docker/
-cp  ${PROJECT_ROOT}/java/distribution/target/distribution-${VERSION}-bin/scripts/templates/version.txt ${PROJECT_ROOT}/scripts/templates/version.txt
-
+"$SCRIPTS_DIR/build/build.sh"
 END_BUILD_TIME=$(record_time)
-echo "Build finished at $(recorded_time_str "$END_BUILD_TIME"), took $(elapsed_time_str "$START_TIME" "$END_BUILD_TIME")"
 
 echo "-------------------------------------------------------------------------------"
 echo "Configuring Deployment"
 echo "-------------------------------------------------------------------------------"
-TEMPLATE_DIR=${PROJECT_ROOT}/scripts/templates
-GENERATED_DIR=${PROJECT_ROOT}/scripts/generated
+TEMPLATE_DIR="$SCRIPTS_DIR/templates"
+GENERATED_DIR="$SCRIPTS_DIR/generated"
 INSTANCE_PROPERTIES=${GENERATED_DIR}/instance.properties
+VERSION=$(cat "$TEMPLATE_DIR/version.txt")
 
 mkdir -p ${GENERATED_DIR}
 
