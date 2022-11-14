@@ -15,8 +15,6 @@
  */
 package sleeper.bulkimport.job.runner.rdd;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.junit.Test;
@@ -24,6 +22,8 @@ import scala.Tuple2;
 import sleeper.core.key.Key;
 
 import java.util.Arrays;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ExtractKeyFunctionTest {
 
