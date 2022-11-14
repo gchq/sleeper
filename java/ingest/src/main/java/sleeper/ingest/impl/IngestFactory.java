@@ -76,9 +76,9 @@ public class IngestFactory {
         return new Builder();
     }
 
-    public AllTablesIngestFactory withTablePropertiesProvider(
+    public IngestByTableNameFactory withTablePropertiesProvider(
             TablePropertiesProvider tablePropertiesProvider) {
-        return new AllTablesIngestFactory(this, tablePropertiesProvider);
+        return new IngestByTableNameFactory(this, tablePropertiesProvider);
     }
 
     public IngestCoordinator<Record> createIngestCoordinator(TableProperties tableProperties) {
