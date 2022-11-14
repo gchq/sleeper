@@ -44,6 +44,8 @@ import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -56,17 +58,18 @@ public class SingleFileWritingIterator implements Iterator<Row> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleFileWritingIterator.class);
 
     private final Iterator<Row> input;
+    private final InstanceProperties instanceProperties;
+    private final TableProperties tableProperties;
     private final Schema schema;
     private final List<Field> allSchemaFields;
     private final Configuration conf;
-    private final InstanceProperties instanceProperties;
-    private final TableProperties tableProperties;
+    private final PartitionTree partitionTree;
     private ParquetWriter<Record> parquetWriter;
     private Map<String, ItemsSketch> sketches;
     private String path;
     private long numRecords;
-    private final PartitionTree partitionTree;
     private String partitionId;
+    private Instant startTime;
 
     public SingleFileWritingIterator(Iterator<Row> input,
             InstanceProperties instanceProperties,
@@ -99,12 +102,13 @@ public class SingleFileWritingIterator implements Iterator<Row> {
             while (input.hasNext()) {
                 Row row = input.next();
                 if (null == parquetWriter) {
+                    startTime = Instant.now();
                     initialiseState(partitionId);
                     partitionId = getPartitionId(row);
                 }
                 write(row);
             }
-            writeFiles();
+            closeFile();
             return RowFactory.create(partitionId, path, numRecords);
         } catch (IOException e) {
             throw new RuntimeException("Encountered error while writing files", e);
@@ -128,13 +132,18 @@ public class SingleFileWritingIterator implements Iterator<Row> {
         sketches = getSketches(schema.getRowKeyFields());
     }
 
-    private void writeFiles() throws IOException {
+    private void closeFile() throws IOException {
         LOGGER.info("Flushing file to S3 containing {} records", numRecords);
         if (parquetWriter == null) {
             return;
         }
         parquetWriter.close();
         new SketchesSerDeToS3(schema).saveToHadoopFS(new Path(path.replace(".parquet", ".sketches")), new Sketches(sketches), conf);
+        Instant finishTime = Instant.now();
+        long durationInSeconds = Duration.between(startTime, finishTime).getSeconds();
+        double rate = numRecords / durationInSeconds;
+        LOGGER.info("Finished writing {} records to file {} in {} seconds (rate was {})",
+                numRecords, path, durationInSeconds, rate);
     }
 
     private Record getRecord(Row row) {
