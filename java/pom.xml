@@ -81,7 +81,6 @@
         <java-websocket.version>1.5.2</java-websocket.version>
         <arrow.version>8.0.0</arrow.version>
         <bouncycastle.version>1.71.1</bouncycastle.version>
-        <github-api.version>1.308</github-api.version>
         <!-- Testing -->
         <junit.version>4.13</junit.version>
         <mockito.version>3.3.3</mockito.version>
@@ -163,12 +162,6 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-reload4j</artifactId>
                 <version>${slf4j.version}</version>
-            </dependency>
-            <!-- Build -->
-            <dependency>
-                <groupId>org.kohsuke</groupId>
-                <artifactId>github-api</artifactId>
-                <version>${github-api.version}</version>
             </dependency>
             <!-- Cryptography -->
             <dependency>

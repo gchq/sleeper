@@ -13,26 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.job;
+package sleeper.build.github;
 
-import org.junit.Test;
+public class TestGitHubHead {
 
-import static org.assertj.core.api.Assertions.assertThat;
+    private TestGitHubHead() {
+    }
 
-public class IngestJobSerDeTest {
+    public static GitHubHead example() {
+        return exampleBuilder().build();
+    }
 
-    @Test
-    public void shouldSerDeCorrectly() {
-        // Given
-        IngestJob ingestJob = IngestJob.builder()
-                .tableName("table").id("id").files("file1", "file2")
-                .build();
-        IngestJobSerDe ingestJobSerDe = new IngestJobSerDe();
-
-        // When
-        IngestJob deserialisedJob = ingestJobSerDe.fromJson(ingestJobSerDe.toJson(ingestJob));
-
-        // Then
-        assertThat(deserialisedJob).isEqualTo(ingestJob);
+    public static GitHubHead.Builder exampleBuilder() {
+        return GitHubHead.builder().owner("test-owner").repository("test-repo").branch("test-branch").sha("test-sha");
     }
 }

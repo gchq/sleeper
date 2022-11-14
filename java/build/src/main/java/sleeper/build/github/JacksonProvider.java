@@ -13,26 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.job;
+package sleeper.build.github;
 
-import org.junit.Test;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import javax.ws.rs.ext.ContextResolver;
+import javax.ws.rs.ext.Provider;
 
-public class IngestJobSerDeTest {
+@Provider
+public class JacksonProvider implements ContextResolver<ObjectMapper> {
 
-    @Test
-    public void shouldSerDeCorrectly() {
-        // Given
-        IngestJob ingestJob = IngestJob.builder()
-                .tableName("table").id("id").files("file1", "file2")
-                .build();
-        IngestJobSerDe ingestJobSerDe = new IngestJobSerDe();
-
-        // When
-        IngestJob deserialisedJob = ingestJobSerDe.fromJson(ingestJobSerDe.toJson(ingestJob));
-
-        // Then
-        assertThat(deserialisedJob).isEqualTo(ingestJob);
+    @Override
+    public ObjectMapper getContext(Class<?> type) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        return mapper;
     }
 }
