@@ -34,6 +34,8 @@ public class Utils {
 
     private static final Set<String> VALID_FADVISE_VALUES = Sets.newHashSet("normal", "sequential", "random");
 
+    private static final Set<String> VALID_EBS_VOLUME_TYPES = Sets.newHashSet("gp2", "gp3", "io1", "io2");
+
     public static boolean isPositiveInteger(String integer) {
         return Integer.parseInt(integer) > 0;
     }
@@ -78,6 +80,10 @@ public class Utils {
         // From source code to software.amazon.awscdk.services.emr.CfnCluster.VolumeSpecificationProperty.Builder:
         // "This can be a number from 1 - 1024. If the volume type is EBS-optimized, the minimum value is 10."
         return ebsSizeInGbInt >= 10 && ebsSizeInGbInt <= 1024;
+    }
+
+    public static boolean isValidEbsVolumeType(String ebsVolumeType) {
+        return VALID_EBS_VOLUME_TYPES.contains(ebsVolumeType);
     }
 
     public static boolean isIntLtEqValue(String string, int maxValue) {

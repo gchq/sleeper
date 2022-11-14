@@ -51,6 +51,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPE;
@@ -93,7 +94,7 @@ public class PersistentEmrBulkImportStack extends AbstractEmrBulkImportStack {
         VolumeSpecificationProperty volumeSpecificationProperty = VolumeSpecificationProperty.builder()
 //                .iops() // TODO Add property to control this
                 .sizeInGb(instanceProperties.getInt(BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB))
-//                .volumeType(null) // TODO Add property to control this
+                .volumeType(instanceProperties.get(BULK_IMPORT_EMR_EBS_VOLUME_TYPE))
                 .build();
         EbsBlockDeviceConfigProperty ebsBlockDeviceConfig = EbsBlockDeviceConfigProperty.builder()
                 .volumeSpecification(volumeSpecificationProperty)
