@@ -141,7 +141,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
         new SketchesSerDeToS3(schema).saveToHadoopFS(new Path(path.replace(".parquet", ".sketches")), new Sketches(sketches), conf);
         Instant finishTime = Instant.now();
         long durationInSeconds = Duration.between(startTime, finishTime).getSeconds();
-        double rate = numRecords / durationInSeconds;
+        double rate = numRecords / (double) durationInSeconds;
         LOGGER.info("Finished writing {} records to file {} in {} seconds (rate was {})",
                 numRecords, path, durationInSeconds, rate);
     }
