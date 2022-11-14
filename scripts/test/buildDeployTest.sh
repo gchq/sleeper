@@ -78,7 +78,7 @@ echo "--------------------------------------------------------------------------
 echo "Writing Random Data"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.ingest.RunWriteRandomDataTaskOnECS "${INSTANCE_ID}" system-test
+sleeper.systemtest.ingest.RunWriteRandomDataTaskOnECS "${INSTANCE_ID}" "${TABLE_NAME}"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
