@@ -26,7 +26,7 @@ RUN npm install -g aws-cdk
 
 # Install AWS CLI
 WORKDIR /aws
-RUN apt-get install -y unzip
+RUN apt-get install -y unzip less
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 RUN unzip awscliv2.zip
 RUN ./aws/install
