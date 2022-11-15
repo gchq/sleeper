@@ -89,6 +89,7 @@ public class IngestStack extends NestedStack {
     private Queue ingestJobQueue;
     private Queue ingestDLQ;
     private final InstanceProperties instanceProperties;
+    private final IngestStatusStoreStack statusStore;
 
     public IngestStack(
             Construct scope,
@@ -99,7 +100,7 @@ public class IngestStack extends NestedStack {
             InstanceProperties instanceProperties) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
-
+        this.statusStore = IngestStatusStoreStack.from(scope, instanceProperties);
         // The ingest stack consists of the following components:
         //  - An SQS queue for the ingest jobs.
         //  - An ECS cluster, task definition, etc., for ingest jobs.
@@ -227,6 +228,7 @@ public class IngestStack extends NestedStack {
         dataBuckets.forEach(bucket -> bucket.grantReadWrite(taskDefinition.getTaskRole()));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDefinition.getTaskRole()));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadPartitionMetadata(taskDefinition.getTaskRole()));
+        statusStore.grantWriteJobEvent(taskDefinition.getTaskRole());
         ingestJobQueue.grantConsumeMessages(taskDefinition.getTaskRole());
         taskDefinition.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
@@ -287,7 +289,7 @@ public class IngestStack extends NestedStack {
         // Grant this function permission to query the queue for number of messages
         ingestJobQueue.grantSendMessages(handler);
         ingestJobQueue.grant(handler, "sqs:GetQueueAttributes");
-
+        statusStore.grantWriteJobEvent(handler);
         // Grant this function permission to query ECS for the number of tasks, etc
         PolicyStatement policyStatement = PolicyStatement.Builder
                 .create()

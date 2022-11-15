@@ -17,9 +17,46 @@
 package sleeper.cdk.stack;
 
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.ingest.status.DynamoDBIngestJobStatusFormat;
+import sleeper.ingest.status.DynamoDBIngestJobStatusStore;
+import software.amazon.awscdk.RemovalPolicy;
+import software.amazon.awscdk.services.dynamodb.Attribute;
+import software.amazon.awscdk.services.dynamodb.AttributeType;
+import software.amazon.awscdk.services.dynamodb.BillingMode;
+import software.amazon.awscdk.services.dynamodb.Table;
+import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
+import static sleeper.cdk.Utils.removalPolicy;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+
 public class DynamoDBIngestStatusStoreStack implements IngestStatusStoreStack {
-    public DynamoDBIngestStatusStoreStack(Construct scope, InstanceProperties properties) {
+    private final Table table;
+
+    public DynamoDBIngestStatusStoreStack(Construct scope, InstanceProperties instanceProperties) {
+        String instanceId = instanceProperties.get(ID);
+
+        RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
+
+        this.table = Table.Builder
+                .create(scope, "DynamoDBIngestJobStatusTable")
+                .tableName(DynamoDBIngestJobStatusStore.jobStatusTableName(instanceId))
+                .removalPolicy(removalPolicy)
+                .billingMode(BillingMode.PAY_PER_REQUEST)
+                .partitionKey(Attribute.builder()
+                        .name(DynamoDBIngestJobStatusFormat.JOB_ID)
+                        .type(AttributeType.STRING)
+                        .build())
+                .sortKey(Attribute.builder()
+                        .name(DynamoDBIngestJobStatusFormat.UPDATE_TIME)
+                        .type(AttributeType.NUMBER)
+                        .build())
+                .pointInTimeRecovery(false)
+                .build();
+    }
+
+    @Override
+    public void grantWriteJobEvent(IGrantable grantee) {
+        table.grantWriteData(grantee);
     }
 }
