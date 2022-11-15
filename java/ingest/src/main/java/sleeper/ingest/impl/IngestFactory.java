@@ -133,19 +133,18 @@ public class IngestFactory {
 
     public IngestResult ingestRecords(TableProperties tableProperties, List<Record> records)
             throws StateStoreException, IteratorException, IOException {
-        IngestRecords ingestRecords;
         if (instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT).equals("arrow")) {
             try (BufferAllocator buffer = new RootAllocator(instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES) +
                     instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))) {
-                ingestRecords = new IngestRecords(createIngestCoordinator(tableProperties, buffer));
-                for (Record record : records) {
-                    ingestRecords.write(record);
-                }
-                return ingestRecords.close();
+                return performIngest(new IngestRecords(createIngestCoordinator(tableProperties, buffer)), records);
             }
         } else {
-            ingestRecords = new IngestRecords(createIngestCoordinator(tableProperties));
+            return performIngest(new IngestRecords(createIngestCoordinator(tableProperties)), records);
         }
+    }
+
+    private IngestResult performIngest(IngestRecords ingestRecords, List<Record> records)
+            throws IteratorException, StateStoreException, IOException {
         for (Record record : records) {
             ingestRecords.write(record);
         }
