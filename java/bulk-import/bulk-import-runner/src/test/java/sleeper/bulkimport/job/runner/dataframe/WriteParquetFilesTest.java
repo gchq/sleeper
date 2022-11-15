@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.job.runner;
+package sleeper.bulkimport.job.runner.dataframe;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetReader;
@@ -22,6 +22,7 @@ import org.apache.spark.sql.RowFactory;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
@@ -112,8 +113,7 @@ public class WriteParquetFilesTest {
                         fileInfo -> fileInfo.getLong(2),
                         fileInfo -> readRecords(fileInfo.getString(1), schema))
                 .containsExactly(
-                        tuple(2L,
-                                Arrays.asList(expectedRecord1, expectedRecord2)));
+                        tuple(2L, Arrays.asList(expectedRecord1, expectedRecord2)));
     }
 
     @Test
@@ -152,10 +152,8 @@ public class WriteParquetFilesTest {
                         fileInfo -> fileInfo.getLong(2),
                         fileInfo -> readRecords(fileInfo.getString(1), schema))
                 .containsExactly(
-                        tuple("a", 1L,
-                                Collections.singletonList(expectedRecord1)),
-                        tuple("b", 1L,
-                                Collections.singletonList(expectedRecord2)));
+                        tuple("a", 1L, Collections.singletonList(expectedRecord1)),
+                        tuple("b", 1L, Collections.singletonList(expectedRecord2)));
     }
 
     private Schema getSchema() {
