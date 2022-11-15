@@ -27,7 +27,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
 
     private final AmazonDynamoDB dynamoDB;
     private final String statusTableName;
-    private Long timeToLive;
+    private long timeToLive;
 
     private DynamoDBIngestJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         this.dynamoDB = dynamoDB;
