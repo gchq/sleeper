@@ -205,7 +205,9 @@ public class IngestJobQueueConsumerFullIT {
                 .flatMap(List::stream)
                 .sorted(new RecordComparator(recordListAndSchema.sleeperSchema))
                 .collect(Collectors.toList());
-        IngestJob ingestJob = new IngestJob(TEST_TABLE_NAME, "id", files);
+        IngestJob ingestJob = IngestJob.builder()
+                .tableName(TEST_TABLE_NAME).id("id").files(files)
+                .build();
         AWS_EXTERNAL_RESOURCE.getSqsClient()
                 .sendMessage(getInstanceProperties().get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(ingestJob));
         consumeAndVerify(recordListAndSchema.sleeperSchema, doubledRecords, 1);
@@ -222,7 +224,9 @@ public class IngestJobQueueConsumerFullIT {
                 .mapToObj(jobNo -> {
                     try {
                         List<String> files = writeParquetFilesForIngest(recordListAndSchema, "job-" + jobNo, noOfFilesPerJob);
-                        return new IngestJob(TEST_TABLE_NAME, UUID.randomUUID().toString(), files);
+                        return IngestJob.builder()
+                                .tableName(TEST_TABLE_NAME).id(UUID.randomUUID().toString()).files(files)
+                                .build();
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }

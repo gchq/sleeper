@@ -236,7 +236,9 @@ public class IngestJobRunnerIT {
                 .flatMap(List::stream)
                 .sorted(new RecordComparator(recordListAndSchema.sleeperSchema))
                 .collect(Collectors.toList());
-        IngestJob ingestJob = new IngestJob(TEST_TABLE_NAME, "id", files);
+        IngestJob ingestJob = IngestJob.builder()
+                .tableName(TEST_TABLE_NAME).id("id").files(files)
+                .build();
         consumeAndVerify(recordListAndSchema.sleeperSchema, ingestJob, doubledRecords, 1);
     }
 
@@ -252,7 +254,9 @@ public class IngestJobRunnerIT {
         URI uri2 = new URI(fileSystemPrefix + getIngestBucket() + "/file-2.csv");
         FileSystem.get(uri2, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration()).createNewFile(new Path(uri2));
         files.add(getIngestBucket() + "/file-2.csv");
-        IngestJob ingestJob = new IngestJob(TEST_TABLE_NAME, "id", files);
+        IngestJob ingestJob = IngestJob.builder()
+                .tableName(TEST_TABLE_NAME).id("id").files(files)
+                .build();
         consumeAndVerify(recordListAndSchema.sleeperSchema, ingestJob, recordListAndSchema.recordList, 1);
     }
 
@@ -279,7 +283,9 @@ public class IngestJobRunnerIT {
                 .flatMap(List::stream)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
-        IngestJob ingestJob = new IngestJob(TEST_TABLE_NAME, "id", files);
+        IngestJob ingestJob = IngestJob.builder()
+                .tableName(TEST_TABLE_NAME).id("id").files(files)
+                .build();
         consumeAndVerify(recordListAndSchema.sleeperSchema, ingestJob, expectedRecords, 1);
     }
 }

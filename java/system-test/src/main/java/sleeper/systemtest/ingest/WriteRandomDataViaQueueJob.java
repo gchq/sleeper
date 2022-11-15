@@ -116,7 +116,11 @@ public class WriteRandomDataViaQueueJob extends WriteRandomDataJob {
 
         SendMessageRequest sendMessageRequest;
         if (ingestMode.equalsIgnoreCase(IngestMode.QUEUE.name())) {
-            IngestJob ingestJob = new IngestJob(getTableProperties().get(TABLE_NAME), UUID.randomUUID().toString(), Collections.singletonList(filename));
+            IngestJob ingestJob = IngestJob.builder()
+                    .tableName(getTableProperties().get(TABLE_NAME))
+                    .id(UUID.randomUUID().toString())
+                    .files(Collections.singletonList(filename))
+                    .build();
             String jsonJob = new IngestJobSerDe().toJson(ingestJob);
             LOGGER.debug("Sending message to ingest queue ({})", jsonJob);
             sendMessageRequest = new SendMessageRequest()

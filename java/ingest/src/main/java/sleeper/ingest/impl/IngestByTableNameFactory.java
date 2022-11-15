@@ -25,12 +25,12 @@ import sleeper.statestore.StateStoreException;
 import java.io.IOException;
 import java.util.Iterator;
 
-public class AllTablesIngestFactory {
+public class IngestByTableNameFactory {
 
     private final IngestFactory factory;
     private final TablePropertiesProvider tablePropertiesProvider;
 
-    AllTablesIngestFactory(IngestFactory factory, TablePropertiesProvider tablePropertiesProvider) {
+    IngestByTableNameFactory(IngestFactory factory, TablePropertiesProvider tablePropertiesProvider) {
         this.factory = factory;
         this.tablePropertiesProvider = tablePropertiesProvider;
     }
