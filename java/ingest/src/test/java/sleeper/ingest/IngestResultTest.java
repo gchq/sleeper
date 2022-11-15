@@ -19,7 +19,6 @@ package sleeper.ingest;
 import org.junit.Test;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.IteratorException;
-import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestFactory;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
@@ -41,15 +40,11 @@ public class IngestResultTest extends IngestRecordsTestBase {
         IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .build();
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
 
         // When
-        for (Record record : getRecords()) {
-            ingestRecords.write(record);
-        }
+        IngestResult result = factory.ingestRecords(tableProperties, getRecords());
 
         // Then
-        IngestResult result = ingestRecords.close();
         assertThat(result.getNumberOfRecords())
                 .isEqualTo(2L);
     }
@@ -62,15 +57,11 @@ public class IngestResultTest extends IngestRecordsTestBase {
         IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .build();
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
 
         // When
-        for (Record record : getRecords()) {
-            ingestRecords.write(record);
-        }
+        IngestResult result = factory.ingestRecords(tableProperties, getRecords());
 
         // Then
-        IngestResult result = ingestRecords.close();
         assertThat(result.getFileInfoList())
                 .containsExactlyInAnyOrderElementsOf(stateStore.getActiveFiles());
     }

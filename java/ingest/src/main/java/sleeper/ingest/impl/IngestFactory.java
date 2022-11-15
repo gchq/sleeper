@@ -17,6 +17,7 @@
 package sleeper.ingest.impl;
 
 import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.memory.RootAllocator;
 import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
@@ -24,6 +25,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
+import sleeper.ingest.IngestRecords;
 import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.ingest.IngestResult;
 import sleeper.statestore.StateStoreException;
@@ -32,6 +34,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -75,6 +78,10 @@ public class IngestFactory {
     }
 
     public IngestCoordinator<Record> createIngestCoordinator(TableProperties tableProperties) {
+        return createIngestCoordinator(tableProperties, bufferAllocator);
+    }
+
+    public IngestCoordinator<Record> createIngestCoordinator(TableProperties tableProperties, BufferAllocator internalBufferAllocator) {
         S3AsyncClient internalS3AsyncClient =
                 instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT).equals("async") ?
                         ((s3AsyncClient == null) ? S3AsyncClient.create() : s3AsyncClient) :
@@ -97,7 +104,7 @@ public class IngestFactory {
                         .stateStore(stateStoreProvider.getStateStore(tableProperties))
                         .hadoopConfiguration(hadoopConfiguration)
                         .backedByArrow()
-                        .arrowBufferAllocator(bufferAllocator)
+                        .arrowBufferAllocator(internalBufferAllocator)
                         .maxNoOfRecordsToWriteToArrowFileAtOnce(instanceProperties.getInt(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS))
                         .workingArrowBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES))
                         .minBatchArrowBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
@@ -124,8 +131,35 @@ public class IngestFactory {
         }
     }
 
+    public IngestResult ingestRecords(TableProperties tableProperties, List<Record> records)
+            throws StateStoreException, IteratorException, IOException {
+        IngestRecords ingestRecords;
+        if (instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT).equals("arrow")) {
+            try (BufferAllocator buffer = new RootAllocator(instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES) +
+                    instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))) {
+                ingestRecords = new IngestRecords(createIngestCoordinator(tableProperties, buffer));
+                for (Record record : records) {
+                    ingestRecords.write(record);
+                }
+                return ingestRecords.close();
+            }
+        } else {
+            ingestRecords = new IngestRecords(createIngestCoordinator(tableProperties));
+        }
+        for (Record record : records) {
+            ingestRecords.write(record);
+        }
+        return ingestRecords.close();
+    }
+
     public IngestResult ingestRecordsFromIterator(TableProperties tableProperties, Iterator<Record> recordIterator)
             throws StateStoreException, IteratorException, IOException {
+        if (instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT).equals("arrow")) {
+            try (BufferAllocator buffer = new RootAllocator(instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES) +
+                    instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))) {
+                return new IngestRecordsFromIterator(createIngestCoordinator(tableProperties, buffer), recordIterator).write();
+            }
+        }
         return new IngestRecordsFromIterator(createIngestCoordinator(tableProperties), recordIterator).write();
     }
 

@@ -99,12 +99,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .build();
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
-        ingestRecords.init();
-        for (Record record : getRecords()) {
-            ingestRecords.write(record);
-        }
-        long numWritten = ingestRecords.close().getNumberOfRecords();
+        long numWritten = factory.ingestRecords(tableProperties, getRecords()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -172,12 +167,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .build();
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
-        ingestRecords.init();
-        for (Record record : getRecordsByteArrayKey()) {
-            ingestRecords.write(record);
-        }
-        long numWritten = ingestRecords.close().getNumberOfRecords();
+        long numWritten = factory.ingestRecords(tableProperties, getRecordsByteArrayKey()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -252,12 +242,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .build();
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
-        ingestRecords.init();
-        for (Record record : getRecords2DimByteArrayKey()) {
-            ingestRecords.write(record);
-        }
-        long numWritten = ingestRecords.close().getNumberOfRecords();
+        long numWritten = factory.ingestRecords(tableProperties, getRecords2DimByteArrayKey()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -377,14 +362,9 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .build();
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
-        ingestRecords.init();
         //  - When sorted the records in getRecordsOscillateBetweenTwoPartitions
         //  appear in partition 1 then partition 2 then partition 1, then 2, etc
-        for (Record record : getRecordsOscillatingBetween2Partitions()) {
-            ingestRecords.write(record);
-        }
-        long numWritten = ingestRecords.close().getNumberOfRecords();
+        long numWritten = factory.ingestRecords(tableProperties, getRecordsOscillatingBetween2Partitions()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -463,12 +443,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .build();
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
-        ingestRecords.init();
-        for (Record record : getRecordsInFirstPartitionOnly()) {
-            ingestRecords.write(record);
-        }
-        long numWritten = ingestRecords.close().getNumberOfRecords();
+        long numWritten = factory.ingestRecords(tableProperties, getRecordsInFirstPartitionOnly()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -508,12 +483,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .build();
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
-        ingestRecords.init();
-        for (Record record : records) {
-            ingestRecords.write(record);
-        }
-        long numWritten = ingestRecords.close().getNumberOfRecords();
+        long numWritten = factory.ingestRecords(tableProperties, records).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -567,12 +537,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .build();
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
-        ingestRecords.init();
-        for (Record record : records) {
-            ingestRecords.write(record);
-        }
-        long numWritten = ingestRecords.close().getNumberOfRecords();
+        long numWritten = factory.ingestRecords(tableProperties, records).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -692,12 +657,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .build();
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
-        ingestRecords.init();
-        for (Record record : records) {
-            ingestRecords.write(record);
-        }
-        long numWritten = ingestRecords.close().getNumberOfRecords();
+        long numWritten = factory.ingestRecords(tableProperties, records).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -787,12 +747,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .build();
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
-        ingestRecords.init();
-        for (Record record : getUnsortedRecords()) {
-            ingestRecords.write(record);
-        }
-        long numWritten = ingestRecords.close().getNumberOfRecords();
+        long numWritten = factory.ingestRecords(tableProperties, getUnsortedRecords()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -841,12 +796,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .build();
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
-        ingestRecords.init();
-        for (Record record : getRecordsForAggregationIteratorTest()) {
-            ingestRecords.write(record);
-        }
-        long numWritten = ingestRecords.close().getNumberOfRecords();
+        long numWritten = factory.ingestRecords(tableProperties, getRecordsForAggregationIteratorTest()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written

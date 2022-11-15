@@ -25,6 +25,7 @@ import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,12 +44,7 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .build();
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
-        ingestRecords.init();
-        for (Record record : getRecords()) {
-            ingestRecords.write(record);
-        }
-        long numWritten = ingestRecords.close().getNumberOfRecords();
+        long numWritten = factory.ingestRecords(tableProperties, getRecords()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -87,9 +83,7 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         IngestFactory factory = defaultFactoryBuilder(inputFolderName, instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .build();
-        IngestRecords ingestRecords = new IngestRecords(factory.createIngestCoordinator(tableProperties));
-        ingestRecords.init();
-        long numWritten = ingestRecords.close().getNumberOfRecords();
+        long numWritten = factory.ingestRecords(tableProperties, Collections.emptyList()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
