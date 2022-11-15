@@ -174,11 +174,9 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                 .localDir(ingestLocalWorkingDirectory)
                 .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
                 .s3AsyncClient(AWS_EXTERNAL_RESOURCE.getS3AsyncClient())
-                .bufferAllocator(bufferAllocator)
                 .instanceProperties(instanceProperties)
                 .build();
-        IngestCoordinator<Record> ingestCoordinator = factory.createIngestCoordinator(tableProperties);
-
+        IngestCoordinator<Record> ingestCoordinator = factory.createIngestCoordinator(tableProperties, bufferAllocator);
         try {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
