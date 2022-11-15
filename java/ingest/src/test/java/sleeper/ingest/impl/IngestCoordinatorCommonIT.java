@@ -167,7 +167,6 @@ public class IngestCoordinatorCommonIT {
             instanceProperties.setNumber(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS, 128);
             instanceProperties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 16 * 1024 * 1024L);
             instanceProperties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 16 * 1024 * 1024L);
-            instanceProperties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 16 * 1024 * 1024L);
             TableProperties tableProperties = createTableProperties(instanceProperties, sleeperSchema, "");
             tableProperties.set(ITERATOR_CLASS_NAME, sleeperIteratorClassName);
             String objectFactoryLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
@@ -199,7 +198,6 @@ public class IngestCoordinatorCommonIT {
             instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 16 * 1024 * 1024L);
             instanceProperties.setNumber(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS, 10);
             instanceProperties.setNumber(ARROW_INGEST_WORKING_BUFFER_BYTES, 16 * 1024 * 1024L);
-            instanceProperties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 16 * 1024 * 1024L);
             instanceProperties.setNumber(ARROW_INGEST_BATCH_BUFFER_BYTES, 16 * 1024 * 1024L);
             TableProperties tableProperties = createTableProperties(instanceProperties, sleeperSchema, s3BucketName);
             tableProperties.set(ITERATOR_CLASS_NAME, sleeperIteratorClassName);
