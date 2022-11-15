@@ -15,8 +15,6 @@
  */
 package sleeper.ingest.job;
 
-import org.apache.arrow.memory.BufferAllocator;
-import org.apache.arrow.memory.RootAllocator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
@@ -117,16 +115,13 @@ public class IngestJobRunner {
             }
         }
         // Run the ingest
-        try (CloseableIterator<Record> recordIterator = new ConcatenatingIterator(inputIterators);
-             BufferAllocator bufferAllocator = new RootAllocator()) {
-
+        try (CloseableIterator<Record> recordIterator = new ConcatenatingIterator(inputIterators)) {
             IngestByTableNameFactory factory = IngestFactory.builder()
                     .objectFactory(objectFactory)
                     .stateStoreProvider(stateStoreProvider)
                     .localDir(localDir)
                     .s3AsyncClient(s3AsyncClient)
                     .hadoopConfiguration(hadoopConfiguration)
-                    .bufferAllocator(bufferAllocator)
                     .instanceProperties(instanceProperties)
                     .build().withTablePropertiesProvider(tablePropertiesProvider);
             IngestResult result = factory.ingestRecordsFromIterator(job.getTableName(), recordIterator);
