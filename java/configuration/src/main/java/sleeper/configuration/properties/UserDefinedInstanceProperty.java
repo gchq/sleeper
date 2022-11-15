@@ -78,7 +78,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     ARROW_INGEST_MAX_LOCAL_STORE_BYTES("sleeper.ingest.arrow.max.local.store.bytes", "17179869184"),                // 16G
     ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS("sleeper.ingest.arrow.max.single.write.to.file.records", "1024"), // 1K
 
-    // State Store
+    // Status Store
     INGEST_STATUS_STORE_ENABLED("sleeper.ingest.status.store.enabled", "true"),
     INGEST_JOB_STATUS_TTL_IN_SECONDS("sleeper.ingest.job.status.ttl", "604800", Utils::isPositiveInteger), // Default is 1 week
 
