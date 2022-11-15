@@ -17,6 +17,10 @@
 package sleeper.ingest.status;
 
 public class DynamoDBIngestJobStatusFormat {
+
+    private DynamoDBIngestJobStatusFormat() {
+    }
+
     public static final String JOB_ID = "JobId";
     public static final String UPDATE_TIME = "UpdateTime";
 }

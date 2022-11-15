@@ -33,6 +33,6 @@ public interface IngestJobStatusStore {
     }
 
     default void jobFinished(IngestJob job) {
-        
+
     }
 }
