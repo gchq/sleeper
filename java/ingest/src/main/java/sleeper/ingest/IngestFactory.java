@@ -44,8 +44,17 @@ public class IngestFactory {
         objectFactory = Objects.requireNonNull(builder.objectFactory, "objectFactory must not be null");
         localDir = Objects.requireNonNull(builder.localDir, "localDir must not be null");
         stateStoreProvider = Objects.requireNonNull(builder.stateStoreProvider, "stateStoreProvider must not be null");
-        hadoopConfiguration = Objects.requireNonNull(builder.hadoopConfiguration, "hadoopConfiguration must not be null");
         instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
+        if (builder.hadoopConfiguration == null) {
+            hadoopConfiguration = defaultHadoopConfiguration();
+        } else {
+            hadoopConfiguration = builder.hadoopConfiguration;
+        }
+    }
+
+    public IngestResult ingestFromRecordIterator(TableProperties tableProperties, CloseableIterator<Record> recordIterator)
+            throws StateStoreException, IteratorException, IOException {
+        return ingestFromRecordIterator(tableProperties, null, recordIterator);
     }
 
     public IngestResult ingestFromRecordIterator(
@@ -66,6 +75,18 @@ public class IngestFactory {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Create a simple default Hadoop configuration which may be used if no other configuration is provided.
+     *
+     * @return The Hadoop configuration
+     */
+    private static Configuration defaultHadoopConfiguration() {
+        Configuration conf = new Configuration();
+        conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
+        conf.set("fs.s3a.fast.upload", "true");
+        return conf;
     }
 
     public static final class Builder {

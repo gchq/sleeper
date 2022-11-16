@@ -209,7 +209,7 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
      *
      * @return The Hadoop configuration
      */
-    private static Configuration defaultHadoopConfiguration() {
+    static Configuration defaultHadoopConfiguration() {
         Configuration conf = new Configuration();
         conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
         conf.set("fs.s3a.fast.upload", "true");
