@@ -33,6 +33,7 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.getIntAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
+import static sleeper.dynamodb.tools.DynamoDBUtils.EXPIRY_DATE;
 
 public class DynamoDBCompactionTaskStatusFormat {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskStatusFormat.class);
@@ -51,7 +52,6 @@ public class DynamoDBCompactionTaskStatusFormat {
     public static final String LINES_WRITTEN = "LinesWritten";
     public static final String READ_RATE = "ReadRate";
     public static final String WRITE_RATE = "WriteRate";
-    public static final String EXPIRY_DATE = "ExpiryDate";
 
     public static final String STARTED = "started";
     public static final String FINISHED = "finished";

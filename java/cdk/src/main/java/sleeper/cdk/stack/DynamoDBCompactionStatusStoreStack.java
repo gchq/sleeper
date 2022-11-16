@@ -20,6 +20,7 @@ import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusFormat;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.dynamodb.tools.DynamoDBUtils;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
@@ -55,7 +56,7 @@ public class DynamoDBCompactionStatusStoreStack implements CompactionStatusStore
                         .name(DynamoDBCompactionJobStatusFormat.UPDATE_TIME)
                         .type(AttributeType.NUMBER)
                         .build())
-                .timeToLiveAttribute(DynamoDBCompactionJobStatusFormat.EXPIRY_DATE)
+                .timeToLiveAttribute(DynamoDBUtils.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
 
@@ -72,7 +73,7 @@ public class DynamoDBCompactionStatusStoreStack implements CompactionStatusStore
                         .name(DynamoDBCompactionTaskStatusFormat.UPDATE_TIME)
                         .type(AttributeType.NUMBER)
                         .build())
-                .timeToLiveAttribute(DynamoDBCompactionTaskStatusFormat.EXPIRY_DATE)
+                .timeToLiveAttribute(DynamoDBUtils.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
     }
