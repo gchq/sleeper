@@ -16,7 +16,6 @@
 package sleeper.ingest.impl;
 
 import org.apache.arrow.memory.BufferAllocator;
-import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
@@ -51,14 +50,10 @@ public class StandardIngestCoordinator {
     private static IngestCoordinator<Record> directWriteBackedByArrayList(
             Builder builder, BackedByArrayBuilder arrayBuilder, String filePathPrefix) {
         Supplier<RecordBatch<Record>> recordBatchFactoryFn = () -> new ArrayListRecordBatchAcceptingRecords(
-                builder.schema,
+                builder.parquetConfiguration,
                 builder.localWorkingDirectory,
                 arrayBuilder.maxNoOfRecordsInMemory,
-                arrayBuilder.maxNoOfRecordsInLocalStore,
-                builder.parquetRowGroupSize,
-                builder.parquetPageSize,
-                builder.parquetCompressionCodec,
-                builder.hadoopConfiguration);
+                arrayBuilder.maxNoOfRecordsInLocalStore);
         FileWriterConfiguration fileWriterConfiguration = new DirectFileWriterConfiguration(
                 builder.parquetConfiguration, filePathPrefix);
         return new IngestCoordinator<>(
@@ -130,14 +125,10 @@ public class StandardIngestCoordinator {
             Builder builder, BackedByArrayBuilder arrayBuilder, String s3BucketName, S3AsyncClient s3AsyncClient) {
         Supplier<RecordBatch<Record>> recordBatchFactoryFn = () ->
                 new ArrayListRecordBatchAcceptingRecords(
-                        builder.schema,
+                        builder.parquetConfiguration,
                         builder.localWorkingDirectory,
                         arrayBuilder.maxNoOfRecordsInMemory,
-                        arrayBuilder.maxNoOfRecordsInLocalStore,
-                        builder.parquetRowGroupSize,
-                        builder.parquetPageSize,
-                        builder.parquetCompressionCodec,
-                        builder.hadoopConfiguration);
+                        arrayBuilder.maxNoOfRecordsInLocalStore);
         FileWriterConfiguration fileWriterConfiguration = AsyncS3FileWriterConfiguration.builder()
                 .parquetConfiguration(builder.parquetConfiguration)
                 .s3AsyncClient(s3AsyncClient).s3BucketName(s3BucketName)
@@ -292,15 +283,11 @@ public class StandardIngestCoordinator {
         private ObjectFactory objectFactory;
         private String localWorkingDirectory;
         private ParquetConfiguration parquetConfiguration;
-        private int parquetRowGroupSize;
-        private int parquetPageSize;
-        private String parquetCompressionCodec;
         private StateStore stateStore;
         private Schema schema;
         private String iteratorClassName;
         private String iteratorConfig;
         private int ingestPartitionRefreshFrequencyInSeconds;
-        private Configuration hadoopConfiguration;
 
         private Builder() {
         }
@@ -315,15 +302,11 @@ public class StandardIngestCoordinator {
                             .parquetPageSize(ingestProperties.getPageSize())
                             .hadoopConfiguration(ingestProperties.getHadoopConfiguration())
                             .build())
-                    .parquetRowGroupSize(ingestProperties.getRowGroupSize())
-                    .parquetPageSize(ingestProperties.getPageSize())
                     .stateStore(ingestProperties.getStateStore())
                     .schema(ingestProperties.getSchema())
-                    .parquetCompressionCodec(ingestProperties.getCompressionCodec())
                     .iteratorClassName(ingestProperties.getIteratorClassName())
                     .iteratorConfig(ingestProperties.getIteratorConfig())
-                    .ingestPartitionRefreshFrequencyInSeconds(ingestProperties.getIngestPartitionRefreshFrequencyInSecond())
-                    .hadoopConfiguration(ingestProperties.getHadoopConfiguration());
+                    .ingestPartitionRefreshFrequencyInSeconds(ingestProperties.getIngestPartitionRefreshFrequencyInSecond());
         }
 
         public Builder objectFactory(ObjectFactory objectFactory) {
@@ -338,21 +321,6 @@ public class StandardIngestCoordinator {
 
         public Builder parquetConfiguration(ParquetConfiguration parquetConfiguration) {
             this.parquetConfiguration = parquetConfiguration;
-            return this;
-        }
-
-        public Builder parquetRowGroupSize(int parquetRowGroupSize) {
-            this.parquetRowGroupSize = parquetRowGroupSize;
-            return this;
-        }
-
-        public Builder parquetPageSize(int parquetPageSize) {
-            this.parquetPageSize = parquetPageSize;
-            return this;
-        }
-
-        public Builder parquetCompressionCodec(String parquetCompressionCodec) {
-            this.parquetCompressionCodec = parquetCompressionCodec;
             return this;
         }
 
@@ -378,11 +346,6 @@ public class StandardIngestCoordinator {
 
         public Builder ingestPartitionRefreshFrequencyInSeconds(int ingestPartitionRefreshFrequencyInSeconds) {
             this.ingestPartitionRefreshFrequencyInSeconds = ingestPartitionRefreshFrequencyInSeconds;
-            return this;
-        }
-
-        public Builder hadoopConfiguration(Configuration hadoopConfiguration) {
-            this.hadoopConfiguration = hadoopConfiguration;
             return this;
         }
 

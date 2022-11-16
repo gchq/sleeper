@@ -65,11 +65,12 @@ public class ParquetConfiguration {
     }
 
     /**
-     * Create a Parquet writer to write Records to the named file
+     * Create a {@link ParquetWriter} to write {@link Record} objects using the parameter values supplied during
+     * construction. It is the responsibility of the caller to close the writer after use.
      *
      * @param outputFile The name of the Parquet file to write to
      * @return The {@link ParquetWriter} object
-     * @throws IOException -
+     * @throws IOException Thrown when the writer cannot be created
      */
     public ParquetWriter<Record> createParquetWriter(String outputFile) throws IOException {
         ParquetRecordWriter.Builder builder = new ParquetRecordWriter.Builder(new Path(outputFile),
