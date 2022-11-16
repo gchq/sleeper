@@ -20,4 +20,9 @@
 # You can then run that image like this:
 # ./runInDocker.sh sleeper
 
-docker run -it --rm -v /var/run/docker.sock:/var/run/docker.sock "$@"
+HOME_IN_IMAGE=/root
+
+docker run -it --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v "$HOME/.aws:$HOME_IN_IMAGE/.aws" \
+  "$@"
