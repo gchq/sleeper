@@ -21,7 +21,6 @@ import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.dynamodb.tools.DynamoDBUtils;
 
 import java.util.Arrays;
 
@@ -29,6 +28,7 @@ import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.JO
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 
 public class DynamoDBCompactionJobStatusStoreCreator {
@@ -45,6 +45,6 @@ public class DynamoDBCompactionJobStatusStoreCreator {
                 Arrays.asList(
                         new KeySchemaElement(JOB_ID, KeyType.HASH),
                         new KeySchemaElement(UPDATE_TIME, KeyType.RANGE)));
-        DynamoDBUtils.configureTimeToLive(dynamoDB, tableName);
+        configureTimeToLive(dynamoDB, tableName);
     }
 }
