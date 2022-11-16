@@ -22,6 +22,8 @@ import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.CreateTableResult;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.ResourceInUseException;
+import com.amazonaws.services.dynamodbv2.model.TimeToLiveSpecification;
+import com.amazonaws.services.dynamodbv2.model.UpdateTimeToLiveRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +31,7 @@ import java.util.List;
 
 public class DynamoDBUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBUtils.class);
+    public static final String EXPIRY_DATE = "ExpiryDate";
 
     private DynamoDBUtils() {
     }
@@ -58,5 +61,16 @@ public class DynamoDBUtils {
                 throw e;
             }
         }
+    }
+    
+    public static void configureTimeToLive(AmazonDynamoDB dynamoDB, String tableName) {
+        dynamoDB.updateTimeToLive(new UpdateTimeToLiveRequest()
+                .withTableName(tableName)
+                .withTimeToLiveSpecification(
+                        new TimeToLiveSpecification()
+                                .withEnabled(true)
+                                .withAttributeName(EXPIRY_DATE)
+                ));
+        LOGGER.info("Configured TTL on field {}", EXPIRY_DATE);
     }
 }
