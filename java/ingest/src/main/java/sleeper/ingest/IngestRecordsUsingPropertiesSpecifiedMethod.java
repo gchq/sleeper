@@ -97,9 +97,6 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
                 instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT).equals("async") ?
                         ((s3AsyncClient == null) ? S3AsyncClient.create() : s3AsyncClient) :
                         null;
-        // If the Hadoop configuration is null then create a default configuration
-        Configuration internalHadoopConfiguration = (hadoopConfiguration == null) ?
-                defaultHadoopConfiguration() : hadoopConfiguration;
         // If the record batch type is Arrow, and no buffer allocator is provided, then create a root allocator that is
         // large enough to hold both the working and batch buffers.
         // This approach does not allow the batch buffer to be shared between multiple writing threads.
@@ -110,7 +107,7 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
         }
         IngestProperties ingestProperties = createIngestProperties(objectFactory,
                 sleeperStateStore, instanceProperties, tableProperties, localWorkingDirectory,
-                internalHadoopConfiguration, sleeperIteratorClassName, sleeperIteratorConfig);
+                hadoopConfiguration, sleeperIteratorClassName, sleeperIteratorConfig);
         try (BufferAllocator arrowBufferAllocator = (totalArrowBytesRequired > 0) ?
                 new RootAllocator(totalArrowBytesRequired) : null;
              IngestCoordinator<Record> ingestCoordinator = createIngestCoordinatorWithProperties(
@@ -202,17 +199,5 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
                 .maxInMemoryBatchSize(instanceProperties.getInt(MAX_IN_MEMORY_BATCH_SIZE))
                 .maxRecordsToWriteLocally(instanceProperties.getLong(MAX_RECORDS_TO_WRITE_LOCALLY))
                 .ingestPartitionRefreshFrequencyInSecond(instanceProperties.getInt(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS)).build();
-    }
-
-    /**
-     * Create a simple default Hadoop configuration which may be used if no other configuration is provided.
-     *
-     * @return The Hadoop configuration
-     */
-    static Configuration defaultHadoopConfiguration() {
-        Configuration conf = new Configuration();
-        conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
-        conf.set("fs.s3a.fast.upload", "true");
-        return conf;
     }
 }
