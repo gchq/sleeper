@@ -37,8 +37,8 @@ public class IngestFactory {
     private final ObjectFactory objectFactory;
     private final String localDir;
     private final StateStoreProvider stateStoreProvider;
-    private final Configuration hadoopConfiguration;
     private final InstanceProperties instanceProperties;
+    private final Configuration hadoopConfiguration;
 
     private IngestFactory(Builder builder) {
         objectFactory = Objects.requireNonNull(builder.objectFactory, "objectFactory must not be null");
@@ -93,10 +93,14 @@ public class IngestFactory {
         private ObjectFactory objectFactory;
         private String localDir;
         private StateStoreProvider stateStoreProvider;
-        private Configuration hadoopConfiguration;
         private InstanceProperties instanceProperties;
+        private Configuration hadoopConfiguration;
 
         private Builder() {
+        }
+
+        public static Builder builder() {
+            return new Builder();
         }
 
         public Builder objectFactory(ObjectFactory objectFactory) {
@@ -114,13 +118,13 @@ public class IngestFactory {
             return this;
         }
 
-        public Builder hadoopConfiguration(Configuration hadoopConfiguration) {
-            this.hadoopConfiguration = hadoopConfiguration;
+        public Builder instanceProperties(InstanceProperties instanceProperties) {
+            this.instanceProperties = instanceProperties;
             return this;
         }
 
-        public Builder instanceProperties(InstanceProperties instanceProperties) {
-            this.instanceProperties = instanceProperties;
+        public Builder hadoopConfiguration(Configuration hadoopConfiguration) {
+            this.hadoopConfiguration = hadoopConfiguration;
             return this;
         }
 
