@@ -45,9 +45,9 @@ public class UploadMultipleShardedSortedParquetFiles extends WriteRandomDataJob 
             StateStoreProvider stateStoreProvider) {
         super(objectFactory, properties, tableProperties, stateStoreProvider);
         this.ingestFactory = IngestFactory.builder()
-                .objectFactory(getClassFactory())
+                .objectFactory(objectFactory)
                 .localDir("/mnt/scratch")
-                .stateStoreProvider(getStateStoreProvider())
+                .stateStoreProvider(stateStoreProvider)
                 .instanceProperties(properties)
                 .build();
     }
