@@ -35,8 +35,8 @@ echo "TABLE_NAME: ${TABLE_NAME}"
 echo "GENERATED_DIR:${GENERATED_DIR}"
 echo "TEMPLATE_DIR: ${TEMPLATE_DIR}"
 
-rm -rf ${GENERATED_DIR}
-mkdir -p ${GENERATED_DIR}
+rm -rf "${GENERATED_DIR:?}"/*
+mkdir -p "${GENERATED_DIR}"
 
 #######################
 # Output Bucket Names #

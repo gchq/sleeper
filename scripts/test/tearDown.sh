@@ -68,7 +68,7 @@ echo "Removing the Jars bucket and docker containers"
 "${DEPLOY_SCRIPTS_DIR}/removeUploads.sh" "${INSTANCE_PROPERTIES}"
 
 echo "Removing generated files"
-rm -r "${GENERATED_DIR}"
+rm -r "${GENERATED_DIR:?}"/*
 
 echo "Successfully torn down"
 

@@ -24,6 +24,7 @@ HOME_IN_IMAGE=/root
 
 docker run -it --rm \
   -v /var/run/docker.sock:/var/run/docker.sock \
+  -v "$HOME/.sleeper/generated:/sleeper/generated" \
   -v "$HOME/.aws:$HOME_IN_IMAGE/.aws" \
   -e AWS_ACCESS_KEY_ID \
   -e AWS_SECRET_ACCESS_KEY \
