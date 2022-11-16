@@ -13,36 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.job.runner;
+package sleeper.bulkimport.job.runner.rdd;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.api.java.function.FlatMapFunction;
-import org.apache.spark.api.java.function.MapPartitionsFunction;
+import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.Row;
 import org.apache.spark.util.SerializableConfiguration;
+
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.List;
 
 /**
- * A {@link WriteParquetFiles} writes sorted Rows to a Parquet file. When it
- * comes across a {@link sleeper.core.record.Record} belonging to a different leaf partition
- * (denoted by the "partitionId" column), the Parquet file is flushed to the
- * file system along with its accompanying sketches file.
+ * A {@link WriteParquetFile} writes sorted Rows to a Parquet file.
  */
-public class WriteParquetFiles implements MapPartitionsFunction<Row, Row>, FlatMapFunction<Iterator<Row>, Row> {
+public class WriteParquetFile implements FlatMapFunction<Iterator<Row>, Row> {
     private static final long serialVersionUID = 1873341639622053831L;
 
     private final String instancePropertiesStr;
     private final String tablePropertiesStr;
     private final SerializableConfiguration serializableConf;
+    private final Broadcast<List<Partition>> broadcastPartitions;
 
-    public WriteParquetFiles(String instancePropertiesStr, String tablePropertiesStr, Configuration conf) {
+    public WriteParquetFile(String instancePropertiesStr, String tablePropertiesStr, Configuration conf, Broadcast<List<Partition>> broadcastPartitions) {
         this.instancePropertiesStr = instancePropertiesStr;
         this.tablePropertiesStr = tablePropertiesStr;
         this.serializableConf = new SerializableConfiguration(conf);
+        this.broadcastPartitions = broadcastPartitions;
     }
 
     @Override
@@ -53,6 +56,8 @@ public class WriteParquetFiles implements MapPartitionsFunction<Row, Row>, FlatM
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.loadFromString(tablePropertiesStr);
 
-        return new FileWritingIterator(rowIter, instanceProperties, tableProperties, serializableConf.value());
+        PartitionTree partitionTree = new PartitionTree(tableProperties.getSchema(), broadcastPartitions.getValue());
+
+        return new SingleFileWritingIterator(rowIter, instanceProperties, tableProperties, serializableConf.value(), partitionTree);
     }
 }
