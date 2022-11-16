@@ -14,7 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# The image should be built using a command like this:
+# The image should be built using commands like this:
+# ./build/buildForTest.sh
 # docker build -t sleeper .
 
 # You can then run that image like this:
