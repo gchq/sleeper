@@ -42,6 +42,10 @@ public class AsyncS3FileWriterConfiguration implements FileWriterConfiguration {
         }
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     @Override
     public PartitionFileWriter createPartitionFileWriter(Partition partition) {
         try {
@@ -70,10 +74,6 @@ public class AsyncS3FileWriterConfiguration implements FileWriterConfiguration {
         private String localWorkingDirectory;
 
         private Builder() {
-        }
-
-        public static Builder builder() {
-            return new Builder();
         }
 
         public Builder parquetWriterConfiguration(ParquetWriterConfiguration parquetWriterConfiguration) {

@@ -18,21 +18,19 @@ package sleeper.ingest.impl;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.IngestProperties;
-import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriter;
-import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriter;
-import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriter;
+import sleeper.ingest.impl.partitionfilewriter.AsyncS3FileWriterConfiguration;
+import sleeper.ingest.impl.partitionfilewriter.DirectFileWriterConfiguration;
+import sleeper.ingest.impl.partitionfilewriter.FileWriterConfiguration;
+import sleeper.ingest.impl.partitionfilewriter.ParquetWriterConfiguration;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchAcceptingRecords;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchAcceptingRecords;
 import sleeper.statestore.StateStore;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
-import java.io.IOException;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class StandardIngestCoordinator {
@@ -62,20 +60,8 @@ public class StandardIngestCoordinator {
                 builder.parquetPageSize,
                 builder.parquetCompressionCodec,
                 builder.hadoopConfiguration);
-        Function<Partition, PartitionFileWriter> partitionFileFactoryFn = partition -> {
-            try {
-                return new DirectPartitionFileWriter(
-                        builder.schema,
-                        partition,
-                        builder.parquetRowGroupSize,
-                        builder.parquetPageSize,
-                        builder.parquetCompressionCodec,
-                        builder.hadoopConfiguration,
-                        filePathPrefix);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        };
+        FileWriterConfiguration fileWriterConfiguration = new DirectFileWriterConfiguration(
+                builder.parquetWriterConfiguration, filePathPrefix);
         return new IngestCoordinator<>(
                 builder.objectFactory,
                 builder.stateStore,
@@ -84,7 +70,7 @@ public class StandardIngestCoordinator {
                 builder.iteratorConfig,
                 builder.ingestPartitionRefreshFrequencyInSeconds,
                 recordBatchFactoryFn,
-                partitionFileFactoryFn);
+                fileWriterConfiguration);
     }
 
     public static IngestCoordinator<Record> directWriteBackedByArrow(IngestProperties ingestProperties,
@@ -117,20 +103,8 @@ public class StandardIngestCoordinator {
                         arrowBuilder.maxBatchArrowBufferAllocatorBytes,
                         arrowBuilder.maxNoOfBytesToWriteLocally,
                         arrowBuilder.maxNoOfRecordsToWriteToArrowFileAtOnce);
-        Function<Partition, PartitionFileWriter> partitionFileFactoryFn = partition -> {
-            try {
-                return new DirectPartitionFileWriter(
-                        builder.schema,
-                        partition,
-                        builder.parquetRowGroupSize,
-                        builder.parquetPageSize,
-                        builder.parquetCompressionCodec,
-                        builder.hadoopConfiguration,
-                        filePathPrefix);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        };
+        FileWriterConfiguration fileWriterConfiguration = new DirectFileWriterConfiguration(
+                builder.parquetWriterConfiguration, filePathPrefix);
         return new IngestCoordinator<>(
                 builder.objectFactory,
                 builder.stateStore,
@@ -139,7 +113,7 @@ public class StandardIngestCoordinator {
                 builder.iteratorConfig,
                 builder.ingestPartitionRefreshFrequencyInSeconds,
                 recordBatchFactoryFn,
-                partitionFileFactoryFn);
+                fileWriterConfiguration);
     }
 
     public static IngestCoordinator<Record> asyncS3WriteBackedByArrayList(IngestProperties ingestProperties,
@@ -165,22 +139,11 @@ public class StandardIngestCoordinator {
                         builder.parquetPageSize,
                         builder.parquetCompressionCodec,
                         builder.hadoopConfiguration);
-        Function<Partition, PartitionFileWriter> partitionFileFactoryFn = partition -> {
-            try {
-                return new AsyncS3PartitionFileWriter(
-                        builder.schema,
-                        partition,
-                        builder.parquetRowGroupSize,
-                        builder.parquetPageSize,
-                        builder.parquetCompressionCodec,
-                        builder.hadoopConfiguration,
-                        s3BucketName,
-                        s3AsyncClient,
-                        builder.localWorkingDirectory);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        };
+        FileWriterConfiguration fileWriterConfiguration = AsyncS3FileWriterConfiguration.builder()
+                .parquetWriterConfiguration(builder.parquetWriterConfiguration)
+                .s3AsyncClient(s3AsyncClient).s3BucketName(s3BucketName)
+                .localWorkingDirectory(builder.localWorkingDirectory)
+                .build();
         return new IngestCoordinator<>(
                 builder.objectFactory,
                 builder.stateStore,
@@ -189,7 +152,7 @@ public class StandardIngestCoordinator {
                 builder.iteratorConfig,
                 builder.ingestPartitionRefreshFrequencyInSeconds,
                 recordBatchFactoryFn,
-                partitionFileFactoryFn);
+                fileWriterConfiguration);
     }
 
     public static IngestCoordinator<Record> asyncS3WriteBackedByArrow(IngestProperties ingestProperties,
@@ -224,22 +187,11 @@ public class StandardIngestCoordinator {
                         arrowBuilder.maxBatchArrowBufferAllocatorBytes,
                         arrowBuilder.maxNoOfBytesToWriteLocally,
                         arrowBuilder.maxNoOfRecordsToWriteToArrowFileAtOnce);
-        Function<Partition, PartitionFileWriter> partitionFileFactoryFn = partition -> {
-            try {
-                return new AsyncS3PartitionFileWriter(
-                        builder.schema,
-                        partition,
-                        builder.parquetRowGroupSize,
-                        builder.parquetPageSize,
-                        builder.parquetCompressionCodec,
-                        builder.hadoopConfiguration,
-                        s3BucketName,
-                        s3AsyncClient,
-                        builder.localWorkingDirectory);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        };
+        FileWriterConfiguration fileWriterConfiguration = AsyncS3FileWriterConfiguration.builder()
+                .parquetWriterConfiguration(builder.parquetWriterConfiguration)
+                .s3AsyncClient(s3AsyncClient).s3BucketName(s3BucketName)
+                .localWorkingDirectory(builder.localWorkingDirectory)
+                .build();
         return new IngestCoordinator<>(
                 builder.objectFactory,
                 builder.stateStore,
@@ -248,7 +200,7 @@ public class StandardIngestCoordinator {
                 builder.iteratorConfig,
                 builder.ingestPartitionRefreshFrequencyInSeconds,
                 recordBatchFactoryFn,
-                partitionFileFactoryFn);
+                fileWriterConfiguration);
     }
 
     public static class BackedByArrayBuilder implements BackedBuilder {
@@ -340,6 +292,7 @@ public class StandardIngestCoordinator {
     public static class Builder {
         private ObjectFactory objectFactory;
         private String localWorkingDirectory;
+        private ParquetWriterConfiguration parquetWriterConfiguration;
         private int parquetRowGroupSize;
         private int parquetPageSize;
         private String parquetCompressionCodec;
@@ -356,6 +309,13 @@ public class StandardIngestCoordinator {
         public Builder fromProperties(IngestProperties ingestProperties) {
             return this.objectFactory(ingestProperties.getObjectFactory())
                     .localWorkingDirectory(ingestProperties.getLocalDir())
+                    .parquetWriterConfiguration(ParquetWriterConfiguration.builder()
+                            .sleeperSchema(ingestProperties.getSchema())
+                            .parquetCompressionCodec(ingestProperties.getCompressionCodec())
+                            .parquetRowGroupSize(ingestProperties.getRowGroupSize())
+                            .parquetPageSize(ingestProperties.getPageSize())
+                            .hadoopConfiguration(ingestProperties.getHadoopConfiguration())
+                            .build())
                     .parquetRowGroupSize(ingestProperties.getRowGroupSize())
                     .parquetPageSize(ingestProperties.getPageSize())
                     .stateStore(ingestProperties.getStateStore())
@@ -374,6 +334,11 @@ public class StandardIngestCoordinator {
 
         public Builder localWorkingDirectory(String localWorkingDirectory) {
             this.localWorkingDirectory = localWorkingDirectory;
+            return this;
+        }
+
+        public Builder parquetWriterConfiguration(ParquetWriterConfiguration parquetWriterConfiguration) {
+            this.parquetWriterConfiguration = parquetWriterConfiguration;
             return this;
         }
 

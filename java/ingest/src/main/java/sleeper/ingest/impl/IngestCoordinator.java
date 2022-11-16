@@ -24,6 +24,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.ingest.impl.partitionfilewriter.FileWriterConfiguration;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriter;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
 import sleeper.statestore.FileInfo;
@@ -35,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -72,6 +72,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     private final String sleeperIteratorConfig;
     private final int ingestPartitionRefreshFrequencyInSeconds;
     private final Supplier<RecordBatch<INCOMINGDATATYPE>> createNewRecordBatchFn;
+    private final FileWriterConfiguration fileWriterConfiguration;
     private final IngesterIntoPartitions ingesterIntoPartitions;
 
     private final List<CompletableFuture<List<FileInfo>>> ingestFutures;
@@ -103,7 +104,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                              String sleeperIteratorConfig,
                              int ingestPartitionRefreshFrequencyInSeconds,
                              Supplier<RecordBatch<INCOMINGDATATYPE>> recordBatchFactoryFn,
-                             Function<Partition, PartitionFileWriter> partitionFileWriterFactoryFn) {
+                             FileWriterConfiguration fileWriterConfiguration) {
         LOGGER.info("Creating IngestCoordinator with schema of {}", sleeperSchema);
 
         // Supplied member variables
@@ -119,7 +120,8 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         this.ingestCoordinatorCreationTime = System.currentTimeMillis();
         this.lastPartitionsUpdateTime = PARTITIONS_NEVER_UPDATED_TIME;
         this.ingestFutures = new ArrayList<>();
-        this.ingesterIntoPartitions = new IngesterIntoPartitions(sleeperSchema, partitionFileWriterFactoryFn);
+        this.fileWriterConfiguration = fileWriterConfiguration;
+        this.ingesterIntoPartitions = new IngesterIntoPartitions(sleeperSchema, fileWriterConfiguration::createPartitionFileWriter);
         this.currentRecordBatch = this.createNewRecordBatchFn.get();
         this.isClosed = false;
     }
@@ -324,6 +326,11 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
             }
         }
         currentRecordBatch = null;
+        try {
+            fileWriterConfiguration.close();
+        } catch (Exception e) {
+            LOGGER.error("Failed to close fileWriterConfiguration", e);
+        }
     }
 
     /**
