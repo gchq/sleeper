@@ -17,7 +17,11 @@ package sleeper.ingest.impl.partitionfilewriter;
 
 import sleeper.core.partition.Partition;
 
-public interface FileWriterConfiguration {
+public interface FileWriterConfiguration extends AutoCloseable {
 
     PartitionFileWriter createPartitionFileWriter(Partition partition);
+
+    @Override
+    default void close() throws Exception {
+    }
 }

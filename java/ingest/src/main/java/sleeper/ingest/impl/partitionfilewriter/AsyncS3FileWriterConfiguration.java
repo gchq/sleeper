@@ -24,15 +24,22 @@ import java.util.Objects;
 public class AsyncS3FileWriterConfiguration implements FileWriterConfiguration {
 
     private final ParquetWriterConfiguration parquetWriterConfiguration;
-    private final S3AsyncClient s3AsyncClient;
     private final String s3BucketName;
     private final String localWorkingDirectory;
+    private final S3AsyncClient s3AsyncClient;
+    private final boolean closeS3AsyncClient;
 
     private AsyncS3FileWriterConfiguration(Builder builder) {
         parquetWriterConfiguration = Objects.requireNonNull(builder.parquetWriterConfiguration, "parquetWriterConfiguration must not be null");
-        s3AsyncClient = Objects.requireNonNull(builder.s3AsyncClient, "s3AsyncClient must not be null");
         s3BucketName = Objects.requireNonNull(builder.s3BucketName, "s3BucketName must not be null");
         localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
+        if (builder.s3AsyncClient != null) {
+            s3AsyncClient = builder.s3AsyncClient;
+            closeS3AsyncClient = false;
+        } else {
+            s3AsyncClient = S3AsyncClient.create();
+            closeS3AsyncClient = true;
+        }
     }
 
     @Override
@@ -46,6 +53,13 @@ public class AsyncS3FileWriterConfiguration implements FileWriterConfiguration {
                     localWorkingDirectory);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (closeS3AsyncClient) {
+            s3AsyncClient.close();
         }
     }
 
