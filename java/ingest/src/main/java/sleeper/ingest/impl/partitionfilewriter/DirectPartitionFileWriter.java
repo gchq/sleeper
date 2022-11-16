@@ -66,33 +66,14 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
      * org.apache.hadoop.fs.FileSystem#closeAll()} is called. This is strange behaviour and can cause errors which are difficult to
      * diagnose.
      *
-     * @param sleeperSchema           The Sleeper schema that the {@link Record} objects will comply with
-     * @param partition               The {@link Partition} that is to be written by this writer
-     * @param filePathPrefix          The prefix to apply to the partition files, such as 's3a://mybucket' or
-     *                                'file://mydirectory'
-     * @param parquetCompressionCodec -
-     * @param parquetRowGroupSize     -
-     * @param parquetPageSize         -
-     * @param hadoopConfiguration     The Hadoop configuration that is used to find the classes required to support the
-     *                                file system specified in the filePathPrefix
+     * @param partition                  The {@link Partition} that is to be written by this writer
+     * @param parquetWriterConfiguration Hadoop, schema and Parquet configuration for writing files. The Hadoop
+     *                                   configuration is used to find the classes required to support the file system
+     *                                   specified in the filePathPrefix.
+     * @param filePathPrefix             The prefix to apply to the partition files, such as 's3a://mybucket' or
+     *                                   'file://mydirectory'
      * @throws IOException -
      */
-    public DirectPartitionFileWriter(Schema sleeperSchema,
-                                     Partition partition,
-                                     int parquetRowGroupSize,
-                                     int parquetPageSize,
-                                     String parquetCompressionCodec,
-                                     Configuration hadoopConfiguration,
-                                     String filePathPrefix) throws IOException {
-        this(partition, ParquetWriterConfiguration.builder()
-                .sleeperSchema(sleeperSchema)
-                .parquetRowGroupSize(parquetRowGroupSize)
-                .parquetPageSize(parquetPageSize)
-                .parquetCompressionCodec(parquetCompressionCodec)
-                .hadoopConfiguration(hadoopConfiguration)
-                .build(), filePathPrefix);
-    }
-
     public DirectPartitionFileWriter(
             Partition partition,
             ParquetWriterConfiguration parquetWriterConfiguration,

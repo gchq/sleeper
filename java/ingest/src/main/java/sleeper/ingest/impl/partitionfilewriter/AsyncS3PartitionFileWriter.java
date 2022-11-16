@@ -87,35 +87,13 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * org.apache.hadoop.fs.FileSystem#closeAll()} is called. This is strange behaviour and can cause errors which are difficult to
      * diagnose.
      *
-     * @param sleeperSchema           The schema of the records in the partition
-     * @param partition               The partition to write to
-     * @param s3AsyncClient           The S3 client to use to perform the asynchronous upload
-     * @param localWorkingDirectory   The local directory to use to create temporary files
-     * @param s3BucketName            The S3 bucket to write to
-     * @param parquetCompressionCodec The compression codec to use
-     * @param parquetRowGroupSize     The row group size
-     * @param parquetPageSize         The page size
-     * @param hadoopConfiguration     The Hadoop configuration to use when writing the local Parquet partition file
+     * @param partition                  The partition to write to
+     * @param parquetWriterConfiguration Hadoop, schema and Parquet configuration for writing the local Parquet partition file
+     * @param s3AsyncClient              The S3 client to use to perform the asynchronous upload
+     * @param localWorkingDirectory      The local directory to use to create temporary files
+     * @param s3BucketName               The S3 bucket to write to
      * @throws IOException -
      */
-    public AsyncS3PartitionFileWriter(Schema sleeperSchema,
-                                      Partition partition,
-                                      int parquetRowGroupSize,
-                                      int parquetPageSize,
-                                      String parquetCompressionCodec,
-                                      Configuration hadoopConfiguration,
-                                      String s3BucketName,
-                                      S3AsyncClient s3AsyncClient,
-                                      String localWorkingDirectory) throws IOException {
-        this(partition, ParquetWriterConfiguration.builder()
-                .sleeperSchema(sleeperSchema)
-                .parquetRowGroupSize(parquetRowGroupSize)
-                .parquetPageSize(parquetPageSize)
-                .parquetCompressionCodec(parquetCompressionCodec)
-                .hadoopConfiguration(hadoopConfiguration)
-                .build(), s3BucketName, s3AsyncClient, localWorkingDirectory);
-    }
-
     public AsyncS3PartitionFileWriter(
             Partition partition,
             ParquetWriterConfiguration parquetWriterConfiguration,
