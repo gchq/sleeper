@@ -45,6 +45,7 @@ jobs:
         working-directory: ./java
       - name: Check rate limits
         id: rate-limit
+        if: ${{ always() }}
         working-directory: ./java/build
         run: |
           echo "remaining=$(mvn compile exec:java -q -Dexec.mainClass=sleeper.build.ratelimit.GetRemainingRateLimit \
