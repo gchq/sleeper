@@ -16,17 +16,18 @@
 package sleeper.ingest.impl.partitionfilewriter;
 
 import sleeper.core.partition.Partition;
+import sleeper.ingest.impl.ParquetConfiguration;
 
 import java.io.IOException;
 import java.util.Objects;
 
 public class DirectFileWriterConfiguration implements FileWriterConfiguration {
 
-    private final ParquetWriterConfiguration parquetWriterConfiguration;
+    private final ParquetConfiguration parquetConfiguration;
     private final String fileSystem;
 
-    public DirectFileWriterConfiguration(ParquetWriterConfiguration parquetWriterConfiguration, String fileSystem) {
-        this.parquetWriterConfiguration = Objects.requireNonNull(parquetWriterConfiguration, "parquetWriterConfiguration must not be null");
+    public DirectFileWriterConfiguration(ParquetConfiguration parquetConfiguration, String fileSystem) {
+        this.parquetConfiguration = Objects.requireNonNull(parquetConfiguration, "parquetWriterConfiguration must not be null");
         this.fileSystem = Objects.requireNonNull(fileSystem, "fileSystem must not be null");
     }
 
@@ -35,7 +36,7 @@ public class DirectFileWriterConfiguration implements FileWriterConfiguration {
         try {
             return new DirectPartitionFileWriter(
                     partition,
-                    parquetWriterConfiguration,
+                    parquetConfiguration,
                     fileSystem);
         } catch (IOException e) {
             throw new RuntimeException(e);

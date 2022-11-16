@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.impl.partitionfilewriter;
+package sleeper.ingest.impl;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -32,7 +32,7 @@ import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_C
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 
-public class ParquetWriterConfiguration {
+public class ParquetConfiguration {
 
     private final Schema sleeperSchema;
     private final String parquetCompressionCodec;
@@ -40,7 +40,7 @@ public class ParquetWriterConfiguration {
     private final int parquetPageSize;
     private final Configuration hadoopConfiguration;
 
-    private ParquetWriterConfiguration(Builder builder) {
+    private ParquetConfiguration(Builder builder) {
         sleeperSchema = Objects.requireNonNull(builder.sleeperSchema, "sleeperSchema must not be null");
         parquetCompressionCodec = Objects.requireNonNull(builder.parquetCompressionCodec, "parquetCompressionCodec must not be null");
         parquetRowGroupSize = builder.parquetRowGroupSize;
@@ -48,7 +48,7 @@ public class ParquetWriterConfiguration {
         hadoopConfiguration = Objects.requireNonNull(builder.hadoopConfiguration, "hadoopConfiguration must not be null");
     }
 
-    public static ParquetWriterConfiguration from(TableProperties tableProperties, Configuration hadoopConfiguration) {
+    public static ParquetConfiguration from(TableProperties tableProperties, Configuration hadoopConfiguration) {
         return builder().tableProperties(tableProperties).hadoopConfiguration(hadoopConfiguration).build();
     }
 
@@ -123,8 +123,8 @@ public class ParquetWriterConfiguration {
             return this;
         }
 
-        public ParquetWriterConfiguration build() {
-            return new ParquetWriterConfiguration(this);
+        public ParquetConfiguration build() {
+            return new ParquetConfiguration(this);
         }
     }
 }

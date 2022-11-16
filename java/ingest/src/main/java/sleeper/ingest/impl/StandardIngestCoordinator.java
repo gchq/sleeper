@@ -24,7 +24,6 @@ import sleeper.ingest.IngestProperties;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3FileWriterConfiguration;
 import sleeper.ingest.impl.partitionfilewriter.DirectFileWriterConfiguration;
 import sleeper.ingest.impl.partitionfilewriter.FileWriterConfiguration;
-import sleeper.ingest.impl.partitionfilewriter.ParquetWriterConfiguration;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchAcceptingRecords;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchAcceptingRecords;
@@ -61,7 +60,7 @@ public class StandardIngestCoordinator {
                 builder.parquetCompressionCodec,
                 builder.hadoopConfiguration);
         FileWriterConfiguration fileWriterConfiguration = new DirectFileWriterConfiguration(
-                builder.parquetWriterConfiguration, filePathPrefix);
+                builder.parquetConfiguration, filePathPrefix);
         return new IngestCoordinator<>(
                 builder.objectFactory,
                 builder.stateStore,
@@ -104,7 +103,7 @@ public class StandardIngestCoordinator {
                         arrowBuilder.maxNoOfBytesToWriteLocally,
                         arrowBuilder.maxNoOfRecordsToWriteToArrowFileAtOnce);
         FileWriterConfiguration fileWriterConfiguration = new DirectFileWriterConfiguration(
-                builder.parquetWriterConfiguration, filePathPrefix);
+                builder.parquetConfiguration, filePathPrefix);
         return new IngestCoordinator<>(
                 builder.objectFactory,
                 builder.stateStore,
@@ -140,7 +139,7 @@ public class StandardIngestCoordinator {
                         builder.parquetCompressionCodec,
                         builder.hadoopConfiguration);
         FileWriterConfiguration fileWriterConfiguration = AsyncS3FileWriterConfiguration.builder()
-                .parquetWriterConfiguration(builder.parquetWriterConfiguration)
+                .parquetConfiguration(builder.parquetConfiguration)
                 .s3AsyncClient(s3AsyncClient).s3BucketName(s3BucketName)
                 .localWorkingDirectory(builder.localWorkingDirectory)
                 .build();
@@ -188,7 +187,7 @@ public class StandardIngestCoordinator {
                         arrowBuilder.maxNoOfBytesToWriteLocally,
                         arrowBuilder.maxNoOfRecordsToWriteToArrowFileAtOnce);
         FileWriterConfiguration fileWriterConfiguration = AsyncS3FileWriterConfiguration.builder()
-                .parquetWriterConfiguration(builder.parquetWriterConfiguration)
+                .parquetConfiguration(builder.parquetConfiguration)
                 .s3AsyncClient(s3AsyncClient).s3BucketName(s3BucketName)
                 .localWorkingDirectory(builder.localWorkingDirectory)
                 .build();
@@ -292,7 +291,7 @@ public class StandardIngestCoordinator {
     public static class Builder {
         private ObjectFactory objectFactory;
         private String localWorkingDirectory;
-        private ParquetWriterConfiguration parquetWriterConfiguration;
+        private ParquetConfiguration parquetConfiguration;
         private int parquetRowGroupSize;
         private int parquetPageSize;
         private String parquetCompressionCodec;
@@ -309,7 +308,7 @@ public class StandardIngestCoordinator {
         public Builder fromProperties(IngestProperties ingestProperties) {
             return this.objectFactory(ingestProperties.getObjectFactory())
                     .localWorkingDirectory(ingestProperties.getLocalDir())
-                    .parquetWriterConfiguration(ParquetWriterConfiguration.builder()
+                    .parquetConfiguration(ParquetConfiguration.builder()
                             .sleeperSchema(ingestProperties.getSchema())
                             .parquetCompressionCodec(ingestProperties.getCompressionCodec())
                             .parquetRowGroupSize(ingestProperties.getRowGroupSize())
@@ -337,8 +336,8 @@ public class StandardIngestCoordinator {
             return this;
         }
 
-        public Builder parquetWriterConfiguration(ParquetWriterConfiguration parquetWriterConfiguration) {
-            this.parquetWriterConfiguration = parquetWriterConfiguration;
+        public Builder parquetConfiguration(ParquetConfiguration parquetConfiguration) {
+            this.parquetConfiguration = parquetConfiguration;
             return this;
         }
 

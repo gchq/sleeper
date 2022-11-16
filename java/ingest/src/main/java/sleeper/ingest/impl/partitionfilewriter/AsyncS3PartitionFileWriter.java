@@ -28,6 +28,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
+import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.statestore.FileInfo;
@@ -87,30 +88,30 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * org.apache.hadoop.fs.FileSystem#closeAll()} is called. This is strange behaviour and can cause errors which are difficult to
      * diagnose.
      *
-     * @param partition                  The partition to write to
-     * @param parquetWriterConfiguration Hadoop, schema and Parquet configuration for writing the local Parquet partition file
-     * @param s3AsyncClient              The S3 client to use to perform the asynchronous upload
-     * @param localWorkingDirectory      The local directory to use to create temporary files
-     * @param s3BucketName               The S3 bucket to write to
+     * @param partition             The partition to write to
+     * @param parquetConfiguration  Hadoop, schema and Parquet configuration for writing the local Parquet partition file
+     * @param s3AsyncClient         The S3 client to use to perform the asynchronous upload
+     * @param localWorkingDirectory The local directory to use to create temporary files
+     * @param s3BucketName          The S3 bucket to write to
      * @throws IOException -
      */
     public AsyncS3PartitionFileWriter(
             Partition partition,
-            ParquetWriterConfiguration parquetWriterConfiguration,
+            ParquetConfiguration parquetConfiguration,
             String s3BucketName,
             S3AsyncClient s3AsyncClient,
             String localWorkingDirectory) throws IOException {
         this.s3AsyncClient = requireNonNull(s3AsyncClient);
-        this.sleeperSchema = parquetWriterConfiguration.getSleeperSchema();
+        this.sleeperSchema = parquetConfiguration.getSleeperSchema();
         this.partition = requireNonNull(partition);
         this.s3BucketName = requireNonNull(s3BucketName);
-        this.hadoopConfiguration = parquetWriterConfiguration.getHadoopConfiguration();
+        this.hadoopConfiguration = parquetConfiguration.getHadoopConfiguration();
         UUID uuid = UUID.randomUUID();
         this.partitionParquetLocalFileName = String.format("%s/partition_%s_%s.parquet", localWorkingDirectory, partition.getId(), uuid);
         this.quantileSketchesLocalFileName = String.format("%s/partition_%s_%s.sketches", localWorkingDirectory, partition.getId(), uuid);
         this.partitionParquetS3Key = String.format("partition_%s/%s.parquet", partition.getId(), uuid);
         this.quantileSketchesS3Key = String.format("partition_%s/%s.sketches", partition.getId(), uuid);
-        this.parquetWriter = parquetWriterConfiguration.createParquetWriter(partitionParquetLocalFileName);
+        this.parquetWriter = parquetConfiguration.createParquetWriter(partitionParquetLocalFileName);
         LOGGER.info("Created Parquet writer for partition {}", partition.getId());
         this.keyFieldToSketchMap = createKeyFieldToSketchMap(sleeperSchema);
         this.rowKeyName = this.sleeperSchema.getRowKeyFields().get(0).getName();

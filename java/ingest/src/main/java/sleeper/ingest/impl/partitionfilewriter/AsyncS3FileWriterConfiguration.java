@@ -16,6 +16,7 @@
 package sleeper.ingest.impl.partitionfilewriter;
 
 import sleeper.core.partition.Partition;
+import sleeper.ingest.impl.ParquetConfiguration;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
@@ -23,14 +24,14 @@ import java.util.Objects;
 
 public class AsyncS3FileWriterConfiguration implements FileWriterConfiguration {
 
-    private final ParquetWriterConfiguration parquetWriterConfiguration;
+    private final ParquetConfiguration parquetConfiguration;
     private final String s3BucketName;
     private final String localWorkingDirectory;
     private final S3AsyncClient s3AsyncClient;
     private final boolean closeS3AsyncClient;
 
     private AsyncS3FileWriterConfiguration(Builder builder) {
-        parquetWriterConfiguration = Objects.requireNonNull(builder.parquetWriterConfiguration, "parquetWriterConfiguration must not be null");
+        parquetConfiguration = Objects.requireNonNull(builder.parquetConfiguration, "parquetWriterConfiguration must not be null");
         s3BucketName = Objects.requireNonNull(builder.s3BucketName, "s3BucketName must not be null");
         localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
         if (builder.s3AsyncClient != null) {
@@ -51,7 +52,7 @@ public class AsyncS3FileWriterConfiguration implements FileWriterConfiguration {
         try {
             return new AsyncS3PartitionFileWriter(
                     partition,
-                    parquetWriterConfiguration,
+                    parquetConfiguration,
                     s3BucketName,
                     s3AsyncClient,
                     localWorkingDirectory);
@@ -68,7 +69,7 @@ public class AsyncS3FileWriterConfiguration implements FileWriterConfiguration {
     }
 
     public static final class Builder {
-        private ParquetWriterConfiguration parquetWriterConfiguration;
+        private ParquetConfiguration parquetConfiguration;
         private S3AsyncClient s3AsyncClient;
         private String s3BucketName;
         private String localWorkingDirectory;
@@ -76,8 +77,8 @@ public class AsyncS3FileWriterConfiguration implements FileWriterConfiguration {
         private Builder() {
         }
 
-        public Builder parquetWriterConfiguration(ParquetWriterConfiguration parquetWriterConfiguration) {
-            this.parquetWriterConfiguration = parquetWriterConfiguration;
+        public Builder parquetConfiguration(ParquetConfiguration parquetConfiguration) {
+            this.parquetConfiguration = parquetConfiguration;
             return this;
         }
 
