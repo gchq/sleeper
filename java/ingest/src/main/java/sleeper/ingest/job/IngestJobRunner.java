@@ -29,11 +29,10 @@ import sleeper.core.iterator.ConcatenatingIterator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.ingest.IngestRecordsUsingPropertiesSpecifiedMethod;
+import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestResult;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -46,8 +45,6 @@ import java.util.function.Supplier;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
 /**
  * An IngestJobRunner takes ingest jobs and runs them.
@@ -55,16 +52,12 @@ import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONF
 public class IngestJobRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobRunner.class);
 
-    private final ObjectFactory objectFactory;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
-    private final StateStoreProvider stateStoreProvider;
-    private final String localDir;
-    private final long maxLinesInLocalFile;
-    private final long maxInMemoryBatchSize;
     private final String fs;
     private final S3AsyncClient s3AsyncClient;
     private final Configuration hadoopConfiguration;
+    private final IngestFactory ingestFactory;
 
     public IngestJobRunner(ObjectFactory objectFactory,
                            InstanceProperties instanceProperties,
@@ -73,16 +66,18 @@ public class IngestJobRunner {
                            String localDir,
                            S3AsyncClient s3AsyncClient,
                            Configuration hadoopConfiguration) {
-        this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
-        this.stateStoreProvider = stateStoreProvider;
-        this.localDir = localDir;
-        this.maxLinesInLocalFile = instanceProperties.getLong(MAX_RECORDS_TO_WRITE_LOCALLY);
-        this.maxInMemoryBatchSize = instanceProperties.getLong(MAX_IN_MEMORY_BATCH_SIZE);
         this.fs = instanceProperties.get(FILE_SYSTEM);
         this.hadoopConfiguration = hadoopConfiguration;
         this.s3AsyncClient = s3AsyncClient;
+        this.ingestFactory = IngestFactory.builder()
+                .objectFactory(objectFactory)
+                .localDir(localDir)
+                .stateStoreProvider(stateStoreProvider)
+                .hadoopConfiguration(hadoopConfiguration)
+                .instanceProperties(instanceProperties)
+                .build();
     }
 
     public IngestResult ingest(IngestJob job) throws InterruptedException, IteratorException, StateStoreException, IOException {
@@ -93,8 +88,8 @@ public class IngestJobRunner {
         List<Path> paths = IngestJobUtils.getPaths(job.getFiles(), hadoopConfiguration, fs);
         LOGGER.info("There are {} files to ingest", paths.size());
         LOGGER.debug("Files to ingest are: {}", paths);
-        LOGGER.info("Max number of records to read into memory is {}", maxInMemoryBatchSize);
-        LOGGER.info("Max number of records to write to local disk is {}", maxLinesInLocalFile);
+        LOGGER.info("Max number of records to read into memory is {}", instanceProperties.getLong(MAX_IN_MEMORY_BATCH_SIZE));
+        LOGGER.info("Max number of records to write to local disk is {}", instanceProperties.getLong(MAX_RECORDS_TO_WRITE_LOCALLY));
 
         // Create supplier of iterator of records from each file (using a supplier avoids having multiple files open
         // at the same time)
@@ -120,21 +115,9 @@ public class IngestJobRunner {
         // Concatenate iterators into one iterator
         CloseableIterator<Record> concatenatingIterator = new ConcatenatingIterator(inputIterators);
 
-        // Get StateStore for this table
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-
         // Run the ingest
-        IngestResult result = IngestRecordsUsingPropertiesSpecifiedMethod.ingestFromRecordIterator(
-                objectFactory,
-                stateStore,
-                instanceProperties,
-                tableProperties,
-                localDir,
-                s3AsyncClient,
-                hadoopConfiguration,
-                tableProperties.get(ITERATOR_CLASS_NAME),
-                tableProperties.get(ITERATOR_CONFIG),
-                concatenatingIterator);
+        IngestResult result = ingestFactory.ingestFromRecordIterator(
+                tableProperties, s3AsyncClient, concatenatingIterator);
         LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getNumberOfRecords(), paths);
         return result;
     }
