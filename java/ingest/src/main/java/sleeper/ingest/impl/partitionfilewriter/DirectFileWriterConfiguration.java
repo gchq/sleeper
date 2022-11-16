@@ -15,44 +15,28 @@
  */
 package sleeper.ingest.impl.partitionfilewriter;
 
-import org.apache.hadoop.conf.Configuration;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 
 import java.io.IOException;
-
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
-import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
+import java.util.Objects;
 
 public class DirectFileWriterConfiguration implements FileWriterConfiguration {
 
-    private final InstanceProperties instanceProperties;
-    private final TableProperties tableProperties;
-    private final Configuration hadoopConfiguration;
+    private final ParquetWriterConfiguration parquetWriterConfiguration;
+    private final String fileSystem;
 
-    public DirectFileWriterConfiguration(
-            InstanceProperties instanceProperties,
-            TableProperties tableProperties,
-            Configuration hadoopConfiguration) {
-        this.instanceProperties = instanceProperties;
-        this.tableProperties = tableProperties;
-        this.hadoopConfiguration = hadoopConfiguration;
+    public DirectFileWriterConfiguration(ParquetWriterConfiguration parquetWriterConfiguration, String fileSystem) {
+        this.parquetWriterConfiguration = Objects.requireNonNull(parquetWriterConfiguration, "parquetWriterConfiguration must not be null");
+        this.fileSystem = Objects.requireNonNull(fileSystem, "fileSystem must not be null");
     }
 
     @Override
     public PartitionFileWriter createPartitionFileWriter(Partition partition) {
         try {
             return new DirectPartitionFileWriter(
-                    tableProperties.getSchema(),
                     partition,
-                    tableProperties.getInt(ROW_GROUP_SIZE),
-                    tableProperties.getInt(PAGE_SIZE),
-                    tableProperties.get(COMPRESSION_CODEC),
-                    hadoopConfiguration,
-                    instanceProperties.get(FILE_SYSTEM));
+                    parquetWriterConfiguration,
+                    fileSystem);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

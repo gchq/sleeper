@@ -84,19 +84,26 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
                                      String parquetCompressionCodec,
                                      Configuration hadoopConfiguration,
                                      String filePathPrefix) throws IOException {
-        this.sleeperSchema = requireNonNull(sleeperSchema);
+        this(partition, ParquetWriterConfiguration.builder()
+                .sleeperSchema(sleeperSchema)
+                .parquetRowGroupSize(parquetRowGroupSize)
+                .parquetPageSize(parquetPageSize)
+                .parquetCompressionCodec(parquetCompressionCodec)
+                .hadoopConfiguration(hadoopConfiguration)
+                .build(), filePathPrefix);
+    }
+
+    public DirectPartitionFileWriter(
+            Partition partition,
+            ParquetWriterConfiguration parquetWriterConfiguration,
+            String filePathPrefix) throws IOException {
+        this.sleeperSchema = parquetWriterConfiguration.getSleeperSchema();
         this.partition = requireNonNull(partition);
-        this.hadoopConfiguration = requireNonNull(hadoopConfiguration);
+        this.hadoopConfiguration = parquetWriterConfiguration.getHadoopConfiguration();
         UUID uuid = UUID.randomUUID();
         this.partitionParquetFileName = PartitionFileWriterUtils.constructPartitionParquetFileName(filePathPrefix, partition, uuid);
         this.quantileSketchesFileName = PartitionFileWriterUtils.constructQuantileSketchesFileName(filePathPrefix, partition, uuid);
-        this.parquetWriter = PartitionFileWriterUtils.createParquetWriter(
-                this.partitionParquetFileName,
-                sleeperSchema,
-                parquetCompressionCodec,
-                parquetRowGroupSize,
-                parquetPageSize,
-                hadoopConfiguration);
+        this.parquetWriter = parquetWriterConfiguration.createParquetWriter(this.partitionParquetFileName);
         LOGGER.info("Created Parquet writer for partition {} to file {}", partition.getId(), partitionParquetFileName);
         this.keyFieldToSketchMap = PartitionFileWriterUtils.createQuantileSketchMap(sleeperSchema);
         this.rowKeyName = this.sleeperSchema.getRowKeyFields().get(0).getName();
