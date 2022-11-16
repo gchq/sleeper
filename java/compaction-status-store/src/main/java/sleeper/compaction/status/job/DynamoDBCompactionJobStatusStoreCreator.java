@@ -20,15 +20,11 @@ import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
-import com.amazonaws.services.dynamodbv2.model.TimeToLiveSpecification;
-import com.amazonaws.services.dynamodbv2.model.UpdateTimeToLiveRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.dynamodb.tools.DynamoDBUtils;
 
 import java.util.Arrays;
 
-import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.EXPIRY_DATE;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
@@ -36,30 +32,19 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 
 public class DynamoDBCompactionJobStatusStoreCreator {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobStatusStoreCreator.class);
 
     private DynamoDBCompactionJobStatusStoreCreator() {
     }
 
     public static void create(InstanceProperties properties, AmazonDynamoDB dynamoDB) {
-        initialiseTable(dynamoDB, jobStatusTableName(properties.get(ID)),
+        String tableName = jobStatusTableName(properties.get(ID));
+        initialiseTable(dynamoDB, tableName,
                 Arrays.asList(
                         new AttributeDefinition(JOB_ID, ScalarAttributeType.S),
                         new AttributeDefinition(UPDATE_TIME, ScalarAttributeType.N)),
                 Arrays.asList(
                         new KeySchemaElement(JOB_ID, KeyType.HASH),
                         new KeySchemaElement(UPDATE_TIME, KeyType.RANGE)));
-        configureTimeToLive(properties, dynamoDB);
-    }
-
-    public static void configureTimeToLive(InstanceProperties properties, AmazonDynamoDB dynamoDB) {
-        dynamoDB.updateTimeToLive(new UpdateTimeToLiveRequest()
-                .withTableName(jobStatusTableName(properties.get(ID)))
-                .withTimeToLiveSpecification(
-                        new TimeToLiveSpecification()
-                                .withEnabled(true)
-                                .withAttributeName(EXPIRY_DATE)
-                ));
-        LOGGER.info("Configured TTL on field {}", EXPIRY_DATE);
+        DynamoDBUtils.configureTimeToLive(dynamoDB, tableName);
     }
 }
