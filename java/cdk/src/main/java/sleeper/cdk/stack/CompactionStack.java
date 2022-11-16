@@ -36,7 +36,10 @@ import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerDefinitionOptions;
 import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.ecs.CpuArchitecture;
 import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
+import software.amazon.awscdk.services.ecs.OperatingSystemFamily;
+import software.amazon.awscdk.services.ecs.RuntimePlatform;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
@@ -75,9 +78,12 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPA
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_MEMORY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_MEMORY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
@@ -350,12 +356,7 @@ public class CompactionStack extends NestedStack {
                 .build();
         instanceProperties.set(COMPACTION_CLUSTER, cluster.getClusterName());
 
-        FargateTaskDefinition taskDefinition = FargateTaskDefinition.Builder
-                .create(this, "MergeCompactionTaskDefinition")
-                .family(instanceProperties.get(ID) + "MergeCompactionTaskFamily")
-                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
-                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
-                .build();
+        FargateTaskDefinition taskDefinition = compactionFargateTaskDefinition("Merge");
         this.compactionFamily = taskDefinition.getFamily();
         instanceProperties.set(COMPACTION_TASK_DEFINITION_FAMILY, compactionFamily);
 
@@ -406,12 +407,7 @@ public class CompactionStack extends NestedStack {
                 .build();
         instanceProperties.set(SPLITTING_COMPACTION_CLUSTER, cluster.getClusterName());
 
-        FargateTaskDefinition taskDefinition = FargateTaskDefinition.Builder
-                .create(this, "SplittingMergeCompactionTaskDefinition")
-                .family(instanceProperties.get(ID) + "SplittingMergeCompactionTaskFamily")
-                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
-                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
-                .build();
+        FargateTaskDefinition taskDefinition = compactionFargateTaskDefinition("SplittingMerge");
         splittingCompactionFamily = taskDefinition.getFamily();
         instanceProperties.set(SPLITTING_COMPACTION_TASK_DEFINITION_FAMILY, splittingCompactionFamily);
 
@@ -441,6 +437,30 @@ public class CompactionStack extends NestedStack {
         new CfnOutput(this, SPLITTING_COMPACTION_CLUSTER_NAME, splittingCompactionClusterProps);
 
         return cluster;
+    }
+
+    private FargateTaskDefinition compactionFargateTaskDefinition(String compactionTypeName) {
+
+        String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
+        int cpu;
+        int memoryLimitMiB;
+        if (architecture.startsWith("ARM")) {
+            cpu = instanceProperties.getInt(COMPACTION_TASK_ARM_CPU);
+            memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_ARM_MEMORY);
+        } else {
+            cpu = instanceProperties.getInt(COMPACTION_TASK_X86_CPU);
+            memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_X86_MEMORY);
+        }
+
+        return FargateTaskDefinition.Builder
+                .create(this, compactionTypeName + "CompactionTaskDefinition")
+                .family(instanceProperties.get(ID) + compactionTypeName + "CompactionTaskFamily")
+                .cpu(cpu).memoryLimitMiB(memoryLimitMiB)
+                .runtimePlatform(RuntimePlatform.builder()
+                        .cpuArchitecture(CpuArchitecture.of(architecture))
+                        .operatingSystemFamily(OperatingSystemFamily.LINUX)
+                        .build())
+                .build();
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
