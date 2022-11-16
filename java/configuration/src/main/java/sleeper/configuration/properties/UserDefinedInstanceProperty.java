@@ -137,6 +137,9 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     BULK_IMPORT_EMR_SPARK_RDD_COMPRESS("sleeper.bulk.import.emr.spark.rdd.compress", "true"),
     BULK_IMPORT_EMR_SPARK_SHUFFLE_COMPRESS("sleeper.bulk.import.emr.spark.shuffle.compress", "true"),
     BULK_IMPORT_EMR_SPARK_SHUFFLE_SPILL_COMPRESS("sleeper.bulk.import.emr.spark.shuffle.spill.compress", "true"),
+    BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB("sleeper.bulk.import.emr.ebs.volume.size.gb", "256", Utils::isValidEbsSize),
+    BULK_IMPORT_EMR_EBS_VOLUME_TYPE("sleeper.bulk.import.emr.ebs.volume.type", "gp2", Utils::isValidEbsVolumeType),
+    BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE("sleeper.bulk.import.emr.ebs.volumes.per.instance", "4", s -> Utils.isIntLtEqValue(s, 25)),
 
     // Bulk import using the non-persistent EMR approach
     DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL("sleeper.default.bulk.import.emr.release.label", "emr-6.8.0"),

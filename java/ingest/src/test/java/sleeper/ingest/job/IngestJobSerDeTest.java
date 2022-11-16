@@ -17,8 +17,6 @@ package sleeper.ingest.job;
 
 import org.junit.Test;
 
-import java.util.Arrays;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class IngestJobSerDeTest {
@@ -26,7 +24,9 @@ public class IngestJobSerDeTest {
     @Test
     public void shouldSerDeCorrectly() {
         // Given
-        IngestJob ingestJob = new IngestJob("table", "id", Arrays.asList("file1", "file2"));
+        IngestJob ingestJob = IngestJob.builder()
+                .tableName("table").id("id").files("file1", "file2")
+                .build();
         IngestJobSerDe ingestJobSerDe = new IngestJobSerDe();
 
         // When

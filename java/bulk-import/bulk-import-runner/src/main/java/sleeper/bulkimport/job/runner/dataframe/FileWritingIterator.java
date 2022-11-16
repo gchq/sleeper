@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.job.runner;
+package sleeper.bulkimport.job.runner.dataframe;
 
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
@@ -41,6 +41,8 @@ import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -64,6 +66,7 @@ public class FileWritingIterator implements Iterator<Row> {
     private String path;
     private long numRecords;
     private boolean hasMore = false;
+    private Instant startTime = null;
 
     public FileWritingIterator(Iterator<Row> input, InstanceProperties instanceProperties, TableProperties tableProperties, Configuration conf) {
         this.input = input;
@@ -120,6 +123,9 @@ public class FileWritingIterator implements Iterator<Row> {
     }
 
     private void write(Row row) throws IOException {
+        if (null == startTime) {
+            startTime = Instant.now();
+        }
         // Append to current writer
         Record record = getRecord(row);
         parquetWriter.write(record);
@@ -134,7 +140,7 @@ public class FileWritingIterator implements Iterator<Row> {
         currentPartitionId = partitionId;
         // Create writer;
         parquetWriter = createWriter(partitionId);
-        // Intialize sketches
+        // Initialise sketches
         sketches = getSketches(schema.getRowKeyFields());
     }
 
@@ -145,6 +151,10 @@ public class FileWritingIterator implements Iterator<Row> {
         }
         parquetWriter.close();
         new SketchesSerDeToS3(schema).saveToHadoopFS(new Path(path.replace(".parquet", ".sketches")), new Sketches(sketches), conf);
+        long durationInSeconds = Duration.between(startTime, Instant.now()).getSeconds();
+        double rate = numRecords / (double) durationInSeconds;
+        LOGGER.info("Overall written {} records in {} seconds (rate was {} per second)",
+                numRecords, durationInSeconds, rate);
     }
 
     private Record getRecord(Row row) {
