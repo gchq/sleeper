@@ -24,7 +24,7 @@ import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
-import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchAcceptingRecords;
+import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.statestore.StateStore;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -126,12 +126,12 @@ public class StandardIngestCoordinator {
         }
 
         private RecordBatchFactory<Record> buildRecordBatchFactory() {
-            return () ->
-                    new ArrayListRecordBatchAcceptingRecords(
-                            builder.parquetConfiguration,
-                            builder.localWorkingDirectory,
-                            maxNoOfRecordsInMemory,
-                            maxNoOfRecordsInLocalStore);
+            return ArrayListRecordBatchFactory.builder()
+                    .parquetConfiguration(builder.parquetConfiguration)
+                    .localWorkingDirectory(builder.localWorkingDirectory)
+                    .maxNoOfRecordsInMemory(maxNoOfRecordsInMemory)
+                    .maxNoOfRecordsInLocalStore(maxNoOfRecordsInLocalStore)
+                    .buildAcceptingRecords();
         }
     }
 
