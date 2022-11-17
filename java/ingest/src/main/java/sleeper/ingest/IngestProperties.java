@@ -18,25 +18,31 @@ package sleeper.ingest;
 
 import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.jars.ObjectFactory;
+import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.ingest.impl.ParquetConfiguration;
+import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
+import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
+import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
+import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.statestore.StateStore;
 
 public class IngestProperties {
-    private ObjectFactory objectFactory;
-    private String localDir;
-    private long maxRecordsToWriteLocally;
-    private long maxInMemoryBatchSize;
-    private int rowGroupSize;
-    private int pageSize;
-    private String compressionCodec;
-    private StateStore stateStore;
-    private Schema schema;
-    private String fs;
-    private String bucketName;
-    private String iteratorClassName;
-    private String iteratorConfig;
-    private int ingestPartitionRefreshFrequencyInSecond;
-    private Configuration hadoopConfiguration;
+    private final ObjectFactory objectFactory;
+    private final String localDir;
+    private final long maxRecordsToWriteLocally;
+    private final int maxInMemoryBatchSize;
+    private final int rowGroupSize;
+    private final int pageSize;
+    private final String compressionCodec;
+    private final StateStore stateStore;
+    private final Schema schema;
+    private final String fs;
+    private final String bucketName;
+    private final String iteratorClassName;
+    private final String iteratorConfig;
+    private final int ingestPartitionRefreshFrequencyInSecond;
+    private final Configuration hadoopConfiguration;
 
     private IngestProperties(Builder builder) {
         objectFactory = builder.objectFactory;
@@ -92,14 +98,6 @@ public class IngestProperties {
         return schema;
     }
 
-    public String getFilePrefix() {
-        return fs;
-    }
-
-    public String getBucketName() {
-        return null == bucketName ? "" : bucketName;
-    }
-
     public String getIteratorClassName() {
         return iteratorClassName;
     }
@@ -114,6 +112,47 @@ public class IngestProperties {
 
     public Configuration getHadoopConfiguration() {
         return hadoopConfiguration;
+    }
+
+    public ParquetConfiguration buildParquetConfiguration() {
+        return ParquetConfiguration.builder()
+                .sleeperSchema(schema)
+                .parquetCompressionCodec(compressionCodec)
+                .parquetRowGroupSize(rowGroupSize)
+                .parquetPageSize(pageSize)
+                .hadoopConfiguration(hadoopConfiguration)
+                .build();
+    }
+
+    public ArrayListRecordBatchFactory<Record> buildArrayListRecordBatchFactory(
+            ParquetConfiguration parquetConfiguration) {
+        return ArrayListRecordBatchFactory.builder()
+                .parquetConfiguration(parquetConfiguration)
+                .localWorkingDirectory(localDir)
+                .maxNoOfRecordsInMemory(maxInMemoryBatchSize)
+                .maxNoOfRecordsInLocalStore(maxRecordsToWriteLocally)
+                .buildAcceptingRecords();
+    }
+
+    public ArrowRecordBatchFactory.Builder arrowRecordBatchFactoryBuilder(
+            ParquetConfiguration parquetConfiguration) {
+        return ArrowRecordBatchFactory.builder()
+                .schema(parquetConfiguration.getSleeperSchema())
+                .localWorkingDirectory(localDir)
+                .maxNoOfBytesToWriteLocally(maxRecordsToWriteLocally);
+    }
+
+    public DirectPartitionFileWriterFactory buildDirectPartitionFileWriterFactory(
+            ParquetConfiguration parquetConfiguration) {
+        return new DirectPartitionFileWriterFactory(parquetConfiguration,
+                fs + (null == bucketName ? "" : bucketName));
+    }
+
+    public AsyncS3PartitionFileWriterFactory.Builder asyncS3PartitionFileWriterFactoryBuilder(
+            ParquetConfiguration parquetConfiguration) {
+        return AsyncS3PartitionFileWriterFactory.builder()
+                .parquetConfiguration(parquetConfiguration)
+                .localWorkingDirectory(localDir);
     }
 
     public static Builder builder() {
@@ -143,7 +182,7 @@ public class IngestProperties {
         private ObjectFactory objectFactory;
         private String localDir;
         private long maxRecordsToWriteLocally;
-        private long maxInMemoryBatchSize;
+        private int maxInMemoryBatchSize;
         private int rowGroupSize;
         private int pageSize;
         private String compressionCodec;
@@ -174,7 +213,7 @@ public class IngestProperties {
             return this;
         }
 
-        public Builder maxInMemoryBatchSize(long maxInMemoryBatchSize) {
+        public Builder maxInMemoryBatchSize(int maxInMemoryBatchSize) {
             this.maxInMemoryBatchSize = maxInMemoryBatchSize;
             return this;
         }

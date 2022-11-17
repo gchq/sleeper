@@ -86,8 +86,6 @@ public class IngestFactory {
         ParquetConfiguration parquetConfiguration = ParquetConfiguration.from(tableProperties, hadoopConfiguration);
         return StandardIngestCoordinator.builder()
                 .objectFactory(objectFactory)
-                .parquetConfiguration(parquetConfiguration)
-                .localWorkingDirectory(localDir)
                 .stateStore(stateStoreProvider.getStateStore(tableProperties))
                 .schema(tableProperties.getSchema())
                 .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))

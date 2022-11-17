@@ -20,16 +20,10 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.IngestProperties;
-import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
-import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
-import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
-import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.statestore.StateStore;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
-
-import java.util.function.Consumer;
 
 public class StandardIngestCoordinator {
     private StandardIngestCoordinator() {
@@ -40,12 +34,10 @@ public class StandardIngestCoordinator {
     }
 
     public static IngestCoordinator<Record> directWriteBackedByArrayList(IngestProperties ingestProperties) {
+        ParquetConfiguration parquetConfiguration = ingestProperties.buildParquetConfiguration();
         return builder().fromProperties(ingestProperties)
-                .arrayListRecordBatchFactory(
-                        (int) ingestProperties.getMaxInMemoryBatchSize(),
-                        ingestProperties.getMaxRecordsToWriteLocally())
-                .directPartitionFileWriterFactory(
-                        ingestProperties.getFilePrefix() + ingestProperties.getBucketName())
+                .recordBatchFactory(ingestProperties.buildArrayListRecordBatchFactory(parquetConfiguration))
+                .partitionFileWriterFactory(ingestProperties.buildDirectPartitionFileWriterFactory(parquetConfiguration))
                 .build();
     }
 
@@ -55,29 +47,31 @@ public class StandardIngestCoordinator {
                                                                      long workingArrowBufferAllocatorBytes,
                                                                      long minBatchArrowBufferAllocatorBytes,
                                                                      long maxBatchArrowBufferAllocatorBytes) {
+        ParquetConfiguration parquetConfiguration = ingestProperties.buildParquetConfiguration();
         return builder()
                 .fromProperties(ingestProperties)
-                .arrowRecordBatchFactory(builder -> builder
+                .recordBatchFactory(ingestProperties.arrowRecordBatchFactoryBuilder(parquetConfiguration)
                         .bufferAllocator(arrowBufferAllocator)
                         .maxNoOfRecordsToWriteToArrowFileAtOnce(maxNoOfRecordsToWriteToArrowFileAtOnce)
                         .workingBufferAllocatorBytes(workingArrowBufferAllocatorBytes)
                         .minBatchBufferAllocatorBytes(minBatchArrowBufferAllocatorBytes)
                         .maxBatchBufferAllocatorBytes(maxBatchArrowBufferAllocatorBytes)
-                        .maxNoOfBytesToWriteLocally(ingestProperties.getMaxRecordsToWriteLocally()))
-                .directPartitionFileWriterFactory(
-                        ingestProperties.getFilePrefix() + ingestProperties.getBucketName())
+                        .buildAcceptingRecords())
+                .partitionFileWriterFactory(ingestProperties.buildDirectPartitionFileWriterFactory(parquetConfiguration))
                 .build();
     }
 
     public static IngestCoordinator<Record> asyncS3WriteBackedByArrayList(IngestProperties ingestProperties,
                                                                           String s3BucketName,
                                                                           S3AsyncClient s3AsyncClient) {
+        ParquetConfiguration parquetConfiguration = ingestProperties.buildParquetConfiguration();
         return builder()
                 .fromProperties(ingestProperties)
-                .arrayListRecordBatchFactory(
-                        (int) ingestProperties.getMaxInMemoryBatchSize(),
-                        ingestProperties.getMaxRecordsToWriteLocally())
-                .asyncS3PartitionFileWriterFactory(s3BucketName, s3AsyncClient)
+                .recordBatchFactory(ingestProperties.buildArrayListRecordBatchFactory(parquetConfiguration))
+                .partitionFileWriterFactory(ingestProperties
+                        .asyncS3PartitionFileWriterFactoryBuilder(parquetConfiguration)
+                        .s3BucketName(s3BucketName).s3AsyncClient(s3AsyncClient)
+                        .build())
                 .build();
     }
 
@@ -89,23 +83,25 @@ public class StandardIngestCoordinator {
                                                                       long workingArrowBufferAllocatorBytes,
                                                                       long minBatchArrowBufferAllocatorBytes,
                                                                       long maxBatchArrowBufferAllocatorBytes) {
+        ParquetConfiguration parquetConfiguration = ingestProperties.buildParquetConfiguration();
         return builder()
                 .fromProperties(ingestProperties)
-                .arrowRecordBatchFactory(builder -> builder
+                .recordBatchFactory(ingestProperties.arrowRecordBatchFactoryBuilder(parquetConfiguration)
                         .bufferAllocator(arrowBufferAllocator)
                         .maxNoOfRecordsToWriteToArrowFileAtOnce(maxNoOfRecordsToWriteToArrowFileAtOnce)
                         .workingBufferAllocatorBytes(workingArrowBufferAllocatorBytes)
                         .minBatchBufferAllocatorBytes(minBatchArrowBufferAllocatorBytes)
                         .maxBatchBufferAllocatorBytes(maxBatchArrowBufferAllocatorBytes)
-                        .maxNoOfBytesToWriteLocally(ingestProperties.getMaxRecordsToWriteLocally()))
-                .asyncS3PartitionFileWriterFactory(s3BucketName, s3AsyncClient)
+                        .buildAcceptingRecords())
+                .partitionFileWriterFactory(ingestProperties
+                        .asyncS3PartitionFileWriterFactoryBuilder(parquetConfiguration)
+                        .s3BucketName(s3BucketName).s3AsyncClient(s3AsyncClient)
+                        .build())
                 .build();
     }
 
     public static class Builder {
         private ObjectFactory objectFactory;
-        private String localWorkingDirectory;
-        private ParquetConfiguration parquetConfiguration;
         private StateStore stateStore;
         private Schema schema;
         private String iteratorClassName;
@@ -119,14 +115,6 @@ public class StandardIngestCoordinator {
 
         public Builder fromProperties(IngestProperties ingestProperties) {
             return this.objectFactory(ingestProperties.getObjectFactory())
-                    .localWorkingDirectory(ingestProperties.getLocalDir())
-                    .parquetConfiguration(ParquetConfiguration.builder()
-                            .sleeperSchema(ingestProperties.getSchema())
-                            .parquetCompressionCodec(ingestProperties.getCompressionCodec())
-                            .parquetRowGroupSize(ingestProperties.getRowGroupSize())
-                            .parquetPageSize(ingestProperties.getPageSize())
-                            .hadoopConfiguration(ingestProperties.getHadoopConfiguration())
-                            .build())
                     .stateStore(ingestProperties.getStateStore())
                     .schema(ingestProperties.getSchema())
                     .iteratorClassName(ingestProperties.getIteratorClassName())
@@ -136,16 +124,6 @@ public class StandardIngestCoordinator {
 
         public Builder objectFactory(ObjectFactory objectFactory) {
             this.objectFactory = objectFactory;
-            return this;
-        }
-
-        public Builder localWorkingDirectory(String localWorkingDirectory) {
-            this.localWorkingDirectory = localWorkingDirectory;
-            return this;
-        }
-
-        public Builder parquetConfiguration(ParquetConfiguration parquetConfiguration) {
-            this.parquetConfiguration = parquetConfiguration;
             return this;
         }
 
@@ -179,42 +157,9 @@ public class StandardIngestCoordinator {
             return this;
         }
 
-        public Builder arrayListRecordBatchFactory(
-                int maxNoOfRecordsInMemory,
-                long maxNoOfRecordsInLocalStore) {
-            return recordBatchFactory(ArrayListRecordBatchFactory.builder()
-                    .parquetConfiguration(parquetConfiguration)
-                    .localWorkingDirectory(localWorkingDirectory)
-                    .maxNoOfRecordsInMemory(maxNoOfRecordsInMemory)
-                    .maxNoOfRecordsInLocalStore(maxNoOfRecordsInLocalStore)
-                    .buildAcceptingRecords());
-        }
-
-        public Builder arrowRecordBatchFactory(Consumer<ArrowRecordBatchFactory.Builder> config) {
-            ArrowRecordBatchFactory.Builder builder = ArrowRecordBatchFactory.builder()
-                    .schema(schema)
-                    .localWorkingDirectory(localWorkingDirectory);
-            config.accept(builder);
-            return recordBatchFactory(builder.buildAcceptingRecords());
-        }
-
         public Builder partitionFileWriterFactory(PartitionFileWriterFactory partitionFileWriterFactory) {
             this.partitionFileWriterFactory = partitionFileWriterFactory;
             return this;
-        }
-
-        public Builder directPartitionFileWriterFactory(String filePathPrefix) {
-            return partitionFileWriterFactory(
-                    new DirectPartitionFileWriterFactory(parquetConfiguration, filePathPrefix));
-        }
-
-        public Builder asyncS3PartitionFileWriterFactory(
-                String s3BucketName, S3AsyncClient s3AsyncClient) {
-            return partitionFileWriterFactory(AsyncS3PartitionFileWriterFactory.builder()
-                    .parquetConfiguration(parquetConfiguration)
-                    .localWorkingDirectory(localWorkingDirectory)
-                    .s3BucketName(s3BucketName).s3AsyncClient(s3AsyncClient)
-                    .build());
         }
 
         public IngestCoordinator<Record> build() {
