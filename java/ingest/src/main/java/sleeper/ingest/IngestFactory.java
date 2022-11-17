@@ -25,6 +25,12 @@ import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.StandardIngestCoordinator;
+import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
+import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
+import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
+import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
+import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
+import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -77,46 +83,65 @@ public class IngestFactory {
     }
 
     public IngestCoordinator<Record> createIngestCoordinator(TableProperties tableProperties) {
-        String recordBatchType = instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
-        String fileWriterType = instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
-        StandardIngestCoordinator.Builder builder = StandardIngestCoordinator.builder()
+        ParquetConfiguration parquetConfiguration = ParquetConfiguration.from(tableProperties, hadoopConfiguration);
+        return StandardIngestCoordinator.builder()
                 .objectFactory(objectFactory)
-                .parquetConfiguration(ParquetConfiguration.from(tableProperties, hadoopConfiguration))
+                .parquetConfiguration(parquetConfiguration)
                 .localWorkingDirectory(localDir)
                 .stateStore(stateStoreProvider.getStateStore(tableProperties))
                 .schema(tableProperties.getSchema())
                 .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
                 .iteratorConfig(tableProperties.get(ITERATOR_CONFIG))
-                .ingestPartitionRefreshFrequencyInSeconds(instanceProperties.getInt(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS));
+                .ingestPartitionRefreshFrequencyInSeconds(instanceProperties.getInt(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS))
+                .recordBatchFactory(standardRecordBatchFactory(parquetConfiguration))
+                .partitionFileWriterFactory(standardPartitionFileWriterFactory(tableProperties, parquetConfiguration))
+                .build();
+
+    }
+
+    private RecordBatchFactory<Record> standardRecordBatchFactory(ParquetConfiguration parquetConfiguration) {
+        String recordBatchType = instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
         if (recordBatchType.equals("arraylist")) {
-            builder.arrayListRecordBatchFactory(
-                    instanceProperties.getInt(MAX_IN_MEMORY_BATCH_SIZE),
-                    instanceProperties.getLong(MAX_RECORDS_TO_WRITE_LOCALLY));
+            return ArrayListRecordBatchFactory.builder()
+                    .parquetConfiguration(parquetConfiguration)
+                    .localWorkingDirectory(localDir)
+                    .maxNoOfRecordsInMemory(instanceProperties.getInt(MAX_IN_MEMORY_BATCH_SIZE))
+                    .maxNoOfRecordsInLocalStore(instanceProperties.getLong(MAX_RECORDS_TO_WRITE_LOCALLY))
+                    .buildAcceptingRecords();
         } else if (recordBatchType.equals("arrow")) {
-            builder.arrowRecordBatchFactory(arrowBuilder -> arrowBuilder
+            return ArrowRecordBatchFactory.builder()
+                    .schema(parquetConfiguration.getSleeperSchema())
+                    .localWorkingDirectory(localDir)
                     .maxNoOfRecordsToWriteToArrowFileAtOnce(
                             instanceProperties.getInt(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS))
                     .workingBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES))
                     .minBatchBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
                     .maxBatchBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
-                    .maxNoOfBytesToWriteLocally(instanceProperties.getLong(MAX_RECORDS_TO_WRITE_LOCALLY)));
+                    .maxNoOfBytesToWriteLocally(instanceProperties.getLong(MAX_RECORDS_TO_WRITE_LOCALLY))
+                    .buildAcceptingRecords();
         } else {
             throw new UnsupportedOperationException(String.format("Record batch type %s not supported", recordBatchType));
         }
+    }
+
+    private PartitionFileWriterFactory standardPartitionFileWriterFactory(
+            TableProperties tableProperties, ParquetConfiguration parquetConfiguration) {
+        String fileWriterType = instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
         if (fileWriterType.equals("direct")) {
-            builder.directPartitionFileWriterFactory(
+            return new DirectPartitionFileWriterFactory(parquetConfiguration,
                     instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET));
         } else if (fileWriterType.equals("async")) {
             if (!instanceProperties.get(FILE_SYSTEM).toLowerCase(Locale.ROOT).equals("s3a://")) {
                 throw new UnsupportedOperationException("Attempting an asynchronous write to a file system that is not s3a://");
-            } else {
-                builder.asyncS3PartitionFileWriterFactory(tableProperties.get(DATA_BUCKET), s3AsyncClient);
             }
+            return AsyncS3PartitionFileWriterFactory.builder()
+                    .parquetConfiguration(parquetConfiguration)
+                    .localWorkingDirectory(localDir)
+                    .s3BucketName(tableProperties.get(DATA_BUCKET)).s3AsyncClient(s3AsyncClient)
+                    .build();
         } else {
-            throw new UnsupportedOperationException(String.format("Record batch type %s not supported", recordBatchType));
+            throw new UnsupportedOperationException(String.format("File writer type %s not supported", fileWriterType));
         }
-        return builder.build();
-
     }
 
     public static Builder builder() {
