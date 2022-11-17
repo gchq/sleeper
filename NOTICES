@@ -145,6 +145,15 @@ s3fs:
 
 - The 3-Clause BSD License
 
+The experimental GPU work includes the following dependencies.
+
+cppack:
+
+ - MIT License (https://github.com/mikeloomisgg/cppack/blob/master/LICENSE)
+
+RAPIDS cudf:
+
+ - Apache License, Version 2.0
 
 
 The build pipeline uses the following GitHub Actions from the marketplace.

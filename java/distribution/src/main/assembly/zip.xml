@@ -1,6 +1,6 @@
 <assembly xmlns="http://maven.apache.org/ASSEMBLY/2.1.0"
-          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.0 http://maven.apache.org/xsd/assembly-2.1.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.0 http://maven.apache.org/xsd/assembly-2.1.0.xsd">
     <id>bin</id>
     <formats>
         <format>${distribution.format}</format>
@@ -57,6 +57,15 @@
                 <exclude>*.jar</exclude>
             </excludes>
         </fileSet>
+        <!-- GPU source code -->
+        <fileSet>
+            <directory>${project.basedir}/../compaction-job-execution/src/c</directory>
+            <outputDirectory>scripts/docker/compaction-job-execution/src/c</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../compaction-job-execution/cmake</directory>
+            <outputDirectory>scripts/docker/compaction-job-execution/cmake</outputDirectory>
+        </fileSet>
     </fileSets>
 
     <files>
@@ -81,6 +90,12 @@
             <source>${project.basedir}/../compaction-job-execution/target/compaction-job-execution-${project.version}-utility.jar</source>
             <outputDirectory>scripts/docker/compaction-job-execution/</outputDirectory>
             <destName>compaction-job-execution.jar</destName>
+        </file>
+        <!-- CMake build file for GPU support -->
+        <file>
+            <source>${project.basedir}/../compaction-job-execution/CMakeLists.txt</source>
+            <outputDirectory>scripts/docker/compaction-job-execution/</outputDirectory>
+            <destName>CMakeLists.txt</destName>
         </file>
         <file>
             <source>${project.basedir}/../compaction-job-creation/target/compaction-job-creation-${project.version}-utility.jar</source>
