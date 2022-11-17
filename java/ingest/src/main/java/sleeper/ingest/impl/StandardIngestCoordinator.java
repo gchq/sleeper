@@ -48,12 +48,7 @@ public class StandardIngestCoordinator {
     }
 
     private static IngestCoordinator<Record> directWriteBackedByArrayList(
-            Builder builder, BackedByArrayBuilder arrayBuilder, String filePathPrefix) {
-        Supplier<RecordBatch<Record>> recordBatchFactoryFn = () -> new ArrayListRecordBatchAcceptingRecords(
-                builder.parquetConfiguration,
-                builder.localWorkingDirectory,
-                arrayBuilder.maxNoOfRecordsInMemory,
-                arrayBuilder.maxNoOfRecordsInLocalStore);
+            Builder builder, Supplier<RecordBatch<Record>> recordBatchFactoryFn, String filePathPrefix) {
         FileWriterConfiguration fileWriterConfiguration = new DirectFileWriterConfiguration(
                 builder.parquetConfiguration, filePathPrefix);
         return new IngestCoordinator<>(
@@ -112,13 +107,7 @@ public class StandardIngestCoordinator {
     }
 
     private static IngestCoordinator<Record> asyncS3WriteBackedByArrayList(
-            Builder builder, BackedByArrayBuilder arrayBuilder, String s3BucketName, S3AsyncClient s3AsyncClient) {
-        Supplier<RecordBatch<Record>> recordBatchFactoryFn = () ->
-                new ArrayListRecordBatchAcceptingRecords(
-                        builder.parquetConfiguration,
-                        builder.localWorkingDirectory,
-                        arrayBuilder.maxNoOfRecordsInMemory,
-                        arrayBuilder.maxNoOfRecordsInLocalStore);
+            Builder builder, Supplier<RecordBatch<Record>> recordBatchFactoryFn, String s3BucketName, S3AsyncClient s3AsyncClient) {
         FileWriterConfiguration fileWriterConfiguration = AsyncS3FileWriterConfiguration.builder()
                 .parquetConfiguration(builder.parquetConfiguration)
                 .s3AsyncClient(s3AsyncClient).s3BucketName(s3BucketName)
@@ -193,11 +182,20 @@ public class StandardIngestCoordinator {
         }
 
         public IngestCoordinator<Record> buildDirectWrite(String filePathPrefix) {
-            return directWriteBackedByArrayList(builder, this, filePathPrefix);
+            return directWriteBackedByArrayList(builder, buildRecordBatchFactoryFn(), filePathPrefix);
         }
 
         public IngestCoordinator<Record> buildAsyncS3Write(String s3BucketName, S3AsyncClient s3AsyncClient) {
-            return asyncS3WriteBackedByArrayList(builder, this, s3BucketName, s3AsyncClient);
+            return asyncS3WriteBackedByArrayList(builder, buildRecordBatchFactoryFn(), s3BucketName, s3AsyncClient);
+        }
+
+        private Supplier<RecordBatch<Record>> buildRecordBatchFactoryFn() {
+            return () ->
+                    new ArrayListRecordBatchAcceptingRecords(
+                            builder.parquetConfiguration,
+                            builder.localWorkingDirectory,
+                            maxNoOfRecordsInMemory,
+                            maxNoOfRecordsInLocalStore);
         }
     }
 
