@@ -23,13 +23,11 @@ import sleeper.ingest.IngestProperties;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
-import sleeper.ingest.impl.recordbatch.RecordBatch;
+import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchAcceptingRecords;
-import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchAcceptingRecords;
+import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchAcceptingRecordsFactory;
 import sleeper.statestore.StateStore;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
-
-import java.util.function.Supplier;
 
 public class StandardIngestCoordinator {
     private StandardIngestCoordinator() {
@@ -117,17 +115,17 @@ public class StandardIngestCoordinator {
 
         public IngestCoordinator<Record> buildDirectWrite(String filePathPrefix) {
             return builder.buildIngestCoordinator(
-                    buildRecordBatchFactoryFn(),
+                    buildRecordBatchFactory(),
                     builder.buildDirectFileWriterFactory(filePathPrefix));
         }
 
         public IngestCoordinator<Record> buildAsyncS3Write(String s3BucketName, S3AsyncClient s3AsyncClient) {
             return builder.buildIngestCoordinator(
-                    buildRecordBatchFactoryFn(),
+                    buildRecordBatchFactory(),
                     builder.buildAsyncFileWriterFactory(s3BucketName, s3AsyncClient));
         }
 
-        private Supplier<RecordBatch<Record>> buildRecordBatchFactoryFn() {
+        private RecordBatchFactory<Record> buildRecordBatchFactory() {
             return () ->
                     new ArrayListRecordBatchAcceptingRecords(
                             builder.parquetConfiguration,
@@ -182,27 +180,27 @@ public class StandardIngestCoordinator {
 
         public IngestCoordinator<Record> buildDirectWrite(String filePathPrefix) {
             return builder.buildIngestCoordinator(
-                    buildRecordBatchFactoryFn(),
+                    buildRecordBatchFactory(),
                     builder.buildDirectFileWriterFactory(filePathPrefix));
         }
 
         public IngestCoordinator<Record> buildAsyncS3Write(String s3BucketName, S3AsyncClient s3AsyncClient) {
             return builder.buildIngestCoordinator(
-                    buildRecordBatchFactoryFn(),
+                    buildRecordBatchFactory(),
                     builder.buildAsyncFileWriterFactory(s3BucketName, s3AsyncClient));
         }
 
-        private Supplier<RecordBatch<Record>> buildRecordBatchFactoryFn() {
-            return () ->
-                    new ArrowRecordBatchAcceptingRecords(
-                            arrowBufferAllocator,
-                            builder.schema,
-                            builder.localWorkingDirectory,
-                            workingArrowBufferAllocatorBytes,
-                            minBatchArrowBufferAllocatorBytes,
-                            maxBatchArrowBufferAllocatorBytes,
-                            maxNoOfBytesToWriteLocally,
-                            maxNoOfRecordsToWriteToArrowFileAtOnce);
+        private RecordBatchFactory<Record> buildRecordBatchFactory() {
+            return ArrowRecordBatchAcceptingRecordsFactory.builder()
+                    .bufferAllocator(arrowBufferAllocator)
+                    .schema(builder.schema)
+                    .localWorkingDirectory(builder.localWorkingDirectory)
+                    .workingBufferAllocatorBytes(workingArrowBufferAllocatorBytes)
+                    .minBatchBufferAllocatorBytes(minBatchArrowBufferAllocatorBytes)
+                    .maxBatchBufferAllocatorBytes(maxBatchArrowBufferAllocatorBytes)
+                    .maxNoOfBytesToWriteLocally(maxNoOfBytesToWriteLocally)
+                    .maxNoOfRecordsToWriteToArrowFileAtOnce(maxNoOfRecordsToWriteToArrowFileAtOnce)
+                    .build();
         }
     }
 
@@ -291,7 +289,7 @@ public class StandardIngestCoordinator {
         }
 
         private IngestCoordinator<Record> buildIngestCoordinator(
-                Supplier<RecordBatch<Record>> recordBatchFactoryFn,
+                RecordBatchFactory<Record> recordBatchFactory,
                 PartitionFileWriterFactory partitionFileWriterFactory) {
             return new IngestCoordinator<>(
                     objectFactory,
@@ -300,7 +298,7 @@ public class StandardIngestCoordinator {
                     iteratorClassName,
                     iteratorConfig,
                     ingestPartitionRefreshFrequencyInSeconds,
-                    recordBatchFactoryFn::get,
+                    recordBatchFactory,
                     partitionFileWriterFactory);
         }
 
