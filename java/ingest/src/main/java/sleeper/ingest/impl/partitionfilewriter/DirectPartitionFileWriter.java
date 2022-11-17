@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.statestore.FileInfo;
@@ -66,37 +67,25 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
      * org.apache.hadoop.fs.FileSystem#closeAll()} is called. This is strange behaviour and can cause errors which are difficult to
      * diagnose.
      *
-     * @param sleeperSchema           The Sleeper schema that the {@link Record} objects will comply with
-     * @param partition               The {@link Partition} that is to be written by this writer
-     * @param filePathPrefix          The prefix to apply to the partition files, such as 's3a://mybucket' or
-     *                                'file://mydirectory'
-     * @param parquetCompressionCodec -
-     * @param parquetRowGroupSize     -
-     * @param parquetPageSize         -
-     * @param hadoopConfiguration     The Hadoop configuration that is used to find the classes required to support the
-     *                                file system specified in the filePathPrefix
+     * @param partition            The {@link Partition} that is to be written by this writer
+     * @param parquetConfiguration Hadoop, schema and Parquet configuration for writing files. The Hadoop
+     *                             configuration is used to find the classes required to support the file system
+     *                             specified in the filePathPrefix.
+     * @param filePathPrefix       The prefix to apply to the partition files, such as 's3a://mybucket' or
+     *                             'file://mydirectory'
      * @throws IOException -
      */
-    public DirectPartitionFileWriter(Schema sleeperSchema,
-                                     Partition partition,
-                                     int parquetRowGroupSize,
-                                     int parquetPageSize,
-                                     String parquetCompressionCodec,
-                                     Configuration hadoopConfiguration,
-                                     String filePathPrefix) throws IOException {
-        this.sleeperSchema = requireNonNull(sleeperSchema);
+    public DirectPartitionFileWriter(
+            Partition partition,
+            ParquetConfiguration parquetConfiguration,
+            String filePathPrefix) throws IOException {
+        this.sleeperSchema = parquetConfiguration.getSleeperSchema();
         this.partition = requireNonNull(partition);
-        this.hadoopConfiguration = requireNonNull(hadoopConfiguration);
+        this.hadoopConfiguration = parquetConfiguration.getHadoopConfiguration();
         UUID uuid = UUID.randomUUID();
         this.partitionParquetFileName = PartitionFileWriterUtils.constructPartitionParquetFileName(filePathPrefix, partition, uuid);
         this.quantileSketchesFileName = PartitionFileWriterUtils.constructQuantileSketchesFileName(filePathPrefix, partition, uuid);
-        this.parquetWriter = PartitionFileWriterUtils.createParquetWriter(
-                this.partitionParquetFileName,
-                sleeperSchema,
-                parquetCompressionCodec,
-                parquetRowGroupSize,
-                parquetPageSize,
-                hadoopConfiguration);
+        this.parquetWriter = parquetConfiguration.createParquetWriter(this.partitionParquetFileName);
         LOGGER.info("Created Parquet writer for partition {} to file {}", partition.getId(), partitionParquetFileName);
         this.keyFieldToSketchMap = PartitionFileWriterUtils.createQuantileSketchMap(sleeperSchema);
         this.rowKeyName = this.sleeperSchema.getRowKeyFields().get(0).getName();
