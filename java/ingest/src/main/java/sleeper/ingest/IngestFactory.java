@@ -22,13 +22,27 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
+import sleeper.ingest.impl.IngestCoordinator;
+import sleeper.ingest.impl.ParquetConfiguration;
+import sleeper.ingest.impl.StandardIngestCoordinator;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Objects;
 
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
@@ -57,17 +71,52 @@ public class IngestFactory {
 
     public IngestResult ingestFromRecordIterator(TableProperties tableProperties, CloseableIterator<Record> recordIterator)
             throws StateStoreException, IteratorException, IOException {
-        return IngestRecordsUsingPropertiesSpecifiedMethod.ingestFromRecordIterator(
-                objectFactory,
-                stateStoreProvider.getStateStore(tableProperties),
-                instanceProperties,
-                tableProperties,
-                localDir,
-                s3AsyncClient,
-                hadoopConfiguration,
-                tableProperties.get(ITERATOR_CLASS_NAME),
-                tableProperties.get(ITERATOR_CONFIG),
-                recordIterator);
+        try (IngestCoordinator<Record> ingestCoordinator = createIngestCoordinator(tableProperties)) {
+            return new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
+        }
+    }
+
+    public IngestCoordinator<Record> createIngestCoordinator(TableProperties tableProperties) {
+        String recordBatchType = instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
+        String fileWriterType = instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
+        StandardIngestCoordinator.Builder builder = StandardIngestCoordinator.builder()
+                .objectFactory(objectFactory)
+                .parquetConfiguration(ParquetConfiguration.from(tableProperties, hadoopConfiguration))
+                .localWorkingDirectory(localDir)
+                .stateStore(stateStoreProvider.getStateStore(tableProperties))
+                .schema(tableProperties.getSchema())
+                .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
+                .iteratorConfig(tableProperties.get(ITERATOR_CONFIG))
+                .ingestPartitionRefreshFrequencyInSeconds(instanceProperties.getInt(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS));
+        if (recordBatchType.equals("arraylist")) {
+            builder.arrayListRecordBatchFactory(
+                    instanceProperties.getInt(MAX_IN_MEMORY_BATCH_SIZE),
+                    instanceProperties.getLong(MAX_RECORDS_TO_WRITE_LOCALLY));
+        } else if (recordBatchType.equals("arrow")) {
+            builder.arrowRecordBatchFactory(arrowBuilder -> arrowBuilder
+                    .maxNoOfRecordsToWriteToArrowFileAtOnce(
+                            instanceProperties.getInt(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS))
+                    .workingBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES))
+                    .minBatchBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
+                    .maxBatchBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
+                    .maxNoOfBytesToWriteLocally(instanceProperties.getLong(MAX_RECORDS_TO_WRITE_LOCALLY)));
+        } else {
+            throw new UnsupportedOperationException(String.format("Record batch type %s not supported", recordBatchType));
+        }
+        if (fileWriterType.equals("direct")) {
+            builder.directPartitionFileWriterFactory(
+                    instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET));
+        } else if (fileWriterType.equals("async")) {
+            if (!instanceProperties.get(FILE_SYSTEM).toLowerCase(Locale.ROOT).equals("s3a://")) {
+                throw new UnsupportedOperationException("Attempting an asynchronous write to a file system that is not s3a://");
+            } else {
+                builder.asyncS3PartitionFileWriterFactory(tableProperties.get(DATA_BUCKET), s3AsyncClient);
+            }
+        } else {
+            throw new UnsupportedOperationException(String.format("Record batch type %s not supported", recordBatchType));
+        }
+        return builder.build();
+
     }
 
     public static Builder builder() {
