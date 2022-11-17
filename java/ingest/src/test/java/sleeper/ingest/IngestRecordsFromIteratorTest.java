@@ -17,6 +17,9 @@
 package sleeper.ingest;
 
 import org.junit.Test;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
@@ -32,8 +35,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.TEST_TABLE_NAME;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createLeafPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createRootPartition;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultInstanceProperties;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultTableProperties;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSingleRecord;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
@@ -58,8 +64,11 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
-        long numWritten = new IngestRecordsFromIterator(properties, getRecords().iterator()).write().getNumberOfRecords();
+        InstanceProperties instanceProperties = defaultInstanceProperties();
+        TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
+        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
+        long numWritten = factory.ingestFromRecordIterator(tableProperties,
+                new WrappedIterator<>(getRecords().iterator())).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -119,8 +128,11 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
-        long numWritten = new IngestRecordsFromIterator(properties, getSingleRecord().iterator()).write().getNumberOfRecords();
+        InstanceProperties instanceProperties = defaultInstanceProperties();
+        TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
+        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
+        long numWritten = factory.ingestFromRecordIterator(tableProperties,
+                new WrappedIterator<>(getSingleRecord().iterator())).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -156,8 +168,11 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         StateStore stateStore = getStateStore(schema);
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
-        long numWritten = new IngestRecordsFromIterator(properties, Collections.emptyIterator()).write().getNumberOfRecords();
+        InstanceProperties instanceProperties = defaultInstanceProperties();
+        TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
+        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
+        long numWritten = factory.ingestFromRecordIterator(tableProperties,
+                new WrappedIterator<>(Collections.emptyIterator())).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
