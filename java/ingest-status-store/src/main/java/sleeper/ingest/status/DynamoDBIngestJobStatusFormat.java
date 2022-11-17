@@ -23,4 +23,5 @@ public class DynamoDBIngestJobStatusFormat {
 
     public static final String JOB_ID = "JobId";
     public static final String UPDATE_TIME = "UpdateTime";
+    public static final String EXPIRY_DATE = "ExpiryDate";
 }

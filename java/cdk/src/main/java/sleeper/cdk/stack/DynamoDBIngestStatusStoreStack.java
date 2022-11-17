@@ -51,6 +51,7 @@ public class DynamoDBIngestStatusStoreStack implements IngestStatusStoreStack {
                         .name(DynamoDBIngestJobStatusFormat.UPDATE_TIME)
                         .type(AttributeType.NUMBER)
                         .build())
+                .timeToLiveAttribute(DynamoDBIngestJobStatusFormat.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
     }

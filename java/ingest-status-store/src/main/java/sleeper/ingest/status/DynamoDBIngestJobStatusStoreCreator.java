@@ -26,7 +26,9 @@ import sleeper.configuration.properties.InstanceProperties;
 import java.util.Arrays;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
+import static sleeper.ingest.status.DynamoDBIngestJobStatusFormat.EXPIRY_DATE;
 import static sleeper.ingest.status.DynamoDBIngestJobStatusFormat.JOB_ID;
 import static sleeper.ingest.status.DynamoDBIngestJobStatusFormat.UPDATE_TIME;
 import static sleeper.ingest.status.DynamoDBIngestJobStatusStore.jobStatusTableName;
@@ -36,14 +38,14 @@ public class DynamoDBIngestJobStatusStoreCreator {
     }
 
     public static void create(InstanceProperties properties, AmazonDynamoDB dynamoDB) {
-
-        initialiseTable(dynamoDB, jobStatusTableName(properties.get(ID)),
+        String tableName = jobStatusTableName(properties.get(ID));
+        initialiseTable(dynamoDB, tableName,
                 Arrays.asList(
                         new AttributeDefinition(JOB_ID, ScalarAttributeType.S),
                         new AttributeDefinition(UPDATE_TIME, ScalarAttributeType.N)),
                 Arrays.asList(
                         new KeySchemaElement(JOB_ID, KeyType.HASH),
                         new KeySchemaElement(UPDATE_TIME, KeyType.RANGE)));
-
+        configureTimeToLive(dynamoDB, tableName, EXPIRY_DATE);
     }
 }
