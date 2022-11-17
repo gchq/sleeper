@@ -24,8 +24,9 @@ import sleeper.ingest.impl.recordbatch.RecordBatch;
 import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
 
 import java.util.Objects;
+import java.util.function.Function;
 
-public class ArrowRecordBatchAcceptingRecordsFactory implements RecordBatchFactory<Record> {
+public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFactory<INCOMINGDATATYPE> {
     private final Schema schema;
     private final String localWorkingDirectory;
     private final long workingBufferAllocatorBytes;
@@ -33,11 +34,13 @@ public class ArrowRecordBatchAcceptingRecordsFactory implements RecordBatchFacto
     private final long maxBatchBufferAllocatorBytes;
     private final long maxNoOfBytesToWriteLocally;
     private final int maxNoOfRecordsToWriteToArrowFileAtOnce;
+    private final Function<ArrowRecordBatchFactory<?>, RecordBatch<INCOMINGDATATYPE>> createBatchFn;
     private final BufferAllocator bufferAllocator;
     private final boolean closeBufferAllocator;
 
-    private ArrowRecordBatchAcceptingRecordsFactory(Builder builder) {
-
+    private ArrowRecordBatchFactory(
+            Builder builder,
+            Function<ArrowRecordBatchFactory<?>, RecordBatch<INCOMINGDATATYPE>> createBatchFn) {
         schema = Objects.requireNonNull(builder.schema, "schema must not be null");
         localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
         workingBufferAllocatorBytes = builder.workingBufferAllocatorBytes;
@@ -45,6 +48,7 @@ public class ArrowRecordBatchAcceptingRecordsFactory implements RecordBatchFacto
         maxBatchBufferAllocatorBytes = builder.maxBatchBufferAllocatorBytes;
         maxNoOfBytesToWriteLocally = builder.maxNoOfBytesToWriteLocally;
         maxNoOfRecordsToWriteToArrowFileAtOnce = builder.maxNoOfRecordsToWriteToArrowFileAtOnce;
+        this.createBatchFn = Objects.requireNonNull(createBatchFn, "createBatchFn must not be null");
         if (builder.bufferAllocator == null) {
             closeBufferAllocator = true;
             bufferAllocator = new RootAllocator(workingBufferAllocatorBytes + maxBatchBufferAllocatorBytes);
@@ -59,7 +63,11 @@ public class ArrowRecordBatchAcceptingRecordsFactory implements RecordBatchFacto
     }
 
     @Override
-    public RecordBatch<Record> createRecordBatch() {
+    public RecordBatch<INCOMINGDATATYPE> createRecordBatch() {
+        return createBatchFn.apply(this);
+    }
+
+    public RecordBatch<Record> createRecordBatchAcceptingRecords() {
         return new ArrowRecordBatchAcceptingRecords(
                 bufferAllocator,
                 schema,
@@ -132,8 +140,9 @@ public class ArrowRecordBatchAcceptingRecordsFactory implements RecordBatchFacto
             return this;
         }
 
-        public ArrowRecordBatchAcceptingRecordsFactory build() {
-            return new ArrowRecordBatchAcceptingRecordsFactory(this);
+        public ArrowRecordBatchFactory<Record> buildAcceptingRecords() {
+            return new ArrowRecordBatchFactory<>(this,
+                    ArrowRecordBatchFactory::createRecordBatchAcceptingRecords);
         }
     }
 }
