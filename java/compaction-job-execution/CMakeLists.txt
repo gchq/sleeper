@@ -60,5 +60,5 @@ target_include_directories(filters PUBLIC src/main/c/include)
 target_compile_options(filters PRIVATE --expt-relaxed-constexpr --expt-extended-lambda -Xfatbin -compress-all -Xcompiler -pthread)
 target_link_libraries(filters PRIVATE cudf::cudf)
 
-add_executable(cukeydist src/main/c/src/cukeydist.cpp src/main/c/src/cukeydist_utils.cpp src/main/c/include/cukeydist_utils.hpp src/main/c/src/output_split.cpp src/main/c/src/s3_waiting_source.cpp src/main/c/src/s3_writer.cpp src/main/c/include/output_split.hpp src/c/main/c/include/cukeydist.hpp src/main/c/include/s3_waiting_source.hpp src/main/c/include/s3_writer.hpp)
+add_executable(cukeydist src/main/c/src/cukeydist.cpp src/main/c/src/cukeydist_utils.cpp src/main/c/include/cukeydist_utils.hpp src/main/c/src/output_split.cpp src/main/c/src/s3_waiting_source.cpp src/main/c/src/s3_writer.cpp src/main/c/include/output_split.hpp src/main/c/include/cukeydist.hpp src/main/c/include/s3_waiting_source.hpp src/main/c/include/s3_writer.hpp)
 target_link_libraries(cukeydist PUBLIC cudf::cudf filters parquet_shared histogram s3_utils)
