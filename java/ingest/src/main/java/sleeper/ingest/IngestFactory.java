@@ -121,6 +121,15 @@ public class IngestFactory {
             return this;
         }
 
+        /**
+         * The configuration to use for interacting with files through a Hadoop file system,
+         * and any other needed operations.
+         * <p>
+         * This is not required. If it is not set, a default configuration will be created.
+         *
+         * @param hadoopConfiguration The configuration to use
+         * @return The builder for chaining calls
+         */
         public Builder hadoopConfiguration(Configuration hadoopConfiguration) {
             this.hadoopConfiguration = hadoopConfiguration;
             return this;
