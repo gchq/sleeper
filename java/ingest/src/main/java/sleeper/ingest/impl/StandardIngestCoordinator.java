@@ -86,7 +86,7 @@ public class StandardIngestCoordinator {
     }
 
     private static IngestCoordinator<Record> directWriteBackedByArrow(
-            Builder builder, BackedByArrowBuilder arrowBuilder, String filePathPrefix) {
+            Builder builder, Supplier<RecordBatch<Record>> recordBatchFactoryFn, String filePathPrefix) {
         FileWriterConfiguration fileWriterConfiguration = new DirectFileWriterConfiguration(
                 builder.parquetConfiguration, filePathPrefix);
         return new IngestCoordinator<>(
@@ -96,7 +96,7 @@ public class StandardIngestCoordinator {
                 builder.iteratorClassName,
                 builder.iteratorConfig,
                 builder.ingestPartitionRefreshFrequencyInSeconds,
-                arrowBuilder.recordBatchFactoryFn,
+                recordBatchFactoryFn,
                 fileWriterConfiguration);
     }
 
@@ -156,7 +156,7 @@ public class StandardIngestCoordinator {
     }
 
     private static IngestCoordinator<Record> asyncS3WriteBackedByArrow(
-            Builder builder, BackedByArrowBuilder arrowBuilder, String s3BucketName, S3AsyncClient s3AsyncClient) {
+            Builder builder, Supplier<RecordBatch<Record>> recordBatchFactoryFn, String s3BucketName, S3AsyncClient s3AsyncClient) {
         FileWriterConfiguration fileWriterConfiguration = AsyncS3FileWriterConfiguration.builder()
                 .parquetConfiguration(builder.parquetConfiguration)
                 .s3AsyncClient(s3AsyncClient).s3BucketName(s3BucketName)
@@ -169,7 +169,7 @@ public class StandardIngestCoordinator {
                 builder.iteratorClassName,
                 builder.iteratorConfig,
                 builder.ingestPartitionRefreshFrequencyInSeconds,
-                arrowBuilder.recordBatchFactoryFn,
+                recordBatchFactoryFn,
                 fileWriterConfiguration);
     }
 
@@ -203,7 +203,6 @@ public class StandardIngestCoordinator {
 
     public static class BackedByArrowBuilder implements BackedBuilder {
         private final Builder builder;
-        public Supplier<RecordBatch<Record>> recordBatchFactoryFn;
         private BufferAllocator arrowBufferAllocator;
         private int maxNoOfRecordsToWriteToArrowFileAtOnce;
         private long workingArrowBufferAllocatorBytes;
@@ -246,17 +245,15 @@ public class StandardIngestCoordinator {
         }
 
         public IngestCoordinator<Record> buildDirectWrite(String filePathPrefix) {
-            buildRecordBatchFactoryFn();
-            return directWriteBackedByArrow(builder, this, filePathPrefix);
+            return directWriteBackedByArrow(builder, buildRecordBatchFactoryFn(), filePathPrefix);
         }
 
         public IngestCoordinator<Record> buildAsyncS3Write(String s3BucketName, S3AsyncClient s3AsyncClient) {
-            buildRecordBatchFactoryFn();
-            return asyncS3WriteBackedByArrow(builder, this, s3BucketName, s3AsyncClient);
+            return asyncS3WriteBackedByArrow(builder, buildRecordBatchFactoryFn(), s3BucketName, s3AsyncClient);
         }
 
-        private void buildRecordBatchFactoryFn() {
-            this.recordBatchFactoryFn = () ->
+        private Supplier<RecordBatch<Record>> buildRecordBatchFactoryFn() {
+            return () ->
                     new ArrowRecordBatchAcceptingRecords(
                             arrowBufferAllocator,
                             builder.schema,
