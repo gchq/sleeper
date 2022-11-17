@@ -119,34 +119,35 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
         // Define a factory function for record batches
         String recordBatchType = instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
         String fileWriterType = instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
-        StandardIngestCoordinator.BackedBuilder ingestCoordinatorBuilder;
+        StandardIngestCoordinator.Builder builder = StandardIngestCoordinator.builder().fromProperties(ingestProperties);
         if (recordBatchType.equals("arraylist")) {
-            ingestCoordinatorBuilder = StandardIngestCoordinator.builder().fromProperties(ingestProperties)
-                    .backedByArrayList()
-                    .maxNoOfRecordsInMemory((int) ingestProperties.getMaxInMemoryBatchSize())
-                    .maxNoOfRecordsInLocalStore(ingestProperties.getMaxRecordsToWriteLocally());
+            builder.arrayListRecordBatchFactory(
+                    (int) ingestProperties.getMaxInMemoryBatchSize(),
+                    ingestProperties.getMaxRecordsToWriteLocally());
         } else if (recordBatchType.equals("arrow")) {
-            ingestCoordinatorBuilder = StandardIngestCoordinator.builder().fromProperties(ingestProperties)
-                    .backedByArrow()
-                    .maxNoOfRecordsToWriteToArrowFileAtOnce(instanceProperties.getInt(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS))
-                    .workingArrowBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES))
-                    .minBatchArrowBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
-                    .maxBatchArrowBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
-                    .maxNoOfBytesToWriteLocally(ingestProperties.getMaxRecordsToWriteLocally());
+            builder.arrowRecordBatchFactory(arrowBuilder -> arrowBuilder
+                    .maxNoOfRecordsToWriteToArrowFileAtOnce(
+                            instanceProperties.getInt(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS))
+                    .workingBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES))
+                    .minBatchBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
+                    .maxBatchBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
+                    .maxNoOfBytesToWriteLocally(ingestProperties.getMaxRecordsToWriteLocally()));
         } else {
             throw new UnsupportedOperationException(String.format("Record batch type %s not supported", recordBatchType));
         }
         if (fileWriterType.equals("direct")) {
-            return ingestCoordinatorBuilder.buildDirectWrite(ingestProperties.getFilePrefix() + ingestProperties.getBucketName());
+            builder.directPartitionFileWriterFactory(
+                    ingestProperties.getFilePrefix() + ingestProperties.getBucketName());
         } else if (fileWriterType.equals("async")) {
             if (!instanceProperties.get(FILE_SYSTEM).toLowerCase(Locale.ROOT).equals("s3a://")) {
                 throw new UnsupportedOperationException("Attempting an asynchronous write to a file system that is not s3a://");
             } else {
-                return ingestCoordinatorBuilder.buildAsyncS3Write(ingestProperties.getBucketName(), s3AsyncClient);
+                builder.asyncS3PartitionFileWriterFactory(ingestProperties.getBucketName(), s3AsyncClient);
             }
         } else {
             throw new UnsupportedOperationException(String.format("Record batch type %s not supported", recordBatchType));
         }
+        return builder.build();
     }
 
     private static IngestProperties createIngestProperties(ObjectFactory objectFactory,
