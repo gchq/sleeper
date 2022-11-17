@@ -92,11 +92,6 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
             String sleeperIteratorClassName,
             String sleeperIteratorConfig,
             CloseableIterator<Record> recordIterator) throws StateStoreException, IteratorException, IOException {
-        // If the partition file writer is 'async' then create the default async S3 client if required
-        S3AsyncClient internalS3AsyncClient =
-                instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT).equals("async") ?
-                        ((s3AsyncClient == null) ? S3AsyncClient.create() : s3AsyncClient) :
-                        null;
         // If the record batch type is Arrow, and no buffer allocator is provided, then create a root allocator that is
         // large enough to hold both the working and batch buffers.
         // This approach does not allow the batch buffer to be shared between multiple writing threads.
@@ -112,15 +107,11 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
                 new RootAllocator(totalArrowBytesRequired) : null;
              IngestCoordinator<Record> ingestCoordinator = createIngestCoordinatorWithProperties(
                      ingestProperties, instanceProperties, arrowBufferAllocator,
-                     internalS3AsyncClient)) {
+                     s3AsyncClient)) {
             return new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
             // The Arrow buffer will be auto-closed
         } finally {
             recordIterator.close();
-            // Close the S3 client if it was created in this method
-            if (s3AsyncClient == null && internalS3AsyncClient != null) {
-                internalS3AsyncClient.close();
-            }
         }
     }
 
