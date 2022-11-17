@@ -21,12 +21,12 @@ import sleeper.ingest.impl.ParquetConfiguration;
 import java.io.IOException;
 import java.util.Objects;
 
-public class DirectFileWriterConfiguration implements FileWriterConfiguration {
+public class DirectPartitionFileWriterFactory implements PartitionFileWriterFactory {
 
     private final ParquetConfiguration parquetConfiguration;
     private final String fileSystem;
 
-    public DirectFileWriterConfiguration(ParquetConfiguration parquetConfiguration, String fileSystem) {
+    public DirectPartitionFileWriterFactory(ParquetConfiguration parquetConfiguration, String fileSystem) {
         this.parquetConfiguration = Objects.requireNonNull(parquetConfiguration, "parquetWriterConfiguration must not be null");
         this.fileSystem = Objects.requireNonNull(fileSystem, "fileSystem must not be null");
     }

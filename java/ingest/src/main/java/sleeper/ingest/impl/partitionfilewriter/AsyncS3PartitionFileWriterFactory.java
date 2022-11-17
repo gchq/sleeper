@@ -22,7 +22,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import java.io.IOException;
 import java.util.Objects;
 
-public class AsyncS3FileWriterConfiguration implements FileWriterConfiguration {
+public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFactory {
 
     private final ParquetConfiguration parquetConfiguration;
     private final String s3BucketName;
@@ -30,7 +30,7 @@ public class AsyncS3FileWriterConfiguration implements FileWriterConfiguration {
     private final S3AsyncClient s3AsyncClient;
     private final boolean closeS3AsyncClient;
 
-    private AsyncS3FileWriterConfiguration(Builder builder) {
+    private AsyncS3PartitionFileWriterFactory(Builder builder) {
         parquetConfiguration = Objects.requireNonNull(builder.parquetConfiguration, "parquetWriterConfiguration must not be null");
         s3BucketName = Objects.requireNonNull(builder.s3BucketName, "s3BucketName must not be null");
         localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
@@ -97,8 +97,8 @@ public class AsyncS3FileWriterConfiguration implements FileWriterConfiguration {
             return this;
         }
 
-        public AsyncS3FileWriterConfiguration build() {
-            return new AsyncS3FileWriterConfiguration(this);
+        public AsyncS3PartitionFileWriterFactory build() {
+            return new AsyncS3PartitionFileWriterFactory(this);
         }
     }
 }

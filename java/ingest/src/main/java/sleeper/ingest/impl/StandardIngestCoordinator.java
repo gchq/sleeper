@@ -20,9 +20,9 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.IngestProperties;
-import sleeper.ingest.impl.partitionfilewriter.AsyncS3FileWriterConfiguration;
-import sleeper.ingest.impl.partitionfilewriter.DirectFileWriterConfiguration;
-import sleeper.ingest.impl.partitionfilewriter.FileWriterConfiguration;
+import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
+import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
+import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchAcceptingRecords;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchAcceptingRecords;
@@ -118,13 +118,13 @@ public class StandardIngestCoordinator {
         public IngestCoordinator<Record> buildDirectWrite(String filePathPrefix) {
             return builder.buildIngestCoordinator(
                     buildRecordBatchFactoryFn(),
-                    builder.buildDirectFileWriter(filePathPrefix));
+                    builder.buildDirectFileWriterFactory(filePathPrefix));
         }
 
         public IngestCoordinator<Record> buildAsyncS3Write(String s3BucketName, S3AsyncClient s3AsyncClient) {
             return builder.buildIngestCoordinator(
                     buildRecordBatchFactoryFn(),
-                    builder.buildAsyncFileWriter(s3BucketName, s3AsyncClient));
+                    builder.buildAsyncFileWriterFactory(s3BucketName, s3AsyncClient));
         }
 
         private Supplier<RecordBatch<Record>> buildRecordBatchFactoryFn() {
@@ -183,13 +183,13 @@ public class StandardIngestCoordinator {
         public IngestCoordinator<Record> buildDirectWrite(String filePathPrefix) {
             return builder.buildIngestCoordinator(
                     buildRecordBatchFactoryFn(),
-                    builder.buildDirectFileWriter(filePathPrefix));
+                    builder.buildDirectFileWriterFactory(filePathPrefix));
         }
 
         public IngestCoordinator<Record> buildAsyncS3Write(String s3BucketName, S3AsyncClient s3AsyncClient) {
             return builder.buildIngestCoordinator(
                     buildRecordBatchFactoryFn(),
-                    builder.buildAsyncFileWriter(s3BucketName, s3AsyncClient));
+                    builder.buildAsyncFileWriterFactory(s3BucketName, s3AsyncClient));
         }
 
         private Supplier<RecordBatch<Record>> buildRecordBatchFactoryFn() {
@@ -292,7 +292,7 @@ public class StandardIngestCoordinator {
 
         private IngestCoordinator<Record> buildIngestCoordinator(
                 Supplier<RecordBatch<Record>> recordBatchFactoryFn,
-                FileWriterConfiguration fileWriterConfiguration) {
+                PartitionFileWriterFactory partitionFileWriterFactory) {
             return new IngestCoordinator<>(
                     objectFactory,
                     stateStore,
@@ -301,16 +301,17 @@ public class StandardIngestCoordinator {
                     iteratorConfig,
                     ingestPartitionRefreshFrequencyInSeconds,
                     recordBatchFactoryFn,
-                    fileWriterConfiguration);
+                    partitionFileWriterFactory);
         }
 
-        private FileWriterConfiguration buildDirectFileWriter(String filePathPrefix) {
-            return new DirectFileWriterConfiguration(
+        private PartitionFileWriterFactory buildDirectFileWriterFactory(String filePathPrefix) {
+            return new DirectPartitionFileWriterFactory(
                     parquetConfiguration, filePathPrefix);
         }
 
-        private FileWriterConfiguration buildAsyncFileWriter(String s3BucketName, S3AsyncClient s3AsyncClient) {
-            return AsyncS3FileWriterConfiguration.builder()
+        private PartitionFileWriterFactory buildAsyncFileWriterFactory(
+                String s3BucketName, S3AsyncClient s3AsyncClient) {
+            return AsyncS3PartitionFileWriterFactory.builder()
                     .parquetConfiguration(parquetConfiguration)
                     .s3BucketName(s3BucketName).s3AsyncClient(s3AsyncClient)
                     .localWorkingDirectory(localWorkingDirectory)

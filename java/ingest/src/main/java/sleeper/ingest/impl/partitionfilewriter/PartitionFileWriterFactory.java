@@ -17,7 +17,7 @@ package sleeper.ingest.impl.partitionfilewriter;
 
 import sleeper.core.partition.Partition;
 
-public interface FileWriterConfiguration extends AutoCloseable {
+public interface PartitionFileWriterFactory extends AutoCloseable {
 
     PartitionFileWriter createPartitionFileWriter(Partition partition);
 
