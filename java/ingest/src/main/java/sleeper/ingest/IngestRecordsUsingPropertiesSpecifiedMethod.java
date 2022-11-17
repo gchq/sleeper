@@ -15,8 +15,6 @@
  */
 package sleeper.ingest;
 
-import org.apache.arrow.memory.BufferAllocator;
-import org.apache.arrow.memory.RootAllocator;
 import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
@@ -95,23 +93,12 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
         // If the record batch type is Arrow, and no buffer allocator is provided, then create a root allocator that is
         // large enough to hold both the working and batch buffers.
         // This approach does not allow the batch buffer to be shared between multiple writing threads.
-        long totalArrowBytesRequired = 0;
-        if (instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT).equals("arrow")) {
-            totalArrowBytesRequired = instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES) +
-                    instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES);
-        }
         IngestProperties ingestProperties = createIngestProperties(objectFactory,
                 sleeperStateStore, instanceProperties, tableProperties, localWorkingDirectory,
                 hadoopConfiguration, sleeperIteratorClassName, sleeperIteratorConfig);
-        try (BufferAllocator arrowBufferAllocator = (totalArrowBytesRequired > 0) ?
-                new RootAllocator(totalArrowBytesRequired) : null;
-             IngestCoordinator<Record> ingestCoordinator = createIngestCoordinatorWithProperties(
-                     ingestProperties, instanceProperties, arrowBufferAllocator,
-                     s3AsyncClient)) {
+        try (IngestCoordinator<Record> ingestCoordinator = createIngestCoordinatorWithProperties(
+                ingestProperties, instanceProperties, s3AsyncClient)) {
             return new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
-            // The Arrow buffer will be auto-closed
-        } finally {
-            recordIterator.close();
         }
     }
 
@@ -121,16 +108,13 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
      *
      * @param ingestProperties   The ingest properties to use to configure the ingest
      * @param instanceProperties The instance properties to use to configure the ingest
-     * @param bufferAllocator    A buffer allocator to use during Arrow-based ingest. It may be null, but if it is
-     *                           needed, a {@link NullPointerException} will be thrown
      * @param s3AsyncClient      A client to use during asynchronous ingest. It may be null, but if it is needed,
      *                           a {@link NullPointerException} will be thrown
      * @return The relevant IngestCoordinator object
      */
-    public static IngestCoordinator<Record> createIngestCoordinatorWithProperties(
+    private static IngestCoordinator<Record> createIngestCoordinatorWithProperties(
             IngestProperties ingestProperties,
             InstanceProperties instanceProperties,
-            BufferAllocator bufferAllocator,
             S3AsyncClient s3AsyncClient) {
         // Define a factory function for record batches
         String recordBatchType = instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
@@ -144,7 +128,6 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
         } else if (recordBatchType.equals("arrow")) {
             ingestCoordinatorBuilder = StandardIngestCoordinator.builder().fromProperties(ingestProperties)
                     .backedByArrow()
-                    .arrowBufferAllocator(bufferAllocator)
                     .maxNoOfRecordsToWriteToArrowFileAtOnce(instanceProperties.getInt(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS))
                     .workingArrowBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES))
                     .minBatchArrowBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
