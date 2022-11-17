@@ -142,6 +142,10 @@ public class IngestFactory {
         }
     }
 
+    public IngestRecords createIngestRecords(TableProperties tableProperties) {
+        return new IngestRecords(createIngestCoordinator(tableProperties));
+    }
+
     public static Builder builder() {
         return new Builder();
     }

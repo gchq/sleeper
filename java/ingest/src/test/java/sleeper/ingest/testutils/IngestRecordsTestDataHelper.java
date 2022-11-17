@@ -21,6 +21,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Region;
 import sleeper.core.record.CloneRecord;
@@ -29,11 +31,13 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
+import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestProperties;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreProvider;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,8 +48,21 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class IngestRecordsTestDataHelper {
+    public static final String TEST_TABLE_NAME = "test-ingest-records";
+
     private IngestRecordsTestDataHelper() {
     }
 
@@ -64,6 +81,41 @@ public class IngestRecordsTestDataHelper {
                 .schema(sleeperSchema)
                 .filePathPrefix(sketchDirectory)
                 .ingestPartitionRefreshFrequencyInSecond(120);
+    }
+
+    public static TableProperties defaultTableProperties(Schema schema, String tableName, String bucketName) {
+        return defaultTableProperties(schema, tableName, bucketName, defaultInstanceProperties());
+    }
+
+    public static TableProperties defaultTableProperties(Schema schema, String tableName, String bucketName, InstanceProperties instanceProperties) {
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.setSchema(schema);
+        tableProperties.set(TABLE_NAME, tableName);
+        tableProperties.setNumber(ROW_GROUP_SIZE, ParquetWriter.DEFAULT_BLOCK_SIZE);
+        tableProperties.setNumber(PAGE_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE);
+        tableProperties.set(COMPRESSION_CODEC, "zstd");
+        tableProperties.set(DATA_BUCKET, bucketName);
+        return tableProperties;
+    }
+
+    public static InstanceProperties defaultInstanceProperties() {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(FILE_SYSTEM, "");
+        instanceProperties.set(INGEST_RECORD_BATCH_TYPE, "arraylist");
+        instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 10L);
+        instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1000);
+        instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, 120);
+        return instanceProperties;
+    }
+
+    public static IngestFactory createIngestFactory(String localDir, StateStoreProvider stateStoreProvider, InstanceProperties instanceProperties) {
+        return IngestFactory.builder()
+                .objectFactory(ObjectFactory.noUserJars())
+                .localDir(localDir)
+                .stateStoreProvider(stateStoreProvider)
+                .instanceProperties(instanceProperties)
+                .build();
     }
 
     public static Schema schemaWithRowKeys(Field... fields) {

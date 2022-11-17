@@ -19,6 +19,8 @@ package sleeper.ingest;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
@@ -27,6 +29,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
 import sleeper.statestore.DelegatingStateStore;
+import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.inmemory.FixedPartitionStore;
@@ -64,5 +67,9 @@ public class IngestRecordsTestBase {
 
     protected IngestProperties.Builder defaultPropertiesBuilder(StateStore stateStore, Schema sleeperSchema) {
         return IngestRecordsTestDataHelper.defaultPropertiesBuilder(stateStore, sleeperSchema, inputFolderName, sketchFolderName);
+    }
+
+    protected IngestFactory createIngestFactory(StateStore stateStore, TableProperties tableProperties, InstanceProperties instanceProperties) {
+        return IngestRecordsTestDataHelper.createIngestFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
     }
 }
