@@ -32,11 +32,9 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.ingest.IngestFactory;
-import sleeper.ingest.IngestProperties;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
-import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.File;
@@ -65,24 +63,7 @@ public class IngestRecordsTestDataHelper {
 
     private IngestRecordsTestDataHelper() {
     }
-
-
-    public static IngestProperties.Builder defaultPropertiesBuilder(
-            StateStore stateStore, Schema sleeperSchema, String ingestLocalWorkingDirectory, String sketchDirectory) {
-        return IngestProperties.builder()
-                .objectFactory(ObjectFactory.noUserJars())
-                .localDir(ingestLocalWorkingDirectory)
-                .maxRecordsToWriteLocally(10L)
-                .maxInMemoryBatchSize(1000)
-                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
-                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
-                .compressionCodec("zstd")
-                .stateStore(stateStore)
-                .schema(sleeperSchema)
-                .filePathPrefix(sketchDirectory)
-                .ingestPartitionRefreshFrequencyInSecond(120);
-    }
-
+    
     public static TableProperties defaultTableProperties(Schema schema, String tableName, String bucketName) {
         return defaultTableProperties(schema, tableName, bucketName, defaultInstanceProperties());
     }
