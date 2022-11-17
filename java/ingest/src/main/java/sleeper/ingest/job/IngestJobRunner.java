@@ -55,7 +55,6 @@ public class IngestJobRunner {
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final String fs;
-    private final S3AsyncClient s3AsyncClient;
     private final Configuration hadoopConfiguration;
     private final IngestFactory ingestFactory;
 
@@ -70,13 +69,13 @@ public class IngestJobRunner {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.fs = instanceProperties.get(FILE_SYSTEM);
         this.hadoopConfiguration = hadoopConfiguration;
-        this.s3AsyncClient = s3AsyncClient;
         this.ingestFactory = IngestFactory.builder()
                 .objectFactory(objectFactory)
                 .localDir(localDir)
                 .stateStoreProvider(stateStoreProvider)
                 .hadoopConfiguration(hadoopConfiguration)
                 .instanceProperties(instanceProperties)
+                .s3AsyncClient(s3AsyncClient)
                 .build();
     }
 
@@ -116,8 +115,7 @@ public class IngestJobRunner {
         CloseableIterator<Record> concatenatingIterator = new ConcatenatingIterator(inputIterators);
 
         // Run the ingest
-        IngestResult result = ingestFactory.ingestFromRecordIterator(
-                tableProperties, s3AsyncClient, concatenatingIterator);
+        IngestResult result = ingestFactory.ingestFromRecordIterator(tableProperties, concatenatingIterator);
         LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getNumberOfRecords(), paths);
         return result;
     }

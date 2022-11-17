@@ -39,6 +39,7 @@ public class IngestFactory {
     private final StateStoreProvider stateStoreProvider;
     private final InstanceProperties instanceProperties;
     private final Configuration hadoopConfiguration;
+    private final S3AsyncClient s3AsyncClient;
 
     private IngestFactory(Builder builder) {
         objectFactory = Objects.requireNonNull(builder.objectFactory, "objectFactory must not be null");
@@ -50,15 +51,11 @@ public class IngestFactory {
         } else {
             hadoopConfiguration = builder.hadoopConfiguration;
         }
+        // If S3AsyncClient is not set, a default client will be created if it is needed.
+        s3AsyncClient = builder.s3AsyncClient;
     }
 
     public IngestResult ingestFromRecordIterator(TableProperties tableProperties, CloseableIterator<Record> recordIterator)
-            throws StateStoreException, IteratorException, IOException {
-        return ingestFromRecordIterator(tableProperties, null, recordIterator);
-    }
-
-    public IngestResult ingestFromRecordIterator(
-            TableProperties tableProperties, S3AsyncClient s3AsyncClient, CloseableIterator<Record> recordIterator)
             throws StateStoreException, IteratorException, IOException {
         return IngestRecordsUsingPropertiesSpecifiedMethod.ingestFromRecordIterator(
                 objectFactory,
@@ -95,6 +92,7 @@ public class IngestFactory {
         private StateStoreProvider stateStoreProvider;
         private InstanceProperties instanceProperties;
         private Configuration hadoopConfiguration;
+        private S3AsyncClient s3AsyncClient;
 
         private Builder() {
         }
@@ -123,8 +121,31 @@ public class IngestFactory {
             return this;
         }
 
+        /**
+         * The configuration to use for interacting with files through a Hadoop file system,
+         * and any other needed operations.
+         * <p>
+         * This is not required. If it is not set, a default configuration will be created.
+         *
+         * @param hadoopConfiguration The configuration to use
+         * @return The builder for chaining calls
+         */
         public Builder hadoopConfiguration(Configuration hadoopConfiguration) {
             this.hadoopConfiguration = hadoopConfiguration;
+            return this;
+        }
+
+        /**
+         * The client to use for asynchronous S3 operations.
+         * This may or may not be used depending on the settings for an ingest.
+         * <p>
+         * This is not required. If it is not set, a default client will be created if it is needed.
+         *
+         * @param s3AsyncClient The client to use
+         * @return The builder for chaining calls
+         */
+        public Builder s3AsyncClient(S3AsyncClient s3AsyncClient) {
+            this.s3AsyncClient = s3AsyncClient;
             return this;
         }
 
