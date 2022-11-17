@@ -134,7 +134,7 @@ public class FindPartitionsToSplitIT {
                         .objectFactory(new ObjectFactory(new InstanceProperties(), null, ""))
                         .localDir(stagingArea.getAbsolutePath())
                         .maxRecordsToWriteLocally(0L)
-                        .maxInMemoryBatchSize(1_000_000L)
+                        .maxInMemoryBatchSize(1_000_000)
                         .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
                         .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
                         .compressionCodec("zstd")

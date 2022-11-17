@@ -196,7 +196,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                 .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
                 .localDir(ingestLocalWorkingDirectory)
                 .maxRecordsToWriteLocally(10L)
-                .maxInMemoryBatchSize(1000L)
+                .maxInMemoryBatchSize(1000)
                 .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
                 .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
                 .compressionCodec("zstd")
