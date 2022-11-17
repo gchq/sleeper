@@ -55,8 +55,8 @@ target_include_directories(s3_utils INTERFACE ${AWSSDK_INCLUDE_DIRS})
 target_link_libraries(s3_utils PRIVATE ${AWSSDK_LIBRARIES})
 
 # Build the filters library
-add_library(filters STATIC compact/range_and_age_filter.cu compact/age_of_filter.cu compact/range_filter_int32.cu compact/range_filter_int64.cu compact/range_filter_string.cu compact/range_filter.cuh compact/filters.h)
-target_include_directories(filters PUBLIC compact)
+add_library(filters STATIC src/main/c/src/range_filter_int32.cu src/main/c/src/range_filter_int64.cu src/main/c/src/range_filter_string.cu src/main/c/include/range_filter.cuh src/main/c/include/filters.h)
+target_include_directories(filters PUBLIC src/main/c/include)
 target_compile_options(filters PRIVATE --expt-relaxed-constexpr --expt-extended-lambda -Xfatbin -compress-all -Xcompiler -pthread)
 target_link_libraries(filters PRIVATE cudf::cudf)
 

@@ -59,8 +59,8 @@
         </fileSet>
         <!-- GPU source code -->
         <fileSet>
-            <directory>${project.basedir}/../compaction-job-execution/src/c</directory>
-            <outputDirectory>scripts/docker/compaction-job-execution/src/c</outputDirectory>
+            <directory>${project.basedir}/../compaction-job-execution/src</directory>
+            <outputDirectory>scripts/docker/compaction-job-execution/src</outputDirectory>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../compaction-job-execution/cmake</directory>

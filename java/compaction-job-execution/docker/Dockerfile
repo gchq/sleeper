@@ -15,34 +15,34 @@ ARG TARGETARCH
 FROM nvcr.io/nvidia/rapidsai/rapidsai-core:22.10-cuda11.5-base-ubuntu20.04-py3.9 as base
 
 # Install some essentials
-RUN apt-get update
-RUN apt-get upgrade -y
-RUN apt-get install -y zip unzip tar wget htop nano less xxd hexedit openjdk-8-jre-headless
+RUN ["apt-get", "update"]
+RUN ["apt-get", "upgrade", "-y"]
+RUN ["apt-get", "install", "-y", "htop", "nano", "openjdk-8-jre-headless"]
 
 # Create proc. user
-RUN useradd -ms /bin/bash worker
+RUN ["useradd", "-ms", "/bin/bash", "worker"]
 USER worker
 WORKDIR /home/worker
 # Install some runtime dependencies
-RUN /opt/conda/condabin/mamba install -y -c nvidia -c conda-forge -c rapidsai msgpack-python gmp cuda-nvtx cuda-cudart
+RUN ["/opt/conda/condabin/mamba", "install", "-y", "-c", "nvidia", "-c", "conda-forge", "gmp", "cuda-nvtx", "cuda-cudart"]
 
 # Now create builder image with extra tools built in
 FROM base AS compiler
 ARG TARGETARCH
 USER root
-RUN apt-get install -y gcc g++ make clang
+RUN ["apt-get", "install", "-y", "gcc", "g++", "make"]
 USER worker
 WORKDIR /home/worker
 # Install CUDA and compiler and cmake
-RUN /opt/conda/condabin/mamba install -y -c nvidia -c conda-forge cmake make cuda-nvcc cuda-cudart-dev libopenssl-static pkg-config
+RUN ["/opt/conda/condabin/mamba", "install", "-y", "-c", "nvidia", "-c", "conda-forge", "cmake", "cuda-nvcc", "cuda-cudart-dev", "libopenssl-static", "pkg-config"]
 
 # Copy and build the code
 FROM compiler AS builder
 USER worker
-RUN mkdir -p /home/worker/compact
+RUN ["mkdir", "-p","/home/worker/compact"]
 COPY --chown=worker:worker . /home/worker/compact
 WORKDIR /home/worker/compact
-RUN bash shell/build.sh
+RUN ["./gpu_build.sh"]
 
 # Now we have a built image, copy it across to the final image
 FROM base AS final
