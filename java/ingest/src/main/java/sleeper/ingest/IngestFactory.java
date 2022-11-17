@@ -129,7 +129,8 @@ public class IngestFactory {
         /**
          * The client to use for asynchronous S3 operations.
          * This may or may not be used depending on the settings for an ingest.
-         * If this is not set, a default client will be created if it is needed.
+         * <p>
+         * This is not required. If it is not set, a default client will be created if it is needed.
          *
          * @param s3AsyncClient The client to use
          * @return The builder for chaining calls
