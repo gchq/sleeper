@@ -48,14 +48,17 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
         return instanceTableName(instanceId, "ingest-job-status");
     }
 
+    // Used to prevent spotbugs from failing
     public AmazonDynamoDB getDynamoDB() {
         return dynamoDB;
     }
 
+    // Used to prevent spotbugs from failing
     public String getStatusTableName() {
         return statusTableName;
     }
 
+    // Used to prevent spotbugs from failing
     public long getTimeToLive() {
         return timeToLive;
     }
