@@ -46,6 +46,7 @@ RUN ["./gpu_build.sh"]
 
 # Now we have a built image, copy it across to the final image
 FROM base AS final
+USER root
 COPY --from=builder /home/worker/compact/build /compact
 COPY compaction-job-execution.jar /compaction-job-execution.jar
 COPY run.sh /run.sh
