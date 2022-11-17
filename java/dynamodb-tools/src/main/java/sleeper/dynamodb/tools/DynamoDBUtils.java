@@ -31,7 +31,7 @@ import java.util.List;
 
 public class DynamoDBUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBUtils.class);
-    public static final String EXPIRY_DATE = "ExpiryDate";
+
 
     private DynamoDBUtils() {
     }
@@ -62,15 +62,15 @@ public class DynamoDBUtils {
             }
         }
     }
-    
-    public static void configureTimeToLive(AmazonDynamoDB dynamoDB, String tableName) {
+
+    public static void configureTimeToLive(AmazonDynamoDB dynamoDB, String tableName, String expiryField) {
         dynamoDB.updateTimeToLive(new UpdateTimeToLiveRequest()
                 .withTableName(tableName)
                 .withTimeToLiveSpecification(
                         new TimeToLiveSpecification()
                                 .withEnabled(true)
-                                .withAttributeName(EXPIRY_DATE)
+                                .withAttributeName(expiryField)
                 ));
-        LOGGER.info("Configured TTL on field {}", EXPIRY_DATE);
+        LOGGER.info("Configured TTL on field {}", expiryField);
     }
 }

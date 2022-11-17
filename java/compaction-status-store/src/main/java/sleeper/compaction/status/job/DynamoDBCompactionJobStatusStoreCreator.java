@@ -24,6 +24,7 @@ import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.Arrays;
 
+import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.EXPIRY_DATE;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
 import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
@@ -45,6 +46,6 @@ public class DynamoDBCompactionJobStatusStoreCreator {
                 Arrays.asList(
                         new KeySchemaElement(JOB_ID, KeyType.HASH),
                         new KeySchemaElement(UPDATE_TIME, KeyType.RANGE)));
-        configureTimeToLive(dynamoDB, tableName);
+        configureTimeToLive(dynamoDB, tableName, EXPIRY_DATE);
     }
 }

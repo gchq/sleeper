@@ -24,6 +24,7 @@ import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.Arrays;
 
+import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusFormat.EXPIRY_DATE;
 import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusFormat.TASK_ID;
 import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusFormat.UPDATE_TIME;
 import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore.taskStatusTableName;
@@ -45,6 +46,6 @@ public class DynamoDBCompactionTaskStatusStoreCreator {
                 Arrays.asList(
                         new KeySchemaElement(TASK_ID, KeyType.HASH),
                         new KeySchemaElement(UPDATE_TIME, KeyType.RANGE)));
-        configureTimeToLive(dynamoDB, tableName);
+        configureTimeToLive(dynamoDB, tableName, EXPIRY_DATE);
     }
 }
