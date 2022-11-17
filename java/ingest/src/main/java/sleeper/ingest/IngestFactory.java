@@ -51,6 +51,7 @@ public class IngestFactory {
         } else {
             hadoopConfiguration = builder.hadoopConfiguration;
         }
+        // If S3AsyncClient is not set, a default client will be created if it is needed.
         s3AsyncClient = builder.s3AsyncClient;
     }
 
@@ -125,6 +126,14 @@ public class IngestFactory {
             return this;
         }
 
+        /**
+         * The client to use for asynchronous S3 operations.
+         * This may or may not be used depending on the settings for an ingest.
+         * If this is not set, a default client will be created if it is needed.
+         *
+         * @param s3AsyncClient The client to use
+         * @return The builder for chaining calls
+         */
         public Builder s3AsyncClient(S3AsyncClient s3AsyncClient) {
             this.s3AsyncClient = s3AsyncClient;
             return this;
