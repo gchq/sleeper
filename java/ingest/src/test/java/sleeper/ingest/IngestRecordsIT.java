@@ -16,6 +16,8 @@
 package sleeper.ingest;
 
 import org.junit.Test;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.statestore.FileInfo;
@@ -26,6 +28,9 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.TEST_TABLE_NAME;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultInstanceProperties;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultTableProperties;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
@@ -37,8 +42,10 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
-        IngestRecords ingestRecords = new IngestRecords(properties);
+        InstanceProperties instanceProperties = defaultInstanceProperties();
+        TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
+        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
+        IngestRecords ingestRecords = factory.createIngestRecords(tableProperties);
         ingestRecords.init();
         for (Record record : getRecords()) {
             ingestRecords.write(record);
@@ -79,8 +86,10 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
-        IngestRecords ingestRecords = new IngestRecords(properties);
+        InstanceProperties instanceProperties = defaultInstanceProperties();
+        TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
+        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
+        IngestRecords ingestRecords = factory.createIngestRecords(tableProperties);
         ingestRecords.init();
         long numWritten = ingestRecords.close().getNumberOfRecords();
 
