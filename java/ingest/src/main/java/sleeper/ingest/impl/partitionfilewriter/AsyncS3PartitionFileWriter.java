@@ -20,7 +20,6 @@ import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.core.key.Key;
@@ -29,8 +28,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
-import sleeper.io.parquet.record.ParquetRecordWriter;
-import sleeper.io.parquet.record.SchemaConverter;
+import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.statestore.FileInfo;
@@ -90,43 +88,30 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * org.apache.hadoop.fs.FileSystem#closeAll()} is called. This is strange behaviour and can cause errors which are difficult to
      * diagnose.
      *
-     * @param sleeperSchema           The schema of the records in the partition
-     * @param partition               The partition to write to
-     * @param s3AsyncClient           The S3 client to use to perform the asynchronous upload
-     * @param localWorkingDirectory   The local directory to use to create temporary files
-     * @param s3BucketName            The S3 bucket to write to
-     * @param parquetCompressionCodec The compression codec to use
-     * @param parquetRowGroupSize     The row group size
-     * @param parquetPageSize         The page size
-     * @param hadoopConfiguration     The Hadoop configuration to use when writing the local Parquet partition file
+     * @param partition             The partition to write to
+     * @param parquetConfiguration  Hadoop, schema and Parquet configuration for writing the local Parquet partition file
+     * @param s3AsyncClient         The S3 client to use to perform the asynchronous upload
+     * @param localWorkingDirectory The local directory to use to create temporary files
+     * @param s3BucketName          The S3 bucket to write to
      * @throws IOException -
      */
-    public AsyncS3PartitionFileWriter(Schema sleeperSchema,
-                                      Partition partition,
-                                      int parquetRowGroupSize,
-                                      int parquetPageSize,
-                                      String parquetCompressionCodec,
-                                      Configuration hadoopConfiguration,
-                                      String s3BucketName,
-                                      S3AsyncClient s3AsyncClient,
-                                      String localWorkingDirectory) throws IOException {
+    public AsyncS3PartitionFileWriter(
+            Partition partition,
+            ParquetConfiguration parquetConfiguration,
+            String s3BucketName,
+            S3AsyncClient s3AsyncClient,
+            String localWorkingDirectory) throws IOException {
         this.s3AsyncClient = requireNonNull(s3AsyncClient);
-        this.sleeperSchema = requireNonNull(sleeperSchema);
+        this.sleeperSchema = parquetConfiguration.getSleeperSchema();
         this.partition = requireNonNull(partition);
         this.s3BucketName = requireNonNull(s3BucketName);
-        this.hadoopConfiguration = requireNonNull(hadoopConfiguration);
+        this.hadoopConfiguration = parquetConfiguration.getHadoopConfiguration();
         UUID uuid = UUID.randomUUID();
         this.partitionParquetLocalFileName = String.format("%s/partition_%s_%s.parquet", localWorkingDirectory, partition.getId(), uuid);
         this.quantileSketchesLocalFileName = String.format("%s/partition_%s_%s.sketches", localWorkingDirectory, partition.getId(), uuid);
         this.partitionParquetS3Key = String.format("partition_%s/%s.parquet", partition.getId(), uuid);
         this.quantileSketchesS3Key = String.format("partition_%s/%s.sketches", partition.getId(), uuid);
-        this.parquetWriter = createParquetWriter(
-                partitionParquetLocalFileName,
-                sleeperSchema,
-                parquetCompressionCodec,
-                parquetRowGroupSize,
-                parquetPageSize,
-                hadoopConfiguration);
+        this.parquetWriter = parquetConfiguration.createParquetWriter(partitionParquetLocalFileName);
         LOGGER.info("Created Parquet writer for partition {}", partition.getId());
         this.keyFieldToSketchMap = createKeyFieldToSketchMap(sleeperSchema);
         this.rowKeyName = this.sleeperSchema.getRowKeyFields().get(0).getName();
@@ -165,33 +150,6 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
                 .maxRowKey(Key.create(maxKey))
                 .lastStateStoreUpdateTime(updateTime)
                 .build();
-    }
-
-    /**
-     * Create a Parquet writer to write Records to the named file
-     *
-     * @param outputFile              The name of the Parquet file to write to
-     * @param sleeperSchema           -
-     * @param parquetCompressionCodec -
-     * @param parquetRowGroupSize     -
-     * @param parquetPageSize         -
-     * @param hadoopConfiguration     -
-     * @return The {@link ParquetWriter} object
-     * @throws IOException -
-     */
-    private static ParquetWriter<Record> createParquetWriter(String outputFile,
-                                                             Schema sleeperSchema,
-                                                             String parquetCompressionCodec,
-                                                             int parquetRowGroupSize,
-                                                             int parquetPageSize,
-                                                             Configuration hadoopConfiguration) throws IOException {
-        ParquetRecordWriter.Builder builder = new ParquetRecordWriter.Builder(new Path(outputFile),
-                SchemaConverter.getSchema(sleeperSchema), sleeperSchema)
-                .withCompressionCodec(CompressionCodecName.fromConf(parquetCompressionCodec))
-                .withRowGroupSize(parquetRowGroupSize)
-                .withPageSize(parquetPageSize)
-                .withConf(hadoopConfiguration);
-        return builder.build();
     }
 
     /**
