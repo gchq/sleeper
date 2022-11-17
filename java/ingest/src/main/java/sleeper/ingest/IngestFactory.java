@@ -39,6 +39,7 @@ public class IngestFactory {
     private final StateStoreProvider stateStoreProvider;
     private final InstanceProperties instanceProperties;
     private final Configuration hadoopConfiguration;
+    private final S3AsyncClient s3AsyncClient;
 
     private IngestFactory(Builder builder) {
         objectFactory = Objects.requireNonNull(builder.objectFactory, "objectFactory must not be null");
@@ -50,15 +51,10 @@ public class IngestFactory {
         } else {
             hadoopConfiguration = builder.hadoopConfiguration;
         }
+        s3AsyncClient = builder.s3AsyncClient;
     }
 
     public IngestResult ingestFromRecordIterator(TableProperties tableProperties, CloseableIterator<Record> recordIterator)
-            throws StateStoreException, IteratorException, IOException {
-        return ingestFromRecordIterator(tableProperties, null, recordIterator);
-    }
-
-    public IngestResult ingestFromRecordIterator(
-            TableProperties tableProperties, S3AsyncClient s3AsyncClient, CloseableIterator<Record> recordIterator)
             throws StateStoreException, IteratorException, IOException {
         return IngestRecordsUsingPropertiesSpecifiedMethod.ingestFromRecordIterator(
                 objectFactory,
@@ -95,6 +91,7 @@ public class IngestFactory {
         private StateStoreProvider stateStoreProvider;
         private InstanceProperties instanceProperties;
         private Configuration hadoopConfiguration;
+        private S3AsyncClient s3AsyncClient;
 
         private Builder() {
         }
@@ -125,6 +122,11 @@ public class IngestFactory {
 
         public Builder hadoopConfiguration(Configuration hadoopConfiguration) {
             this.hadoopConfiguration = hadoopConfiguration;
+            return this;
+        }
+
+        public Builder s3AsyncClient(S3AsyncClient s3AsyncClient) {
+            this.s3AsyncClient = s3AsyncClient;
             return this;
         }
 
