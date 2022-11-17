@@ -300,7 +300,7 @@ public class StandardIngestCoordinator {
                     iteratorClassName,
                     iteratorConfig,
                     ingestPartitionRefreshFrequencyInSeconds,
-                    recordBatchFactoryFn,
+                    recordBatchFactoryFn::get,
                     partitionFileWriterFactory);
         }
 
