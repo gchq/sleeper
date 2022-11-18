@@ -57,7 +57,7 @@ public class StandardIngestCoordinator {
                         .workingBufferAllocatorBytes(workingArrowBufferAllocatorBytes)
                         .minBatchBufferAllocatorBytes(minBatchArrowBufferAllocatorBytes)
                         .maxBatchBufferAllocatorBytes(maxBatchArrowBufferAllocatorBytes)
-                        .maxNoOfBytesToWriteLocally(maxNoOfBytesToWriteLocally))
+                        .maxNoOfBytesToWriteLocally(maxNoOfBytesToWriteLocally)
                         .buildAcceptingRecords())
                 .partitionFileWriterFactory(ingestProperties.buildDirectPartitionFileWriterFactory(parquetConfiguration))
                 .build();
@@ -95,7 +95,7 @@ public class StandardIngestCoordinator {
                         .workingBufferAllocatorBytes(workingArrowBufferAllocatorBytes)
                         .minBatchBufferAllocatorBytes(minBatchArrowBufferAllocatorBytes)
                         .maxBatchBufferAllocatorBytes(maxBatchArrowBufferAllocatorBytes)
-                        .maxNoOfBytesToWriteLocally(maxNoOfBytesToWriteLocally))
+                        .maxNoOfBytesToWriteLocally(maxNoOfBytesToWriteLocally)
                         .buildAcceptingRecords())
                 .partitionFileWriterFactory(ingestProperties
                         .asyncS3PartitionFileWriterFactoryBuilder(parquetConfiguration)
