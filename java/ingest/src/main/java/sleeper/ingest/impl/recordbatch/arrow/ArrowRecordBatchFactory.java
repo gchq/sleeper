@@ -43,6 +43,18 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
             Function<ArrowRecordBatchFactory<?>, RecordBatch<INCOMINGDATATYPE>> createBatchFn) {
         schema = Objects.requireNonNull(builder.schema, "schema must not be null");
         localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
+        if (builder.workingBufferAllocatorBytes < 1) {
+            throw new IllegalArgumentException("workingBufferAllocatorBytes must be positive");
+        }
+        if (builder.maxBatchBufferAllocatorBytes < 1) {
+            throw new IllegalArgumentException("maxBatchBufferAllocatorBytes must be positive");
+        }
+        if (builder.maxNoOfBytesToWriteLocally < 1) {
+            throw new IllegalArgumentException("maxNoOfBytesToWriteLocally must be positive");
+        }
+        if (builder.maxNoOfRecordsToWriteToArrowFileAtOnce < 1) {
+            throw new IllegalArgumentException("maxNoOfRecordsToWriteToArrowFileAtOnce must be positive");
+        }
         workingBufferAllocatorBytes = builder.workingBufferAllocatorBytes;
         minBatchBufferAllocatorBytes = builder.minBatchBufferAllocatorBytes;
         maxBatchBufferAllocatorBytes = builder.maxBatchBufferAllocatorBytes;
