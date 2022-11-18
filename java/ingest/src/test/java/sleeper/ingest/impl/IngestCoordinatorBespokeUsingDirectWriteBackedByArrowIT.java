@@ -16,6 +16,7 @@
 package sleeper.ingest.impl;
 
 import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.After;
@@ -117,7 +118,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
     }
 
     @Test
-    public void shouldError() {
+    public void shouldErrorWhenThereAreMoreRecordsThanCanFitInLocalFileAndMoreThanFitInWorkingBytes() {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
@@ -137,7 +138,8 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                         32 * 1024L,
                         1024 * 1024L,
                         64 * 1024 * 1024L))
-                .isInstanceOf(NullPointerException.class);
+                .isInstanceOf(OutOfMemoryException.class)
+                .hasNoSuppressedExceptions();
     }
 
     private void ingestAndVerifyUsingDirectWriteBackedByArrow(
