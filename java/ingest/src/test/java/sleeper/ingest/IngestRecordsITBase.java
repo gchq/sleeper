@@ -29,6 +29,7 @@ import org.testcontainers.containers.GenericContainer;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -39,8 +40,12 @@ import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
+import java.util.List;
 import java.util.UUID;
 
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.TEST_TABLE_NAME;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultInstanceProperties;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultTableProperties;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
 
 public class IngestRecordsITBase {
@@ -81,5 +86,12 @@ public class IngestRecordsITBase {
 
     protected IngestFactory createIngestFactory(StateStore stateStore, TableProperties tableProperties, InstanceProperties instanceProperties) {
         return IngestRecordsTestDataHelper.createIngestFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
+    }
+
+    protected IngestResult ingestRecords(Schema schema, StateStore stateStore, List<Record> records) {
+        InstanceProperties instanceProperties = defaultInstanceProperties();
+        TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
+        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
+        return factory.ingestRecords(tableProperties, records);
     }
 }
