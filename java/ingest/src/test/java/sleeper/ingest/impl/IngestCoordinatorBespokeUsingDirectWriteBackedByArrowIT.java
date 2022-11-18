@@ -15,9 +15,7 @@
  */
 package sleeper.ingest.impl;
 
-import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.OutOfMemoryException;
-import org.apache.arrow.memory.RootAllocator;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.After;
 import org.junit.Before;
@@ -150,7 +148,6 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
             long arrowWorkingBytes,
             long arrowBatchBytes,
             long localStoreBytes) throws IOException, StateStoreException, IteratorException {
-        BufferAllocator bufferAllocator = new RootAllocator();
         StateStore stateStore = PartitionedTableCreator.createStateStore(
                 AWS_EXTERNAL_RESOURCE.getDynamoDBClient(),
                 recordListAndSchema.sleeperSchema,
@@ -163,7 +160,6 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                 stateStore, recordListAndSchema.sleeperSchema,
                 ArrowRecordBatchFactory.builder()
                         .schema(recordListAndSchema.sleeperSchema)
-                        .bufferAllocator(bufferAllocator)
                         .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
                         .workingBufferAllocatorBytes(arrowWorkingBytes)
                         .minBatchBufferAllocatorBytes(arrowBatchBytes)
