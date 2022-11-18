@@ -63,10 +63,6 @@ public class IngestRecordsTestDataHelper {
 
     private IngestRecordsTestDataHelper() {
     }
-    
-    public static TableProperties defaultTableProperties(Schema schema, String tableName, String bucketName) {
-        return defaultTableProperties(schema, tableName, bucketName, defaultInstanceProperties());
-    }
 
     public static TableProperties defaultTableProperties(Schema schema, String tableName, String bucketName, InstanceProperties instanceProperties) {
         TableProperties tableProperties = new TableProperties(instanceProperties);

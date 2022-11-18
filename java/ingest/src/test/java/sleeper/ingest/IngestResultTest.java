@@ -19,12 +19,8 @@ package sleeper.ingest;
 import org.junit.Test;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.iterator.IteratorException;
-import sleeper.core.record.Record;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-
-import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.TEST_TABLE_NAME;
@@ -34,41 +30,33 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 
 public class IngestResultTest extends IngestRecordsTestBase {
     @Test
-    public void shouldReturnNumberOfRecordsFromIngestResult() throws StateStoreException, IteratorException, IOException {
+    public void shouldReturnNumberOfRecordsFromIngestResult() throws StateStoreException {
         // Given
         StateStore stateStore = getStateStore(schema);
         InstanceProperties instanceProperties = defaultInstanceProperties();
         TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
         IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        IngestRecords ingestRecords = factory.createIngestRecords(tableProperties);
 
         // When
-        for (Record record : getRecords()) {
-            ingestRecords.write(record);
-        }
+        IngestResult result = factory.ingestRecords(tableProperties, getRecords());
 
         // Then
-        IngestResult result = ingestRecords.close();
         assertThat(result.getNumberOfRecords())
                 .isEqualTo(2L);
     }
 
     @Test
-    public void shouldReturnFileInfoListFromIngestResult() throws StateStoreException, IteratorException, IOException {
+    public void shouldReturnFileInfoListFromIngestResult() throws StateStoreException {
         // Given
         StateStore stateStore = getStateStore(schema);
         InstanceProperties instanceProperties = defaultInstanceProperties();
         TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
         IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        IngestRecords ingestRecords = factory.createIngestRecords(tableProperties);
 
         // When
-        for (Record record : getRecords()) {
-            ingestRecords.write(record);
-        }
+        IngestResult result = factory.ingestRecords(tableProperties, getRecords());
 
         // Then
-        IngestResult result = ingestRecords.close();
         assertThat(result.getFileInfoList())
                 .containsExactlyInAnyOrderElementsOf(stateStore.getActiveFiles());
     }

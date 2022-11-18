@@ -36,6 +36,7 @@ import sleeper.statestore.StateStoreProvider;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -73,6 +74,19 @@ public class IngestFactory {
         }
         // If S3AsyncClient is not set, a default client will be created if it is needed.
         s3AsyncClient = builder.s3AsyncClient;
+    }
+
+    public IngestResult ingestRecords(TableProperties tableProperties, List<Record> records) {
+        try (IngestCoordinator<Record> ingestCoordinator = createIngestCoordinator(tableProperties)) {
+            IngestRecords ingestRecords = new IngestRecords(ingestCoordinator);
+            ingestRecords.init();
+            for (Record record : records) {
+                ingestRecords.write(record);
+            }
+            return ingestRecords.close();
+        } catch (StateStoreException | IteratorException | IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public IngestResult ingestFromRecordIterator(TableProperties tableProperties, CloseableIterator<Record> recordIterator)
@@ -140,10 +154,6 @@ public class IngestFactory {
         } else {
             throw new UnsupportedOperationException(String.format("File writer type %s not supported", fileWriterType));
         }
-    }
-
-    public IngestRecords createIngestRecords(TableProperties tableProperties) {
-        return new IngestRecords(createIngestCoordinator(tableProperties));
     }
 
     public static Builder builder() {
