@@ -54,7 +54,8 @@ public class StandardIngestCoordinator {
                                                                      int maxNoOfRecordsToWriteToArrowFileAtOnce,
                                                                      long workingArrowBufferAllocatorBytes,
                                                                      long minBatchArrowBufferAllocatorBytes,
-                                                                     long maxBatchArrowBufferAllocatorBytes) {
+                                                                     long maxBatchArrowBufferAllocatorBytes,
+                                                                     long maxNoOfBytesToWriteLocally) {
         return builder()
                 .fromProperties(ingestProperties)
                 .arrowRecordBatchFactory(builder -> builder
@@ -63,7 +64,7 @@ public class StandardIngestCoordinator {
                         .workingBufferAllocatorBytes(workingArrowBufferAllocatorBytes)
                         .minBatchBufferAllocatorBytes(minBatchArrowBufferAllocatorBytes)
                         .maxBatchBufferAllocatorBytes(maxBatchArrowBufferAllocatorBytes)
-                        .maxNoOfBytesToWriteLocally(ingestProperties.getMaxRecordsToWriteLocally()))
+                        .maxNoOfBytesToWriteLocally(maxNoOfBytesToWriteLocally))
                 .directPartitionFileWriterFactory(
                         ingestProperties.getFilePrefix() + ingestProperties.getBucketName())
                 .build();
@@ -88,7 +89,8 @@ public class StandardIngestCoordinator {
                                                                       int maxNoOfRecordsToWriteToArrowFileAtOnce,
                                                                       long workingArrowBufferAllocatorBytes,
                                                                       long minBatchArrowBufferAllocatorBytes,
-                                                                      long maxBatchArrowBufferAllocatorBytes) {
+                                                                      long maxBatchArrowBufferAllocatorBytes,
+                                                                      long maxNoOfBytesToWriteLocally) {
         return builder()
                 .fromProperties(ingestProperties)
                 .arrowRecordBatchFactory(builder -> builder
@@ -97,7 +99,7 @@ public class StandardIngestCoordinator {
                         .workingBufferAllocatorBytes(workingArrowBufferAllocatorBytes)
                         .minBatchBufferAllocatorBytes(minBatchArrowBufferAllocatorBytes)
                         .maxBatchBufferAllocatorBytes(maxBatchArrowBufferAllocatorBytes)
-                        .maxNoOfBytesToWriteLocally(ingestProperties.getMaxRecordsToWriteLocally()))
+                        .maxNoOfBytesToWriteLocally(maxNoOfBytesToWriteLocally))
                 .asyncS3PartitionFileWriterFactory(s3BucketName, s3AsyncClient)
                 .build();
     }
