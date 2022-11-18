@@ -79,6 +79,8 @@ public class IngestFactory {
             throws StateStoreException, IteratorException, IOException {
         try (IngestCoordinator<Record> ingestCoordinator = createIngestCoordinator(tableProperties)) {
             return new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
+        } finally {
+            recordIterator.close();
         }
     }
 
