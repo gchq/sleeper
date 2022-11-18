@@ -18,7 +18,6 @@ package sleeper.ingest;
 
 import org.junit.Test;
 import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
@@ -26,7 +25,7 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getStateStore
 
 public class IngestResultTest extends IngestRecordsTestBase {
     @Test
-    public void shouldReturnNumberOfRecordsFromIngestResult() throws StateStoreException {
+    public void shouldReturnNumberOfRecordsFromIngestResult() throws Exception {
         // Given
         StateStore stateStore = getStateStore(schema);
 
@@ -39,7 +38,7 @@ public class IngestResultTest extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldReturnFileInfoListFromIngestResult() throws StateStoreException {
+    public void shouldReturnFileInfoListFromIngestResult() throws Exception {
         // Given
         StateStore stateStore = getStateStore(schema);
 

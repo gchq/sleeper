@@ -56,7 +56,7 @@ public class IngestRecordsTestBase {
         sketchFolderName = folder.newFolder().getAbsolutePath();
     }
 
-    protected IngestResult ingestRecords(Schema schema, StateStore stateStore, List<Record> records) {
+    protected IngestResult ingestRecords(Schema schema, StateStore stateStore, List<Record> records) throws Exception {
         return ingestRecords(schema, stateStore, records, instanceProperties -> {
         }, tableProperties -> {
         });
@@ -64,14 +64,14 @@ public class IngestRecordsTestBase {
 
     protected IngestResult ingestRecordsWithTableProperties(
             Schema schema, StateStore stateStore, List<Record> records,
-            Consumer<TableProperties> tablePropertiesConfig) {
+            Consumer<TableProperties> tablePropertiesConfig) throws Exception {
         return ingestRecords(schema, stateStore, records, instanceProperties -> {
         }, tablePropertiesConfig);
     }
 
     protected IngestResult ingestRecordsWithInstanceProperties(
             Schema schema, StateStore stateStore, List<Record> records,
-            Consumer<InstanceProperties> instancePropertiesConfig) {
+            Consumer<InstanceProperties> instancePropertiesConfig) throws Exception {
         return ingestRecords(schema, stateStore, records, instancePropertiesConfig, tableProperties -> {
         });
     }
@@ -79,13 +79,20 @@ public class IngestRecordsTestBase {
     protected IngestResult ingestRecords(
             Schema schema, StateStore stateStore, List<Record> records,
             Consumer<InstanceProperties> instancePropertiesConfig,
-            Consumer<TableProperties> tablePropertiesConfig) {
+            Consumer<TableProperties> tablePropertiesConfig) throws Exception {
+
         InstanceProperties instanceProperties = defaultInstanceProperties();
         instancePropertiesConfig.accept(instanceProperties);
         TableProperties tableProperties = defaultTableProperties(schema, instanceProperties);
         tablePropertiesConfig.accept(tableProperties);
         IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        return factory.ingestRecords(tableProperties, records);
+
+        IngestRecords ingestRecords = factory.createIngestRecords(tableProperties);
+        ingestRecords.init();
+        for (Record record : records) {
+            ingestRecords.write(record);
+        }
+        return ingestRecords.close();
     }
 
     protected IngestResult ingestFromRecordIterator(Schema schema, StateStore stateStore, Iterator<Record> iterator)
