@@ -15,8 +15,6 @@
  */
 package sleeper.ingest.impl;
 
-import org.apache.arrow.memory.BufferAllocator;
-import org.apache.arrow.memory.RootAllocator;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.RandomStringGenerator;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -43,6 +41,7 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.ingest.IngestProperties;
+import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.testutils.AwsExternalResource;
@@ -121,8 +120,8 @@ public class IngestCoordinatorCommonIT {
                                 sleeperSchema,
                                 DATA_BUCKET_NAME,
                                 sleeperIteratorClassName,
-                                workingDir,
-                                temporaryFolder);
+                                workingDir
+                        );
         QuinFunction<StateStore, Schema, String, String, TemporaryFolder, IngestCoordinator<Record>> directArrayListLocalFn =
                 (stateStore, sleeperSchema, sleeperIteratorClassName, workingDir, temporaryFolder) ->
                         (IngestCoordinator<Record>) createIngestCoordinatorDirectWriteBackedByArrayList(
@@ -185,24 +184,29 @@ public class IngestCoordinatorCommonIT {
             Schema sleeperSchema,
             String s3BucketName,
             String sleeperIteratorClassName,
-            String ingestLocalWorkingDirectory,
-            TemporaryFolder temporaryFolder) {
+            String ingestLocalWorkingDirectory) {
         try {
-            BufferAllocator bufferAllocator = new RootAllocator();
-            IngestProperties properties = defaultPropertiesBuilder(temporaryFolder, stateStore, sleeperSchema, sleeperIteratorClassName, ingestLocalWorkingDirectory)
-                    .maxRecordsToWriteLocally(16 * 1024 * 1024L)
+            ParquetConfiguration parquetConfiguration = parquetConfiguration(
+                    sleeperSchema, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
+            return standardIngestCoordinatorBuilder(
+                    stateStore, sleeperSchema,
+                    ArrowRecordBatchFactory.builder()
+                            .schema(sleeperSchema)
+                            .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
+                            .workingBufferAllocatorBytes(16 * 1024 * 1024L)
+                            .minBatchBufferAllocatorBytes(16 * 1024 * 1024L)
+                            .maxBatchBufferAllocatorBytes(16 * 1024 * 1024L)
+                            .maxNoOfBytesToWriteLocally(16 * 1024 * 1024L)
+                            .localWorkingDirectory(ingestLocalWorkingDirectory)
+                            .buildAcceptingRecords(),
+                    AsyncS3PartitionFileWriterFactory.builder()
+                            .parquetConfiguration(parquetConfiguration)
+                            .s3AsyncClient(AWS_EXTERNAL_RESOURCE.getS3AsyncClient())
+                            .localWorkingDirectory(ingestLocalWorkingDirectory)
+                            .s3BucketName(s3BucketName)
+                            .build())
+                    .iteratorClassName(sleeperIteratorClassName)
                     .build();
-            return StandardIngestCoordinator.asyncS3WriteBackedByArrow(
-                    properties,
-                    s3BucketName,
-                    AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
-                    bufferAllocator,
-                    10,
-                    16 * 1024 * 1024L,
-                    16 * 1024 * 1024L,
-                    16 * 1024 * 1024L,
-                    16 * 1024 * 1024L
-            );
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
