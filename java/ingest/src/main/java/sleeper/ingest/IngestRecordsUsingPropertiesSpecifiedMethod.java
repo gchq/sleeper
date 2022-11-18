@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.Locale;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_MAX_LOCAL_STORE_BYTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
@@ -133,7 +134,7 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
                     .workingBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES))
                     .minBatchBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
                     .maxBatchBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
-                    .maxNoOfBytesToWriteLocally(ingestProperties.getMaxRecordsToWriteLocally()));
+                    .maxNoOfBytesToWriteLocally(instanceProperties.getLong(ARROW_INGEST_MAX_LOCAL_STORE_BYTES)));
         } else {
             throw new UnsupportedOperationException(String.format("Record batch type %s not supported", recordBatchType));
         }
