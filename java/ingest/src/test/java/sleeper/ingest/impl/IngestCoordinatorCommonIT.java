@@ -17,7 +17,6 @@ package sleeper.ingest.impl;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.RandomStringGenerator;
-import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -27,9 +26,6 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.impl.AdditionIterator;
@@ -40,9 +36,9 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.ingest.IngestProperties;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
+import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.PartitionedTableCreator;
@@ -129,8 +125,8 @@ public class IngestCoordinatorCommonIT {
                                 sleeperSchema,
                                 newTemporaryDirectory(temporaryFolder),
                                 sleeperIteratorClassName,
-                                workingDir,
-                                temporaryFolder);
+                                workingDir
+                        );
         QuinFunction<StateStore, Schema, String, String, TemporaryFolder, IngestCoordinator<Record>> directArrayListS3Fn =
                 (stateStore, sleeperSchema, sleeperIteratorClassName, workingDir, temporaryFolder) ->
                         (IngestCoordinator<Record>) createIngestCoordinatorDirectWriteBackedByArrayList(
@@ -138,8 +134,8 @@ public class IngestCoordinatorCommonIT {
                                 sleeperSchema,
                                 "s3a://" + DATA_BUCKET_NAME,
                                 sleeperIteratorClassName,
-                                workingDir,
-                                temporaryFolder);
+                                workingDir
+                        );
         return Arrays.asList(new Object[][]{
                 {asyncArrowS3Fn},
                 {directArrowLocalFn},
@@ -217,37 +213,24 @@ public class IngestCoordinatorCommonIT {
             Schema sleeperSchema,
             String filePathPrefix,
             String sleeperIteratorClassName,
-            String ingestLocalWorkingDirectory,
-            TemporaryFolder temporaryFolder) {
+            String ingestLocalWorkingDirectory) {
         try {
-            IngestProperties properties = defaultPropertiesBuilder(temporaryFolder, stateStore, sleeperSchema, sleeperIteratorClassName, ingestLocalWorkingDirectory)
-                    .filePathPrefix(filePathPrefix)
-                    .maxRecordsToWriteLocally(1000)
-                    .maxInMemoryBatchSize(100000)
+            ParquetConfiguration parquetConfiguration = parquetConfiguration(
+                    sleeperSchema, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
+            return standardIngestCoordinatorBuilder(
+                    stateStore, sleeperSchema,
+                    ArrayListRecordBatchFactory.builder()
+                            .maxNoOfRecordsInLocalStore(1000)
+                            .maxNoOfRecordsInMemory(100000)
+                            .localWorkingDirectory(ingestLocalWorkingDirectory)
+                            .buildAcceptingRecords(),
+                    new DirectPartitionFileWriterFactory(
+                            parquetConfiguration, filePathPrefix))
+                    .iteratorClassName(sleeperIteratorClassName)
                     .build();
-            return StandardIngestCoordinator.directWriteBackedByArrayList(properties);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static IngestProperties.Builder defaultPropertiesBuilder(TemporaryFolder temporaryFolder,
-                                                                     StateStore stateStore,
-                                                                     Schema sleeperSchema,
-                                                                     String sleeperIteratorClassName,
-                                                                     String ingestLocalWorkingDirectory) throws IOException, ObjectFactoryException {
-        String objectFactoryLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
-        return IngestProperties.builder()
-                .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
-                .localDir(ingestLocalWorkingDirectory)
-                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
-                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
-                .compressionCodec("zstd")
-                .stateStore(stateStore)
-                .schema(sleeperSchema)
-                .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
-                .iteratorClassName(sleeperIteratorClassName)
-                .ingestPartitionRefreshFrequencyInSecond(Integer.MAX_VALUE);
     }
 
     @Before
