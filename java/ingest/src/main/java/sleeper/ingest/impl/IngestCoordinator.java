@@ -168,7 +168,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      */
     private void initiateIngestIfNecessary(boolean isClosing)
             throws StateStoreException, IteratorException, IOException {
-        if(currentRecordBatch == null) {
+        if (currentRecordBatch == null) {
             return;
         }
         // If the record batch is full, or it is closing, then initiate the ingest
