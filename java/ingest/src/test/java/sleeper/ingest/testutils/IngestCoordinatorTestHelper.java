@@ -42,13 +42,18 @@ public class IngestCoordinatorTestHelper {
     public static IngestCoordinator<Record> standardIngestCoordinator(
             StateStore stateStore, Schema schema,
             RecordBatchFactory<Record> recordBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
+        return standardIngestCoordinatorBuilder(stateStore, schema, recordBatchFactory, partitionFileWriterFactory).build();
+    }
+
+    public static StandardIngestCoordinator.Builder standardIngestCoordinatorBuilder(
+            StateStore stateStore, Schema schema,
+            RecordBatchFactory<Record> recordBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
         return StandardIngestCoordinator.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .ingestPartitionRefreshFrequencyInSeconds(Integer.MAX_VALUE)
                 .stateStore(stateStore)
                 .schema(schema)
                 .recordBatchFactory(recordBatchFactory)
-                .partitionFileWriterFactory(partitionFileWriterFactory)
-                .build();
+                .partitionFileWriterFactory(partitionFileWriterFactory);
     }
 }
