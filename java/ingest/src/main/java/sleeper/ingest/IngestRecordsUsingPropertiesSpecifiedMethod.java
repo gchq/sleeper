@@ -99,6 +99,8 @@ public class IngestRecordsUsingPropertiesSpecifiedMethod {
         try (IngestCoordinator<Record> ingestCoordinator = createIngestCoordinatorWithProperties(
                 ingestProperties, instanceProperties, s3AsyncClient)) {
             return new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
+        } finally {
+            recordIterator.close();
         }
     }
 
