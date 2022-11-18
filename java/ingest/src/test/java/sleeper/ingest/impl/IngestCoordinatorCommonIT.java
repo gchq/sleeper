@@ -220,6 +220,7 @@ public class IngestCoordinatorCommonIT {
             return standardIngestCoordinatorBuilder(
                     stateStore, sleeperSchema,
                     ArrayListRecordBatchFactory.builder()
+                            .parquetConfiguration(parquetConfiguration)
                             .maxNoOfRecordsInLocalStore(1000)
                             .maxNoOfRecordsInMemory(100000)
                             .localWorkingDirectory(ingestLocalWorkingDirectory)
