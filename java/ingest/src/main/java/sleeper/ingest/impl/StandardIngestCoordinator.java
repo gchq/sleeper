@@ -46,7 +46,8 @@ public class StandardIngestCoordinator {
                                                                      int maxNoOfRecordsToWriteToArrowFileAtOnce,
                                                                      long workingArrowBufferAllocatorBytes,
                                                                      long minBatchArrowBufferAllocatorBytes,
-                                                                     long maxBatchArrowBufferAllocatorBytes) {
+                                                                     long maxBatchArrowBufferAllocatorBytes,
+                                                                     long maxNoOfBytesToWriteLocally) {
         ParquetConfiguration parquetConfiguration = ingestProperties.buildParquetConfiguration();
         return builder()
                 .fromProperties(ingestProperties)
@@ -56,6 +57,7 @@ public class StandardIngestCoordinator {
                         .workingBufferAllocatorBytes(workingArrowBufferAllocatorBytes)
                         .minBatchBufferAllocatorBytes(minBatchArrowBufferAllocatorBytes)
                         .maxBatchBufferAllocatorBytes(maxBatchArrowBufferAllocatorBytes)
+                        .maxNoOfBytesToWriteLocally(maxNoOfBytesToWriteLocally))
                         .buildAcceptingRecords())
                 .partitionFileWriterFactory(ingestProperties.buildDirectPartitionFileWriterFactory(parquetConfiguration))
                 .build();
@@ -82,7 +84,8 @@ public class StandardIngestCoordinator {
                                                                       int maxNoOfRecordsToWriteToArrowFileAtOnce,
                                                                       long workingArrowBufferAllocatorBytes,
                                                                       long minBatchArrowBufferAllocatorBytes,
-                                                                      long maxBatchArrowBufferAllocatorBytes) {
+                                                                      long maxBatchArrowBufferAllocatorBytes,
+                                                                      long maxNoOfBytesToWriteLocally) {
         ParquetConfiguration parquetConfiguration = ingestProperties.buildParquetConfiguration();
         return builder()
                 .fromProperties(ingestProperties)
@@ -92,6 +95,7 @@ public class StandardIngestCoordinator {
                         .workingBufferAllocatorBytes(workingArrowBufferAllocatorBytes)
                         .minBatchBufferAllocatorBytes(minBatchArrowBufferAllocatorBytes)
                         .maxBatchBufferAllocatorBytes(maxBatchArrowBufferAllocatorBytes)
+                        .maxNoOfBytesToWriteLocally(maxNoOfBytesToWriteLocally))
                         .buildAcceptingRecords())
                 .partitionFileWriterFactory(ingestProperties
                         .asyncS3PartitionFileWriterFactoryBuilder(parquetConfiguration)
