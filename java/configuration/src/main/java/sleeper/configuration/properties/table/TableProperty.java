@@ -63,7 +63,6 @@ public enum TableProperty implements ITableProperty {
     PARTITION_SPLIT_THRESHOLD("sleeper.table.partition.splitting.threshold", DEFAULT_PARTITION_SPLIT_THRESHOLD),
     STATESTORE_CLASSNAME("sleeper.table.statestore.classname", "sleeper.statestore.dynamodb.DynamoDBStateStore"),
     COMPACTION_EXPERIMENTAL_GPU_ENABLE("sleeper.table.experimental.compactions.gpu.enabled", "false", null, s -> s.equals("true") || s.equals("false")),
-    
     BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE("sleeper.table.bulk.import.emr.master.instance.type", DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE),
     BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE("sleeper.table.bulk.import.emr.executor.instance.type", DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE),
     BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE("sleeper.table.bulk.import.emr.executor.market.type", DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE),

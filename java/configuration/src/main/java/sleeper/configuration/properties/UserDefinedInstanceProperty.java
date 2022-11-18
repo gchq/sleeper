@@ -181,6 +181,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES("sleeper.compaction.task.creation.period.minutes", "1"), // >0
     COMPACTION_TASK_CPU("sleeper.compaction.task.cpu", "2048"),
     COMPACTION_TASK_MEMORY("sleeper.compaction.task.memory", "4096"),
+    COMPACTION_TASK_GPU("sleeper.compaction.task.gpu", "0"),
     COMPACTION_STATUS_STORE_ENABLED("sleeper.compaction.status.store.enabled", "true"),
     COMPACTION_JOB_STATUS_TTL_IN_SECONDS("sleeper.compaction.job.status.ttl", "604800", Utils::isPositiveInteger), // Default is 1 week
     DEFAULT_COMPACTION_STRATEGY_CLASS("sleeper.default.compaction.strategy.class", "sleeper.compaction.strategy.impl.SizeRatioCompactionStrategy"),

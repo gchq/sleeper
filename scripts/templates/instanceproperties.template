@@ -103,6 +103,7 @@ sleeper.task.runner.timeout.seconds=900
 # The cpu and memory for a compaction task. See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.
 sleeper.compaction.task.cpu=2048
 sleeper.compaction.task.memory=4096
+sleeper.compaction.task.gpu=0
 
 # The retention period for CloudWatch logs. See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html for valid options.
 # Use -1 to indicate infinite retention.

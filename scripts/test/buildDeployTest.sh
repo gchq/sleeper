@@ -37,7 +37,7 @@ echo "Building Project"
 echo "-------------------------------------------------------------------------------"
 pushd ${PROJECT_ROOT}/java
 VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
-#mvn clean install -Pquick
+mvn clean install -Pquick
 mkdir -p ${PROJECT_ROOT}/scripts/jars
 mkdir -p ${PROJECT_ROOT}/scripts/docker
 cp  ${PROJECT_ROOT}/java/distribution/target/distribution-${VERSION}-bin/scripts/jars/* ${PROJECT_ROOT}/scripts/jars/
@@ -78,8 +78,6 @@ ${PROJECT_ROOT}/scripts/deploy/pre-deployment.sh ${INSTANCE_ID} ${VPC} ${SUBNET}
 
 END_CONFIGURE_DEPLOYMENT_TIME=$(record_time)
 echo "Configuring deployment finished at $(recorded_time_str "$END_CONFIGURE_DEPLOYMENT_TIME"), took $(elapsed_time_str "$END_BUILD_TIME" "$END_CONFIGURE_DEPLOYMENT_TIME")"
-
-exit 1
 
 echo "-------------------------------------------------------------------------------"
 echo "Deploying Stack"

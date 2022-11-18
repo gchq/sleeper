@@ -58,6 +58,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPA
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_GPU;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
@@ -254,6 +255,7 @@ public class InstancePropertiesTest {
         instanceProperties.setNumber(INGEST_TASK_CREATION_PERIOD_IN_MINUTES, 7);
         instanceProperties.setNumber(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB, 1024);
         instanceProperties.setNumber(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, 600);
+        instanceProperties.setNumber(COMPACTION_TASK_GPU, 0);
         instanceProperties.set(COMPACTION_EC2_TYPE, "t3.xlarge");
         instanceProperties.setNumber(COMPACTION_EC2_POOL_MINIMUM, 0);
         instanceProperties.setNumber(COMPACTION_EC2_POOL_DESIRED, 0);

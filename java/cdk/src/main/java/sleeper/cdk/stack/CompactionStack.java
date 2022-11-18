@@ -105,6 +105,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPA
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_GPU;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -417,15 +418,24 @@ public class CompactionStack extends NestedStack {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
 
-        ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
+        ContainerDefinitionOptions fargateContainerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
                 .environment(environmentVariables)
                 .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
                 .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
                 .logging(Utils.createFargateContainerLogDriver(this, instanceProperties, "MergeCompactionTasks"))
                 .build();
-        fargateTaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
-        ec2TaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
+        fargateTaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, fargateContainerDefinitionOptions);
+
+        ContainerDefinitionOptions ec2ContainerDefinitionOptions = ContainerDefinitionOptions.builder()
+                .image(containerImage)
+                .environment(environmentVariables)
+                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
+                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
+                .gpuCount(instanceProperties.getInt(COMPACTION_TASK_GPU))
+                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties, "MergeCompactionTasks"))
+                .build();
+        ec2TaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, ec2ContainerDefinitionOptions);
 
         Consumer<ITaskDefinition> grantPermissions = (taskDef) -> {
             configBucket.grantRead(taskDef.getTaskRole());
@@ -499,7 +509,7 @@ public class CompactionStack extends NestedStack {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
 
-        ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
+        ContainerDefinitionOptions fargateContainerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
                 .environment(environmentVariables)
                 .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
@@ -508,9 +518,19 @@ public class CompactionStack extends NestedStack {
                         "SplittingMergeCompactionTasks"))
                 .build();
         fargateTaskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME,
-                containerDefinitionOptions);
+                fargateContainerDefinitionOptions);
+
+        ContainerDefinitionOptions ec2ContainerDefinitionOptions = ContainerDefinitionOptions.builder()
+                .image(containerImage)
+                .environment(environmentVariables)
+                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
+                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
+                .gpuCount(instanceProperties.getInt(COMPACTION_TASK_GPU))
+                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties,
+                        "SplittingMergeCompactionTasks"))
+                .build();
         ec2TaskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME,
-                containerDefinitionOptions);
+                ec2ContainerDefinitionOptions);
 
         Consumer<ITaskDefinition> grantPermissions = (taskDef) -> {
             configBucket.grantRead(taskDef.getTaskRole());
@@ -558,7 +578,7 @@ public class CompactionStack extends NestedStack {
                 .desiredCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_DESIRED))
                 .maxCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MAXIMUM)).requireImdsv2(true)
                 .instanceType(lookupEC2InstanceType(instanceProperties.get(COMPACTION_EC2_TYPE)))
-                .machineImage(EcsOptimizedImage.amazonLinux2(AmiHardwareType.STANDARD,
+                .machineImage(EcsOptimizedImage.amazonLinux2(AmiHardwareType.GPU,
                         EcsOptimizedImageOptions.builder()
                                 .cachedInContext(false)
                                 .build()))
