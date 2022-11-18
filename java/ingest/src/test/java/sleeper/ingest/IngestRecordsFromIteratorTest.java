@@ -19,7 +19,6 @@ package sleeper.ingest;
 import org.junit.Test;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
@@ -67,8 +66,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         InstanceProperties instanceProperties = defaultInstanceProperties();
         TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
         IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        long numWritten = factory.ingestFromRecordIteratorAndClose(tableProperties,
-                new WrappedIterator<>(getRecords().iterator())).getNumberOfRecords();
+        long numWritten = factory.ingestFromRecordIterator(tableProperties, getRecords().iterator()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -131,8 +129,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         InstanceProperties instanceProperties = defaultInstanceProperties();
         TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
         IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        long numWritten = factory.ingestFromRecordIteratorAndClose(tableProperties,
-                new WrappedIterator<>(getSingleRecord().iterator())).getNumberOfRecords();
+        long numWritten = factory.ingestFromRecordIterator(tableProperties, getSingleRecord().iterator()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -171,8 +168,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         InstanceProperties instanceProperties = defaultInstanceProperties();
         TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
         IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        long numWritten = factory.ingestFromRecordIteratorAndClose(tableProperties,
-                new WrappedIterator<>(Collections.emptyIterator())).getNumberOfRecords();
+        long numWritten = factory.ingestFromRecordIterator(tableProperties, Collections.emptyIterator()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written

@@ -18,7 +18,6 @@ package sleeper.ingest;
 import org.junit.Test;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.statestore.FileInfo;
@@ -46,8 +45,7 @@ public class IngestRecordsFromIteratorIT extends IngestRecordsITBase {
         InstanceProperties instanceProperties = defaultInstanceProperties();
         TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
         IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        long numWritten = factory.ingestFromRecordIteratorAndClose(tableProperties,
-                new WrappedIterator<>(getRecords().iterator())).getNumberOfRecords();
+        long numWritten = factory.ingestFromRecordIterator(tableProperties, getRecords().iterator()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
