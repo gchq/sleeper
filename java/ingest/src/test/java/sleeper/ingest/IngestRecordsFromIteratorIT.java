@@ -46,7 +46,7 @@ public class IngestRecordsFromIteratorIT extends IngestRecordsITBase {
         InstanceProperties instanceProperties = defaultInstanceProperties();
         TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
         IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        long numWritten = factory.ingestFromRecordIterator(tableProperties,
+        long numWritten = factory.ingestFromRecordIteratorAndClose(tableProperties,
                 new WrappedIterator<>(getRecords().iterator())).getNumberOfRecords();
 
         // Then:

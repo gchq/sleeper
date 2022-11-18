@@ -67,7 +67,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         InstanceProperties instanceProperties = defaultInstanceProperties();
         TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
         IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        long numWritten = factory.ingestFromRecordIterator(tableProperties,
+        long numWritten = factory.ingestFromRecordIteratorAndClose(tableProperties,
                 new WrappedIterator<>(getRecords().iterator())).getNumberOfRecords();
 
         // Then:
@@ -131,7 +131,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         InstanceProperties instanceProperties = defaultInstanceProperties();
         TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
         IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        long numWritten = factory.ingestFromRecordIterator(tableProperties,
+        long numWritten = factory.ingestFromRecordIteratorAndClose(tableProperties,
                 new WrappedIterator<>(getSingleRecord().iterator())).getNumberOfRecords();
 
         // Then:
@@ -171,7 +171,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         InstanceProperties instanceProperties = defaultInstanceProperties();
         TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
         IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        long numWritten = factory.ingestFromRecordIterator(tableProperties,
+        long numWritten = factory.ingestFromRecordIteratorAndClose(tableProperties,
                 new WrappedIterator<>(Collections.emptyIterator())).getNumberOfRecords();
 
         // Then:

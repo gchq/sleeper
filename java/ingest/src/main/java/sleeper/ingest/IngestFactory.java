@@ -36,6 +36,7 @@ import sleeper.statestore.StateStoreProvider;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -89,12 +90,19 @@ public class IngestFactory {
         }
     }
 
-    public IngestResult ingestFromRecordIterator(TableProperties tableProperties, CloseableIterator<Record> recordIterator)
+    public IngestResult ingestFromRecordIteratorAndClose(TableProperties tableProperties, CloseableIterator<Record> recordIterator)
+            throws StateStoreException, IteratorException, IOException {
+        try {
+            return ingestFromRecordIterator(tableProperties, recordIterator);
+        } finally {
+            recordIterator.close();
+        }
+    }
+
+    public IngestResult ingestFromRecordIterator(TableProperties tableProperties, Iterator<Record> recordIterator)
             throws StateStoreException, IteratorException, IOException {
         try (IngestCoordinator<Record> ingestCoordinator = createIngestCoordinator(tableProperties)) {
             return new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
-        } finally {
-            recordIterator.close();
         }
     }
 
