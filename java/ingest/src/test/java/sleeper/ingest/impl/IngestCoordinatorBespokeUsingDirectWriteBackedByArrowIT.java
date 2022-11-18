@@ -25,7 +25,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.key.Key;
@@ -51,6 +50,8 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
+import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
 
 public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
     @ClassRule
@@ -154,17 +155,11 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                 keyAndDimensionToSplitOnInOrder);
         String ingestLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
 
-        ParquetConfiguration parquetConfiguration = ParquetConfiguration.builder()
-                .sleeperSchema(recordListAndSchema.sleeperSchema)
-                .parquetCompressionCodec("zstd")
-                .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
-                .build();
-        try (IngestCoordinator<Record> ingestCoordinator = StandardIngestCoordinator.builder()
-                .objectFactory(ObjectFactory.noUserJars())
-                .stateStore(stateStore)
-                .schema(recordListAndSchema.sleeperSchema)
-                .ingestPartitionRefreshFrequencyInSeconds(Integer.MAX_VALUE)
-                .recordBatchFactory(ArrowRecordBatchFactory.builder()
+        ParquetConfiguration parquetConfiguration = parquetConfiguration(
+                recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
+        try (IngestCoordinator<Record> ingestCoordinator = standardIngestCoordinator(
+                stateStore, recordListAndSchema.sleeperSchema,
+                ArrowRecordBatchFactory.builder()
                         .schema(recordListAndSchema.sleeperSchema)
                         .bufferAllocator(bufferAllocator)
                         .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
@@ -173,10 +168,9 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                         .maxBatchBufferAllocatorBytes(arrowBatchBytes)
                         .maxNoOfBytesToWriteLocally(localStoreBytes)
                         .localWorkingDirectory(ingestLocalWorkingDirectory)
-                        .buildAcceptingRecords())
-                .partitionFileWriterFactory(new DirectPartitionFileWriterFactory(
-                        parquetConfiguration, "s3a://" + DATA_BUCKET_NAME))
-                .build()) {
+                        .buildAcceptingRecords(),
+                new DirectPartitionFileWriterFactory(
+                        parquetConfiguration, "s3a://" + DATA_BUCKET_NAME))) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }
