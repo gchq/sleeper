@@ -16,7 +16,6 @@
 package sleeper.ingest.impl;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -25,14 +24,13 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.key.Key;
 import sleeper.core.record.Record;
 import sleeper.core.schema.type.LongType;
-import sleeper.ingest.IngestProperties;
+import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
+import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.PartitionedTableCreator;
 import sleeper.ingest.testutils.RecordGenerator;
@@ -70,7 +68,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrayListIT {
     }
 
     @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws StateStoreException, IOException, IteratorException, ObjectFactoryException {
+    public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -91,7 +89,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrayListIT {
     }
 
     @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws StateStoreException, IOException, IteratorException, ObjectFactoryException {
+    public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -117,28 +115,31 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrayListIT {
             Function<Key, Integer> keyToPartitionNoMappingFn,
             Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap,
             int maxNoOfRecordsInMemory,
-            long maxNoOfRecordsInLocalStore) throws IOException, ObjectFactoryException, StateStoreException, IteratorException {
+            long maxNoOfRecordsInLocalStore) throws IOException, StateStoreException, IteratorException {
         StateStore stateStore = PartitionedTableCreator.createStateStore(
                 AWS_EXTERNAL_RESOURCE.getDynamoDBClient(),
                 recordListAndSchema.sleeperSchema,
                 keyAndDimensionToSplitOnInOrder);
-        String objectFactoryLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
         String ingestLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
-        IngestProperties properties = IngestProperties.builder()
-                .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
+        ParquetConfiguration parquetConfiguration = ParquetConfiguration.builder()
+                .sleeperSchema(recordListAndSchema.sleeperSchema)
+                .parquetCompressionCodec("zstd")
+                .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
+                .build();
+        IngestCoordinator<Record> ingestCoordinator = StandardIngestCoordinator.builder()
+                .objectFactory(ObjectFactory.noUserJars())
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
-                .localDir(ingestLocalWorkingDirectory)
-                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
-                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
-                .compressionCodec("zstd")
-                .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
-                .ingestPartitionRefreshFrequencyInSecond(Integer.MAX_VALUE)
-                .filePathPrefix("s3a://" + DATA_BUCKET_NAME)
-                .maxInMemoryBatchSize(maxNoOfRecordsInMemory)
-                .maxRecordsToWriteLocally(maxNoOfRecordsInLocalStore)
+                .ingestPartitionRefreshFrequencyInSeconds(Integer.MAX_VALUE)
+                .recordBatchFactory(ArrayListRecordBatchFactory.builder()
+                        .parquetConfiguration(parquetConfiguration)
+                        .localWorkingDirectory(ingestLocalWorkingDirectory)
+                        .maxNoOfRecordsInMemory(maxNoOfRecordsInMemory)
+                        .maxNoOfRecordsInLocalStore(maxNoOfRecordsInLocalStore)
+                        .buildAcceptingRecords())
+                .partitionFileWriterFactory(new DirectPartitionFileWriterFactory(
+                        parquetConfiguration, "s3a://" + DATA_BUCKET_NAME))
                 .build();
-        IngestCoordinator<Record> ingestCoordinator = StandardIngestCoordinator.directWriteBackedByArrayList(properties);
 
         try {
             for (Record record : recordListAndSchema.recordList) {
