@@ -75,8 +75,9 @@ T populateVariant(::size_t const index) {
     if constexpr (I < std::variant_size_v<T>) {
         if (index == I) {
             return std::variant_alternative_t<I, T> {};
+        } else {
+            return populateVariant<T,I+1>(index);
         }
-        return populateVariant<T,I+1>(index);
     } else {
         throw std::invalid_argument{"index out of range for variant type"};
     }

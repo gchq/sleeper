@@ -161,17 +161,17 @@ public class CompactSortedFiles {
             throw new IllegalStateException("can't use GPU compaction on table " + compactionJob.getTableName() +
                     " as its schema has more than one row key. Only single dimension row key tables can be GPU compacted.");
         }
-
+        LOGGER.info("Starting accelerated GPU compaction");
         // Run GPU sorter
-        LOGGER.info("<<<GPU accelerated compaction to launch here>>>");
-        LOGGER.info("{} {} {} {} {} {}", compactionJob.getInputFiles(), compactionJob.getOutputFile(), compactionJob.getOutputFiles(),
-                this.compressionCodec, this.rowGroupSize, this.pageSize);
+        LOGGER.info("{} {} {} {} {} {} {}", compactionJob.getInputFiles(), compactionJob.getOutputFile(), compactionJob.getOutputFiles(),
+                this.compressionCodec, this.rowGroupSize, this.pageSize, compactionJob.getSplitPoint());
 
         // Write config data to msgpack
         java.nio.file.Path tempFile = Files.createTempFile(null, null);
-        //TODO support multiple output files
-        //writeMsgPack(tempFile);
+        tempFile.toFile().deleteOnExit();
+        writeMsgPack(tempFile);
 
+        // TODO: launch process here
         long linesRead = 0;
         long linesWritten = 0;
         String min = "aaaa", max = "zzzzz";
@@ -181,21 +181,46 @@ public class CompactSortedFiles {
         Object maxKey = parseToType(max, rowKeyType0);
 
         long finishTime = System.currentTimeMillis();
-        updateStateStoreSuccess(compactionJob.getInputFiles(),
-                compactionJob.getOutputFile(), //REMIND: This can't be null
-                compactionJob.getPartitionId(),
-                linesWritten,
-                minKey,
-                maxKey,
-                finishTime,
-                stateStore,
-                schema.getRowKeyTypes());
-        // May as well explode here since nothing good is going to happen after
-        // this...
-        throw new UnsupportedOperationException();
-        // return new CompactionJobRecordsProcessed(linesRead, linesWritten);
+        if (compactionJob.isSplittingJob()) {
+            updateStateStoreSuccess(compactionJob.getInputFiles(),
+                    compactionJob.getOutputFiles(),
+                    compactionJob.getPartitionId(),
+                    compactionJob.getChildPartitions(),
+                    new ImmutablePair<>(linesWritten, linesWritten), // TODO:
+                                                                     // get this
+                                                                     // data
+                                                                     // from C++
+                    new ImmutablePair<>(minKey, maxKey), // TODO: get this data
+                                                         // from C++
+                    new ImmutablePair<>(minKey, maxKey),
+                    finishTime,
+                    stateStore,
+                    schema.getRowKeyTypes());
+            // TODO: calculate the total
+            return new CompactionJobRecordsProcessed(linesRead, linesWritten * 2);
+        } else {
+            updateStateStoreSuccess(compactionJob.getInputFiles(),
+                    compactionJob.getOutputFile(), // REMIND: This can't be null
+                    compactionJob.getPartitionId(),
+                    linesWritten,
+                    minKey,
+                    maxKey,
+                    finishTime,
+                    stateStore,
+                    schema.getRowKeyTypes());
+            return new CompactionJobRecordsProcessed(linesRead, linesWritten);
+        }
     }
 
+    /**
+     * Converts a string to an int or long depending on the type specified.
+     * 
+     * @param min string to convert
+     * @param rowKeyType0 the data type of the column
+     * @return converted object
+     * @throws NumberFormatException if a numeric type is specified but it
+     * couldn't be converted
+     */
     public static Object parseToType(String min, PrimitiveType rowKeyType0) {
         if (rowKeyType0 instanceof IntType) {
             return Integer.parseInt(min);
@@ -224,19 +249,24 @@ public class CompactSortedFiles {
             }
             // since we currently only support sorting on a single column, we
             // assume the first row key is column 0
-            packer.packString(compactionJob.getOutputFile())
-                    .packString(this.compressionCodec)
+            if (compactionJob.isSplittingJob()) {
+                packer.packArrayHeader(2)
+                        .packString(compactionJob.getOutputFiles().getLeft())
+                        .packString(compactionJob.getOutputFiles().getRight());
+            } else {
+                packer.packArrayHeader(1)
+                        .packString(compactionJob.getOutputFile());
+            }
+            packer.packString(this.compressionCodec)
                     .packInt(this.rowGroupSize)
                     .packInt(GPU_MAX_ROW_GROUP_ROWS)
                     .packInt(this.pageSize)
                     .packArrayHeader(1) // assume only a single sort column
                     .packInt(0); // sort column number //TODO check dimension
                                  // for row key split
-
             if (compactionJob.isSplittingJob()) {
                 packer.packArrayHeader(1);
-                // TODO check type for split point
-                // .packString(compactionJob.getSplitPoint());
+                packer.packString(compactionJob.getSplitPoint().toString());
             } else {
                 packer.packArrayHeader(0);
             }
