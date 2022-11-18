@@ -15,11 +15,10 @@
  */
 package sleeper.ingest.impl.recordbatch.arraylist;
 
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
+import sleeper.ingest.impl.ParquetConfiguration;
 
 import java.io.IOException;
 
@@ -29,22 +28,14 @@ import java.io.IOException;
 public class ArrayListRecordBatchAcceptingRecords extends ArrayListRecordBatchBase<Record> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArrayListRecordBatchAcceptingRecords.class);
 
-    public ArrayListRecordBatchAcceptingRecords(Schema sleeperSchema,
+    public ArrayListRecordBatchAcceptingRecords(ParquetConfiguration parquetConfiguration,
                                                 String localWorkingDirectory,
                                                 int maxNoOfRecordsInMemory,
-                                                long maxNoOfRecordsInLocalStore,
-                                                long parquetRowGroupSize,
-                                                int parquetPageSize,
-                                                String parquetCompressionCodec,
-                                                Configuration hadoopConfiguration) {
-        super(sleeperSchema,
+                                                long maxNoOfRecordsInLocalStore) {
+        super(parquetConfiguration,
                 localWorkingDirectory,
                 maxNoOfRecordsInMemory,
-                maxNoOfRecordsInLocalStore,
-                parquetRowGroupSize,
-                parquetPageSize,
-                parquetCompressionCodec,
-                hadoopConfiguration);
+                maxNoOfRecordsInLocalStore);
     }
 
     @Override

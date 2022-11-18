@@ -16,6 +16,7 @@
 package sleeper.cdk.stack;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.apache.commons.lang3.tuple.Pair;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
@@ -48,6 +49,7 @@ import software.amazon.awscdk.services.ecs.AsgCapacityProvider;
 import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerDefinitionOptions;
 import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.ecs.CpuArchitecture;
 import software.amazon.awscdk.services.ecs.Ec2TaskDefinition;
 import software.amazon.awscdk.services.ecs.EcsOptimizedImage;
 import software.amazon.awscdk.services.ecs.EcsOptimizedImageOptions;
@@ -55,6 +57,8 @@ import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
 import software.amazon.awscdk.services.ecs.ITaskDefinition;
 import software.amazon.awscdk.services.ecs.MachineImageType;
 import software.amazon.awscdk.services.ecs.NetworkMode;
+import software.amazon.awscdk.services.ecs.OperatingSystemFamily;
+import software.amazon.awscdk.services.ecs.RuntimePlatform;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
@@ -103,10 +107,13 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPA
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_MEMORY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_GPU;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_MEMORY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_GPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
@@ -392,22 +399,11 @@ public class CompactionStack extends NestedStack {
                 .build();
         instanceProperties.set(COMPACTION_CLUSTER, cluster.getClusterName());
 
-        FargateTaskDefinition fargateTaskDefinition = FargateTaskDefinition.Builder
-                .create(this, "MergeCompactionFGTaskDefinition")
-                .family(instanceProperties.get(ID) + "MergeCompactionFGTaskFamily")
-                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
-                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
-                .build();
-
+        FargateTaskDefinition fargateTaskDefinition = compactionFargateTaskDefinition("Merge");
         String fargateTaskDefinitionFamily = fargateTaskDefinition.getFamily();
         instanceProperties.set(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY, fargateTaskDefinitionFamily);
 
-        Ec2TaskDefinition ec2TaskDefinition = Ec2TaskDefinition.Builder
-                .create(this, "MergeCompactionEC2TaskDefinition")
-                .family(instanceProperties.get(ID) + "MergeCompactionEC2TaskFamily")
-                .networkMode(NetworkMode.BRIDGE)
-                .build();
-
+        Ec2TaskDefinition ec2TaskDefinition = compactionEC2TaskDefinition("Merge");
         String ec2TaskDefinitionFamily = ec2TaskDefinition.getFamily();
         instanceProperties.set(COMPACTION_TASK_EC2_DEFINITION_FAMILY, ec2TaskDefinitionFamily);
 
@@ -418,23 +414,13 @@ public class CompactionStack extends NestedStack {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
 
-        ContainerDefinitionOptions fargateContainerDefinitionOptions = ContainerDefinitionOptions.builder()
-                .image(containerImage)
-                .environment(environmentVariables)
-                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
-                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
-                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties, "MergeCompactionTasks"))
-                .build();
-        fargateTaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, fargateContainerDefinitionOptions);
+        ContainerDefinitionOptions fargateContainerDefinitionOptions = createFargateContainerDefinition(containerImage,
+                environmentVariables, instanceProperties, "Merge");
+        fargateTaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME,
+                fargateContainerDefinitionOptions);
 
-        ContainerDefinitionOptions ec2ContainerDefinitionOptions = ContainerDefinitionOptions.builder()
-                .image(containerImage)
-                .environment(environmentVariables)
-                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
-                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
-                .gpuCount(instanceProperties.getInt(COMPACTION_TASK_GPU))
-                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties, "MergeCompactionTasks"))
-                .build();
+        ContainerDefinitionOptions ec2ContainerDefinitionOptions = createEC2ContainerDefinition(containerImage,
+                environmentVariables, instanceProperties, "Merge");
         ec2TaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, ec2ContainerDefinitionOptions);
 
         Consumer<ITaskDefinition> grantPermissions = (taskDef) -> {
@@ -483,22 +469,11 @@ public class CompactionStack extends NestedStack {
                 .build();
         instanceProperties.set(SPLITTING_COMPACTION_CLUSTER, cluster.getClusterName());
 
-        FargateTaskDefinition fargateTaskDefinition = FargateTaskDefinition.Builder
-                .create(this, "SplittingMergeCompactionFGTaskDefinition")
-                .family(instanceProperties.get(ID) + "SplittingMergeCompactionFGTaskFamily")
-                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
-                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
-                .build();
-
+        FargateTaskDefinition fargateTaskDefinition = compactionFargateTaskDefinition("SplittingMerge");
         String fargateTaskDefinitionFamily = fargateTaskDefinition.getFamily();
         instanceProperties.set(SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY, fargateTaskDefinitionFamily);
 
-        Ec2TaskDefinition ec2TaskDefinition = Ec2TaskDefinition.Builder
-                .create(this, "SplittingMergeCompactionEC2TaskDefinition")
-                .family(instanceProperties.get(ID) + "SplittingMergeCompactionEC2TaskFamily")
-                .networkMode(NetworkMode.BRIDGE)
-                .build();
-
+        Ec2TaskDefinition ec2TaskDefinition = compactionEC2TaskDefinition("SplittingMerge");
         String ec2TaskDefinitionFamily = ec2TaskDefinition.getFamily();
         instanceProperties.set(SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY, ec2TaskDefinitionFamily);
 
@@ -509,26 +484,13 @@ public class CompactionStack extends NestedStack {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
 
-        ContainerDefinitionOptions fargateContainerDefinitionOptions = ContainerDefinitionOptions.builder()
-                .image(containerImage)
-                .environment(environmentVariables)
-                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
-                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
-                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties,
-                        "SplittingMergeCompactionTasks"))
-                .build();
+        ContainerDefinitionOptions fargateContainerDefinitionOptions = createFargateContainerDefinition(containerImage,
+                environmentVariables, instanceProperties, "SplittingMerge");
         fargateTaskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME,
                 fargateContainerDefinitionOptions);
 
-        ContainerDefinitionOptions ec2ContainerDefinitionOptions = ContainerDefinitionOptions.builder()
-                .image(containerImage)
-                .environment(environmentVariables)
-                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
-                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
-                .gpuCount(instanceProperties.getInt(COMPACTION_TASK_GPU))
-                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties,
-                        "SplittingMergeCompactionTasks"))
-                .build();
+        ContainerDefinitionOptions ec2ContainerDefinitionOptions = createEC2ContainerDefinition(containerImage,
+                environmentVariables, instanceProperties, "SplittingMerge");
         ec2TaskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME,
                 ec2ContainerDefinitionOptions);
 
@@ -620,6 +582,72 @@ public class CompactionStack extends NestedStack {
         InstanceSize instanceSize = InstanceSize.valueOf(size);
 
         return InstanceType.of(instanceClass, instanceSize);
+    }
+
+    private static Pair<Integer, Integer> getCpuMemoryForArch(String architecture,
+            InstanceProperties instanceProperties) {
+        int cpu;
+        int memoryLimitMiB;
+        if (architecture.startsWith("ARM")) {
+            cpu = instanceProperties.getInt(COMPACTION_TASK_ARM_CPU);
+            memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_ARM_MEMORY);
+        } else {
+            cpu = instanceProperties.getInt(COMPACTION_TASK_X86_CPU);
+            memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_X86_MEMORY);
+        }
+        return Pair.of(cpu, memoryLimitMiB);
+    }
+
+    private FargateTaskDefinition compactionFargateTaskDefinition(String compactionTypeName) {
+        String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
+        Pair<Integer, Integer> requirements = getCpuMemoryForArch(architecture, instanceProperties);
+        return FargateTaskDefinition.Builder
+                .create(this, compactionTypeName + "CompactionFargateTaskDefinition")
+                .family(instanceProperties.get(ID) + compactionTypeName + "CompactionFargateTaskFamily")
+                .cpu(requirements.getLeft())
+                .memoryLimitMiB(requirements.getRight())
+                .runtimePlatform(RuntimePlatform.builder()
+                        .cpuArchitecture(CpuArchitecture.of(architecture))
+                        .operatingSystemFamily(OperatingSystemFamily.LINUX)
+                        .build())
+                .build();
+    }
+
+    private Ec2TaskDefinition compactionEC2TaskDefinition(String compactionTypeName) {
+        return Ec2TaskDefinition.Builder
+                .create(this, compactionTypeName + "CompactionEC2TaskDefinition")
+                .family(instanceProperties.get(ID) + compactionTypeName + "CompactionEC2TaskFamily")
+                .networkMode(NetworkMode.BRIDGE)
+                .build();
+    }
+
+    private ContainerDefinitionOptions createFargateContainerDefinition(ContainerImage image,
+            Map<String, String> environment, InstanceProperties instanceProperties, String compactionTypeName) {
+        String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
+        Pair<Integer, Integer> requirements = getCpuMemoryForArch(architecture, instanceProperties);
+        return ContainerDefinitionOptions.builder()
+                .image(image)
+                .environment(environment)
+                .cpu(requirements.getLeft())
+                .memoryLimitMiB(requirements.getRight())
+                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties,
+                        compactionTypeName + "FargateCompactionTasks"))
+                .build();
+    }
+
+    private ContainerDefinitionOptions createEC2ContainerDefinition(ContainerImage image,
+            Map<String, String> environment, InstanceProperties instanceProperties, String compactionTypeName) {
+        String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
+        Pair<Integer, Integer> requirements = getCpuMemoryForArch(architecture, instanceProperties);
+        return ContainerDefinitionOptions.builder()
+                .image(image)
+                .environment(environment)
+                .cpu(requirements.getLeft())
+                .memoryLimitMiB(requirements.getRight())
+                .gpuCount(instanceProperties.getInt(COMPACTION_TASK_X86_GPU))
+                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties,
+                        compactionTypeName + "EC2CompactionTasks"))
+                .build();
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")

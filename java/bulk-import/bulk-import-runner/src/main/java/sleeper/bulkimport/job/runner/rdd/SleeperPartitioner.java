@@ -51,9 +51,9 @@ public class SleeperPartitioner extends Partitioner {
     }
 
     private void init() {
-        Schema schema = new SchemaSerDe().fromJson(this.schemaAsString);
+        Schema schema = new SchemaSerDe().fromJson(schemaAsString);
         numRowKeyFields = schema.getRowKeyFields().size();
-        List<Partition> partitions = this.broadcastPartitions.getValue();
+        List<Partition> partitions = broadcastPartitions.getValue();
         partitionTree = new PartitionTree(schema, partitions);
         numLeafPartitions = (int) partitions.stream().filter(Partition::isLeafPartition).count();
         partitionIdToInt = new HashMap<>();
@@ -64,7 +64,7 @@ public class SleeperPartitioner extends Partitioner {
         SortedSet<String> sortedPartitionIds = new TreeSet<>(leafPartitions);
         int i = 0;
         for (String partitionId : sortedPartitionIds) {
-            this.partitionIdToInt.put(partitionId, i);
+            partitionIdToInt.put(partitionId, i);
             i++;
         }
     }

@@ -24,9 +24,9 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.ingest.IngestRecordsUsingPropertiesSpecifiedMethod;
-import sleeper.statestore.StateStore;
+import sleeper.ingest.IngestFactory;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
@@ -36,12 +36,20 @@ import java.io.IOException;
  */
 public class UploadMultipleShardedSortedParquetFiles extends WriteRandomDataJob {
 
+    private final IngestFactory ingestFactory;
+
     public UploadMultipleShardedSortedParquetFiles(
             ObjectFactory objectFactory,
             SystemTestProperties properties,
             TableProperties tableProperties,
-            StateStore stateStore) {
-        super(objectFactory, properties, tableProperties, stateStore);
+            StateStoreProvider stateStoreProvider) {
+        super(objectFactory, properties, tableProperties, stateStoreProvider);
+        this.ingestFactory = IngestFactory.builder()
+                .objectFactory(objectFactory)
+                .localDir("/mnt/scratch")
+                .stateStoreProvider(stateStoreProvider)
+                .instanceProperties(properties)
+                .build();
     }
 
     public void run() throws IOException {
@@ -52,17 +60,7 @@ public class UploadMultipleShardedSortedParquetFiles extends WriteRandomDataJob 
         CloseableIterator<Record> recordIterator = new WrappedIterator<>(createRecordIterator(schema));
 
         try {
-            IngestRecordsUsingPropertiesSpecifiedMethod.ingestFromRecordIterator(
-                    getClassFactory(),
-                    getStateStore(),
-                    getSystemTestProperties(),
-                    getTableProperties(),
-                    "/mnt/scratch",
-                    null,
-                    null,
-                    null,
-                    null,
-                    recordIterator);
+            ingestFactory.ingestFromRecordIterator(getTableProperties(), recordIterator);
         } catch (StateStoreException | IteratorException e) {
             throw new IOException("Failed to write records using iterator", e);
         }

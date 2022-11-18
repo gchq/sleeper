@@ -20,5 +20,4 @@ jobs:
   module-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkName: Data
-      moduleList: tables,garbage-collector,metrics
+      chunkId: data

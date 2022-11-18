@@ -29,5 +29,4 @@ jobs:
   module-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkName: CDK
-      moduleList: cdk,cdk-custom-resources,cdk-environment,system-test
+      chunkId: cdk

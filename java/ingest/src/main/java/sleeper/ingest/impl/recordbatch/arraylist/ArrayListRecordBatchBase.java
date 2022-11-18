@@ -20,7 +20,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.core.iterator.CloseableIterator;
@@ -28,11 +27,10 @@ import sleeper.core.iterator.MergingIterator;
 import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
+import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.io.parquet.record.ParquetRecordWriter;
-import sleeper.io.parquet.record.SchemaConverter;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -58,13 +56,11 @@ import static java.util.Objects.requireNonNull;
  */
 public abstract class ArrayListRecordBatchBase<INCOMINGDATATYPE> implements RecordBatch<INCOMINGDATATYPE> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArrayListRecordBatchBase.class);
+    private final ParquetConfiguration parquetConfiguration;
     private final Schema sleeperSchema;
     private final String localWorkingDirectory;
     private final int maxNoOfRecordsInMemory;
     private final long maxNoOfRecordsInLocalStore;
-    private final long parquetRowGroupSize;
-    private final int parquetPageSize;
-    private final String parquetCompressionCodec;
     private final Configuration hadoopConfiguration;
     private final UUID uniqueIdentifier;
     private final List<Record> inMemoryBatch;
@@ -77,33 +73,24 @@ public abstract class ArrayListRecordBatchBase<INCOMINGDATATYPE> implements Reco
     /**
      * Construct the ArrayList-based batch of records.
      *
-     * @param sleeperSchema              The Sleeper schema corresponding to the records
+     * @param parquetConfiguration       Hadoop, schema and Parquet configuration for writing files.
+     *                                   The Hadoop configuration is used during read and write of the Parquet files.
+     *                                   Note that the library code uses caching and so unusual errors can occur if
+     *                                   different configurations are used in different calls.
      * @param localWorkingDirectory      A local directory to use to store temporary files
      * @param maxNoOfRecordsInMemory     The maximum number of records to store in the internal ArrayList
      * @param maxNoOfRecordsInLocalStore The maximum number of records to store on the local disk
-     * @param parquetRowGroupSize        The row group size for the Parquet files that are generated
-     * @param parquetPageSize            The page size for the Parquet files that are generated
-     * @param parquetCompressionCodec    The compression codec for the Parquet files that are generated
-     * @param hadoopConfiguration        The Hadoop configuration to use during read and write of the Parquet files.
-     *                                   Note that the library code uses caching and so unusual errors can occur if
-     *                                   different configurations are used in different calls.
      */
-    public ArrayListRecordBatchBase(Schema sleeperSchema,
+    public ArrayListRecordBatchBase(ParquetConfiguration parquetConfiguration,
                                     String localWorkingDirectory,
                                     int maxNoOfRecordsInMemory,
-                                    long maxNoOfRecordsInLocalStore,
-                                    long parquetRowGroupSize,
-                                    int parquetPageSize,
-                                    String parquetCompressionCodec,
-                                    Configuration hadoopConfiguration) {
-        this.sleeperSchema = requireNonNull(sleeperSchema);
+                                    long maxNoOfRecordsInLocalStore) {
+        this.parquetConfiguration = requireNonNull(parquetConfiguration);
+        this.sleeperSchema = parquetConfiguration.getSleeperSchema();
         this.localWorkingDirectory = requireNonNull(localWorkingDirectory);
         this.maxNoOfRecordsInMemory = maxNoOfRecordsInMemory;
         this.maxNoOfRecordsInLocalStore = maxNoOfRecordsInLocalStore;
-        this.parquetRowGroupSize = parquetRowGroupSize;
-        this.parquetPageSize = parquetPageSize;
-        this.parquetCompressionCodec = requireNonNull(parquetCompressionCodec);
-        this.hadoopConfiguration = requireNonNull(hadoopConfiguration);
+        this.hadoopConfiguration = parquetConfiguration.getHadoopConfiguration();
         this.uniqueIdentifier = UUID.randomUUID();
         this.internalOrderedRecordIterator = null;
         this.isWriteable = true;
@@ -147,7 +134,7 @@ public abstract class ArrayListRecordBatchBase<INCOMINGDATATYPE> implements Reco
             long time2 = System.currentTimeMillis();
             // Write the records to a local Parquet file. The try-with-resources block ensures that the writer
             // is closed in both success and failure.
-            try (ParquetWriter<Record> parquetWriter = createParquetWriter(outputFileName)) {
+            try (ParquetWriter<Record> parquetWriter = parquetConfiguration.createParquetWriter(outputFileName)) {
                 for (Record record : inMemoryBatch) {
                     parquetWriter.write(record);
                 }
@@ -245,24 +232,6 @@ public abstract class ArrayListRecordBatchBase<INCOMINGDATATYPE> implements Reco
      */
     private ParquetReader<Record> createParquetReader(String inputFile) throws IOException {
         ParquetReader.Builder<Record> builder = new ParquetRecordReader.Builder(new Path(inputFile), sleeperSchema)
-                .withConf(hadoopConfiguration);
-        return builder.build();
-    }
-
-    /**
-     * Create a {@link ParquetWriter} to write {@link Record} objects using the parameter values supplied during
-     * construction. It is the responsibility of the caller to close the writer after use.
-     *
-     * @param outputFile The file to write to.
-     * @return The {@link ParquetWriter} object.
-     * @throws IOException Thrown when the writer cannot be created
-     */
-    private ParquetWriter<Record> createParquetWriter(String outputFile) throws IOException {
-        ParquetRecordWriter.Builder builder = new ParquetRecordWriter.Builder(
-                new Path(outputFile), SchemaConverter.getSchema(sleeperSchema), sleeperSchema)
-                .withRowGroupSize(parquetRowGroupSize)
-                .withPageSize(parquetPageSize)
-                .withCompressionCodec(CompressionCodecName.fromConf(parquetCompressionCodec))
                 .withConf(hadoopConfiguration);
         return builder.build();
     }

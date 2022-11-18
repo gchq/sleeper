@@ -117,9 +117,9 @@ AWS Lambda Powertools (software.amazon.lambda:powertools-metrics:1.10.2):
 
 - MIT License (https://github.com/awslabs/aws-lambda-powertools-java/blob/master/LICENSE)
 
-GitHub API for Java (org.kohsuke:github-api:1.308):
+Jersey Client (org.glassfish.jersey.core:jersey-client:2.37):
 
-- MIT License (https://github-api.kohsuke.org/licenses.html)
+- Eclipse Public License 2.0 (https://projects.eclipse.org/projects/ee4j.jersey)
 
 Go Offline Maven Plugin (de.qaware.maven:go-offline-maven-plugin:1.2.8):
 
