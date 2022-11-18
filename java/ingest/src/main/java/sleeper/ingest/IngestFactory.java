@@ -77,6 +77,10 @@ public class IngestFactory {
         s3AsyncClient = builder.s3AsyncClient;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public IngestResult ingestRecords(TableProperties tableProperties, List<Record> records) {
         try (IngestCoordinator<Record> ingestCoordinator = createIngestCoordinator(tableProperties)) {
             IngestRecords ingestRecords = new IngestRecords(ingestCoordinator);
@@ -164,10 +168,6 @@ public class IngestFactory {
         } else {
             throw new UnsupportedOperationException(String.format("File writer type %s not supported", fileWriterType));
         }
-    }
-
-    public static Builder builder() {
-        return new Builder();
     }
 
     /**
