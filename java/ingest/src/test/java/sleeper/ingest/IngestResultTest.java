@@ -17,15 +17,10 @@
 package sleeper.ingest;
 
 import org.junit.Test;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.TEST_TABLE_NAME;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultInstanceProperties;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultTableProperties;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getStateStore;
 
@@ -34,12 +29,9 @@ public class IngestResultTest extends IngestRecordsTestBase {
     public void shouldReturnNumberOfRecordsFromIngestResult() throws StateStoreException {
         // Given
         StateStore stateStore = getStateStore(schema);
-        InstanceProperties instanceProperties = defaultInstanceProperties();
-        TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
-        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
 
         // When
-        IngestResult result = factory.ingestRecords(tableProperties, getRecords());
+        IngestResult result = ingestRecords(schema, stateStore, getRecords());
 
         // Then
         assertThat(result.getNumberOfRecords())
@@ -50,12 +42,9 @@ public class IngestResultTest extends IngestRecordsTestBase {
     public void shouldReturnFileInfoListFromIngestResult() throws StateStoreException {
         // Given
         StateStore stateStore = getStateStore(schema);
-        InstanceProperties instanceProperties = defaultInstanceProperties();
-        TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
-        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
 
         // When
-        IngestResult result = factory.ingestRecords(tableProperties, getRecords());
+        IngestResult result = ingestRecords(schema, stateStore, getRecords());
 
         // Then
         assertThat(result.getFileInfoList())

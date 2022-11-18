@@ -16,8 +16,6 @@
 package sleeper.ingest;
 
 import org.junit.Test;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.statestore.FileInfo;
@@ -28,9 +26,6 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.TEST_TABLE_NAME;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultInstanceProperties;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultTableProperties;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
@@ -42,10 +37,7 @@ public class IngestRecordsFromIteratorIT extends IngestRecordsITBase {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        InstanceProperties instanceProperties = defaultInstanceProperties();
-        TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
-        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        long numWritten = factory.ingestFromRecordIterator(tableProperties, getRecords().iterator()).getNumberOfRecords();
+        long numWritten = ingestFromRecordIterator(schema, stateStore, getRecords().iterator()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written

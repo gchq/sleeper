@@ -22,8 +22,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.junit.Test;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.MergingIterator;
 import sleeper.core.iterator.impl.AdditionIterator;
@@ -60,11 +58,8 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_I
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.TEST_TABLE_NAME;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createLeafPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createRootPartition;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultInstanceProperties;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultTableProperties;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getLotsOfRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords2DimByteArrayKey;
@@ -96,10 +91,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        InstanceProperties instanceProperties = defaultInstanceProperties();
-        TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
-        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        long numWritten = factory.ingestRecords(tableProperties, getRecords()).getNumberOfRecords();
+        long numWritten = ingestRecords(schema, stateStore, getRecords()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -163,10 +155,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        InstanceProperties instanceProperties = defaultInstanceProperties();
-        TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
-        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        long numWritten = factory.ingestRecords(tableProperties, getRecordsByteArrayKey()).getNumberOfRecords();
+        long numWritten = ingestRecords(schema, stateStore, getRecordsByteArrayKey()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -237,10 +226,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        InstanceProperties instanceProperties = defaultInstanceProperties();
-        TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
-        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        long numWritten = factory.ingestRecords(tableProperties, getRecords2DimByteArrayKey()).getNumberOfRecords();
+        long numWritten = ingestRecords(schema, stateStore, getRecords2DimByteArrayKey()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -355,13 +341,11 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        InstanceProperties instanceProperties = defaultInstanceProperties();
-        TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
-        tableProperties.set(COMPRESSION_CODEC, "snappy");
-        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
         //  - When sorted the records in getRecordsOscillateBetweenTwoPartitions
         //  appear in partition 1 then partition 2 then partition 1, then 2, etc
-        long numWritten = factory.ingestRecords(tableProperties, getRecordsOscillatingBetween2Partitions()).getNumberOfRecords();
+        long numWritten = ingestRecordsWithTableProperties(schema, stateStore,
+                getRecordsOscillatingBetween2Partitions(),
+                tableProperties -> tableProperties.set(COMPRESSION_CODEC, "snappy")).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -436,10 +420,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        InstanceProperties instanceProperties = defaultInstanceProperties();
-        TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
-        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        long numWritten = factory.ingestRecords(tableProperties, getRecordsInFirstPartitionOnly()).getNumberOfRecords();
+        long numWritten = ingestRecords(schema, stateStore, getRecordsInFirstPartitionOnly()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -475,10 +456,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         // When
         List<Record> records = new ArrayList<>(getRecords());
         records.addAll(getRecords());
-        InstanceProperties instanceProperties = defaultInstanceProperties();
-        TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
-        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        long numWritten = factory.ingestRecords(tableProperties, records).getNumberOfRecords();
+        long numWritten = ingestRecords(schema, stateStore, records).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -526,12 +504,10 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         List<Record> records = getLotsOfRecords();
 
         // When
-        InstanceProperties instanceProperties = defaultInstanceProperties();
-        instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 1000L);
-        instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 5);
-        TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
-        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        long numWritten = factory.ingestRecords(tableProperties, records).getNumberOfRecords();
+        long numWritten = ingestRecordsWithInstanceProperties(schema, stateStore, records, instanceProperties -> {
+            instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 1000L);
+            instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 5);
+        }).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -645,12 +621,10 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         List<Record> records = getLotsOfRecords();
 
         // When
-        InstanceProperties instanceProperties = defaultInstanceProperties();
-        instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 10L);
-        instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 5);
-        TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
-        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        long numWritten = factory.ingestRecords(tableProperties, records).getNumberOfRecords();
+        long numWritten = ingestRecordsWithInstanceProperties(schema, stateStore, records, instanceProperties -> {
+            instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 10L);
+            instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 5);
+        }).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -736,10 +710,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         StateStore stateStore = getStateStore(schema);
 
         // When
-        InstanceProperties instanceProperties = defaultInstanceProperties();
-        TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
-        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        long numWritten = factory.ingestRecords(tableProperties, getUnsortedRecords()).getNumberOfRecords();
+        long numWritten = ingestRecords(schema, stateStore, getUnsortedRecords()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -783,11 +754,9 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         StateStore stateStore = getStateStore(schema);
 
         // When
-        InstanceProperties instanceProperties = defaultInstanceProperties();
-        TableProperties tableProperties = defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
-        tableProperties.set(ITERATOR_CLASS_NAME, AdditionIterator.class.getName());
-        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
-        long numWritten = factory.ingestRecords(tableProperties, getRecordsForAggregationIteratorTest()).getNumberOfRecords();
+        long numWritten = ingestRecordsWithTableProperties(schema, stateStore, getRecordsForAggregationIteratorTest(),
+                tableProperties -> tableProperties.set(ITERATOR_CLASS_NAME, AdditionIterator.class.getName()))
+                .getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
