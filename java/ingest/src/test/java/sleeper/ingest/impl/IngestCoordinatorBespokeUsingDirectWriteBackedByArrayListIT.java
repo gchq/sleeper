@@ -126,7 +126,8 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrayListIT {
                 .parquetCompressionCodec("zstd")
                 .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
                 .build();
-        IngestCoordinator<Record> ingestCoordinator = StandardIngestCoordinator.builder()
+
+        try (IngestCoordinator<Record> ingestCoordinator = StandardIngestCoordinator.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
@@ -139,14 +140,10 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrayListIT {
                         .buildAcceptingRecords())
                 .partitionFileWriterFactory(new DirectPartitionFileWriterFactory(
                         parquetConfiguration, "s3a://" + DATA_BUCKET_NAME))
-                .build();
-
-        try {
+                .build()) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }
-        } finally {
-            ingestCoordinator.close();
         }
 
         ResultVerifier.verify(
