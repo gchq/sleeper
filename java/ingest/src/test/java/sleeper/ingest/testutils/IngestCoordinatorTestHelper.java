@@ -28,6 +28,9 @@ import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
 import sleeper.statestore.StateStore;
 
 public class IngestCoordinatorTestHelper {
+    private IngestCoordinatorTestHelper() {
+    }
+
     public static ParquetConfiguration parquetConfiguration(Schema schema, Configuration hadoopConfiguration) {
         return ParquetConfiguration.builder()
                 .parquetCompressionCodec("zstd")
