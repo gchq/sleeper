@@ -140,7 +140,7 @@ public class FindPartitionsToSplitIT {
                                 .parquetConfiguration(parquetConfiguration)
                                 .localWorkingDirectory(stagingArea.getAbsolutePath())
                                 .maxNoOfRecordsInMemory(1_000_000)
-                                .maxNoOfRecordsInLocalStore(0L)
+                                .maxNoOfRecordsInLocalStore(1000L)
                                 .buildAcceptingRecords(),
                         new DirectPartitionFileWriterFactory(parquetConfiguration,
                                 "file://" + directory.getAbsolutePath())
