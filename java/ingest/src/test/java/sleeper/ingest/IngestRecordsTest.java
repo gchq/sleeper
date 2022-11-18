@@ -73,6 +73,7 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsFor
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsInFirstPartitionOnly;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsOscillatingBetween2Partitions;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getStateStore;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getUnsortedRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;

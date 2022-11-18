@@ -42,6 +42,7 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultTableP
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSingleRecord;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getStateStore;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 
 public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {

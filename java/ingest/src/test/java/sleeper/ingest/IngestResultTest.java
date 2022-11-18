@@ -27,6 +27,7 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.TEST_TABLE_NA
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultInstanceProperties;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultTableProperties;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getStateStore;
 
 public class IngestResultTest extends IngestRecordsTestBase {
     @Test

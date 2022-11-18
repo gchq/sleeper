@@ -22,21 +22,12 @@ import org.junit.rules.TemporaryFolder;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
-import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
-import sleeper.statestore.DelegatingStateStore;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
-import sleeper.statestore.inmemory.FixedPartitionStore;
-import sleeper.statestore.inmemory.InMemoryFileInfoStore;
-
-import java.util.Collections;
-import java.util.List;
 
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
 
@@ -53,16 +44,6 @@ public class IngestRecordsTestBase {
     public void setUpBase() throws Exception {
         inputFolderName = folder.newFolder().getAbsolutePath();
         sketchFolderName = folder.newFolder().getAbsolutePath();
-    }
-
-    protected static StateStore getStateStore(Schema schema) throws StateStoreException {
-        return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct());
-    }
-
-    protected static StateStore getStateStore(Schema schema, List<Partition> initialPartitions) throws StateStoreException {
-        StateStore stateStore = new DelegatingStateStore(new InMemoryFileInfoStore(), new FixedPartitionStore(schema));
-        stateStore.initialise(initialPartitions);
-        return stateStore;
     }
 
     protected IngestFactory createIngestFactory(StateStore stateStore, TableProperties tableProperties, InstanceProperties instanceProperties) {
