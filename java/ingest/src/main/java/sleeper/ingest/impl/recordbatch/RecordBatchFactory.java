@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.impl.partitionfilewriter;
-
-import sleeper.core.partition.Partition;
+package sleeper.ingest.impl.recordbatch;
 
 @FunctionalInterface
-public interface PartitionFileWriterFactory extends AutoCloseable {
+public interface RecordBatchFactory<INCOMINGDATATYPE> extends AutoCloseable {
 
-    PartitionFileWriter createPartitionFileWriter(Partition partition);
+    RecordBatch<INCOMINGDATATYPE> createRecordBatch();
 
     @Override
     default void close() throws Exception {

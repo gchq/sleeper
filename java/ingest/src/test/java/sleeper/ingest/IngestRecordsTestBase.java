@@ -19,22 +19,26 @@ package sleeper.ingest;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
-import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.iterator.IteratorException;
+import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
-import sleeper.statestore.DelegatingStateStore;
+import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.statestore.inmemory.FixedPartitionStore;
-import sleeper.statestore.inmemory.InMemoryFileInfoStore;
 
-import java.util.Collections;
+import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
 
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.TEST_TABLE_NAME;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultInstanceProperties;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
 
 public class IngestRecordsTestBase {
@@ -52,17 +56,58 @@ public class IngestRecordsTestBase {
         sketchFolderName = folder.newFolder().getAbsolutePath();
     }
 
-    protected static StateStore getStateStore(Schema schema) throws StateStoreException {
-        return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct());
+    protected IngestResult ingestRecords(Schema schema, StateStore stateStore, List<Record> records) throws Exception {
+        return ingestRecords(schema, stateStore, records, instanceProperties -> {
+        }, tableProperties -> {
+        });
     }
 
-    protected static StateStore getStateStore(Schema schema, List<Partition> initialPartitions) throws StateStoreException {
-        StateStore stateStore = new DelegatingStateStore(new InMemoryFileInfoStore(), new FixedPartitionStore(schema));
-        stateStore.initialise(initialPartitions);
-        return stateStore;
+    protected IngestResult ingestRecordsWithTableProperties(
+            Schema schema, StateStore stateStore, List<Record> records,
+            Consumer<TableProperties> tablePropertiesConfig) throws Exception {
+        return ingestRecords(schema, stateStore, records, instanceProperties -> {
+        }, tablePropertiesConfig);
     }
 
-    protected IngestProperties.Builder defaultPropertiesBuilder(StateStore stateStore, Schema sleeperSchema) {
-        return IngestRecordsTestDataHelper.defaultPropertiesBuilder(stateStore, sleeperSchema, inputFolderName, sketchFolderName);
+    protected IngestResult ingestRecordsWithInstanceProperties(
+            Schema schema, StateStore stateStore, List<Record> records,
+            Consumer<InstanceProperties> instancePropertiesConfig) throws Exception {
+        return ingestRecords(schema, stateStore, records, instancePropertiesConfig, tableProperties -> {
+        });
+    }
+
+    protected IngestResult ingestRecords(
+            Schema schema, StateStore stateStore, List<Record> records,
+            Consumer<InstanceProperties> instancePropertiesConfig,
+            Consumer<TableProperties> tablePropertiesConfig) throws Exception {
+
+        InstanceProperties instanceProperties = defaultInstanceProperties();
+        instancePropertiesConfig.accept(instanceProperties);
+        TableProperties tableProperties = defaultTableProperties(schema, instanceProperties);
+        tablePropertiesConfig.accept(tableProperties);
+        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
+
+        IngestRecords ingestRecords = factory.createIngestRecords(tableProperties);
+        ingestRecords.init();
+        for (Record record : records) {
+            ingestRecords.write(record);
+        }
+        return ingestRecords.close();
+    }
+
+    protected IngestResult ingestFromRecordIterator(Schema schema, StateStore stateStore, Iterator<Record> iterator)
+            throws StateStoreException, IteratorException, IOException {
+        InstanceProperties instanceProperties = defaultInstanceProperties();
+        TableProperties tableProperties = defaultTableProperties(schema, instanceProperties);
+        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
+        return factory.ingestFromRecordIterator(tableProperties, iterator);
+    }
+
+    private TableProperties defaultTableProperties(Schema schema, InstanceProperties instanceProperties) {
+        return IngestRecordsTestDataHelper.defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
+    }
+
+    private IngestFactory createIngestFactory(StateStore stateStore, TableProperties tableProperties, InstanceProperties instanceProperties) {
+        return IngestRecordsTestDataHelper.createIngestFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
     }
 }

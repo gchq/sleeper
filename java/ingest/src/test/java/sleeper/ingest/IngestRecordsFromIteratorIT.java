@@ -37,8 +37,7 @@ public class IngestRecordsFromIteratorIT extends IngestRecordsITBase {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
-        long numWritten = new IngestRecordsFromIterator(properties, getRecords().iterator()).write().getNumberOfRecords();
+        long numWritten = ingestFromRecordIterator(schema, stateStore, getRecords().iterator()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written

@@ -15,20 +15,34 @@
  */
 package sleeper.ingest.impl.partitionfilewriter;
 
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.ingest.impl.ParquetConfiguration;
 
 import java.io.IOException;
 import java.util.Objects;
 
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+
 public class DirectPartitionFileWriterFactory implements PartitionFileWriterFactory {
 
     private final ParquetConfiguration parquetConfiguration;
-    private final String fileSystem;
+    private final String filePathPrefix;
 
-    public DirectPartitionFileWriterFactory(ParquetConfiguration parquetConfiguration, String fileSystem) {
+    private DirectPartitionFileWriterFactory(ParquetConfiguration parquetConfiguration, String filePathPrefix) {
         this.parquetConfiguration = Objects.requireNonNull(parquetConfiguration, "parquetWriterConfiguration must not be null");
-        this.fileSystem = Objects.requireNonNull(fileSystem, "fileSystem must not be null");
+        this.filePathPrefix = Objects.requireNonNull(filePathPrefix, "filePathPrefix must not be null");
+    }
+
+    public static DirectPartitionFileWriterFactory from(ParquetConfiguration configuration, String filePathPrefix) {
+        return new DirectPartitionFileWriterFactory(configuration, filePathPrefix);
+    }
+
+    public static DirectPartitionFileWriterFactory from(ParquetConfiguration configuration, InstanceProperties instanceProperties,
+                                                        TableProperties tableProperties) {
+        return from(configuration, instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET));
     }
 
     @Override
@@ -37,7 +51,7 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
             return new DirectPartitionFileWriter(
                     partition,
                     parquetConfiguration,
-                    fileSystem);
+                    filePathPrefix);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

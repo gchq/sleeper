@@ -22,15 +22,26 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
+import sleeper.ingest.impl.IngestCoordinator;
+import sleeper.ingest.impl.ParquetConfiguration;
+import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
+import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
+import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
+import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
+import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
+import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.Locale;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_RECORD_BATCH_TYPE;
 
 public class IngestFactory {
 
@@ -55,23 +66,74 @@ public class IngestFactory {
         s3AsyncClient = builder.s3AsyncClient;
     }
 
-    public IngestResult ingestFromRecordIterator(TableProperties tableProperties, CloseableIterator<Record> recordIterator)
-            throws StateStoreException, IteratorException, IOException {
-        return IngestRecordsUsingPropertiesSpecifiedMethod.ingestFromRecordIterator(
-                objectFactory,
-                stateStoreProvider.getStateStore(tableProperties),
-                instanceProperties,
-                tableProperties,
-                localDir,
-                s3AsyncClient,
-                hadoopConfiguration,
-                tableProperties.get(ITERATOR_CLASS_NAME),
-                tableProperties.get(ITERATOR_CONFIG),
-                recordIterator);
-    }
-
     public static Builder builder() {
         return new Builder();
+    }
+
+    public IngestResult ingestFromRecordIteratorAndClose(TableProperties tableProperties, CloseableIterator<Record> recordIterator)
+            throws StateStoreException, IteratorException, IOException {
+        try {
+            return ingestFromRecordIterator(tableProperties, recordIterator);
+        } finally {
+            recordIterator.close();
+        }
+    }
+
+    public IngestResult ingestFromRecordIterator(TableProperties tableProperties, Iterator<Record> recordIterator)
+            throws StateStoreException, IteratorException, IOException {
+        try (IngestCoordinator<Record> ingestCoordinator = createIngestCoordinator(tableProperties)) {
+            return new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
+        }
+    }
+
+    public IngestRecords createIngestRecords(TableProperties tableProperties) {
+        return new IngestRecords(createIngestCoordinator(tableProperties));
+    }
+
+    public IngestCoordinator<Record> createIngestCoordinator(TableProperties tableProperties) {
+        ParquetConfiguration parquetConfiguration = ParquetConfiguration.from(tableProperties, hadoopConfiguration);
+        return IngestCoordinator.builderWith(instanceProperties, tableProperties)
+                .objectFactory(objectFactory)
+                .stateStore(stateStoreProvider.getStateStore(tableProperties))
+                .recordBatchFactory(standardRecordBatchFactory(parquetConfiguration))
+                .partitionFileWriterFactory(standardPartitionFileWriterFactory(tableProperties, parquetConfiguration))
+                .build();
+    }
+
+    private RecordBatchFactory<Record> standardRecordBatchFactory(ParquetConfiguration parquetConfiguration) {
+        String recordBatchType = instanceProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
+        if (recordBatchType.equals("arraylist")) {
+            return ArrayListRecordBatchFactory.builderWith(instanceProperties)
+                    .parquetConfiguration(parquetConfiguration)
+                    .localWorkingDirectory(localDir)
+                    .buildAcceptingRecords();
+        } else if (recordBatchType.equals("arrow")) {
+            return ArrowRecordBatchFactory.builderWith(instanceProperties)
+                    .schema(parquetConfiguration.getSleeperSchema())
+                    .localWorkingDirectory(localDir)
+                    .buildAcceptingRecords();
+        } else {
+            throw new UnsupportedOperationException(String.format("Record batch type %s not supported", recordBatchType));
+        }
+    }
+
+    private PartitionFileWriterFactory standardPartitionFileWriterFactory(
+            TableProperties tableProperties, ParquetConfiguration parquetConfiguration) {
+        String fileWriterType = instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
+        if (fileWriterType.equals("direct")) {
+            return DirectPartitionFileWriterFactory.from(parquetConfiguration, instanceProperties, tableProperties);
+        } else if (fileWriterType.equals("async")) {
+            if (!instanceProperties.get(FILE_SYSTEM).toLowerCase(Locale.ROOT).equals("s3a://")) {
+                throw new UnsupportedOperationException("Attempting an asynchronous write to a file system that is not s3a://");
+            }
+            return AsyncS3PartitionFileWriterFactory.builderWith(tableProperties)
+                    .parquetConfiguration(parquetConfiguration)
+                    .localWorkingDirectory(localDir)
+                    .s3AsyncClient(s3AsyncClient)
+                    .build();
+        } else {
+            throw new UnsupportedOperationException(String.format("File writer type %s not supported", fileWriterType));
+        }
     }
 
     /**

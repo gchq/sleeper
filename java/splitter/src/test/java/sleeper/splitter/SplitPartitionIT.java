@@ -22,7 +22,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.facebook.collections.ByteArray;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -30,11 +29,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.GenericContainer;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.CommonTestConstants;
-import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Range;
@@ -47,14 +42,17 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.ingest.IngestProperties;
 import sleeper.ingest.IngestRecordsFromIterator;
+import sleeper.ingest.impl.IngestCoordinator;
+import sleeper.ingest.impl.ParquetConfiguration;
+import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
+import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
+import sleeper.ingest.testutils.IngestCoordinatorTestHelper;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -110,8 +108,7 @@ public class SplitPartitionIT {
     }
 
     @Test
-    public void shouldSplitPartitionForIntKeyCorrectly()
-            throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
+    public void shouldSplitPartitionForIntKeyCorrectly() throws Exception {
         // Given
         StateStore stateStore = getStateStore(schema);
         String path = folder.newFolder().getAbsolutePath();
@@ -124,11 +121,7 @@ public class SplitPartitionIT {
                 record.put("key", r);
                 records.add(record);
             }
-            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                    records.iterator()
-            );
-            ingestRecordsFromIterator.write();
+            ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -162,8 +155,7 @@ public class SplitPartitionIT {
     }
 
     @Test
-    public void shouldNotSplitPartitionForIntKeyIfItCannotBeSplitBecausePartitionIsOnePoint()
-            throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
+    public void shouldNotSplitPartitionForIntKeyIfItCannotBeSplitBecausePartitionIsOnePoint() throws Exception {
         // Given
         // Non-leaf partitions
         Range rootRange = new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, null);
@@ -239,11 +231,7 @@ public class SplitPartitionIT {
                     record.put("key", r);
                     records.add(record);
                 }
-                IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-                IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                        records.iterator()
-                );
-                ingestRecordsFromIterator.write();
+                ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
             }
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -262,8 +250,7 @@ public class SplitPartitionIT {
     }
 
     @Test
-    public void shouldNotSplitPartitionForIntKeyIfItCannotBeSplitBecauseDataIsConstant()
-            throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
+    public void shouldNotSplitPartitionForIntKeyIfItCannotBeSplitBecauseDataIsConstant() throws Exception {
         // Given
         // Non-leaf partitions
         Range rootRange = new RangeFactory(schema).createRange(field, Integer.MIN_VALUE, null);
@@ -347,11 +334,7 @@ public class SplitPartitionIT {
                         records.add(record);
                     }
                 }
-                IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-                IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                        records.iterator()
-                );
-                ingestRecordsFromIterator.write();
+                ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
             }
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -370,8 +353,7 @@ public class SplitPartitionIT {
     }
 
     @Test
-    public void shouldSplitPartitionForIntMultidimensionalKeyOnFirstDimensionCorrectly()
-            throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
+    public void shouldSplitPartitionForIntMultidimensionalKeyOnFirstDimensionCorrectly() throws Exception {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
@@ -388,11 +370,7 @@ public class SplitPartitionIT {
                 record.put("key2", 10);
                 records.add(record);
             }
-            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                    records.iterator()
-            );
-            ingestRecordsFromIterator.write();
+            ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -439,8 +417,7 @@ public class SplitPartitionIT {
     }
 
     @Test
-    public void shouldSplitPartitionForIntMultidimensionalKeyOnSecondDimensionCorrectlyWhenMinIsMax()
-            throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
+    public void shouldSplitPartitionForIntMultidimensionalKeyOnSecondDimensionCorrectlyWhenMinIsMax() throws Exception {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
@@ -457,11 +434,7 @@ public class SplitPartitionIT {
                 record.put("key2", r);
                 records.add(record);
             }
-            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                    records.iterator()
-            );
-            ingestRecordsFromIterator.write();
+            ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -508,8 +481,7 @@ public class SplitPartitionIT {
     }
 
     @Test
-    public void shouldSplitPartitionForIntMultidimensionalKeyOnSecondDimensionCorrectlyWhenMinIsMedian()
-            throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
+    public void shouldSplitPartitionForIntMultidimensionalKeyOnSecondDimensionCorrectlyWhenMinIsMedian() throws Exception {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
@@ -531,11 +503,7 @@ public class SplitPartitionIT {
                 record.put("key2", r);
                 records.add(record);
             }
-            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                    records.iterator()
-            );
-            ingestRecordsFromIterator.write();
+            ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -582,8 +550,7 @@ public class SplitPartitionIT {
     }
 
     @Test
-    public void shouldSplitPartitionForLongKeyCorrectly()
-            throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
+    public void shouldSplitPartitionForLongKeyCorrectly() throws Exception {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new LongType())).build();
         StateStore stateStore = getStateStore(schema);
@@ -597,11 +564,7 @@ public class SplitPartitionIT {
                 record.put("key", r);
                 records.add(record);
             }
-            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                    records.iterator()
-            );
-            ingestRecordsFromIterator.write();
+            ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -639,8 +602,7 @@ public class SplitPartitionIT {
     }
 
     @Test
-    public void shouldSplitPartitionForStringKeyCorrectly()
-            throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
+    public void shouldSplitPartitionForStringKeyCorrectly() throws Exception {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
         StateStore stateStore = getStateStore(schema);
@@ -654,11 +616,7 @@ public class SplitPartitionIT {
                 record.put("key", "A" + i + "" + r);
                 records.add(record);
             }
-            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                    records.iterator()
-            );
-            ingestRecordsFromIterator.write();
+            ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -707,7 +665,7 @@ public class SplitPartitionIT {
 
     @Test
     public void shouldSplitPartitionForByteArrayKeyCorrectly()
-            throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
+            throws Exception {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
         StateStore stateStore = getStateStore(schema);
@@ -721,11 +679,7 @@ public class SplitPartitionIT {
                 record.put("key", new byte[]{(byte) r});
                 records.add(record);
             }
-            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                    records.iterator()
-            );
-            ingestRecordsFromIterator.write();
+            ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -765,8 +719,7 @@ public class SplitPartitionIT {
     }
 
     @Test
-    public void shouldNotSplitPartitionForByteArrayKeyIfItCannotBeSplitBecausePartitionIsOnePoint()
-            throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
+    public void shouldNotSplitPartitionForByteArrayKeyIfItCannotBeSplitBecausePartitionIsOnePoint() throws Exception {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -862,11 +815,7 @@ public class SplitPartitionIT {
                         records.add(record);
                     }
                 }
-                IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-                IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                        records.iterator()
-                );
-                ingestRecordsFromIterator.write();
+                ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
             }
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -885,8 +834,7 @@ public class SplitPartitionIT {
     }
 
     @Test
-    public void shouldNotSplitPartitionForByteArrayKeyIfItCannotBeSplitBecauseDataIsConstant()
-            throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
+    public void shouldNotSplitPartitionForByteArrayKeyIfItCannotBeSplitBecauseDataIsConstant() throws Exception {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -978,11 +926,7 @@ public class SplitPartitionIT {
                         records.add(record);
                     }
                 }
-                IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-                IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                        records.iterator()
-                );
-                ingestRecordsFromIterator.write();
+                ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
             }
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -1001,8 +945,7 @@ public class SplitPartitionIT {
     }
 
     @Test
-    public void shouldSplitPartitionForByteArrayMultidimensionalKeyOnFirstDimensionCorrectly()
-            throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
+    public void shouldSplitPartitionForByteArrayMultidimensionalKeyOnFirstDimensionCorrectly() throws Exception {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()))
@@ -1019,11 +962,7 @@ public class SplitPartitionIT {
                 record.put("key2", new byte[]{(byte) -100});
                 records.add(record);
             }
-            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                    records.iterator()
-            );
-            ingestRecordsFromIterator.write();
+            ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -1072,8 +1011,7 @@ public class SplitPartitionIT {
     }
 
     @Test
-    public void shouldSplitPartitionForByteArrayMultidimensionalKeyOnSecondDimensionCorrectly()
-            throws StateStoreException, IOException, IteratorException, InterruptedException, ObjectFactoryException {
+    public void shouldSplitPartitionForByteArrayMultidimensionalKeyOnSecondDimensionCorrectly() throws Exception {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()))
@@ -1090,11 +1028,7 @@ public class SplitPartitionIT {
                 record.put("key2", new byte[]{(byte) r});
                 records.add(record);
             }
-            IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, path, path2);
-            IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties,
-                    records.iterator()
-            );
-            ingestRecordsFromIterator.write();
+            ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -1155,23 +1089,18 @@ public class SplitPartitionIT {
         }
     }
 
-    private static IngestProperties defaultPropertiesBuilder(StateStore stateStore,
-                                                             Schema sleeperSchema,
-                                                             String path,
-                                                             String path2) throws IOException, ObjectFactoryException {
-        return IngestProperties.builder()
-                .objectFactory(new ObjectFactory(new InstanceProperties(), null, ""))
-                .localDir(path)
-                .maxRecordsToWriteLocally(1_000_000)
-                .maxInMemoryBatchSize(1_000_000)
-                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
-                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
-                .compressionCodec("zstd")
-                .stateStore(stateStore)
-                .schema(sleeperSchema)
-                .filePathPrefix("")
-                .bucketName(path2)
-                .ingestPartitionRefreshFrequencyInSecond(1_000_000)
-                .build();
+    private static void ingestRecordsFromIterator(StateStore stateStore, Schema schema, String localDir,
+                                                  String filePathPrefix, Iterator<Record> recordIterator) throws Exception {
+        ParquetConfiguration parquetConfiguration = IngestCoordinatorTestHelper.parquetConfiguration(schema, new Configuration());
+        IngestCoordinator<Record> ingestCoordinator = IngestCoordinatorTestHelper.standardIngestCoordinator(
+                stateStore, schema,
+                ArrayListRecordBatchFactory.builder()
+                        .localWorkingDirectory(localDir)
+                        .maxNoOfRecordsInMemory(1000000)
+                        .maxNoOfRecordsInLocalStore(100000000)
+                        .parquetConfiguration(parquetConfiguration)
+                        .buildAcceptingRecords(),
+                DirectPartitionFileWriterFactory.from(parquetConfiguration, filePathPrefix));
+        new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
     }
 }
