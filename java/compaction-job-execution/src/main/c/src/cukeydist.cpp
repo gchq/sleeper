@@ -178,7 +178,6 @@ table_for_range_low_mem(std::vector<fileinfo_t> const& sources, cudf::size_type 
 class Test : public arrow::ScalarVisitor {
     template <typename T>
     arrow::Status Visit(T) {
-        std::cerr << "Bork\n";
         return arrow::Status::OK();
     }
 };
@@ -212,7 +211,6 @@ row_mem_t write_range_low_mem(std::vector<fileinfo_t> const& sources, cudf::size
         Test visit{};
         val->Accept(&visit);
     }
-    
 
     freeMemory("write tables done");
     return {static_cast<size_t>(tableMem.first->num_rows()), tableMem.second};
@@ -278,6 +276,7 @@ void readRowGroupStats(std::vector<cudf::size_type> const& sortCols, std::shared
 template <typename T>
 CommandLineOutput doCompactFiles(Edge_vec<T> const& rowGroupParts, CommandLineInput const& opts, std::vector<fileinfo_t> const& sources, std::vector<EdgePair_vec<T>> const& fileStats,
                                  std::shared_ptr<AwsLibrary> awsPtr, cudf::io::table_input_metadata const& tim, std::shared_ptr<S3Sink>& currentSink, std::shared_ptr<std::atomic_size_t> downloadedAmount) {
+    CommandLineOutput returnData{};
     // want to work from total available memory, not total device memory
     ::size_t totalMem = getFreeMem();
     // Create list of partitions based on the merged histograms of all input files.
@@ -351,12 +350,14 @@ CommandLineOutput doCompactFiles(Edge_vec<T> const& rowGroupParts, CommandLineIn
                 nextRangesPerPart = rangesPerPart << 1;
             }
 
-            // TODO: do something with the table min/maxxes in here.
-
             // do we need to start a new file?
             if (newOutputNeeded) {
                 writer->close();
                 writer = createWriter(opts, tim, (awsPtr) ? awsPtr.get() : nullptr, currentSink);
+                returnData.minKeys.push_back("a");  // TODO set these correctly
+                returnData.maxKeys.push_back("z");
+                returnData.rowsWritten.push_back(static_cast<std::uint64_t>(count));
+                count = 0;
             }
         } catch (std::exception& excpt) {
             std::cerr << excpt.what() << std::endl;
@@ -373,13 +374,15 @@ CommandLineOutput doCompactFiles(Edge_vec<T> const& rowGroupParts, CommandLineIn
         std::cerr << " next attempt " << rangesPerPart << std::endl;
     }
     writer->close();
+    returnData.minKeys.push_back("a");  // TODO set these correctly
+    returnData.maxKeys.push_back("z");
+    returnData.push_back(static_cast<std::uint64_t>(count));
     if constexpr (std::is_integral_v<T>) {
         // return {std::to_string(globMin), std::to_string(globMax), 0, count};
-        return {{}, {}, 0, count};
     } else {
-        return {{}, {}, 0, count};
         // return {globMin, globMax, 0, count};
     }
+    return returnData;
 }
 
 CommandLineOutput compactFiles(SupportedTypes::Edge_vec_variant const& rowGroupParts, CommandLineInput const& opts,
@@ -491,7 +494,7 @@ int main(int argc, char* argv[]) {
     CommandLineOutput resultData = compactFiles(rowGroupParts, opts, sources, filestats, awsPtr, tim, currentSink, downloadedAmount);
     double tend = timestamp();
 
-    std::cerr << "total num rows written " << resultData.rowsWritten << std::endl;
+    std::cerr << "total num rows written " << std::accumulate(resultData.rowsWritten.cbegin(), resultData.rowsWritten.cend(), 0) << std::endl;
     std::cerr << "total time " << (tend - tstart) << " seconds" << std::endl;
     // write out message pack data
     resultData.rowsRead = totalRows;

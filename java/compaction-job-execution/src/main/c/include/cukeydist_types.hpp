@@ -58,8 +58,8 @@ struct CommandLineInput {
 struct CommandLineOutput {
     std::vector<std::string> minKeys;
     std::vector<std::string> maxKeys;
-    std::uint64_t rowsRead;
-    std::uint64_t rowsWritten;
+    std::uint64_t rowsRead = 0;
+    std::vector<std::uint64_t> rowsWritten;
 
     template <typename T>
     void pack(T& pack) {

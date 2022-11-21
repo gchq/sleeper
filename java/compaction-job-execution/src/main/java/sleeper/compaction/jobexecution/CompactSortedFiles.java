@@ -28,6 +28,7 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.schema.MessageType;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessagePacker;
+import org.msgpack.core.MessageUnpacker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
@@ -63,6 +64,7 @@ import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -70,6 +72,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 
@@ -171,7 +174,31 @@ public class CompactSortedFiles {
         tempFile.toFile().deleteOnExit();
         writeMsgPack(tempFile);
 
-        // TODO: launch process here
+        // output message pack file
+        java.nio.file.Path gpuOutput = Files.createTempFile(null, null);
+        gpuOutput.toFile().deleteOnExit();
+
+        ProcessBuilder builder = new ProcessBuilder("/compact/cukeydist", "-", gpuOutput.toAbsolutePath().toString())
+                .inheritIO()
+                .redirectOutput(gpuOutput.toFile());
+
+        Process gpuProcess = builder.start();
+        try {
+            boolean terminatedInTime = gpuProcess.waitFor(5, TimeUnit.MINUTES);
+            if (!terminatedInTime) {
+                LOGGER.warn("GPU process not terminated inside timeout");
+            }
+        } catch (InterruptedException ignore) {
+        }
+        int exitValue = gpuProcess.exitValue();
+        if (exitValue != 0) {
+            LOGGER.warn("GPU process exited with code {}", exitValue);
+        }
+
+        // grab exit data
+        MessageUnpacker unpack=MessagePack.newDefaultUnpacker(Files.newInputStream(gpuOutput));
+        
+
         long linesRead = 0;
         long linesWritten = 0;
         String min = "aaaa", max = "zzzzz";
@@ -200,7 +227,7 @@ public class CompactSortedFiles {
             return new CompactionJobRecordsProcessed(linesRead, linesWritten * 2);
         } else {
             updateStateStoreSuccess(compactionJob.getInputFiles(),
-                    compactionJob.getOutputFile(), // REMIND: This can't be null
+                    compactionJob.getOutputFile(),
                     compactionJob.getPartitionId(),
                     linesWritten,
                     minKey,
