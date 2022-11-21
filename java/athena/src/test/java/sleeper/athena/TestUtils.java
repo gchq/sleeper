@@ -127,7 +127,7 @@ public class TestUtils {
                     .objectFactory(new ObjectFactory(instanceProperties, s3Client, "/tmp"))
                     .localDir(dataDir)
                     .maxRecordsToWriteLocally(1000L)
-                    .maxInMemoryBatchSize(1024L)
+                    .maxInMemoryBatchSize(1024)
                     .rowGroupSize(table.getInt(ROW_GROUP_SIZE))
                     .pageSize(table.getInt(PAGE_SIZE))
                     .compressionCodec(table.get(COMPRESSION_CODEC))

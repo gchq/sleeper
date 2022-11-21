@@ -158,15 +158,15 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
         String objectFactoryLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
         String ingestLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
         IngestProperties properties = defaultPropertiesBuilder(objectFactoryLocalWorkingDirectory, stateStore, recordListAndSchema.sleeperSchema, null, ingestLocalWorkingDirectory)
-                .filePathPrefix("s3a://" + DATA_BUCKET_NAME)
-                .maxRecordsToWriteLocally(localStoreBytes).build();
+                .filePathPrefix("s3a://" + DATA_BUCKET_NAME).build();
         IngestCoordinator<sleeper.core.record.Record> ingestCoordinator = StandardIngestCoordinator.directWriteBackedByArrow(
                 properties,
                 bufferAllocator,
                 128,
                 arrowWorkingBytes,
                 arrowBatchBytes,
-                arrowBatchBytes
+                arrowBatchBytes,
+                localStoreBytes
         );
 
         try {
@@ -196,7 +196,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                 .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
                 .localDir(ingestLocalWorkingDirectory)
                 .maxRecordsToWriteLocally(10L)
-                .maxInMemoryBatchSize(1000L)
+                .maxInMemoryBatchSize(1000)
                 .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
                 .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
                 .compressionCodec("zstd")
