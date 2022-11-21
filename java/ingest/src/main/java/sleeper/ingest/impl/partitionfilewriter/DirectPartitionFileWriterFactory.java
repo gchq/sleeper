@@ -31,6 +31,10 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
         this.filePathPrefix = Objects.requireNonNull(filePathPrefix, "filePathPrefix must not be null");
     }
 
+    public static DirectPartitionFileWriterFactory from(ParquetConfiguration configuration, String filePathPrefix) {
+        return new DirectPartitionFileWriterFactory(configuration, filePathPrefix);
+    }
+
     @Override
     public PartitionFileWriter createPartitionFileWriter(Partition partition) {
         try {
