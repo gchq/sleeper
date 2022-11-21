@@ -43,7 +43,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_RECORD_BATCH_TYPE;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
@@ -134,10 +133,10 @@ public class IngestFactory {
             if (!instanceProperties.get(FILE_SYSTEM).toLowerCase(Locale.ROOT).equals("s3a://")) {
                 throw new UnsupportedOperationException("Attempting an asynchronous write to a file system that is not s3a://");
             }
-            return AsyncS3PartitionFileWriterFactory.builder()
+            return AsyncS3PartitionFileWriterFactory.builderWith(tableProperties)
                     .parquetConfiguration(parquetConfiguration)
                     .localWorkingDirectory(localDir)
-                    .s3BucketName(tableProperties.get(DATA_BUCKET)).s3AsyncClient(s3AsyncClient)
+                    .s3AsyncClient(s3AsyncClient)
                     .build();
         } else {
             throw new UnsupportedOperationException(String.format("File writer type %s not supported", fileWriterType));
