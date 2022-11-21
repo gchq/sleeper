@@ -72,7 +72,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
     }
 
     @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
@@ -94,7 +94,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
     }
 
     @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
@@ -116,7 +116,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
     }
 
     @Test
-    public void shouldErrorWhenThereAreMoreRecordsThanCanFitInLocalFileAndMoreThanFitInWorkingBytes() {
+    public void shouldErrorWhenBatchBufferAndWorkingBufferAreSmall() {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
