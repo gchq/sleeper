@@ -15,11 +15,16 @@
  */
 package sleeper.ingest.impl.partitionfilewriter;
 
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.ingest.impl.ParquetConfiguration;
 
 import java.io.IOException;
 import java.util.Objects;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 
 public class DirectPartitionFileWriterFactory implements PartitionFileWriterFactory {
 
@@ -33,6 +38,11 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
 
     public static DirectPartitionFileWriterFactory from(ParquetConfiguration configuration, String filePathPrefix) {
         return new DirectPartitionFileWriterFactory(configuration, filePathPrefix);
+    }
+
+    public static DirectPartitionFileWriterFactory from(ParquetConfiguration configuration, InstanceProperties instanceProperties,
+                                                        TableProperties tableProperties) {
+        return from(configuration, instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET));
     }
 
     @Override
