@@ -691,7 +691,7 @@ public class SqsQueryProcessorLambdaIT {
                     .objectFactory(new ObjectFactory(instanceProperties, null, "/tmp"))
                     .localDir(dataDir)
                     .maxRecordsToWriteLocally(10L)
-                    .maxInMemoryBatchSize(1000L)
+                    .maxInMemoryBatchSize(1000)
                     .rowGroupSize(tableProperties.getInt(ROW_GROUP_SIZE))
                     .pageSize(tableProperties.getInt(PAGE_SIZE))
                     .compressionCodec(tableProperties.get(COMPRESSION_CODEC))

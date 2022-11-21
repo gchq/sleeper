@@ -1340,7 +1340,7 @@ public class QueryExecutorIT {
                 .objectFactory(new ObjectFactory(instanceProperties, null, "/tmp"))
                 .localDir(folder.newFolder().getAbsolutePath())
                 .maxRecordsToWriteLocally(100L)
-                .maxInMemoryBatchSize(100L)
+                .maxInMemoryBatchSize(100)
                 .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
                 .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
                 .compressionCodec("snappy")

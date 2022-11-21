@@ -212,7 +212,7 @@ public class IngestCoordinatorCommonIT {
             IngestProperties properties = defaultPropertiesBuilder(temporaryFolder, stateStore, sleeperSchema, sleeperIteratorClassName, ingestLocalWorkingDirectory)
                     .filePathPrefix(filePathPrefix)
                     .maxRecordsToWriteLocally(1000)
-                    .maxInMemoryBatchSize(100000L)
+                    .maxInMemoryBatchSize(100000)
                     .build();
             return StandardIngestCoordinator.directWriteBackedByArrayList(properties);
         } catch (Exception e) {
