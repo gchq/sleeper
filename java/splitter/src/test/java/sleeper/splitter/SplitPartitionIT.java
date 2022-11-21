@@ -1098,6 +1098,7 @@ public class SplitPartitionIT {
                         .localWorkingDirectory(localDir)
                         .maxNoOfRecordsInMemory(1000000)
                         .maxNoOfRecordsInLocalStore(100000000)
+                        .parquetConfiguration(parquetConfiguration)
                         .buildAcceptingRecords(),
                 DirectPartitionFileWriterFactory.from(parquetConfiguration, filePathPrefix));
         new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
