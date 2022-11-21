@@ -24,11 +24,11 @@ import java.util.Objects;
 public class DirectPartitionFileWriterFactory implements PartitionFileWriterFactory {
 
     private final ParquetConfiguration parquetConfiguration;
-    private final String fileSystem;
+    private final String filePathPrefix;
 
-    public DirectPartitionFileWriterFactory(ParquetConfiguration parquetConfiguration, String fileSystem) {
+    public DirectPartitionFileWriterFactory(ParquetConfiguration parquetConfiguration, String filePathPrefix) {
         this.parquetConfiguration = Objects.requireNonNull(parquetConfiguration, "parquetWriterConfiguration must not be null");
-        this.fileSystem = Objects.requireNonNull(fileSystem, "fileSystem must not be null");
+        this.filePathPrefix = Objects.requireNonNull(filePathPrefix, "filePathPrefix must not be null");
     }
 
     @Override
@@ -37,7 +37,7 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
             return new DirectPartitionFileWriter(
                     partition,
                     parquetConfiguration,
-                    fileSystem);
+                    filePathPrefix);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
