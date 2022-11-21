@@ -376,7 +376,7 @@ CommandLineOutput doCompactFiles(Edge_vec<T> const& rowGroupParts, CommandLineIn
     writer->close();
     returnData.minKeys.push_back("a");  // TODO set these correctly
     returnData.maxKeys.push_back("z");
-    returnData.push_back(static_cast<std::uint64_t>(count));
+    returnData.rowsWritten.push_back(static_cast<std::uint64_t>(count));
     if constexpr (std::is_integral_v<T>) {
         // return {std::to_string(globMin), std::to_string(globMax), 0, count};
     } else {
@@ -436,6 +436,10 @@ int main(int argc, char* argv[]) {
         opts.splitPoints = loadOutputPartsFile(argv[2]);
         opts.inputFiles = {argv + 3, argv + argc};
     }
+    for (auto const & s:opts.splitPoints) {
+        std::cerr << s << std::endl;
+    }
+
     if (opts.outputFiles.size() != opts.splitPoints.size() + 1) {
         std::cerr << opts.splitPoints.size() << " splits need " << opts.splitPoints.size() + 1 << " output files specified, only " << opts.outputFiles.size() << " were given.\n";
         return 1;
