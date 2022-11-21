@@ -55,7 +55,11 @@ public class ParquetConfiguration {
     }
 
     public static ParquetConfiguration from(TableProperties tableProperties, Configuration hadoopConfiguration) {
-        return builder().tableProperties(tableProperties).hadoopConfiguration(hadoopConfiguration).build();
+        return builderWith(tableProperties).hadoopConfiguration(hadoopConfiguration).build();
+    }
+
+    public static Builder builderWith(TableProperties tableProperties) {
+        return builder().tableProperties(tableProperties);
     }
 
     public static Builder builder() {
