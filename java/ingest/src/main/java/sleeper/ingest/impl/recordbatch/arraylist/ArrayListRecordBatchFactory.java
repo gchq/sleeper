@@ -16,6 +16,7 @@
 
 package sleeper.ingest.impl.recordbatch.arraylist;
 
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
@@ -23,6 +24,9 @@ import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
 
 import java.util.Objects;
 import java.util.function.Function;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 
 public class ArrayListRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFactory<INCOMINGDATATYPE> {
     private final ParquetConfiguration parquetConfiguration;
@@ -48,6 +52,10 @@ public class ArrayListRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatc
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static Builder builderWith(InstanceProperties instanceProperties) {
+        return builder().instanceProperties(instanceProperties);
     }
 
     public ArrayListRecordBatchAcceptingRecords createRecordBatchAcceptingRecords() {
@@ -90,6 +98,11 @@ public class ArrayListRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatc
         public Builder maxNoOfRecordsInLocalStore(long maxNoOfRecordsInLocalStore) {
             this.maxNoOfRecordsInLocalStore = maxNoOfRecordsInLocalStore;
             return this;
+        }
+
+        public Builder instanceProperties(InstanceProperties instanceProperties) {
+            return maxNoOfRecordsInMemory(instanceProperties.getInt(MAX_IN_MEMORY_BATCH_SIZE))
+                    .maxNoOfRecordsInLocalStore(instanceProperties.getLong(MAX_RECORDS_TO_WRITE_LOCALLY));
         }
 
         public ArrayListRecordBatchFactory<Record> buildAcceptingRecords() {
