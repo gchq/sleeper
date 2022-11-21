@@ -60,7 +60,7 @@ echo "Starting Pre-deployment steps"
 "${SCRIPTS_DIR}/deploy/pre-deployment.sh" "${INSTANCE_ID}" "${VPC}" "${SUBNET}" "${TABLE_NAME}" "${TEMPLATE_DIR}" "${GENERATED_DIR}"
 
 END_CONFIGURE_DEPLOYMENT_TIME=$(record_time)
-echo "Configuring deployment finished at $(recorded_time_str "$END_CONFIGURE_DEPLOYMENT_TIME"), took $(elapsed_time_str "$END_BUILD_TIME" "$END_CONFIGURE_DEPLOYMENT_TIME")"
+echo "Configuring deployment finished at $(recorded_time_str "$END_CONFIGURE_DEPLOYMENT_TIME"), took $(elapsed_time_str "$START_TIME" "$END_CONFIGURE_DEPLOYMENT_TIME")"
 
 echo "-------------------------------------------------------------------------------"
 echo "Deploying Stack"
