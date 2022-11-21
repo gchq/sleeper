@@ -18,6 +18,8 @@ package sleeper.ingest.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.Partition;
@@ -39,6 +41,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
+import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 
 /**
@@ -105,6 +110,12 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
 
     public static Builder<?> builder() {
         return new Builder<>();
+    }
+
+    public static Builder<?> builderWith(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return builder()
+                .instanceProperties(instanceProperties)
+                .tableProperties(tableProperties);
     }
 
     /**
@@ -443,6 +454,17 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         public Builder<T> partitionFileWriterFactory(PartitionFileWriterFactory partitionFileWriterFactory) {
             this.partitionFileWriterFactory = partitionFileWriterFactory;
             return this;
+        }
+
+        public Builder<T> instanceProperties(InstanceProperties instanceProperties) {
+            return ingestPartitionRefreshFrequencyInSeconds(
+                    instanceProperties.getInt(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS));
+        }
+
+        public Builder<T> tableProperties(TableProperties tableProperties) {
+            return schema(tableProperties.getSchema())
+                    .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
+                    .iteratorConfig(tableProperties.get(ITERATOR_CONFIG));
         }
 
         public IngestCoordinator<T> build() {
