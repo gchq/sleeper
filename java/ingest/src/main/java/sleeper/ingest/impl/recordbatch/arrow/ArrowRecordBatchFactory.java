@@ -18,6 +18,7 @@ package sleeper.ingest.impl.recordbatch.arrow;
 
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
@@ -25,6 +26,11 @@ import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
 
 import java.util.Objects;
 import java.util.function.Function;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_MAX_LOCAL_STORE_BYTES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
 
 public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFactory<INCOMINGDATATYPE> {
     private final Schema schema;
@@ -72,6 +78,10 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static Builder builderWith(InstanceProperties instanceProperties) {
+        return builder().instanceProperties(instanceProperties);
     }
 
     @Override
@@ -150,6 +160,14 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
         public Builder bufferAllocator(BufferAllocator bufferAllocator) {
             this.bufferAllocator = bufferAllocator;
             return this;
+        }
+
+        public Builder instanceProperties(InstanceProperties instanceProperties) {
+            return maxNoOfRecordsToWriteToArrowFileAtOnce(instanceProperties.getInt(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS))
+                    .workingBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES))
+                    .minBatchBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
+                    .maxBatchBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_BATCH_BUFFER_BYTES))
+                    .maxNoOfBytesToWriteLocally(instanceProperties.getLong(ARROW_INGEST_MAX_LOCAL_STORE_BYTES));
         }
 
         public ArrowRecordBatchFactory<Record> buildAcceptingRecords() {
