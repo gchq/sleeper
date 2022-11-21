@@ -81,48 +81,30 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     private PartitionTree partitionTree;
     private boolean isClosed;
 
-    /**
-     * Construct an {@link IngestCoordinator} object.
-     *
-     * @param objectFactory                            The Sleeper {@link ObjectFactory} to use to create Sleeper
-     *                                                 iterators
-     * @param sleeperStateStore                        The Sleeper state store
-     * @param sleeperSchema                            The Sleeper schema of the data
-     * @param sleeperIteratorClassName                 The Sleeper iterator class name
-     * @param sleeperIteratorConfig                    The Sleeper iterator configuration
-     * @param ingestPartitionRefreshFrequencyInSeconds The number of seconds to wait before the current list of
-     *                                                 partitions is refreshed from the state store
-     * @param recordBatchFactory                       A factory to create new {@link RecordBatch} objects
-     * @param partitionFileWriterFactory               Configuration to create new {@link sleeper.ingest.impl.partitionfilewriter.PartitionFileWriter}
-     *                                                 objects
-     */
-    public IngestCoordinator(ObjectFactory objectFactory,
-                             StateStore sleeperStateStore,
-                             Schema sleeperSchema,
-                             String sleeperIteratorClassName,
-                             String sleeperIteratorConfig,
-                             int ingestPartitionRefreshFrequencyInSeconds,
-                             RecordBatchFactory<INCOMINGDATATYPE> recordBatchFactory,
-                             PartitionFileWriterFactory partitionFileWriterFactory) {
-        LOGGER.info("Creating IngestCoordinator with schema of {}", sleeperSchema);
+    private IngestCoordinator(Builder builder, RecordBatchFactory<INCOMINGDATATYPE> recordBatchFactory) {
+        LOGGER.info("Creating IngestCoordinator with schema of {}", builder.schema);
 
         // Supplied member variables
-        this.objectFactory = requireNonNull(objectFactory);
-        this.sleeperStateStore = requireNonNull(sleeperStateStore);
-        this.sleeperSchema = requireNonNull(sleeperSchema);
-        this.sleeperIteratorClassName = sleeperIteratorClassName;
-        this.sleeperIteratorConfig = sleeperIteratorConfig;
-        this.ingestPartitionRefreshFrequencyInSeconds = ingestPartitionRefreshFrequencyInSeconds;
+        this.objectFactory = requireNonNull(builder.objectFactory);
+        this.sleeperStateStore = requireNonNull(builder.stateStore);
+        this.sleeperSchema = requireNonNull(builder.schema);
+        this.sleeperIteratorClassName = builder.iteratorClassName;
+        this.sleeperIteratorConfig = builder.iteratorConfig;
+        this.ingestPartitionRefreshFrequencyInSeconds = builder.ingestPartitionRefreshFrequencyInSeconds;
         this.recordBatchFactory = requireNonNull(recordBatchFactory);
 
         // Other member variables
         this.ingestCoordinatorCreationTime = System.currentTimeMillis();
         this.lastPartitionsUpdateTime = PARTITIONS_NEVER_UPDATED_TIME;
         this.ingestFutures = new ArrayList<>();
-        this.partitionFileWriterFactory = requireNonNull(partitionFileWriterFactory);
+        this.partitionFileWriterFactory = requireNonNull(builder.partitionFileWriterFactory);
         this.ingesterIntoPartitions = new IngesterIntoPartitions(sleeperSchema, partitionFileWriterFactory::createPartitionFileWriter);
         this.currentRecordBatch = this.recordBatchFactory.createRecordBatch();
         this.isClosed = false;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -359,6 +341,112 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         } catch (Exception e) {
             internalClose();
             throw e;
+        }
+    }
+
+    public static class Builder {
+        private ObjectFactory objectFactory;
+        private StateStore stateStore;
+        private Schema schema;
+        private String iteratorClassName;
+        private String iteratorConfig;
+        private int ingestPartitionRefreshFrequencyInSeconds;
+        private RecordBatchFactory<Record> recordBatchFactory;
+        private PartitionFileWriterFactory partitionFileWriterFactory;
+
+        Builder() {
+        }
+
+        /**
+         * The Sleeper {@link ObjectFactory} to use to create Sleeper iterators
+         *
+         * @param objectFactory the object factory
+         * @return the builder for call chaining
+         */
+        public Builder objectFactory(ObjectFactory objectFactory) {
+            this.objectFactory = objectFactory;
+            return this;
+        }
+
+        /**
+         * The Sleeper state store
+         *
+         * @param stateStore the state store
+         * @return the builder for call chaining
+         */
+        public Builder stateStore(StateStore stateStore) {
+            this.stateStore = stateStore;
+            return this;
+        }
+
+        /**
+         * The Sleeper schema of the data
+         *
+         * @param schema the schema
+         * @return the builder for call chaining
+         */
+        public Builder schema(Schema schema) {
+            this.schema = schema;
+            return this;
+        }
+
+        /**
+         * The Sleeper iterator class name
+         *
+         * @param iteratorClassName the class name
+         * @return the builder for call chaining
+         */
+        public Builder iteratorClassName(String iteratorClassName) {
+            this.iteratorClassName = iteratorClassName;
+            return this;
+        }
+
+        /**
+         * The Sleeper iterator configuration
+         *
+         * @param iteratorConfig the configuration
+         * @return the builder for call chaining
+         */
+        public Builder iteratorConfig(String iteratorConfig) {
+            this.iteratorConfig = iteratorConfig;
+            return this;
+        }
+
+        /**
+         * The number of seconds to wait before the current list of partitions is refreshed from the state store
+         *
+         * @param ingestPartitionRefreshFrequencyInSeconds the wait time
+         * @return the builder for call chaining
+         */
+        public Builder ingestPartitionRefreshFrequencyInSeconds(int ingestPartitionRefreshFrequencyInSeconds) {
+            this.ingestPartitionRefreshFrequencyInSeconds = ingestPartitionRefreshFrequencyInSeconds;
+            return this;
+        }
+
+        /**
+         * A factory to create new {@link RecordBatch} objects
+         *
+         * @param recordBatchFactory the factory
+         * @return the builder for call chaining
+         */
+        public Builder recordBatchFactory(RecordBatchFactory<Record> recordBatchFactory) {
+            this.recordBatchFactory = recordBatchFactory;
+            return this;
+        }
+
+        /**
+         * A factory to create new {@link sleeper.ingest.impl.partitionfilewriter.PartitionFileWriter} objects
+         *
+         * @param partitionFileWriterFactory the factory
+         * @return the builder for call chaining
+         */
+        public Builder partitionFileWriterFactory(PartitionFileWriterFactory partitionFileWriterFactory) {
+            this.partitionFileWriterFactory = partitionFileWriterFactory;
+            return this;
+        }
+
+        public IngestCoordinator<Record> build() {
+            return new IngestCoordinator<>(this, recordBatchFactory);
         }
     }
 }

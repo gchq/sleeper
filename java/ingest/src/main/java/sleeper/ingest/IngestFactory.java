@@ -24,7 +24,6 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.ParquetConfiguration;
-import sleeper.ingest.impl.StandardIngestCoordinator;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
@@ -103,7 +102,7 @@ public class IngestFactory {
 
     public IngestCoordinator<Record> createIngestCoordinator(TableProperties tableProperties) {
         ParquetConfiguration parquetConfiguration = ParquetConfiguration.from(tableProperties, hadoopConfiguration);
-        return StandardIngestCoordinator.builder()
+        return IngestCoordinator.builder()
                 .objectFactory(objectFactory)
                 .stateStore(stateStoreProvider.getStateStore(tableProperties))
                 .schema(tableProperties.getSchema())

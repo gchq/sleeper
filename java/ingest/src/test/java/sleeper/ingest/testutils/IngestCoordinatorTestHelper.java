@@ -22,7 +22,6 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.ParquetConfiguration;
-import sleeper.ingest.impl.StandardIngestCoordinator;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
 import sleeper.statestore.StateStore;
@@ -45,10 +44,10 @@ public class IngestCoordinatorTestHelper {
         return standardIngestCoordinatorBuilder(stateStore, schema, recordBatchFactory, partitionFileWriterFactory).build();
     }
 
-    public static StandardIngestCoordinator.Builder standardIngestCoordinatorBuilder(
+    public static IngestCoordinator.Builder standardIngestCoordinatorBuilder(
             StateStore stateStore, Schema schema,
             RecordBatchFactory<Record> recordBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
-        return StandardIngestCoordinator.builder()
+        return IngestCoordinator.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .ingestPartitionRefreshFrequencyInSeconds(Integer.MAX_VALUE)
                 .stateStore(stateStore)
