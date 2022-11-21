@@ -134,7 +134,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrayListIT {
                         .maxNoOfRecordsInMemory(maxNoOfRecordsInMemory)
                         .maxNoOfRecordsInLocalStore(maxNoOfRecordsInLocalStore)
                         .buildAcceptingRecords(),
-                new DirectPartitionFileWriterFactory(
+                DirectPartitionFileWriterFactory.from(
                         parquetConfiguration, "s3a://" + DATA_BUCKET_NAME))) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);

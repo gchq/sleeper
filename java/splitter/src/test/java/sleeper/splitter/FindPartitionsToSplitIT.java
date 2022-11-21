@@ -142,7 +142,7 @@ public class FindPartitionsToSplitIT {
                                 .maxNoOfRecordsInMemory(1_000_000)
                                 .maxNoOfRecordsInLocalStore(1000L)
                                 .buildAcceptingRecords(),
-                        new DirectPartitionFileWriterFactory(parquetConfiguration,
+                        DirectPartitionFileWriterFactory.from(parquetConfiguration,
                                 "file://" + directory.getAbsolutePath())
                 )) {
                     new IngestRecordsFromIterator(coordinator, list.iterator()).write();

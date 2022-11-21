@@ -129,7 +129,7 @@ public class IngestFactory {
             TableProperties tableProperties, ParquetConfiguration parquetConfiguration) {
         String fileWriterType = instanceProperties.get(INGEST_PARTITION_FILE_WRITER_TYPE).toLowerCase(Locale.ROOT);
         if (fileWriterType.equals("direct")) {
-            return new DirectPartitionFileWriterFactory(parquetConfiguration,
+            return DirectPartitionFileWriterFactory.from(parquetConfiguration,
                     instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET));
         } else if (fileWriterType.equals("async")) {
             if (!instanceProperties.get(FILE_SYSTEM).toLowerCase(Locale.ROOT).equals("s3a://")) {

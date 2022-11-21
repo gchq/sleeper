@@ -165,7 +165,7 @@ public class IngestCoordinatorCommonIT {
                             .maxNoOfBytesToWriteLocally(512 * 1024 * 1024L)
                             .localWorkingDirectory(ingestLocalWorkingDirectory)
                             .buildAcceptingRecords(),
-                    new DirectPartitionFileWriterFactory(
+                    DirectPartitionFileWriterFactory.from(
                             parquetConfiguration, filePathPrefix))
                     .iteratorClassName(sleeperIteratorClassName)
                     .build();
@@ -225,7 +225,7 @@ public class IngestCoordinatorCommonIT {
                             .maxNoOfRecordsInMemory(100000)
                             .localWorkingDirectory(ingestLocalWorkingDirectory)
                             .buildAcceptingRecords(),
-                    new DirectPartitionFileWriterFactory(
+                    DirectPartitionFileWriterFactory.from(
                             parquetConfiguration, filePathPrefix))
                     .iteratorClassName(sleeperIteratorClassName)
                     .build();

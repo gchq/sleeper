@@ -26,7 +26,7 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
     private final ParquetConfiguration parquetConfiguration;
     private final String filePathPrefix;
 
-    public DirectPartitionFileWriterFactory(ParquetConfiguration parquetConfiguration, String filePathPrefix) {
+    private DirectPartitionFileWriterFactory(ParquetConfiguration parquetConfiguration, String filePathPrefix) {
         this.parquetConfiguration = Objects.requireNonNull(parquetConfiguration, "parquetWriterConfiguration must not be null");
         this.filePathPrefix = Objects.requireNonNull(filePathPrefix, "filePathPrefix must not be null");
     }
