@@ -15,10 +15,8 @@
  */
 package sleeper.ingest.impl;
 
-import org.apache.arrow.memory.BufferAllocator;
-import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -26,16 +24,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.key.Key;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.ingest.IngestProperties;
+import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
+import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.PartitionedTableCreator;
 import sleeper.ingest.testutils.RecordGenerator;
@@ -54,6 +49,8 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
+import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
 
 public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
     @ClassRule
@@ -75,7 +72,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
     }
 
     @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws StateStoreException, IOException, IteratorException, ObjectFactoryException {
+    public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
@@ -97,7 +94,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
     }
 
     @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws StateStoreException, IOException, IteratorException, ObjectFactoryException {
+    public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
@@ -119,7 +116,7 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
     }
 
     @Test
-    public void shouldError() {
+    public void shouldErrorWhenBatchBufferAndWorkingBufferAreSmall() {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
@@ -139,7 +136,8 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                         32 * 1024L,
                         1024 * 1024L,
                         64 * 1024 * 1024L))
-                .isInstanceOf(NullPointerException.class);
+                .isInstanceOf(OutOfMemoryException.class)
+                .hasNoSuppressedExceptions();
     }
 
     private void ingestAndVerifyUsingDirectWriteBackedByArrow(
@@ -149,32 +147,31 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
             Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap,
             long arrowWorkingBytes,
             long arrowBatchBytes,
-            long localStoreBytes) throws IOException, ObjectFactoryException, StateStoreException, IteratorException {
-        BufferAllocator bufferAllocator = new RootAllocator();
+            long localStoreBytes) throws IOException, StateStoreException, IteratorException {
         StateStore stateStore = PartitionedTableCreator.createStateStore(
                 AWS_EXTERNAL_RESOURCE.getDynamoDBClient(),
                 recordListAndSchema.sleeperSchema,
                 keyAndDimensionToSplitOnInOrder);
-        String objectFactoryLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
         String ingestLocalWorkingDirectory = temporaryFolder.newFolder().getAbsolutePath();
-        IngestProperties properties = defaultPropertiesBuilder(objectFactoryLocalWorkingDirectory, stateStore, recordListAndSchema.sleeperSchema, null, ingestLocalWorkingDirectory)
-                .filePathPrefix("s3a://" + DATA_BUCKET_NAME).build();
-        IngestCoordinator<sleeper.core.record.Record> ingestCoordinator = StandardIngestCoordinator.directWriteBackedByArrow(
-                properties,
-                bufferAllocator,
-                128,
-                arrowWorkingBytes,
-                arrowBatchBytes,
-                arrowBatchBytes,
-                localStoreBytes
-        );
 
-        try {
+        ParquetConfiguration parquetConfiguration = parquetConfiguration(
+                recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
+        try (IngestCoordinator<Record> ingestCoordinator = standardIngestCoordinator(
+                stateStore, recordListAndSchema.sleeperSchema,
+                ArrowRecordBatchFactory.builder()
+                        .schema(recordListAndSchema.sleeperSchema)
+                        .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
+                        .workingBufferAllocatorBytes(arrowWorkingBytes)
+                        .minBatchBufferAllocatorBytes(arrowBatchBytes)
+                        .maxBatchBufferAllocatorBytes(arrowBatchBytes)
+                        .maxNoOfBytesToWriteLocally(localStoreBytes)
+                        .localWorkingDirectory(ingestLocalWorkingDirectory)
+                        .buildAcceptingRecords(),
+                DirectPartitionFileWriterFactory.from(
+                        parquetConfiguration, "s3a://" + DATA_BUCKET_NAME))) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }
-        } finally {
-            ingestCoordinator.close();
         }
 
         ResultVerifier.verify(
@@ -185,25 +182,5 @@ public class IngestCoordinatorBespokeUsingDirectWriteBackedByArrowIT {
                 partitionNoToExpectedNoOfFilesMap,
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
                 ingestLocalWorkingDirectory);
-    }
-
-    private static IngestProperties.Builder defaultPropertiesBuilder(String objectFactoryLocalWorkingDirectory,
-                                                                     StateStore stateStore,
-                                                                     Schema sleeperSchema,
-                                                                     String sleeperIteratorClassName,
-                                                                     String ingestLocalWorkingDirectory) throws IOException, ObjectFactoryException {
-        return IngestProperties.builder()
-                .objectFactory(new ObjectFactory(new InstanceProperties(), null, objectFactoryLocalWorkingDirectory))
-                .localDir(ingestLocalWorkingDirectory)
-                .maxRecordsToWriteLocally(10L)
-                .maxInMemoryBatchSize(1000)
-                .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
-                .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
-                .compressionCodec("zstd")
-                .stateStore(stateStore)
-                .schema(sleeperSchema)
-                .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
-                .iteratorClassName(sleeperIteratorClassName)
-                .ingestPartitionRefreshFrequencyInSecond(Integer.MAX_VALUE);
     }
 }

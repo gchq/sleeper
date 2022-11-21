@@ -23,6 +23,7 @@ import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,13 +38,7 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
-        IngestRecords ingestRecords = new IngestRecords(properties);
-        ingestRecords.init();
-        for (Record record : getRecords()) {
-            ingestRecords.write(record);
-        }
-        long numWritten = ingestRecords.close().getNumberOfRecords();
+        long numWritten = ingestRecords(schema, stateStore, getRecords()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written
@@ -79,10 +74,7 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema).build();
-        IngestRecords ingestRecords = new IngestRecords(properties);
-        ingestRecords.init();
-        long numWritten = ingestRecords.close().getNumberOfRecords();
+        long numWritten = ingestRecords(schema, stateStore, Collections.emptyList()).getNumberOfRecords();
 
         // Then:
         //  - Check the correct number of records were written

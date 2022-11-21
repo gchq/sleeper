@@ -21,14 +21,13 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.CreateQueueResult;
 import com.amazonaws.services.sqs.model.Message;
-import org.apache.parquet.hadoop.ParquetWriter;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -39,8 +38,11 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
-import sleeper.ingest.IngestProperties;
 import sleeper.ingest.IngestRecordsFromIterator;
+import sleeper.ingest.impl.IngestCoordinator;
+import sleeper.ingest.impl.ParquetConfiguration;
+import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
+import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -56,6 +58,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
+import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
 
 public class FindPartitionsToSplitIT {
     @ClassRule
@@ -126,25 +130,23 @@ public class FindPartitionsToSplitIT {
     }
 
     private void writeFiles(StateStore stateStore, Schema schema, List<List<Record>> recordLists) {
+        ParquetConfiguration parquetConfiguration = parquetConfiguration(schema, new Configuration());
         recordLists.forEach(list -> {
             try {
                 File stagingArea = tempDir.newFolder();
                 File directory = tempDir.newFolder();
-                IngestProperties properties = IngestProperties.builder()
-                        .objectFactory(new ObjectFactory(new InstanceProperties(), null, ""))
-                        .localDir(stagingArea.getAbsolutePath())
-                        .maxRecordsToWriteLocally(0L)
-                        .maxInMemoryBatchSize(1_000_000)
-                        .rowGroupSize(ParquetWriter.DEFAULT_BLOCK_SIZE)
-                        .pageSize(ParquetWriter.DEFAULT_PAGE_SIZE)
-                        .compressionCodec("zstd")
-                        .stateStore(stateStore)
-                        .schema(schema)
-                        .filePathPrefix("file://")
-                        .bucketName(directory.getAbsolutePath())
-                        .ingestPartitionRefreshFrequencyInSecond(1_000_000)
-                        .build();
-                new IngestRecordsFromIterator(properties, list.iterator()).write();
+                try (IngestCoordinator<Record> coordinator = standardIngestCoordinator(stateStore, schema,
+                        ArrayListRecordBatchFactory.builder()
+                                .parquetConfiguration(parquetConfiguration)
+                                .localWorkingDirectory(stagingArea.getAbsolutePath())
+                                .maxNoOfRecordsInMemory(1_000_000)
+                                .maxNoOfRecordsInLocalStore(1000L)
+                                .buildAcceptingRecords(),
+                        DirectPartitionFileWriterFactory.from(parquetConfiguration,
+                                "file://" + directory.getAbsolutePath())
+                )) {
+                    new IngestRecordsFromIterator(coordinator, list.iterator()).write();
+                }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

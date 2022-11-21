@@ -60,7 +60,7 @@ public class UploadMultipleShardedSortedParquetFiles extends WriteRandomDataJob 
         CloseableIterator<Record> recordIterator = new WrappedIterator<>(createRecordIterator(schema));
 
         try {
-            ingestFactory.ingestFromRecordIterator(getTableProperties(), recordIterator);
+            ingestFactory.ingestFromRecordIteratorAndClose(getTableProperties(), recordIterator);
         } catch (StateStoreException | IteratorException e) {
             throw new IOException("Failed to write records using iterator", e);
         }

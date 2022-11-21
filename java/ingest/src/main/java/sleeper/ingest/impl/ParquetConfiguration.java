@@ -45,11 +45,21 @@ public class ParquetConfiguration {
         parquetCompressionCodec = Objects.requireNonNull(builder.parquetCompressionCodec, "parquetCompressionCodec must not be null");
         parquetRowGroupSize = builder.parquetRowGroupSize;
         parquetPageSize = builder.parquetPageSize;
+        if (parquetRowGroupSize < 1) {
+            throw new IllegalArgumentException("parquetRowGroupSize must be positive");
+        }
+        if (parquetPageSize < 1) {
+            throw new IllegalArgumentException("parquetPageSize must be positive");
+        }
         hadoopConfiguration = Objects.requireNonNull(builder.hadoopConfiguration, "hadoopConfiguration must not be null");
     }
 
     public static ParquetConfiguration from(TableProperties tableProperties, Configuration hadoopConfiguration) {
-        return builder().tableProperties(tableProperties).hadoopConfiguration(hadoopConfiguration).build();
+        return builderWith(tableProperties).hadoopConfiguration(hadoopConfiguration).build();
+    }
+
+    public static Builder builderWith(TableProperties tableProperties) {
+        return builder().tableProperties(tableProperties);
     }
 
     public static Builder builder() {
@@ -85,8 +95,8 @@ public class ParquetConfiguration {
     public static final class Builder {
         private Schema sleeperSchema;
         private String parquetCompressionCodec;
-        private long parquetRowGroupSize;
-        private int parquetPageSize;
+        private long parquetRowGroupSize = ParquetWriter.DEFAULT_BLOCK_SIZE;
+        private int parquetPageSize = ParquetWriter.DEFAULT_PAGE_SIZE;
         private Configuration hadoopConfiguration;
 
         private Builder() {

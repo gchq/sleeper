@@ -32,11 +32,6 @@ public class IngestRecordsFromIterator {
     private final Iterator<Record> recordsIterator;
     private final IngestRecords ingestRecords;
 
-    public IngestRecordsFromIterator(IngestProperties properties, Iterator<Record> recordsIterator) {
-        this.recordsIterator = recordsIterator;
-        this.ingestRecords = new IngestRecords(properties);
-    }
-
     public IngestRecordsFromIterator(IngestCoordinator<Record> ingestCoordinator, Iterator<Record> recordsIterator) {
         this.recordsIterator = recordsIterator;
         this.ingestRecords = new IngestRecords(ingestCoordinator);

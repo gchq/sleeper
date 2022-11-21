@@ -15,12 +15,15 @@
  */
 package sleeper.ingest.impl.partitionfilewriter;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.ingest.impl.ParquetConfiguration;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
 import java.util.Objects;
+
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 
 public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFactory {
 
@@ -45,6 +48,10 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static Builder builderWith(TableProperties tableProperties) {
+        return builder().tableProperties(tableProperties);
     }
 
     @Override
@@ -95,6 +102,10 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         public Builder localWorkingDirectory(String localWorkingDirectory) {
             this.localWorkingDirectory = localWorkingDirectory;
             return this;
+        }
+
+        public Builder tableProperties(TableProperties tableProperties) {
+            return s3BucketName(tableProperties.get(DATA_BUCKET));
         }
 
         public AsyncS3PartitionFileWriterFactory build() {
