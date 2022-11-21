@@ -164,7 +164,8 @@ public class IngestCoordinatorCommonIT {
                     128,
                     16 * 1024 * 1024L,
                     16 * 1024 * 1024L,
-                    16 * 1024 * 1024L
+                    16 * 1024 * 1024L,
+                    512 * 1024 * 1024L
             );
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -192,6 +193,7 @@ public class IngestCoordinatorCommonIT {
                     10,
                     16 * 1024 * 1024L,
                     16 * 1024 * 1024L,
+                    16 * 1024 * 1024L,
                     16 * 1024 * 1024L
             );
         } catch (Exception e) {
@@ -210,7 +212,7 @@ public class IngestCoordinatorCommonIT {
             IngestProperties properties = defaultPropertiesBuilder(temporaryFolder, stateStore, sleeperSchema, sleeperIteratorClassName, ingestLocalWorkingDirectory)
                     .filePathPrefix(filePathPrefix)
                     .maxRecordsToWriteLocally(1000)
-                    .maxInMemoryBatchSize(100000L)
+                    .maxInMemoryBatchSize(100000)
                     .build();
             return StandardIngestCoordinator.directWriteBackedByArrayList(properties);
         } catch (Exception e) {

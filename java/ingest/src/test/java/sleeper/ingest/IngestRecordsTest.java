@@ -537,7 +537,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         // When
         IngestProperties properties = defaultPropertiesBuilder(stateStore, schema)
                 .maxRecordsToWriteLocally(1000L)
-                .maxInMemoryBatchSize(5L).build();
+                .maxInMemoryBatchSize(5).build();
         IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         for (Record record : records) {
@@ -659,7 +659,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         // When
         IngestProperties properties = defaultPropertiesBuilder(stateStore, schema)
                 .maxRecordsToWriteLocally(10L)
-                .maxInMemoryBatchSize(5L).build();
+                .maxInMemoryBatchSize(5).build();
         IngestRecords ingestRecords = new IngestRecords(properties);
         ingestRecords.init();
         for (Record record : records) {
