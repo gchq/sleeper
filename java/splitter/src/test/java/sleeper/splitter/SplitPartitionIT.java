@@ -48,6 +48,11 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.ingest.IngestProperties;
 import sleeper.ingest.IngestRecordsFromIterator;
+import sleeper.ingest.impl.IngestCoordinator;
+import sleeper.ingest.impl.ParquetConfiguration;
+import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
+import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
+import sleeper.ingest.testutils.IngestCoordinatorTestHelper;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -1119,8 +1124,15 @@ public class SplitPartitionIT {
 
     private static void ingestRecordsFromIterator(StateStore stateStore, Schema schema, String localDir,
                                                   String filePathPrefix, Iterator<Record> recordIterator) throws Exception {
-        IngestProperties properties = defaultPropertiesBuilder(stateStore, schema, localDir, filePathPrefix);
-        IngestRecordsFromIterator ingestRecordsFromIterator = new IngestRecordsFromIterator(properties, recordIterator);
-        ingestRecordsFromIterator.write();
+        ParquetConfiguration parquetConfiguration = IngestCoordinatorTestHelper.parquetConfiguration(schema, new Configuration());
+        IngestCoordinator<Record> ingestCoordinator = IngestCoordinatorTestHelper.standardIngestCoordinator(
+                stateStore, schema,
+                ArrayListRecordBatchFactory.builder()
+                        .localWorkingDirectory(localDir)
+                        .maxNoOfRecordsInMemory(1000000)
+                        .maxNoOfRecordsInLocalStore(100000000)
+                        .buildAcceptingRecords(),
+                DirectPartitionFileWriterFactory.from(parquetConfiguration, filePathPrefix));
+        new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
     }
 }
