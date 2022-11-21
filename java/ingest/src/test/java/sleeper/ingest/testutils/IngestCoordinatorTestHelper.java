@@ -44,7 +44,7 @@ public class IngestCoordinatorTestHelper {
         return standardIngestCoordinatorBuilder(stateStore, schema, recordBatchFactory, partitionFileWriterFactory).build();
     }
 
-    public static IngestCoordinator.Builder standardIngestCoordinatorBuilder(
+    public static IngestCoordinator.Builder<Record> standardIngestCoordinatorBuilder(
             StateStore stateStore, Schema schema,
             RecordBatchFactory<Record> recordBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
         return IngestCoordinator.builder()

@@ -112,7 +112,6 @@ public class IngestFactory {
                 .recordBatchFactory(standardRecordBatchFactory(parquetConfiguration))
                 .partitionFileWriterFactory(standardPartitionFileWriterFactory(tableProperties, parquetConfiguration))
                 .build();
-
     }
 
     private RecordBatchFactory<Record> standardRecordBatchFactory(ParquetConfiguration parquetConfiguration) {

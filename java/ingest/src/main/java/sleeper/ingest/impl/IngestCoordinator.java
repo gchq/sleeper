@@ -103,8 +103,8 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         this.isClosed = false;
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static Builder<?> builder() {
+        return new Builder<>();
     }
 
     /**
@@ -344,14 +344,14 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         }
     }
 
-    public static class Builder {
+    public static class Builder<T> {
         private ObjectFactory objectFactory;
         private StateStore stateStore;
         private Schema schema;
         private String iteratorClassName;
         private String iteratorConfig;
         private int ingestPartitionRefreshFrequencyInSeconds;
-        private RecordBatchFactory<Record> recordBatchFactory;
+        private RecordBatchFactory<T> recordBatchFactory;
         private PartitionFileWriterFactory partitionFileWriterFactory;
 
         Builder() {
@@ -363,7 +363,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
          * @param objectFactory the object factory
          * @return the builder for call chaining
          */
-        public Builder objectFactory(ObjectFactory objectFactory) {
+        public Builder<T> objectFactory(ObjectFactory objectFactory) {
             this.objectFactory = objectFactory;
             return this;
         }
@@ -374,7 +374,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
          * @param stateStore the state store
          * @return the builder for call chaining
          */
-        public Builder stateStore(StateStore stateStore) {
+        public Builder<T> stateStore(StateStore stateStore) {
             this.stateStore = stateStore;
             return this;
         }
@@ -385,7 +385,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
          * @param schema the schema
          * @return the builder for call chaining
          */
-        public Builder schema(Schema schema) {
+        public Builder<T> schema(Schema schema) {
             this.schema = schema;
             return this;
         }
@@ -396,7 +396,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
          * @param iteratorClassName the class name
          * @return the builder for call chaining
          */
-        public Builder iteratorClassName(String iteratorClassName) {
+        public Builder<T> iteratorClassName(String iteratorClassName) {
             this.iteratorClassName = iteratorClassName;
             return this;
         }
@@ -407,7 +407,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
          * @param iteratorConfig the configuration
          * @return the builder for call chaining
          */
-        public Builder iteratorConfig(String iteratorConfig) {
+        public Builder<T> iteratorConfig(String iteratorConfig) {
             this.iteratorConfig = iteratorConfig;
             return this;
         }
@@ -418,7 +418,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
          * @param ingestPartitionRefreshFrequencyInSeconds the wait time
          * @return the builder for call chaining
          */
-        public Builder ingestPartitionRefreshFrequencyInSeconds(int ingestPartitionRefreshFrequencyInSeconds) {
+        public Builder<T> ingestPartitionRefreshFrequencyInSeconds(int ingestPartitionRefreshFrequencyInSeconds) {
             this.ingestPartitionRefreshFrequencyInSeconds = ingestPartitionRefreshFrequencyInSeconds;
             return this;
         }
@@ -429,9 +429,9 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
          * @param recordBatchFactory the factory
          * @return the builder for call chaining
          */
-        public Builder recordBatchFactory(RecordBatchFactory<Record> recordBatchFactory) {
-            this.recordBatchFactory = recordBatchFactory;
-            return this;
+        public <R> Builder<R> recordBatchFactory(RecordBatchFactory<R> recordBatchFactory) {
+            this.recordBatchFactory = (RecordBatchFactory<T>) recordBatchFactory;
+            return (Builder<R>) this;
         }
 
         /**
@@ -440,12 +440,12 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
          * @param partitionFileWriterFactory the factory
          * @return the builder for call chaining
          */
-        public Builder partitionFileWriterFactory(PartitionFileWriterFactory partitionFileWriterFactory) {
+        public Builder<T> partitionFileWriterFactory(PartitionFileWriterFactory partitionFileWriterFactory) {
             this.partitionFileWriterFactory = partitionFileWriterFactory;
             return this;
         }
 
-        public IngestCoordinator<Record> build() {
+        public IngestCoordinator<T> build() {
             return new IngestCoordinator<>(this, recordBatchFactory);
         }
     }
