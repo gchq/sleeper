@@ -34,7 +34,7 @@ import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobSerDe;
 import sleeper.io.parquet.record.ParquetRecordWriter;
 import sleeper.io.parquet.record.SchemaConverter;
-import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
@@ -61,8 +61,8 @@ public class WriteRandomDataViaQueueJob extends WriteRandomDataJob {
             ObjectFactory objectFactory,
             SystemTestProperties properties,
             TableProperties tableProperties,
-            StateStore stateStore) {
-        super(objectFactory, properties, tableProperties, stateStore);
+            StateStoreProvider stateStoreProvider) {
+        super(objectFactory, properties, tableProperties, stateStoreProvider);
         this.ingestMode = ingestMode;
     }
 

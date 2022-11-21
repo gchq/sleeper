@@ -17,14 +17,20 @@ package sleeper.bulkimport.job.runner.rdd;
 
 import sleeper.core.key.Key;
 import sleeper.core.record.KeyComparator;
+import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
+import sleeper.core.schema.type.PrimitiveType;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
+
 
 /**
  * The {@link WrappedKeyComparator} is a {@link Comparator} of Sleeper {@link Key}s
- * that sorts them in the natural way as defined by the Sleeper schema.
+ * that sorts them in the natural way as defined by the Sleeper schema, i.e.
+ * it sorts by the row keys and then the sort keys.
  */
 public class WrappedKeyComparator implements Comparator<Key>, Serializable {
     private static final long serialVersionUID = 7448396149070034670L;
@@ -38,7 +44,11 @@ public class WrappedKeyComparator implements Comparator<Key>, Serializable {
     @Override
     public int compare(Key key1, Key key2) {
         if (null == keyComparator) {
-            keyComparator = new KeyComparator(new SchemaSerDe().fromJson(schemaAsString).getRowKeyTypes());
+            Schema schema = new SchemaSerDe().fromJson(schemaAsString);
+            List<PrimitiveType> rowAndSortKeyTypes = new ArrayList<>();
+            rowAndSortKeyTypes.addAll(schema.getRowKeyTypes());
+            rowAndSortKeyTypes.addAll(schema.getSortKeyTypes());
+            keyComparator = new KeyComparator(rowAndSortKeyTypes);
         }
         return keyComparator.compare(key1, key2);
     }
