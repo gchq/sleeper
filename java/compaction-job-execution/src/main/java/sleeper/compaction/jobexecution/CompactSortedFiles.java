@@ -64,7 +64,6 @@ import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -72,6 +71,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
@@ -196,46 +196,45 @@ public class CompactSortedFiles {
         }
 
         // grab exit data
-        MessageUnpacker unpack=MessagePack.newDefaultUnpacker(Files.newInputStream(gpuOutput));
-        
-
-        long linesRead = 0;
-        long linesWritten = 0;
-        String min = "aaaa", max = "zzzzz";
+        GPUReturnData gpuData = readMsgPack(gpuOutput);
         // get type of rowkey zero
         PrimitiveType rowKeyType0 = schema.getRowKeyTypes().get(0);
-        Object minKey = parseToType(min, rowKeyType0);
-        Object maxKey = parseToType(max, rowKeyType0);
 
         long finishTime = System.currentTimeMillis();
         if (compactionJob.isSplittingJob()) {
+            if (gpuData.maxKeys.size() != 2) {
+                throw new IllegalStateException("Splitting compaction expected 2 set of output data, got " +
+                        gpuData.maxKeys.size());
+            }
             updateStateStoreSuccess(compactionJob.getInputFiles(),
                     compactionJob.getOutputFiles(),
                     compactionJob.getPartitionId(),
                     compactionJob.getChildPartitions(),
-                    new ImmutablePair<>(linesWritten, linesWritten), // TODO:
-                                                                     // get this
-                                                                     // data
-                                                                     // from C++
-                    new ImmutablePair<>(minKey, maxKey), // TODO: get this data
-                                                         // from C++
-                    new ImmutablePair<>(minKey, maxKey),
+                    new ImmutablePair<>(gpuData.rowsWritten.get(0), gpuData.rowsWritten.get(1)),
+                    new ImmutablePair<>(parseToType(gpuData.minKeys.get(0), rowKeyType0),
+                            parseToType(gpuData.maxKeys.get(0), rowKeyType0)),
+                    new ImmutablePair<>(parseToType(gpuData.minKeys.get(1), rowKeyType0),
+                            parseToType(gpuData.maxKeys.get(1), rowKeyType0)),
                     finishTime,
                     stateStore,
                     schema.getRowKeyTypes());
-            // TODO: calculate the total
-            return new CompactionJobRecordsProcessed(linesRead, linesWritten * 2);
+            long linesWritten = gpuData.rowsWritten.stream().mapToLong(Long::longValue).sum();
+            return new CompactionJobRecordsProcessed(gpuData.rowsRead, linesWritten);
         } else {
+            if (gpuData.maxKeys.size() != 1) {
+                throw new IllegalStateException("Compaction expected 1 set of output data, got " +
+                        gpuData.maxKeys.size());
+            }
             updateStateStoreSuccess(compactionJob.getInputFiles(),
                     compactionJob.getOutputFile(),
                     compactionJob.getPartitionId(),
-                    linesWritten,
-                    minKey,
-                    maxKey,
+                    gpuData.rowsWritten.get(0),
+                    parseToType(gpuData.minKeys.get(0), rowKeyType0),
+                    parseToType(gpuData.maxKeys.get(0), rowKeyType0),
                     finishTime,
                     stateStore,
                     schema.getRowKeyTypes());
-            return new CompactionJobRecordsProcessed(linesRead, linesWritten);
+            return new CompactionJobRecordsProcessed(gpuData.rowsRead, gpuData.rowsWritten.get(0));
         }
     }
 
@@ -257,6 +256,82 @@ public class CompactSortedFiles {
             return min;
         } else {
             throw new UnsupportedOperationException("GPU acceleration unavailable with row key field type " + rowKeyType0.getClass());
+        }
+    }
+
+    private static class GPUReturnData {
+        public final ArrayList<String> minKeys;
+        public final ArrayList<String> maxKeys;
+        public final long rowsRead;
+        public final ArrayList<Long> rowsWritten;
+
+        public GPUReturnData(ArrayList<String> minKeys, ArrayList<String> maxKeys, long rowsRead, ArrayList<Long> rowsWritten) {
+            this.minKeys = minKeys;
+            this.maxKeys = maxKeys;
+            this.rowsRead = rowsRead;
+            this.rowsWritten = rowsWritten;
+        }
+
+        @Override
+        public String toString() {
+            return "GPUReturnData [minKeys=" + minKeys + ", maxKeys=" + maxKeys +
+                    ", rowsRead=" + rowsRead + ", rowsWritten=" + rowsWritten + "]";
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(maxKeys, minKeys, rowsRead, rowsWritten);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            GPUReturnData other = (GPUReturnData) obj;
+            return Objects.equals(maxKeys, other.maxKeys) && Objects.equals(minKeys, other.minKeys) &&
+                    rowsRead == other.rowsRead && Objects.equals(rowsWritten, other.rowsWritten);
+        }
+    }
+
+    private GPUReturnData readMsgPack(java.nio.file.Path msgPackFile) throws IOException {
+        LOGGER.debug("Reading GPU return data from file {}", msgPackFile);
+        try (MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(Files.newInputStream(msgPackFile))) {
+            // get the minimum keys list
+            int keysLength = unpacker.unpackArrayHeader();
+            ArrayList<String> minKeys = new ArrayList<>(keysLength);
+            for (int i = 0; i < keysLength; i++) {
+                minKeys.add(unpacker.unpackString());
+            }
+
+            // get the maximum keys list
+            keysLength = unpacker.unpackArrayHeader();
+            if (keysLength != minKeys.size()) {
+                throw new IllegalStateException("MessagePack data from GPU contained " + minKeys.size() +
+                        " minKeys and " + keysLength + " maxKeys. These must be equal length!");
+            }
+
+            ArrayList<String> maxKeys = new ArrayList<>(keysLength);
+            for (int i = 0; i < keysLength; i++) {
+                maxKeys.add(unpacker.unpackString());
+            }
+
+            // number of rows read by GPU
+            long rowsRead = unpacker.unpackLong();
+
+            // list of written per output partition
+            int len = unpacker.unpackArrayHeader();
+            ArrayList<Long> rowsWritten = new ArrayList<>(len);
+            for (int i = 0; i < len; i++) {
+                rowsWritten.add(unpacker.unpackLong());
+            }
+            return new GPUReturnData(minKeys, maxKeys, rowsRead, rowsWritten);
         }
     }
 
@@ -297,7 +372,6 @@ public class CompactSortedFiles {
             } else {
                 packer.packArrayHeader(0);
             }
-
             LOGGER.debug("Wrote {} bytes of Msgpack to {}", packer.getTotalWrittenBytes(), tempFile);
         }
     }

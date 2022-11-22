@@ -268,9 +268,17 @@ void readRowGroupStats(std::vector<cudf::size_type> const& sortCols, std::shared
     std::visit([&](auto&& arg) {
         using ArgType = std::decay_t<decltype(arg)>;          // determine underlying type of variant -> Edge_vec<T>
         using BaseType = typename ArgType::value_type::type;  // get the underlying type of T in the above line
-        doReadRowGroupStats(sortCols, fmeta, std::get<std::vector<EdgePair_vec<BaseType>>>(fileStatsVariant), sources, arg, file, fileIndex);
+        doReadRowGroupStats(sortCols, fmeta, std::get<std::vector<EdgePair_vec<BaseType>>>(fileStatsVariant),
+                            sources, arg, file, fileIndex);
     },
                rowGroupParts);
+}
+
+void updateOutputData(CommandLineOutput& returnData, std::string const& min,
+                      std::string const& max, ::size_t const count) {
+    returnData.minKeys.push_back(min;  // TODO set these correctly
+    returnData.maxKeys.push_back(max);
+    returnData.rowsWritten.push_back(static_cast<std::uint64_t>(count));
 }
 
 template <typename T>
@@ -308,7 +316,7 @@ CommandLineOutput doCompactFiles(Edge_vec<T> const& rowGroupParts, CommandLineIn
     // ranges is on an increasing trajectory (positive gradient)
     ::size_t previousRangesPerPart = 1;
     // ====================
-    // row count written
+    // row count written to this output file
     ::size_t count = 0;
     // number of partitions to merge in one pass
     ::size_t rangesPerPart = 1;
@@ -354,9 +362,7 @@ CommandLineOutput doCompactFiles(Edge_vec<T> const& rowGroupParts, CommandLineIn
             if (newOutputNeeded) {
                 writer->close();
                 writer = createWriter(opts, tim, (awsPtr) ? awsPtr.get() : nullptr, currentSink);
-                returnData.minKeys.push_back("a");  // TODO set these correctly
-                returnData.maxKeys.push_back("z");
-                returnData.rowsWritten.push_back(static_cast<std::uint64_t>(count));
+                updateOutputData(returnData, "a", "z", count); //TODO FIX
                 count = 0;
             }
         } catch (std::exception& excpt) {
@@ -374,13 +380,11 @@ CommandLineOutput doCompactFiles(Edge_vec<T> const& rowGroupParts, CommandLineIn
         std::cerr << " next attempt " << rangesPerPart << std::endl;
     }
     writer->close();
-    returnData.minKeys.push_back("a");  // TODO set these correctly
-    returnData.maxKeys.push_back("z");
-    returnData.rowsWritten.push_back(static_cast<std::uint64_t>(count));
-    if constexpr (std::is_integral_v<T>) {
-        // return {std::to_string(globMin), std::to_string(globMax), 0, count};
+
+    if constexpr (std::is_integral_v<T>) {//TODO FIX
+        updateOutputData(returnData, std::to_string(1), std::to_string(9), count);
     } else {
-        // return {globMin, globMax, 0, count};
+        updateOutputData(returnData, "a", "z", count);
     }
     return returnData;
 }
@@ -436,7 +440,7 @@ int main(int argc, char* argv[]) {
         opts.splitPoints = loadOutputPartsFile(argv[2]);
         opts.inputFiles = {argv + 3, argv + argc};
     }
-    for (auto const & s:opts.splitPoints) {
+    for (auto const& s : opts.splitPoints) {
         std::cerr << s << std::endl;
     }
 
