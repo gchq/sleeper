@@ -1,0 +1,9 @@
+
+Ingest Task Status Report
+-------------------------
+Total tasks: 0
+Total unfinished tasks: 0
+Total finished tasks: 0
+----------------------------------------------
+| STATE | START_TIME | FINISH_TIME | TASK_ID |
+----------------------------------------------
