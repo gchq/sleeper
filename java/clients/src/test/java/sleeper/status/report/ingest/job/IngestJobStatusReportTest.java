@@ -31,6 +31,15 @@ public class IngestJobStatusReportTest {
                 example("reports/ingest/job/standard/all/noJobs.txt"));
     }
 
+    @Test
+    public void shouldReportMixedIngestJobs() throws Exception {
+
+        // When / Then
+        assertThat(getStandardReport(IngestJobQuery.ALL)).hasToString(
+                example("reports/ingest/job/standard/all/mixedJobs.txt"));
+    }
+
+
     private String getStandardReport(IngestJobQuery query) {
         ToStringPrintStream output = new ToStringPrintStream();
         new IngestJobStatusReport(output.getPrintStream()).run(query);

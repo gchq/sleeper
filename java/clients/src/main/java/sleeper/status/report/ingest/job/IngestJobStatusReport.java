@@ -47,7 +47,7 @@ public class IngestJobStatusReport {
         out.println();
         out.println("Ingest Job Status Report");
         out.println("------------------------");
-        out.printf("Total jobs pending in queue: %s%n", 0);
+        out.printf("Total jobs waiting in queue (excluded from report): %s%n", 0);
         out.printf("Total jobs in progress: %s%n", 0);
         out.printf("Total jobs finished: %s%n", 0);
         TABLE_FACTORY.tableBuilder()
