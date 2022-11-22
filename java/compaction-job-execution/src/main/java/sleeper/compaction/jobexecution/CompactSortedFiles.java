@@ -135,10 +135,15 @@ public class CompactSortedFiles {
         LOGGER.info("Compaction job {}: compaction called at {}", id, startTime);
         jobStatusStore.jobStarted(compactionJob, startTime, taskId);
 
-        CompactionJobRecordsProcessed recordsProcessed;
+        CompactionJobRecordsProcessed recordsProcessed=null;
+        try {
         if (this.gpuEnabled) {
             recordsProcessed = gpuCompact();
-        } else {
+        }  
+        } catch (RuntimeException e) {
+            //GPU failed
+        }
+        if (recordsProcessed==null) {
             if (!compactionJob.isSplittingJob()) {
                 recordsProcessed = compactNoSplitting();
             } else {
@@ -166,7 +171,8 @@ public class CompactSortedFiles {
         }
         LOGGER.info("Starting accelerated GPU compaction");
         // Run GPU sorter
-        LOGGER.info("{} {} {} {} {} {} {}", compactionJob.getInputFiles(), compactionJob.getOutputFile(), compactionJob.getOutputFiles(),
+        LOGGER.info("{} {} {} {} {} {} {}", compactionJob.getInputFiles(), compactionJob.getOutputFile(),
+                compactionJob.getOutputFiles(),
                 this.compressionCodec, this.rowGroupSize, this.pageSize, compactionJob.getSplitPoint());
 
         // Write config data to msgpack
@@ -192,7 +198,8 @@ public class CompactSortedFiles {
         }
         int exitValue = gpuProcess.exitValue();
         if (exitValue != 0) {
-            LOGGER.warn("GPU process exited with code {}", exitValue);
+            LOGGER.error("GPU process exited with code {}, please examine logs", exitValue);
+            throw new RuntimeException("GPU compaction failed. Please see logs.");
         }
 
         // grab exit data
@@ -241,11 +248,11 @@ public class CompactSortedFiles {
     /**
      * Converts a string to an int or long depending on the type specified.
      *
-     * @param min string to convert
+     * @param min         string to convert
      * @param rowKeyType0 the data type of the column
      * @return converted object
      * @throws NumberFormatException if a numeric type is specified but it
-     * couldn't be converted
+     *                               couldn't be converted
      */
     public static Object parseToType(String min, PrimitiveType rowKeyType0) {
         if (rowKeyType0 instanceof IntType) {
@@ -255,7 +262,8 @@ public class CompactSortedFiles {
         } else if (rowKeyType0 instanceof StringType) {
             return min;
         } else {
-            throw new UnsupportedOperationException("GPU acceleration unavailable with row key field type " + rowKeyType0.getClass());
+            throw new UnsupportedOperationException(
+                    "GPU acceleration unavailable with row key field type " + rowKeyType0.getClass());
         }
     }
 
@@ -265,7 +273,8 @@ public class CompactSortedFiles {
         public final long rowsRead;
         public final ArrayList<Long> rowsWritten;
 
-        GPUReturnData(ArrayList<String> minKeys, ArrayList<String> maxKeys, long rowsRead, ArrayList<Long> rowsWritten) {
+        GPUReturnData(ArrayList<String> minKeys, ArrayList<String> maxKeys, long rowsRead,
+                ArrayList<Long> rowsWritten) {
             this.minKeys = minKeys;
             this.maxKeys = maxKeys;
             this.rowsRead = rowsRead;
@@ -397,12 +406,13 @@ public class CompactSortedFiles {
         LOGGER.debug("Creating writer for file {}", compactionJob.getOutputFile());
         ParquetRecordWriter.Builder builder = new ParquetRecordWriter.Builder(new Path(compactionJob.getOutputFile()),
                 messageType, schema)
-                        .withCompressionCodec(CompressionCodecName.fromConf(compressionCodec))
-                        .withRowGroupSize(rowGroupSize)
-                        .withPageSize(pageSize)
-                        .withConf(conf);
+                .withCompressionCodec(CompressionCodecName.fromConf(compressionCodec))
+                .withRowGroupSize(rowGroupSize)
+                .withPageSize(pageSize)
+                .withConf(conf);
         ParquetWriter<Record> writer = builder.build();
-        LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFile());
+        LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(),
+                compactionJob.getOutputFile());
         Map<String, ItemsSketch> keyFieldToSketch = getSketches();
 
         long linesWritten = 0L;
@@ -448,7 +458,8 @@ public class CompactSortedFiles {
             totalNumberOfLinesRead += ((ParquetReaderIterator) iterator).getNumberOfRecordsRead();
         }
 
-        LOGGER.info("Compaction job {}: Read {} lines and wrote {} lines", compactionJob.getId(), totalNumberOfLinesRead, linesWritten);
+        LOGGER.info("Compaction job {}: Read {} lines and wrote {} lines", compactionJob.getId(),
+                totalNumberOfLinesRead, linesWritten);
 
         updateStateStoreSuccess(compactionJob.getInputFiles(),
                 compactionJob.getOutputFile(),
@@ -474,22 +485,26 @@ public class CompactSortedFiles {
         CloseableIterator<Record> mergingIterator = getMergingIterator(inputIterators);
 
         // Create writers
-        ParquetRecordWriter leftWriter = new ParquetRecordWriter(new Path(compactionJob.getOutputFiles().getLeft()), messageType, schema,
+        ParquetRecordWriter leftWriter = new ParquetRecordWriter(new Path(compactionJob.getOutputFiles().getLeft()),
+                messageType, schema,
                 CompressionCodecName.fromConf(compressionCodec), rowGroupSize, pageSize); // 4
                                                                                           // *
                                                                                           // 1024
                                                                                           // *
                                                                                           // 1024,
                                                                                           // DEFAULT_PAGE_SIZE);
-        LOGGER.debug("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFiles().getLeft());
-        ParquetRecordWriter rightWriter = new ParquetRecordWriter(new Path(compactionJob.getOutputFiles().getRight()), messageType, schema,
+        LOGGER.debug("Compaction job {}: Created writer for file {}", compactionJob.getId(),
+                compactionJob.getOutputFiles().getLeft());
+        ParquetRecordWriter rightWriter = new ParquetRecordWriter(new Path(compactionJob.getOutputFiles().getRight()),
+                messageType, schema,
                 CompressionCodecName.fromConf(compressionCodec), rowGroupSize, pageSize); // 4
                                                                                           // *
                                                                                           // 1024
                                                                                           // *
                                                                                           // 1024,
                                                                                           // DEFAULT_PAGE_SIZE);
-        LOGGER.debug("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFiles().getRight());
+        LOGGER.debug("Compaction job {}: Created writer for file {}", compactionJob.getId(),
+                compactionJob.getOutputFiles().getRight());
 
         Map<String, ItemsSketch> leftKeyFieldToSketch = getSketches();
         Map<String, ItemsSketch> rightKeyFieldToSketch = getSketches();
@@ -587,13 +602,15 @@ public class CompactSortedFiles {
                 stateStore,
                 schema.getRowKeyTypes());
         LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(), LocalDateTime.now());
-        return new CompactionJobRecordsProcessed(totalNumberOfLinesRead, linesWrittenToLeftFile + linesWrittenToRightFile);
+        return new CompactionJobRecordsProcessed(totalNumberOfLinesRead,
+                linesWrittenToLeftFile + linesWrittenToRightFile);
     }
 
     private List<CloseableIterator<Record>> createInputIterators(Configuration conf) throws IOException {
         List<CloseableIterator<Record>> inputIterators = new ArrayList<>();
         for (String file : compactionJob.getInputFiles()) {
-            ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(file), schema).withConf(conf).build();
+            ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(file), schema).withConf(conf)
+                    .build();
             ParquetReaderIterator recordIterator = new ParquetReaderIterator(reader);
             inputIterators.add(recordIterator);
             LOGGER.debug("Compaction job {}: Created reader for file {}", compactionJob.getId(), file);
@@ -601,7 +618,8 @@ public class CompactSortedFiles {
         return inputIterators;
     }
 
-    private CloseableIterator<Record> getMergingIterator(List<CloseableIterator<Record>> inputIterators) throws IteratorException {
+    private CloseableIterator<Record> getMergingIterator(List<CloseableIterator<Record>> inputIterators)
+            throws IteratorException {
         CloseableIterator<Record> mergingIterator = new MergingIterator(schema, inputIterators);
 
         // Apply an iterator if one is provided
@@ -610,7 +628,8 @@ public class CompactSortedFiles {
             try {
                 iterator = objectFactory.getObject(compactionJob.getIteratorClassName(), SortedRecordIterator.class);
             } catch (ObjectFactoryException e) {
-                throw new IteratorException("ObjectFactoryException creating iterator of class " + compactionJob.getIteratorClassName(), e);
+                throw new IteratorException(
+                        "ObjectFactoryException creating iterator of class " + compactionJob.getIteratorClassName(), e);
             }
             LOGGER.debug("Created iterator of class {}", compactionJob.getIteratorClassName());
             iterator.init(compactionJob.getIteratorConfig(), schema);
@@ -659,7 +678,9 @@ public class CompactSortedFiles {
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
             return true;
         } catch (StateStoreException e) {
-            LOGGER.error("Exception updating DynamoDB (moving input files to ready for GC and creating new active file): {}", e.getMessage());
+            LOGGER.error(
+                    "Exception updating DynamoDB (moving input files to ready for GC and creating new active file): {}",
+                    e.getMessage());
             return false;
         }
     }
@@ -706,11 +727,14 @@ public class CompactSortedFiles {
                 .lastStateStoreUpdateTime(finishTime)
                 .build();
         try {
-            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, leftFileInfo, rightFileInfo);
+            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, leftFileInfo,
+                    rightFileInfo);
             LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
             return true;
         } catch (StateStoreException e) {
-            LOGGER.error("Exception updating DynamoDB while moving input files to ready for GC and creating new active file", e);
+            LOGGER.error(
+                    "Exception updating DynamoDB while moving input files to ready for GC and creating new active file",
+                    e);
             return false;
         }
     }

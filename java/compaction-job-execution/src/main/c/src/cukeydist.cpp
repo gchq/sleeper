@@ -276,7 +276,7 @@ void readRowGroupStats(std::vector<cudf::size_type> const& sortCols, std::shared
 
 void updateOutputData(CommandLineOutput& returnData, std::string const& min,
                       std::string const& max, ::size_t const count) {
-    returnData.minKeys.push_back(min;  // TODO set these correctly
+    returnData.minKeys.push_back(min);  // TODO set these correctly
     returnData.maxKeys.push_back(max);
     returnData.rowsWritten.push_back(static_cast<std::uint64_t>(count));
 }
