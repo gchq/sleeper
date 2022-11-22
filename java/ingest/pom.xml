@@ -29,5 +29,6 @@
     <modules>
         <module>ingest-core</module>
         <module>ingest-runner</module>
+        <module>ingest-status-store</module>
     </modules>
 </project>
