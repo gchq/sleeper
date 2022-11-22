@@ -2,7 +2,7 @@ name: Build Ingest Module
 on:
   push:
     paths:
-      - '.github/workflows/chunk-ingest.yaml'
+      - '.github/workflows/chunk-ingest-runner.yaml'
       - '.github/workflows/chunk.yaml'
       - '.github/config/chunks.yaml'
       - 'code-style/checkstyle*.xml'
@@ -22,4 +22,4 @@ jobs:
   module-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkId: ingest
+      chunkId: ingest-runner
