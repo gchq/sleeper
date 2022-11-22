@@ -53,7 +53,7 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
     private DynamoDBCompactionTaskStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         this.dynamoDB = dynamoDB;
         this.statusTableName = taskStatusTableName(properties.get(ID));
-        this.timeToLive = properties.getLong(UserDefinedInstanceProperty.COMPACTION_JOB_STATUS_TTL_IN_SECONDS) * 1000;
+        this.timeToLive = properties.getLong(UserDefinedInstanceProperty.COMPACTION_TASK_STATUS_TTL_IN_SECONDS) * 1000;
     }
 
     @Override
