@@ -17,11 +17,11 @@ package sleeper.status.report.compactiontask;
 
 import org.junit.Test;
 import sleeper.ToStringPrintStream;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.status.report.CompactionTaskStatusReport;
 
 import java.io.PrintStream;
