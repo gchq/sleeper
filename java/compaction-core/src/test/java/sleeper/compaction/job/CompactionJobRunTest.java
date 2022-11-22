@@ -20,9 +20,9 @@ import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.job.status.ProcessFinishedStatus;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.status.ProcessFinishedStatus;
 import sleeper.core.status.ProcessStartedStatus;
 
 import java.time.Instant;

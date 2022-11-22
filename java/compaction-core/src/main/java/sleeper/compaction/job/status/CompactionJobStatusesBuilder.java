@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.job.status;
 
+import sleeper.core.status.ProcessFinishedStatus;
 import sleeper.core.status.ProcessStartedStatus;
 import sleeper.core.status.ProcessStatusUpdate;
 

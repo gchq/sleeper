@@ -21,9 +21,9 @@ import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusUpdateRecord;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
-import sleeper.compaction.job.status.ProcessFinishedStatus;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.status.ProcessFinishedStatus;
 import sleeper.core.status.ProcessStartedStatus;
 
 import java.time.Instant;

@@ -17,6 +17,7 @@
 package sleeper.compaction.job.status;
 
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.status.ProcessFinishedStatus;
 import sleeper.core.status.ProcessStartedStatus;
 
 import java.time.Instant;
