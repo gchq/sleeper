@@ -35,7 +35,7 @@
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>ingest</artifactId>
+            <artifactId>ingest-runner</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
