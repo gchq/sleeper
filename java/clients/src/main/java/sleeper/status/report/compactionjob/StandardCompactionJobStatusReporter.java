@@ -16,7 +16,7 @@
 
 package sleeper.status.report.compactionjob;
 
-import sleeper.compaction.job.status.AverageCompactionRate;
+import sleeper.compaction.job.status.AverageRecordRate;
 import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.status.report.table.TableField;
@@ -178,7 +178,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     }
 
     private void printAverageCompactionRate(String formatString, List<CompactionJobStatus> jobs) {
-        AverageCompactionRate average = AverageCompactionRate.of(jobs);
+        AverageRecordRate average = recordRate(jobs);
         if (average.getJobCount() < 1) {
             return;
         }
@@ -186,6 +186,13 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
                 formatDecimal(average.getRecordsReadPerSecond()),
                 formatDecimal(average.getRecordsWrittenPerSecond()));
         out.printf(formatString, rateString);
+    }
+
+    private static AverageRecordRate recordRate(List<CompactionJobStatus> jobs) {
+        return AverageRecordRate.of(jobs.stream()
+                .flatMap(job -> job.getJobRuns().stream())
+                .filter(CompactionJobRun::isFinished)
+                .map(CompactionJobRun::getFinishedSummary));
     }
 
     private void writeJob(CompactionJobStatus job, TableWriter.Builder table) {

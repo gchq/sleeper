@@ -28,6 +28,10 @@ public class RecordsProcessedSummary {
     private final double recordsReadPerSecond;
     private final double recordsWrittenPerSecond;
 
+    public RecordsProcessedSummary(RecordsProcessed recordsProcessed, Instant startTime, Duration duration) {
+        this(recordsProcessed, startTime, startTime.plus(duration));
+    }
+
     public RecordsProcessedSummary(RecordsProcessed recordsProcessed, Instant startTime, Instant finishTime) {
         this.recordsProcessed = Objects.requireNonNull(recordsProcessed, "recordsProcessed must not be null");
         this.startTime = Objects.requireNonNull(startTime, "startTime must not be null");
