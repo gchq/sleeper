@@ -178,7 +178,7 @@ public class CompactSortedFiles {
         // Write config data to msgpack
         java.nio.file.Path tempFile = Files.createTempFile(null, null);
         tempFile.toFile().deleteOnExit();
-        writeMsgPack(tempFile);
+        writeMsgPack(tempFile, compactionJob, compressionCodec, this.rowGroupSize, GPU_MAX_ROW_GROUP_ROWS, this.pageSize);
 
         // output message pack file
         java.nio.file.Path gpuOutput = Files.createTempFile(null, null);
@@ -320,7 +320,7 @@ public class CompactSortedFiles {
      * @return object containing data read from GPU process
      * @throws IOException if an I/O error occurs
      */
-    private GPUReturnData readMsgPack(java.nio.file.Path msgPackFile) throws IOException {
+    public static GPUReturnData readMsgPack(java.nio.file.Path msgPackFile) throws IOException {
         LOGGER.debug("Reading GPU return data from file {}", msgPackFile);
         try (MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(Files.newInputStream(msgPackFile))) {
             // get the minimum keys list
@@ -363,32 +363,33 @@ public class CompactSortedFiles {
      * @throws IOException if an I/O error occurs
      */
     @SuppressWarnings("resource")
-    private void writeMsgPack(java.nio.file.Path tempFile) throws IOException {
+    public static void writeMsgPack(java.nio.file.Path tempFile, CompactionJob compJob, String codec,
+            long rowGroupBytes, long rowGroupRows, long pageSize) throws IOException {
         try (MessagePacker packer = MessagePack.newDefaultPacker(Files.newOutputStream(tempFile))) {
-            packer.packArrayHeader(compactionJob.getInputFiles().size());
-            for (String f : compactionJob.getInputFiles()) {
+            packer.packArrayHeader(compJob.getInputFiles().size());
+            for (String f : compJob.getInputFiles()) {
                 packer.packString(f);
             }
             // since we currently only support sorting on a single column, we
             // assume the first row key is column 0
-            if (compactionJob.isSplittingJob()) {
+            if (compJob.isSplittingJob()) {
                 packer.packArrayHeader(2)
-                        .packString(compactionJob.getOutputFiles().getLeft())
-                        .packString(compactionJob.getOutputFiles().getRight());
+                        .packString(compJob.getOutputFiles().getLeft())
+                        .packString(compJob.getOutputFiles().getRight());
             } else {
                 packer.packArrayHeader(1)
-                        .packString(compactionJob.getOutputFile());
+                        .packString(compJob.getOutputFile());
             }
-            packer.packString(this.compressionCodec)
-                    .packInt(this.rowGroupSize)
-                    .packInt(GPU_MAX_ROW_GROUP_ROWS)
-                    .packInt(this.pageSize)
+            packer.packString(codec)
+                    .packLong(rowGroupBytes)
+                    .packLong(rowGroupRows)
+                    .packLong(pageSize)
                     .packArrayHeader(1) // assume only a single sort column
                     .packInt(0); // sort column number //TODO check dimension
                                  // for row key split
-            if (compactionJob.isSplittingJob()) {
+            if (compJob.isSplittingJob()) {
                 packer.packArrayHeader(1);
-                packer.packString(compactionJob.getSplitPoint().toString());
+                packer.packString(compJob.getSplitPoint().toString());
             } else {
                 packer.packArrayHeader(0);
             }
