@@ -20,9 +20,9 @@ import sleeper.ToStringPrintStream;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.status.ProcessFinishedStatus;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.status.ProcessStartedStatus;
@@ -157,8 +157,8 @@ public abstract class StatusReporterTestBase {
                 Instant.parse(startTimeNoMillis + ".001Z"));
     }
 
-    private static CompactionJobFinishedStatus defaultFinishedStatus(String startTimeNoMillis, String finishTimeNoMillis) {
-        return CompactionJobFinishedStatus.updateTimeAndSummary(
+    private static ProcessFinishedStatus defaultFinishedStatus(String startTimeNoMillis, String finishTimeNoMillis) {
+        return ProcessFinishedStatus.updateTimeAndSummary(
                 Instant.parse(finishTimeNoMillis + ".123Z"),
                 new RecordsProcessedSummary(
                         new RecordsProcessed(300L, 200L),
@@ -200,7 +200,7 @@ public abstract class StatusReporterTestBase {
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
                 .singleJobRun(CompactionJobRun.finished(taskId, ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime),
-                        CompactionJobFinishedStatus.updateTimeAndSummary(finishedTime, summary)))
+                        ProcessFinishedStatus.updateTimeAndSummary(finishedTime, summary)))
                 .build();
     }
 

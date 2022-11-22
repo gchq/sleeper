@@ -17,9 +17,9 @@ package sleeper.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.status.ProcessFinishedStatus;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.status.ProcessStartedStatus;
@@ -149,7 +149,7 @@ public class CompactionJobStatusInPeriodTest {
                 .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
                 .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID,
                         ProcessStartedStatus.updateAndStartTime(beforeTime, beforeTime),
-                        CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary)))
+                        ProcessFinishedStatus.updateTimeAndSummary(updateTime, summary)))
                 .build();
 
         // When / Then
@@ -167,7 +167,7 @@ public class CompactionJobStatusInPeriodTest {
                 .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
                 .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID,
                         ProcessStartedStatus.updateAndStartTime(beforeTime, beforeTime),
-                        CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary)))
+                        ProcessFinishedStatus.updateTimeAndSummary(updateTime, summary)))
                 .build();
 
         // When / Then
@@ -185,7 +185,7 @@ public class CompactionJobStatusInPeriodTest {
                 .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
                 .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID,
                         ProcessStartedStatus.updateAndStartTime(beforeTime, beforeTime),
-                        CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary)))
+                        ProcessFinishedStatus.updateTimeAndSummary(updateTime, summary)))
                 .build();
 
         // When / Then
@@ -203,7 +203,7 @@ public class CompactionJobStatusInPeriodTest {
                 .createdStatus(CompactionJobCreatedStatus.from(job, afterTime))
                 .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID,
                         ProcessStartedStatus.updateAndStartTime(afterTime, afterTime),
-                        CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary)))
+                        ProcessFinishedStatus.updateTimeAndSummary(updateTime, summary)))
                 .build();
 
         // When / Then
@@ -226,7 +226,7 @@ public class CompactionJobStatusInPeriodTest {
                                 ProcessStartedStatus.updateAndStartTime(run2StartTime, run2StartTime)),
                         CompactionJobRun.finished(DEFAULT_TASK_ID,
                                 ProcessStartedStatus.updateAndStartTime(run1StartTime, run1StartTime),
-                                CompactionJobFinishedStatus.updateTimeAndSummary(run1FinishTime,
+                                ProcessFinishedStatus.updateTimeAndSummary(run1FinishTime,
                                         new RecordsProcessedSummary(
                                                 new RecordsProcessed(300L, 200L),
                                                 run1StartTime, run1FinishTime)))))

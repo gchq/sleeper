@@ -20,10 +20,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusUpdateRecord;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
+import sleeper.compaction.job.status.ProcessFinishedStatus;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.status.ProcessStartedStatus;
@@ -134,7 +134,7 @@ public class DynamoDBCompactionJobStatusFormat {
                         getInstantAttribute(item, UPDATE_TIME),
                         getInstantAttribute(item, START_TIME));
             case UPDATE_TYPE_FINISHED:
-                return CompactionJobFinishedStatus.updateTimeAndSummary(
+                return ProcessFinishedStatus.updateTimeAndSummary(
                         getInstantAttribute(item, UPDATE_TIME),
                         new RecordsProcessedSummary(new RecordsProcessed(
                                 getLongAttribute(item, RECORDS_READ, 0),

@@ -21,18 +21,18 @@ import sleeper.core.status.ProcessStatusUpdate;
 import java.time.Instant;
 import java.util.Objects;
 
-public class CompactionJobFinishedStatus implements ProcessStatusUpdate {
+public class ProcessFinishedStatus implements ProcessStatusUpdate {
 
     private final Instant updateTime;
     private final RecordsProcessedSummary summary;
 
-    private CompactionJobFinishedStatus(Instant updateTime, RecordsProcessedSummary summary) {
+    private ProcessFinishedStatus(Instant updateTime, RecordsProcessedSummary summary) {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
         this.summary = Objects.requireNonNull(summary, "summary must not be null");
     }
 
-    public static CompactionJobFinishedStatus updateTimeAndSummary(Instant updateTime, RecordsProcessedSummary summary) {
-        return new CompactionJobFinishedStatus(updateTime, summary);
+    public static ProcessFinishedStatus updateTimeAndSummary(Instant updateTime, RecordsProcessedSummary summary) {
+        return new ProcessFinishedStatus(updateTime, summary);
     }
 
     public Instant getUpdateTime() {
@@ -51,7 +51,7 @@ public class CompactionJobFinishedStatus implements ProcessStatusUpdate {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        CompactionJobFinishedStatus that = (CompactionJobFinishedStatus) o;
+        ProcessFinishedStatus that = (ProcessFinishedStatus) o;
         return updateTime.equals(that.updateTime) && summary.equals(that.summary);
     }
 
@@ -62,7 +62,7 @@ public class CompactionJobFinishedStatus implements ProcessStatusUpdate {
 
     @Override
     public String toString() {
-        return "CompactionJobFinishedStatus{" +
+        return "ProcessFinishedStatus{" +
                 "updateTime=" + updateTime +
                 ", summary=" + summary +
                 '}';

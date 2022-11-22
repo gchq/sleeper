@@ -86,7 +86,7 @@ public class CompactionJobStatusesBuilder {
                 orderedBuilders.add(builder);
             } else {
                 taskBuilders.remove(taskId)
-                        .finishedStatus((CompactionJobFinishedStatus) statusUpdate)
+                        .finishedStatus((ProcessFinishedStatus) statusUpdate)
                         .taskId(taskId);
             }
         }

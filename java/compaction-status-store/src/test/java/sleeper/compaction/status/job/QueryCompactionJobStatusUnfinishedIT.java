@@ -18,9 +18,9 @@ package sleeper.compaction.status.job;
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.status.ProcessFinishedStatus;
 import sleeper.compaction.status.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.status.ProcessStartedStatus;
@@ -129,7 +129,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
                                         ProcessStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())),
                                 CompactionJobRun.finished(DEFAULT_TASK_ID,
                                         ProcessStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime()),
-                                        CompactionJobFinishedStatus.updateTimeAndSummary(ignoredUpdateTime(), defaultSummary()))
+                                        ProcessFinishedStatus.updateTimeAndSummary(ignoredUpdateTime(), defaultSummary()))
                         )).build());
     }
 }

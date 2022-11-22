@@ -17,11 +17,11 @@ package sleeper.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusUpdateRecord;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
+import sleeper.compaction.job.status.ProcessFinishedStatus;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.status.ProcessStartedStatus;
@@ -46,7 +46,7 @@ public class CompactionJobStatusesBuilderTest {
         ProcessStartedStatus started1 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-23T09:23:30.012Z"),
                 Instant.parse("2022-09-23T09:23:30.001Z"));
-        CompactionJobFinishedStatus finished1 = CompactionJobFinishedStatus.updateTimeAndSummary(
+        ProcessFinishedStatus finished1 = ProcessFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-23T09:24:00.012Z"),
                 new RecordsProcessedSummary(new RecordsProcessed(200L, 100L),
                         Instant.parse("2022-09-23T09:23:30.001Z"),
@@ -59,7 +59,7 @@ public class CompactionJobStatusesBuilderTest {
         ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-24T09:23:30.012Z"),
                 Instant.parse("2022-09-24T09:23:30.001Z"));
-        CompactionJobFinishedStatus finished2 = CompactionJobFinishedStatus.updateTimeAndSummary(
+        ProcessFinishedStatus finished2 = ProcessFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-24T09:24:00.012Z"),
                 new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-24T09:23:30.001Z"),

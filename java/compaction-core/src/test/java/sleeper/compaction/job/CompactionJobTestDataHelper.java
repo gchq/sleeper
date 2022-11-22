@@ -16,9 +16,9 @@
 package sleeper.compaction.job;
 
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.status.ProcessFinishedStatus;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
@@ -161,7 +161,7 @@ public class CompactionJobTestDataHelper {
                 new RecordsProcessed(linesRead, linesWritten), startTime, finishTime);
         return CompactionJobRun.finished(DEFAULT_TASK_ID,
                 ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime),
-                CompactionJobFinishedStatus.updateTimeAndSummary(finishUpdateTime, summary));
+                ProcessFinishedStatus.updateTimeAndSummary(finishUpdateTime, summary));
     }
 
     public static class CompactionJobRunsBuilder {

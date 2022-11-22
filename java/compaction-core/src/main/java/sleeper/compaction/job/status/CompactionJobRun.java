@@ -25,7 +25,7 @@ import java.util.Objects;
 public class CompactionJobRun {
     private final String taskId;
     private final ProcessStartedStatus startedStatus;
-    private final CompactionJobFinishedStatus finishedStatus;
+    private final ProcessFinishedStatus finishedStatus;
 
     private CompactionJobRun(Builder builder) {
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
@@ -43,7 +43,7 @@ public class CompactionJobRun {
                 .build();
     }
 
-    public static CompactionJobRun finished(String taskId, ProcessStartedStatus startedStatus, CompactionJobFinishedStatus finishedStatus) {
+    public static CompactionJobRun finished(String taskId, ProcessStartedStatus startedStatus, ProcessFinishedStatus finishedStatus) {
         return builder().taskId(taskId)
                 .startedStatus(startedStatus)
                 .finishedStatus(finishedStatus)
@@ -58,7 +58,7 @@ public class CompactionJobRun {
         return startedStatus;
     }
 
-    public CompactionJobFinishedStatus getFinishedStatus() {
+    public ProcessFinishedStatus getFinishedStatus() {
         return finishedStatus;
     }
 
@@ -137,7 +137,7 @@ public class CompactionJobRun {
     public static final class Builder {
         private String taskId;
         private ProcessStartedStatus startedStatus;
-        private CompactionJobFinishedStatus finishedStatus;
+        private ProcessFinishedStatus finishedStatus;
 
         private Builder() {
         }
@@ -152,7 +152,7 @@ public class CompactionJobRun {
             return this;
         }
 
-        public Builder finishedStatus(CompactionJobFinishedStatus finishedStatus) {
+        public Builder finishedStatus(ProcessFinishedStatus finishedStatus) {
             this.finishedStatus = finishedStatus;
             return this;
         }

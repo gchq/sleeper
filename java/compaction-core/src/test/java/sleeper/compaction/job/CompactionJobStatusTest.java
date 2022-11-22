@@ -17,9 +17,9 @@ package sleeper.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.status.ProcessFinishedStatus;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
@@ -114,7 +114,7 @@ public class CompactionJobStatusTest {
                 .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID,
                         ProcessStartedStatus.updateAndStartTime(
                                 Instant.parse("2022-09-22T13:33:09.001Z"), startTime),
-                        CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary)))
+                        ProcessFinishedStatus.updateTimeAndSummary(updateTime, summary)))
                 .build();
 
         // Then
