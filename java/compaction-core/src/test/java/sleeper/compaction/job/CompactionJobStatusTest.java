@@ -19,11 +19,11 @@ import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobRun;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.status.ProcessStartedStatus;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -90,7 +90,7 @@ public class CompactionJobStatusTest {
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, Instant.parse("2022-09-22T13:33:12.001Z")))
                 .singleJobRun(CompactionJobRun.started(DEFAULT_TASK_ID,
-                        CompactionJobStartedStatus.updateAndStartTime(updateTime, startTime)))
+                        ProcessStartedStatus.updateAndStartTime(updateTime, startTime)))
                 .build();
 
         // Then
@@ -112,7 +112,7 @@ public class CompactionJobStatusTest {
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, Instant.parse("2022-09-22T13:33:00.001Z")))
                 .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID,
-                        CompactionJobStartedStatus.updateAndStartTime(
+                        ProcessStartedStatus.updateAndStartTime(
                                 Instant.parse("2022-09-22T13:33:09.001Z"), startTime),
                         CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary)))
                 .build();

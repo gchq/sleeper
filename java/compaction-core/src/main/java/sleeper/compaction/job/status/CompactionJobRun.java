@@ -17,13 +17,14 @@
 package sleeper.compaction.job.status;
 
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.status.ProcessStartedStatus;
 
 import java.time.Instant;
 import java.util.Objects;
 
 public class CompactionJobRun {
     private final String taskId;
-    private final CompactionJobStartedStatus startedStatus;
+    private final ProcessStartedStatus startedStatus;
     private final CompactionJobFinishedStatus finishedStatus;
 
     private CompactionJobRun(Builder builder) {
@@ -36,13 +37,13 @@ public class CompactionJobRun {
         return new Builder();
     }
 
-    public static CompactionJobRun started(String taskId, CompactionJobStartedStatus startedStatus) {
+    public static CompactionJobRun started(String taskId, ProcessStartedStatus startedStatus) {
         return builder().taskId(taskId)
                 .startedStatus(startedStatus)
                 .build();
     }
 
-    public static CompactionJobRun finished(String taskId, CompactionJobStartedStatus startedStatus, CompactionJobFinishedStatus finishedStatus) {
+    public static CompactionJobRun finished(String taskId, ProcessStartedStatus startedStatus, CompactionJobFinishedStatus finishedStatus) {
         return builder().taskId(taskId)
                 .startedStatus(startedStatus)
                 .finishedStatus(finishedStatus)
@@ -53,7 +54,7 @@ public class CompactionJobRun {
         return taskId;
     }
 
-    public CompactionJobStartedStatus getStartedStatus() {
+    public ProcessStartedStatus getStartedStatus() {
         return startedStatus;
     }
 
@@ -135,7 +136,7 @@ public class CompactionJobRun {
 
     public static final class Builder {
         private String taskId;
-        private CompactionJobStartedStatus startedStatus;
+        private ProcessStartedStatus startedStatus;
         private CompactionJobFinishedStatus finishedStatus;
 
         private Builder() {
@@ -146,7 +147,7 @@ public class CompactionJobRun {
             return this;
         }
 
-        public Builder startedStatus(CompactionJobStartedStatus startedStatus) {
+        public Builder startedStatus(ProcessStartedStatus startedStatus) {
             this.startedStatus = startedStatus;
             return this;
         }

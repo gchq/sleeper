@@ -19,10 +19,10 @@ import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobRun;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
+import sleeper.core.status.ProcessStartedStatus;
 import sleeper.statestore.FileInfoFactory;
 
 import java.util.Arrays;
@@ -57,7 +57,7 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobSta
                 .containsExactly(CompactionJobStatus.builder().jobId(job1.getId())
                         .createdStatus(CompactionJobCreatedStatus.from(job1, ignoredUpdateTime()))
                         .singleJobRun(CompactionJobRun.started(searchingTaskId,
-                                CompactionJobStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())))
+                                ProcessStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())))
                         .build());
     }
 
@@ -86,11 +86,11 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobSta
                         .createdStatus(CompactionJobCreatedStatus.from(job, ignoredUpdateTime()))
                         .jobRunsLatestFirst(Arrays.asList(
                                 CompactionJobRun.started(taskId3,
-                                        CompactionJobStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())),
+                                        ProcessStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())),
                                 CompactionJobRun.started(searchingTaskId,
-                                        CompactionJobStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())),
+                                        ProcessStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())),
                                 CompactionJobRun.started(taskId1,
-                                        CompactionJobStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime()))
+                                        ProcessStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime()))
                         )).build());
     }
 

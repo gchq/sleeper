@@ -18,7 +18,6 @@ package sleeper.compaction.job;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobRun;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -30,6 +29,7 @@ import sleeper.core.range.Range;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
+import sleeper.core.status.ProcessStartedStatus;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfoFactory;
 
@@ -132,7 +132,7 @@ public class CompactionJobTestDataHelper {
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, createTime))
                 .singleJobRun(CompactionJobRun.started(DEFAULT_TASK_ID,
-                        CompactionJobStartedStatus.updateAndStartTime(startUpdateTime, startTime)))
+                        ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime)))
                 .build();
     }
 
@@ -160,7 +160,7 @@ public class CompactionJobTestDataHelper {
         RecordsProcessedSummary summary = new RecordsProcessedSummary(
                 new RecordsProcessed(linesRead, linesWritten), startTime, finishTime);
         return CompactionJobRun.finished(DEFAULT_TASK_ID,
-                CompactionJobStartedStatus.updateAndStartTime(startUpdateTime, startTime),
+                ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime),
                 CompactionJobFinishedStatus.updateTimeAndSummary(finishUpdateTime, summary));
     }
 

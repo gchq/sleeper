@@ -18,8 +18,8 @@ package sleeper.compaction.job;
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobRun;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.core.status.ProcessStartedStatus;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -82,6 +82,6 @@ public class CompactionJobStatusTaskIdAssignedTest {
 
     private static CompactionJobRun runWithTaskId(String taskId) {
         return CompactionJobRun.started(taskId,
-                CompactionJobStartedStatus.updateAndStartTime(Instant.now(), Instant.now()));
+                ProcessStartedStatus.updateAndStartTime(Instant.now(), Instant.now()));
     }
 }

@@ -21,12 +21,12 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusUpdateRecord;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.status.ProcessStartedStatus;
 import sleeper.core.status.ProcessStatusUpdate;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -130,7 +130,7 @@ public class DynamoDBCompactionJobStatusFormat {
                         .inputFilesCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))
                         .build();
             case UPDATE_TYPE_STARTED:
-                return CompactionJobStartedStatus.updateAndStartTime(
+                return ProcessStartedStatus.updateAndStartTime(
                         getInstantAttribute(item, UPDATE_TIME),
                         getInstantAttribute(item, START_TIME));
             case UPDATE_TYPE_FINISHED:

@@ -19,12 +19,12 @@ import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobRun;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusUpdateRecord;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.status.ProcessStartedStatus;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -43,7 +43,7 @@ public class CompactionJobStatusesBuilderTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started1 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started1 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-23T09:23:30.012Z"),
                 Instant.parse("2022-09-23T09:23:30.001Z"));
         CompactionJobFinishedStatus finished1 = CompactionJobFinishedStatus.updateTimeAndSummary(
@@ -56,7 +56,7 @@ public class CompactionJobStatusesBuilderTest {
                 .partitionId("partition2").childPartitionIds(Arrays.asList("A", "B"))
                 .inputFilesCount(12)
                 .build();
-        CompactionJobStartedStatus started2 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-24T09:23:30.012Z"),
                 Instant.parse("2022-09-24T09:23:30.001Z"));
         CompactionJobFinishedStatus finished2 = CompactionJobFinishedStatus.updateTimeAndSummary(

@@ -20,10 +20,10 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobRun;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
+import sleeper.core.status.ProcessStartedStatus;
 import sleeper.statestore.FileInfoFactory;
 
 import java.util.Arrays;
@@ -126,9 +126,9 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
                         .createdStatus(CompactionJobCreatedStatus.from(job, ignoredUpdateTime()))
                         .jobRunsLatestFirst(Arrays.asList(
                                 CompactionJobRun.started(DEFAULT_TASK_ID,
-                                        CompactionJobStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())),
+                                        ProcessStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())),
                                 CompactionJobRun.finished(DEFAULT_TASK_ID,
-                                        CompactionJobStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime()),
+                                        ProcessStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime()),
                                         CompactionJobFinishedStatus.updateTimeAndSummary(ignoredUpdateTime(), defaultSummary()))
                         )).build());
     }
