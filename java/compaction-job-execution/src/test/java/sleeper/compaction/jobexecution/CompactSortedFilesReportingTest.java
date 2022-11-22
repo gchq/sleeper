@@ -20,7 +20,7 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDataHelper;
 import sleeper.core.record.Record;
@@ -62,7 +62,7 @@ public class CompactSortedFilesReportingTest extends CompactSortedFilesTestBase 
         dataHelper.addFilesToStateStoreForJob(compactionJob);
 
         // When
-        CompactionJobSummary summary =
+        RecordsProcessedSummary summary =
                 createCompactSortedFiles(schema, compactionJob, stateStore, jobStatusStore, DEFAULT_TASK_ID).compact();
 
         // Then

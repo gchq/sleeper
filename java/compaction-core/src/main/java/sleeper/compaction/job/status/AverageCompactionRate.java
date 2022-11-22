@@ -15,7 +15,7 @@
  */
 package sleeper.compaction.job.status;
 
-import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.util.List;
 
@@ -63,7 +63,7 @@ public class AverageCompactionRate {
             return this;
         }
 
-        private void jobSummary(CompactionJobSummary summary) {
+        private void jobSummary(RecordsProcessedSummary summary) {
             jobCount++;
             totalRecordsReadPerSecond += summary.getRecordsReadPerSecond();
             totalRecordsWrittenPerSecond += summary.getRecordsWrittenPerSecond();

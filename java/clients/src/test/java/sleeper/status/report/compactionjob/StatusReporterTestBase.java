@@ -18,8 +18,8 @@ package sleeper.status.report.compactionjob;
 
 import sleeper.ToStringPrintStream;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobRecordsProcessed;
-import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
@@ -160,8 +160,8 @@ public abstract class StatusReporterTestBase {
     private static CompactionJobFinishedStatus defaultFinishedStatus(String startTimeNoMillis, String finishTimeNoMillis) {
         return CompactionJobFinishedStatus.updateTimeAndSummary(
                 Instant.parse(finishTimeNoMillis + ".123Z"),
-                new CompactionJobSummary(
-                        new CompactionJobRecordsProcessed(300L, 200L),
+                new RecordsProcessedSummary(
+                        new RecordsProcessed(300L, 200L),
                         Instant.parse(startTimeNoMillis + ".001Z"),
                         Instant.parse(finishTimeNoMillis + ".001Z")));
     }
@@ -195,8 +195,8 @@ public abstract class StatusReporterTestBase {
     }
 
     protected static CompactionJobStatus jobFinished(CompactionJob job, String taskId, Instant creationTime, Instant startTime, Instant startUpdateTime, Instant finishedTime) {
-        CompactionJobSummary summary = new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(600L, 300L), startUpdateTime, finishedTime);
+        RecordsProcessedSummary summary = new RecordsProcessedSummary(
+                new RecordsProcessed(600L, 300L), startUpdateTime, finishedTime);
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
                 .singleJobRun(CompactionJobRun.finished(taskId, CompactionJobStartedStatus.updateAndStartTime(startUpdateTime, startTime),

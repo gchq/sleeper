@@ -16,8 +16,8 @@
 package sleeper.compaction.task;
 
 import org.junit.Test;
-import sleeper.compaction.job.CompactionJobRecordsProcessed;
-import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.List;
@@ -32,8 +32,8 @@ public class CompactionTaskStatusesBuilderTest {
         String taskId = "test-task";
         Instant startTime = Instant.parse("2022-10-12T15:45:00.001Z");
         CompactionTaskFinishedStatus finishedStatus = CompactionTaskFinishedStatus.builder()
-                .addJobSummary(new CompactionJobSummary(
-                        new CompactionJobRecordsProcessed(300L, 200L),
+                .addJobSummary(new RecordsProcessedSummary(
+                        new RecordsProcessed(300L, 200L),
                         Instant.parse("2022-10-12T15:45:01.001Z"),
                         Instant.parse("2022-10-12T15:46:01.001Z")))
                 .finish(startTime,

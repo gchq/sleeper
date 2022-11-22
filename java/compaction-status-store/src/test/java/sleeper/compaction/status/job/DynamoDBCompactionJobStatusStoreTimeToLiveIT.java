@@ -18,8 +18,8 @@ package sleeper.compaction.status.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobRecordsProcessed;
-import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.compaction.status.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfoFactory;
@@ -93,8 +93,8 @@ public class DynamoDBCompactionJobStatusStoreTimeToLiveIT extends DynamoDBCompac
         Thread.sleep(2000L);
 
         Instant finishedTime = Instant.now();
-        store.jobFinished(job, new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(60L, 60L), startedTime, finishedTime), DEFAULT_TASK_ID);
+        store.jobFinished(job, new RecordsProcessedSummary(
+                new RecordsProcessed(60L, 60L), startedTime, finishedTime), DEFAULT_TASK_ID);
 
         // Then
         assertThat(getJobStatus(job.getId()).getExpiryDate())

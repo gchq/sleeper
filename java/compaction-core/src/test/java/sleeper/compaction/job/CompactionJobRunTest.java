@@ -22,6 +22,8 @@ import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
 
@@ -90,7 +92,7 @@ public class CompactionJobRunTest {
                 Instant.parse("2022-09-24T09:23:30.001Z"));
         CompactionJobFinishedStatus finished = CompactionJobFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-24T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-24T09:23:30.001Z"),
                         Instant.parse("2022-09-24T09:24:00.001Z")));
 
@@ -149,7 +151,7 @@ public class CompactionJobRunTest {
                 Instant.parse("2022-09-23T09:23:30.001Z"));
         CompactionJobFinishedStatus finished1 = CompactionJobFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-23T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-23T09:23:30.001Z"),
                         Instant.parse("2022-09-23T09:24:00.001Z")));
         CompactionJobStartedStatus started2 = CompactionJobStartedStatus.updateAndStartTime(
@@ -157,7 +159,7 @@ public class CompactionJobRunTest {
                 Instant.parse("2022-09-24T09:23:30.001Z"));
         CompactionJobFinishedStatus finished2 = CompactionJobFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-24T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-24T09:23:30.001Z"),
                         Instant.parse("2022-09-24T09:24:00.001Z")));
 
@@ -228,7 +230,7 @@ public class CompactionJobRunTest {
                 Instant.parse("2022-09-23T09:23:30.001Z"));
         CompactionJobFinishedStatus finished1 = CompactionJobFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-23T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-23T09:23:30.001Z"),
                         Instant.parse("2022-09-23T09:24:00.001Z")));
         CompactionJobStartedStatus started2 = CompactionJobStartedStatus.updateAndStartTime(
@@ -236,7 +238,7 @@ public class CompactionJobRunTest {
                 Instant.parse("2022-09-24T09:23:30.001Z"));
         CompactionJobFinishedStatus finished2 = CompactionJobFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-24T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-24T09:23:30.001Z"),
                         Instant.parse("2022-09-24T09:24:00.001Z")));
 
@@ -269,7 +271,7 @@ public class CompactionJobRunTest {
                 Instant.parse("2022-09-24T09:23:30.001Z"));
         CompactionJobFinishedStatus finished = CompactionJobFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-24T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-24T09:23:30.001Z"),
                         Instant.parse("2022-09-24T09:24:00.001Z")));
 
@@ -338,7 +340,7 @@ public class CompactionJobRunTest {
                 Instant.parse("2022-09-26T09:23:30.001Z"));
         CompactionJobFinishedStatus finished = CompactionJobFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-27T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-26T09:23:30.001Z"),
                         Instant.parse("2022-09-27T09:24:00.001Z")));
 
@@ -370,7 +372,7 @@ public class CompactionJobRunTest {
                 Instant.parse("2022-09-22T09:23:30.001Z"));
         CompactionJobFinishedStatus finished1 = CompactionJobFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-23T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-23T09:23:30.001Z"),
                         Instant.parse("2022-09-23T09:24:00.001Z")));
         CompactionJobStartedStatus started2 = CompactionJobStartedStatus.updateAndStartTime(
@@ -378,7 +380,7 @@ public class CompactionJobRunTest {
                 Instant.parse("2022-09-24T09:23:30.001Z"));
         CompactionJobFinishedStatus finished2 = CompactionJobFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-24T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-24T09:23:30.001Z"),
                         Instant.parse("2022-09-24T09:24:00.001Z")));
 
@@ -413,12 +415,12 @@ public class CompactionJobRunTest {
                 Instant.parse("2022-09-24T09:23:30.001Z"));
         CompactionJobFinishedStatus finished2 = CompactionJobFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-25T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-25T09:23:30.001Z"),
                         Instant.parse("2022-09-25T09:24:00.001Z")));
         CompactionJobFinishedStatus finished1 = CompactionJobFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-26T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-26T09:23:30.001Z"),
                         Instant.parse("2022-09-26T09:24:00.001Z")));
 

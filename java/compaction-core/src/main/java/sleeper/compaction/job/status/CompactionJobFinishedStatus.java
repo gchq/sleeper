@@ -15,7 +15,7 @@
  */
 package sleeper.compaction.job.status;
 
-import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -23,14 +23,14 @@ import java.util.Objects;
 public class CompactionJobFinishedStatus implements CompactionJobStatusUpdate {
 
     private final Instant updateTime;
-    private final CompactionJobSummary summary;
+    private final RecordsProcessedSummary summary;
 
-    private CompactionJobFinishedStatus(Instant updateTime, CompactionJobSummary summary) {
+    private CompactionJobFinishedStatus(Instant updateTime, RecordsProcessedSummary summary) {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
         this.summary = Objects.requireNonNull(summary, "summary must not be null");
     }
 
-    public static CompactionJobFinishedStatus updateTimeAndSummary(Instant updateTime, CompactionJobSummary summary) {
+    public static CompactionJobFinishedStatus updateTimeAndSummary(Instant updateTime, RecordsProcessedSummary summary) {
         return new CompactionJobFinishedStatus(updateTime, summary);
     }
 
@@ -38,7 +38,7 @@ public class CompactionJobFinishedStatus implements CompactionJobStatusUpdate {
         return updateTime;
     }
 
-    public CompactionJobSummary getSummary() {
+    public RecordsProcessedSummary getSummary() {
         return summary;
     }
 

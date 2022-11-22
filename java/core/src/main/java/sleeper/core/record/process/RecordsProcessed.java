@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job;
+package sleeper.core.record.process;
 
 import java.util.Objects;
 
-public class CompactionJobRecordsProcessed {
+public class RecordsProcessed {
     private final long linesRead;
     private final long linesWritten;
 
-    public CompactionJobRecordsProcessed(long linesRead, long linesWritten) {
+    public RecordsProcessed(long linesRead, long linesWritten) {
         this.linesRead = linesRead;
         this.linesWritten = linesWritten;
     }
@@ -42,7 +42,7 @@ public class CompactionJobRecordsProcessed {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        CompactionJobRecordsProcessed that = (CompactionJobRecordsProcessed) o;
+        RecordsProcessed that = (RecordsProcessed) o;
         return linesRead == that.linesRead && linesWritten == that.linesWritten;
     }
 

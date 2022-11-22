@@ -16,7 +16,7 @@
 
 package sleeper.compaction.job.status;
 
-import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -97,7 +97,7 @@ public class CompactionJobRun {
         }
     }
 
-    public CompactionJobSummary getFinishedSummary() {
+    public RecordsProcessedSummary getFinishedSummary() {
         if (isFinished()) {
             return getFinishedStatus().getSummary();
         } else {

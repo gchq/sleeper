@@ -20,9 +20,9 @@ import org.junit.After;
 import org.junit.Before;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
-import sleeper.compaction.job.CompactionJobRecordsProcessed;
+import sleeper.core.record.process.RecordsProcessed;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobRun;
@@ -109,9 +109,9 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return Instant.parse("2022-09-23T10:51:00.001Z");
     }
 
-    protected static CompactionJobSummary defaultSummary() {
-        return new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(200L, 100L),
+    protected static RecordsProcessedSummary defaultSummary() {
+        return new RecordsProcessedSummary(
+                new RecordsProcessed(200L, 100L),
                 defaultStartTime(), Instant.parse("2022-09-23T10:52:00.001Z"));
     }
 

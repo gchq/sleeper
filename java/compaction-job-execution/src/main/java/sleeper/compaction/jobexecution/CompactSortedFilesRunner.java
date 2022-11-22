@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
@@ -176,7 +176,7 @@ public class CompactSortedFilesRunner {
         taskStatusStore.taskFinished(taskFinished);
     }
 
-    private CompactionJobSummary compact(CompactionJob compactionJob, Message message) throws IOException, IteratorException, ActionException {
+    private RecordsProcessedSummary compact(CompactionJob compactionJob, Message message) throws IOException, IteratorException, ActionException {
         MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl,
                 "Compaction job " + compactionJob.getId(), message.getReceiptHandle());
         // Create background thread to keep messages alive
@@ -194,7 +194,7 @@ public class CompactSortedFilesRunner {
                 tableProperties.getSchema(), SchemaConverter.getSchema(tableProperties.getSchema()), compactionJob,
                 stateStore, jobStatusStore, tableProperties.getInt(ROW_GROUP_SIZE), tableProperties.getInt(PAGE_SIZE),
                 tableProperties.get(COMPRESSION_CODEC), taskId);
-        CompactionJobSummary summary = compactSortedFiles.compact();
+        RecordsProcessedSummary summary = compactSortedFiles.compact();
 
         // Delete message from queue
         DeleteMessageAction deleteAction = messageReference.deleteAction();

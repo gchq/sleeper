@@ -27,6 +27,8 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Range;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfoFactory;
@@ -155,8 +157,8 @@ public class CompactionJobTestDataHelper {
         Instant startUpdateTime = startTime.plus(Duration.ofMillis(123));
         Instant finishTime = startTime.plus(runDuration);
         Instant finishUpdateTime = finishTime.plus(Duration.ofMillis(123));
-        CompactionJobSummary summary = new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(linesRead, linesWritten), startTime, finishTime);
+        RecordsProcessedSummary summary = new RecordsProcessedSummary(
+                new RecordsProcessed(linesRead, linesWritten), startTime, finishTime);
         return CompactionJobRun.finished(DEFAULT_TASK_ID,
                 CompactionJobStartedStatus.updateAndStartTime(startUpdateTime, startTime),
                 CompactionJobFinishedStatus.updateTimeAndSummary(finishUpdateTime, summary));

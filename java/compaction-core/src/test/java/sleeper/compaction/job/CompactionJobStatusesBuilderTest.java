@@ -23,6 +23,8 @@ import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusUpdateRecord;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -46,7 +48,7 @@ public class CompactionJobStatusesBuilderTest {
                 Instant.parse("2022-09-23T09:23:30.001Z"));
         CompactionJobFinishedStatus finished1 = CompactionJobFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-23T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(200L, 100L),
+                new RecordsProcessedSummary(new RecordsProcessed(200L, 100L),
                         Instant.parse("2022-09-23T09:23:30.001Z"),
                         Instant.parse("2022-09-23T09:24:00.001Z")));
         CompactionJobCreatedStatus created2 = CompactionJobCreatedStatus.builder()
@@ -59,7 +61,7 @@ public class CompactionJobStatusesBuilderTest {
                 Instant.parse("2022-09-24T09:23:30.001Z"));
         CompactionJobFinishedStatus finished2 = CompactionJobFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-24T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-24T09:23:30.001Z"),
                         Instant.parse("2022-09-24T09:24:00.001Z")));
 

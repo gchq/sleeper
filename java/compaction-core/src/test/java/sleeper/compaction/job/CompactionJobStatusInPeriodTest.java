@@ -21,6 +21,8 @@ import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -31,8 +33,8 @@ import static sleeper.compaction.job.CompactionJobTestDataHelper.DEFAULT_TASK_ID
 public class CompactionJobStatusInPeriodTest {
 
     private final CompactionJob job = new CompactionJobTestDataHelper().singleFileCompaction();
-    private final CompactionJobSummary summary = new CompactionJobSummary(
-            new CompactionJobRecordsProcessed(200L, 100L),
+    private final RecordsProcessedSummary summary = new RecordsProcessedSummary(
+            new RecordsProcessed(200L, 100L),
             Instant.parse("2022-09-23T11:00:00.000Z"), Instant.parse("2022-09-23T11:30:00.000Z"));
 
     @Test
@@ -225,8 +227,8 @@ public class CompactionJobStatusInPeriodTest {
                         CompactionJobRun.finished(DEFAULT_TASK_ID,
                                 CompactionJobStartedStatus.updateAndStartTime(run1StartTime, run1StartTime),
                                 CompactionJobFinishedStatus.updateTimeAndSummary(run1FinishTime,
-                                        new CompactionJobSummary(
-                                                new CompactionJobRecordsProcessed(300L, 200L),
+                                        new RecordsProcessedSummary(
+                                                new RecordsProcessed(300L, 200L),
                                                 run1StartTime, run1FinishTime)))))
                 .build();
 

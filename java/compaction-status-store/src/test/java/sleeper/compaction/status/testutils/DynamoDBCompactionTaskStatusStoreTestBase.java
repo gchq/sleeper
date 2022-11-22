@@ -18,8 +18,8 @@ package sleeper.compaction.status.testutils;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.After;
 import org.junit.Before;
-import sleeper.compaction.job.CompactionJobRecordsProcessed;
-import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStoreCreator;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
@@ -73,9 +73,9 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
         return Instant.parse("2022-09-22T16:30:00.500Z");
     }
 
-    private static CompactionJobSummary defaultJobSummary() {
-        return new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(4800L, 2400L),
+    private static RecordsProcessedSummary defaultJobSummary() {
+        return new RecordsProcessedSummary(
+                new RecordsProcessed(4800L, 2400L),
                 defaultJobStartTime(), defaultJobFinishTime());
     }
 
@@ -108,8 +108,8 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
     protected static CompactionTaskStatus taskWithStartAndFinishTime(Instant startTime, Instant finishTime) {
         return CompactionTaskStatus.builder().taskId(UUID.randomUUID().toString()).started(startTime)
                 .finished(CompactionTaskFinishedStatus.builder()
-                        .addJobSummary(new CompactionJobSummary(
-                                new CompactionJobRecordsProcessed(200, 100),
+                        .addJobSummary(new RecordsProcessedSummary(
+                                new RecordsProcessed(200, 100),
                                 startTime, finishTime
                         )), finishTime)
                 .build();

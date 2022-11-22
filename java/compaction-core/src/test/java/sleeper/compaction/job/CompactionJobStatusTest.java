@@ -22,6 +22,8 @@ import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.partition.Partition;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -103,8 +105,8 @@ public class CompactionJobStatusTest {
         Instant updateTime = Instant.parse("2022-09-22T13:34:00.001Z");
         Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
         Instant finishTime = Instant.parse("2022-09-22T13:34:10.001Z");
-        CompactionJobSummary summary = new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(450L, 300L), startTime, finishTime);
+        RecordsProcessedSummary summary = new RecordsProcessedSummary(
+                new RecordsProcessed(450L, 300L), startTime, finishTime);
 
         // When
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())

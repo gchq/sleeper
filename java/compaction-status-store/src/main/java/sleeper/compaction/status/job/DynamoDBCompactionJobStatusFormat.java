@@ -19,8 +19,8 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobRecordsProcessed;
-import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobFinishedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
@@ -84,7 +84,7 @@ public class DynamoDBCompactionJobStatusFormat {
                 .build();
     }
 
-    public static Map<String, AttributeValue> createJobFinishedRecord(CompactionJob job, CompactionJobSummary summary, String taskId, Long timeToLive) {
+    public static Map<String, AttributeValue> createJobFinishedRecord(CompactionJob job, RecordsProcessedSummary summary, String taskId, Long timeToLive) {
         return createJobRecord(job, UPDATE_TYPE_FINISHED, timeToLive)
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
                 .string(TASK_ID, taskId)
@@ -136,7 +136,7 @@ public class DynamoDBCompactionJobStatusFormat {
             case UPDATE_TYPE_FINISHED:
                 return CompactionJobFinishedStatus.updateTimeAndSummary(
                         getInstantAttribute(item, UPDATE_TIME),
-                        new CompactionJobSummary(new CompactionJobRecordsProcessed(
+                        new RecordsProcessedSummary(new RecordsProcessed(
                                 getLongAttribute(item, RECORDS_READ, 0),
                                 getLongAttribute(item, RECORDS_WRITTEN, 0)),
                                 getInstantAttribute(item, START_TIME),
