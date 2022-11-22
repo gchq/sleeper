@@ -135,15 +135,15 @@ public class CompactSortedFiles {
         LOGGER.info("Compaction job {}: compaction called at {}", id, startTime);
         jobStatusStore.jobStarted(compactionJob, startTime, taskId);
 
-        CompactionJobRecordsProcessed recordsProcessed=null;
+        CompactionJobRecordsProcessed recordsProcessed = null;
         try {
-        if (this.gpuEnabled) {
-            recordsProcessed = gpuCompact();
-        }  
+            if (this.gpuEnabled) {
+                recordsProcessed = gpuCompact();
+            }
         } catch (RuntimeException e) {
-            //GPU failed
+            LOGGER.error("GPU failed ", e);
         }
-        if (recordsProcessed==null) {
+        if (recordsProcessed == null) {
             if (!compactionJob.isSplittingJob()) {
                 recordsProcessed = compactNoSplitting();
             } else {
@@ -193,9 +193,12 @@ public class CompactSortedFiles {
             boolean terminatedInTime = gpuProcess.waitFor(15, TimeUnit.MINUTES);
             if (!terminatedInTime) {
                 LOGGER.warn("GPU process not terminated inside timeout");
+                gpuProcess.destroyForcibly();
             }
-        } catch (InterruptedException ignore) {
+        } catch (InterruptedException e) {
+            LOGGER.error("Waiting for GPU process to terminate caught", e);
         }
+
         int exitValue = gpuProcess.exitValue();
         if (exitValue != 0) {
             LOGGER.error("GPU process exited with code {}, please examine logs", exitValue);
@@ -248,11 +251,11 @@ public class CompactSortedFiles {
     /**
      * Converts a string to an int or long depending on the type specified.
      *
-     * @param min         string to convert
+     * @param min string to convert
      * @param rowKeyType0 the data type of the column
      * @return converted object
      * @throws NumberFormatException if a numeric type is specified but it
-     *                               couldn't be converted
+     * couldn't be converted
      */
     public static Object parseToType(String min, PrimitiveType rowKeyType0) {
         if (rowKeyType0 instanceof IntType) {
@@ -406,10 +409,10 @@ public class CompactSortedFiles {
         LOGGER.debug("Creating writer for file {}", compactionJob.getOutputFile());
         ParquetRecordWriter.Builder builder = new ParquetRecordWriter.Builder(new Path(compactionJob.getOutputFile()),
                 messageType, schema)
-                .withCompressionCodec(CompressionCodecName.fromConf(compressionCodec))
-                .withRowGroupSize(rowGroupSize)
-                .withPageSize(pageSize)
-                .withConf(conf);
+                        .withCompressionCodec(CompressionCodecName.fromConf(compressionCodec))
+                        .withRowGroupSize(rowGroupSize)
+                        .withPageSize(pageSize)
+                        .withConf(conf);
         ParquetWriter<Record> writer = builder.build();
         LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(),
                 compactionJob.getOutputFile());
