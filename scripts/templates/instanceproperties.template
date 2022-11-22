@@ -202,3 +202,8 @@ sleeper.ingest.arrow.max.local.store.bytes=17179869184
 # multiple times and so this parameter does not affect the final size of the Arrow file (arrow only) [1K]
 sleeper.ingest.arrow.max.single.write.to.file.records=1024
 
+# Flag to enable/disable storage of tracking information for ingest jobs and tasks.
+sleeper.ingest.status.store.enabled=true
+
+# The time to live in seconds for ingest jobs in the status store. Default is 1 week
+sleeper.ingest.job.status.ttl=604800
