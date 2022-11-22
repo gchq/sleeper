@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.status;
+package sleeper.ingest.job.status;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import sleeper.configuration.properties.InstanceProperties;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.status;
+package sleeper.ingest.job.status;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
@@ -28,17 +28,16 @@ import java.util.Arrays;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
-import static sleeper.ingest.status.DynamoDBIngestJobStatusFormat.EXPIRY_DATE;
-import static sleeper.ingest.status.DynamoDBIngestJobStatusFormat.JOB_ID;
-import static sleeper.ingest.status.DynamoDBIngestJobStatusFormat.UPDATE_TIME;
-import static sleeper.ingest.status.DynamoDBIngestJobStatusStore.jobStatusTableName;
+import static sleeper.ingest.job.status.DynamoDBIngestJobStatusFormat.EXPIRY_DATE;
+import static sleeper.ingest.job.status.DynamoDBIngestJobStatusFormat.JOB_ID;
+import static sleeper.ingest.job.status.DynamoDBIngestJobStatusFormat.UPDATE_TIME;
 
 public class DynamoDBIngestJobStatusStoreCreator {
     private DynamoDBIngestJobStatusStoreCreator() {
     }
 
     public static void create(InstanceProperties properties, AmazonDynamoDB dynamoDB) {
-        String tableName = jobStatusTableName(properties.get(ID));
+        String tableName = DynamoDBIngestJobStatusStore.jobStatusTableName(properties.get(ID));
         initialiseTable(dynamoDB, tableName,
                 Arrays.asList(
                         new AttributeDefinition(JOB_ID, ScalarAttributeType.S),

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.status;
+package sleeper.ingest.job.status;
 
 import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
 import org.junit.After;
@@ -24,12 +24,11 @@ import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.ingest.status.DynamoDBIngestJobStatusStore.jobStatusTableName;
-import static sleeper.ingest.status.testutils.IngestStatusStoreTestUtils.createInstanceProperties;
+import static sleeper.ingest.job.status.testutils.IngestStatusStoreTestUtils.createInstanceProperties;
 
 public class DynamoDBIngestJobStatusStoreCreatorIT extends DynamoDBTestBase {
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final String tableName = jobStatusTableName(instanceProperties.get(ID));
+    private final String tableName = DynamoDBIngestJobStatusStore.jobStatusTableName(instanceProperties.get(ID));
 
     @Test
     public void shouldCreateStore() {

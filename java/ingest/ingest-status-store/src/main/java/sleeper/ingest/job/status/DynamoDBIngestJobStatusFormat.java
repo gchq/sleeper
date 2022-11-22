@@ -14,25 +14,14 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.status;
+package sleeper.ingest.job.status;
 
-import sleeper.ingest.job.IngestJob;
+public class DynamoDBIngestJobStatusFormat {
 
-public interface IngestJobStatusStore {
-    static IngestJobStatusStore none() {
-        return new IngestJobStatusStore() {
-        };
+    private DynamoDBIngestJobStatusFormat() {
     }
 
-    default void jobCreated(IngestJob job) {
-
-    }
-
-    default void jobStarted(IngestJob job) {
-
-    }
-
-    default void jobFinished(IngestJob job) {
-
-    }
+    public static final String JOB_ID = "JobId";
+    public static final String UPDATE_TIME = "UpdateTime";
+    public static final String EXPIRY_DATE = "ExpiryDate";
 }

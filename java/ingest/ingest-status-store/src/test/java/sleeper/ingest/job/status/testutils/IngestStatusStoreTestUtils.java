@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.status.testutils;
+package sleeper.ingest.job.status.testutils;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
