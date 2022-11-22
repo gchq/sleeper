@@ -240,7 +240,7 @@ public class CompactSortedFiles {
 
     /**
      * Converts a string to an int or long depending on the type specified.
-     * 
+     *
      * @param min string to convert
      * @param rowKeyType0 the data type of the column
      * @return converted object
@@ -265,7 +265,7 @@ public class CompactSortedFiles {
         public final long rowsRead;
         public final ArrayList<Long> rowsWritten;
 
-        public GPUReturnData(ArrayList<String> minKeys, ArrayList<String> maxKeys, long rowsRead, ArrayList<Long> rowsWritten) {
+        GPUReturnData(ArrayList<String> minKeys, ArrayList<String> maxKeys, long rowsRead, ArrayList<Long> rowsWritten) {
             this.minKeys = minKeys;
             this.maxKeys = maxKeys;
             this.rowsRead = rowsRead;
@@ -300,6 +300,14 @@ public class CompactSortedFiles {
         }
     }
 
+    /**
+     * Reads the return data from the GPU process by decoding the data contained
+     * in the file given. This should be encoded with MessagePack.
+     *
+     * @param msgPackFile file that the GPU process wrote MessagePack into
+     * @return object containing data read from GPU process
+     * @throws IOException if an I/O error occurs
+     */
     private GPUReturnData readMsgPack(java.nio.file.Path msgPackFile) throws IOException {
         LOGGER.debug("Reading GPU return data from file {}", msgPackFile);
         try (MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(Files.newInputStream(msgPackFile))) {
@@ -338,7 +346,7 @@ public class CompactSortedFiles {
     /**
      * Writes the compaction configuration data to the given file in MessagePack
      * format.
-     * 
+     *
      * @param tempFile file to write to
      * @throws IOException if an I/O error occurs
      */
