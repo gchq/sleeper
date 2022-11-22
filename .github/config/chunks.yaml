@@ -30,7 +30,7 @@ chunks:
   ingest:
     name: Ingest
     workflow: chunk-ingest.yaml
-    modules: [ ingest/ingest-core, ingest/ingest-runner ]
+    modules: [ ingest/ingest-core, ingest/ingest-runner, ingest/ingest-status-store ]
   query:
     name: Query
     workflow: chunk-query.yaml
