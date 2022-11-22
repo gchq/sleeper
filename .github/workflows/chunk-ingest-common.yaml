@@ -1,4 +1,4 @@
-name: Build Ingest Module
+name: Build Ingest Common Modules
 on:
   push:
     paths:
