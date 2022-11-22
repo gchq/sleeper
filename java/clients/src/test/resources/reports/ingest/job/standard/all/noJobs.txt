@@ -1,0 +1,9 @@
+
+Ingest Job Status Report
+------------------------
+Total jobs pending in queue: 0
+Total jobs in progress: 0
+Total jobs finished: 0
+--------------------------------------------------------------------------------------------------------------------------------------------------
+| STATE | JOB_ID | TASK_ID | START_TIME | FINISH_TIME | DURATION (s) | TOTAL_FILES | LINES_READ | LINES_WRITTEN | READ_RATE (s) | WRITE_RATE (s) |
+--------------------------------------------------------------------------------------------------------------------------------------------------
