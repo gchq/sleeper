@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.status;
-
-import sleeper.core.record.process.RecordsProcessedSummary;
+package sleeper.core.record.process;
 
 import java.util.stream.Stream;
 

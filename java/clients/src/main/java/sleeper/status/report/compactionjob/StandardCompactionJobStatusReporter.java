@@ -16,9 +16,9 @@
 
 package sleeper.status.report.compactionjob;
 
-import sleeper.compaction.job.status.AverageRecordRate;
 import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.core.record.process.AverageRecordRate;
 import sleeper.status.report.table.TableField;
 import sleeper.status.report.table.TableRow;
 import sleeper.status.report.table.TableWriter;

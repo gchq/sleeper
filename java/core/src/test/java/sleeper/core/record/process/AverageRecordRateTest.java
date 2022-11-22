@@ -13,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job;
+package sleeper.core.record.process;
 
 import org.junit.Test;
-import sleeper.compaction.job.status.AverageRecordRate;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -26,8 +23,6 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class AverageRecordRateTest {
-
-    private final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
 
     @Test
     public void shouldCalculateAverageOfSingleFinishedProcess() {
