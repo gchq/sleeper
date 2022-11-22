@@ -16,6 +16,7 @@
 
 package sleeper.status.report.ingest.job;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import sleeper.ToStringPrintStream;
 
@@ -32,6 +33,7 @@ public class IngestJobStatusReportTest {
     }
 
     @Test
+    @Ignore("TODO")
     public void shouldReportMixedIngestJobs() throws Exception {
 
         // When / Then
