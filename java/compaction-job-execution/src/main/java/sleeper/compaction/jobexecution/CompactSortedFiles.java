@@ -184,7 +184,7 @@ public class CompactSortedFiles {
 
         Process gpuProcess = builder.start();
         try {
-            boolean terminatedInTime = gpuProcess.waitFor(5, TimeUnit.MINUTES);
+            boolean terminatedInTime = gpuProcess.waitFor(15, TimeUnit.MINUTES);
             if (!terminatedInTime) {
                 LOGGER.warn("GPU process not terminated inside timeout");
             }
