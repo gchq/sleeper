@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.status;
+package sleeper.core.status;
 
 import java.time.Instant;
 
-public interface CompactionJobStatusUpdate {
+public interface ProcessStatusUpdate {
 
     Instant getUpdateTime();
 }

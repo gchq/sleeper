@@ -15,6 +15,8 @@
  */
 package sleeper.compaction.job.status;
 
+import sleeper.core.status.ProcessStatusUpdate;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -74,7 +76,7 @@ public class CompactionJobStatusesBuilder {
         List<CompactionJobRun.Builder> orderedBuilders = new ArrayList<>();
         for (CompactionJobStatusUpdateRecord record : recordList) {
             String taskId = record.getTaskId();
-            CompactionJobStatusUpdate statusUpdate = record.getStatusUpdate();
+            ProcessStatusUpdate statusUpdate = record.getStatusUpdate();
             if (statusUpdate instanceof CompactionJobStartedStatus) {
                 CompactionJobRun.Builder builder = CompactionJobRun.builder()
                         .startedStatus((CompactionJobStartedStatus) statusUpdate)

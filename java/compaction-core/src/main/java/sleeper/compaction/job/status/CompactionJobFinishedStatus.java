@@ -16,11 +16,12 @@
 package sleeper.compaction.job.status;
 
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.status.ProcessStatusUpdate;
 
 import java.time.Instant;
 import java.util.Objects;
 
-public class CompactionJobFinishedStatus implements CompactionJobStatusUpdate {
+public class CompactionJobFinishedStatus implements ProcessStatusUpdate {
 
     private final Instant updateTime;
     private final RecordsProcessedSummary summary;

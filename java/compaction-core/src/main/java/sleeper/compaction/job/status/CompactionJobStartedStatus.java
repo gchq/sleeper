@@ -15,10 +15,12 @@
  */
 package sleeper.compaction.job.status;
 
+import sleeper.core.status.ProcessStatusUpdate;
+
 import java.time.Instant;
 import java.util.Objects;
 
-public class CompactionJobStartedStatus implements CompactionJobStatusUpdate {
+public class CompactionJobStartedStatus implements ProcessStatusUpdate {
 
     private final Instant updateTime;
     private final Instant startTime;

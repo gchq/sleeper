@@ -15,6 +15,8 @@
  */
 package sleeper.compaction.job.status;
 
+import sleeper.core.status.ProcessStatusUpdate;
+
 import java.time.Instant;
 import java.util.Objects;
 
@@ -22,10 +24,10 @@ public class CompactionJobStatusUpdateRecord {
 
     private final String jobId;
     private final Instant expiryDate;
-    private final CompactionJobStatusUpdate statusUpdate;
+    private final ProcessStatusUpdate statusUpdate;
     private final String taskId;
 
-    public CompactionJobStatusUpdateRecord(String jobId, Instant expiryDate, CompactionJobStatusUpdate statusUpdate, String taskId) {
+    public CompactionJobStatusUpdateRecord(String jobId, Instant expiryDate, ProcessStatusUpdate statusUpdate, String taskId) {
         this.jobId = Objects.requireNonNull(jobId, "jobId must not be null");
         this.expiryDate = Objects.requireNonNull(expiryDate, "expiryDate must not be null");
         this.statusUpdate = Objects.requireNonNull(statusUpdate, "statusUpdate must not be null");
@@ -40,7 +42,7 @@ public class CompactionJobStatusUpdateRecord {
         return expiryDate;
     }
 
-    public CompactionJobStatusUpdate getStatusUpdate() {
+    public ProcessStatusUpdate getStatusUpdate() {
         return statusUpdate;
     }
 
