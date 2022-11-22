@@ -18,6 +18,7 @@ package sleeper.ingest.job;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 public class IngestJob {
     private final String tableName;
@@ -26,7 +27,11 @@ public class IngestJob {
 
     private IngestJob(Builder builder) {
         tableName = builder.tableName;
-        id = builder.id;
+        if (builder.id != null) {
+            id = builder.id;
+        } else {
+            id = UUID.randomUUID().toString();
+        }
         files = builder.files;
     }
 
