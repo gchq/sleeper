@@ -87,6 +87,11 @@
             <artifactId>tables</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>ingest-core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
         <!-- Arrow dependencies -->
         <dependency>
             <groupId>org.apache.arrow</groupId>
