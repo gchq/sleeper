@@ -17,10 +17,10 @@ package sleeper.compaction.jobexecution;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDataHelper;
 import sleeper.core.record.Record;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
