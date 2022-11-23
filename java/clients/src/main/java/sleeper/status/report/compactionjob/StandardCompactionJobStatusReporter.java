@@ -118,7 +118,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("Creation Time: %s%n", jobStatus.getCreateUpdateTime().toString());
         out.printf("Partition ID: %s%n", jobStatus.getPartitionId());
         out.printf("Child partition IDs: %s%n", jobStatus.getChildPartitionIds().toString());
-        for (ProcessRun run : jobStatus.getJobRunList()) {
+        for (ProcessRun run : jobStatus.getJobRuns()) {
             out.println();
             out.printf("Run on task %s%n", run.getTaskId());
             out.printf("Start Time: %s%n", run.getStartTime());
@@ -190,19 +190,19 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
 
     private static AverageRecordRate recordRate(List<CompactionJobStatus> jobs) {
         return AverageRecordRate.of(jobs.stream()
-                .flatMap(job -> job.getJobRunList().stream())
+                .flatMap(job -> job.getJobRuns().stream())
                 .filter(ProcessRun::isFinished)
                 .map(ProcessRun::getFinishedSummary));
     }
 
     private void writeJob(CompactionJobStatus job, TableWriter.Builder table) {
-        if (job.getJobRunList().isEmpty()) {
+        if (job.getJobRuns().isEmpty()) {
             table.row(row -> {
                 row.value(STATE, STATE_PENDING);
                 writeJobFields(job, row);
             });
         } else {
-            job.getJobRunList().forEach(run -> table.row(row -> {
+            job.getJobRuns().forEach(run -> table.row(row -> {
                 writeJobFields(job, row);
                 writeRunFields(run, row);
             }));

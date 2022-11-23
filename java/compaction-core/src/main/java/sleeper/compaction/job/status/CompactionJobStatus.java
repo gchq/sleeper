@@ -103,7 +103,7 @@ public class CompactionJobStatus {
         return jobRuns.lastTime().orElse(createdStatus.getUpdateTime());
     }
 
-    public List<ProcessRun> getJobRunList() {
+    public List<ProcessRun> getJobRuns() {
         return jobRuns.getRunList();
     }
 

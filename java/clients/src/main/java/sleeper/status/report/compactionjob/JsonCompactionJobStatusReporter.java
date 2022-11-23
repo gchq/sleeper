@@ -60,7 +60,7 @@ public class JsonCompactionJobStatusReporter implements CompactionJobStatusRepor
     private JsonElement createCompactionJobJson(CompactionJobStatus jobStatus) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("jobId", jobStatus.getJobId());
-        jsonObject.add("jobRunList", gson.toJsonTree(jobStatus.getJobRunList()));
+        jsonObject.add("jobRunList", gson.toJsonTree(jobStatus.getJobRuns()));
         JsonObject createdStatus = new JsonObject();
         createdStatus.addProperty("updateTime", jobStatus.getCreateUpdateTime().toString());
         createdStatus.addProperty("partitionId", jobStatus.getPartitionId());

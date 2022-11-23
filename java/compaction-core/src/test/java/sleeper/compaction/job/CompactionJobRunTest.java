@@ -49,7 +49,7 @@ public class CompactionJobRunTest {
                 .buildSingleStatus();
 
         // Then
-        assertThat(status.getJobRunList())
+        assertThat(status.getJobRuns())
                 .isEmpty();
         assertThat(status.isFinished()).isFalse();
     }
@@ -72,7 +72,7 @@ public class CompactionJobRunTest {
                 .buildSingleStatus();
 
         // Then
-        assertThat(status.getJobRunList())
+        assertThat(status.getJobRuns())
                 .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_1, started, null));
@@ -102,7 +102,7 @@ public class CompactionJobRunTest {
                 .buildSingleStatus();
 
         // Then
-        assertThat(status.getJobRunList())
+        assertThat(status.getJobRuns())
                 .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_1, started, finished));
@@ -130,7 +130,7 @@ public class CompactionJobRunTest {
                 .buildSingleStatus();
 
         // Then
-        assertThat(status.getJobRunList())
+        assertThat(status.getJobRuns())
                 .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_1, started2, null),
@@ -170,7 +170,7 @@ public class CompactionJobRunTest {
                 .buildSingleStatus();
 
         // Then
-        assertThat(status.getJobRunList())
+        assertThat(status.getJobRuns())
                 .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_1, started2, finished2),
@@ -207,7 +207,7 @@ public class CompactionJobRunTest {
                 .buildSingleStatus();
 
         // Then
-        assertThat(status.getJobRunList())
+        assertThat(status.getJobRuns())
                 .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_2, started4, null),
@@ -250,7 +250,7 @@ public class CompactionJobRunTest {
                 .buildSingleStatus();
 
         // Then
-        assertThat(status.getJobRunList())
+        assertThat(status.getJobRuns())
                 .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_2, started2, finished2),
@@ -281,7 +281,7 @@ public class CompactionJobRunTest {
                 .buildSingleStatus();
 
         // Then
-        assertThat(status.getJobRunList())
+        assertThat(status.getJobRuns())
                 .extracting(ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(started, finished));
@@ -312,7 +312,7 @@ public class CompactionJobRunTest {
                 .buildSingleStatus();
 
         // Then
-        assertThat(status.getJobRunList())
+        assertThat(status.getJobRuns())
                 .extracting(ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(started3, null),
@@ -350,7 +350,7 @@ public class CompactionJobRunTest {
                 .buildSingleStatus();
 
         // Then
-        assertThat(status.getJobRunList())
+        assertThat(status.getJobRuns())
                 .extracting(ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(started3, finished),
@@ -391,7 +391,7 @@ public class CompactionJobRunTest {
                 .buildSingleStatus();
 
         // Then
-        assertThat(status.getJobRunList())
+        assertThat(status.getJobRuns())
                 .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_2, started2, finished2),
@@ -432,7 +432,7 @@ public class CompactionJobRunTest {
                 .buildSingleStatus();
 
         // Then
-        assertThat(status.getJobRunList())
+        assertThat(status.getJobRuns())
                 .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_2, started2, finished2),
