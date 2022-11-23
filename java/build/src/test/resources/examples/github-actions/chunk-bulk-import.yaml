@@ -15,7 +15,7 @@ on:
       - 'maven/core/**'
 
 jobs:
-  module-workflow:
+  chunk-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
       chunkId: bulk-import

@@ -27,7 +27,7 @@ on:
       - 'java/core/**'
 
 jobs:
-  module-workflow:
+  chunk-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
       chunkId: cdk
