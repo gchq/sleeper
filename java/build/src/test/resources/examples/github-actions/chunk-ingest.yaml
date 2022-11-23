@@ -12,6 +12,6 @@ on:
 
 jobs:
   chunk-workflow:
-    uses: ./.github/workflows/chunk.yaml
+    uses: ./github-actions/chunk.yaml
     with:
       chunkId: ingest
