@@ -33,6 +33,10 @@ public class ProcessStatusesBuilder {
         return this;
     }
 
+    public List<ProcessRun> buildRunList(String jobId) {
+        return buildRunList(runUpdatesByJobId.get(jobId));
+    }
+
     public List<ProcessRun> buildRunList(List<ProcessStatusUpdateRecord> recordList) {
         Map<String, ProcessRun.Builder> taskBuilders = new HashMap<>();
         List<ProcessRun.Builder> orderedBuilders = new ArrayList<>();
