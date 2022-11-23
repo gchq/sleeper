@@ -46,11 +46,14 @@ public class ProcessRuns {
     }
 
     public Optional<Instant> lastTime() {
-        return Optional.of(getLatestJobRun().getLatestUpdateTime());
+        if (getLatestJobRun().isPresent()) {
+            return Optional.of(getLatestJobRun().get().getLatestUpdateTime());
+        }
+        return Optional.empty();
     }
 
-    public ProcessRun getLatestJobRun() {
-        return jobRunList.get(0);
+    private Optional<ProcessRun> getLatestJobRun() {
+        return Optional.ofNullable(jobRunList.get(0));
     }
 
     public List<ProcessRun> getJobRunList() {
