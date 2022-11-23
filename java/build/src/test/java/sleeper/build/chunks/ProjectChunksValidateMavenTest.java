@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class ProjectChunksValidationTest {
+public class ProjectChunksValidateMavenTest {
 
     @Test
     public void shouldValidateWhenAllCompiledModulesAreInChunks() {
