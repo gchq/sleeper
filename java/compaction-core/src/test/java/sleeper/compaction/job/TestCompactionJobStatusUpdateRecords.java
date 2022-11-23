@@ -18,8 +18,8 @@ package sleeper.compaction.job;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
-import sleeper.compaction.job.status.ProcessStatusUpdateRecord;
 import sleeper.core.status.ProcessStatusUpdate;
+import sleeper.core.status.ProcessStatusUpdateRecord;
 
 import java.time.Instant;
 import java.util.ArrayList;

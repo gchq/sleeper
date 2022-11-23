@@ -19,6 +19,7 @@ import sleeper.core.status.ProcessFinishedStatus;
 import sleeper.core.status.ProcessRun;
 import sleeper.core.status.ProcessStartedStatus;
 import sleeper.core.status.ProcessStatusUpdate;
+import sleeper.core.status.ProcessStatusUpdateRecord;
 
 import java.util.ArrayList;
 import java.util.Collections;
