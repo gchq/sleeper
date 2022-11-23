@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class GetChunkConfigTest {
 
-    private static final ProjectChunks CHUNKS = TestChunks.example("examples/chunks.yaml");
+    private static final ProjectChunks CHUNKS = TestChunks.example("examples/config/chunks.yaml");
 
     @Test
     public void shouldGetChunkName() {

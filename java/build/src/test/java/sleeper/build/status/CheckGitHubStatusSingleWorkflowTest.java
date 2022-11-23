@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class CheckGitHubStatusSingleWorkflowTest {
 
-    private static final ProjectChunks CHUNKS = TestChunks.example("examples/chunks.yaml");
+    private static final ProjectChunks CHUNKS = TestChunks.example("examples/config/chunks.yaml");
     private static final GitHubHead BRANCH = TestGitHubHead.example();
     private static final String WORKFLOW = "test-workflow.yaml";
     private static final MavenModuleStructure MAVEN_PROJECT = TestMavenModuleStructure.example();
