@@ -19,10 +19,10 @@ import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.job.status.ProcessRun;
 import sleeper.compaction.status.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.status.ProcessFinishedStatus;
+import sleeper.core.status.ProcessRun;
 import sleeper.core.status.ProcessStartedStatus;
 import sleeper.statestore.FileInfoFactory;
 

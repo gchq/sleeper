@@ -17,7 +17,6 @@ package sleeper.compaction.job;
 
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.job.status.ProcessRun;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
@@ -29,6 +28,7 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.status.ProcessFinishedStatus;
+import sleeper.core.status.ProcessRun;
 import sleeper.core.status.ProcessStartedStatus;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfoFactory;

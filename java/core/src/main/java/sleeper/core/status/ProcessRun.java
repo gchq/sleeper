@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package sleeper.compaction.job.status;
+package sleeper.core.status;
 
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.status.ProcessFinishedStatus;
-import sleeper.core.status.ProcessStartedStatus;
 
 import java.time.Instant;
 import java.util.Objects;
