@@ -33,6 +33,10 @@ public class ProcessRuns {
         return new ProcessRuns(latestFirst);
     }
 
+    public static ProcessRuns latestFirst(ProcessRun run) {
+        return latestFirst(Collections.singletonList(run));
+    }
+
     public boolean isStarted() {
         return !latestFirst.isEmpty();
     }
