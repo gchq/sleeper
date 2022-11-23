@@ -17,8 +17,7 @@ package sleeper.build.github.actions;
 
 import org.junit.Test;
 import sleeper.build.chunks.TestChunks;
-
-import java.nio.file.Paths;
+import sleeper.build.chunks.TestProjectStructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.build.testutil.TestResources.exampleReader;
@@ -46,10 +45,9 @@ public class GitHubActionsChunkWorkflowYamlTest {
     }
 
     @Test
-    public void shouldReadCommonExampleWorkflowFromDirectoryAndChunk() throws Exception {
-        GitHubActionsChunkWorkflow workflow = GitHubActionsChunkWorkflowYaml.readInWorkflowsDirectory(
-                Paths.get("src/test/resources/examples/github-actions"),
-                TestChunks.common());
+    public void shouldReadCommonExampleWorkflowFromPath() throws Exception {
+        GitHubActionsChunkWorkflow workflow = GitHubActionsChunkWorkflowYaml.readFromPath(
+                TestProjectStructure.example().workflowPath(TestChunks.common()));
 
         assertThat(workflow).isEqualTo(TestGitHubActionsChunkWorkflows.common());
     }

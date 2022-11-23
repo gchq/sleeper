@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import sleeper.build.chunks.ProjectChunk;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -53,8 +52,10 @@ public class GitHubActionsChunkWorkflowYaml {
         return chunksYaml.toWorkflow(mapper);
     }
 
-    public static GitHubActionsChunkWorkflow readInWorkflowsDirectory(Path path, ProjectChunk chunk) throws IOException {
-        return read(Files.newBufferedReader(path.resolve(chunk.getWorkflow())));
+    public static GitHubActionsChunkWorkflow readFromPath(Path path) throws IOException {
+        try (Reader reader = Files.newBufferedReader(path)) {
+            return read(reader);
+        }
     }
 
     private GitHubActionsChunkWorkflow toWorkflow(ObjectMapper mapper) {

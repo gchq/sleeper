@@ -82,7 +82,7 @@ public class ProjectConfiguration {
     }
 
     public void validate(ProjectStructure structure) throws IOException {
-        chunks.validateAllConfigured(structure.loadMavenStructure());
+        chunks.validate(structure);
     }
 
     public long getRetrySeconds() {

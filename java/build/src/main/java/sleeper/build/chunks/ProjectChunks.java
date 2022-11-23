@@ -15,8 +15,10 @@
  */
 package sleeper.build.chunks;
 
+import sleeper.build.maven.InternalDependencyIndex;
 import sleeper.build.maven.MavenModuleStructure;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -37,6 +39,12 @@ public class ProjectChunks {
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Chunk ID not found: " + id));
     }
 
+    public void validate(ProjectStructure project) throws IOException {
+        MavenModuleStructure maven = project.loadMavenStructure();
+        validateAllConfigured(maven);
+        validateChunkWorkflows(project, maven.internalDependencies());
+    }
+
     public void validateAllConfigured(MavenModuleStructure project) throws NotAllMavenModulesConfiguredException {
         Set<String> configuredModuleRefs = stream()
                 .flatMap(chunk -> chunk.getModules().stream())
@@ -46,6 +54,14 @@ public class ProjectChunks {
                 .collect(Collectors.toList());
         if (!unconfiguredModuleRefs.isEmpty()) {
             throw new NotAllMavenModulesConfiguredException(unconfiguredModuleRefs);
+        }
+    }
+
+    private void validateChunkWorkflows(
+            ProjectStructure project, InternalDependencyIndex dependencies) throws IOException {
+        for (ProjectChunk chunk : chunks) {
+            project.loadWorkflow(chunk)
+                    .validate(project, chunk, dependencies);
         }
     }
 

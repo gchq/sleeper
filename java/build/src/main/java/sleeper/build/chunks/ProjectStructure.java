@@ -15,6 +15,8 @@
  */
 package sleeper.build.chunks;
 
+import sleeper.build.github.actions.GitHubActionsChunkWorkflow;
+import sleeper.build.github.actions.GitHubActionsChunkWorkflowYaml;
 import sleeper.build.maven.MavenModuleStructure;
 import sleeper.build.util.PathUtils;
 
@@ -27,6 +29,7 @@ public class ProjectStructure {
     private final Path gitHubPropertiesAbsolute;
     private final Path chunksYamlAbsolute;
     private final Path mavenProjectAbsolute;
+    private final Path workflowsPathAbsolute;
     private final Path repositoryPath;
 
     private ProjectStructure(Builder builder) {
@@ -34,6 +37,11 @@ public class ProjectStructure {
         chunksYamlAbsolute = nonNullAbsolute(builder.chunksYamlPath, "chunksYamlPath");
         mavenProjectAbsolute = nonNullAbsolute(builder.mavenProjectPath, "mavenProjectPath");
         repositoryPath = PathUtils.commonPath(chunksYamlAbsolute, mavenProjectAbsolute);
+        if (builder.workflowsPath != null) {
+            workflowsPathAbsolute = builder.workflowsPath.toAbsolutePath();
+        } else {
+            workflowsPathAbsolute = repositoryPath.resolve(".github/workflows");
+        }
     }
 
     private static Path nonNullAbsolute(Path path, String name) {
@@ -57,6 +65,14 @@ public class ProjectStructure {
         return MavenModuleStructure.fromProjectBase(mavenProjectAbsolute);
     }
 
+    public GitHubActionsChunkWorkflow loadWorkflow(ProjectChunk chunk) throws IOException {
+        return GitHubActionsChunkWorkflowYaml.readFromPath(workflowPath(chunk));
+    }
+
+    public Path workflowPath(ProjectChunk chunk) {
+        return workflowsPathAbsolute.resolve(chunk.getWorkflow());
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -65,6 +81,7 @@ public class ProjectStructure {
         private Path gitHubPropertiesPath;
         private Path chunksYamlPath;
         private Path mavenProjectPath;
+        private Path workflowsPath;
 
         private Builder() {
         }
@@ -81,6 +98,11 @@ public class ProjectStructure {
 
         public Builder mavenProjectPath(Path mavenProjectPath) {
             this.mavenProjectPath = mavenProjectPath;
+            return this;
+        }
+
+        public Builder workflowsPath(Path workflowsPath) {
+            this.workflowsPath = workflowsPath;
             return this;
         }
 

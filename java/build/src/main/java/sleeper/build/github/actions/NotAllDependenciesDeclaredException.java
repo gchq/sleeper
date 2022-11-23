@@ -15,24 +15,35 @@
  */
 package sleeper.build.github.actions;
 
+import sleeper.build.chunks.ProjectChunk;
+import sleeper.build.chunks.ProjectStructure;
+import sleeper.build.util.ReportableException;
+
+import java.io.PrintStream;
 import java.util.List;
 
-public class NotAllDependenciesDeclaredException extends RuntimeException {
+public class NotAllDependenciesDeclaredException extends ReportableException {
 
-    private final String chunkId;
+    private final ProjectChunk chunk;
     private final List<String> unconfiguredModuleRefs;
 
-    public NotAllDependenciesDeclaredException(String chunkId, List<String> unconfiguredModuleRefs) {
-        super("Maven dependencies not declared in on.push.paths for chunk \"" + chunkId + "\": " + unconfiguredModuleRefs);
-        this.chunkId = chunkId;
+    public NotAllDependenciesDeclaredException(ProjectChunk chunk, List<String> unconfiguredModuleRefs) {
+        super("Maven dependencies not declared in on.push.paths for chunk \"" + chunk.getId() + "\": " + unconfiguredModuleRefs);
+        this.chunk = chunk;
         this.unconfiguredModuleRefs = unconfiguredModuleRefs;
     }
 
     public String getChunkId() {
-        return chunkId;
+        return chunk.getId();
     }
 
     public List<String> getUnconfiguredModuleRefs() {
         return unconfiguredModuleRefs;
+    }
+
+    @Override
+    public void report(PrintStream out, ProjectStructure project) {
+        out.println(getMessage());
+        out.println("Please add the necessary on.push.paths at " + project.workflowPath(chunk));
     }
 }

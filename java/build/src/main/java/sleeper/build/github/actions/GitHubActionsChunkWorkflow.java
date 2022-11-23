@@ -54,7 +54,7 @@ public class GitHubActionsChunkWorkflow {
             }
         });
         if (!undeclaredModuleRefs.isEmpty()) {
-            throw new NotAllDependenciesDeclaredException(chunk.getId(), undeclaredModuleRefs);
+            throw new NotAllDependenciesDeclaredException(chunk, undeclaredModuleRefs);
         }
     }
 
