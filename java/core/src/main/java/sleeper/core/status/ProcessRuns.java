@@ -62,8 +62,12 @@ public class ProcessRuns {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         ProcessRuns that = (ProcessRuns) o;
         return jobRunList.equals(that.jobRunList);
     }
