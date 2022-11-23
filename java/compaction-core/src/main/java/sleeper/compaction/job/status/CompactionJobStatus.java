@@ -34,9 +34,7 @@ public class CompactionJobStatus {
     private CompactionJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         createdStatus = Objects.requireNonNull(builder.createdStatus, "createdStatus must not be null");
-        jobRuns = ProcessRuns.builder()
-                .jobRunList(Collections.unmodifiableList(Objects.requireNonNull(builder.jobRunList, "jobRunList must not be null")))
-                .build();
+        jobRuns = builder.jobRuns;
         expiryDate = builder.expiryDate;
     }
 
@@ -112,7 +110,7 @@ public class CompactionJobStatus {
     public static final class Builder {
         private String jobId;
         private CompactionJobCreatedStatus createdStatus;
-        private List<ProcessRun> jobRunList;
+        private ProcessRuns jobRuns;
         private Instant expiryDate;
 
         private Builder() {
@@ -129,12 +127,16 @@ public class CompactionJobStatus {
         }
 
         public Builder singleJobRun(ProcessRun jobRun) {
-            this.jobRunList = Collections.singletonList(jobRun);
+            this.jobRuns = ProcessRuns.builder()
+                    .singleJobRun(jobRun)
+                    .build();
             return this;
         }
 
         public Builder jobRunsLatestFirst(List<ProcessRun> jobRunList) {
-            this.jobRunList = jobRunList;
+            this.jobRuns = ProcessRuns.builder()
+                    .jobRunsLatestFirst(jobRunList)
+                    .build();
             return this;
         }
 
