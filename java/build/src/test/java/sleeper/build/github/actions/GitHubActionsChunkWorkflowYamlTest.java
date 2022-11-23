@@ -17,19 +17,13 @@ package sleeper.build.github.actions;
 
 import org.junit.Test;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.build.testutil.TestResources.exampleReader;
 
 public class GitHubActionsChunkWorkflowYamlTest {
 
     @Test
-    public void shouldReadGitHubActionsWorkflowForBulkImportChunk() throws IOException {
+    public void shouldReadGitHubActionsWorkflowForBulkImportChunk() throws Exception {
         GitHubActionsChunkWorkflow workflow = GitHubActionsChunkWorkflowYaml.read(
                 exampleReader("examples/github-actions/chunk-bulk-import.yaml"));
 
@@ -53,7 +47,7 @@ public class GitHubActionsChunkWorkflowYamlTest {
     }
 
     @Test
-    public void shouldReadGitHubActionsWorkflowForCommonChunk() throws IOException {
+    public void shouldReadGitHubActionsWorkflowForCommonChunk() throws Exception {
         GitHubActionsChunkWorkflow workflow = GitHubActionsChunkWorkflowYaml.read(
                 exampleReader("examples/github-actions/chunk-common.yaml"));
 
@@ -72,31 +66,48 @@ public class GitHubActionsChunkWorkflowYamlTest {
     }
 
     @Test
-    public void shouldFailWhenMoreThanOneJobDeclared() {
+    public void shouldIgnoreExtraJob() throws Exception {
         // Given
-        Map<String, GitHubActionsChunkWorkflowYaml.Job> jobs = new HashMap<>();
-        jobs.put("some-job", job("some-workflow", "some-chunk"));
-        jobs.put("other-job", job("other-workflow", "other-chunk"));
+        GitHubActionsChunkWorkflow workflow = GitHubActionsChunkWorkflowYaml.read(
+                exampleReader("examples/github-actions/corner-cases/chunk-extra-job.yaml"));
 
         // When / Then
-        assertThatThrownBy(() -> workflowWithJobs(jobs))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(workflow).isEqualTo(
+                GitHubActionsChunkWorkflow.builder()
+                        .chunkId("some-chunk")
+                        .name("Build Some Modules")
+                        .onPushPathsArray("github-actions/chunk-extra-job.yaml")
+                        .build());
     }
 
-    private static GitHubActionsChunkWorkflowYaml workflowWithJobs(
-            Map<String, GitHubActionsChunkWorkflowYaml.Job> jobs) {
-        return new GitHubActionsChunkWorkflowYaml("name", onPushPaths(), jobs);
+    @Test
+    public void shouldIgnoreExtraJobFirst() throws Exception {
+        // Given
+        GitHubActionsChunkWorkflow workflow = GitHubActionsChunkWorkflowYaml.read(
+                exampleReader("examples/github-actions/corner-cases/chunk-extra-job-first.yaml"));
+
+        // When / Then
+        assertThat(workflow).isEqualTo(
+                GitHubActionsChunkWorkflow.builder()
+                        .chunkId("some-chunk")
+                        .name("Build Some Modules")
+                        .onPushPathsArray("github-actions/chunk-extra-job.yaml")
+                        .build());
     }
 
-    private static GitHubActionsChunkWorkflowYaml.Job job(String workflow, String chunkId) {
-        return new GitHubActionsChunkWorkflowYaml.Job(workflow,
-                new GitHubActionsChunkWorkflowYaml.WorkflowInputs(chunkId));
-    }
+    @Test
+    public void shouldIgnoreExtraInput() throws Exception {
+        // Given
+        GitHubActionsChunkWorkflow workflow = GitHubActionsChunkWorkflowYaml.read(
+                exampleReader("examples/github-actions/corner-cases/chunk-extra-input.yaml"));
 
-    private static GitHubActionsChunkWorkflowYaml.On onPushPaths(String... paths) {
-        return new GitHubActionsChunkWorkflowYaml.On(
-                new GitHubActionsChunkWorkflowYaml.Push(Arrays.asList(paths)));
+        // When / Then
+        assertThat(workflow).isEqualTo(
+                GitHubActionsChunkWorkflow.builder()
+                        .chunkId("some-chunk")
+                        .name("Build Some Modules")
+                        .onPushPathsArray("github-actions/chunk-extra-input.yaml")
+                        .build());
     }
-
 
 }

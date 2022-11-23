@@ -16,6 +16,7 @@
 package sleeper.build.github.actions;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
@@ -24,39 +25,51 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 public class GitHubActionsChunkWorkflowYaml {
 
-    private final String chunkId;
     private final String name;
     private final List<String> onPushPaths;
+    private final Map<String, Object> jobs;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public GitHubActionsChunkWorkflowYaml(
             @JsonProperty("name") String name,
             @JsonProperty("on") On on,
-            @JsonProperty("jobs") Map<String, Job> jobs) {
-        if (jobs.size() != 1) {
-            throw new IllegalArgumentException("Expected only one job declared, found " + jobs.size());
-        }
-        Job job = jobs.values().stream().findFirst().orElseThrow(IllegalStateException::new);
-        this.chunkId = job.with.chunkId;
-        this.name = name;
-        this.onPushPaths = on.push.paths;
+            @JsonProperty("jobs") Map<String, Object> jobs) {
+        this.name = Objects.requireNonNull(name, "name must not be null");
+        this.onPushPaths = Objects.requireNonNull(on, "on must not be null").push.paths;
+        this.jobs = Objects.requireNonNull(jobs, "jobs must not be null");
     }
 
     public static GitHubActionsChunkWorkflow read(Reader reader) throws IOException {
         ObjectMapper mapper = new YAMLMapper();
         GitHubActionsChunkWorkflowYaml chunksYaml = mapper.readValue(reader, GitHubActionsChunkWorkflowYaml.class);
-        return chunksYaml.toWorkflow();
+        return chunksYaml.toWorkflow(mapper);
     }
 
-    public GitHubActionsChunkWorkflow toWorkflow() {
+    private GitHubActionsChunkWorkflow toWorkflow(ObjectMapper mapper) {
         return GitHubActionsChunkWorkflow.builder()
-                .chunkId(chunkId)
+                .chunkId(chunkJob(mapper).with.chunkId)
                 .name(name)
                 .onPushPaths(onPushPaths)
                 .build();
+    }
+
+    private Job chunkJob(ObjectMapper mapper) {
+        return jobs.values().stream()
+                .flatMap(job -> readJob(job, mapper))
+                .findFirst().orElseThrow(() -> new IllegalArgumentException("No chunk job found"));
+    }
+
+    private Stream<Job> readJob(Object job, ObjectMapper mapper) {
+        try {
+            return Stream.of(mapper.convertValue(job, Job.class));
+        } catch (IllegalArgumentException e) {
+            return Stream.empty();
+        }
     }
 
     public static class On {
@@ -64,7 +77,7 @@ public class GitHubActionsChunkWorkflowYaml {
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public On(@JsonProperty("push") Push push) {
-            this.push = push;
+            this.push = Objects.requireNonNull(push, "push must not be null");
         }
     }
 
@@ -73,29 +86,29 @@ public class GitHubActionsChunkWorkflowYaml {
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public Push(@JsonProperty("paths") List<String> paths) {
-            this.paths = paths;
+            this.paths = Objects.requireNonNull(paths, "paths must not be null");
         }
     }
 
     public static class Job {
-        private final String uses;
         private final WorkflowInputs with;
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public Job(
                 @JsonProperty("uses") String uses,
                 @JsonProperty("with") WorkflowInputs with) {
-            this.uses = uses;
-            this.with = with;
+            Objects.requireNonNull(uses, "uses must not be null");
+            this.with = Objects.requireNonNull(with, "with must not be null");
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class WorkflowInputs {
         private final String chunkId;
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public WorkflowInputs(@JsonProperty("chunkId") String chunkId) {
-            this.chunkId = chunkId;
+            this.chunkId = Objects.requireNonNull(chunkId, "chunkId must not be null");
         }
     }
 }
