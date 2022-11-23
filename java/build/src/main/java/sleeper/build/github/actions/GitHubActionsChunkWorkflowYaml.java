@@ -16,7 +16,6 @@
 package sleeper.build.github.actions;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
@@ -26,7 +25,6 @@ import java.io.Reader;
 import java.util.List;
 import java.util.Map;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class GitHubActionsChunkWorkflowYaml {
 
     private final String chunkId;
@@ -38,9 +36,11 @@ public class GitHubActionsChunkWorkflowYaml {
             @JsonProperty("name") String name,
             @JsonProperty("on") On on,
             @JsonProperty("jobs") Map<String, Job> jobs) {
-        this.chunkId = jobs.values().stream().findFirst()
-                .map(job -> job.with.chunkId)
-                .orElse(null);
+        if (jobs.size() != 1) {
+            throw new IllegalArgumentException("Expected only one job declared, found " + jobs.size());
+        }
+        Job job = jobs.values().stream().findFirst().orElseThrow(IllegalStateException::new);
+        this.chunkId = job.with.chunkId;
         this.name = name;
         this.onPushPaths = on.push.paths;
     }

@@ -18,8 +18,12 @@ package sleeper.build.github.actions;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.build.testutil.TestResources.exampleReader;
 
 public class GitHubActionsChunkWorkflowYamlTest {
@@ -66,4 +70,33 @@ public class GitHubActionsChunkWorkflowYamlTest {
                                 "maven/core/**")
                         .build());
     }
+
+    @Test
+    public void shouldFailWhenMoreThanOneJobDeclared() {
+        // Given
+        Map<String, GitHubActionsChunkWorkflowYaml.Job> jobs = new HashMap<>();
+        jobs.put("some-job", job("some-workflow", "some-chunk"));
+        jobs.put("other-job", job("other-workflow", "other-chunk"));
+
+        // When / Then
+        assertThatThrownBy(() -> workflowWithJobs(jobs))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    private static GitHubActionsChunkWorkflowYaml workflowWithJobs(
+            Map<String, GitHubActionsChunkWorkflowYaml.Job> jobs) {
+        return new GitHubActionsChunkWorkflowYaml("name", onPushPaths(), jobs);
+    }
+
+    private static GitHubActionsChunkWorkflowYaml.Job job(String workflow, String chunkId) {
+        return new GitHubActionsChunkWorkflowYaml.Job(workflow,
+                new GitHubActionsChunkWorkflowYaml.WorkflowInputs(chunkId));
+    }
+
+    private static GitHubActionsChunkWorkflowYaml.On onPushPaths(String... paths) {
+        return new GitHubActionsChunkWorkflowYaml.On(
+                new GitHubActionsChunkWorkflowYaml.Push(Arrays.asList(paths)));
+    }
+
+
 }
