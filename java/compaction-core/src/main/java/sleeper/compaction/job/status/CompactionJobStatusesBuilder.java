@@ -73,14 +73,14 @@ public class CompactionJobStatusesBuilder {
                 .build();
     }
 
-    public List<CompactionJobRun> buildJobRunList(List<CompactionJobStatusUpdateRecord> recordList) {
-        Map<String, CompactionJobRun.Builder> taskBuilders = new HashMap<>();
-        List<CompactionJobRun.Builder> orderedBuilders = new ArrayList<>();
+    public List<ProcessRun> buildJobRunList(List<CompactionJobStatusUpdateRecord> recordList) {
+        Map<String, ProcessRun.Builder> taskBuilders = new HashMap<>();
+        List<ProcessRun.Builder> orderedBuilders = new ArrayList<>();
         for (CompactionJobStatusUpdateRecord record : recordList) {
             String taskId = record.getTaskId();
             ProcessStatusUpdate statusUpdate = record.getStatusUpdate();
             if (statusUpdate instanceof ProcessStartedStatus) {
-                CompactionJobRun.Builder builder = CompactionJobRun.builder()
+                ProcessRun.Builder builder = ProcessRun.builder()
                         .startedStatus((ProcessStartedStatus) statusUpdate)
                         .taskId(taskId);
                 taskBuilders.put(taskId, builder);
@@ -91,8 +91,8 @@ public class CompactionJobStatusesBuilder {
                         .taskId(taskId);
             }
         }
-        List<CompactionJobRun> jobRuns = orderedBuilders.stream()
-                .map(CompactionJobRun.Builder::build)
+        List<ProcessRun> jobRuns = orderedBuilders.stream()
+                .map(ProcessRun.Builder::build)
                 .collect(Collectors.toList());
         Collections.reverse(jobRuns);
         return jobRuns;

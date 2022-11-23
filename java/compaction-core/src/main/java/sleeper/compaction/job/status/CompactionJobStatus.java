@@ -26,7 +26,7 @@ public class CompactionJobStatus {
 
     private final String jobId;
     private final CompactionJobCreatedStatus createdStatus;
-    private final List<CompactionJobRun> jobRunList;
+    private final List<ProcessRun> jobRunList;
     private final Instant expiryDate;
 
     private CompactionJobStatus(Builder builder) {
@@ -73,7 +73,7 @@ public class CompactionJobStatus {
     }
 
     public boolean isFinished() {
-        return !jobRunList.isEmpty() && jobRunList.stream().allMatch(CompactionJobRun::isFinished);
+        return !jobRunList.isEmpty() && jobRunList.stream().allMatch(ProcessRun::isFinished);
     }
 
     public Instant getExpiryDate() {
@@ -104,18 +104,18 @@ public class CompactionJobStatus {
         return getLatestJobRun().getLatestUpdateTime();
     }
 
-    private CompactionJobRun getLatestJobRun() {
+    private ProcessRun getLatestJobRun() {
         return jobRunList.get(0);
     }
 
-    public List<CompactionJobRun> getJobRuns() {
+    public List<ProcessRun> getJobRuns() {
         return jobRunList;
     }
 
     public static final class Builder {
         private String jobId;
         private CompactionJobCreatedStatus createdStatus;
-        private List<CompactionJobRun> jobRunList;
+        private List<ProcessRun> jobRunList;
         private Instant expiryDate;
 
         private Builder() {
@@ -131,12 +131,12 @@ public class CompactionJobStatus {
             return this;
         }
 
-        public Builder singleJobRun(CompactionJobRun jobRun) {
+        public Builder singleJobRun(ProcessRun jobRun) {
             this.jobRunList = Collections.singletonList(jobRun);
             return this;
         }
 
-        public Builder jobRunsLatestFirst(List<CompactionJobRun> jobRunList) {
+        public Builder jobRunsLatestFirst(List<ProcessRun> jobRunList) {
             this.jobRunList = jobRunList;
             return this;
         }

@@ -17,8 +17,8 @@ package sleeper.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.status.ProcessRun;
 import sleeper.core.status.ProcessStartedStatus;
 
 import java.time.Instant;
@@ -74,14 +74,14 @@ public class CompactionJobStatusTaskIdAssignedTest {
                         Instant.parse("2022-10-12T11:29:00.000Z")));
     }
 
-    private static List<CompactionJobRun> runsWithTaskIds(String... taskIds) {
+    private static List<ProcessRun> runsWithTaskIds(String... taskIds) {
         return Stream.of(taskIds)
                 .map(CompactionJobStatusTaskIdAssignedTest::runWithTaskId)
                 .collect(Collectors.toList());
     }
 
-    private static CompactionJobRun runWithTaskId(String taskId) {
-        return CompactionJobRun.started(taskId,
+    private static ProcessRun runWithTaskId(String taskId) {
+        return ProcessRun.started(taskId,
                 ProcessStartedStatus.updateAndStartTime(Instant.now(), Instant.now()));
     }
 }

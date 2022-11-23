@@ -18,8 +18,8 @@ package sleeper.compaction.status.job;
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.status.ProcessRun;
 import sleeper.compaction.status.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.status.ProcessFinishedStatus;
@@ -125,9 +125,9 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
                 .containsExactly(CompactionJobStatus.builder().jobId(job.getId())
                         .createdStatus(CompactionJobCreatedStatus.from(job, ignoredUpdateTime()))
                         .jobRunsLatestFirst(Arrays.asList(
-                                CompactionJobRun.started(DEFAULT_TASK_ID,
+                                ProcessRun.started(DEFAULT_TASK_ID,
                                         ProcessStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())),
-                                CompactionJobRun.finished(DEFAULT_TASK_ID,
+                                ProcessRun.finished(DEFAULT_TASK_ID,
                                         ProcessStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime()),
                                         ProcessFinishedStatus.updateTimeAndSummary(ignoredUpdateTime(), defaultSummary()))
                         )).build());

@@ -16,8 +16,8 @@
 package sleeper.compaction.job;
 
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.status.ProcessRun;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
@@ -131,7 +131,7 @@ public class CompactionJobTestDataHelper {
         Instant startUpdateTime = startTime.plus(Duration.ofMillis(123));
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, createTime))
-                .singleJobRun(CompactionJobRun.started(DEFAULT_TASK_ID,
+                .singleJobRun(ProcessRun.started(DEFAULT_TASK_ID,
                         ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime)))
                 .build();
     }
@@ -152,21 +152,21 @@ public class CompactionJobTestDataHelper {
                 .build();
     }
 
-    public static CompactionJobRun finishedJobRun(
+    public static ProcessRun finishedJobRun(
             Instant startTime, Duration runDuration, long linesRead, long linesWritten) {
         Instant startUpdateTime = startTime.plus(Duration.ofMillis(123));
         Instant finishTime = startTime.plus(runDuration);
         Instant finishUpdateTime = finishTime.plus(Duration.ofMillis(123));
         RecordsProcessedSummary summary = new RecordsProcessedSummary(
                 new RecordsProcessed(linesRead, linesWritten), startTime, finishTime);
-        return CompactionJobRun.finished(DEFAULT_TASK_ID,
+        return ProcessRun.finished(DEFAULT_TASK_ID,
                 ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime),
                 ProcessFinishedStatus.updateTimeAndSummary(finishUpdateTime, summary));
     }
 
     public static class CompactionJobRunsBuilder {
 
-        private final List<CompactionJobRun> runs = new ArrayList<>();
+        private final List<ProcessRun> runs = new ArrayList<>();
         private Instant nextStartTime;
 
         private CompactionJobRunsBuilder(Instant jobCreateTime) {
@@ -174,13 +174,13 @@ public class CompactionJobTestDataHelper {
         }
 
         public CompactionJobRunsBuilder finishedRun(Duration runDuration, long linesRead, long linesWritten) {
-            CompactionJobRun run = finishedJobRun(nextStartTime, runDuration, linesRead, linesWritten);
+            ProcessRun run = finishedJobRun(nextStartTime, runDuration, linesRead, linesWritten);
             nextStartTime = run.getFinishTime().plus(Duration.ofSeconds(10));
             runs.add(run);
             return this;
         }
 
-        private List<CompactionJobRun> latestFirst() {
+        private List<ProcessRun> latestFirst() {
             Collections.reverse(runs);
             return runs;
         }

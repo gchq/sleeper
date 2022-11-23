@@ -20,8 +20,8 @@ import sleeper.ToStringPrintStream;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.status.ProcessRun;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.status.ProcessFinishedStatus;
@@ -141,12 +141,12 @@ public abstract class StatusReporterTestBase {
                         Duration.ofMillis(123), 1234, 1234));
     }
 
-    private static CompactionJobRun jobRunStartedInTask(int taskNumber, String startTimeNoMillis) {
-        return CompactionJobRun.started(task(taskNumber), defaultStartedStatus(startTimeNoMillis));
+    private static ProcessRun jobRunStartedInTask(int taskNumber, String startTimeNoMillis) {
+        return ProcessRun.started(task(taskNumber), defaultStartedStatus(startTimeNoMillis));
     }
 
-    private static CompactionJobRun jobRunFinishedInTask(int taskNumber, String startTimeNoMillis, String finishTimeNoMillis) {
-        return CompactionJobRun.finished(task(taskNumber),
+    private static ProcessRun jobRunFinishedInTask(int taskNumber, String startTimeNoMillis, String finishTimeNoMillis) {
+        return ProcessRun.finished(task(taskNumber),
                 defaultStartedStatus(startTimeNoMillis),
                 defaultFinishedStatus(startTimeNoMillis, finishTimeNoMillis));
     }
@@ -190,7 +190,7 @@ public abstract class StatusReporterTestBase {
     protected static CompactionJobStatus jobStarted(CompactionJob job, String taskId, Instant creationTime, Instant startTime, Instant startUpdateTime) {
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
-                .singleJobRun(CompactionJobRun.started(taskId, ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime)))
+                .singleJobRun(ProcessRun.started(taskId, ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime)))
                 .build();
     }
 
@@ -199,7 +199,7 @@ public abstract class StatusReporterTestBase {
                 new RecordsProcessed(600L, 300L), startUpdateTime, finishedTime);
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
-                .singleJobRun(CompactionJobRun.finished(taskId, ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime),
+                .singleJobRun(ProcessRun.finished(taskId, ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime),
                         ProcessFinishedStatus.updateTimeAndSummary(finishedTime, summary)))
                 .build();
     }

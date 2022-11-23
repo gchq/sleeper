@@ -18,8 +18,8 @@ package sleeper.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.status.ProcessRun;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.status.ProcessFinishedStatus;
@@ -30,7 +30,7 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 
-public class CompactionJobRunTest {
+public class ProcessRunTest {
     private static final String DEFAULT_TASK_ID_1 = "task-id-1";
     private static final String DEFAULT_TASK_ID_2 = "task-id-2";
 
@@ -73,7 +73,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getTaskId, CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_1, started, null));
         assertThat(status.isFinished()).isFalse();
@@ -103,7 +103,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getTaskId, CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_1, started, finished));
         assertThat(status.isFinished()).isTrue();
@@ -131,7 +131,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getTaskId, CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_1, started2, null),
                         tuple(DEFAULT_TASK_ID_1, started1, null));
@@ -171,7 +171,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getTaskId, CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_1, started2, finished2),
                         tuple(DEFAULT_TASK_ID_1, started1, finished1));
@@ -208,7 +208,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getTaskId, CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_2, started4, null),
                         tuple(DEFAULT_TASK_ID_1, started3, null),
@@ -251,7 +251,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getTaskId, CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_2, started2, finished2),
                         tuple(DEFAULT_TASK_ID_1, started1, finished1));
@@ -282,7 +282,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(started, finished));
         assertThat(status.isFinished()).isTrue();
@@ -313,7 +313,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(started3, null),
                         tuple(started2, null),
@@ -351,7 +351,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(started3, finished),
                         tuple(started2, null),
@@ -392,7 +392,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getTaskId, CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_2, started2, finished2),
                         tuple(DEFAULT_TASK_ID_1, started1, finished1));
@@ -433,7 +433,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getTaskId, CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_2, started2, finished2),
                         tuple(DEFAULT_TASK_ID_1, started1, finished1));

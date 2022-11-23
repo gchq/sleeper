@@ -16,8 +16,8 @@
 
 package sleeper.status.report.compactionjob;
 
-import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.status.ProcessRun;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.status.report.table.TableField;
 import sleeper.status.report.table.TableRow;
@@ -118,7 +118,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("Creation Time: %s%n", jobStatus.getCreateUpdateTime().toString());
         out.printf("Partition ID: %s%n", jobStatus.getPartitionId());
         out.printf("Child partition IDs: %s%n", jobStatus.getChildPartitionIds().toString());
-        for (CompactionJobRun run : jobStatus.getJobRuns()) {
+        for (ProcessRun run : jobStatus.getJobRuns()) {
             out.println();
             out.printf("Run on task %s%n", run.getTaskId());
             out.printf("Start Time: %s%n", run.getStartTime());
@@ -191,8 +191,8 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private static AverageRecordRate recordRate(List<CompactionJobStatus> jobs) {
         return AverageRecordRate.of(jobs.stream()
                 .flatMap(job -> job.getJobRuns().stream())
-                .filter(CompactionJobRun::isFinished)
-                .map(CompactionJobRun::getFinishedSummary));
+                .filter(ProcessRun::isFinished)
+                .map(ProcessRun::getFinishedSummary));
     }
 
     private void writeJob(CompactionJobStatus job, TableWriter.Builder table) {
@@ -216,7 +216,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
                 .value(TYPE, job.isSplittingCompaction() ? "SPLIT" : "COMPACT");
     }
 
-    private void writeRunFields(CompactionJobRun run, TableRow.Builder builder) {
+    private void writeRunFields(ProcessRun run, TableRow.Builder builder) {
         builder.value(STATE, getState(run))
                 .value(TASK_ID, run.getTaskId())
                 .value(START_TIME, run.getStartTime())
@@ -228,7 +228,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
                 .value(WRITE_RATE, getRecordsWrittenPerSecond(run));
     }
 
-    private static String getState(CompactionJobRun run) {
+    private static String getState(ProcessRun run) {
         if (run.isFinished()) {
             return STATE_FINISHED;
         }
@@ -244,23 +244,23 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         return STATE_PENDING;
     }
 
-    private static String getDurationInSeconds(CompactionJobRun run) {
+    private static String getDurationInSeconds(ProcessRun run) {
         return getOrNull(run.getFinishedSummary(), summary -> formatDecimal(summary.getDurationInSeconds()));
     }
 
-    private static String getLinesRead(CompactionJobRun run) {
+    private static String getLinesRead(ProcessRun run) {
         return getOrNull(run.getFinishedSummary(), summary -> countWithCommas(summary.getLinesRead()));
     }
 
-    private static String getLinesWritten(CompactionJobRun run) {
+    private static String getLinesWritten(ProcessRun run) {
         return getOrNull(run.getFinishedSummary(), summary -> countWithCommas(summary.getLinesWritten()));
     }
 
-    private static String getRecordsReadPerSecond(CompactionJobRun run) {
+    private static String getRecordsReadPerSecond(ProcessRun run) {
         return getOrNull(run.getFinishedSummary(), summary -> formatDecimal(summary.getRecordsReadPerSecond()));
     }
 
-    private static String getRecordsWrittenPerSecond(CompactionJobRun run) {
+    private static String getRecordsWrittenPerSecond(ProcessRun run) {
         return getOrNull(run.getFinishedSummary(), summary -> formatDecimal(summary.getRecordsWrittenPerSecond()));
     }
 

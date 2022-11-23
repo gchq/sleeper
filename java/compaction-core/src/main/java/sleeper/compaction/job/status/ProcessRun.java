@@ -23,12 +23,12 @@ import sleeper.core.status.ProcessStartedStatus;
 import java.time.Instant;
 import java.util.Objects;
 
-public class CompactionJobRun {
+public class ProcessRun {
     private final String taskId;
     private final ProcessStartedStatus startedStatus;
     private final ProcessFinishedStatus finishedStatus;
 
-    private CompactionJobRun(Builder builder) {
+    private ProcessRun(Builder builder) {
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
         startedStatus = Objects.requireNonNull(builder.startedStatus, "startedStatus must not be null");
         finishedStatus = builder.finishedStatus;
@@ -38,13 +38,13 @@ public class CompactionJobRun {
         return new Builder();
     }
 
-    public static CompactionJobRun started(String taskId, ProcessStartedStatus startedStatus) {
+    public static ProcessRun started(String taskId, ProcessStartedStatus startedStatus) {
         return builder().taskId(taskId)
                 .startedStatus(startedStatus)
                 .build();
     }
 
-    public static CompactionJobRun finished(String taskId, ProcessStartedStatus startedStatus, ProcessFinishedStatus finishedStatus) {
+    public static ProcessRun finished(String taskId, ProcessStartedStatus startedStatus, ProcessFinishedStatus finishedStatus) {
         return builder().taskId(taskId)
                 .startedStatus(startedStatus)
                 .finishedStatus(finishedStatus)
@@ -115,7 +115,7 @@ public class CompactionJobRun {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        CompactionJobRun that = (CompactionJobRun) o;
+        ProcessRun that = (ProcessRun) o;
         return taskId.equals(that.taskId)
                 && Objects.equals(startedStatus, that.startedStatus)
                 && Objects.equals(finishedStatus, that.finishedStatus);
@@ -128,7 +128,7 @@ public class CompactionJobRun {
 
     @Override
     public String toString() {
-        return "CompactionJobRun{" +
+        return "ProcessRun{" +
                 "taskId='" + taskId + '\'' +
                 ", startedStatus=" + startedStatus +
                 ", finishedStatus=" + finishedStatus +
@@ -158,8 +158,8 @@ public class CompactionJobRun {
             return this;
         }
 
-        public CompactionJobRun build() {
-            return new CompactionJobRun(this);
+        public ProcessRun build() {
+            return new ProcessRun(this);
         }
     }
 }

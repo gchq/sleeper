@@ -22,8 +22,8 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.status.ProcessRun;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.configuration.properties.InstanceProperties;
@@ -119,7 +119,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(
                         job, ignoredUpdateTime()))
-                .singleJobRun(CompactionJobRun.started(DEFAULT_TASK_ID, ProcessStartedStatus.updateAndStartTime(
+                .singleJobRun(ProcessRun.started(DEFAULT_TASK_ID, ProcessStartedStatus.updateAndStartTime(
                         ignoredUpdateTime(), defaultStartTime())))
                 .build();
     }
@@ -128,7 +128,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(
                         job, ignoredUpdateTime()))
-                .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID, ProcessStartedStatus.updateAndStartTime(
+                .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID, ProcessStartedStatus.updateAndStartTime(
                                 ignoredUpdateTime(), defaultStartTime()),
                         ProcessFinishedStatus.updateTimeAndSummary(
                                 ignoredUpdateTime(), defaultSummary())))

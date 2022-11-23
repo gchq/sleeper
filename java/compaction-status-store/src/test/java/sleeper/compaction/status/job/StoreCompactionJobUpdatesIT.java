@@ -18,8 +18,8 @@ package sleeper.compaction.status.job;
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.status.ProcessRun;
 import sleeper.compaction.status.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.process.RecordsProcessed;
@@ -104,11 +104,11 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
                                 .createdStatus(CompactionJobCreatedStatus.from(
                                         job, ignoredUpdateTime()))
                                 .jobRunsLatestFirst(Arrays.asList(
-                                        CompactionJobRun.finished(DEFAULT_TASK_ID_2, ProcessStartedStatus.updateAndStartTime(
+                                        ProcessRun.finished(DEFAULT_TASK_ID_2, ProcessStartedStatus.updateAndStartTime(
                                                         ignoredUpdateTime(), startTime2),
                                                 ProcessFinishedStatus.updateTimeAndSummary(
                                                         ignoredUpdateTime(), new RecordsProcessedSummary(processed, startTime2, finishTime2))),
-                                        CompactionJobRun.finished(DEFAULT_TASK_ID, ProcessStartedStatus.updateAndStartTime(
+                                        ProcessRun.finished(DEFAULT_TASK_ID, ProcessStartedStatus.updateAndStartTime(
                                                         ignoredUpdateTime(), startTime1),
                                                 ProcessFinishedStatus.updateTimeAndSummary(
                                                         ignoredUpdateTime(), new RecordsProcessedSummary(processed, startTime1, finishTime1)))))

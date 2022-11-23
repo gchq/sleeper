@@ -17,10 +17,10 @@ package sleeper.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobRun;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatusUpdateRecord;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
+import sleeper.compaction.job.status.ProcessRun;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.status.ProcessFinishedStatus;
@@ -76,8 +76,8 @@ public class CompactionJobStatusesBuilderTest {
         // Then
         assertThat(statuses).containsExactly(
                 CompactionJobStatus.builder().jobId("job2").createdStatus(created2)
-                        .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID, started2, finished2)).build(),
+                        .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID, started2, finished2)).build(),
                 CompactionJobStatus.builder().jobId("job1").createdStatus(created1)
-                        .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID, started1, finished1)).build());
+                        .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID, started1, finished1)).build());
     }
 }
