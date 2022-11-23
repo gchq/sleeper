@@ -54,13 +54,18 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+		</dependency>
+        <dependency>
             <groupId>sleeper</groupId>
             <artifactId>compaction-status-store</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
+		<dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>ingest-status-store</artifactId>
+            <version>${project.parent.version}</version>
         </dependency>
         <!-- AWS Cloud Development Kit -->
         <dependency>

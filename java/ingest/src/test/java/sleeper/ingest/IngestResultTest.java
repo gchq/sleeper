@@ -17,47 +17,35 @@
 package sleeper.ingest;
 
 import org.junit.Test;
-import sleeper.core.iterator.IteratorException;
-import sleeper.core.record.Record;
 import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
-
-import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getStateStore;
 
 public class IngestResultTest extends IngestRecordsTestBase {
     @Test
-    public void shouldReturnNumberOfRecordsFromIngestResult() throws StateStoreException, IteratorException, IOException {
+    public void shouldReturnNumberOfRecordsFromIngestResult() throws Exception {
         // Given
         StateStore stateStore = getStateStore(schema);
-        IngestRecords ingestRecords = new IngestRecords(defaultPropertiesBuilder(stateStore, schema).build());
 
         // When
-        for (Record record : getRecords()) {
-            ingestRecords.write(record);
-        }
+        IngestResult result = ingestRecords(schema, stateStore, getRecords());
 
         // Then
-        IngestResult result = ingestRecords.close();
         assertThat(result.getNumberOfRecords())
                 .isEqualTo(2L);
     }
 
     @Test
-    public void shouldReturnFileInfoListFromIngestResult() throws StateStoreException, IteratorException, IOException {
+    public void shouldReturnFileInfoListFromIngestResult() throws Exception {
         // Given
         StateStore stateStore = getStateStore(schema);
-        IngestRecords ingestRecords = new IngestRecords(defaultPropertiesBuilder(stateStore, schema).build());
 
         // When
-        for (Record record : getRecords()) {
-            ingestRecords.write(record);
-        }
+        IngestResult result = ingestRecords(schema, stateStore, getRecords());
 
         // Then
-        IngestResult result = ingestRecords.close();
         assertThat(result.getFileInfoList())
                 .containsExactlyInAnyOrderElementsOf(stateStore.getActiveFiles());
     }

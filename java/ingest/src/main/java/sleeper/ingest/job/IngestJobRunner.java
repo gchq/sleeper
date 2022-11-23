@@ -115,7 +115,7 @@ public class IngestJobRunner {
         CloseableIterator<Record> concatenatingIterator = new ConcatenatingIterator(inputIterators);
 
         // Run the ingest
-        IngestResult result = ingestFactory.ingestFromRecordIterator(tableProperties, concatenatingIterator);
+        IngestResult result = ingestFactory.ingestFromRecordIteratorAndClose(tableProperties, concatenatingIterator);
         LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getNumberOfRecords(), paths);
         return result;
     }
