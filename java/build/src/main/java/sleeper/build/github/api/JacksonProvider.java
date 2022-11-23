@@ -13,11 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.github;
+package sleeper.build.github.api;
 
-public class GitHubException extends RuntimeException {
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-    public GitHubException(Throwable cause) {
-        super("Failed calling GitHub", cause);
+import javax.ws.rs.ext.ContextResolver;
+import javax.ws.rs.ext.Provider;
+
+@Provider
+public class JacksonProvider implements ContextResolver<ObjectMapper> {
+
+    @Override
+    public ObjectMapper getContext(Class<?> type) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        return mapper;
     }
 }

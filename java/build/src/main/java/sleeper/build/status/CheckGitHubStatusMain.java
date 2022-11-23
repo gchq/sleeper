@@ -17,7 +17,7 @@ package sleeper.build.status;
 
 import sleeper.build.chunks.NotAllMavenModulesConfiguredException;
 import sleeper.build.chunks.ProjectConfiguration;
-import sleeper.build.github.GitHubWorkflowRunsImpl;
+import sleeper.build.github.api.GitHubWorkflowRunsImpl;
 import sleeper.build.maven.MavenModuleStructure;
 import sleeper.build.util.PathUtils;
 

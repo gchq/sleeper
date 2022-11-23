@@ -17,7 +17,7 @@ package sleeper.build.chunks;
 
 import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubWorkflowRuns;
-import sleeper.build.github.GitHubWorkflowRunsImpl;
+import sleeper.build.github.api.GitHubWorkflowRunsImpl;
 import sleeper.build.status.CheckGitHubStatus;
 import sleeper.build.status.ChunkStatuses;
 import sleeper.build.status.WorkflowStatus;
