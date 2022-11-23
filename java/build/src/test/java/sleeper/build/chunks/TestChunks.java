@@ -27,7 +27,7 @@ public class TestChunks {
     }
 
     public static ProjectChunks example() {
-        return new ProjectChunks(Arrays.asList(bulkImport(), common(), ingest()));
+        return chunks(bulkImport(), common(), ingest());
     }
 
     public static ProjectChunk bulkImport() {
@@ -51,6 +51,17 @@ public class TestChunks {
         return ProjectChunk.chunk("ingest").name("Ingest")
                 .workflow("chunk-ingest.yaml")
                 .modulesArray("ingest")
+                .build();
+    }
+
+    public static ProjectChunks chunks(ProjectChunk... chunks) {
+        return new ProjectChunks(Arrays.asList(chunks));
+    }
+
+    public static ProjectChunk chunk(String id, String... modules) {
+        return ProjectChunk.chunk(id).name(id)
+                .workflow("chunk-" + id + ".yaml")
+                .modulesArray(modules)
                 .build();
     }
 

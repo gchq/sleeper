@@ -19,24 +19,18 @@ import org.junit.Test;
 import sleeper.build.maven.MavenModuleStructure;
 import sleeper.build.maven.TestMavenModuleStructure;
 
-import java.util.Arrays;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.build.chunks.TestChunks.chunk;
+import static sleeper.build.chunks.TestChunks.chunks;
 
-public class ProjectChunksValidateMavenTest {
+public class ProjectChunksValidateModulesInChunksTest {
 
     @Test
     public void shouldValidateWhenAllCompiledModulesAreInChunks() {
         // Given
-        ProjectChunks chunks = chunks(
-                chunk("common", "core", "configuration"),
-                chunk("ingest", "ingest"),
-                chunk("bulk-import",
-                        "bulk-import/bulk-import-common",
-                        "bulk-import/bulk-import-runner",
-                        "bulk-import/bulk-import-starter"));
+        ProjectChunks chunks = TestChunks.example();
         MavenModuleStructure structure = TestMavenModuleStructure.example();
 
         // When / Then
@@ -79,13 +73,5 @@ public class ProjectChunksValidateMavenTest {
                 .isInstanceOfSatisfying(NotAllMavenModulesConfiguredException.class, e ->
                         assertThat(e.getUnconfiguredModuleRefs())
                                 .containsExactly("configuration", "bulk-import/bulk-import-runner"));
-    }
-
-    private static ProjectChunks chunks(ProjectChunk... chunks) {
-        return new ProjectChunks(Arrays.asList(chunks));
-    }
-
-    private static ProjectChunk chunk(String id, String... modules) {
-        return ProjectChunk.chunk(id).name(id).workflow(id + ".yaml").modulesArray(modules).build();
     }
 }
