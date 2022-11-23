@@ -27,10 +27,10 @@ public class IngestJob {
 
     private IngestJob(Builder builder) {
         tableName = builder.tableName;
-        if (builder.id != null) {
-            id = builder.id;
-        } else {
+        if (builder.id == null || builder.id.isEmpty()) {
             id = UUID.randomUUID().toString();
+        } else {
+            id = builder.id;
         }
         files = builder.files;
     }
