@@ -33,6 +33,7 @@
 #include "s3_writer.hpp"
 
 inline const std::string S3_URI_PREFIX = "s3://";
+inline const std::string S3A_URI_PREFIX = "s3a://";
 inline constexpr ::uintmax_t BATCH_SIZE = 1'048'576 * 100;
 
 inline const std::string ZSTD = "ZSTD";

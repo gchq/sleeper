@@ -49,7 +49,7 @@ double timestamp() {
 }
 
 bool isS3Path(std::string const& path) noexcept {
-    return startsWith(path, S3_URI_PREFIX);
+    return startsWith(path, S3_URI_PREFIX) || startsWith(path, S3A_URI_PREFIX);
 }
 
 ::size_t getFreeMem(rmm::cuda_stream_view const stream,

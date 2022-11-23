@@ -40,6 +40,7 @@
 #include <cudf/utilities/bit.hpp>
 #include <cudf/utilities/error.hpp>
 #include <exception>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -362,7 +363,7 @@ CommandLineOutput doCompactFiles(Edge_vec<T> const& rowGroupParts, CommandLineIn
             if (newOutputNeeded) {
                 writer->close();
                 writer = createWriter(opts, tim, (awsPtr) ? awsPtr.get() : nullptr, currentSink);
-                updateOutputData(returnData, "a", "z", count); //TODO FIX
+                updateOutputData(returnData, "a", "z", count);  // TODO FIX
                 count = 0;
             }
         } catch (std::exception& excpt) {
@@ -381,7 +382,7 @@ CommandLineOutput doCompactFiles(Edge_vec<T> const& rowGroupParts, CommandLineIn
     }
     writer->close();
 
-    if constexpr (std::is_integral_v<T>) {//TODO FIX
+    if constexpr (std::is_integral_v<T>) {  // TODO FIX
         updateOutputData(returnData, std::to_string(1), std::to_string(9), count);
     } else {
         updateOutputData(returnData, "a", "z", count);
@@ -431,6 +432,11 @@ int main(int argc, char* argv[]) {
     if (argv[1] == std::string("-")) {
         // the iterator approach is safe since we are reading chars and writing to a uint8_t data buffer
         // and implicit well defined conversions exist.
+
+        if (!std::filesystem::exists(argv[2])) {
+            std::cerr << "File " << argv[2] << " doesn't exist.\n";
+            return 1;
+        }
         std::ifstream partFile{argv[2]};
         std::vector<std::uint8_t> inputMsg{std::istream_iterator<char>{partFile}, std::istream_iterator<char>{}};
         opts = msgpack::unpack<CommandLineInput>(inputMsg);
@@ -439,9 +445,6 @@ int main(int argc, char* argv[]) {
         // load the output file split points from partition file (if it's valid)
         opts.splitPoints = loadOutputPartsFile(argv[2]);
         opts.inputFiles = {argv + 3, argv + argc};
-    }
-    for (auto const& s : opts.splitPoints) {
-        std::cerr << s << std::endl;
     }
 
     if (opts.outputFiles.size() != opts.splitPoints.size() + 1) {

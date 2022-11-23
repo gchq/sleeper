@@ -182,16 +182,12 @@ public class CompactSortedFiles {
         java.nio.file.Path tempFile = Files.createTempFile(null, null);
         tempFile.toFile().deleteOnExit();
         writeMsgPack(tempFile, compactionJob, compressionCodec, this.rowGroupSize, GPU_MAX_ROW_GROUP_ROWS, this.pageSize);
-
-        byte[] fileBytes = Files.readAllBytes(tempFile);
-        String encoded=Base64.getEncoder().encodeToString(fileBytes);
-        LOGGER.debug(encoded);
-
+        
         // output message pack file
         java.nio.file.Path gpuOutput = Files.createTempFile(null, null);
         gpuOutput.toFile().deleteOnExit();
 
-        ProcessBuilder builder = new ProcessBuilder("/compact/cukeydist", "-", gpuOutput.toAbsolutePath().toString())
+        ProcessBuilder builder = new ProcessBuilder("/compact/cukeydist", "-", tempFile.toAbsolutePath().toString())
                 .inheritIO()
                 .redirectOutput(gpuOutput.toFile());
 
