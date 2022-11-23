@@ -23,44 +23,44 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class ProcessRuns {
-    private final List<ProcessRun> jobRunList;
+    private final List<ProcessRun> latestFirst;
 
-    private ProcessRuns(Builder builder) {
-        jobRunList = builder.jobRunList;
+    private ProcessRuns(List<ProcessRun> latestFirst) {
+        this.latestFirst = Collections.unmodifiableList(Objects.requireNonNull(latestFirst, "latestFirst must not be null"));
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static ProcessRuns latestFirst(List<ProcessRun> latestFirst) {
+        return new ProcessRuns(latestFirst);
     }
 
     public boolean isStarted() {
-        return !jobRunList.isEmpty();
+        return !latestFirst.isEmpty();
     }
 
     public boolean isFinished() {
-        return !jobRunList.isEmpty() && jobRunList.stream().allMatch(ProcessRun::isFinished);
+        return !latestFirst.isEmpty() && latestFirst.stream().allMatch(ProcessRun::isFinished);
     }
 
     public boolean isTaskIdAssigned(String taskId) {
-        return jobRunList.stream().anyMatch(run -> run.getTaskId().equals(taskId));
+        return latestFirst.stream().anyMatch(run -> run.getTaskId().equals(taskId));
     }
 
     public Optional<Instant> lastTime() {
-        if (getLatestJobRun().isPresent()) {
-            return Optional.of(getLatestJobRun().get().getLatestUpdateTime());
+        if (getLatestRun().isPresent()) {
+            return Optional.of(getLatestRun().get().getLatestUpdateTime());
         }
         return Optional.empty();
     }
 
-    private Optional<ProcessRun> getLatestJobRun() {
-        if (!jobRunList.isEmpty()) {
-            return Optional.of(jobRunList.get(0));
+    private Optional<ProcessRun> getLatestRun() {
+        if (!latestFirst.isEmpty()) {
+            return Optional.of(latestFirst.get(0));
         }
         return Optional.empty();
     }
 
-    public List<ProcessRun> getJobRunList() {
-        return jobRunList;
+    public List<ProcessRun> getRunList() {
+        return latestFirst;
     }
 
     @Override
@@ -72,35 +72,12 @@ public class ProcessRuns {
             return false;
         }
         ProcessRuns that = (ProcessRuns) o;
-        return jobRunList.equals(that.jobRunList);
+        return latestFirst.equals(that.latestFirst);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobRunList);
+        return Objects.hash(latestFirst);
     }
 
-    public static final class Builder {
-        private List<ProcessRun> jobRunList;
-
-        private Builder() {
-        }
-
-        public Builder singleJobRun(ProcessRun jobRun) {
-            this.jobRunList = Collections.singletonList(jobRun);
-            return this;
-        }
-
-        public Builder jobRunsLatestFirst(List<ProcessRun> jobRunList) {
-            this.jobRunList = jobRunList;
-            return this;
-        }
-
-        public ProcessRuns build() {
-            if (jobRunList == null) {
-                jobRunList = Collections.emptyList();
-            }
-            return new ProcessRuns(this);
-        }
-    }
 }

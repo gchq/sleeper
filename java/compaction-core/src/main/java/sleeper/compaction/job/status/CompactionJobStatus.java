@@ -104,7 +104,7 @@ public class CompactionJobStatus {
     }
 
     public List<ProcessRun> getJobRunList() {
-        return jobRuns.getJobRunList();
+        return jobRuns.getRunList();
     }
 
     public static final class Builder {
@@ -127,16 +127,11 @@ public class CompactionJobStatus {
         }
 
         public Builder singleJobRun(ProcessRun jobRun) {
-            this.jobRuns = ProcessRuns.builder()
-                    .singleJobRun(jobRun)
-                    .build();
-            return this;
+            return jobRunsLatestFirst(Collections.singletonList(jobRun));
         }
 
         public Builder jobRunsLatestFirst(List<ProcessRun> jobRunList) {
-            this.jobRuns = ProcessRuns.builder()
-                    .jobRunsLatestFirst(jobRunList)
-                    .build();
+            this.jobRuns = ProcessRuns.latestFirst(jobRunList);
             return this;
         }
 
