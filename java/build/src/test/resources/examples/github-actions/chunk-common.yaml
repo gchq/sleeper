@@ -1,0 +1,16 @@
+name: Build Common Modules
+on:
+  push:
+    paths:
+      - 'github-actions/chunk-common.yaml'
+      - 'github-actions/chunk.yaml'
+      - 'config/chunks.yaml'
+      - 'maven/pom.xml'
+      - 'maven/configuration/**'
+      - 'maven/core/**'
+
+jobs:
+  module-workflow:
+    uses: ./.github/workflows/chunk.yaml
+    with:
+      chunkId: common
