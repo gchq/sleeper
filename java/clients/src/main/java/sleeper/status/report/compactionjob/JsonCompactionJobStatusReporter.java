@@ -65,7 +65,7 @@ public class JsonCompactionJobStatusReporter implements CompactionJobStatusRepor
         createdStatus.addProperty("updateTime", jobStatus.getCreateUpdateTime().toString());
         createdStatus.addProperty("partitionId", jobStatus.getPartitionId());
         createdStatus.add("childPartitionIds", gson.toJsonTree(jobStatus.getChildPartitionIds()));
-        createdStatus.add("inputFilesCount", gson.toJsonTree(jobStatus.getInputFilesCount()));
+        createdStatus.addProperty("inputFilesCount", jobStatus.getInputFilesCount());
         jsonObject.add("createdStatus", createdStatus);
         return jsonObject;
     }
