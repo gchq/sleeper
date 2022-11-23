@@ -43,7 +43,7 @@ public class GitHubRateLimitsTest {
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/vnd.github+json")
-                        .withBody(exampleString("github-examples/rate-limit.json"))));
+                        .withBody(exampleString("examples/github-api/rate-limit.json"))));
 
         JsonNode response = GitHubRateLimits.get("http://localhost:" + wireMockRule.port(), "test-bearer-token");
         assertThat(GitHubRateLimits.remainingLimit(response)).isEqualTo(4999);

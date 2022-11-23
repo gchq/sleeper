@@ -26,7 +26,7 @@ public class MavenPomTest {
 
     @Test
     public void canReadDependencies() throws Exception {
-        try (Reader reader = TestResources.exampleReader("maven-example/configuration/pom.xml")) {
+        try (Reader reader = TestResources.exampleReader("examples/maven/configuration/pom.xml")) {
             MavenPom pom = MavenPom.from(reader);
             assertThat(pom.getDependencies()).containsExactly(
                     DependencyReference.groupAndArtifact("org.apache.datasketches", "datasketches-java"),

@@ -27,8 +27,8 @@ public class ProjectConfigurationTest {
     @Test
     public void shouldLoadFromYamlAndGitHubProperties() {
         ProjectConfiguration configuration = ProjectConfiguration.fromGitHubAndChunks(
-                TestProperties.example("example-github.properties"),
-                TestChunks.example("example-chunks.yaml"));
+                TestProperties.example("examples/github.properties"),
+                TestChunks.example("examples/chunks.yaml"));
 
         assertThat(configuration).isEqualTo(
                 ProjectConfiguration.builder()

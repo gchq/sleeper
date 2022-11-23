@@ -27,7 +27,7 @@ public class MavenModuleStructureTest {
     public void shouldLoadExampleStructureFromPomFiles() throws Exception {
         // When / Then
         assertThat(MavenModuleStructure.fromProjectBase(
-                Paths.get("src/test/resources/maven-example")))
+                Paths.get("src/test/resources/examples/maven")))
                 .isEqualTo(TestMavenModuleStructure.example());
     }
 

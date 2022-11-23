@@ -50,7 +50,7 @@ public class GitHubWorkflowRunsImplTest {
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/vnd.github+json")
-                        .withBody(exampleString("github-examples/workflow-runs-single.json"))));
+                        .withBody(exampleString("examples/github-api/workflow-runs-single.json"))));
 
         assertThat(workflowRuns().getLatestRun(GITHUB_EXAMPLE_HEAD, "test-workflow.yaml"))
                 .contains(GitHubWorkflowRun.builder()
@@ -70,7 +70,7 @@ public class GitHubWorkflowRunsImplTest {
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/vnd.github+json")
-                        .withBody(exampleString("github-examples/workflow-runs-single.json"))));
+                        .withBody(exampleString("examples/github-api/workflow-runs-single.json"))));
 
         stubFor(get("/repos/test-owner/test-repo/compare/" + GITHUB_EXAMPLE_HEAD.getSha() + "...test-sha")
                 .withHeader("Accept", equalTo("application/vnd.github+json"))
@@ -78,7 +78,7 @@ public class GitHubWorkflowRunsImplTest {
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/vnd.github+json")
-                        .withBody(exampleString("github-examples/compare.json"))));
+                        .withBody(exampleString("examples/github-api/compare.json"))));
 
         assertThat(workflowRuns().getLatestRun(TestGitHubHead.example(), "test-workflow.yaml"))
                 .contains(GitHubWorkflowRun.builder()
