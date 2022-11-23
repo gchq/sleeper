@@ -53,7 +53,10 @@ public class ProcessRuns {
     }
 
     private Optional<ProcessRun> getLatestJobRun() {
-        return Optional.ofNullable(jobRunList.get(0));
+        if (!jobRunList.isEmpty()) {
+            return Optional.of(jobRunList.get(0));
+        }
+        return Optional.empty();
     }
 
     public List<ProcessRun> getJobRunList() {
@@ -83,11 +86,6 @@ public class ProcessRuns {
         private Builder() {
         }
 
-        public Builder jobRunList(List<ProcessRun> jobRunList) {
-            this.jobRunList = jobRunList;
-            return this;
-        }
-
         public Builder singleJobRun(ProcessRun jobRun) {
             this.jobRunList = Collections.singletonList(jobRun);
             return this;
@@ -99,6 +97,9 @@ public class ProcessRuns {
         }
 
         public ProcessRuns build() {
+            if (jobRunList == null) {
+                jobRunList = Collections.emptyList();
+            }
             return new ProcessRuns(this);
         }
     }
