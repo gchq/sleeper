@@ -18,16 +18,11 @@ package sleeper.build.status;
 import org.junit.Test;
 import sleeper.build.chunks.ProjectChunks;
 import sleeper.build.chunks.ProjectConfiguration;
-import sleeper.build.chunks.ProjectStructure;
 import sleeper.build.chunks.TestChunks;
 import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubWorkflowRun;
 import sleeper.build.github.InMemoryGitHubWorkflowRuns;
 import sleeper.build.github.TestGitHubHead;
-import sleeper.build.maven.MavenModuleStructure;
-import sleeper.build.maven.TestMavenModuleStructure;
-
-import java.nio.file.Paths;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,16 +31,12 @@ public class CheckGitHubStatusSingleWorkflowTest {
     private static final ProjectChunks CHUNKS = TestChunks.example();
     private static final GitHubHead BRANCH = TestGitHubHead.example();
     private static final String WORKFLOW = "test-workflow.yaml";
-    private static final MavenModuleStructure MAVEN_PROJECT = TestMavenModuleStructure.example();
     private final InMemoryGitHubWorkflowRuns workflowRuns = new InMemoryGitHubWorkflowRuns(BRANCH, WORKFLOW);
 
     private ProjectConfiguration.Builder configurationBuilder() {
         return ProjectConfiguration.builder()
                 .token("test-token").head(BRANCH)
-                .chunks(CHUNKS).structure(ProjectStructure.builder()
-                        .mavenPathInRepository(Paths.get("java"))
-                        .mavenProject(MAVEN_PROJECT)
-                        .build());
+                .chunks(CHUNKS);
     }
 
     @Test

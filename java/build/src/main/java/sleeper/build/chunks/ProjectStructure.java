@@ -16,59 +16,71 @@
 package sleeper.build.chunks;
 
 import sleeper.build.maven.MavenModuleStructure;
+import sleeper.build.util.PathUtils;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Objects;
 
 public class ProjectStructure {
 
-    private final Path mavenPathInRepository;
-    private final MavenModuleStructure mavenProject;
+    private final Path gitHubPropertiesAbsolute;
+    private final Path chunksYamlAbsolute;
+    private final Path mavenProjectAbsolute;
+    private final Path repositoryPath;
 
     private ProjectStructure(Builder builder) {
-        mavenPathInRepository = Objects.requireNonNull(builder.mavenPathInRepository, "mavenPathInRepository must not be null");
-        mavenProject = Objects.requireNonNull(builder.mavenProject, "mavenProject must not be null");
+        gitHubPropertiesAbsolute = nonNullAbsolute(builder.gitHubPropertiesPath, "gitHubPropertiesPath");
+        chunksYamlAbsolute = nonNullAbsolute(builder.chunksYamlPath, "chunksYamlPath");
+        mavenProjectAbsolute = nonNullAbsolute(builder.mavenProjectPath, "mavenProjectPath");
+        repositoryPath = PathUtils.commonPath(chunksYamlAbsolute, mavenProjectAbsolute);
+    }
+
+    private static Path nonNullAbsolute(Path path, String name) {
+        return Objects.requireNonNull(path, name + " must not be null")
+                .toAbsolutePath();
+    }
+
+    public Path getChunksYamlRelative() {
+        return repositoryPath.relativize(chunksYamlAbsolute);
+    }
+
+    public Path relativizeMavenProjectListPathInRepository(String projectListPath) {
+        return repositoryPath.relativize(mavenProjectAbsolute).resolve(projectListPath);
+    }
+
+    public ProjectConfiguration loadProjectConfiguration() throws IOException {
+        return ProjectConfiguration.fromGitHubAndChunks(gitHubPropertiesAbsolute, chunksYamlAbsolute);
+    }
+
+    public MavenModuleStructure loadMavenStructure() throws IOException {
+        return MavenModuleStructure.fromProjectBase(mavenProjectAbsolute);
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        ProjectStructure that = (ProjectStructure) o;
-        return mavenPathInRepository.equals(that.mavenPathInRepository) && mavenProject.equals(that.mavenProject);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(mavenPathInRepository, mavenProject);
-    }
-
     public static final class Builder {
-        private Path mavenPathInRepository;
-        private MavenModuleStructure mavenProject;
+        private Path gitHubPropertiesPath;
+        private Path chunksYamlPath;
+        private Path mavenProjectPath;
 
         private Builder() {
         }
 
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public Builder mavenProject(MavenModuleStructure mavenProject) {
-            this.mavenProject = mavenProject;
+        public Builder gitHubPropertiesPath(Path gitHubPropertiesPath) {
+            this.gitHubPropertiesPath = gitHubPropertiesPath;
             return this;
         }
 
-        public Builder mavenPathInRepository(Path mavenPathInRepository) {
-            this.mavenPathInRepository = mavenPathInRepository;
+        public Builder chunksYamlPath(Path chunksYamlPath) {
+            this.chunksYamlPath = chunksYamlPath;
+            return this;
+        }
+
+        public Builder mavenProjectPath(Path mavenProjectPath) {
+            this.mavenProjectPath = mavenProjectPath;
             return this;
         }
 

@@ -16,8 +16,7 @@
 package sleeper.build.maven;
 
 import org.junit.Test;
-
-import java.nio.file.Paths;
+import sleeper.build.chunks.TestProjectStructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,8 +25,7 @@ public class MavenModuleStructureTest {
     @Test
     public void shouldLoadExampleStructureFromPomFiles() throws Exception {
         // When / Then
-        assertThat(MavenModuleStructure.fromProjectBase(
-                Paths.get("src/test/resources/examples/maven")))
+        assertThat(TestProjectStructure.example().loadMavenStructure())
                 .isEqualTo(TestMavenModuleStructure.example());
     }
 

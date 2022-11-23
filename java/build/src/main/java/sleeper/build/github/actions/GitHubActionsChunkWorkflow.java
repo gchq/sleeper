@@ -15,7 +15,14 @@
  */
 package sleeper.build.github.actions;
 
+import sleeper.build.chunks.ProjectChunk;
+import sleeper.build.chunks.ProjectStructure;
+import sleeper.build.maven.InternalDependencyIndex;
+import sleeper.build.maven.MavenModuleStructure;
+
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -33,6 +40,24 @@ public class GitHubActionsChunkWorkflow {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public void validate(ProjectStructure project, ProjectChunk chunk, MavenModuleStructure maven) {
+        validate(project, chunk, maven.internalDependencies());
+    }
+
+    public void validate(ProjectStructure project, ProjectChunk chunk, InternalDependencyIndex index) {
+        chunk.dependencies(index).forEach(module -> {
+            Path pathInRepo = module.pathInRepository(project);
+            if (!isOnPushPathDeclared(pathInRepo)) {
+                throw new NotAllDependenciesDeclaredException(chunk.getId(),
+                        Collections.singletonList(module.getModuleRef()));
+            }
+        });
+    }
+
+    private boolean isOnPushPathDeclared(Path pathInRepo) {
+        return onPushPaths.contains(pathInRepo.toString() + "/**");
     }
 
     @Override

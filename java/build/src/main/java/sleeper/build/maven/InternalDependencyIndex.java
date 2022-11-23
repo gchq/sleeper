@@ -15,6 +15,7 @@
  */
 package sleeper.build.maven;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,21 +34,21 @@ public class InternalDependencyIndex {
                 .collect(Collectors.toMap(MavenModuleAndPath::getPath, path -> path));
     }
 
-    public Stream<String> dependenciesForModules(String... paths) {
-        return Stream.of(paths)
-                .flatMap(this::dependenciesOfPath)
-                .distinct();
-    }
-
-    private Stream<String> dependenciesOfPath(String path) {
-        MavenModuleAndPath module = moduleByPath(path)
-                .orElseThrow(() -> new IllegalArgumentException("Module not found: " + path));
-        return moduleAndDependencies(module)
+    public Stream<String> dependencyPathsForModules(String... paths) {
+        return dependenciesForModules(Arrays.asList(paths))
                 .map(MavenModuleAndPath::getPath);
     }
 
-    private Optional<MavenModuleAndPath> moduleByPath(String path) {
-        return Optional.ofNullable(modulesByPath.get(path));
+    public Stream<MavenModuleAndPath> dependenciesForModules(List<String> paths) {
+        return paths.stream()
+                .map(this::moduleByPathOrThrow)
+                .flatMap(this::moduleAndDependencies)
+                .distinct();
+    }
+
+    private MavenModuleAndPath moduleByPathOrThrow(String path) {
+        return Optional.ofNullable(modulesByPath.get(path))
+                .orElseThrow(() -> new IllegalArgumentException("Module not found: " + path));
     }
 
     private Stream<MavenModuleAndPath> moduleAndDependencies(MavenModuleAndPath path) {

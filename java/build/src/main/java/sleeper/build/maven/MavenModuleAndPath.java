@@ -15,6 +15,9 @@
  */
 package sleeper.build.maven;
 
+import sleeper.build.chunks.ProjectStructure;
+
+import java.nio.file.Path;
 import java.util.stream.Stream;
 
 public class MavenModuleAndPath {
@@ -48,6 +51,14 @@ public class MavenModuleAndPath {
 
     public String getPath() {
         return path;
+    }
+
+    public Path pathInRepository(ProjectStructure project) {
+        return project.relativizeMavenProjectListPathInRepository(path);
+    }
+
+    public String getModuleRef() {
+        return structure.getModuleRef();
     }
 
     public MavenModuleStructure getStructure() {

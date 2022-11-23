@@ -50,4 +50,11 @@ public class TestGitHubActionsChunkWorkflows {
                 .build();
     }
 
+    public static GitHubActionsChunkWorkflow workflow(String chunkId, String... paths) {
+        return GitHubActionsChunkWorkflow.builder()
+                .chunkId(chunkId).name(chunkId)
+                .onPushPathsArray(paths)
+                .build();
+    }
+
 }

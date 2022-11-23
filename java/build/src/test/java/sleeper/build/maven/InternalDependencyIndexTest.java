@@ -29,7 +29,7 @@ public class InternalDependencyIndexTest {
         InternalDependencyIndex index = TestMavenModuleStructure.example().internalDependencies();
 
         // When / Then
-        assertThat(index.dependenciesForModules("core"))
+        assertThat(index.dependencyPathsForModules("core"))
                 .containsExactly("core");
     }
 
@@ -39,7 +39,7 @@ public class InternalDependencyIndexTest {
         InternalDependencyIndex index = TestMavenModuleStructure.example().internalDependencies();
 
         // When / Then
-        assertThat(index.dependenciesForModules("core", "configuration"))
+        assertThat(index.dependencyPathsForModules("core", "configuration"))
                 .containsExactly("core", "configuration");
     }
 
@@ -49,7 +49,7 @@ public class InternalDependencyIndexTest {
         InternalDependencyIndex index = TestMavenModuleStructure.example().internalDependencies();
 
         // When / Then
-        assertThat(index.dependenciesForModules("ingest"))
+        assertThat(index.dependencyPathsForModules("ingest"))
                 .containsExactly("ingest", "configuration", "core");
     }
 
@@ -59,7 +59,7 @@ public class InternalDependencyIndexTest {
         InternalDependencyIndex index = TestMavenModuleStructure.example().internalDependencies();
 
         // When / Then
-        assertThat(index.dependenciesForModules(
+        assertThat(index.dependencyPathsForModules(
                 "bulk-import/bulk-import-common",
                 "bulk-import/bulk-import-runner",
                 "bulk-import/bulk-import-starter"))
@@ -79,7 +79,7 @@ public class InternalDependencyIndexTest {
         ).build().internalDependencies();
 
         // When / Then
-        assertThat(index.dependenciesForModules("c"))
+        assertThat(index.dependencyPathsForModules("c"))
                 .containsExactly("c", "b", "a");
     }
 }
