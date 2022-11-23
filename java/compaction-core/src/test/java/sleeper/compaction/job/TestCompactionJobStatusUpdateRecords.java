@@ -17,8 +17,8 @@ package sleeper.compaction.job;
 
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.job.status.CompactionJobStatusUpdateRecord;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
+import sleeper.compaction.job.status.ProcessStatusUpdateRecord;
 import sleeper.core.status.ProcessStatusUpdate;
 
 import java.time.Instant;
@@ -29,7 +29,7 @@ import java.util.function.Consumer;
 
 public class TestCompactionJobStatusUpdateRecords {
 
-    private final List<CompactionJobStatusUpdateRecord> updates = new ArrayList<>();
+    private final List<ProcessStatusUpdateRecord> updates = new ArrayList<>();
 
     public TestCompactionJobStatusUpdateRecords updatesForJobWithTask(
             String jobId, String taskId, ProcessStatusUpdate... statusUpdates) {
@@ -46,7 +46,7 @@ public class TestCompactionJobStatusUpdateRecords {
         return this;
     }
 
-    public List<CompactionJobStatusUpdateRecord> list() {
+    public List<ProcessStatusUpdateRecord> list() {
         return updates;
     }
 
@@ -68,7 +68,7 @@ public class TestCompactionJobStatusUpdateRecords {
 
         public WithJob updatesWithTask(String taskId, ProcessStatusUpdate... statusUpdates) {
             Arrays.stream(statusUpdates)
-                    .map(update -> new CompactionJobStatusUpdateRecord(jobId, expiryDate, update, taskId))
+                    .map(update -> new ProcessStatusUpdateRecord(jobId, expiryDate, update, taskId))
                     .forEach(updates::add);
             return this;
         }

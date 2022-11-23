@@ -20,14 +20,14 @@ import sleeper.core.status.ProcessStatusUpdate;
 import java.time.Instant;
 import java.util.Objects;
 
-public class CompactionJobStatusUpdateRecord {
+public class ProcessStatusUpdateRecord {
 
     private final String jobId;
     private final Instant expiryDate;
     private final ProcessStatusUpdate statusUpdate;
     private final String taskId;
 
-    public CompactionJobStatusUpdateRecord(String jobId, Instant expiryDate, ProcessStatusUpdate statusUpdate, String taskId) {
+    public ProcessStatusUpdateRecord(String jobId, Instant expiryDate, ProcessStatusUpdate statusUpdate, String taskId) {
         this.jobId = Objects.requireNonNull(jobId, "jobId must not be null");
         this.expiryDate = Objects.requireNonNull(expiryDate, "expiryDate must not be null");
         this.statusUpdate = Objects.requireNonNull(statusUpdate, "statusUpdate must not be null");

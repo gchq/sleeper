@@ -21,8 +21,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.job.status.CompactionJobStatusUpdateRecord;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
+import sleeper.compaction.job.status.ProcessStatusUpdateRecord;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.status.ProcessFinishedStatus;
@@ -112,8 +112,8 @@ public class DynamoDBCompactionJobStatusFormat {
         return builder.stream();
     }
 
-    private static CompactionJobStatusUpdateRecord getStatusUpdateRecord(Map<String, AttributeValue> item) {
-        return new CompactionJobStatusUpdateRecord(
+    private static ProcessStatusUpdateRecord getStatusUpdateRecord(Map<String, AttributeValue> item) {
+        return new ProcessStatusUpdateRecord(
                 getStringAttribute(item, JOB_ID),
                 getInstantAttribute(item, EXPIRY_DATE),
                 getStatusUpdate(item),

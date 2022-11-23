@@ -18,8 +18,8 @@ package sleeper.compaction.job;
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.job.status.CompactionJobStatusUpdateRecord;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
+import sleeper.compaction.job.status.ProcessStatusUpdateRecord;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.status.ProcessFinishedStatus;
@@ -65,7 +65,7 @@ public class CompactionJobStatusesBuilderTest {
                         Instant.parse("2022-09-24T09:23:30.001Z"),
                         Instant.parse("2022-09-24T09:24:00.001Z")));
 
-        List<CompactionJobStatusUpdateRecord> updates = new TestCompactionJobStatusUpdateRecords()
+        List<ProcessStatusUpdateRecord> updates = new TestCompactionJobStatusUpdateRecords()
                 .updatesForJobWithTask("job1", DEFAULT_TASK_ID, created1, started1, finished1)
                 .updatesForJobWithTask("job2", DEFAULT_TASK_ID, created2, started2, finished2)
                 .list();

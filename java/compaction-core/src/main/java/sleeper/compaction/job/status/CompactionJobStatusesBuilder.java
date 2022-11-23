@@ -31,15 +31,15 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class CompactionJobStatusesBuilder {
-    private final Map<String, CompactionJobStatusUpdateRecord> createdUpdateByJobId = new HashMap<>();
-    private final Map<String, List<CompactionJobStatusUpdateRecord>> runUpdatesByJobId = new HashMap<>();
+    private final Map<String, ProcessStatusUpdateRecord> createdUpdateByJobId = new HashMap<>();
+    private final Map<String, List<ProcessStatusUpdateRecord>> runUpdatesByJobId = new HashMap<>();
 
-    public CompactionJobStatusesBuilder jobUpdates(List<CompactionJobStatusUpdateRecord> jobUpdates) {
+    public CompactionJobStatusesBuilder jobUpdates(List<ProcessStatusUpdateRecord> jobUpdates) {
         jobUpdates.forEach(this::jobUpdate);
         return this;
     }
 
-    public CompactionJobStatusesBuilder jobUpdate(CompactionJobStatusUpdateRecord jobUpdate) {
+    public CompactionJobStatusesBuilder jobUpdate(ProcessStatusUpdateRecord jobUpdate) {
         if (jobUpdate.getStatusUpdate() instanceof CompactionJobCreatedStatus) {
             createdUpdateByJobId.put(jobUpdate.getJobId(), jobUpdate);
         } else {
@@ -52,7 +52,7 @@ public class CompactionJobStatusesBuilder {
     public Stream<CompactionJobStatus> stream() {
         return createdUpdateByJobId.entrySet().stream()
                 .sorted(Comparator.comparing(
-                        (Map.Entry<String, CompactionJobStatusUpdateRecord> update) ->
+                        (Map.Entry<String, ProcessStatusUpdateRecord> update) ->
                                 update.getValue().getStatusUpdate().getUpdateTime()).reversed())
                 .map(entry -> fullStatus(entry.getKey(), entry.getValue()));
     }
@@ -61,23 +61,23 @@ public class CompactionJobStatusesBuilder {
         return stream().collect(Collectors.toList());
     }
 
-    private CompactionJobStatus fullStatus(String jobId, CompactionJobStatusUpdateRecord createdUpdate) {
+    private CompactionJobStatus fullStatus(String jobId, ProcessStatusUpdateRecord createdUpdate) {
         CompactionJobCreatedStatus createdStatus = (CompactionJobCreatedStatus) createdUpdate.getStatusUpdate();
-        List<CompactionJobStatusUpdateRecord> runUpdates = runUpdatesOrderedByUpdateTime(jobId);
+        List<ProcessStatusUpdateRecord> runUpdates = runUpdatesOrderedByUpdateTime(jobId);
 
         return CompactionJobStatus.builder().jobId(jobId)
                 .createdStatus(createdStatus)
                 .jobRunsLatestFirst(buildJobRunList(runUpdates))
                 .expiryDate(last(runUpdates)
-                        .map(CompactionJobStatusUpdateRecord::getExpiryDate)
+                        .map(ProcessStatusUpdateRecord::getExpiryDate)
                         .orElseGet(createdUpdate::getExpiryDate))
                 .build();
     }
 
-    public List<ProcessRun> buildJobRunList(List<CompactionJobStatusUpdateRecord> recordList) {
+    public List<ProcessRun> buildJobRunList(List<ProcessStatusUpdateRecord> recordList) {
         Map<String, ProcessRun.Builder> taskBuilders = new HashMap<>();
         List<ProcessRun.Builder> orderedBuilders = new ArrayList<>();
-        for (CompactionJobStatusUpdateRecord record : recordList) {
+        for (ProcessStatusUpdateRecord record : recordList) {
             String taskId = record.getTaskId();
             ProcessStatusUpdate statusUpdate = record.getStatusUpdate();
             if (statusUpdate instanceof ProcessStartedStatus) {
@@ -99,7 +99,7 @@ public class CompactionJobStatusesBuilder {
         return jobRuns;
     }
 
-    private List<CompactionJobStatusUpdateRecord> runUpdatesOrderedByUpdateTime(String jobId) {
+    private List<ProcessStatusUpdateRecord> runUpdatesOrderedByUpdateTime(String jobId) {
         return runUpdatesByJobId.getOrDefault(jobId, Collections.emptyList())
                 .stream().sorted(Comparator.comparing(update -> update.getStatusUpdate().getUpdateTime()))
                 .collect(Collectors.toList());
