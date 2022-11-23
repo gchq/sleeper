@@ -81,6 +81,10 @@ public class ProjectConfiguration {
         return chunks;
     }
 
+    public void validate(ProjectStructure structure) throws IOException {
+        chunks.validateAllConfigured(structure.loadMavenStructure());
+    }
+
     public long getRetrySeconds() {
         return retrySeconds;
     }

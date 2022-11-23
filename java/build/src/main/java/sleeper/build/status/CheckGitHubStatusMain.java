@@ -15,11 +15,10 @@
  */
 package sleeper.build.status;
 
-import sleeper.build.chunks.NotAllMavenModulesConfiguredException;
 import sleeper.build.chunks.ProjectConfiguration;
 import sleeper.build.chunks.ProjectStructure;
 import sleeper.build.github.api.GitHubWorkflowRunsImpl;
-import sleeper.build.maven.MavenModuleStructure;
+import sleeper.build.util.ReportableException;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -41,12 +40,10 @@ public class CheckGitHubStatusMain {
                 .mavenProjectPath(Paths.get(args[2]))
                 .build();
         ProjectConfiguration configuration = structure.loadProjectConfiguration();
-        MavenModuleStructure mavenProject = structure.loadMavenStructure();
         try {
-            configuration.getChunks().validateAllConfigured(mavenProject);
-        } catch (NotAllMavenModulesConfiguredException e) {
-            System.out.println(e.getMessage());
-            System.out.println("Please ensure chunks are configured correctly at " + structure.getChunksYamlRelative());
+            configuration.validate(structure);
+        } catch (ReportableException e) {
+            e.report(System.out, structure);
             System.exit(1);
             return;
         }

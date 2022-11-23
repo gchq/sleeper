@@ -15,9 +15,12 @@
  */
 package sleeper.build.chunks;
 
+import sleeper.build.util.ReportableException;
+
+import java.io.PrintStream;
 import java.util.List;
 
-public class NotAllMavenModulesConfiguredException extends RuntimeException {
+public class NotAllMavenModulesConfiguredException extends ReportableException {
 
     private final List<String> unconfiguredModuleRefs;
 
@@ -28,5 +31,11 @@ public class NotAllMavenModulesConfiguredException extends RuntimeException {
 
     public List<String> getUnconfiguredModuleRefs() {
         return unconfiguredModuleRefs;
+    }
+
+    @Override
+    public void report(PrintStream out, ProjectStructure project) {
+        out.println(getMessage());
+        out.println("Please ensure chunks are configured correctly at " + project.getChunksYamlRelative());
     }
 }
