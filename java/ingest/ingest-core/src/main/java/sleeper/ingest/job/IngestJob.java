@@ -15,22 +15,27 @@
  */
 package sleeper.ingest.job;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
 public class IngestJob {
+    private static final Logger LOGGER = LoggerFactory.getLogger(IngestJob.class);
     private final String tableName;
     private final String id;
     private final List<String> files;
 
     private IngestJob(Builder builder) {
         tableName = builder.tableName;
-        if (builder.id != null) {
-            id = builder.id;
-        } else {
+        if (builder.id == null || builder.id.isEmpty()) {
             id = UUID.randomUUID().toString();
+            LOGGER.info("Null or empty id provided. Generated new id: {}", id);
+        } else {
+            id = builder.id;
         }
         files = builder.files;
     }
