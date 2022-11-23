@@ -20,6 +20,9 @@ import java.nio.file.Paths;
 
 public class TestProjectStructure {
 
+    private TestProjectStructure() {
+    }
+
     public static ProjectStructure example() {
         Path basePath = Paths.get("src/test/resources/examples");
         return ProjectStructure.builder()

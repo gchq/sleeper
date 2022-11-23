@@ -17,6 +17,9 @@ package sleeper.build.github.actions;
 
 public class TestGitHubActionsChunkWorkflows {
 
+    private TestGitHubActionsChunkWorkflows() {
+    }
+
     public static GitHubActionsChunkWorkflow bulkImport() {
         return GitHubActionsChunkWorkflow.builder()
                 .chunkId("bulk-import")
