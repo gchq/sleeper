@@ -62,4 +62,24 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
                     assertThat(e.getUnconfiguredModuleRefs()).containsExactly("configuration");
                 });
     }
+
+    @Test
+    public void shouldFailWhenMultipleDependenciesMissingFromOnPushPaths() {
+        // Given
+        GitHubActionsChunkWorkflow workflow = TestGitHubActionsChunkWorkflows.workflow("common",
+                "github-actions/chunk-common.yaml",
+                "github-actions/chunk.yaml",
+                "config/chunks.yaml",
+                "maven/pom.xml");
+        ProjectChunk chunk = TestChunks.common();
+        ProjectStructure project = TestProjectStructure.example();
+        MavenModuleStructure maven = TestMavenModuleStructure.example();
+
+        // When / Then
+        assertThatThrownBy(() -> workflow.validate(project, chunk, maven))
+                .isInstanceOfSatisfying(NotAllDependenciesDeclaredException.class, e -> {
+                    assertThat(e.getChunkId()).isEqualTo("common");
+                    assertThat(e.getUnconfiguredModuleRefs()).containsExactly("core", "configuration");
+                });
+    }
 }

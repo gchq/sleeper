@@ -21,8 +21,8 @@ import sleeper.build.maven.InternalDependencyIndex;
 import sleeper.build.maven.MavenModuleStructure;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -47,13 +47,15 @@ public class GitHubActionsChunkWorkflow {
     }
 
     public void validate(ProjectStructure project, ProjectChunk chunk, InternalDependencyIndex index) {
+        List<String> undeclaredModuleRefs = new ArrayList<>();
         chunk.dependencies(index).forEach(module -> {
-            Path pathInRepo = module.pathInRepository(project);
-            if (!isOnPushPathDeclared(pathInRepo)) {
-                throw new NotAllDependenciesDeclaredException(chunk.getId(),
-                        Collections.singletonList(module.getModuleRef()));
+            if (!isOnPushPathDeclared(module.pathInRepository(project))) {
+                undeclaredModuleRefs.add(module.getModuleRef());
             }
         });
+        if (!undeclaredModuleRefs.isEmpty()) {
+            throw new NotAllDependenciesDeclaredException(chunk.getId(), undeclaredModuleRefs);
+        }
     }
 
     private boolean isOnPushPathDeclared(Path pathInRepo) {
