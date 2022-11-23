@@ -17,6 +17,7 @@ package sleeper.compaction.job.status;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.core.status.ProcessRun;
+import sleeper.core.status.ProcessRuns;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -27,13 +28,15 @@ public class CompactionJobStatus {
 
     private final String jobId;
     private final CompactionJobCreatedStatus createdStatus;
-    private final List<ProcessRun> jobRunList;
+    private final ProcessRuns jobRuns;
     private final Instant expiryDate;
 
     private CompactionJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         createdStatus = Objects.requireNonNull(builder.createdStatus, "createdStatus must not be null");
-        jobRunList = Collections.unmodifiableList(Objects.requireNonNull(builder.jobRunList, "jobRunList must not be null"));
+        jobRuns = ProcessRuns.builder()
+                .jobRunList(Collections.unmodifiableList(Objects.requireNonNull(builder.jobRunList, "jobRunList must not be null")))
+                .build();
         expiryDate = builder.expiryDate;
     }
 
@@ -70,11 +73,11 @@ public class CompactionJobStatus {
     }
 
     public boolean isStarted() {
-        return !jobRunList.isEmpty();
+        return jobRuns.isStarted();
     }
 
     public boolean isFinished() {
-        return !jobRunList.isEmpty() && jobRunList.stream().allMatch(ProcessRun::isFinished);
+        return jobRuns.isFinished();
     }
 
     public Instant getExpiryDate() {
@@ -86,7 +89,7 @@ public class CompactionJobStatus {
     }
 
     public boolean isTaskIdAssigned(String taskId) {
-        return jobRunList.stream().anyMatch(run -> run.getTaskId().equals(taskId));
+        return jobRuns.isTaskIdAssigned(taskId);
     }
 
     public boolean isInPeriod(Instant startTime, Instant endTime) {
@@ -99,18 +102,11 @@ public class CompactionJobStatus {
     }
 
     private Instant lastTime() {
-        if (jobRunList.isEmpty()) {
-            return createdStatus.getUpdateTime();
-        }
-        return getLatestJobRun().getLatestUpdateTime();
+        return jobRuns.lastTime().orElse(createdStatus.getUpdateTime());
     }
 
-    private ProcessRun getLatestJobRun() {
-        return jobRunList.get(0);
-    }
-
-    public List<ProcessRun> getJobRuns() {
-        return jobRunList;
+    public List<ProcessRun> getJobRunList() {
+        return jobRuns.getJobRunList();
     }
 
     public static final class Builder {
@@ -161,12 +157,12 @@ public class CompactionJobStatus {
             return false;
         }
         CompactionJobStatus status = (CompactionJobStatus) o;
-        return jobId.equals(status.jobId) && createdStatus.equals(status.createdStatus) && Objects.equals(jobRunList, status.jobRunList);
+        return jobId.equals(status.jobId) && createdStatus.equals(status.createdStatus) && Objects.equals(jobRuns, status.jobRuns);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, createdStatus, jobRunList);
+        return Objects.hash(jobId, createdStatus, jobRuns);
     }
 
     @Override
@@ -174,7 +170,7 @@ public class CompactionJobStatus {
         return "CompactionJobStatus{" +
                 "jobId='" + jobId + '\'' +
                 ", createdStatus=" + createdStatus +
-                ", jobRunList=" + jobRunList +
+                ", jobRuns=" + jobRuns +
                 ", expiryDate=" + expiryDate +
                 '}';
     }
