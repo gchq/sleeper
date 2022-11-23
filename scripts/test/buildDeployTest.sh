@@ -37,7 +37,7 @@ echo "Building Project"
 echo "-------------------------------------------------------------------------------"
 pushd ${PROJECT_ROOT}/java
 VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
-#mvn clean install -Pquick
+mvn clean install -Pquick
 mkdir -p ${PROJECT_ROOT}/scripts/jars
 mkdir -p ${PROJECT_ROOT}/scripts/docker
 cp  ${PROJECT_ROOT}/java/distribution/target/distribution-${VERSION}-bin/scripts/jars/* ${PROJECT_ROOT}/scripts/jars/

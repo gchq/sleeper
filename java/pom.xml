@@ -402,8 +402,7 @@
                     <version>${compiler.plugin.version}</version>
                     <configuration>
                         <source>${java.version}</source>
-                        <target>${java.version}</target>
-                        <release>8</release>
+                        <target>${java.version}</target> 
                     </configuration>
                 </plugin>
             </plugins>
