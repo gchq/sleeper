@@ -24,24 +24,38 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
+import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GitHubActionsChunkWorkflowYaml {
 
+    private final String chunkId;
+    private final String name;
     private final List<String> onPushPaths;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public GitHubActionsChunkWorkflowYaml(@JsonProperty("on") On on) {
+    public GitHubActionsChunkWorkflowYaml(
+            @JsonProperty("name") String name,
+            @JsonProperty("on") On on,
+            @JsonProperty("jobs") Map<String, Job> jobs) {
+        this.chunkId = jobs.values().stream().findFirst()
+                .map(job -> job.with.chunkId)
+                .orElse(null);
+        this.name = name;
         this.onPushPaths = on.push.paths;
     }
 
     public static GitHubActionsChunkWorkflow read(Reader reader) throws IOException {
         ObjectMapper mapper = new YAMLMapper();
         GitHubActionsChunkWorkflowYaml chunksYaml = mapper.readValue(reader, GitHubActionsChunkWorkflowYaml.class);
+        return chunksYaml.toWorkflow();
+    }
+
+    public GitHubActionsChunkWorkflow toWorkflow() {
         return GitHubActionsChunkWorkflow.builder()
-                .chunkId("bulk-import")
-                .name("Build Bulk Import Modules")
-                .onPushPaths(chunksYaml.onPushPaths)
+                .chunkId(chunkId)
+                .name(name)
+                .onPushPaths(onPushPaths)
                 .build();
     }
 
@@ -60,6 +74,28 @@ public class GitHubActionsChunkWorkflowYaml {
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public Push(@JsonProperty("paths") List<String> paths) {
             this.paths = paths;
+        }
+    }
+
+    public static class Job {
+        private final String uses;
+        private final WorkflowInputs with;
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public Job(
+                @JsonProperty("uses") String uses,
+                @JsonProperty("with") WorkflowInputs with) {
+            this.uses = uses;
+            this.with = with;
+        }
+    }
+
+    public static class WorkflowInputs {
+        private final String chunkId;
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public WorkflowInputs(@JsonProperty("chunkId") String chunkId) {
+            this.chunkId = chunkId;
         }
     }
 }

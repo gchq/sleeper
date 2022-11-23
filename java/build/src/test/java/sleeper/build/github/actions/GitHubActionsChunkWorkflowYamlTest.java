@@ -47,4 +47,23 @@ public class GitHubActionsChunkWorkflowYamlTest {
                                 "maven/core/**")
                         .build());
     }
+
+    @Test
+    public void shouldReadGitHubActionsWorkflowForCommonChunk() throws IOException {
+        GitHubActionsChunkWorkflow workflow = GitHubActionsChunkWorkflowYaml.read(
+                exampleReader("examples/github-actions/chunk-common.yaml"));
+
+        assertThat(workflow).isEqualTo(
+                GitHubActionsChunkWorkflow.builder()
+                        .chunkId("common")
+                        .name("Build Common Modules")
+                        .onPushPathsArray(
+                                "github-actions/chunk-common.yaml",
+                                "github-actions/chunk.yaml",
+                                "config/chunks.yaml",
+                                "maven/pom.xml",
+                                "maven/configuration/**",
+                                "maven/core/**")
+                        .build());
+    }
 }
