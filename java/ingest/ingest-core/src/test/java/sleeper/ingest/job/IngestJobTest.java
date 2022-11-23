@@ -34,5 +34,20 @@ public class IngestJobTest {
 
         // Then
         assertThat(ingestJob.getId()).isNotNull();
+        assertThat(ingestJob.getId()).isNotEmpty();
+    }
+
+    @Test
+    public void shouldSetRandomIdIfIdSetToEmptyString() {
+        // Given/When
+        IngestJob ingestJob = IngestJob.builder()
+                .tableName("test-table")
+                .files(Collections.singletonList("test.parquet"))
+                .id("")
+                .build();
+
+        // Then
+        assertThat(ingestJob.getId()).isNotNull();
+        assertThat(ingestJob.getId()).isNotEmpty();
     }
 }
