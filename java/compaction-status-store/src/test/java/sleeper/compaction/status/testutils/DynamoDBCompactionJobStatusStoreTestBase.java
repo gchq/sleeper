@@ -32,10 +32,10 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFinishedStatus;
+import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.core.schema.Schema;
-import sleeper.core.status.ProcessFinishedStatus;
-import sleeper.core.status.ProcessRun;
-import sleeper.core.status.ProcessStartedStatus;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 import sleeper.statestore.FileInfoFactory;
 

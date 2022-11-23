@@ -15,8 +15,8 @@
  */
 package sleeper.compaction.job.status;
 
-import sleeper.core.status.ProcessStatusUpdateRecord;
-import sleeper.core.status.ProcessStatusesBuilder;
+import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.core.record.process.status.ProcessStatusesBuilder;
 
 import java.util.Comparator;
 import java.util.HashMap;

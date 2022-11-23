@@ -26,10 +26,10 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Range;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFinishedStatus;
+import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.core.schema.Schema;
-import sleeper.core.status.ProcessFinishedStatus;
-import sleeper.core.status.ProcessRun;
-import sleeper.core.status.ProcessStartedStatus;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfoFactory;
 

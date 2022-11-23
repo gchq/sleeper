@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.core.status;
+package sleeper.core.record.process.status;
 
 import java.time.Instant;
 import java.util.Collections;

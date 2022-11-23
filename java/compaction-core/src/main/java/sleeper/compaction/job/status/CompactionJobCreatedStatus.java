@@ -16,7 +16,7 @@
 package sleeper.compaction.job.status;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.core.status.ProcessStatusUpdate;
+import sleeper.core.record.process.status.ProcessStatusUpdate;
 
 import java.time.Instant;
 import java.util.Collections;
