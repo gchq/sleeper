@@ -24,45 +24,22 @@ public class GitHubActionsChunkWorkflowYamlTest {
 
     @Test
     public void shouldReadGitHubActionsWorkflowForBulkImportChunk() throws Exception {
+        // Given
         GitHubActionsChunkWorkflow workflow = GitHubActionsChunkWorkflowYaml.read(
                 exampleReader("examples/github-actions/chunk-bulk-import.yaml"));
 
-        assertThat(workflow).isEqualTo(
-                GitHubActionsChunkWorkflow.builder()
-                        .chunkId("bulk-import")
-                        .name("Build Bulk Import Modules")
-                        .onPushPathsArray(
-                                "github-actions/chunk-bulk-import.yaml",
-                                "github-actions/chunk.yaml",
-                                "config/chunks.yaml",
-                                "maven/pom.xml",
-                                "maven/bulk-import/pom.xml",
-                                "maven/bulk-import/bulk-import-runner/**",
-                                "maven/bulk-import/bulk-import-starter/**",
-                                "maven/bulk-import/bulk-import-common/**",
-                                "maven/ingest/**",
-                                "maven/configuration/**",
-                                "maven/core/**")
-                        .build());
+        // When / Then
+        assertThat(workflow).isEqualTo(TestGitHubActionsChunkWorkflows.bulkImport());
     }
 
     @Test
     public void shouldReadGitHubActionsWorkflowForCommonChunk() throws Exception {
+        // Given
         GitHubActionsChunkWorkflow workflow = GitHubActionsChunkWorkflowYaml.read(
                 exampleReader("examples/github-actions/chunk-common.yaml"));
 
-        assertThat(workflow).isEqualTo(
-                GitHubActionsChunkWorkflow.builder()
-                        .chunkId("common")
-                        .name("Build Common Modules")
-                        .onPushPathsArray(
-                                "github-actions/chunk-common.yaml",
-                                "github-actions/chunk.yaml",
-                                "config/chunks.yaml",
-                                "maven/pom.xml",
-                                "maven/configuration/**",
-                                "maven/core/**")
-                        .build());
+        // When / Then
+        assertThat(workflow).isEqualTo(TestGitHubActionsChunkWorkflows.common());
     }
 
     @Test

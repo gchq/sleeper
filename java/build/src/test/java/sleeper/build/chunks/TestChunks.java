@@ -19,10 +19,39 @@ import sleeper.build.testutil.TestResources;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Arrays;
 
 public class TestChunks {
 
     private TestChunks() {
+    }
+
+    public static ProjectChunks example() {
+        return new ProjectChunks(Arrays.asList(bulkImport(), common(), ingest()));
+    }
+
+    public static ProjectChunk bulkImport() {
+        return ProjectChunk.chunk("bulk-import").name("Bulk Import")
+                .workflow("chunk-bulk-import.yaml")
+                .modulesArray(
+                        "bulk-import/bulk-import-common",
+                        "bulk-import/bulk-import-starter",
+                        "bulk-import/bulk-import-runner")
+                .build();
+    }
+
+    public static ProjectChunk common() {
+        return ProjectChunk.chunk("common").name("Common")
+                .workflow("chunk-common.yaml")
+                .modulesArray("core", "configuration")
+                .build();
+    }
+
+    public static ProjectChunk ingest() {
+        return ProjectChunk.chunk("ingest").name("Ingest")
+                .workflow("chunk-ingest.yaml")
+                .modulesArray("ingest")
+                .build();
     }
 
     public static ProjectChunks example(String path) {
