@@ -85,7 +85,8 @@ public class Scaler {
     }
 
     /**
-     * Find out how many containers of a specific CPU and RAM requirement can fit
+     * Find out how many containers of a specific CPU and RAM requirement can
+     * fit
      * into the cluster at the moment.
      *
      * @param instanceDetails cluster EC2 details
@@ -103,7 +104,7 @@ public class Scaler {
      * Find the details of a given EC2 auto scaling group
      *
      * @param groupName the name of the auto scaling group
-     * @param client    the client object
+     * @param client the client object
      * @return group data
      */
     public static AutoScalingGroup getAutoScalingGroupInfo(String groupName, AmazonAutoScaling client) {
@@ -120,15 +121,18 @@ public class Scaler {
     }
 
     /**
-     * Perform an EC2 auto scaling group scale-out if needed. First checks to see if
-     * any more instances are needed to run the desired number of new containers.
+     * Perform an EC2 auto scaling group scale-out if needed. First checks to
+     * see if
+     * any more instances are needed to run the desired number of new
+     * containers.
      * If so, then the number of new instances is calculated from the remaining
-     * headroom in the cluster and number of containers that can fit on the instance
+     * headroom in the cluster and number of containers that can fit on the
+     * instance
      * type in the auto scaling group.
      *
      * @param newContainerCount the number of new containers desired
-     * @param details           map from EC2 instance ID to details about that
-     *                          instance
+     * @param details map from EC2 instance ID to details about that
+     * instance
      * @return result stating what action was taken
      */
     public ScaleOutResult possiblyScaleOut(int newContainerCount, Map<String, InstanceDetails> details) {
@@ -181,7 +185,8 @@ public class Scaler {
 
     /**
      * Sets the number of containers that can run on each instance.
-     * If there are any details given in the map, then the first machine is queried
+     * If there are any details given in the map, then the first machine is
+     * queried
      * to work out how many containers could fit on it.
      * This method makes the assumption that the machines in the cluster are all
      * identical.
@@ -222,11 +227,12 @@ public class Scaler {
     }
 
     /**
-     * Fetch a list of tasks from the ECS cluster that have the given task family
+     * Fetch a list of tasks from the ECS cluster that have the given task
+     * family
      * name and desired status.
      *
      * @param taskFamilyName the task family name to filter on
-     * @param desiredStatus  task status should be RUNNING or STOPPED
+     * @param desiredStatus task status should be RUNNING or STOPPED
      * @return the list of matching tasks
      */
     public List<String> getTasks(String taskFamilyName, String desiredStatus) {
@@ -247,7 +253,8 @@ public class Scaler {
     }
 
     /**
-     * Creates a list of EC2 container instance ARNs that are safe from termination.
+     * Creates a list of EC2 container instance ARNs that are safe from
+     * termination.
      * Looking at the list of tasks, we enumerate the instances and find those
      * that haven't run a task recently and are not running any now.
      *
@@ -275,9 +282,10 @@ public class Scaler {
 
                 // Should we keep this task's EC2
                 boolean shouldKeepEC2 = false;
-                LOGGER.debug("Task {} running on {}, keep its EC2", t.getTaskArn(), instanceArn);
+                LOGGER.debug("Task {} is/was running on instance ARN {}", t.getTaskArn(), instanceArn);
                 // Keep running tasks
                 if (t.getLastStatus().equals("RUNNING")) {
+                    LOGGER.debug("Task still running, so keep its EC2");
                     shouldKeepEC2 = true;
                 } else if (t.getLastStatus().equals("STOPPED")) {
                     // When did the task stop?
@@ -307,28 +315,32 @@ public class Scaler {
     }
 
     /**
-     * Given a list of container instance ARNs that are safe, find EC2 IDs that are
+     * Given a list of container instance ARNs that are safe, find EC2 IDs that
+     * are
      * not
      * on the safe list and haven't been registered with the cluster inside the
      * grace
      * period.
      *
      * @param safeARNs the list of container instance ARNs that are safe from
-     *                 termination
-     * @param details  the cluster instance details
+     * termination
+     * @param details the cluster instance details
      * @return list of EC2 IDs to terminate
      */
     public List<String> findEC2IDsToTerminate(Set<String> safeARNs, Map<String, InstanceDetails> details) {
         List<String> terminationIDs = new ArrayList<>();
         Instant now = Instant.now();
-        // If an instance's ARN is not in the safe list AND it's registration time is
+        // If an instance's ARN is not in the safe list AND it's registration
+        // time is
         // older
         // than the grace period, it should be terminated
         for (Map.Entry<String, InstanceDetails> machine : details.entrySet()) {
+            LOGGER.debug("Examining {}", machine.getValue().instanceArn);
             if (safeARNs.contains(machine.getValue().instanceArn)) {
                 LOGGER.info("Instance ARN {} ID {} is in safe list, so keep it.",
                         machine.getValue().instanceArn, machine.getKey());
             } else {
+                LOGGER.debug("Instance ARN {} not in set", machine.getValue().instanceArn);
                 Duration uptime = Duration.between(machine.getValue().registered, now);
                 if (uptime.compareTo(gracePeriod) >= 0) {
                     LOGGER.info("Instance ARN {} ID {} idle longer than grace period, so terminate it",
@@ -346,11 +358,11 @@ public class Scaler {
     /**
      * Attempt to scale the cluster in.
      *
-     * @param taskFamilyName            the EC2 task family name
-     * @param details                   the cluster details
+     * @param taskFamilyName the EC2 task family name
+     * @param details the cluster details
      * @param containerInstanceARNsUsed list of instance container ARNs from
-     *                                  recently
-     *                                  launched tasks
+     * recently
+     * launched tasks
      */
     public void possiblyScaleIn(String taskFamilyName, Map<String, InstanceDetails> details,
             Set<String> containerInstanceARNsUsed) {
@@ -361,9 +373,17 @@ public class Scaler {
         List<String> clusterTasks = getTasks(taskFamilyName, "RUNNING");
         clusterTasks.addAll(getTasks(taskFamilyName, "STOPPED"));
 
+        LOGGER.debug("Safe ARNS {}", safeARNs);
+
         // Find the set of EC2 instance container ARNs that are running tasks
         // or recently stopped running tasks
-        safeARNs.addAll(determineSafeInstanceContainerARNs(clusterTasks));
+        Set<String> returnedSafeArns = determineSafeInstanceContainerARNs(clusterTasks);
+
+        LOGGER.debug("Safe ARNs from determining {}", returnedSafeArns);
+
+        safeARNs.addAll(returnedSafeArns);
+
+        LOGGER.debug("Safe ARNS after determining safe instances {}", safeARNs);
 
         // Take this list of safe ARNs and wash it against the list of all EC2s
         // to find ones to terminate
