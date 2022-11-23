@@ -18,7 +18,6 @@ package sleeper.compaction.jobexecution;
 import com.facebook.collections.ByteArray;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
@@ -63,13 +62,11 @@ import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.utils.HadoopConfigurationProvider;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -173,12 +170,12 @@ public class CompactSortedFiles {
                     " as its schema has more than one row key. Only single dimension row key tables can be GPU compacted.");
         }
         LOGGER.info("Starting GPU compaction");
-        
+
         // Write config data to msgpack
         java.nio.file.Path tempFile = Files.createTempFile(null, null);
         tempFile.toFile().deleteOnExit();
         writeMsgPack(tempFile, compactionJob, compressionCodec, this.rowGroupSize, GPU_MAX_ROW_GROUP_ROWS, this.pageSize);
-        
+
         // output message pack file
         java.nio.file.Path gpuOutput = Files.createTempFile(null, null);
         gpuOutput.toFile().deleteOnExit();
