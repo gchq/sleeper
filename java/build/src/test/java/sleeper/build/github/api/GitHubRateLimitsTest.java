@@ -28,7 +28,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.build.chunks.TestResources.exampleString;
+import static sleeper.build.testutil.TestResources.exampleString;
 
 public class GitHubRateLimitsTest {
 

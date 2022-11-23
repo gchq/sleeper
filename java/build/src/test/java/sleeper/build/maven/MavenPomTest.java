@@ -16,7 +16,7 @@
 package sleeper.build.maven;
 
 import org.junit.Test;
-import sleeper.build.chunks.TestResources;
+import sleeper.build.testutil.TestResources;
 
 import java.io.Reader;
 

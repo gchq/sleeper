@@ -17,6 +17,7 @@ package sleeper.build.chunks;
 
 import org.junit.Test;
 import sleeper.build.github.TestGitHubHead;
+import sleeper.build.testutil.TestProperties;
 
 import java.util.Arrays;
 

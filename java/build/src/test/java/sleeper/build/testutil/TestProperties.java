@@ -13,23 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.chunks;
-
-import sleeper.build.github.GitHubHead;
+package sleeper.build.testutil;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Properties;
 
-import static sleeper.build.chunks.TestResources.exampleReader;
+import static sleeper.build.testutil.TestResources.exampleReader;
 
 public class TestProperties {
 
     private TestProperties() {
-    }
-
-    public static GitHubHead exampleHead() {
-        return GitHubHead.from(example("examples/config/github.properties"));
     }
 
     public static Properties example(String path) {

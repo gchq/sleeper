@@ -15,6 +15,8 @@
  */
 package sleeper.build.chunks;
 
+import sleeper.build.testutil.TestResources;
+
 import java.io.IOException;
 import java.io.Reader;
 
