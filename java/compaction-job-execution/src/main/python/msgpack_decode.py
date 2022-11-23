@@ -28,14 +28,27 @@ class CommandLineInput:
         msgpack.pack(self.sortIndexes, stream)
         msgpack.pack(self.splitPoints, stream)
 
+def _process_args(argv: list[str] = None):
+    """
+    Processes command line args. Uses sys.argv is none are passed in
+
+    :param argv: argument list
+    :return: processed args
+    """
+    if argv is None:
+        argv = sys.argv[1:]
+    parser = argparse.ArgumentParser(
+        description="Tests the MessagePack encoded output produced by msgpack_launch.py")
+    parser.add_argument("file", action="store",help="MsgPack encoded file",type=argparse.FileType("rb"))
+    args = parser.parse_args(argv)
+    return args
+
 def main():
     args = _process_args()
-    # Flatten the lists of command line arguments
-    settings = CommandLineInput(args.input_file, args.output, args.codec, args.row_group_bytes,
-                                args.row_group_rows, args.page_bytes, args.sort_column, args.d)
-    buf = io.BytesIO()
-    settings.serialise(buf)
-    sys.stdout.buffer.write(buf.getvalue())
+    unpacker = msgpack.Unpacker(args.file)
+    for object in unpacker:
+        print(object)
+    
 
 
 if __name__ == "__main__":

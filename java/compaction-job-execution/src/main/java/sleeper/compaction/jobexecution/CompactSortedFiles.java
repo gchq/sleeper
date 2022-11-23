@@ -18,6 +18,7 @@ package sleeper.compaction.jobexecution;
 import com.facebook.collections.ByteArray;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
@@ -62,6 +63,7 @@ import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.utils.HadoopConfigurationProvider;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Instant;
@@ -362,7 +364,6 @@ public class CompactSortedFiles {
      * @param tempFile file to write to
      * @throws IOException if an I/O error occurs
      */
-    @SuppressWarnings("resource")
     public static void writeMsgPack(java.nio.file.Path tempFile, CompactionJob compJob, String codec,
             long rowGroupBytes, long rowGroupRows, long pageSize) throws IOException {
         try (MessagePacker packer = MessagePack.newDefaultPacker(Files.newOutputStream(tempFile))) {
@@ -381,9 +382,9 @@ public class CompactSortedFiles {
                         .packString(compJob.getOutputFile());
             }
             packer.packString(codec)
-                    .packLong(rowGroupBytes)
-                    .packLong(rowGroupRows)
-                    .packLong(pageSize)
+                    .packInt((int) rowGroupBytes)
+                    .packInt((int) rowGroupRows)
+                    .packInt((int) pageSize)
                     .packArrayHeader(1) // assume only a single sort column
                     .packInt(0); // sort column number //TODO check dimension
                                  // for row key split

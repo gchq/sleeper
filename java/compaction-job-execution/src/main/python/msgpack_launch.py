@@ -59,11 +59,11 @@ def _process_args(argv: list[str] = None):
     parser.add_argument("--page-bytes", "-p", action="store", type=int,
                         help="Maximum page size in bytes", default=PAGE_SIZE_BYTES)
     parser.add_argument("--sort-column", "-s", nargs='+', action="extend",
-                        type=int, help="Use multiple times. Column number to sort on")
-    parser.add_argument("-d", type=str, action="extend", nargs='+',
+                        type=int, help="Use multiple times. Column number to sort on",default=[])
+    parser.add_argument("-d", type=str, action="extend", nargs='+',default=[],
                         help="Use multiple times. Specify a split point for output")
     args = parser.parse_args(argv)
-    if args.sort_column is None:
+    if len(args.sort_column) == 0:
         args.sort_column = [0]
     return args
 
