@@ -16,6 +16,9 @@
 package sleeper.build.github.actions;
 
 import org.junit.Test;
+import sleeper.build.chunks.TestChunks;
+
+import java.nio.file.Paths;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.build.testutil.TestResources.exampleReader;
@@ -23,7 +26,7 @@ import static sleeper.build.testutil.TestResources.exampleReader;
 public class GitHubActionsChunkWorkflowYamlTest {
 
     @Test
-    public void shouldReadGitHubActionsWorkflowForBulkImportChunk() throws Exception {
+    public void shouldReadBulkImportExampleWorkflow() throws Exception {
         // Given
         GitHubActionsChunkWorkflow workflow = GitHubActionsChunkWorkflowYaml.read(
                 exampleReader("examples/github-actions/chunk-bulk-import.yaml"));
@@ -33,12 +36,21 @@ public class GitHubActionsChunkWorkflowYamlTest {
     }
 
     @Test
-    public void shouldReadGitHubActionsWorkflowForCommonChunk() throws Exception {
+    public void shouldReadCommonExampleWorkflow() throws Exception {
         // Given
         GitHubActionsChunkWorkflow workflow = GitHubActionsChunkWorkflowYaml.read(
                 exampleReader("examples/github-actions/chunk-common.yaml"));
 
         // When / Then
+        assertThat(workflow).isEqualTo(TestGitHubActionsChunkWorkflows.common());
+    }
+
+    @Test
+    public void shouldReadCommonExampleWorkflowFromDirectoryAndChunk() throws Exception {
+        GitHubActionsChunkWorkflow workflow = GitHubActionsChunkWorkflowYaml.readInWorkflowsDirectory(
+                Paths.get("src/test/resources/examples/github-actions"),
+                TestChunks.common());
+
         assertThat(workflow).isEqualTo(TestGitHubActionsChunkWorkflows.common());
     }
 
