@@ -69,6 +69,7 @@ import java.nio.file.Files;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -181,6 +182,10 @@ public class CompactSortedFiles {
         java.nio.file.Path tempFile = Files.createTempFile(null, null);
         tempFile.toFile().deleteOnExit();
         writeMsgPack(tempFile, compactionJob, compressionCodec, this.rowGroupSize, GPU_MAX_ROW_GROUP_ROWS, this.pageSize);
+
+        byte[] fileBytes = Files.readAllBytes(tempFile);
+        String encoded=Base64.getEncoder().encodeToString(fileBytes);
+        LOGGER.debug(encoded);
 
         // output message pack file
         java.nio.file.Path gpuOutput = Files.createTempFile(null, null);

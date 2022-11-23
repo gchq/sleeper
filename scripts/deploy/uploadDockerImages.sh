@@ -57,10 +57,10 @@ aws ecr get-login-password --region ${REGION} | docker login --username AWS --pa
 
 BUILDX_STACKS=("CompactionStack")
 
-if any_in_array DOCKER_STACKS BUILDX_STACKS; then
-  docker buildx rm sleeper || true
-  docker buildx create --name sleeper --use
-fi
+#if any_in_array DOCKER_STACKS BUILDX_STACKS; then
+  #docker buildx rm sleeper || true
+  #docker buildx create --name sleeper --use
+#fi
 
 for stack in "${DOCKER_STACKS[@]}"; do
 

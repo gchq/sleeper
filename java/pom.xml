@@ -403,6 +403,7 @@
                     <configuration>
                         <source>${java.version}</source>
                         <target>${java.version}</target>
+                        <release>8</release>
                     </configuration>
                 </plugin>
             </plugins>
