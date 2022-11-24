@@ -21,6 +21,7 @@ import sleeper.status.report.table.TableField;
 import sleeper.status.report.table.TableRow;
 import sleeper.status.report.table.TableWriterFactory;
 
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
@@ -37,11 +38,12 @@ public class StandardProcessStatusReporter {
     private final TableField linesWrittenField;
     private final TableField readRateField;
     private final TableField writeRateField;
-
+    private final PrintStream out;
     public static final String STATE_IN_PROGRESS = "IN PROGRESS";
     public static final String STATE_FINISHED = "FINISHED";
 
-    public StandardProcessStatusReporter(TableWriterFactory.Builder tableBuilder) {
+    public StandardProcessStatusReporter(PrintStream out, TableWriterFactory.Builder tableBuilder) {
+        this.out = out;
         taskIdField = tableBuilder.addField("TASK_ID");
         startTimeField = tableBuilder.addField("START_TIME");
         finishTimeField = tableBuilder.addField("FINISH_TIME");
@@ -61,6 +63,24 @@ public class StandardProcessStatusReporter {
                 .value(linesWrittenField, getLinesWritten(run))
                 .value(readRateField, getRecordsReadPerSecond(run))
                 .value(writeRateField, getRecordsWrittenPerSecond(run));
+    }
+
+    public void printProcessJobRun(ProcessRun run) {
+        out.println();
+        out.printf("Run on task %s%n", run.getTaskId());
+        out.printf("Start Time: %s%n", run.getStartTime());
+        out.printf("Start Update Time: %s%n", run.getStartUpdateTime());
+        if (run.isFinished()) {
+            out.printf("Finish Time: %s%n", run.getFinishTime());
+            out.printf("Finish Update Time: %s%n", run.getFinishUpdateTime());
+            out.printf("Duration: %ss%n", getDurationInSeconds(run));
+            out.printf("Lines Read: %s%n", getLinesRead(run));
+            out.printf("Lines Written: %s%n", getLinesWritten(run));
+            out.printf("Read Rate (reads per second): %s%n", getRecordsReadPerSecond(run));
+            out.printf("Write Rate (writes per second): %s%n", getRecordsWrittenPerSecond(run));
+        } else {
+            out.println("Not finished");
+        }
     }
 
     public List<TableField> getFinishedFields() {

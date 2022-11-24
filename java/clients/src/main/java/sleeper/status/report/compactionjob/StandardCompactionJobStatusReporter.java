@@ -32,11 +32,6 @@ import java.util.stream.Collectors;
 import static sleeper.status.report.StandardProcessStatusReporter.STATE_FINISHED;
 import static sleeper.status.report.StandardProcessStatusReporter.STATE_IN_PROGRESS;
 import static sleeper.status.report.StandardProcessStatusReporter.formatDecimal;
-import static sleeper.status.report.StandardProcessStatusReporter.getDurationInSeconds;
-import static sleeper.status.report.StandardProcessStatusReporter.getLinesRead;
-import static sleeper.status.report.StandardProcessStatusReporter.getLinesWritten;
-import static sleeper.status.report.StandardProcessStatusReporter.getRecordsReadPerSecond;
-import static sleeper.status.report.StandardProcessStatusReporter.getRecordsWrittenPerSecond;
 
 public class StandardCompactionJobStatusReporter implements CompactionJobStatusReporter {
 
@@ -63,7 +58,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
         partitionIdField = tableFactoryBuilder.addField("PARTITION_ID");
         typeField = tableFactoryBuilder.addField("TYPE");
-        standardProcessStatusReporter = new StandardProcessStatusReporter(tableFactoryBuilder);
+        standardProcessStatusReporter = new StandardProcessStatusReporter(out, tableFactoryBuilder);
         tableFactory = tableFactoryBuilder.build();
     }
 
@@ -118,23 +113,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("Creation Time: %s%n", jobStatus.getCreateUpdateTime().toString());
         out.printf("Partition ID: %s%n", jobStatus.getPartitionId());
         out.printf("Child partition IDs: %s%n", jobStatus.getChildPartitionIds().toString());
-        for (ProcessRun run : jobStatus.getJobRuns()) {
-            out.println();
-            out.printf("Run on task %s%n", run.getTaskId());
-            out.printf("Start Time: %s%n", run.getStartTime());
-            out.printf("Start Update Time: %s%n", run.getStartUpdateTime());
-            if (run.isFinished()) {
-                out.printf("Finish Time: %s%n", run.getFinishTime());
-                out.printf("Finish Update Time: %s%n", run.getFinishUpdateTime());
-                out.printf("Duration: %ss%n", getDurationInSeconds(run));
-                out.printf("Lines Read: %s%n", getLinesRead(run));
-                out.printf("Lines Written: %s%n", getLinesWritten(run));
-                out.printf("Read Rate (reads per second): %s%n", getRecordsReadPerSecond(run));
-                out.printf("Write Rate (writes per second): %s%n", getRecordsWrittenPerSecond(run));
-            } else {
-                out.println("Not finished");
-            }
-        }
+        jobStatus.getJobRuns().forEach(standardProcessStatusReporter::printProcessJobRun);
         out.println("--------------------------");
     }
 

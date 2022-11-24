@@ -46,7 +46,7 @@ public class IngestJobStatusReport {
         stateField = tableFactoryBuilder.addField("STATE");
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
         totalFilesField = tableFactoryBuilder.fieldBuilder("TOTAL_FILES").alignRight().build();
-        standardProcessStatusReporter = new StandardProcessStatusReporter(tableFactoryBuilder);
+        standardProcessStatusReporter = new StandardProcessStatusReporter(out, tableFactoryBuilder);
         tableFactory = tableFactoryBuilder.build();
     }
 
