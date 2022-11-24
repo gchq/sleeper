@@ -85,6 +85,7 @@ import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
  * files in one partition and outputs files to the split partition).
  */
 public class CompactSortedFiles {
+    private static final String GPU_BINARY = "/compact/cukeydist";
     private final InstanceProperties instanceProperties;
     private final ObjectFactory objectFactory;
     private final Schema schema;
@@ -178,35 +179,9 @@ public class CompactSortedFiles {
         tempFile.toFile().deleteOnExit();
         writeMsgPack(tempFile, compactionJob, compressionCodec, this.rowGroupSize, GPU_MAX_ROW_GROUP_ROWS, this.pageSize);
 
-        // output message pack file
-        java.nio.file.Path gpuOutput = Files.createTempFile(null, null);
-        gpuOutput.toFile().deleteOnExit();
+        // Run GPU process
+        GPUReturnData gpuData = runGPUExternal(tempFile);
 
-        int timeout = this.instanceProperties.getInt(COMPACTION_GPU_TIMEOUT);
-
-        ProcessBuilder builder = new ProcessBuilder("/compact/cukeydist", "-", tempFile.toAbsolutePath().toString())
-                .inheritIO()
-                .redirectOutput(gpuOutput.toFile());
-
-        Process gpuProcess = builder.start();
-        try {
-            boolean terminatedInTime = gpuProcess.waitFor(timeout, TimeUnit.SECONDS);
-            if (!terminatedInTime) {
-                LOGGER.warn("GPU process not terminated inside timeout");
-                gpuProcess.destroyForcibly();
-            }
-        } catch (InterruptedException e) {
-            LOGGER.error("Waiting for GPU process to terminate caught", e);
-        }
-
-        int exitValue = gpuProcess.exitValue();
-        if (exitValue != 0) {
-            LOGGER.error("GPU process exited with code {}, please examine logs", exitValue);
-            throw new RuntimeException("GPU compaction failed. Please see logs.");
-        }
-
-        // grab exit data
-        GPUReturnData gpuData = readMsgPack(gpuOutput);
         // get type of rowkey zero
         PrimitiveType rowKeyType0 = schema.getRowKeyTypes().get(0);
 
@@ -246,6 +221,48 @@ public class CompactSortedFiles {
                     schema.getRowKeyTypes());
             return new CompactionJobRecordsProcessed(gpuData.rowsRead, gpuData.rowsWritten.get(0));
         }
+    }
+
+    /**
+     * Runs the external GPU process. This will wait for the timeout
+     * {@link COMPACTION_GPU_TIMEOUT}
+     * seconds in the instance properties before terminating it.
+     *
+     * @param tempFile the file containing the MessagePack input data
+     * @return return results
+     * @throws IOException for errors on I/O
+     * @throws RuntimeException for an external process error
+     */
+    private GPUReturnData runGPUExternal(java.nio.file.Path tempFile) throws IOException {
+        // output message pack file
+        java.nio.file.Path gpuOutput = Files.createTempFile(null, null);
+        gpuOutput.toFile().deleteOnExit();
+
+        int timeout = this.instanceProperties.getInt(COMPACTION_GPU_TIMEOUT);
+
+        ProcessBuilder builder = new ProcessBuilder(GPU_BINARY, "-", tempFile.toAbsolutePath().toString())
+                .inheritIO()
+                .redirectOutput(gpuOutput.toFile());
+
+        Process gpuProcess = builder.start();
+        try {
+            boolean terminatedInTime = gpuProcess.waitFor(timeout, TimeUnit.SECONDS);
+            if (!terminatedInTime) {
+                LOGGER.warn("GPU process not terminated inside timeout");
+                gpuProcess.destroyForcibly();
+            }
+        } catch (InterruptedException e) {
+            LOGGER.error("Waiting for GPU process to terminate caught", e);
+        }
+
+        int exitValue = gpuProcess.exitValue();
+        if (exitValue != 0) {
+            LOGGER.error("GPU process exited with code {}, please examine logs", exitValue);
+            throw new RuntimeException("GPU compaction failed. Please see logs.");
+        }
+
+        // grab exit data
+        return readMsgPack(gpuOutput);
     }
 
     /**

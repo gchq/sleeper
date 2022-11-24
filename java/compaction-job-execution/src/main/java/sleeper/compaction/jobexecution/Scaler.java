@@ -41,8 +41,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.mockito.Mockito.CALLS_REAL_METHODS;
-
 /**
  * ECS EC2 auto scaler. This makes decisions on how many instances to start and
  * stop based on the amount of work there is to do.
