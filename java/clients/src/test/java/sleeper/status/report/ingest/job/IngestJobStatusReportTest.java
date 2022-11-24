@@ -24,7 +24,6 @@ import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.record.process.status.ProcessStartedStatus;
-import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.time.Instant;
@@ -38,7 +37,7 @@ import static sleeper.status.report.StatusReporterTestHelper.job;
 import static sleeper.status.report.StatusReporterTestHelper.jobRunFinishedInTask;
 import static sleeper.status.report.StatusReporterTestHelper.jobRunStartedInTask;
 
-public class IngestJobStatusReportTest {
+public class IngestJobStatusReportTest extends IngestJobStatusReporterTestBase {
     @Test
     public void shouldReportNoIngestJobs() throws Exception {
 
@@ -50,7 +49,7 @@ public class IngestJobStatusReportTest {
     @Test
     public void shouldReportMixedIngestJobs() throws Exception {
         // Given
-        List<IngestJobStatus> mixedJobs = createMixedJobs();
+        List<IngestJobStatus> mixedJobs = mixedJobStatuses();
 
         // When / Then
         assertThat(getStandardReport(IngestJobQuery.ALL, mixedJobs, 2)).hasToString(
@@ -85,62 +84,6 @@ public class IngestJobStatusReportTest {
         ToStringPrintStream output = new ToStringPrintStream();
         new IngestJobStatusReport(output.getPrintStream()).run(query, statusList, numberInQueue);
         return output.toString();
-    }
-
-    private List<IngestJobStatus> createMixedJobs() {
-        IngestJob job1 = IngestJob.builder()
-                .files("test11.parquet")
-                .id("job22222-2222-2222-2222-222222222222")
-                .build();
-        Instant updateTime1 = Instant.parse("2022-09-18T13:34:12.001Z");
-        Instant startTime1 = Instant.parse("2022-09-18T13:34:12.001Z");
-
-        IngestJob job2 = IngestJob.builder()
-                .files("test22.parquet", "test22.parquet")
-                .id("job33333-3333-3333-3333-333333333333")
-                .build();
-        Instant updateTime2 = Instant.parse("2022-09-19T13:34:12.001Z");
-        Instant startTime2 = Instant.parse("2022-09-19T13:34:12.001Z");
-        Instant finishTime2 = Instant.parse("2022-09-19T13:35:12.001Z");
-        RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
-                new RecordsProcessed(600L, 300L), startTime2, finishTime2);
-
-        IngestJob job3 = IngestJob.builder()
-                .files("test31.parquet", "test32.parquet", "test33.parquet")
-                .id("job55555-5555-5555-5555-555555555555")
-                .build();
-        Instant updateTime3 = Instant.parse("2022-09-21T13:34:12.001Z");
-        Instant startTime3 = Instant.parse("2022-09-21T13:34:12.001Z");
-
-        IngestJob job4 = IngestJob.builder()
-                .files("test41.parquet", "test42.parquet", "test43.parquet", "test44.parquet")
-                .id("job66666-6666-6666-6666-666666666666")
-                .build();
-        Instant updateTime4 = Instant.parse("2022-09-22T13:34:12.001Z");
-        Instant startTime4 = Instant.parse("2022-09-22T13:34:12.001Z");
-        Instant finishTime4 = Instant.parse("2022-09-22T13:35:12.001Z");
-        RecordsProcessedSummary summary4 = new RecordsProcessedSummary(
-                new RecordsProcessed(600L, 300L), startTime4, finishTime4);
-        // When
-        IngestJobStatus status1 = IngestJobStatus.from(job1)
-                .jobRun(ProcessRun.started("task1111-1111-1111-1111-111111111111",
-                        ProcessStartedStatus.updateAndStartTime(updateTime1, startTime1)))
-                .build();
-        IngestJobStatus status2 = IngestJobStatus.from(job2)
-                .jobRun(ProcessRun.finished("task1111-1111-1111-1111-111111111111",
-                        ProcessStartedStatus.updateAndStartTime(updateTime2, startTime2),
-                        ProcessFinishedStatus.updateTimeAndSummary(finishTime2, summary2)))
-                .build();
-        IngestJobStatus status3 = IngestJobStatus.from(job3)
-                .jobRun(ProcessRun.started("task2222-2222-2222-2222-222222222222",
-                        ProcessStartedStatus.updateAndStartTime(updateTime3, startTime3)))
-                .build();
-        IngestJobStatus status4 = IngestJobStatus.from(job4)
-                .jobRun(ProcessRun.finished("task2222-2222-2222-2222-222222222222",
-                        ProcessStartedStatus.updateAndStartTime(updateTime4, startTime4),
-                        ProcessFinishedStatus.updateTimeAndSummary(finishTime4, summary4)))
-                .build();
-        return Arrays.asList(status1, status2, status3, status4);
     }
 
     private List<IngestJobStatus> createJobsWithMultipleRuns() {
