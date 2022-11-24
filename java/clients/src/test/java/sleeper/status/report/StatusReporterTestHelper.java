@@ -16,7 +16,6 @@
 
 package sleeper.status.report;
 
-import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
@@ -51,19 +50,19 @@ public class StatusReporterTestHelper {
                 defaultFinishedStatus(startTimeNoMillis, finishTimeNoMillis));
     }
 
-    public static String replaceStandardJobIds(List<CompactionJobStatus> jobs, String example) {
-        return replaceJobIds(jobs, StatusReporterTestHelper::job, example);
+    public static String replaceStandardJobIds(List<String> jobIds, String example) {
+        return replaceJobIds(jobIds, StatusReporterTestHelper::job, example);
     }
 
-    public static String replaceBracketedJobIds(List<CompactionJobStatus> jobs, String example) {
-        return replaceJobIds(jobs, number -> "$(jobId" + number + ")", example);
+    public static String replaceBracketedJobIds(List<String> jobIds, String example) {
+        return replaceJobIds(jobIds, number -> "$(jobId" + number + ")", example);
     }
 
     protected static String replaceJobIds(
-            List<CompactionJobStatus> jobs, Function<Integer, String> getTemplateId, String example) {
+            List<String> jobIds, Function<Integer, String> getTemplateId, String example) {
         String replaced = example;
-        for (int i = 0; i < jobs.size(); i++) {
-            replaced = replaced.replace(getTemplateId.apply(i + 1), jobs.get(i).getJobId());
+        for (int i = 0; i < jobIds.size(); i++) {
+            replaced = replaced.replace(getTemplateId.apply(i + 1), jobIds.get(i));
         }
         return replaced;
     }

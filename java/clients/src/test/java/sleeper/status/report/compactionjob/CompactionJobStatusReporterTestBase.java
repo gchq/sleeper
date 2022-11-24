@@ -26,6 +26,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStartedStatus;
+import sleeper.status.report.StatusReporterTestHelper;
 import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
 
 import java.io.PrintStream;
@@ -155,6 +156,18 @@ public abstract class CompactionJobStatusReporterTestBase {
                 .singleJobRun(ProcessRun.finished(taskId, ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime),
                         ProcessFinishedStatus.updateTimeAndSummary(finishedTime, summary)))
                 .build();
+    }
+
+    public static String replaceStandardJobIds(List<CompactionJobStatus> job, String example) {
+        return StatusReporterTestHelper.replaceStandardJobIds(job.stream()
+                .map(CompactionJobStatus::getJobId)
+                .collect(Collectors.toList()), example);
+    }
+
+    public static String replaceBracketedJobIds(List<CompactionJobStatus> job, String example) {
+        return StatusReporterTestHelper.replaceBracketedJobIds(job.stream()
+                .map(CompactionJobStatus::getJobId)
+                .collect(Collectors.toList()), example);
     }
 
     public String verboseReportString(Function<PrintStream, CompactionJobStatusReporter> getReporter, List<CompactionJobStatus> statusList,
