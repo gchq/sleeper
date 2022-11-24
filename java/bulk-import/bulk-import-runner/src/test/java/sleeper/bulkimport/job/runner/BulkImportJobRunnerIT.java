@@ -35,6 +35,7 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeRunner;
+import sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortRunner;
 import sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDRunner;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -97,7 +98,11 @@ public class BulkImportJobRunnerIT {
 
     @Parameters
     public static Collection<Object[]> getParameters() {
-        return Lists.newArrayList(new Object[][]{{new BulkImportJobDataframeRunner()}, {new BulkImportJobRDDRunner()}});
+        return Lists.newArrayList(new Object[][]{
+            {new BulkImportJobDataframeRunner()},
+            {new BulkImportJobRDDRunner()},
+            {new BulkImportDataframeLocalSortRunner()}
+        });
     }
 
     @ClassRule

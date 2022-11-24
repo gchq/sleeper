@@ -24,6 +24,7 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityResult;
 import com.google.gson.JsonSyntaxException;
+import com.joom.spark.ExplicitRepartitionStrategy$;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
@@ -33,10 +34,12 @@ import org.apache.spark.serializer.KryoSerializer;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.execution.SparkStrategy;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.collection.JavaConverters;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.InstanceProperties;
@@ -56,6 +59,7 @@ import java.nio.file.attribute.PosixFileAttributes;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -107,6 +111,8 @@ public abstract class BulkImportJobRunner {
         sparkConf.set("spark.serializer", KryoSerializer.class.getName());
         sparkConf.registerKryoClasses(new Class[]{Partition.class});
         SparkSession session = new SparkSession.Builder().config(sparkConf).getOrCreate();
+        scala.collection.immutable.List<SparkStrategy> strategies = JavaConverters.collectionAsScalaIterable(Collections.singletonList((org.apache.spark.sql.execution.SparkStrategy) ExplicitRepartitionStrategy$.MODULE$)).toList();
+        session.experimental().extraStrategies_$eq(strategies);
         SparkContext sparkContext = session.sparkContext();
         JavaSparkContext javaSparkContext = JavaSparkContext.fromSparkContext(sparkContext);
         LOGGER.info("Spark initialised");
