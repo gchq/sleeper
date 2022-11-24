@@ -29,9 +29,11 @@ import static sleeper.ClientTestUtils.example;
 public class IngestJobStatusReportTest extends IngestJobStatusReporterTestBase {
     @Test
     public void shouldReportNoIngestJobs() throws Exception {
+        // Given
+        List<IngestJobStatus> noJobs = Collections.emptyList();
 
         // When / Then
-        assertThat(getStandardReport(IngestJobQuery.ALL)).hasToString(
+        assertThat(getStandardReport(IngestJobQuery.ALL, noJobs, 0)).hasToString(
                 example("reports/ingest/job/standard/all/noJobs.txt"));
     }
 
@@ -64,11 +66,7 @@ public class IngestJobStatusReportTest extends IngestJobStatusReporterTestBase {
         assertThat(getStandardReport(IngestJobQuery.ALL, jobsWithLargeAndDecimalStatistics, 0)).hasToString(
                 example("reports/ingest/job/standard/all/jobsWithLargeAndDecimalStatistics.txt"));
     }
-
-    private String getStandardReport(IngestJobQuery query) {
-        return getStandardReport(query, Collections.emptyList(), 0);
-    }
-
+    
     private String getStandardReport(IngestJobQuery query, List<IngestJobStatus> statusList, int numberInQueue) {
         ToStringPrintStream output = new ToStringPrintStream();
         new IngestJobStatusReport(output.getPrintStream()).run(query, statusList, numberInQueue);
