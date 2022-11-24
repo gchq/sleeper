@@ -29,6 +29,7 @@ public class TestProjectStructure {
                 .chunksYamlPath(basePath.resolve("config/chunks.yaml"))
                 .gitHubPropertiesPath(basePath.resolve("config/github.properties"))
                 .mavenProjectPath(basePath.resolve("maven"))
+                .workflowsPath(basePath.resolve("github-actions"))
                 .build();
     }
 }
