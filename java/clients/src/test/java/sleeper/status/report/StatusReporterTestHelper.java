@@ -16,6 +16,7 @@
 
 package sleeper.status.report;
 
+import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
@@ -23,6 +24,8 @@ import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStartedStatus;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.function.Function;
 
 import static sleeper.ClientTestUtils.exampleUUID;
 
@@ -46,6 +49,23 @@ public class StatusReporterTestHelper {
         return ProcessRun.finished(task(taskNumber),
                 defaultStartedStatus(startTimeNoMillis),
                 defaultFinishedStatus(startTimeNoMillis, finishTimeNoMillis));
+    }
+
+    public static String replaceStandardJobIds(List<CompactionJobStatus> jobs, String example) {
+        return replaceJobIds(jobs, StatusReporterTestHelper::job, example);
+    }
+
+    public static String replaceBracketedJobIds(List<CompactionJobStatus> jobs, String example) {
+        return replaceJobIds(jobs, number -> "$(jobId" + number + ")", example);
+    }
+
+    protected static String replaceJobIds(
+            List<CompactionJobStatus> jobs, Function<Integer, String> getTemplateId, String example) {
+        String replaced = example;
+        for (int i = 0; i < jobs.size(); i++) {
+            replaced = replaced.replace(getTemplateId.apply(i + 1), jobs.get(i).getJobId());
+        }
+        return replaced;
     }
 
     public static ProcessStartedStatus defaultStartedStatus(String startTimeNoMillis) {
