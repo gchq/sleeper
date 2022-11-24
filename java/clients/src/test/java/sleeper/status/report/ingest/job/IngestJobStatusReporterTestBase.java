@@ -20,17 +20,21 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static sleeper.status.report.StatusReporterTestHelper.job;
+import static sleeper.status.report.StatusReporterTestHelper.jobRunFinishedInTask;
+import static sleeper.status.report.StatusReporterTestHelper.jobRunStartedInTask;
 import static sleeper.status.report.StatusReporterTestHelper.task;
 
 public abstract class IngestJobStatusReporterTestBase {
@@ -60,6 +64,44 @@ public abstract class IngestJobStatusReporterTestBase {
         return Arrays.asList(status1, status2, status3, status4);
     }
 
+    List<IngestJobStatus> jobsWithMultipleRuns() {
+        List<ProcessRun> processRuns = Arrays.asList(
+                jobRunStartedInTask(1, "2022-10-12T10:02:00"),
+                jobRunFinishedInTask(2, "2022-10-12T10:01:15", "2022-10-12T10:01:45"),
+                jobRunFinishedInTask(1, "2022-10-12T10:01:00", "2022-10-12T10:01:20"));
+
+        IngestJobStatus status = IngestJobStatus.builder()
+                .jobId(job(2))
+                .inputFileCount(1)
+                .jobRuns(ProcessRuns.latestFirst(processRuns))
+                .build();
+        return Collections.singletonList(status);
+    }
+
+    List<IngestJobStatus> jobsWithLargeAndDecimalStatistics() {
+        Instant updateTime1 = Instant.parse("2022-10-13T10:01:00Z");
+        Instant startTime1 = Instant.parse("2022-10-13T10:00:10.000Z");
+        Instant finishTime1 = Instant.parse("2022-10-13T10:00:10.123Z");
+
+        Instant updateTime2 = Instant.parse("2022-10-13T12:01:00Z");
+        Instant startTime2 = Instant.parse("2022-10-13T12:01:10Z");
+        Instant finishTime2 = Instant.parse("2022-10-13T14:01:10Z");
+
+        Instant updateTime3 = Instant.parse("2022-10-12T10:01:00.000Z");
+        Instant startTime3 = Instant.parse("2022-10-13T14:01:10Z");
+        Instant finishTime3 = Instant.parse("2022-10-13T14:02:10Z");
+
+        Instant updateTime4 = Instant.parse("2022-10-13T14:02:00.000Z");
+        Instant startTime4 = Instant.parse("2022-10-13T14:02:10.000Z");
+        Instant finishTime4 = Instant.parse("2022-10-13T14:02:10.123Z");
+
+        return Arrays.asList(
+                jobFinished(createJob(1, 1), "task-id", startTime1, updateTime1, finishTime1, 600L, 300L),
+                jobFinished(createJob(2, 1), "task-id", startTime2, updateTime2, finishTime2, 1_000_600L, 500_300L),
+                jobFinished(createJob(3, 1), "task-id", startTime3, updateTime3, finishTime3, 1_000_600L, 500_300L),
+                jobFinished(createJob(4, 1), "task-id", startTime4, updateTime4, finishTime4, 1234L, 1234L));
+    }
+
     public IngestJob createJob(int jobNum, int inputFileCount) {
         return IngestJob.builder()
                 .id(job(jobNum))
@@ -83,7 +125,7 @@ public abstract class IngestJobStatusReporterTestBase {
     public IngestJobStatus jobFinished(IngestJob job, String taskId, Instant startTime, Instant startUpdateTime, Instant finishTime,
                                        long linesRead, long linesWritten) {
         RecordsProcessedSummary summary = new RecordsProcessedSummary(
-                new RecordsProcessed(linesRead, linesWritten), startUpdateTime, finishTime);
+                new RecordsProcessed(linesRead, linesWritten), startTime, finishTime);
         return IngestJobStatus.from(job)
                 .jobRun(ProcessRun.finished(taskId,
                         ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime),

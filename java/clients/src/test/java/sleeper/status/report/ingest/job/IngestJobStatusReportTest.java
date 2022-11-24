@@ -18,24 +18,13 @@ package sleeper.status.report.ingest.job;
 
 import org.junit.Test;
 import sleeper.ToStringPrintStream;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
-import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessRuns;
-import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
 
-import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
-import static sleeper.status.report.StatusReporterTestHelper.job;
-import static sleeper.status.report.StatusReporterTestHelper.jobRunFinishedInTask;
-import static sleeper.status.report.StatusReporterTestHelper.jobRunStartedInTask;
 
 public class IngestJobStatusReportTest extends IngestJobStatusReporterTestBase {
     @Test
@@ -59,7 +48,7 @@ public class IngestJobStatusReportTest extends IngestJobStatusReporterTestBase {
     @Test
     public void shouldReportIngestJobWithMultipleRuns() throws Exception {
         // Given
-        List<IngestJobStatus> jobWithMultipleRuns = createJobsWithMultipleRuns();
+        List<IngestJobStatus> jobWithMultipleRuns = jobsWithMultipleRuns();
 
         // When / Then
         assertThat(getStandardReport(IngestJobQuery.ALL, jobWithMultipleRuns, 0)).hasToString(
@@ -69,7 +58,7 @@ public class IngestJobStatusReportTest extends IngestJobStatusReporterTestBase {
     @Test
     public void shouldReportIngestJobsWithLargeAndDecimalStatistics() throws Exception {
         // Given
-        List<IngestJobStatus> jobsWithLargeAndDecimalStatistics = createJobsWithLargeAndDecimalStatistics();
+        List<IngestJobStatus> jobsWithLargeAndDecimalStatistics = jobsWithLargeAndDecimalStatistics();
 
         // When / Then
         assertThat(getStandardReport(IngestJobQuery.ALL, jobsWithLargeAndDecimalStatistics, 0)).hasToString(
@@ -84,74 +73,5 @@ public class IngestJobStatusReportTest extends IngestJobStatusReporterTestBase {
         ToStringPrintStream output = new ToStringPrintStream();
         new IngestJobStatusReport(output.getPrintStream()).run(query, statusList, numberInQueue);
         return output.toString();
-    }
-
-    private List<IngestJobStatus> createJobsWithMultipleRuns() {
-        List<ProcessRun> processRuns = Arrays.asList(
-                jobRunStartedInTask(1, "2022-10-12T10:02:00"),
-                jobRunFinishedInTask(2, "2022-10-12T10:01:15", "2022-10-12T10:01:45"),
-                jobRunFinishedInTask(1, "2022-10-12T10:01:00", "2022-10-12T10:01:20"));
-
-        IngestJobStatus status = IngestJobStatus.builder()
-                .jobId(job(2))
-                .inputFileCount(1)
-                .jobRuns(ProcessRuns.latestFirst(processRuns))
-                .build();
-        return Collections.singletonList(status);
-    }
-
-    private List<IngestJobStatus> createJobsWithLargeAndDecimalStatistics() {
-        Instant updateTime1 = Instant.parse("2022-10-13T12:01:00Z");
-        Instant startTime1 = Instant.parse("2022-10-13T10:00:10.000Z");
-        Instant finishTime1 = Instant.parse("2022-10-13T10:00:10.123Z");
-        RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
-                new RecordsProcessed(600L, 300L), startTime1, finishTime1);
-
-        Instant updateTime2 = Instant.parse("2022-10-13T12:01:00Z");
-        Instant startTime2 = Instant.parse("2022-10-13T12:01:10Z");
-        Instant finishTime2 = Instant.parse("2022-10-13T14:01:10Z");
-        RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
-                new RecordsProcessed(1_000_600L, 500_300L), startTime2, finishTime2);
-        Instant updateTime3 = Instant.parse("2022-10-12T10:01:00.000Z");
-        Instant startTime3 = Instant.parse("2022-10-13T14:01:10Z");
-        Instant finishTime3 = Instant.parse("2022-10-13T14:02:10Z");
-        RecordsProcessedSummary summary3 = new RecordsProcessedSummary(
-                new RecordsProcessed(1_000_600L, 500_300L), startTime3, finishTime3);
-
-        Instant updateTime4 = Instant.parse("2022-10-13T14:02:00.000Z");
-        Instant startTime4 = Instant.parse("2022-10-13T14:02:10.000Z");
-        Instant finishTime4 = Instant.parse("2022-10-13T14:02:10.123Z");
-        RecordsProcessedSummary summary4 = new RecordsProcessedSummary(
-                new RecordsProcessed(1234L, 1234L), startTime4, finishTime4);
-
-        return Arrays.asList(
-                IngestJobStatus.builder()
-                        .jobId("job11111-1111-1111-1111-111111111111")
-                        .inputFileCount(1)
-                        .jobRun(ProcessRun.finished("task-id",
-                                ProcessStartedStatus.updateAndStartTime(updateTime1, startTime1),
-                                ProcessFinishedStatus.updateTimeAndSummary(finishTime1, summary1)))
-                        .build(),
-                IngestJobStatus.builder()
-                        .jobId("job22222-2222-2222-2222-222222222222")
-                        .inputFileCount(1)
-                        .jobRun(ProcessRun.finished("task-id",
-                                ProcessStartedStatus.updateAndStartTime(updateTime2, startTime2),
-                                ProcessFinishedStatus.updateTimeAndSummary(finishTime2, summary2)))
-                        .build(),
-                IngestJobStatus.builder()
-                        .jobId("job33333-3333-3333-3333-333333333333")
-                        .inputFileCount(1)
-                        .jobRun(ProcessRun.finished("task-id",
-                                ProcessStartedStatus.updateAndStartTime(updateTime3, startTime3),
-                                ProcessFinishedStatus.updateTimeAndSummary(finishTime3, summary3)))
-                        .build(),
-                IngestJobStatus.builder()
-                        .jobId("job44444-4444-4444-4444-444444444444")
-                        .inputFileCount(1)
-                        .jobRun(ProcessRun.finished("task-id",
-                                ProcessStartedStatus.updateAndStartTime(updateTime4, startTime4),
-                                ProcessFinishedStatus.updateTimeAndSummary(finishTime4, summary4)))
-                        .build());
     }
 }
