@@ -81,6 +81,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
@@ -149,6 +151,8 @@ public class CompactionStack extends NestedStack {
     public static final String SPLITTING_COMPACTION_STACK_DL_QUEUE_URL = "SplittingCompactionStackDLQueueUrlKey";
     public static final String COMPACTION_CLUSTER_NAME = "CompactionClusterName";
     public static final String SPLITTING_COMPACTION_CLUSTER_NAME = "SplittingCompactionClusterName";
+
+    private static final Pattern NUM_MATCH = Pattern.compile("^(\\d+)(\\D*)$");
 
     private Queue compactionJobQ;
     private Queue compactionDLQ;
@@ -577,14 +581,51 @@ public class CompactionStack extends NestedStack {
         String family = ec2InstanceType.substring(0, pos).toUpperCase(Locale.getDefault());
         String size = ec2InstanceType.substring(pos + 1).toUpperCase(Locale.getDefault());
 
+        // since Java identifiers can't start with a number, sizes like "2xlarge"
+        // become "xlarge2" in the enum namespace.
+        String normalisedSize = normaliseSize(size);
+
         // now perform lookup of these against known types
         InstanceClass instanceClass = InstanceClass.valueOf(family);
-        InstanceSize instanceSize = InstanceSize.valueOf(size);
+        InstanceSize instanceSize = InstanceSize.valueOf(normalisedSize);
 
         return InstanceType.of(instanceClass, instanceSize);
     }
 
-    private static Pair<Integer, Integer> getCpuMemoryForArch(String architecture,
+    /**
+     * Normalises EC2 instance size strings so they can be looked up in the
+     * {@link InstanceSize}
+     * enum. Java identifiers can't start with a number, so "2xlarge" becomes
+     * "xlarge2".
+     *
+     * @param size the human readable size
+     * @return the internal enum name
+     */
+    public static String normaliseSize(String size) {
+        if (size == null) {
+            return null;
+        }
+        Matcher sizeMatch = NUM_MATCH.matcher(size);
+        if (sizeMatch.matches()) {
+            // Match occurred so switch the capture groups
+            return sizeMatch.group(2) + sizeMatch.group(1);
+        } else {
+            return size;
+        }
+    }
+
+    /**
+     * Retrieves architecture specific CPU and memory requirements. This returns a
+     * pair
+     * containing the CPU requirement in the left element and memory requirement in
+     * the right
+     * element.
+     *
+     * @param architecture       CPU architecture
+     * @param instanceProperties Sleeper instance properties
+     * @return CPU and memory requirements as per the CPU architecture
+     */
+    public static Pair<Integer, Integer> getCpuMemoryForArch(String architecture,
             InstanceProperties instanceProperties) {
         int cpu;
         int memoryLimitMiB;

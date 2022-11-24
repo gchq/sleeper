@@ -284,7 +284,7 @@ public class Scaler {
                 boolean shouldKeepEC2 = false;
                 LOGGER.debug("Task {} is/was running on instance ARN {}", t.getTaskArn(), instanceArn);
                 // Keep running tasks
-                if (t.getLastStatus().equals("RUNNING")) {
+                if (t.getDesiredStatus().equals("RUNNING")) {
                     LOGGER.debug("Task still running, so keep its EC2");
                     shouldKeepEC2 = true;
                 } else if (t.getLastStatus().equals("STOPPED")) {
