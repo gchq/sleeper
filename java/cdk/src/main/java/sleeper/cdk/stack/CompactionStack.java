@@ -105,6 +105,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPA
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_MINIMUM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_ROOT_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
@@ -621,10 +622,12 @@ public class CompactionStack extends NestedStack {
      * requirement in the middle and GPU requirement in the right element.
      *
      * @param architecture       CPU architecture
+     * @param launchType         the container launch type
      * @param instanceProperties Sleeper instance properties
      * @return CPU, memory and GPU requirements as per the CPU architecture
      */
     private static Triple<Integer, Integer, Integer> getCpuMemoryForArch(String architecture,
+            String launchType,
             InstanceProperties instanceProperties) {
         int cpu;
         int memoryLimitMiB;
@@ -638,12 +641,24 @@ public class CompactionStack extends NestedStack {
             memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_X86_MEMORY);
             gpu = instanceProperties.getInt(COMPACTION_TASK_X86_GPU);
         }
+
+        // bit hacky: EC2s don't give 100% of their memory for container use (OS
+        // headroom, system tasks, etc.) so since we want a whole GPU
+        // with only 1 GPU per typical system, we have to make sure to reduce
+        // the EC2 memory requirement by 5%. If we don't we end up asking for
+        // 16GiB of RAM on a 16GiB box and allocation will fail.
+        if (launchType.equalsIgnoreCase("EC2")) {
+            memoryLimitMiB = (int) (memoryLimitMiB * 0.95);
+        }
+
         return Triple.of(cpu, memoryLimitMiB, gpu);
     }
 
     private FargateTaskDefinition compactionFargateTaskDefinition(String compactionTypeName) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        Triple<Integer, Integer, Integer> requirements = getCpuMemoryForArch(architecture, instanceProperties);
+        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
+        Triple<Integer, Integer, Integer> requirements = getCpuMemoryForArch(architecture, launchType,
+                instanceProperties);
         return FargateTaskDefinition.Builder
                 .create(this, compactionTypeName + "CompactionFargateTaskDefinition")
                 .family(instanceProperties.get(ID) + compactionTypeName + "CompactionFargateTaskFamily")
@@ -667,7 +682,9 @@ public class CompactionStack extends NestedStack {
     private ContainerDefinitionOptions createFargateContainerDefinition(ContainerImage image,
             Map<String, String> environment, InstanceProperties instanceProperties, String compactionTypeName) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        Triple<Integer, Integer, Integer> requirements = getCpuMemoryForArch(architecture, instanceProperties);
+        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
+        Triple<Integer, Integer, Integer> requirements = getCpuMemoryForArch(architecture, launchType,
+                instanceProperties);
         return ContainerDefinitionOptions.builder()
                 .image(image)
                 .environment(environment)
@@ -681,7 +698,9 @@ public class CompactionStack extends NestedStack {
     private ContainerDefinitionOptions createEC2ContainerDefinition(ContainerImage image,
             Map<String, String> environment, InstanceProperties instanceProperties, String compactionTypeName) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        Triple<Integer, Integer, Integer> requirements = getCpuMemoryForArch(architecture, instanceProperties);
+        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
+        Triple<Integer, Integer, Integer> requirements = getCpuMemoryForArch(architecture, launchType,
+                instanceProperties);
         return ContainerDefinitionOptions.builder()
                 .image(image)
                 .environment(environment)
