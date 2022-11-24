@@ -43,13 +43,18 @@ public class IngestJobStatus {
     }
 
     public static IngestJobStatus started(IngestJob ingestJob, String taskId, Instant updateTime, Instant startTime) {
-        return builder()
-                .jobId(ingestJob.getId())
-                .inputFileCount(ingestJob.getFiles().size())
+        return from(ingestJob)
                 .jobRun(ProcessRun.started(taskId,
                         ProcessStartedStatus.updateAndStartTime(updateTime, startTime)))
                 .build();
     }
+
+    public static Builder from(IngestJob job) {
+        return builder()
+                .jobId(job.getId())
+                .inputFileCount(job.getFiles().size());
+    }
+
 
     public String getJobId() {
         return jobId;
