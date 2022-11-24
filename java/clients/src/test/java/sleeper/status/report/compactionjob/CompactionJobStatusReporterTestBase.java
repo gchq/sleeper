@@ -27,7 +27,6 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStartedStatus;
-import sleeper.status.report.StatusReporterTestHelper;
 import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
 
 import java.io.PrintStream;
@@ -140,23 +139,6 @@ public abstract class CompactionJobStatusReporterTestBase {
                         "task-id",
                         Instant.parse("2022-10-13T14:02:00.000Z"),
                         Duration.ofMillis(123), 1234, 1234));
-    }
-
-    protected static String replaceStandardJobIds(List<CompactionJobStatus> jobs, String example) {
-        return replaceJobIds(jobs, StatusReporterTestHelper::job, example);
-    }
-
-    protected static String replaceBracketedJobIds(List<CompactionJobStatus> jobs, String example) {
-        return replaceJobIds(jobs, number -> "$(jobId" + number + ")", example);
-    }
-
-    protected static String replaceJobIds(
-            List<CompactionJobStatus> jobs, Function<Integer, String> getTemplateId, String example) {
-        String replaced = example;
-        for (int i = 0; i < jobs.size(); i++) {
-            replaced = replaced.replace(getTemplateId.apply(i + 1), jobs.get(i).getJobId());
-        }
-        return replaced;
     }
 
     protected static CompactionJobStatus jobCreated(CompactionJob job, Instant creationTime) {
