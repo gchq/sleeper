@@ -18,12 +18,12 @@ package sleeper.compaction.status.job;
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.job.status.CompactionJobRun;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
+import sleeper.core.record.process.status.ProcessFinishedStatus;
+import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.statestore.FileInfoFactory;
 
 import java.util.Arrays;
@@ -125,11 +125,11 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
                 .containsExactly(CompactionJobStatus.builder().jobId(job.getId())
                         .createdStatus(CompactionJobCreatedStatus.from(job, ignoredUpdateTime()))
                         .jobRunsLatestFirst(Arrays.asList(
-                                CompactionJobRun.started(DEFAULT_TASK_ID,
-                                        CompactionJobStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())),
-                                CompactionJobRun.finished(DEFAULT_TASK_ID,
-                                        CompactionJobStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime()),
-                                        CompactionJobFinishedStatus.updateTimeAndSummary(ignoredUpdateTime(), defaultSummary()))
+                                ProcessRun.started(DEFAULT_TASK_ID,
+                                        ProcessStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())),
+                                ProcessRun.finished(DEFAULT_TASK_ID,
+                                        ProcessStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime()),
+                                        ProcessFinishedStatus.updateTimeAndSummary(ignoredUpdateTime(), defaultSummary()))
                         )).build());
     }
 }

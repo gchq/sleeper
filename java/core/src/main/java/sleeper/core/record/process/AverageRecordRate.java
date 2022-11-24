@@ -13,26 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.status;
+package sleeper.core.record.process;
 
-import sleeper.compaction.job.CompactionJobSummary;
+import java.util.stream.Stream;
 
-import java.util.List;
-
-public class AverageCompactionRate {
+public class AverageRecordRate {
 
     private final int jobCount;
     private final double recordsReadPerSecond;
     private final double recordsWrittenPerSecond;
 
-    private AverageCompactionRate(Builder builder) {
+    private AverageRecordRate(Builder builder) {
         jobCount = builder.jobCount;
         recordsReadPerSecond = builder.totalRecordsReadPerSecond / builder.jobCount;
         recordsWrittenPerSecond = builder.totalRecordsWrittenPerSecond / builder.jobCount;
     }
 
-    public static AverageCompactionRate of(List<CompactionJobStatus> jobs) {
-        return new Builder().jobs(jobs).build();
+    public static AverageRecordRate of(RecordsProcessedSummary... summaries) {
+        return of(Stream.of(summaries));
+    }
+
+    public static AverageRecordRate of(Stream<RecordsProcessedSummary> summaries) {
+        return builder().summaries(summaries).build();
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public int getJobCount() {
@@ -55,22 +61,20 @@ public class AverageCompactionRate {
         private Builder() {
         }
 
-        public Builder jobs(List<CompactionJobStatus> jobs) {
-            jobs.stream()
-                    .flatMap(job -> job.getJobRuns().stream())
-                    .filter(CompactionJobRun::isFinished)
-                    .forEach(run -> jobSummary(run.getFinishedSummary()));
+        public Builder summaries(Stream<RecordsProcessedSummary> summaries) {
+            summaries.forEach(this::summary);
             return this;
         }
 
-        private void jobSummary(CompactionJobSummary summary) {
+        public Builder summary(RecordsProcessedSummary summary) {
             jobCount++;
             totalRecordsReadPerSecond += summary.getRecordsReadPerSecond();
             totalRecordsWrittenPerSecond += summary.getRecordsWrittenPerSecond();
+            return this;
         }
 
-        public AverageCompactionRate build() {
-            return new AverageCompactionRate(this);
+        public AverageRecordRate build() {
+            return new AverageRecordRate(this);
         }
     }
 }

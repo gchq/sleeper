@@ -13,32 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.status;
+package sleeper.core.record.process.status;
 
-import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.Objects;
 
-public class CompactionJobFinishedStatus implements CompactionJobStatusUpdate {
+public class ProcessFinishedStatus implements ProcessStatusUpdate {
 
     private final Instant updateTime;
-    private final CompactionJobSummary summary;
+    private final RecordsProcessedSummary summary;
 
-    private CompactionJobFinishedStatus(Instant updateTime, CompactionJobSummary summary) {
+    private ProcessFinishedStatus(Instant updateTime, RecordsProcessedSummary summary) {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
         this.summary = Objects.requireNonNull(summary, "summary must not be null");
     }
 
-    public static CompactionJobFinishedStatus updateTimeAndSummary(Instant updateTime, CompactionJobSummary summary) {
-        return new CompactionJobFinishedStatus(updateTime, summary);
+    public static ProcessFinishedStatus updateTimeAndSummary(Instant updateTime, RecordsProcessedSummary summary) {
+        return new ProcessFinishedStatus(updateTime, summary);
     }
 
     public Instant getUpdateTime() {
         return updateTime;
     }
 
-    public CompactionJobSummary getSummary() {
+    public RecordsProcessedSummary getSummary() {
         return summary;
     }
 
@@ -50,7 +50,7 @@ public class CompactionJobFinishedStatus implements CompactionJobStatusUpdate {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        CompactionJobFinishedStatus that = (CompactionJobFinishedStatus) o;
+        ProcessFinishedStatus that = (ProcessFinishedStatus) o;
         return updateTime.equals(that.updateTime) && summary.equals(that.summary);
     }
 
@@ -61,7 +61,7 @@ public class CompactionJobFinishedStatus implements CompactionJobStatusUpdate {
 
     @Override
     public String toString() {
-        return "CompactionJobFinishedStatus{" +
+        return "ProcessFinishedStatus{" +
                 "updateTime=" + updateTime +
                 ", summary=" + summary +
                 '}';

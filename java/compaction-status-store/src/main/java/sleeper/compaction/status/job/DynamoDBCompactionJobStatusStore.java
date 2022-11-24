@@ -30,11 +30,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.CompactionStatusStoreException;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.List;
@@ -98,7 +98,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public void jobFinished(CompactionJob job, CompactionJobSummary summary, String taskId) {
+    public void jobFinished(CompactionJob job, RecordsProcessedSummary summary, String taskId) {
         try {
             PutItemResult result = putItem(DynamoDBCompactionJobStatusFormat.createJobFinishedRecord(job, summary, taskId, timeToLive));
             LOGGER.debug("Put finished event for job {} to table {}, capacity consumed = {}",

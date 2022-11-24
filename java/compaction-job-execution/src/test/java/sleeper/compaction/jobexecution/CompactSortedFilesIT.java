@@ -27,7 +27,6 @@ import org.junit.Test;
 import org.testcontainers.containers.GenericContainer;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDataHelper;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
@@ -36,6 +35,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.statestore.StateStore;
@@ -106,7 +106,7 @@ public class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, jobStatusStore, DEFAULT_TASK_ID);
-        CompactionJobSummary summary = compactSortedFiles.compact();
+        RecordsProcessedSummary summary = compactSortedFiles.compact();
 
         // Then
         //  - Read output file and check that it contains the right results
@@ -146,7 +146,7 @@ public class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, jobStatusStore, DEFAULT_TASK_ID);
-        CompactionJobSummary summary = compactSortedFiles.compact();
+        RecordsProcessedSummary summary = compactSortedFiles.compact();
 
         // Then
         //  - Read output files and check that they contain the right results

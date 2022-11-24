@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package sleeper.compaction.job.status;
+package sleeper.core.record.process.status;
 
-import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.Objects;
 
-public class CompactionJobRun {
+public class ProcessRun {
     private final String taskId;
-    private final CompactionJobStartedStatus startedStatus;
-    private final CompactionJobFinishedStatus finishedStatus;
+    private final ProcessStartedStatus startedStatus;
+    private final ProcessFinishedStatus finishedStatus;
 
-    private CompactionJobRun(Builder builder) {
+    private ProcessRun(Builder builder) {
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
         startedStatus = Objects.requireNonNull(builder.startedStatus, "startedStatus must not be null");
         finishedStatus = builder.finishedStatus;
@@ -36,13 +36,13 @@ public class CompactionJobRun {
         return new Builder();
     }
 
-    public static CompactionJobRun started(String taskId, CompactionJobStartedStatus startedStatus) {
+    public static ProcessRun started(String taskId, ProcessStartedStatus startedStatus) {
         return builder().taskId(taskId)
                 .startedStatus(startedStatus)
                 .build();
     }
 
-    public static CompactionJobRun finished(String taskId, CompactionJobStartedStatus startedStatus, CompactionJobFinishedStatus finishedStatus) {
+    public static ProcessRun finished(String taskId, ProcessStartedStatus startedStatus, ProcessFinishedStatus finishedStatus) {
         return builder().taskId(taskId)
                 .startedStatus(startedStatus)
                 .finishedStatus(finishedStatus)
@@ -53,11 +53,11 @@ public class CompactionJobRun {
         return taskId;
     }
 
-    public CompactionJobStartedStatus getStartedStatus() {
+    public ProcessStartedStatus getStartedStatus() {
         return startedStatus;
     }
 
-    public CompactionJobFinishedStatus getFinishedStatus() {
+    public ProcessFinishedStatus getFinishedStatus() {
         return finishedStatus;
     }
 
@@ -97,7 +97,7 @@ public class CompactionJobRun {
         }
     }
 
-    public CompactionJobSummary getFinishedSummary() {
+    public RecordsProcessedSummary getFinishedSummary() {
         if (isFinished()) {
             return getFinishedStatus().getSummary();
         } else {
@@ -113,7 +113,7 @@ public class CompactionJobRun {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        CompactionJobRun that = (CompactionJobRun) o;
+        ProcessRun that = (ProcessRun) o;
         return taskId.equals(that.taskId)
                 && Objects.equals(startedStatus, that.startedStatus)
                 && Objects.equals(finishedStatus, that.finishedStatus);
@@ -126,7 +126,7 @@ public class CompactionJobRun {
 
     @Override
     public String toString() {
-        return "CompactionJobRun{" +
+        return "ProcessRun{" +
                 "taskId='" + taskId + '\'' +
                 ", startedStatus=" + startedStatus +
                 ", finishedStatus=" + finishedStatus +
@@ -135,8 +135,8 @@ public class CompactionJobRun {
 
     public static final class Builder {
         private String taskId;
-        private CompactionJobStartedStatus startedStatus;
-        private CompactionJobFinishedStatus finishedStatus;
+        private ProcessStartedStatus startedStatus;
+        private ProcessFinishedStatus finishedStatus;
 
         private Builder() {
         }
@@ -146,18 +146,18 @@ public class CompactionJobRun {
             return this;
         }
 
-        public Builder startedStatus(CompactionJobStartedStatus startedStatus) {
+        public Builder startedStatus(ProcessStartedStatus startedStatus) {
             this.startedStatus = startedStatus;
             return this;
         }
 
-        public Builder finishedStatus(CompactionJobFinishedStatus finishedStatus) {
+        public Builder finishedStatus(ProcessFinishedStatus finishedStatus) {
             this.finishedStatus = finishedStatus;
             return this;
         }
 
-        public CompactionJobRun build() {
-            return new CompactionJobRun(this);
+        public ProcessRun build() {
+            return new ProcessRun(this);
         }
     }
 }

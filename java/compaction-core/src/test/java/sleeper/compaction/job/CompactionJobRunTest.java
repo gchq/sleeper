@@ -18,10 +18,12 @@ package sleeper.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.job.status.CompactionJobRun;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFinishedStatus;
+import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessStartedStatus;
 
 import java.time.Instant;
 
@@ -60,7 +62,7 @@ public class CompactionJobRunTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-23T09:23:30.012Z"),
                 Instant.parse("2022-09-23T09:23:30.001Z"));
 
@@ -71,7 +73,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getTaskId, CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_1, started, null));
         assertThat(status.isFinished()).isFalse();
@@ -85,12 +87,12 @@ public class CompactionJobRunTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-24T09:23:30.012Z"),
                 Instant.parse("2022-09-24T09:23:30.001Z"));
-        CompactionJobFinishedStatus finished = CompactionJobFinishedStatus.updateTimeAndSummary(
+        ProcessFinishedStatus finished = ProcessFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-24T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-24T09:23:30.001Z"),
                         Instant.parse("2022-09-24T09:24:00.001Z")));
 
@@ -101,7 +103,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getTaskId, CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_1, started, finished));
         assertThat(status.isFinished()).isTrue();
@@ -115,10 +117,10 @@ public class CompactionJobRunTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started1 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started1 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-24T09:23:30.012Z"),
                 Instant.parse("2022-09-24T09:23:30.001Z"));
-        CompactionJobStartedStatus started2 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-24T09:24:30.012Z"),
                 Instant.parse("2022-09-24T09:24:30.001Z"));
 
@@ -129,7 +131,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getTaskId, CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_1, started2, null),
                         tuple(DEFAULT_TASK_ID_1, started1, null));
@@ -144,20 +146,20 @@ public class CompactionJobRunTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started1 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started1 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-23T09:23:30.012Z"),
                 Instant.parse("2022-09-23T09:23:30.001Z"));
-        CompactionJobFinishedStatus finished1 = CompactionJobFinishedStatus.updateTimeAndSummary(
+        ProcessFinishedStatus finished1 = ProcessFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-23T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-23T09:23:30.001Z"),
                         Instant.parse("2022-09-23T09:24:00.001Z")));
-        CompactionJobStartedStatus started2 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-24T09:23:30.012Z"),
                 Instant.parse("2022-09-24T09:23:30.001Z"));
-        CompactionJobFinishedStatus finished2 = CompactionJobFinishedStatus.updateTimeAndSummary(
+        ProcessFinishedStatus finished2 = ProcessFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-24T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-24T09:23:30.001Z"),
                         Instant.parse("2022-09-24T09:24:00.001Z")));
 
@@ -169,7 +171,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getTaskId, CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_1, started2, finished2),
                         tuple(DEFAULT_TASK_ID_1, started1, finished1));
@@ -184,16 +186,16 @@ public class CompactionJobRunTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started1 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started1 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-23T09:23:30.012Z"),
                 Instant.parse("2022-09-23T09:23:30.001Z"));
-        CompactionJobStartedStatus started2 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-24T09:23:30.012Z"),
                 Instant.parse("2022-09-24T09:23:30.001Z"));
-        CompactionJobStartedStatus started3 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started3 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-25T09:23:30.012Z"),
                 Instant.parse("2022-09-25T09:23:30.001Z"));
-        CompactionJobStartedStatus started4 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started4 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-26T09:23:30.012Z"),
                 Instant.parse("2022-09-26T09:23:30.001Z"));
 
@@ -206,7 +208,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getTaskId, CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_2, started4, null),
                         tuple(DEFAULT_TASK_ID_1, started3, null),
@@ -223,20 +225,20 @@ public class CompactionJobRunTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started1 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started1 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-23T09:23:30.012Z"),
                 Instant.parse("2022-09-23T09:23:30.001Z"));
-        CompactionJobFinishedStatus finished1 = CompactionJobFinishedStatus.updateTimeAndSummary(
+        ProcessFinishedStatus finished1 = ProcessFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-23T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-23T09:23:30.001Z"),
                         Instant.parse("2022-09-23T09:24:00.001Z")));
-        CompactionJobStartedStatus started2 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-24T09:23:30.012Z"),
                 Instant.parse("2022-09-24T09:23:30.001Z"));
-        CompactionJobFinishedStatus finished2 = CompactionJobFinishedStatus.updateTimeAndSummary(
+        ProcessFinishedStatus finished2 = ProcessFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-24T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-24T09:23:30.001Z"),
                         Instant.parse("2022-09-24T09:24:00.001Z")));
 
@@ -249,7 +251,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getTaskId, CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_2, started2, finished2),
                         tuple(DEFAULT_TASK_ID_1, started1, finished1));
@@ -264,12 +266,12 @@ public class CompactionJobRunTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-24T09:23:30.012Z"),
                 Instant.parse("2022-09-24T09:23:30.001Z"));
-        CompactionJobFinishedStatus finished = CompactionJobFinishedStatus.updateTimeAndSummary(
+        ProcessFinishedStatus finished = ProcessFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-24T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-24T09:23:30.001Z"),
                         Instant.parse("2022-09-24T09:24:00.001Z")));
 
@@ -280,7 +282,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(started, finished));
         assertThat(status.isFinished()).isTrue();
@@ -294,13 +296,13 @@ public class CompactionJobRunTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started1 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started1 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-24T09:23:30.012Z"),
                 Instant.parse("2022-09-24T09:23:30.001Z"));
-        CompactionJobStartedStatus started2 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-25T09:23:30.012Z"),
                 Instant.parse("2022-09-25T09:23:30.001Z"));
-        CompactionJobStartedStatus started3 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started3 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-26T09:23:30.012Z"),
                 Instant.parse("2022-09-26T09:23:30.001Z"));
 
@@ -311,7 +313,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(started3, null),
                         tuple(started2, null),
@@ -327,18 +329,18 @@ public class CompactionJobRunTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started1 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started1 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-24T09:23:30.012Z"),
                 Instant.parse("2022-09-24T09:23:30.001Z"));
-        CompactionJobStartedStatus started2 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-25T09:23:30.012Z"),
                 Instant.parse("2022-09-25T09:23:30.001Z"));
-        CompactionJobStartedStatus started3 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started3 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-26T09:23:30.012Z"),
                 Instant.parse("2022-09-26T09:23:30.001Z"));
-        CompactionJobFinishedStatus finished = CompactionJobFinishedStatus.updateTimeAndSummary(
+        ProcessFinishedStatus finished = ProcessFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-27T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-26T09:23:30.001Z"),
                         Instant.parse("2022-09-27T09:24:00.001Z")));
 
@@ -349,7 +351,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(started3, finished),
                         tuple(started2, null),
@@ -365,20 +367,20 @@ public class CompactionJobRunTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started1 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started1 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-22T09:23:30.012Z"),
                 Instant.parse("2022-09-22T09:23:30.001Z"));
-        CompactionJobFinishedStatus finished1 = CompactionJobFinishedStatus.updateTimeAndSummary(
+        ProcessFinishedStatus finished1 = ProcessFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-23T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-23T09:23:30.001Z"),
                         Instant.parse("2022-09-23T09:24:00.001Z")));
-        CompactionJobStartedStatus started2 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-24T09:23:30.012Z"),
                 Instant.parse("2022-09-24T09:23:30.001Z"));
-        CompactionJobFinishedStatus finished2 = CompactionJobFinishedStatus.updateTimeAndSummary(
+        ProcessFinishedStatus finished2 = ProcessFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-24T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-24T09:23:30.001Z"),
                         Instant.parse("2022-09-24T09:24:00.001Z")));
 
@@ -390,7 +392,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getTaskId, CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_2, started2, finished2),
                         tuple(DEFAULT_TASK_ID_1, started1, finished1));
@@ -405,20 +407,20 @@ public class CompactionJobRunTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started1 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started1 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-23T09:23:30.012Z"),
                 Instant.parse("2022-09-23T09:23:30.001Z"));
-        CompactionJobStartedStatus started2 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-24T09:23:30.012Z"),
                 Instant.parse("2022-09-24T09:23:30.001Z"));
-        CompactionJobFinishedStatus finished2 = CompactionJobFinishedStatus.updateTimeAndSummary(
+        ProcessFinishedStatus finished2 = ProcessFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-25T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-25T09:23:30.001Z"),
                         Instant.parse("2022-09-25T09:24:00.001Z")));
-        CompactionJobFinishedStatus finished1 = CompactionJobFinishedStatus.updateTimeAndSummary(
+        ProcessFinishedStatus finished1 = ProcessFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-26T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-26T09:23:30.001Z"),
                         Instant.parse("2022-09-26T09:24:00.001Z")));
 
@@ -431,7 +433,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(CompactionJobRun::getTaskId, CompactionJobRun::getStartedStatus, CompactionJobRun::getFinishedStatus)
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID_2, started2, finished2),
                         tuple(DEFAULT_TASK_ID_1, started1, finished1));

@@ -20,13 +20,8 @@ import org.junit.After;
 import org.junit.Before;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
-import sleeper.compaction.job.CompactionJobRecordsProcessed;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.job.status.CompactionJobRun;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStoreCreator;
@@ -35,6 +30,11 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFinishedStatus;
+import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.core.schema.Schema;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 import sleeper.statestore.FileInfoFactory;
@@ -109,9 +109,9 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return Instant.parse("2022-09-23T10:51:00.001Z");
     }
 
-    protected static CompactionJobSummary defaultSummary() {
-        return new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(200L, 100L),
+    protected static RecordsProcessedSummary defaultSummary() {
+        return new RecordsProcessedSummary(
+                new RecordsProcessed(200L, 100L),
                 defaultStartTime(), Instant.parse("2022-09-23T10:52:00.001Z"));
     }
 
@@ -119,7 +119,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(
                         job, ignoredUpdateTime()))
-                .singleJobRun(CompactionJobRun.started(DEFAULT_TASK_ID, CompactionJobStartedStatus.updateAndStartTime(
+                .singleJobRun(ProcessRun.started(DEFAULT_TASK_ID, ProcessStartedStatus.updateAndStartTime(
                         ignoredUpdateTime(), defaultStartTime())))
                 .build();
     }
@@ -128,9 +128,9 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(
                         job, ignoredUpdateTime()))
-                .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID, CompactionJobStartedStatus.updateAndStartTime(
+                .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID, ProcessStartedStatus.updateAndStartTime(
                                 ignoredUpdateTime(), defaultStartTime()),
-                        CompactionJobFinishedStatus.updateTimeAndSummary(
+                        ProcessFinishedStatus.updateTimeAndSummary(
                                 ignoredUpdateTime(), defaultSummary())))
                 .build();
     }

@@ -17,9 +17,9 @@ package sleeper.compaction.job;
 
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.job.status.CompactionJobStatusUpdate;
-import sleeper.compaction.job.status.CompactionJobStatusUpdateRecord;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
+import sleeper.core.record.process.status.ProcessStatusUpdate;
+import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -29,10 +29,10 @@ import java.util.function.Consumer;
 
 public class TestCompactionJobStatusUpdateRecords {
 
-    private final List<CompactionJobStatusUpdateRecord> updates = new ArrayList<>();
+    private final List<ProcessStatusUpdateRecord> updates = new ArrayList<>();
 
     public TestCompactionJobStatusUpdateRecords updatesForJobWithTask(
-            String jobId, String taskId, CompactionJobStatusUpdate... statusUpdates) {
+            String jobId, String taskId, ProcessStatusUpdate... statusUpdates) {
         return forJob(jobId, records -> records.updatesWithTask(taskId, statusUpdates));
     }
 
@@ -46,7 +46,7 @@ public class TestCompactionJobStatusUpdateRecords {
         return this;
     }
 
-    public List<CompactionJobStatusUpdateRecord> list() {
+    public List<ProcessStatusUpdateRecord> list() {
         return updates;
     }
 
@@ -66,9 +66,9 @@ public class TestCompactionJobStatusUpdateRecords {
             this.jobId = jobId;
         }
 
-        public WithJob updatesWithTask(String taskId, CompactionJobStatusUpdate... statusUpdates) {
+        public WithJob updatesWithTask(String taskId, ProcessStatusUpdate... statusUpdates) {
             Arrays.stream(statusUpdates)
-                    .map(update -> new CompactionJobStatusUpdateRecord(jobId, expiryDate, update, taskId))
+                    .map(update -> new ProcessStatusUpdateRecord(jobId, expiryDate, update, taskId))
                     .forEach(updates::add);
             return this;
         }

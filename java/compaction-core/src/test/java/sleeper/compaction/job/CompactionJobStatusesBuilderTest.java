@@ -17,12 +17,14 @@ package sleeper.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.job.status.CompactionJobRun;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.job.status.CompactionJobStatusUpdateRecord;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFinishedStatus;
+import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessStartedStatus;
+import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -41,12 +43,12 @@ public class CompactionJobStatusesBuilderTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
-        CompactionJobStartedStatus started1 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started1 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-23T09:23:30.012Z"),
                 Instant.parse("2022-09-23T09:23:30.001Z"));
-        CompactionJobFinishedStatus finished1 = CompactionJobFinishedStatus.updateTimeAndSummary(
+        ProcessFinishedStatus finished1 = ProcessFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-23T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(200L, 100L),
+                new RecordsProcessedSummary(new RecordsProcessed(200L, 100L),
                         Instant.parse("2022-09-23T09:23:30.001Z"),
                         Instant.parse("2022-09-23T09:24:00.001Z")));
         CompactionJobCreatedStatus created2 = CompactionJobCreatedStatus.builder()
@@ -54,16 +56,16 @@ public class CompactionJobStatusesBuilderTest {
                 .partitionId("partition2").childPartitionIds(Arrays.asList("A", "B"))
                 .inputFilesCount(12)
                 .build();
-        CompactionJobStartedStatus started2 = CompactionJobStartedStatus.updateAndStartTime(
+        ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
                 Instant.parse("2022-09-24T09:23:30.012Z"),
                 Instant.parse("2022-09-24T09:23:30.001Z"));
-        CompactionJobFinishedStatus finished2 = CompactionJobFinishedStatus.updateTimeAndSummary(
+        ProcessFinishedStatus finished2 = ProcessFinishedStatus.updateTimeAndSummary(
                 Instant.parse("2022-09-24T09:24:00.012Z"),
-                new CompactionJobSummary(new CompactionJobRecordsProcessed(450L, 300L),
+                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
                         Instant.parse("2022-09-24T09:23:30.001Z"),
                         Instant.parse("2022-09-24T09:24:00.001Z")));
 
-        List<CompactionJobStatusUpdateRecord> updates = new TestCompactionJobStatusUpdateRecords()
+        List<ProcessStatusUpdateRecord> updates = new TestCompactionJobStatusUpdateRecords()
                 .updatesForJobWithTask("job1", DEFAULT_TASK_ID, created1, started1, finished1)
                 .updatesForJobWithTask("job2", DEFAULT_TASK_ID, created2, started2, finished2)
                 .list();
@@ -74,8 +76,8 @@ public class CompactionJobStatusesBuilderTest {
         // Then
         assertThat(statuses).containsExactly(
                 CompactionJobStatus.builder().jobId("job2").createdStatus(created2)
-                        .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID, started2, finished2)).build(),
+                        .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID, started2, finished2)).build(),
                 CompactionJobStatus.builder().jobId("job1").createdStatus(created1)
-                        .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID, started1, finished1)).build());
+                        .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID, started1, finished1)).build());
     }
 }

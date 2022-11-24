@@ -18,6 +18,8 @@ package sleeper.status.report.compactionjob;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import sleeper.compaction.job.status.CompactionJobStatus;
@@ -29,6 +31,7 @@ import java.util.List;
 public class JsonCompactionJobStatusReporter implements CompactionJobStatusReporter {
     private final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues()
             .registerTypeAdapter(Instant.class, instantJsonSerializer())
+            .registerTypeAdapter(CompactionJobStatus.class, compactionJobStatusJsonSerializer())
             .setPrettyPrinting()
             .create();
     private final PrintStream out;
@@ -48,5 +51,22 @@ public class JsonCompactionJobStatusReporter implements CompactionJobStatusRepor
 
     private static JsonSerializer<Instant> instantJsonSerializer() {
         return (instant, type, context) -> new JsonPrimitive(instant.toString());
+    }
+
+    private JsonSerializer<CompactionJobStatus> compactionJobStatusJsonSerializer() {
+        return (jobStatus, type, context) -> createCompactionJobJson(jobStatus);
+    }
+
+    private JsonElement createCompactionJobJson(CompactionJobStatus jobStatus) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("jobId", jobStatus.getJobId());
+        jsonObject.add("jobRunList", gson.toJsonTree(jobStatus.getJobRuns()));
+        JsonObject createdStatus = new JsonObject();
+        createdStatus.addProperty("updateTime", jobStatus.getCreateUpdateTime().toString());
+        createdStatus.addProperty("partitionId", jobStatus.getPartitionId());
+        createdStatus.add("childPartitionIds", gson.toJsonTree(jobStatus.getChildPartitionIds()));
+        createdStatus.addProperty("inputFilesCount", jobStatus.getInputFilesCount());
+        jsonObject.add("createdStatus", createdStatus);
+        return jsonObject;
     }
 }

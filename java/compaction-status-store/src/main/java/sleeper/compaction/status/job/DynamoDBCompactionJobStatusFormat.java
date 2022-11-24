@@ -19,15 +19,15 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobRecordsProcessed;
-import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.job.status.CompactionJobStatusUpdate;
-import sleeper.compaction.job.status.CompactionJobStatusUpdateRecord;
 import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFinishedStatus;
+import sleeper.core.record.process.status.ProcessStartedStatus;
+import sleeper.core.record.process.status.ProcessStatusUpdate;
+import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;
@@ -84,7 +84,7 @@ public class DynamoDBCompactionJobStatusFormat {
                 .build();
     }
 
-    public static Map<String, AttributeValue> createJobFinishedRecord(CompactionJob job, CompactionJobSummary summary, String taskId, Long timeToLive) {
+    public static Map<String, AttributeValue> createJobFinishedRecord(CompactionJob job, RecordsProcessedSummary summary, String taskId, Long timeToLive) {
         return createJobRecord(job, UPDATE_TYPE_FINISHED, timeToLive)
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
                 .string(TASK_ID, taskId)
@@ -112,15 +112,15 @@ public class DynamoDBCompactionJobStatusFormat {
         return builder.stream();
     }
 
-    private static CompactionJobStatusUpdateRecord getStatusUpdateRecord(Map<String, AttributeValue> item) {
-        return new CompactionJobStatusUpdateRecord(
+    private static ProcessStatusUpdateRecord getStatusUpdateRecord(Map<String, AttributeValue> item) {
+        return new ProcessStatusUpdateRecord(
                 getStringAttribute(item, JOB_ID),
                 getInstantAttribute(item, EXPIRY_DATE),
                 getStatusUpdate(item),
                 getStringAttribute(item, TASK_ID));
     }
 
-    private static CompactionJobStatusUpdate getStatusUpdate(Map<String, AttributeValue> item) {
+    private static ProcessStatusUpdate getStatusUpdate(Map<String, AttributeValue> item) {
         switch (getStringAttribute(item, UPDATE_TYPE)) {
             case UPDATE_TYPE_CREATED:
                 return CompactionJobCreatedStatus.builder()
@@ -130,13 +130,13 @@ public class DynamoDBCompactionJobStatusFormat {
                         .inputFilesCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))
                         .build();
             case UPDATE_TYPE_STARTED:
-                return CompactionJobStartedStatus.updateAndStartTime(
+                return ProcessStartedStatus.updateAndStartTime(
                         getInstantAttribute(item, UPDATE_TIME),
                         getInstantAttribute(item, START_TIME));
             case UPDATE_TYPE_FINISHED:
-                return CompactionJobFinishedStatus.updateTimeAndSummary(
+                return ProcessFinishedStatus.updateTimeAndSummary(
                         getInstantAttribute(item, UPDATE_TIME),
-                        new CompactionJobSummary(new CompactionJobRecordsProcessed(
+                        new RecordsProcessedSummary(new RecordsProcessed(
                                 getLongAttribute(item, RECORDS_READ, 0),
                                 getLongAttribute(item, RECORDS_WRITTEN, 0)),
                                 getInstantAttribute(item, START_TIME),

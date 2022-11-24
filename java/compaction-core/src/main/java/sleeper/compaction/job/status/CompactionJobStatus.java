@@ -16,6 +16,8 @@
 package sleeper.compaction.job.status;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessRuns;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -26,13 +28,13 @@ public class CompactionJobStatus {
 
     private final String jobId;
     private final CompactionJobCreatedStatus createdStatus;
-    private final List<CompactionJobRun> jobRunList;
+    private final ProcessRuns jobRuns;
     private final Instant expiryDate;
 
     private CompactionJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         createdStatus = Objects.requireNonNull(builder.createdStatus, "createdStatus must not be null");
-        jobRunList = Collections.unmodifiableList(Objects.requireNonNull(builder.jobRunList, "jobRunList must not be null"));
+        jobRuns = builder.jobRuns;
         expiryDate = builder.expiryDate;
     }
 
@@ -69,11 +71,11 @@ public class CompactionJobStatus {
     }
 
     public boolean isStarted() {
-        return !jobRunList.isEmpty();
+        return jobRuns.isStarted();
     }
 
     public boolean isFinished() {
-        return !jobRunList.isEmpty() && jobRunList.stream().allMatch(CompactionJobRun::isFinished);
+        return jobRuns.isFinished();
     }
 
     public Instant getExpiryDate() {
@@ -85,7 +87,7 @@ public class CompactionJobStatus {
     }
 
     public boolean isTaskIdAssigned(String taskId) {
-        return jobRunList.stream().anyMatch(run -> run.getTaskId().equals(taskId));
+        return jobRuns.isTaskIdAssigned(taskId);
     }
 
     public boolean isInPeriod(Instant startTime, Instant endTime) {
@@ -98,24 +100,17 @@ public class CompactionJobStatus {
     }
 
     private Instant lastTime() {
-        if (jobRunList.isEmpty()) {
-            return createdStatus.getUpdateTime();
-        }
-        return getLatestJobRun().getLatestUpdateTime();
+        return jobRuns.lastTime().orElse(createdStatus.getUpdateTime());
     }
 
-    private CompactionJobRun getLatestJobRun() {
-        return jobRunList.get(0);
-    }
-
-    public List<CompactionJobRun> getJobRuns() {
-        return jobRunList;
+    public List<ProcessRun> getJobRuns() {
+        return jobRuns.getRunList();
     }
 
     public static final class Builder {
         private String jobId;
         private CompactionJobCreatedStatus createdStatus;
-        private List<CompactionJobRun> jobRunList;
+        private ProcessRuns jobRuns;
         private Instant expiryDate;
 
         private Builder() {
@@ -131,13 +126,12 @@ public class CompactionJobStatus {
             return this;
         }
 
-        public Builder singleJobRun(CompactionJobRun jobRun) {
-            this.jobRunList = Collections.singletonList(jobRun);
-            return this;
+        public Builder singleJobRun(ProcessRun jobRun) {
+            return jobRunsLatestFirst(Collections.singletonList(jobRun));
         }
 
-        public Builder jobRunsLatestFirst(List<CompactionJobRun> jobRunList) {
-            this.jobRunList = jobRunList;
+        public Builder jobRunsLatestFirst(List<ProcessRun> jobRunList) {
+            this.jobRuns = ProcessRuns.latestFirst(jobRunList);
             return this;
         }
 
@@ -160,12 +154,12 @@ public class CompactionJobStatus {
             return false;
         }
         CompactionJobStatus status = (CompactionJobStatus) o;
-        return jobId.equals(status.jobId) && createdStatus.equals(status.createdStatus) && Objects.equals(jobRunList, status.jobRunList);
+        return jobId.equals(status.jobId) && createdStatus.equals(status.createdStatus) && Objects.equals(jobRuns, status.jobRuns);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, createdStatus, jobRunList);
+        return Objects.hash(jobId, createdStatus, jobRuns);
     }
 
     @Override
@@ -173,7 +167,7 @@ public class CompactionJobStatus {
         return "CompactionJobStatus{" +
                 "jobId='" + jobId + '\'' +
                 ", createdStatus=" + createdStatus +
-                ", jobRunList=" + jobRunList +
+                ", jobRuns=" + jobRuns +
                 ", expiryDate=" + expiryDate +
                 '}';
     }
