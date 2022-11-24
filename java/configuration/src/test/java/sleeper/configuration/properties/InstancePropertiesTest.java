@@ -52,11 +52,13 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPA
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_SCALING_GRACE_PERIOD;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_ECS_LAUNCHTYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_GPU_TIMEOUT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_GPU;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
@@ -265,6 +267,7 @@ public class InstancePropertiesTest {
         instanceProperties.setNumber(COMPACTION_EC2_ROOT_SIZE, 50);
         instanceProperties.set(COMPACTION_ECS_LAUNCHTYPE, "FARGATE");
         instanceProperties.setNumber(COMPACTION_EC2_SCALING_GRACE_PERIOD, 120);
+        instanceProperties.setNumber(COMPACTION_GPU_TIMEOUT, 1800);
         instanceProperties.setNumber(TASK_RUNNER_LAMBDA_MEMORY_IN_MB, 2048);
         instanceProperties.setNumber(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS, 600);
         instanceProperties.setNumber(GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB, 2048);
@@ -283,9 +286,10 @@ public class InstancePropertiesTest {
         instanceProperties.set(FILE_SYSTEM, "s3a://");
         instanceProperties.setNumber(LOG_RETENTION_IN_DAYS, 1);
         instanceProperties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "ARM64");
-        instanceProperties.setNumber(COMPACTION_TASK_X86_GPU, 0);
+        instanceProperties.setNumber(COMPACTION_TASK_ARM_GPU, 0);
         instanceProperties.setNumber(COMPACTION_TASK_ARM_CPU, 2048);
         instanceProperties.setNumber(COMPACTION_TASK_ARM_MEMORY, 4096);
+        instanceProperties.setNumber(COMPACTION_TASK_X86_GPU, 0);
         instanceProperties.setNumber(COMPACTION_TASK_X86_CPU, 2048);
         instanceProperties.setNumber(COMPACTION_TASK_X86_MEMORY, 4096);
         instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 100_000_000L);

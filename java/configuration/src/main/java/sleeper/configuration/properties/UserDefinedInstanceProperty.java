@@ -189,9 +189,10 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     COMPACTION_TASK_CPU_ARCHITECTURE("sleeper.compaction.task.cpu.architecture", "X86_64"),
     COMPACTION_TASK_ARM_CPU("sleeper.compaction.task.arm.cpu", "1024"),
     COMPACTION_TASK_ARM_MEMORY("sleeper.compaction.task.arm.memory", "4096"),
+    COMPACTION_TASK_ARM_GPU("sleeper.compaction.task.arm.gpu", "0", Utils::isNonNegativeInteger),
     COMPACTION_TASK_X86_CPU("sleeper.compaction.task.x86.cpu", "1024"),
     COMPACTION_TASK_X86_MEMORY("sleeper.compaction.task.x86.memory", "4096"),
-    COMPACTION_TASK_X86_GPU("sleeper.compaction.task.x86.gpu", "0"),
+    COMPACTION_TASK_X86_GPU("sleeper.compaction.task.x86.gpu", "0", Utils::isNonNegativeInteger),
     COMPACTION_STATUS_STORE_ENABLED("sleeper.compaction.status.store.enabled", "true"),
     COMPACTION_JOB_STATUS_TTL_IN_SECONDS("sleeper.compaction.job.status.ttl", "604800", Utils::isPositiveInteger), // Default is 1 week
     COMPACTION_TASK_STATUS_TTL_IN_SECONDS("sleeper.compaction.task.status.ttl", "604800", Utils::isPositiveInteger), // Default is 1 week
@@ -206,7 +207,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     COMPACTION_EC2_ROOT_SIZE("sleeper.compaction.ec2.root.size", "50", Utils::isPositiveInteger),
     COMPACTION_ECS_LAUNCHTYPE("sleeper.compaction.ecs.launch.type", "FARGATE", Arrays.asList("EC2", "FARGATE")::contains),
     COMPACTION_EC2_SCALING_GRACE_PERIOD("sleeper.compaction.ec2.scaling.grace", "60", Utils::isNonNegativeInteger),
-
+    COMPACTION_GPU_TIMEOUT("sleeper.compaction.gpu.timeout", "1800", Utils::isPositiveInteger),
     // Query
     MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES("sleeper.query.s3.max-connections", "1024", Utils::isPositiveInteger),
     QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB("sleeper.query.processor.memory", "2048"),

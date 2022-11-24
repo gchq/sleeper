@@ -74,6 +74,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_GPU_TIMEOUT;
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 
 /**
@@ -169,6 +170,7 @@ public class CompactSortedFiles {
             throw new IllegalStateException("can't use GPU compaction on table " + compactionJob.getTableName() +
                     " as its schema has more than one row key. Only single dimension row key tables can be GPU compacted.");
         }
+
         LOGGER.info("Starting GPU compaction");
 
         // Write config data to msgpack
@@ -180,13 +182,15 @@ public class CompactSortedFiles {
         java.nio.file.Path gpuOutput = Files.createTempFile(null, null);
         gpuOutput.toFile().deleteOnExit();
 
+        int timeout = this.instanceProperties.getInt(COMPACTION_GPU_TIMEOUT);
+
         ProcessBuilder builder = new ProcessBuilder("/compact/cukeydist", "-", tempFile.toAbsolutePath().toString())
                 .inheritIO()
                 .redirectOutput(gpuOutput.toFile());
 
         Process gpuProcess = builder.start();
         try {
-            boolean terminatedInTime = gpuProcess.waitFor(15, TimeUnit.MINUTES);
+            boolean terminatedInTime = gpuProcess.waitFor(timeout, TimeUnit.SECONDS);
             if (!terminatedInTime) {
                 LOGGER.warn("GPU process not terminated inside timeout");
                 gpuProcess.destroyForcibly();

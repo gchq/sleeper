@@ -63,6 +63,8 @@ public class Scaler {
     private final int cpuReservation;
     /** The memory reservation for tasks. */
     private final int memoryReservation;
+    /** The GPU reservation for tasks. */
+    private final int gpuReservation;
     /**
      * The length of time an EC2 can be idle before being a candidate for
      * termination.
@@ -73,7 +75,7 @@ public class Scaler {
 
     public Scaler(AmazonAutoScaling asClient, AmazonECS ecsClient, String asGroupName,
             String ecsClusterName,
-            int cpuReservation, int memoryReservation, Duration gracePeriod) {
+            int cpuReservation, int memoryReservation, int gpuReservation, Duration gracePeriod) {
         super();
         this.asClient = asClient;
         this.ecsClient = ecsClient;
@@ -81,6 +83,7 @@ public class Scaler {
         this.ecsClusterName = ecsClusterName;
         this.cpuReservation = cpuReservation;
         this.memoryReservation = memoryReservation;
+        this.gpuReservation = gpuReservation;
         this.gracePeriod = gracePeriod;
     }
 
@@ -95,7 +98,10 @@ public class Scaler {
     public int calculateAvailableClusterContainerCapacity(Map<String, InstanceDetails> instanceDetails) {
         int total = 0;
         for (InstanceDetails d : instanceDetails.values()) {
-            total += Math.min(d.availableCPU / this.cpuReservation, d.availableRAM / this.memoryReservation);
+            total += Math.min(
+                    Math.min(d.availableCPU / this.cpuReservation,
+                            d.availableRAM / this.memoryReservation),
+                    d.availableGPU / this.gpuReservation);
         }
         return total;
     }
@@ -200,8 +206,10 @@ public class Scaler {
         // get the first one, we assume the containers are homogenous
         Optional<InstanceDetails> det = details.values().stream().findFirst();
         det.ifPresent(d -> {
-            this.cachedInstanceContainers = Math.min(d.totalCPU / this.cpuReservation,
-                    d.totalRAM / this.memoryReservation);
+            this.cachedInstanceContainers = Math.min(
+                    Math.min(d.totalCPU / this.cpuReservation,
+                            d.totalRAM / this.memoryReservation),
+                    d.totalGPU / this.gpuReservation);
         });
     }
 
@@ -335,7 +343,6 @@ public class Scaler {
         // older
         // than the grace period, it should be terminated
         for (Map.Entry<String, InstanceDetails> machine : details.entrySet()) {
-            LOGGER.debug("Examining {}", machine.getValue().instanceArn);
             if (safeARNs.contains(machine.getValue().instanceArn)) {
                 LOGGER.info("Instance ARN {} ID {} is in safe list, so keep it.",
                         machine.getValue().instanceArn, machine.getKey());
@@ -373,17 +380,10 @@ public class Scaler {
         List<String> clusterTasks = getTasks(taskFamilyName, "RUNNING");
         clusterTasks.addAll(getTasks(taskFamilyName, "STOPPED"));
 
-        LOGGER.debug("Safe ARNS {}", safeARNs);
-
         // Find the set of EC2 instance container ARNs that are running tasks
         // or recently stopped running tasks
         Set<String> returnedSafeArns = determineSafeInstanceContainerARNs(clusterTasks);
-
-        LOGGER.debug("Safe ARNs from determining {}", returnedSafeArns);
-
         safeARNs.addAll(returnedSafeArns);
-
-        LOGGER.debug("Safe ARNS after determining safe instances {}", safeARNs);
 
         // Take this list of safe ARNs and wash it against the list of all EC2s
         // to find ones to terminate

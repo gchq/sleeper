@@ -30,7 +30,7 @@ import com.amazonaws.services.ecs.model.TaskOverride;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.QueueAttributeName;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.InstanceProperties;
@@ -58,9 +58,11 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_SCALING_GRACE_PERIOD;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_GPU;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_GPU;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
@@ -128,26 +130,39 @@ public class RunTasks {
         this.launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
 
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        Pair<Integer, Integer> requirements = getCpuMemoryForArch(architecture, instanceProperties);
+        Triple<Integer, Integer, Integer> requirements = getCpuMemoryForArch(architecture, instanceProperties);
 
         this.scaler = new Scaler(asClient, ecsClient, autoScalingGroupName, this.clusterName,
                 requirements.getLeft(),
+                requirements.getMiddle(),
                 requirements.getRight(),
                 Duration.ofSeconds(instanceProperties.getInt(COMPACTION_EC2_SCALING_GRACE_PERIOD)));
     }
 
-    private static Pair<Integer, Integer> getCpuMemoryForArch(String architecture,
+    /**
+     * Retrieves architecture specific CPU and memory requirements. This returns
+     * a triple containing the CPU requirement in the left element and memory
+     * requirement in the middle and GPU requirement in the right element.
+     *
+     * @param architecture CPU architecture
+     * @param instanceProperties Sleeper instance properties
+     * @return CPU, memory and GPU requirements as per the CPU architecture
+     */
+    private static Triple<Integer, Integer, Integer> getCpuMemoryForArch(String architecture,
             InstanceProperties instanceProperties) {
         int cpu;
         int memoryLimitMiB;
+        int gpu;
         if (architecture.startsWith("ARM")) {
             cpu = instanceProperties.getInt(COMPACTION_TASK_ARM_CPU);
             memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_ARM_MEMORY);
+            gpu = instanceProperties.getInt(COMPACTION_TASK_ARM_GPU);
         } else {
             cpu = instanceProperties.getInt(COMPACTION_TASK_X86_CPU);
             memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_X86_MEMORY);
+            gpu = instanceProperties.getInt(COMPACTION_TASK_X86_GPU);
         }
-        return Pair.of(cpu, memoryLimitMiB);
+        return Triple.of(cpu, memoryLimitMiB, gpu);
     }
 
     public void run() throws InterruptedException {

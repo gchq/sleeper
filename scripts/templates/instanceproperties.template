@@ -108,6 +108,7 @@ sleeper.compaction.task.cpu.architecture=X86_64
 # See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.
 sleeper.compaction.task.arm.cpu=1024
 sleeper.compaction.task.arm.memory=4096
+sleeper.compaction.task.arm.gpu=0
 sleeper.compaction.task.x86.cpu=1024
 sleeper.compaction.task.x86.memory=4096
 sleeper.compaction.task.x86.gpu=0
@@ -172,7 +173,10 @@ sleeper.compaction.ec2.pool.maximum=3
 sleeper.compaction.ecs.launch.type=FARGATE
 
 # The size in GiB of the root EBS volume attached to the EC2 instances.
-sleeper.compaction.ec2.root.size=50
+sleeper.compaction.ec2.root.size=100
+
+# The amount of time in seconds Sleeper will wait for a GPU compaction process to finish
+sleeper.compaction.gpu.timeout=1800
 
 # The grace period (seconds) before an EC2 instance in the compaction ECS cluster is considered
 # for termination.

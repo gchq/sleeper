@@ -27,7 +27,6 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Details about EC2 instances in an ECS cluster.
@@ -41,49 +40,26 @@ public class InstanceDetails {
     public final int availableCPU;
     /** Amount of CPU available for container use. */
     public final int availableRAM;
+    /** Number of GPU available for container use. */
+    public final int availableGPU;
     /** Amount of CPU in total. */
     public final int totalCPU;
     /** Amount of RAM in total. */
     public final int totalRAM;
+    /** Number of GPU in total. */
+    public final int totalGPU;
 
-    public InstanceDetails(String instanceArn, Instant registered, int availableCPU, int availableRAM, int totalCPU,
-            int totalRAM) {
+    public InstanceDetails(String instanceArn, Instant registered, int availableCPU, int availableRAM, int availableGPU, int totalCPU,
+            int totalRAM, int totalGPU) {
         super();
         this.instanceArn = instanceArn;
         this.registered = registered;
         this.availableCPU = availableCPU;
         this.availableRAM = availableRAM;
+        this.availableGPU = availableGPU;
         this.totalCPU = totalCPU;
         this.totalRAM = totalRAM;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(availableCPU, availableRAM, instanceArn, registered, totalCPU, totalRAM);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        InstanceDetails other = (InstanceDetails) obj;
-        return availableCPU == other.availableCPU && availableRAM == other.availableRAM
-                && Objects.equals(instanceArn, other.instanceArn) && Objects.equals(registered, other.registered)
-                && totalCPU == other.totalCPU && totalRAM == other.totalRAM;
-    }
-
-    @Override
-    public String toString() {
-        return "InstanceDetails [instance_arn=" + instanceArn + ", registered=" + registered + ", availableCPU="
-                + availableCPU + ", availableRAM=" + availableRAM + ", totalCPU=" + totalCPU + ", totalRAM=" + totalRAM
-                + "]";
+        this.totalGPU = totalGPU;
     }
 
     /**
@@ -91,7 +67,7 @@ public class InstanceDetails {
      * Inspects the cluster to find the details of all the instances.
      *
      * @param ecsClusterName the cluster name
-     * @param ecsClient      the client conneciton
+     * @param ecsClient the client connection
      * @return map of instance IDs to details
      */
     public static Map<String, InstanceDetails> fetchInstanceDetails(String ecsClusterName, AmazonECS ecsClient) {
@@ -124,8 +100,10 @@ public class InstanceDetails {
                         c.getRegisteredAt().toInstant(),
                         findResourceAmount("CPU", remainingResources),
                         findResourceAmount("MEMORY", remainingResources),
+                        findResourceList("GPU", remainingResources).size(),
                         findResourceAmount("CPU", totalResources),
-                        findResourceAmount("MEMORY", totalResources)));
+                        findResourceAmount("MEMORY", totalResources),
+                        findResourceList("GPU", totalResources).size()));
             }
         }
         return details;
@@ -133,9 +111,33 @@ public class InstanceDetails {
 
     /**
      * Find the amount of the given resource in the list of resources.
-     * The list is inspected for the named resource and returned as an integer.
+     * The list is inspected for the named resource and returned as a list of
+     * strings.
      *
-     * @param name      the resource name to find
+     * @param name the resource name to find
+     * @param resources the list of resources
+     * @return the amount, or empty list if not known
+     * @throws IllegalStateException if the resource type is not STRINGSET
+     */
+    private static List<String> findResourceList(String name, List<Resource> resources) {
+        for (Resource r : resources) {
+            if (r.getName().equals(name)) {
+                if (!r.getType().equals("STRINGSET")) {
+                    throw new java.lang.IllegalStateException(
+                            "resource " + name + " has type " + r.getType() + " instead of STRINGSET");
+                }
+                return r.getStringSetValue();
+            }
+        }
+        return List.of();
+    }
+
+    /**
+     * Find the amount of the given resource in the list of resources.
+     * The list is inspected for the named resource and returned as an list of
+     * strings.
+     *
+     * @param name the resource name to find
      * @param resources the list of resources
      * @return the amount, or 0 if not known
      * @throws IllegalStateException if the resource type is not INTEGER
