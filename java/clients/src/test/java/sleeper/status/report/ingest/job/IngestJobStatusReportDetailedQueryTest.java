@@ -55,4 +55,14 @@ public class IngestJobStatusReportDetailedQueryTest extends IngestJobStatusRepor
         assertThat(getStandardReport(IngestJobQuery.DETAILED, jobWithMultipleRuns, 0)).hasToString(
                 replaceBracketedJobIds(jobWithMultipleRuns, example("reports/ingest/job/standard/detailed/jobWithMultipleRuns.txt")));
     }
+
+    @Test
+    public void shouldReportJobsWithLargeAndDecimalStatistics() throws Exception {
+        // Given
+        List<IngestJobStatus> jobsWithLargeAndDecimalStatistics = jobsWithLargeAndDecimalStatistics();
+
+        // When / Then
+        assertThat(getStandardReport(IngestJobQuery.DETAILED, jobsWithLargeAndDecimalStatistics, 0)).hasToString(
+                replaceBracketedJobIds(jobsWithLargeAndDecimalStatistics, example("reports/ingest/job/standard/detailed/jobsWithLargeAndDecimalStatistics.txt")));
+    }
 }
