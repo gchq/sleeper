@@ -66,7 +66,7 @@ public abstract class IngestJobStatusReporterTestBase {
         return Arrays.asList(status1, status2, status3, status4);
     }
 
-    List<IngestJobStatus> jobsWithMultipleRuns() {
+    List<IngestJobStatus> jobWithMultipleRuns() {
         List<ProcessRun> processRuns = Arrays.asList(
                 jobRunStartedInTask(1, "2022-10-12T10:02:00"),
                 jobRunFinishedInTask(2, "2022-10-12T10:01:15", "2022-10-12T10:01:45"),

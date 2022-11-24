@@ -49,7 +49,7 @@ public class IngestJobStatusReportAllQueryTest extends IngestJobStatusReporterTe
     @Test
     public void shouldReportIngestJobWithMultipleRuns() throws Exception {
         // Given
-        List<IngestJobStatus> jobWithMultipleRuns = jobsWithMultipleRuns();
+        List<IngestJobStatus> jobWithMultipleRuns = jobWithMultipleRuns();
 
         // When / Then
         assertThat(getStandardReport(IngestJobQuery.ALL, jobWithMultipleRuns, 0)).hasToString(
