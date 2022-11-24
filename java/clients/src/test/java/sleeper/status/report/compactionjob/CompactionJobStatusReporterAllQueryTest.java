@@ -18,7 +18,6 @@ package sleeper.status.report.compactionjob;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
 
 import java.util.Collections;
 import java.util.List;
@@ -27,16 +26,17 @@ import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
 
-public class StatusReporterDetailedQueryTest extends StatusReporterTestBase {
+public class CompactionJobStatusReporterAllQueryTest extends CompactionJobStatusReporterTestBase {
+
     @Test
-    public void shouldReportMixedCompactionJobStatus() throws Exception {
+    public void shouldReportCompactionJobStatusForStandardAndSplittingCompactions() throws Exception {
         // Given
         List<CompactionJobStatus> statusList = mixedJobStatuses();
 
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
-                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/standard/detailed/mixedJobs.txt")));
-        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
+                .isEqualTo(replaceStandardJobIds(statusList, example("reports/compactionjobstatus/standard/all/mixedJobs.txt")));
+        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
                 .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/json/mixedJobs.json")));
     }
 
@@ -46,9 +46,9 @@ public class StatusReporterDetailedQueryTest extends StatusReporterTestBase {
         List<CompactionJobStatus> statusList = jobWithMultipleRuns();
 
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.DETAILED))
-                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/standard/detailed/jobWithMultipleRuns.txt")));
-        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.DETAILED))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
+                .isEqualTo(replaceStandardJobIds(statusList, example("reports/compactionjobstatus/standard/all/jobWithMultipleRuns.txt")));
+        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
                 .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/json/jobWithMultipleRuns.json")));
     }
 
@@ -58,22 +58,22 @@ public class StatusReporterDetailedQueryTest extends StatusReporterTestBase {
         List<CompactionJobStatus> statusList = jobsWithLargeAndDecimalStatistics();
 
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.DETAILED))
-                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/standard/detailed/jobsWithLargeAndDecimalStatistics.txt")));
-        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.DETAILED))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
+                .isEqualTo(replaceStandardJobIds(statusList, example("reports/compactionjobstatus/standard/all/jobsWithLargeAndDecimalStatistics.txt")));
+        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
                 .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/json/jobsWithLargeAndDecimalStatistics.json")));
     }
 
     @Test
-    public void shouldReportNoCompactionJobStatusIfNoMatchingId() throws Exception {
+    public void shouldReportNoCompactionJobStatusIfNoJobsExist() throws Exception {
         // Given
         List<CompactionJobStatus> statusList = Collections.emptyList();
 
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
-                .isEqualTo(example("reports/compactionjobstatus/standard/detailed/noJobFound.txt"));
-        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
+                .isEqualTo(example("reports/compactionjobstatus/standard/all/noJobs.txt"));
+        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.ALL))
                 .isEqualTo(example("reports/compactionjobstatus/json/noJobs.json"));
-
     }
+
 }

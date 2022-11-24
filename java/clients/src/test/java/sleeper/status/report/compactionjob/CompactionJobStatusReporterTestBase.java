@@ -39,8 +39,11 @@ import java.util.stream.Collectors;
 
 import static sleeper.ClientTestUtils.exampleUUID;
 import static sleeper.compaction.job.CompactionJobTestDataHelper.finishedCompactionStatus;
+import static sleeper.status.report.StatusReporterTestHelper.jobRunFinishedInTask;
+import static sleeper.status.report.StatusReporterTestHelper.jobRunStartedInTask;
+import static sleeper.status.report.StatusReporterTestHelper.task;
 
-public abstract class StatusReporterTestBase {
+public abstract class CompactionJobStatusReporterTestBase {
 
     protected static String job(int number) {
         return exampleUUID("job", number);
@@ -48,10 +51,6 @@ public abstract class StatusReporterTestBase {
 
     protected static String partition(String letter) {
         return exampleUUID("partn", letter);
-    }
-
-    protected static String task(int number) {
-        return exampleUUID("task", number);
     }
 
     protected static List<CompactionJobStatus> mixedJobStatuses() {
@@ -141,33 +140,8 @@ public abstract class StatusReporterTestBase {
                         Duration.ofMillis(123), 1234, 1234));
     }
 
-    private static ProcessRun jobRunStartedInTask(int taskNumber, String startTimeNoMillis) {
-        return ProcessRun.started(task(taskNumber), defaultStartedStatus(startTimeNoMillis));
-    }
-
-    private static ProcessRun jobRunFinishedInTask(int taskNumber, String startTimeNoMillis, String finishTimeNoMillis) {
-        return ProcessRun.finished(task(taskNumber),
-                defaultStartedStatus(startTimeNoMillis),
-                defaultFinishedStatus(startTimeNoMillis, finishTimeNoMillis));
-    }
-
-    private static ProcessStartedStatus defaultStartedStatus(String startTimeNoMillis) {
-        return ProcessStartedStatus.updateAndStartTime(
-                Instant.parse(startTimeNoMillis + ".123Z"),
-                Instant.parse(startTimeNoMillis + ".001Z"));
-    }
-
-    private static ProcessFinishedStatus defaultFinishedStatus(String startTimeNoMillis, String finishTimeNoMillis) {
-        return ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse(finishTimeNoMillis + ".123Z"),
-                new RecordsProcessedSummary(
-                        new RecordsProcessed(300L, 200L),
-                        Instant.parse(startTimeNoMillis + ".001Z"),
-                        Instant.parse(finishTimeNoMillis + ".001Z")));
-    }
-
     protected static String replaceStandardJobIds(List<CompactionJobStatus> jobs, String example) {
-        return replaceJobIds(jobs, StatusReporterTestBase::job, example);
+        return replaceJobIds(jobs, CompactionJobStatusReporterTestBase::job, example);
     }
 
     protected static String replaceBracketedJobIds(List<CompactionJobStatus> jobs, String example) {

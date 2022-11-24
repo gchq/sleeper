@@ -27,7 +27,7 @@ import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
 
-public class StatusReporterUnfinishedQueryTest extends StatusReporterTestBase {
+public class CompactionJobStatusReporterUnfinishedQueryTest extends CompactionJobStatusReporterTestBase {
 
     @Test
     public void shouldReportCompactionJobStatusForUnfinishedStandardAndSplittingCompactions() throws Exception {
