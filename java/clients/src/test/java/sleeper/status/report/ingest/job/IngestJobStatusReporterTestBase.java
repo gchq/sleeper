@@ -16,6 +16,7 @@
 
 package sleeper.status.report.ingest.job;
 
+import sleeper.ToStringPrintStream;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
@@ -133,5 +134,9 @@ public abstract class IngestJobStatusReporterTestBase {
                 .build();
     }
 
-
+    String getStandardReport(IngestJobQuery query, List<IngestJobStatus> statusList, int numberInQueue) {
+        ToStringPrintStream output = new ToStringPrintStream();
+        new IngestJobStatusReport(output.getPrintStream()).run(query, statusList, numberInQueue);
+        return output.toString();
+    }
 }

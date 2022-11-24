@@ -17,7 +17,6 @@
 package sleeper.status.report.ingest.job;
 
 import org.junit.Test;
-import sleeper.ToStringPrintStream;
 import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.util.Collections;
@@ -26,7 +25,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
 
-public class IngestJobStatusReportTest extends IngestJobStatusReporterTestBase {
+public class IngestJobStatusReportAllQueryTest extends IngestJobStatusReporterTestBase {
     @Test
     public void shouldReportNoIngestJobs() throws Exception {
         // Given
@@ -65,11 +64,5 @@ public class IngestJobStatusReportTest extends IngestJobStatusReporterTestBase {
         // When / Then
         assertThat(getStandardReport(IngestJobQuery.ALL, jobsWithLargeAndDecimalStatistics, 0)).hasToString(
                 example("reports/ingest/job/standard/all/jobsWithLargeAndDecimalStatistics.txt"));
-    }
-    
-    private String getStandardReport(IngestJobQuery query, List<IngestJobStatus> statusList, int numberInQueue) {
-        ToStringPrintStream output = new ToStringPrintStream();
-        new IngestJobStatusReport(output.getPrintStream()).run(query, statusList, numberInQueue);
-        return output.toString();
     }
 }

@@ -54,13 +54,43 @@ public class IngestJobStatusReport {
         out.println();
         out.println("Ingest Job Status Report");
         out.println("------------------------");
+        printSummary(statusList, query, numberInQueue);
+        if (!query.equals(IngestJobQuery.DETAILED)) {
+            tableFactory.tableBuilder()
+                    .itemsAndSplittingWriter(statusList, this::writeJob)
+                    .build().write(out);
+        }
+    }
+
+    private void printSummary(List<IngestJobStatus> statusList, IngestJobQuery queryType, int numberInQueue) {
+        if (queryType.equals(IngestJobQuery.DETAILED)) {
+            printDetailedSummary(statusList);
+        } else if (queryType.equals(IngestJobQuery.ALL)) {
+            printAllSummary(statusList, numberInQueue);
+        }
+    }
+
+    private void printDetailedSummary(List<IngestJobStatus> statusList) {
+        if (statusList.isEmpty()) {
+            out.println("No job found with provided jobId");
+            out.println("------------------------");
+        } else {
+            for (IngestJobStatus status : statusList) {
+                if (status == null) {
+                    out.println("No job found with provided jobId");
+                } else {
+                    out.println("placeholder");
+                }
+                out.println("------------------------");
+            }
+        }
+    }
+
+    private void printAllSummary(List<IngestJobStatus> statusList, int numberInQueue) {
         out.printf("Total jobs waiting in queue (excluded from report): %s%n", numberInQueue);
         out.printf("Total jobs in progress: %s%n", statusList.stream().filter(status -> !status.isFinished()).count());
         out.printf("Total jobs finished: %s%n", statusList.stream().filter(IngestJobStatus::isFinished).count());
         printAverageIngestRate("Average ingest rate: %s%n", statusList);
-        tableFactory.tableBuilder()
-                .itemsAndSplittingWriter(statusList, this::writeJob)
-                .build().write(out);
     }
 
     private void printAverageIngestRate(String formatString, List<IngestJobStatus> jobs) {
