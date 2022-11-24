@@ -25,6 +25,7 @@ import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.status.report.StatusReporterTestHelper;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -132,6 +133,12 @@ public abstract class IngestJobStatusReporterTestBase {
                         ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime),
                         ProcessFinishedStatus.updateTimeAndSummary(finishTime, summary)))
                 .build();
+    }
+
+    public static String replaceBracketedJobIds(List<IngestJobStatus> job, String example) {
+        return StatusReporterTestHelper.replaceBracketedJobIds(job.stream()
+                .map(IngestJobStatus::getJobId)
+                .collect(Collectors.toList()), example);
     }
 
     String getStandardReport(IngestJobQuery query, List<IngestJobStatus> statusList, int numberInQueue) {

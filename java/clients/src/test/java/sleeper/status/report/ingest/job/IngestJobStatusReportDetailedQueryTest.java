@@ -24,6 +24,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
+import static sleeper.status.report.StatusReporterTestHelper.replaceBracketedJobIds;
 
 public class IngestJobStatusReportDetailedQueryTest extends IngestJobStatusReporterTestBase {
     @Test
@@ -34,5 +35,15 @@ public class IngestJobStatusReportDetailedQueryTest extends IngestJobStatusRepor
         // When / Then
         assertThat(getStandardReport(IngestJobQuery.DETAILED, noJobs, 0)).hasToString(
                 example("reports/ingest/job/standard/detailed/noJobFound.txt"));
+    }
+
+    @Test
+    public void shouldReportMixedIngestJobs() throws Exception {
+        // Given
+        List<IngestJobStatus> mixedJobs = mixedJobStatuses();
+
+        // When / Then
+        assertThat(getStandardReport(IngestJobQuery.DETAILED, mixedJobs, 0)).hasToString(
+                replaceBracketedJobIds(mixedJobs, example("reports/ingest/job/standard/detailed/mixedJobs.txt")));
     }
 }

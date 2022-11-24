@@ -28,6 +28,8 @@ import sleeper.status.report.table.TableWriterFactory;
 import java.io.PrintStream;
 import java.util.List;
 
+import static sleeper.status.report.StandardProcessStatusReporter.STATE_FINISHED;
+import static sleeper.status.report.StandardProcessStatusReporter.STATE_IN_PROGRESS;
 import static sleeper.status.report.StandardProcessStatusReporter.formatDecimal;
 
 public class IngestJobStatusReport {
@@ -79,10 +81,19 @@ public class IngestJobStatusReport {
                 if (status == null) {
                     out.println("No job found with provided jobId");
                 } else {
-                    out.println("placeholder");
+                    printDetailedSummary(status);
                 }
                 out.println("------------------------");
             }
+        }
+    }
+
+    private void printDetailedSummary(IngestJobStatus status) {
+        out.printf("Details for job %s:%n", status.getJobId());
+        out.printf("State: %s%n", status.isFinished() ? STATE_FINISHED : STATE_IN_PROGRESS);
+        out.printf("Number of input files: %d%n", status.getInputFileCount());
+        for (ProcessRun run : status.getJobRuns()) {
+            standardProcessStatusReporter.printProcessJobRun(run);
         }
     }
 
