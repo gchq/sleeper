@@ -641,16 +641,6 @@ public class CompactionStack extends NestedStack {
             memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_X86_MEMORY);
             gpu = instanceProperties.getInt(COMPACTION_TASK_X86_GPU);
         }
-
-        // bit hacky: EC2s don't give 100% of their memory for container use (OS
-        // headroom, system tasks, etc.) so since we want a whole GPU
-        // with only 1 GPU per typical system, we have to make sure to reduce
-        // the EC2 memory requirement by 5%. If we don't we end up asking for
-        // 16GiB of RAM on a 16GiB box and allocation will fail.
-        if (launchType.equalsIgnoreCase("EC2")) {
-            memoryLimitMiB = (int) (memoryLimitMiB * 0.95);
-        }
-
         return Triple.of(cpu, memoryLimitMiB, gpu);
     }
 
@@ -663,7 +653,7 @@ public class CompactionStack extends NestedStack {
                 .create(this, compactionTypeName + "CompactionFargateTaskDefinition")
                 .family(instanceProperties.get(ID) + compactionTypeName + "CompactionFargateTaskFamily")
                 .cpu(requirements.getLeft())
-                .memoryLimitMiB(requirements.getRight())
+                .memoryLimitMiB(requirements.getMiddle())
                 .runtimePlatform(RuntimePlatform.builder()
                         .cpuArchitecture(CpuArchitecture.of(architecture))
                         .operatingSystemFamily(OperatingSystemFamily.LINUX)
@@ -705,7 +695,10 @@ public class CompactionStack extends NestedStack {
                 .image(image)
                 .environment(environment)
                 .cpu(requirements.getLeft())
-                .memoryLimitMiB(requirements.getMiddle())
+                //bit hacky: Reduce memory requirement for EC2 to prevent
+                //container allocation failing when we need almost entire resources
+                //of machine
+                .memoryLimitMiB(requirements.getMiddle()*0.95)
                 .gpuCount(requirements.getRight())
                 .logging(Utils.createFargateContainerLogDriver(this, instanceProperties,
                         compactionTypeName + "EC2CompactionTasks"))
