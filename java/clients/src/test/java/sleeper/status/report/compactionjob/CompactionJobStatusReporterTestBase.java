@@ -27,6 +27,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStartedStatus;
+import sleeper.status.report.StatusReporterTestHelper;
 import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
 
 import java.io.PrintStream;
@@ -45,10 +46,6 @@ import static sleeper.status.report.StatusReporterTestHelper.jobRunStartedInTask
 import static sleeper.status.report.StatusReporterTestHelper.task;
 
 public abstract class CompactionJobStatusReporterTestBase {
-
-    protected static String job(int number) {
-        return exampleUUID("job", number);
-    }
 
     protected static String partition(String letter) {
         return exampleUUID("partn", letter);
@@ -146,7 +143,7 @@ public abstract class CompactionJobStatusReporterTestBase {
     }
 
     protected static String replaceStandardJobIds(List<CompactionJobStatus> jobs, String example) {
-        return replaceJobIds(jobs, CompactionJobStatusReporterTestBase::job, example);
+        return replaceJobIds(jobs, StatusReporterTestHelper::job, example);
     }
 
     protected static String replaceBracketedJobIds(List<CompactionJobStatus> jobs, String example) {

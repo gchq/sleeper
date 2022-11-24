@@ -27,6 +27,10 @@ import java.time.Instant;
 import static sleeper.ClientTestUtils.exampleUUID;
 
 public class StatusReporterTestHelper {
+    public static String job(int number) {
+        return exampleUUID("job", number);
+    }
+
     public static String task(int number) {
         return exampleUUID("task", number);
     }
