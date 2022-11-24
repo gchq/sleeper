@@ -122,28 +122,20 @@ public class IngestJobStatusReportTest {
         RecordsProcessedSummary summary4 = new RecordsProcessedSummary(
                 new RecordsProcessed(600L, 300L), startTime4, finishTime4);
         // When
-        IngestJobStatus status1 = IngestJobStatus.builder()
-                .jobId(job1.getId())
-                .inputFileCount(job1.getFiles().size())
+        IngestJobStatus status1 = IngestJobStatus.from(job1)
                 .jobRun(ProcessRun.started("task1111-1111-1111-1111-111111111111",
                         ProcessStartedStatus.updateAndStartTime(updateTime1, startTime1)))
                 .build();
-        IngestJobStatus status2 = IngestJobStatus.builder()
-                .jobId(job2.getId())
-                .inputFileCount(job2.getFiles().size())
+        IngestJobStatus status2 = IngestJobStatus.from(job2)
                 .jobRun(ProcessRun.finished("task1111-1111-1111-1111-111111111111",
                         ProcessStartedStatus.updateAndStartTime(updateTime2, startTime2),
                         ProcessFinishedStatus.updateTimeAndSummary(finishTime2, summary2)))
                 .build();
-        IngestJobStatus status3 = IngestJobStatus.builder()
-                .jobId(job3.getId())
-                .inputFileCount(job3.getFiles().size())
+        IngestJobStatus status3 = IngestJobStatus.from(job3)
                 .jobRun(ProcessRun.started("task2222-2222-2222-2222-222222222222",
                         ProcessStartedStatus.updateAndStartTime(updateTime3, startTime3)))
                 .build();
-        IngestJobStatus status4 = IngestJobStatus.builder()
-                .jobId(job4.getId())
-                .inputFileCount(job4.getFiles().size())
+        IngestJobStatus status4 = IngestJobStatus.from(job4)
                 .jobRun(ProcessRun.finished("task2222-2222-2222-2222-222222222222",
                         ProcessStartedStatus.updateAndStartTime(updateTime4, startTime4),
                         ProcessFinishedStatus.updateTimeAndSummary(finishTime4, summary4)))
