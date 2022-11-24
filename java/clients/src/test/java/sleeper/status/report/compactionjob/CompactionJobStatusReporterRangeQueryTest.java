@@ -30,7 +30,7 @@ import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
 
-public class StatusReporterRangeQueryTest extends StatusReporterTestBase {
+public class CompactionJobStatusReporterRangeQueryTest extends CompactionJobStatusReporterTestBase {
 
     @Test
     public void shouldReportCompactionJobStatusForStandardAndSplittingCompactionsInRange() throws Exception {
