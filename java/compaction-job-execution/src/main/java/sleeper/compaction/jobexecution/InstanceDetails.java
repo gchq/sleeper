@@ -27,6 +27,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Details about EC2 instances in an ECS cluster.
@@ -60,6 +61,33 @@ public class InstanceDetails {
         this.totalCPU = totalCPU;
         this.totalRAM = totalRAM;
         this.totalGPU = totalGPU;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(availableCPU, availableGPU, availableRAM, instanceArn, registered, totalCPU, totalGPU, totalRAM);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        InstanceDetails other = (InstanceDetails) obj;
+        return availableCPU == other.availableCPU && availableGPU == other.availableGPU && availableRAM == other.availableRAM && Objects.equals(instanceArn, other.instanceArn) && Objects.equals(registered, other.registered)
+                && totalCPU == other.totalCPU && totalGPU == other.totalGPU && totalRAM == other.totalRAM;
+    }
+
+    @Override
+    public String toString() {
+        return "InstanceDetails [instanceArn=" + instanceArn + ", registered=" + registered + ", availableCPU=" + availableCPU + ", availableRAM=" + availableRAM + ", availableGPU=" + availableGPU + ", totalCPU=" + totalCPU + ", totalRAM=" + totalRAM
+                + ", totalGPU=" + totalGPU + "]";
     }
 
     /**
