@@ -24,7 +24,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
-import static sleeper.status.report.StatusReporterTestHelper.replaceBracketedJobIds;
 
 public class IngestJobStatusReportDetailedQueryTest extends IngestJobStatusReporterTestBase {
     @Test
@@ -45,5 +44,15 @@ public class IngestJobStatusReportDetailedQueryTest extends IngestJobStatusRepor
         // When / Then
         assertThat(getStandardReport(IngestJobQuery.DETAILED, mixedJobs, 0)).hasToString(
                 replaceBracketedJobIds(mixedJobs, example("reports/ingest/job/standard/detailed/mixedJobs.txt")));
+    }
+
+    @Test
+    public void shouldReportJobWithMultipleRuns() throws Exception {
+        // Given
+        List<IngestJobStatus> jobWithMultipleRuns = jobWithMultipleRuns();
+
+        // When / Then
+        assertThat(getStandardReport(IngestJobQuery.DETAILED, jobWithMultipleRuns, 0)).hasToString(
+                replaceBracketedJobIds(jobWithMultipleRuns, example("reports/ingest/job/standard/detailed/jobWithMultipleRuns.txt")));
     }
 }
