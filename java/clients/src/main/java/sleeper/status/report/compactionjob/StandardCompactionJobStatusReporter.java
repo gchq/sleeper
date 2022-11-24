@@ -46,12 +46,10 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private final TableField partitionIdField;
     private final TableField typeField;
     private final StandardProcessStatusReporter standardProcessStatusReporter;
-
     private final TableWriterFactory tableFactory;
+    private final PrintStream out;
 
     private static final String STATE_PENDING = "PENDING";
-
-    private final PrintStream out;
 
     public StandardCompactionJobStatusReporter() {
         this(System.out);
