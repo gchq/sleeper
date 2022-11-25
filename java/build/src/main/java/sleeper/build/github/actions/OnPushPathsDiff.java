@@ -17,7 +17,8 @@ package sleeper.build.github.actions;
 
 import sleeper.build.chunks.ProjectChunk;
 
-import java.util.Collections;
+import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -40,15 +41,31 @@ public class OnPushPathsDiff {
     }
 
     public static OnPushPathsDiff fromExpectedAndActual(List<String> expected, List<String> actual) {
+        List<String> missingEntries = new ArrayList<>(expected);
+        missingEntries.removeAll(actual);
+        List<String> extraEntries = new ArrayList<>(actual);
+        extraEntries.removeAll(expected);
         return builder()
                 .expected(expected).actual(actual)
-                .missingEntries(Collections.emptyList()).extraEntries(Collections.emptyList())
+                .missingEntries(missingEntries).extraEntries(extraEntries)
                 .build();
     }
 
     public void throwIfInvalid(ProjectChunk chunk) {
         if (!missingEntries.isEmpty()) {
             throw new NotAllDependenciesDeclaredException(chunk, this);
+        }
+    }
+
+    public void report(PrintStream out) {
+        if (!missingEntries.isEmpty()) {
+            out.println("Missing entries:");
+            missingEntries.forEach(out::println);
+        }
+        out.println();
+        if (!extraEntries.isEmpty()) {
+            out.println("Extra entries:");
+            extraEntries.forEach(out::println);
         }
     }
 
@@ -83,6 +100,16 @@ public class OnPushPathsDiff {
     @Override
     public int hashCode() {
         return Objects.hash(expected, actual, missingEntries, extraEntries);
+    }
+
+    @Override
+    public String toString() {
+        return "OnPushPathsDiff{" +
+                "expected=" + expected +
+                ", actual=" + actual +
+                ", missingEntries=" + missingEntries +
+                ", extraEntries=" + extraEntries +
+                '}';
     }
 
     public static final class Builder {

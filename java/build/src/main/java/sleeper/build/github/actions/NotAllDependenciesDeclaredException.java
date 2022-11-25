@@ -45,7 +45,7 @@ public class NotAllDependenciesDeclaredException extends ReportableException {
     public void report(PrintStream out, ProjectStructure project) {
         out.println(getMessage());
         out.println("Please add the necessary on.push.paths at " + project.workflowPathInRepository(chunk));
-        out.println("Missing entries:");
-        diff.getMissingEntries().forEach(out::println);
+        out.println();
+        diff.report(out);
     }
 }

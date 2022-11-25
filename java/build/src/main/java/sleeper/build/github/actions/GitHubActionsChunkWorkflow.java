@@ -20,9 +20,7 @@ import sleeper.build.chunks.ProjectStructure;
 import sleeper.build.maven.InternalDependencyIndex;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -49,20 +47,10 @@ public class GitHubActionsChunkWorkflow {
     }
 
     public void validate(ProjectStructure project, ProjectChunk chunk, InternalDependencyIndex index) {
-        List<String> missingEntries = new ArrayList<>();
-        chunk.dependencies(index).forEach(module -> {
-            String expected = module.pathInRepository(project).toString() + "/**";
-            if (!onPushPaths.contains(expected)) {
-                missingEntries.add(expected);
-            }
-        });
-        if (!missingEntries.isEmpty()) {
-            throw new NotAllDependenciesDeclaredException(chunk,
-                    OnPushPathsDiff.builder().expected(onPushPaths).actual(onPushPaths)
-                            .missingEntries(missingEntries)
-                            .extraEntries(Collections.emptyList())
-                            .build());
-        }
+        OnPushPathsDiff.fromExpectedAndActual(
+                        chunk.getExpectedPathsToTriggerBuild(project, index, this),
+                        onPushPaths)
+                .throwIfInvalid(chunk);
     }
 
     @Override
