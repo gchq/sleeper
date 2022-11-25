@@ -34,6 +34,6 @@ public class JsonIngestJobStatusReporterAllQueryTest extends IngestJobStatusRepo
 
         // When / Then
         assertThat(getJsonReport(QueryType.ALL, noJobs, 0)).hasToString(
-                example("reports/ingest/job/json/all/noJobs.json"));
+                example("reports/ingest/job/json/noJobs.json"));
     }
 }
