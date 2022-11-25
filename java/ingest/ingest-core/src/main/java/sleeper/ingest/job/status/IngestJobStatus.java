@@ -27,13 +27,13 @@ import java.util.Objects;
 
 public class IngestJobStatus {
     private final String jobId;
-    private final int inputFileCount;
+    private final int inputFilesCount;
     private final ProcessRuns jobRuns;
     private final Instant expiryDate;
 
     private IngestJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
-        inputFileCount = builder.inputFileCount;
+        inputFilesCount = builder.inputFileCount;
         jobRuns = Objects.requireNonNull(builder.jobRuns, "jobRuns must not be null");
         expiryDate = builder.expiryDate;
     }
@@ -60,8 +60,8 @@ public class IngestJobStatus {
         return jobId;
     }
 
-    public int getInputFileCount() {
-        return inputFileCount;
+    public int getInputFilesCount() {
+        return inputFilesCount;
     }
 
     public Instant getExpiryDate() {

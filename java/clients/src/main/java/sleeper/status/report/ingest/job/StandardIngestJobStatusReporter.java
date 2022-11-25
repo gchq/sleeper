@@ -91,7 +91,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     private void printDetailedSummary(IngestJobStatus status) {
         out.printf("Details for job %s:%n", status.getJobId());
         out.printf("State: %s%n", status.isFinished() ? STATE_FINISHED : STATE_IN_PROGRESS);
-        out.printf("Number of input files: %d%n", status.getInputFileCount());
+        out.printf("Number of input files: %d%n", status.getInputFilesCount());
         for (ProcessRun run : status.getJobRuns()) {
             standardProcessStatusReporter.printProcessJobRun(run);
         }
@@ -133,6 +133,6 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
 
     private void writeJobFields(IngestJobStatus job, TableRow.Builder builder) {
         builder.value(jobIdField, job.getJobId())
-                .value(totalFilesField, job.getInputFileCount());
+                .value(totalFilesField, job.getInputFilesCount());
     }
 }
