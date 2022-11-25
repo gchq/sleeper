@@ -16,13 +16,19 @@
 
 package sleeper.status.report.ingest.job;
 
-public interface IngestJobQuery {
-    IngestJobQuery ALL = new IngestJobQuery() {
-    };
-    IngestJobQuery DETAILED = new IngestJobQuery() {
-    };
+import sleeper.ingest.job.status.IngestJobStatus;
 
-    // stub method for checkstyle
-    default void run() {
+import java.util.List;
+
+public interface IngestJobStatusReporter {
+    enum QueryType {
+        ALL,
+        DETAILED;
+
+        boolean isParametersRequired() {
+            return this == DETAILED;
+        }
     }
+
+    void report(List<IngestJobStatus> jobStatusList, QueryType queryType, int numberInQueue);
 }

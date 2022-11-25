@@ -24,16 +24,17 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
+import static sleeper.status.report.ingest.job.IngestJobStatusReporter.QueryType;
 
-public class IngestJobStatusReportAllQueryTest extends IngestJobStatusReporterTestBase {
+public class StandardIngestJobStatusReporterDetailedQueryTest extends IngestJobStatusReporterTestBase {
     @Test
     public void shouldReportNoIngestJobs() throws Exception {
         // Given
         List<IngestJobStatus> noJobs = Collections.emptyList();
 
         // When / Then
-        assertThat(getStandardReport(IngestJobQuery.ALL, noJobs, 0)).hasToString(
-                example("reports/ingest/job/standard/all/noJobs.txt"));
+        assertThat(getStandardReport(QueryType.DETAILED, noJobs, 0)).hasToString(
+                example("reports/ingest/job/standard/detailed/noJobFound.txt"));
     }
 
     @Test
@@ -42,27 +43,27 @@ public class IngestJobStatusReportAllQueryTest extends IngestJobStatusReporterTe
         List<IngestJobStatus> mixedJobs = mixedJobStatuses();
 
         // When / Then
-        assertThat(getStandardReport(IngestJobQuery.ALL, mixedJobs, 2)).hasToString(
-                example("reports/ingest/job/standard/all/mixedJobs.txt"));
+        assertThat(getStandardReport(QueryType.DETAILED, mixedJobs, 0)).hasToString(
+                replaceBracketedJobIds(mixedJobs, example("reports/ingest/job/standard/detailed/mixedJobs.txt")));
     }
 
     @Test
-    public void shouldReportIngestJobWithMultipleRuns() throws Exception {
+    public void shouldReportJobWithMultipleRuns() throws Exception {
         // Given
         List<IngestJobStatus> jobWithMultipleRuns = jobWithMultipleRuns();
 
         // When / Then
-        assertThat(getStandardReport(IngestJobQuery.ALL, jobWithMultipleRuns, 0)).hasToString(
-                example("reports/ingest/job/standard/all/jobWithMultipleRuns.txt"));
+        assertThat(getStandardReport(QueryType.DETAILED, jobWithMultipleRuns, 0)).hasToString(
+                replaceBracketedJobIds(jobWithMultipleRuns, example("reports/ingest/job/standard/detailed/jobWithMultipleRuns.txt")));
     }
 
     @Test
-    public void shouldReportIngestJobsWithLargeAndDecimalStatistics() throws Exception {
+    public void shouldReportJobsWithLargeAndDecimalStatistics() throws Exception {
         // Given
         List<IngestJobStatus> jobsWithLargeAndDecimalStatistics = jobsWithLargeAndDecimalStatistics();
 
         // When / Then
-        assertThat(getStandardReport(IngestJobQuery.ALL, jobsWithLargeAndDecimalStatistics, 0)).hasToString(
-                example("reports/ingest/job/standard/all/jobsWithLargeAndDecimalStatistics.txt"));
+        assertThat(getStandardReport(QueryType.DETAILED, jobsWithLargeAndDecimalStatistics, 0)).hasToString(
+                replaceBracketedJobIds(jobsWithLargeAndDecimalStatistics, example("reports/ingest/job/standard/detailed/jobsWithLargeAndDecimalStatistics.txt")));
     }
 }

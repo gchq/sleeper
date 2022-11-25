@@ -38,6 +38,7 @@ import static sleeper.status.report.StatusReporterTestHelper.job;
 import static sleeper.status.report.StatusReporterTestHelper.jobRunFinishedInTask;
 import static sleeper.status.report.StatusReporterTestHelper.jobRunStartedInTask;
 import static sleeper.status.report.StatusReporterTestHelper.task;
+import static sleeper.status.report.ingest.job.IngestJobStatusReporter.QueryType;
 
 public abstract class IngestJobStatusReporterTestBase {
     List<IngestJobStatus> mixedJobStatuses() {
@@ -141,9 +142,9 @@ public abstract class IngestJobStatusReporterTestBase {
                 .collect(Collectors.toList()), example);
     }
 
-    String getStandardReport(IngestJobQuery query, List<IngestJobStatus> statusList, int numberInQueue) {
+    String getStandardReport(QueryType query, List<IngestJobStatus> statusList, int numberInQueue) {
         ToStringPrintStream output = new ToStringPrintStream();
-        new IngestJobStatusReport(output.getPrintStream()).run(query, statusList, numberInQueue);
+        new StandardIngestJobStatusReporter(output.getPrintStream()).report(statusList, query, numberInQueue);
         return output.toString();
     }
 }

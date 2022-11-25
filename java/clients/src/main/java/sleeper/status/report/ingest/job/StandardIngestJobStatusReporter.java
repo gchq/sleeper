@@ -32,7 +32,7 @@ import static sleeper.status.report.StandardProcessStatusReporter.STATE_FINISHED
 import static sleeper.status.report.StandardProcessStatusReporter.STATE_IN_PROGRESS;
 import static sleeper.status.report.StandardProcessStatusReporter.formatDecimal;
 
-public class IngestJobStatusReport {
+public class StandardIngestJobStatusReporter implements IngestJobStatusReporter {
 
     private final TableField stateField;
     private final TableField jobIdField;
@@ -42,7 +42,7 @@ public class IngestJobStatusReport {
 
     private final PrintStream out;
 
-    public IngestJobStatusReport(PrintStream out) {
+    public StandardIngestJobStatusReporter(PrintStream out) {
         this.out = out;
         TableWriterFactory.Builder tableFactoryBuilder = TableWriterFactory.builder();
         stateField = tableFactoryBuilder.addField("STATE");
@@ -52,22 +52,22 @@ public class IngestJobStatusReport {
         tableFactory = tableFactoryBuilder.build();
     }
 
-    public void run(IngestJobQuery query, List<IngestJobStatus> statusList, int numberInQueue) {
+    public void report(List<IngestJobStatus> statusList, QueryType query, int numberInQueue) {
         out.println();
         out.println("Ingest Job Status Report");
         out.println("------------------------");
         printSummary(statusList, query, numberInQueue);
-        if (!query.equals(IngestJobQuery.DETAILED)) {
+        if (!query.equals(QueryType.DETAILED)) {
             tableFactory.tableBuilder()
                     .itemsAndSplittingWriter(statusList, this::writeJob)
                     .build().write(out);
         }
     }
 
-    private void printSummary(List<IngestJobStatus> statusList, IngestJobQuery queryType, int numberInQueue) {
-        if (queryType.equals(IngestJobQuery.DETAILED)) {
+    private void printSummary(List<IngestJobStatus> statusList, QueryType queryType, int numberInQueue) {
+        if (queryType.equals(QueryType.DETAILED)) {
             printDetailedSummary(statusList);
-        } else if (queryType.equals(IngestJobQuery.ALL)) {
+        } else if (queryType.equals(QueryType.ALL)) {
             printAllSummary(statusList, numberInQueue);
         }
     }
