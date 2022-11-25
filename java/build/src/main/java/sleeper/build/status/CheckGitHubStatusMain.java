@@ -18,7 +18,6 @@ package sleeper.build.status;
 import sleeper.build.chunks.ProjectConfiguration;
 import sleeper.build.chunks.ProjectStructure;
 import sleeper.build.github.api.GitHubWorkflowRunsImpl;
-import sleeper.build.util.ReportableException;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -42,8 +41,7 @@ public class CheckGitHubStatusMain {
         ProjectConfiguration configuration = structure.loadProjectConfiguration();
         try {
             configuration.validate(structure, System.err);
-        } catch (ReportableException e) {
-            e.report(System.err, structure);
+        } catch (IllegalStateException e) {
             System.exit(1);
             return;
         }

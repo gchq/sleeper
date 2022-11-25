@@ -52,21 +52,23 @@ public class OnPushPathsDiff {
                 .build();
     }
 
-    public void report(PrintStream out, ProjectStructure project, ProjectChunk chunk) {
+    public void reportMissingEntries(PrintStream out, ProjectStructure project, ProjectChunk chunk) {
         if (!missingEntries.isEmpty()) {
-            out.println("Misconfigured on.push.paths for chunk \"" + chunk.getId() + "\"");
-            out.println("Please add the necessary on.push.paths at " + project.workflowPathInRepository(chunk));
-            out.println();
-            out.println("Missing entries:");
+            out.println("Found missing on.push.paths at " + project.workflowPathInRepository(chunk) + ":");
             missingEntries.forEach(out::println);
+            out.println();
+            out.println("Expected entries:");
+            expected.forEach(out::println);
+            out.println();
         }
-        out.println();
+    }
+
+    public void reportExtraEntries(ProjectStructure project, ProjectChunk chunk, PrintStream out) {
         if (!extraEntries.isEmpty()) {
-            out.println("Extra entries:");
+            out.println("Found extra on.push.paths at " + project.workflowPathInRepository(chunk) + ":");
             extraEntries.forEach(out::println);
+            out.println();
         }
-        out.println();
-        out.println();
     }
 
     public List<String> getExpected() {

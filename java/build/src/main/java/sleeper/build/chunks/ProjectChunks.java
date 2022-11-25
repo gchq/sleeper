@@ -18,14 +18,15 @@ package sleeper.build.chunks;
 import sleeper.build.github.actions.OnPushPathsDiff;
 import sleeper.build.maven.InternalDependencyIndex;
 import sleeper.build.maven.MavenModuleStructure;
-import sleeper.build.util.ReportableException;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -44,35 +45,41 @@ public class ProjectChunks {
 
     public void validate(ProjectStructure project, PrintStream out) throws IOException {
         MavenModuleStructure maven = project.loadMavenStructure();
-        validateAllConfigured(maven);
+        validateAllConfigured(project, maven, out);
         validateChunkWorkflows(project, maven.internalDependencies(), out);
     }
 
-    public void validateAllConfigured(MavenModuleStructure project) throws NotAllMavenModulesConfiguredException {
+    public void validateAllConfigured(ProjectStructure project, MavenModuleStructure maven, PrintStream out) {
         Set<String> configuredModuleRefs = stream()
                 .flatMap(chunk -> chunk.getModules().stream())
                 .collect(Collectors.toSet());
-        List<String> unconfiguredModuleRefs = project.allTestedModulesForProjectList()
+        List<String> unconfiguredModuleRefs = maven.allTestedModulesForProjectList()
                 .filter(moduleRef -> !configuredModuleRefs.contains(moduleRef))
                 .collect(Collectors.toList());
         if (!unconfiguredModuleRefs.isEmpty()) {
-            throw new NotAllMavenModulesConfiguredException(unconfiguredModuleRefs);
+            out.println("Maven modules not configured in any chunk: " + String.join(", ", unconfiguredModuleRefs));
+            out.println("Please ensure chunks are configured correctly at " + project.getChunksYamlRelative());
+            throw new IllegalStateException("Failed validating chunk Maven modules");
         }
     }
 
     private void validateChunkWorkflows(
             ProjectStructure project, InternalDependencyIndex dependencies, PrintStream out) throws IOException {
         boolean failed = false;
+        // Report extra entries after all the missing entries
+        List<Consumer<PrintStream>> extraEntryReports = new ArrayList<>();
         for (ProjectChunk chunk : chunks) {
             OnPushPathsDiff diff = project.loadWorkflow(chunk)
                     .getOnPushPathsDiffFromExpected(project, chunk, dependencies);
+            diff.reportMissingEntries(out, project, chunk);
+            extraEntryReports.add(print -> diff.reportExtraEntries(project, chunk, print));
             if (!diff.getMissingEntries().isEmpty()) {
-                diff.report(out, project, chunk);
                 failed = true;
             }
         }
+        extraEntryReports.forEach(report -> report.accept(out));
         if (failed) {
-            throw new ReportableException("Failed validating chunk workflows");
+            throw new IllegalStateException("Failed validating chunk workflows");
         }
     }
 
