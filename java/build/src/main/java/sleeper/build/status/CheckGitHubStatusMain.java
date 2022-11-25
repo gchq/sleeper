@@ -43,7 +43,7 @@ public class CheckGitHubStatusMain {
         try {
             configuration.validate(structure, System.err);
         } catch (ReportableException e) {
-            e.report(System.out, structure);
+            e.report(System.err, structure);
             System.exit(1);
             return;
         }
