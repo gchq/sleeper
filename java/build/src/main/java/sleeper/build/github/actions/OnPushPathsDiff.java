@@ -16,6 +16,7 @@
 package sleeper.build.github.actions;
 
 import sleeper.build.chunks.ProjectChunk;
+import sleeper.build.chunks.ProjectStructure;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -51,14 +52,11 @@ public class OnPushPathsDiff {
                 .build();
     }
 
-    public void throwIfInvalid(ProjectChunk chunk) {
+    public void report(PrintStream out, ProjectStructure project, ProjectChunk chunk) {
         if (!missingEntries.isEmpty()) {
-            throw new NotAllDependenciesDeclaredException(chunk, this);
-        }
-    }
-
-    public void report(PrintStream out) {
-        if (!missingEntries.isEmpty()) {
+            out.println("Misconfigured on.push.paths for chunk \"" + chunk.getId() + "\"");
+            out.println("Please add the necessary on.push.paths at " + project.workflowPathInRepository(chunk));
+            out.println();
             out.println("Missing entries:");
             missingEntries.forEach(out::println);
         }
@@ -67,6 +65,8 @@ public class OnPushPathsDiff {
             out.println("Extra entries:");
             extraEntries.forEach(out::println);
         }
+        out.println();
+        out.println();
     }
 
     public List<String> getExpected() {

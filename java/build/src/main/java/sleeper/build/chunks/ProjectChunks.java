@@ -15,10 +15,13 @@
  */
 package sleeper.build.chunks;
 
+import sleeper.build.github.actions.OnPushPathsDiff;
 import sleeper.build.maven.InternalDependencyIndex;
 import sleeper.build.maven.MavenModuleStructure;
+import sleeper.build.util.ReportableException;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -39,10 +42,10 @@ public class ProjectChunks {
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Chunk ID not found: " + id));
     }
 
-    public void validate(ProjectStructure project) throws IOException {
+    public void validate(ProjectStructure project, PrintStream out) throws IOException {
         MavenModuleStructure maven = project.loadMavenStructure();
         validateAllConfigured(maven);
-        validateChunkWorkflows(project, maven.internalDependencies());
+        validateChunkWorkflows(project, maven.internalDependencies(), out);
     }
 
     public void validateAllConfigured(MavenModuleStructure project) throws NotAllMavenModulesConfiguredException {
@@ -58,10 +61,18 @@ public class ProjectChunks {
     }
 
     private void validateChunkWorkflows(
-            ProjectStructure project, InternalDependencyIndex dependencies) throws IOException {
+            ProjectStructure project, InternalDependencyIndex dependencies, PrintStream out) throws IOException {
+        boolean failed = false;
         for (ProjectChunk chunk : chunks) {
-            project.loadWorkflow(chunk)
-                    .validate(project, chunk, dependencies);
+            OnPushPathsDiff diff = project.loadWorkflow(chunk)
+                    .getOnPushPathsDiffFromExpected(project, chunk, dependencies);
+            if (!diff.getMissingEntries().isEmpty()) {
+                diff.report(out, project, chunk);
+                failed = true;
+            }
+        }
+        if (failed) {
+            throw new ReportableException("Failed validating chunk workflows");
         }
     }
 

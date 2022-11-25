@@ -19,11 +19,12 @@ import sleeper.build.chunks.ProjectStructure;
 
 import java.io.PrintStream;
 
-public abstract class ReportableException extends RuntimeException {
+public class ReportableException extends RuntimeException {
 
-    protected ReportableException(String message) {
+    public ReportableException(String message) {
         super(message);
     }
 
-    public abstract void report(PrintStream out, ProjectStructure project);
+    public void report(PrintStream out, ProjectStructure project) {
+    }
 }

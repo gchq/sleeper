@@ -23,6 +23,7 @@ import sleeper.build.status.ChunkStatuses;
 import sleeper.build.status.WorkflowStatus;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -81,8 +82,8 @@ public class ProjectConfiguration {
         return chunks;
     }
 
-    public void validate(ProjectStructure structure) throws IOException {
-        chunks.validate(structure);
+    public void validate(ProjectStructure structure, PrintStream out) throws IOException {
+        chunks.validate(structure, out);
     }
 
     public long getRetrySeconds() {

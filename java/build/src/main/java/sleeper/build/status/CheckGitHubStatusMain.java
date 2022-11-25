@@ -41,7 +41,7 @@ public class CheckGitHubStatusMain {
                 .build();
         ProjectConfiguration configuration = structure.loadProjectConfiguration();
         try {
-            configuration.validate(structure);
+            configuration.validate(structure, System.err);
         } catch (ReportableException e) {
             e.report(System.out, structure);
             System.exit(1);
