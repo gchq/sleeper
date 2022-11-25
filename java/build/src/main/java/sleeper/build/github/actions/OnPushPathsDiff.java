@@ -58,7 +58,7 @@ public class OnPushPathsDiff {
             missingEntries.forEach(out::println);
             out.println();
             out.println("Expected entries:");
-            expected.forEach(out::println);
+            expected.forEach(entry -> out.println("- '" + entry + "'"));
             out.println();
         }
     }
