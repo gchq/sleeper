@@ -20,7 +20,7 @@ import sleeper.build.chunks.ProjectChunk;
 import sleeper.build.chunks.ProjectStructure;
 import sleeper.build.chunks.TestChunks;
 import sleeper.build.chunks.TestProjectStructure;
-import sleeper.build.maven.MavenModuleStructure;
+import sleeper.build.maven.InternalDependencyIndex;
 import sleeper.build.maven.TestMavenModuleStructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,14 +35,14 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
         GitHubActionsChunkWorkflow workflow = TestGitHubActionsChunkWorkflows.common();
         ProjectChunk chunk = TestChunks.common();
         ProjectStructure project = TestProjectStructure.example();
-        MavenModuleStructure maven = TestMavenModuleStructure.example();
+        InternalDependencyIndex maven = TestMavenModuleStructure.example().internalDependencies();
 
         // When / Then
         assertThat(chunk.getExpectedPathsToTriggerBuild(project, maven, workflow)).containsExactly(
                 "github-actions/chunk-common.yaml",
                 "github-actions/chunk.yaml",
-                "config/chunks.yaml");
-//                "maven/pom.xml",
+                "config/chunks.yaml",
+                "maven/pom.xml");
 //                "maven/configuration/**",
 //                "maven/core/**");
         assertThatCode(() -> workflow.validate(project, chunk, maven))
@@ -60,7 +60,7 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
                 "maven/core/**");
         ProjectChunk chunk = TestChunks.common();
         ProjectStructure project = TestProjectStructure.example();
-        MavenModuleStructure maven = TestMavenModuleStructure.example();
+        InternalDependencyIndex maven = TestMavenModuleStructure.example().internalDependencies();
 
         // When / Then
         assertThatThrownBy(() -> workflow.validate(project, chunk, maven))
@@ -80,7 +80,7 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
                 "maven/pom.xml");
         ProjectChunk chunk = TestChunks.common();
         ProjectStructure project = TestProjectStructure.example();
-        MavenModuleStructure maven = TestMavenModuleStructure.example();
+        InternalDependencyIndex maven = TestMavenModuleStructure.example().internalDependencies();
 
         // When / Then
         assertThatThrownBy(() -> workflow.validate(project, chunk, maven))

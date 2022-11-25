@@ -18,7 +18,6 @@ package sleeper.build.github.actions;
 import sleeper.build.chunks.ProjectChunk;
 import sleeper.build.chunks.ProjectStructure;
 import sleeper.build.maven.InternalDependencyIndex;
-import sleeper.build.maven.MavenModuleStructure;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -46,10 +45,6 @@ public class GitHubActionsChunkWorkflow {
 
     public Path getUsesWorkflowPath() {
         return usesWorkflowPath;
-    }
-
-    public void validate(ProjectStructure project, ProjectChunk chunk, MavenModuleStructure maven) {
-        validate(project, chunk, maven.internalDependencies());
     }
 
     public void validate(ProjectStructure project, ProjectChunk chunk, InternalDependencyIndex index) {

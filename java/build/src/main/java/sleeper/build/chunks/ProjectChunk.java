@@ -18,12 +18,12 @@ package sleeper.build.chunks;
 import sleeper.build.github.actions.GitHubActionsChunkWorkflow;
 import sleeper.build.maven.InternalDependencyIndex;
 import sleeper.build.maven.MavenModuleAndPath;
-import sleeper.build.maven.MavenModuleStructure;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.build.util.ValidationUtils.ignoreEmpty;
@@ -67,11 +67,15 @@ public class ProjectChunk {
     }
 
     public List<String> getExpectedPathsToTriggerBuild(
-            ProjectStructure project, MavenModuleStructure maven, GitHubActionsChunkWorkflow actualWorkflow) {
-        return Arrays.asList(
-                project.workflowPathInRepository(this).toString(),
-                actualWorkflow.getUsesWorkflowPath().normalize().toString(),
-                project.getChunksYamlRelative().toString());
+            ProjectStructure project, InternalDependencyIndex maven, GitHubActionsChunkWorkflow actualWorkflow) {
+        return Stream.concat(
+                        Stream.of(
+                                project.workflowPathInRepository(this).toString(),
+                                actualWorkflow.getUsesWorkflowPath().normalize().toString(),
+                                project.getChunksYamlRelative().toString()),
+                        maven.ancestorsForModules(modules).map(module ->
+                                project.pomPathInRepository(module).toString()))
+                .collect(Collectors.toList());
     }
 
     public static Builder chunk(String id) {
