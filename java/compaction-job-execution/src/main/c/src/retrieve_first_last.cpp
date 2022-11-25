@@ -54,6 +54,7 @@ std::vector<T> getFirstLast(cudf::column_view const& firstColumn) {
     // pull this back to cpu
     std::shared_ptr<arrow::Table> cpuTable = cudf::to_arrow(tabled.view(), {{""}});
     std::shared_ptr<arrow::ChunkedArray> cpuColumn = cpuTable->column(0);
+    //now get first and second items of this 2 value table
     std::vector<T> items;
     ScalarVisit<T> visitor{items};
     arrow::Result<std::shared_ptr<arrow::Scalar>> firstVal = cpuColumn->GetScalar(0);
@@ -63,6 +64,7 @@ std::vector<T> getFirstLast(cudf::column_view const& firstColumn) {
     return items;
 }
 
+//instantiate this template for the types we need
 template std::vector<std::string> getFirstLast(cudf::column_view const& firstColumn);
 template std::vector<std::int32_t> getFirstLast(cudf::column_view const& firstColumn);
 template std::vector<std::int64_t> getFirstLast(cudf::column_view const& firstColumn);

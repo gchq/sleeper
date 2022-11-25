@@ -24,6 +24,7 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <tuple>
 #include <variant>
 #include <vector>
 
@@ -74,7 +75,8 @@ struct fileinfo_t {
 };
 
 using tab_mem_t = std::pair<std::unique_ptr<cudf::table>, ::size_t>;
-using row_mem_t = std::pair<::size_t, ::size_t>;
+template <typename T>
+using row_mem_t = std::tuple<::size_t, ::size_t, T, T>;
 
 /** Compile time map converts from cuDF column type to a Parquet statistics type.*/
 using parquet_type_map = TypeMap<std::string,

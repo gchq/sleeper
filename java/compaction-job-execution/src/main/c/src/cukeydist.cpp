@@ -25,7 +25,6 @@
 #include <algorithm>
 #include <chrono>
 #include <csignal>
-#include <cudf/concatenate.hpp>
 #include <cudf/copying.hpp>
 #include <cudf/interop.hpp>
 #include <cudf/io/datasource.hpp>
@@ -45,9 +44,11 @@
 #include <iterator>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <rmm/mr/device/logging_resource_adaptor.hpp>
 #include <string>
 #include <thread>
+#include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -176,15 +177,15 @@ table_for_range_low_mem(std::vector<fileinfo_t> const& sources, cudf::size_type 
 }
 
 template <typename T>
-row_mem_t write_range_low_mem(std::vector<fileinfo_t> const& sources, cudf::size_type const sort_col,
-                              T const& low, T const& high,
-                              std::vector<EdgePair_vec<T>> const& filestats,
-                              std::shared_ptr<std::atomic_size_t> downloadedAmount,
-                              std::unique_ptr<cudf::io::parquet_chunked_writer>& writer) {
+row_mem_t<T> write_range_low_mem(std::vector<fileinfo_t> const& sources, cudf::size_type const sort_col,
+                                 T const& low, T const& high,
+                                 std::vector<EdgePair_vec<T>> const& filestats,
+                                 std::shared_ptr<std::atomic_size_t> downloadedAmount,
+                                 std::unique_ptr<cudf::io::parquet_chunked_writer>& writer) {
     tab_mem_t tableMem = table_for_range_low_mem(sources, sort_col, low, high,
                                                  filestats, downloadedAmount);
     if (tableMem.first.get() == nullptr) {
-        return {0, 0};
+        return {0, 0, T{}, T{}};
     }
 
     std::cerr << "Write" << std::endl;
@@ -192,12 +193,8 @@ row_mem_t write_range_low_mem(std::vector<fileinfo_t> const& sources, cudf::size
 
     std::vector<T> firstLast = getFirstLast<T>(tableMem.first->get_column(0).view());
 
-    for (auto const & t : firstLast) {
-        std::cerr << t << std::endl;
-    }
-
     freeMemory("write tables done");
-    return {static_cast<size_t>(tableMem.first->num_rows()), tableMem.second};
+    return {static_cast<size_t>(tableMem.first->num_rows()), tableMem.second, firstLast[0], firstLast[1]};
 }
 
 template <typename T>
@@ -258,10 +255,16 @@ void readRowGroupStats(std::vector<cudf::size_type> const& sortCols, std::shared
                rowGroupParts);
 }
 
-void updateOutputData(CommandLineOutput& returnData, std::string const& min,
-                      std::string const& max, ::size_t const count) {
-    returnData.minKeys.push_back(min);  // TODO set these correctly
-    returnData.maxKeys.push_back(max);
+template <typename T>
+void updateOutputData(CommandLineOutput& returnData, T const& min,
+                      T const& max, ::size_t const count) {
+    if constexpr (std::is_integral_v<T>) {
+        returnData.minKeys.push_back(std::to_string(min));
+        returnData.maxKeys.push_back(std::to_string(max));
+    } else {
+        returnData.minKeys.push_back(min);
+        returnData.maxKeys.push_back(max);
+    }
     returnData.rowsWritten.push_back(static_cast<std::uint64_t>(count));
 }
 
@@ -304,6 +307,9 @@ CommandLineOutput doCompactFiles(Edge_vec<T> const& rowGroupParts, CommandLineIn
     ::size_t count = 0;
     // number of partitions to merge in one pass
     ::size_t rangesPerPart = 1;
+    // the first and last elements of column 0 in current output file
+    std::optional<T> outPartMin;
+    T outPartMax;
     while (!ranges.empty()) {
         EdgePair<T>& curr = ranges.front();
         // find ending point based on how many ranges in this partition
@@ -319,7 +325,14 @@ CommandLineOutput doCompactFiles(Edge_vec<T> const& rowGroupParts, CommandLineIn
 
         ::size_t nextRangesPerPart = 0;
         try {
-            auto [partCount, memUsed] = write_range_low_mem(sources, opts.sortIndexes[0], curr.first, endRange.second, fileStats, downloadedAmount, writer);
+            auto [partCount, memUsed, r0Min, r0Max] = write_range_low_mem(sources, opts.sortIndexes[0], curr.first, endRange.second, fileStats, downloadedAmount, writer);
+
+            // capture first element?
+            if (!outPartMin) {
+                outPartMin = r0Min;
+            }
+            outPartMax = r0Max;  // always update the last element
+
             count += partCount;
             // remove the parts we've just done
             ranges.erase(ranges.begin(), ranges.begin() + endIndex + 1);
@@ -346,7 +359,8 @@ CommandLineOutput doCompactFiles(Edge_vec<T> const& rowGroupParts, CommandLineIn
             if (newOutputNeeded) {
                 writer->close();
                 writer = createWriter(opts, tim, (awsPtr) ? awsPtr.get() : nullptr, currentSink);
-                updateOutputData(returnData, "a", "z", count);  // TODO FIX
+                updateOutputData(returnData, *outPartMin, outPartMax, count);
+                outPartMin.reset();
                 count = 0;
             }
         } catch (std::exception& excpt) {
@@ -364,12 +378,7 @@ CommandLineOutput doCompactFiles(Edge_vec<T> const& rowGroupParts, CommandLineIn
         std::cerr << " next attempt " << rangesPerPart << std::endl;
     }
     writer->close();
-
-    if constexpr (std::is_integral_v<T>) {  // TODO FIX
-        updateOutputData(returnData, std::to_string(1), std::to_string(9), count);
-    } else {
-        updateOutputData(returnData, "a", "z", count);
-    }
+    updateOutputData(returnData, *outPartMin, outPartMax, count);
     return returnData;
 }
 
@@ -490,6 +499,11 @@ int main(int argc, char* argv[]) {
 
     std::cerr << "total num rows written " << std::accumulate(resultData.rowsWritten.cbegin(), resultData.rowsWritten.cend(), 0) << std::endl;
     std::cerr << "total time " << (tend - tstart) << " seconds" << std::endl;
+
+    for (::size_t i = 0; i < resultData.minKeys.size(); i++) {
+        std::cerr << resultData.minKeys[i] << " -> " << resultData.maxKeys[i] << std::endl;
+    }
+
     // write out message pack data
     resultData.rowsRead = totalRows;
     std::vector<std::uint8_t> msgOut = msgpack::pack(resultData);
