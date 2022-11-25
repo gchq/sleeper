@@ -42,7 +42,7 @@ public class InternalDependencyIndex {
     public Stream<MavenModuleAndPath> dependenciesForModules(List<String> paths) {
         return paths.stream()
                 .map(this::moduleByPathOrThrow)
-                .flatMap(this::moduleAndDependencies)
+                .flatMap(this::moduleAndAllDependencies)
                 .distinct();
     }
 
@@ -51,13 +51,15 @@ public class InternalDependencyIndex {
                 .orElseThrow(() -> new IllegalArgumentException("Module not found: " + path));
     }
 
-    private Stream<MavenModuleAndPath> moduleAndDependencies(MavenModuleAndPath path) {
-        return Stream.concat(Stream.of(path), dependencies(path));
+    private Stream<MavenModuleAndPath> moduleAndAllDependencies(MavenModuleAndPath path) {
+        return Stream.concat(Stream.of(path), path.getStructure().dependencies()
+                .flatMap(this::dependenciesByRef));
     }
 
-    private Stream<MavenModuleAndPath> dependencies(MavenModuleAndPath path) {
-        return path.getStructure().dependencies()
-                .flatMap(this::dependenciesByRef);
+    private Stream<MavenModuleAndPath> moduleAndExportedDependencies(MavenModuleAndPath path) {
+        return Stream.concat(Stream.of(path), path.getStructure().dependencies()
+                .filter(DependencyReference::isExported)
+                .flatMap(this::dependenciesByRef));
     }
 
     private Optional<MavenModuleAndPath> moduleByDependencyRef(DependencyReference reference) {
@@ -68,6 +70,6 @@ public class InternalDependencyIndex {
         return Stream.of(moduleByDependencyRef(reference))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .flatMap(this::moduleAndDependencies);
+                .flatMap(this::moduleAndExportedDependencies);
     }
 }

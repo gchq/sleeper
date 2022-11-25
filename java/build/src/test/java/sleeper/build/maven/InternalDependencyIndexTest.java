@@ -85,6 +85,35 @@ public class InternalDependencyIndexTest {
     }
 
     @Test
+    public void shouldExcludeUnexportedDependencyOfDependency() {
+        // Given
+        InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
+                testedModuleBuilder("a").build(),
+                testedModuleBuilder("b").dependenciesArray(
+                        dependencyBuilder("sleeper:a").exported(false).build()).build(),
+                testedModuleBuilder("c").dependenciesArray(dependency("sleeper:b")).build()
+        ).build().internalDependencies();
+
+        // When / Then
+        assertThat(index.dependencyPathsForModules("c"))
+                .containsExactly("c", "b");
+    }
+
+    @Test
+    public void shouldIncludeUnexportedDependencyDirectly() {
+        // Given
+        InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
+                testedModuleBuilder("a").build(),
+                testedModuleBuilder("b").dependenciesArray(
+                        dependencyBuilder("sleeper:a").exported(false).build()).build()
+        ).build().internalDependencies();
+
+        // When / Then
+        assertThat(index.dependencyPathsForModules("b"))
+                .containsExactly("b", "a");
+    }
+
+    @Test
     public void shouldIncludeDependencyWithExplicitlyDeclaredScope() {
         // Given
         InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(

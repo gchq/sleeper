@@ -41,6 +41,10 @@ public class DependencyReference {
         return ArtifactReference.groupAndArtifact(groupId, artifactId);
     }
 
+    public boolean isExported() {
+        return exported;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
