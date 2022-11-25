@@ -1,4 +1,4 @@
-name: Build Some Modules
+name: some-chunk
 on:
   push:
     paths:

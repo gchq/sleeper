@@ -15,6 +15,8 @@
  */
 package sleeper.build.github.actions;
 
+import java.nio.file.Paths;
+
 public class TestGitHubActionsChunkWorkflows {
 
     private TestGitHubActionsChunkWorkflows() {
@@ -24,6 +26,7 @@ public class TestGitHubActionsChunkWorkflows {
         return GitHubActionsChunkWorkflow.builder()
                 .chunkId("bulk-import")
                 .name("Build Bulk Import Modules")
+                .usesWorkflowPath(Paths.get("./github-actions/chunk.yaml"))
                 .onPushPathsArray(
                         "github-actions/chunk-bulk-import.yaml",
                         "github-actions/chunk.yaml",
@@ -43,6 +46,7 @@ public class TestGitHubActionsChunkWorkflows {
         return GitHubActionsChunkWorkflow.builder()
                 .chunkId("common")
                 .name("Build Common Modules")
+                .usesWorkflowPath(Paths.get("./github-actions/chunk.yaml"))
                 .onPushPathsArray(
                         "github-actions/chunk-common.yaml",
                         "github-actions/chunk.yaml",
@@ -56,6 +60,7 @@ public class TestGitHubActionsChunkWorkflows {
     public static GitHubActionsChunkWorkflow workflow(String chunkId, String... paths) {
         return GitHubActionsChunkWorkflow.builder()
                 .chunkId(chunkId).name(chunkId)
+                .usesWorkflowPath(Paths.get("./github-actions/chunk.yaml"))
                 .onPushPathsArray(paths)
                 .build();
     }

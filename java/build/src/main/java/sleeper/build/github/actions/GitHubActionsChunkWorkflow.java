@@ -30,16 +30,22 @@ public class GitHubActionsChunkWorkflow {
 
     private final String chunkId;
     private final String name;
+    private final Path usesWorkflowPath;
     private final List<String> onPushPaths;
 
     private GitHubActionsChunkWorkflow(Builder builder) {
         chunkId = Objects.requireNonNull(builder.chunkId, "chunkId must not be null");
         name = Objects.requireNonNull(builder.name, "name must not be null");
+        usesWorkflowPath = Objects.requireNonNull(builder.usesWorkflowPath, "usesWorkflowPath must not be null");
         onPushPaths = Objects.requireNonNull(builder.onPushPaths, "onPushPaths must not be null");
     }
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public Path getUsesWorkflowPath() {
+        return usesWorkflowPath;
     }
 
     public void validate(ProjectStructure project, ProjectChunk chunk, MavenModuleStructure maven) {
@@ -71,20 +77,35 @@ public class GitHubActionsChunkWorkflow {
             return false;
         }
         GitHubActionsChunkWorkflow that = (GitHubActionsChunkWorkflow) o;
-        return chunkId.equals(that.chunkId) && name.equals(that.name) && onPushPaths.equals(that.onPushPaths);
+        return chunkId.equals(that.chunkId) && name.equals(that.name) && usesWorkflowPath.equals(that.usesWorkflowPath) && onPushPaths.equals(that.onPushPaths);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(chunkId, name, onPushPaths);
+        return Objects.hash(chunkId, name, usesWorkflowPath, onPushPaths);
+    }
+
+    @Override
+    public String toString() {
+        return "GitHubActionsChunkWorkflow{" +
+                "chunkId='" + chunkId + '\'' +
+                ", name='" + name + '\'' +
+                ", usesWorkflowPath=" + usesWorkflowPath +
+                ", onPushPaths=" + onPushPaths +
+                '}';
     }
 
     public static final class Builder {
         private List<String> onPushPaths;
         private String chunkId;
         private String name;
+        private Path usesWorkflowPath;
 
         private Builder() {
+        }
+
+        public static Builder builder() {
+            return new Builder();
         }
 
         public Builder chunkId(String chunkId) {
@@ -94,6 +115,11 @@ public class GitHubActionsChunkWorkflow {
 
         public Builder name(String name) {
             this.name = name;
+            return this;
+        }
+
+        public Builder usesWorkflowPath(Path usesWorkflowPath) {
+            this.usesWorkflowPath = usesWorkflowPath;
             return this;
         }
 

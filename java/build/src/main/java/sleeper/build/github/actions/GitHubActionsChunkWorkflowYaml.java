@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -59,9 +60,11 @@ public class GitHubActionsChunkWorkflowYaml {
     }
 
     private GitHubActionsChunkWorkflow toWorkflow(ObjectMapper mapper) {
+        Job job = chunkJob(mapper);
         return GitHubActionsChunkWorkflow.builder()
-                .chunkId(chunkJob(mapper).with.chunkId)
+                .chunkId(job.with.chunkId)
                 .name(name)
+                .usesWorkflowPath(Paths.get(job.uses))
                 .onPushPaths(onPushPaths)
                 .build();
     }
@@ -99,13 +102,14 @@ public class GitHubActionsChunkWorkflowYaml {
     }
 
     public static class Job {
+        private final String uses;
         private final WorkflowInputs with;
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public Job(
                 @JsonProperty("uses") String uses,
                 @JsonProperty("with") WorkflowInputs with) {
-            Objects.requireNonNull(uses, "uses must not be null");
+            this.uses = Objects.requireNonNull(uses, "uses must not be null");
             this.with = Objects.requireNonNull(with, "with must not be null");
         }
     }

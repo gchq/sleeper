@@ -20,6 +20,7 @@ import sleeper.build.chunks.TestChunks;
 import sleeper.build.chunks.TestProjectStructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.build.github.actions.TestGitHubActionsChunkWorkflows.workflow;
 import static sleeper.build.testutil.TestResources.exampleReader;
 
 public class GitHubActionsChunkWorkflowYamlTest {
@@ -59,12 +60,7 @@ public class GitHubActionsChunkWorkflowYamlTest {
                 exampleReader("examples/github-actions/corner-cases/chunk-extra-job.yaml"));
 
         // When / Then
-        assertThat(workflow).isEqualTo(
-                GitHubActionsChunkWorkflow.builder()
-                        .chunkId("some-chunk")
-                        .name("Build Some Modules")
-                        .onPushPathsArray("github-actions/chunk-extra-job.yaml")
-                        .build());
+        assertThat(workflow).isEqualTo(workflow("some-chunk", "github-actions/chunk-extra-job.yaml"));
     }
 
     @Test
@@ -74,12 +70,7 @@ public class GitHubActionsChunkWorkflowYamlTest {
                 exampleReader("examples/github-actions/corner-cases/chunk-extra-job-first.yaml"));
 
         // When / Then
-        assertThat(workflow).isEqualTo(
-                GitHubActionsChunkWorkflow.builder()
-                        .chunkId("some-chunk")
-                        .name("Build Some Modules")
-                        .onPushPathsArray("github-actions/chunk-extra-job.yaml")
-                        .build());
+        assertThat(workflow).isEqualTo(workflow("some-chunk", "github-actions/chunk-extra-job.yaml"));
     }
 
     @Test
@@ -89,12 +80,7 @@ public class GitHubActionsChunkWorkflowYamlTest {
                 exampleReader("examples/github-actions/corner-cases/chunk-extra-input.yaml"));
 
         // When / Then
-        assertThat(workflow).isEqualTo(
-                GitHubActionsChunkWorkflow.builder()
-                        .chunkId("some-chunk")
-                        .name("Build Some Modules")
-                        .onPushPathsArray("github-actions/chunk-extra-input.yaml")
-                        .build());
+        assertThat(workflow).isEqualTo(workflow("some-chunk", "github-actions/chunk-extra-input.yaml"));
     }
 
 }

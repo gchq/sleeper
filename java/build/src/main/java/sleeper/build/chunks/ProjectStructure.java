@@ -73,6 +73,10 @@ public class ProjectStructure {
         return workflowsPathAbsolute.resolve(chunk.getWorkflow());
     }
 
+    public Path workflowPathInRepository(ProjectChunk chunk) {
+        return repositoryPath.relativize(workflowsPathAbsolute).resolve(chunk.getWorkflow());
+    }
+
     public static Builder builder() {
         return new Builder();
     }

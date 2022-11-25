@@ -38,6 +38,13 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
         MavenModuleStructure maven = TestMavenModuleStructure.example();
 
         // When / Then
+        assertThat(chunk.getExpectedPathsToTriggerBuild(project, maven, workflow)).containsExactly(
+                "github-actions/chunk-common.yaml",
+                "github-actions/chunk.yaml");
+//                "config/chunks.yaml",
+//                "maven/pom.xml",
+//                "maven/configuration/**",
+//                "maven/core/**");
         assertThatCode(() -> workflow.validate(project, chunk, maven))
                 .doesNotThrowAnyException();
     }
