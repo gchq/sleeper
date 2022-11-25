@@ -59,6 +59,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         printSummary(statusList, query, numberInQueue);
         if (!query.equals(QueryType.DETAILED)) {
             tableFactory.tableBuilder()
+                    .showFields(query != QueryType.UNFINISHED, standardProcessStatusReporter.getFinishedFields())
                     .itemsAndSplittingWriter(statusList, this::writeJob)
                     .build().write(out);
         }

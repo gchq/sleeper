@@ -41,6 +41,12 @@ import static sleeper.status.report.StatusReporterTestHelper.task;
 import static sleeper.status.report.ingest.job.IngestJobStatusReporter.QueryType;
 
 public abstract class IngestJobStatusReporterTestBase {
+    List<IngestJobStatus> mixedUnfinishedJobStatuses() {
+        return mixedJobStatuses().stream()
+                .filter(status -> !status.isFinished())
+                .collect(Collectors.toList());
+    }
+
     List<IngestJobStatus> mixedJobStatuses() {
         IngestJob job1 = createJob(2, 1);
         Instant updateTime1 = Instant.parse("2022-09-18T13:34:12.001Z");

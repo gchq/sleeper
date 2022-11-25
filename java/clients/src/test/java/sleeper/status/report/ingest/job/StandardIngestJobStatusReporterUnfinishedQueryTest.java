@@ -36,4 +36,14 @@ public class StandardIngestJobStatusReporterUnfinishedQueryTest extends IngestJo
         assertThat(getStandardReport(QueryType.UNFINISHED, noJobs, 0)).hasToString(
                 example("reports/ingest/job/standard/unfinished/noJobs.txt"));
     }
+
+    @Test
+    public void shouldReportMixedUnfinishedIngestJobs() throws Exception {
+        // Given
+        List<IngestJobStatus> mixedUnfinishedJobStatuses = mixedUnfinishedJobStatuses();
+
+        // When / Then
+        assertThat(getStandardReport(QueryType.UNFINISHED, mixedUnfinishedJobStatuses, 2)).hasToString(
+                example("reports/ingest/job/standard/unfinished/mixedUnfinishedJobs.txt"));
+    }
 }
