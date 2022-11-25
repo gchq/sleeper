@@ -52,24 +52,26 @@ public class InternalDependencyIndex {
     }
 
     private Stream<MavenModuleAndPath> moduleAndAllDependencies(MavenModuleAndPath path) {
-        return Stream.concat(Stream.of(path), path.getStructure().dependencies()
-                .flatMap(this::dependenciesByRef));
+        return Stream.concat(Stream.of(path),
+                path.getStructure().dependencies()
+                        .flatMap(this::traverseInternalTransitives));
     }
 
     private Stream<MavenModuleAndPath> moduleAndExportedDependencies(MavenModuleAndPath path) {
-        return Stream.concat(Stream.of(path), path.getStructure().dependencies()
-                .filter(DependencyReference::isExported)
-                .flatMap(this::dependenciesByRef));
+        return Stream.concat(Stream.of(path),
+                path.getStructure().dependencies()
+                        .filter(DependencyReference::isExported)
+                        .flatMap(this::traverseInternalTransitives));
     }
 
-    private Optional<MavenModuleAndPath> moduleByDependencyRef(DependencyReference reference) {
-        return Optional.ofNullable(modulesByArtifactRef.get(reference.artifactReference()));
-    }
-
-    private Stream<MavenModuleAndPath> dependenciesByRef(DependencyReference reference) {
+    private Stream<MavenModuleAndPath> traverseInternalTransitives(DependencyReference reference) {
         return Stream.of(moduleByDependencyRef(reference))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .flatMap(this::moduleAndExportedDependencies);
+    }
+
+    private Optional<MavenModuleAndPath> moduleByDependencyRef(DependencyReference reference) {
+        return Optional.ofNullable(modulesByArtifactRef.get(reference.artifactReference()));
     }
 }
