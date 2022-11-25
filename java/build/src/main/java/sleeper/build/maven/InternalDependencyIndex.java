@@ -15,11 +15,18 @@
  */
 package sleeper.build.maven;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class InternalDependencyIndex {
@@ -40,9 +47,7 @@ public class InternalDependencyIndex {
     }
 
     public Stream<MavenModuleAndPath> dependenciesForModules(List<String> paths) {
-        return modulesByPathOrThrow(paths)
-                .flatMap(this::moduleAndAllDependencies)
-                .distinct();
+        return modulesAndAllDependencies(modulesByPathOrThrow(paths));
     }
 
     public Stream<String> pomPathsForAncestors(String... paths) {
@@ -65,26 +70,35 @@ public class InternalDependencyIndex {
                 .orElseThrow(() -> new IllegalArgumentException("Module not found: " + path));
     }
 
-    private Stream<MavenModuleAndPath> moduleAndAllDependencies(MavenModuleAndPath path) {
-        return Stream.concat(Stream.of(path),
-                path.getStructure().dependencies()
-                        .flatMap(this::traverseInternalTransitives));
+    private Stream<MavenModuleAndPath> modulesAndAllDependencies(Stream<MavenModuleAndPath> modules) {
+        List<MavenModuleAndPath> list = modules.collect(Collectors.toList());
+        return Stream.concat(list.stream(),
+                removeDuplicatesLastFirst(
+                        list.stream().flatMap(MavenModuleAndPath::dependencies)
+                                .flatMap(this::traverseInternalTransitivesByRef),
+                        list));
     }
 
-    private Stream<MavenModuleAndPath> moduleAndExportedDependencies(MavenModuleAndPath path) {
-        return Stream.concat(Stream.of(path),
-                path.getStructure().dependencies()
-                        .filter(DependencyReference::isExported)
-                        .flatMap(this::traverseInternalTransitives));
-    }
-
-    private Stream<MavenModuleAndPath> traverseInternalTransitives(DependencyReference reference) {
+    private Stream<MavenModuleAndPath> traverseInternalTransitivesByRef(DependencyReference reference) {
         return streamByArtifactRef(reference.artifactReference())
-                .flatMap(this::moduleAndExportedDependencies);
+                .flatMap(this::traverseInternalTransitives);
+    }
+
+    private Stream<MavenModuleAndPath> traverseInternalTransitives(MavenModuleAndPath root) {
+        List<MavenModuleAndPath> breadthFirstOrder = new ArrayList<>();
+        Queue<MavenModuleAndPath> queue = new LinkedList<>();
+        for (MavenModuleAndPath module = root; module != null; module = queue.poll()) {
+            breadthFirstOrder.add(module);
+            module.exportedDependencies()
+                    .map(DependencyReference::artifactReference)
+                    .flatMap(this::streamByArtifactRef)
+                    .forEach(queue::add);
+        }
+        return breadthFirstOrder.stream();
     }
 
     private Stream<MavenModuleAndPath> traverseAncestors(MavenModuleAndPath path) {
-        return streamByArtifactRef(path.getParentRef())
+        return streamByArtifactRef(path.getParentReference())
                 .flatMap(module -> Stream.concat(traverseAncestors(module), Stream.of(module)));
     }
 
@@ -97,5 +111,28 @@ public class InternalDependencyIndex {
     private Optional<MavenModuleAndPath> moduleByArtifactRef(ArtifactReference reference) {
         return Optional.ofNullable(reference)
                 .map(modulesByArtifactRef::get);
+    }
+
+    private static <T> Stream<T> removeDuplicatesLastFirst(Stream<T> stream, Collection<T> exclude) {
+        return removeDuplicatesLastFirst(
+                stream.collect(Collectors.toList()), exclude)
+                .stream();
+    }
+
+    private static <T> List<T> removeDuplicatesLastFirst(List<T> list, Collection<T> exclude) {
+        Set<T> set = new HashSet<>(exclude);
+        LinkedList<T> newList = new LinkedList<>();
+        reverseStream(list).forEach(item -> {
+            if (set.add(item)) {
+                newList.addFirst(item);
+            }
+        });
+        return newList;
+    }
+
+    private static <T> Stream<T> reverseStream(List<T> list) {
+        int size = list.size();
+        return IntStream.rangeClosed(1, size)
+                .mapToObj(i -> list.get(size - i));
     }
 }

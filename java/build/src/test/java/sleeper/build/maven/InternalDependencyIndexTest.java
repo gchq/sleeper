@@ -69,9 +69,10 @@ public class InternalDependencyIndexTest {
                 "bulk-import/bulk-import-runner",
                 "bulk-import/bulk-import-starter"))
                 .containsExactly(
-                        "bulk-import/bulk-import-common", "configuration", "core",
-                        "bulk-import/bulk-import-runner", "ingest",
-                        "bulk-import/bulk-import-starter");
+                        "bulk-import/bulk-import-common",
+                        "bulk-import/bulk-import-runner",
+                        "bulk-import/bulk-import-starter",
+                        "ingest", "configuration", "core");
         assertThat(index.pomPathsForAncestors(
                 "bulk-import/bulk-import-common",
                 "bulk-import/bulk-import-runner",
@@ -93,6 +94,22 @@ public class InternalDependencyIndexTest {
         // When / Then
         assertThat(index.dependencyPathsForModules("c"))
                 .containsExactly("c", "b", "a");
+    }
+
+    @Test
+    public void shouldIncludeDeeplyTransitiveDependency() {
+        // Given
+        InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
+                testedModuleBuilder("a").build(),
+                testedModuleBuilder("b").dependenciesArray(dependency("sleeper:a")).build(),
+                testedModuleBuilder("c").dependenciesArray(dependency("sleeper:b")).build(),
+                testedModuleBuilder("d").dependenciesArray(dependency("sleeper:c")).build(),
+                testedModuleBuilder("e").dependenciesArray(dependency("sleeper:d")).build()
+        ).build().internalDependencies();
+
+        // When / Then
+        assertThat(index.dependencyPathsForModules("e"))
+                .containsExactly("e", "d", "c", "b", "a");
     }
 
     @Test

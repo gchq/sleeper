@@ -65,11 +65,11 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
                 "maven/pom.xml",
                 "maven/bulk-import/pom.xml",
                 "maven/bulk-import/bulk-import-common/**",
-                "maven/configuration/**",
-                "maven/core/**",
                 "maven/bulk-import/bulk-import-starter/**",
                 "maven/bulk-import/bulk-import-runner/**",
-                "maven/ingest/**");
+                "maven/ingest/**",
+                "maven/configuration/**",
+                "maven/core/**");
         assertThatCode(() -> workflow.validate(project, chunk, maven))
                 .doesNotThrowAnyException();
     }

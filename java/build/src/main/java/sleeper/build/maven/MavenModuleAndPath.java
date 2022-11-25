@@ -64,7 +64,11 @@ public class MavenModuleAndPath {
         }
     }
 
-    public ArtifactReference getParentRef() {
+    public ArtifactReference artifactReference() {
+        return structure.artifactReference();
+    }
+
+    public ArtifactReference getParentReference() {
         return parent;
     }
 
@@ -82,6 +86,14 @@ public class MavenModuleAndPath {
 
     public MavenModuleStructure getStructure() {
         return structure;
+    }
+
+    public Stream<DependencyReference> dependencies() {
+        return structure.dependencies();
+    }
+
+    public Stream<DependencyReference> exportedDependencies() {
+        return dependencies().filter(DependencyReference::isExported);
     }
 
     private static String projectListPathFromParent(MavenModuleAndPath parent, MavenModuleStructure structure) {
