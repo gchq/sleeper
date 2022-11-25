@@ -33,12 +33,12 @@ public class DependencyReference {
         exported = builder.exported;
     }
 
-    public static DependencyReference groupAndArtifact(String groupId, String artifactId) {
-        return builder().artifactId(artifactId).groupId(groupId).exported(true).build();
-    }
-
     public static Builder builder() {
         return new Builder();
+    }
+
+    public ArtifactReference artifactReference() {
+        return ArtifactReference.groupAndArtifact(groupId, artifactId);
     }
 
     @Override

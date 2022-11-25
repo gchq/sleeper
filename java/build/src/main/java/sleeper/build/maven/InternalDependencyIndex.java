@@ -24,12 +24,12 @@ import java.util.stream.Stream;
 
 public class InternalDependencyIndex {
 
-    private final Map<DependencyReference, MavenModuleAndPath> modulesByDependencyRef;
+    private final Map<ArtifactReference, MavenModuleAndPath> modulesByArtifactRef;
     private final Map<String, MavenModuleAndPath> modulesByPath;
 
     InternalDependencyIndex(List<MavenModuleAndPath> paths) {
-        modulesByDependencyRef = paths.stream()
-                .collect(Collectors.toMap(path -> path.getStructure().asDependency(), path -> path));
+        modulesByArtifactRef = paths.stream()
+                .collect(Collectors.toMap(path -> path.getStructure().artifactReference(), path -> path));
         modulesByPath = paths.stream()
                 .collect(Collectors.toMap(MavenModuleAndPath::getPath, path -> path));
     }
@@ -61,7 +61,7 @@ public class InternalDependencyIndex {
     }
 
     private Optional<MavenModuleAndPath> moduleByDependencyRef(DependencyReference reference) {
-        return Optional.ofNullable(modulesByDependencyRef.get(reference));
+        return Optional.ofNullable(modulesByArtifactRef.get(reference.artifactReference()));
     }
 
     private Stream<MavenModuleAndPath> dependenciesByRef(DependencyReference reference) {

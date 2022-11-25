@@ -19,6 +19,7 @@ import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.build.maven.TestMavenModuleStructure.dependency;
+import static sleeper.build.maven.TestMavenModuleStructure.dependencyBuilder;
 import static sleeper.build.maven.TestMavenModuleStructure.testedModuleBuilder;
 
 public class InternalDependencyIndexTest {
@@ -81,5 +82,32 @@ public class InternalDependencyIndexTest {
         // When / Then
         assertThat(index.dependencyPathsForModules("c"))
                 .containsExactly("c", "b", "a");
+    }
+
+    @Test
+    public void shouldIncludeDependencyWithExplicitlyDeclaredScope() {
+        // Given
+        InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
+                testedModuleBuilder("a").build(),
+                testedModuleBuilder("b").dependenciesArray(
+                        dependencyBuilder("sleeper:a").scope("something").exported(true).build()).build()
+        ).build().internalDependencies();
+
+        // When / Then
+        assertThat(index.dependencyPathsForModules("b"))
+                .containsExactly("b", "a");
+    }
+
+    @Test
+    public void shouldExcludeDependencyWithWrongGroup() {
+        // Given
+        InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
+                testedModuleBuilder("a").build(),
+                testedModuleBuilder("b").dependenciesArray(dependency("abc:a")).build()
+        ).build().internalDependencies();
+
+        // When / Then
+        assertThat(index.dependencyPathsForModules("b"))
+                .containsExactly("b");
     }
 }
