@@ -56,4 +56,14 @@ public class JsonIngestJobStatusReporterAllQueryTest extends IngestJobStatusRepo
         assertThat(getJsonReport(QueryType.ALL, jobWithMultipleRuns, 0)).hasToString(
                 replaceBracketedJobIds(jobWithMultipleRuns, example("reports/ingest/job/json/jobWithMultipleRuns.json")));
     }
+
+    @Test
+    public void shouldReportIngestJobsWithLargeAndDecimalStatistics() throws Exception {
+        // Given
+        List<IngestJobStatus> jobsWithLargeAndDecimalStatistics = jobsWithLargeAndDecimalStatistics();
+
+        // When / Then
+        assertThat(getJsonReport(QueryType.ALL, jobsWithLargeAndDecimalStatistics, 0)).hasToString(
+                replaceBracketedJobIds(jobsWithLargeAndDecimalStatistics, example("reports/ingest/job/json/jobsWithLargeAndDecimalStatistics.json")));
+    }
 }
