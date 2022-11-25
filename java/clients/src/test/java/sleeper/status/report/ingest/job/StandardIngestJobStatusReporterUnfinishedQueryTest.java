@@ -16,20 +16,24 @@
 
 package sleeper.status.report.ingest.job;
 
+import org.junit.Test;
 import sleeper.ingest.job.status.IngestJobStatus;
 
+import java.util.Collections;
 import java.util.List;
 
-public interface IngestJobStatusReporter {
-    enum QueryType {
-        ALL,
-        DETAILED,
-        UNFINISHED;
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ClientTestUtils.example;
+import static sleeper.status.report.ingest.job.IngestJobStatusReporter.QueryType;
 
-        boolean isParametersRequired() {
-            return this == DETAILED;
-        }
+public class StandardIngestJobStatusReporterUnfinishedQueryTest extends IngestJobStatusReporterTestBase {
+    @Test
+    public void shouldReportNoIngestJobs() throws Exception {
+        // Given
+        List<IngestJobStatus> noJobs = Collections.emptyList();
+
+        // When / Then
+        assertThat(getStandardReport(QueryType.UNFINISHED, noJobs, 0)).hasToString(
+                example("reports/ingest/job/standard/unfinished/noJobs.txt"));
     }
-
-    void report(List<IngestJobStatus> jobStatusList, QueryType queryType, int numberInQueue);
 }

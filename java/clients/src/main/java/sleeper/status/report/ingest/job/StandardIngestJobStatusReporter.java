@@ -69,6 +69,8 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
             printDetailedSummary(statusList);
         } else if (queryType.equals(QueryType.ALL)) {
             printAllSummary(statusList, numberInQueue);
+        } else if (queryType.equals(QueryType.UNFINISHED)) {
+            printUnfinishedSummary(statusList, numberInQueue);
         }
     }
 
@@ -98,10 +100,14 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     }
 
     private void printAllSummary(List<IngestJobStatus> statusList, int numberInQueue) {
-        out.printf("Total jobs waiting in queue (excluded from report): %s%n", numberInQueue);
-        out.printf("Total jobs in progress: %s%n", statusList.stream().filter(status -> !status.isFinished()).count());
+        printUnfinishedSummary(statusList, numberInQueue);
         out.printf("Total jobs finished: %s%n", statusList.stream().filter(IngestJobStatus::isFinished).count());
         printAverageIngestRate("Average ingest rate: %s%n", statusList);
+    }
+
+    private void printUnfinishedSummary(List<IngestJobStatus> statusList, int numberInQueue) {
+        out.printf("Total jobs waiting in queue (excluded from report): %s%n", numberInQueue);
+        out.printf("Total jobs in progress: %s%n", statusList.stream().filter(status -> !status.isFinished()).count());
     }
 
     private void printAverageIngestRate(String formatString, List<IngestJobStatus> jobs) {
