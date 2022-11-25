@@ -500,10 +500,6 @@ int main(int argc, char* argv[]) {
     std::cerr << "total num rows written " << std::accumulate(resultData.rowsWritten.cbegin(), resultData.rowsWritten.cend(), 0) << std::endl;
     std::cerr << "total time " << (tend - tstart) << " seconds" << std::endl;
 
-    for (::size_t i = 0; i < resultData.minKeys.size(); i++) {
-        std::cerr << resultData.minKeys[i] << " -> " << resultData.maxKeys[i] << std::endl;
-    }
-
     // write out message pack data
     resultData.rowsRead = totalRows;
     std::vector<std::uint8_t> msgOut = msgpack::pack(resultData);
