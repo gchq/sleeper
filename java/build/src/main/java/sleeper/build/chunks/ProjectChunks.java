@@ -21,12 +21,10 @@ import sleeper.build.maven.MavenModuleStructure;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -66,18 +64,14 @@ public class ProjectChunks {
     private void validateChunkWorkflows(
             ProjectStructure project, InternalDependencyIndex dependencies, PrintStream out) throws IOException {
         boolean failed = false;
-        // Report extra entries after all the missing entries
-        List<Consumer<PrintStream>> extraEntryReports = new ArrayList<>();
         for (ProjectChunk chunk : chunks) {
             OnPushPathsDiff diff = project.loadWorkflow(chunk)
                     .getOnPushPathsDiffFromExpected(project, chunk, dependencies);
             diff.reportMissingEntries(out, project, chunk);
-            extraEntryReports.add(print -> diff.reportExtraEntries(project, chunk, print));
             if (!diff.getMissingEntries().isEmpty()) {
                 failed = true;
             }
         }
-        extraEntryReports.forEach(report -> report.accept(out));
         if (failed) {
             throw new IllegalStateException("Failed validating chunk workflows");
         }
