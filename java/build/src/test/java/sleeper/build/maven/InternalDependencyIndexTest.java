@@ -30,8 +30,8 @@ public class InternalDependencyIndexTest {
         InternalDependencyIndex index = TestMavenModuleStructure.example().internalDependencies();
 
         // When / Then
-        assertThat(index.dependencyPathsForModules("core"))
-                .containsExactly("core");
+        assertThat(index.dependencyPathsForModules("core")).containsExactly("core");
+        assertThat(index.pomPathsForAncestors("core")).containsExactly("pom.xml");
     }
 
     @Test
@@ -42,6 +42,8 @@ public class InternalDependencyIndexTest {
         // When / Then
         assertThat(index.dependencyPathsForModules("core", "configuration"))
                 .containsExactly("core", "configuration");
+        assertThat(index.pomPathsForAncestors("core", "configuration"))
+                .containsExactly("pom.xml");
     }
 
     @Test
@@ -52,6 +54,8 @@ public class InternalDependencyIndexTest {
         // When / Then
         assertThat(index.dependencyPathsForModules("ingest"))
                 .containsExactly("ingest", "configuration", "core");
+        assertThat(index.pomPathsForAncestors("ingest"))
+                .containsExactly("pom.xml");
     }
 
     @Test
@@ -68,6 +72,13 @@ public class InternalDependencyIndexTest {
                         "bulk-import/bulk-import-common", "configuration", "core",
                         "bulk-import/bulk-import-runner", "ingest",
                         "bulk-import/bulk-import-starter");
+        assertThat(index.pomPathsForAncestors(
+                "bulk-import/bulk-import-common",
+                "bulk-import/bulk-import-runner",
+                "bulk-import/bulk-import-starter"))
+                .containsExactly(
+                        "pom.xml",
+                        "bulk-import/pom.xml");
     }
 
     @Test

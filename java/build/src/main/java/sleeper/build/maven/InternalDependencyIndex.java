@@ -40,10 +40,24 @@ public class InternalDependencyIndex {
     }
 
     public Stream<MavenModuleAndPath> dependenciesForModules(List<String> paths) {
-        return paths.stream()
-                .map(this::moduleByPathOrThrow)
+        return modulesByPathOrThrow(paths)
                 .flatMap(this::moduleAndAllDependencies)
                 .distinct();
+    }
+
+    public Stream<String> pomPathsForAncestors(String... paths) {
+        return ancestorsForModules(Arrays.asList(paths))
+                .map(MavenModuleAndPath::getPomPath);
+    }
+
+    public Stream<MavenModuleAndPath> ancestorsForModules(List<String> paths) {
+        return modulesByPathOrThrow(paths)
+                .flatMap(this::traverseAncestors)
+                .distinct();
+    }
+
+    private Stream<MavenModuleAndPath> modulesByPathOrThrow(List<String> paths) {
+        return paths.stream().map(this::moduleByPathOrThrow);
     }
 
     private MavenModuleAndPath moduleByPathOrThrow(String path) {
@@ -65,13 +79,23 @@ public class InternalDependencyIndex {
     }
 
     private Stream<MavenModuleAndPath> traverseInternalTransitives(DependencyReference reference) {
-        return Stream.of(moduleByDependencyRef(reference))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+        return streamByArtifactRef(reference.artifactReference())
                 .flatMap(this::moduleAndExportedDependencies);
     }
 
-    private Optional<MavenModuleAndPath> moduleByDependencyRef(DependencyReference reference) {
-        return Optional.ofNullable(modulesByArtifactRef.get(reference.artifactReference()));
+    private Stream<MavenModuleAndPath> traverseAncestors(MavenModuleAndPath path) {
+        return streamByArtifactRef(path.getParentRef())
+                .flatMap(module -> Stream.concat(traverseAncestors(module), Stream.of(module)));
+    }
+
+    private Stream<MavenModuleAndPath> streamByArtifactRef(ArtifactReference reference) {
+        return Stream.of(moduleByArtifactRef(reference))
+                .filter(Optional::isPresent)
+                .map(Optional::get);
+    }
+
+    private Optional<MavenModuleAndPath> moduleByArtifactRef(ArtifactReference reference) {
+        return Optional.ofNullable(reference)
+                .map(modulesByArtifactRef::get);
     }
 }
