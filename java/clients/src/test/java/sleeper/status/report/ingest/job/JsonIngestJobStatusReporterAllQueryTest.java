@@ -46,4 +46,14 @@ public class JsonIngestJobStatusReporterAllQueryTest extends IngestJobStatusRepo
         assertThat(getJsonReport(QueryType.ALL, mixedJobStatuses, 0)).hasToString(
                 replaceBracketedJobIds(mixedJobStatuses, example("reports/ingest/job/json/mixedJobs.json")));
     }
+
+    @Test
+    public void shouldReportIngestJobsWithMultipleRuns() throws Exception {
+        // Given
+        List<IngestJobStatus> jobWithMultipleRuns = jobWithMultipleRuns();
+
+        // When / Then
+        assertThat(getJsonReport(QueryType.ALL, jobWithMultipleRuns, 0)).hasToString(
+                replaceBracketedJobIds(jobWithMultipleRuns, example("reports/ingest/job/json/jobWithMultipleRuns.json")));
+    }
 }
