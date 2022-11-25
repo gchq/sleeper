@@ -91,7 +91,7 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
         assertThatThrownBy(() -> workflow.validate(project, chunk, maven))
                 .isInstanceOfSatisfying(NotAllDependenciesDeclaredException.class, e -> {
                     assertThat(e.getChunkId()).isEqualTo("common");
-                    assertThat(e.getUnconfiguredModuleRefs()).containsExactly("configuration");
+                    assertThat(e.getDiff().getMissingEntries()).containsExactly("maven/configuration/**");
                 });
     }
 
@@ -111,7 +111,9 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
         assertThatThrownBy(() -> workflow.validate(project, chunk, maven))
                 .isInstanceOfSatisfying(NotAllDependenciesDeclaredException.class, e -> {
                     assertThat(e.getChunkId()).isEqualTo("common");
-                    assertThat(e.getUnconfiguredModuleRefs()).containsExactly("core", "configuration");
+                    assertThat(e.getDiff().getMissingEntries()).containsExactly(
+                            "maven/core/**",
+                            "maven/configuration/**");
                 });
     }
 }
