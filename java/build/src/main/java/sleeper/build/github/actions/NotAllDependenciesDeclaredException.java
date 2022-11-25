@@ -24,7 +24,7 @@ import java.util.List;
 
 public class NotAllDependenciesDeclaredException extends ReportableException {
 
-    private final ProjectChunk chunk;
+    private final transient ProjectChunk chunk;
     private final List<String> unconfiguredModuleRefs;
 
     public NotAllDependenciesDeclaredException(ProjectChunk chunk, List<String> unconfiguredModuleRefs) {
