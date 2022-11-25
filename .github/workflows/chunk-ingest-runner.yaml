@@ -1,18 +1,13 @@
-name: Build Compaction Modules
+name: Build Ingest Runner Module
 on:
   push:
     paths:
-      - '.github/workflows/chunk-compaction.yaml'
+      - '.github/workflows/chunk-ingest-runner.yaml'
       - '.github/workflows/chunk.yaml'
       - '.github/config/chunks.yaml'
       - 'code-style/checkstyle*.xml'
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
-      - 'java/compaction-job-execution/**'
-      - 'java/compaction-job-creation/**'
-      - 'java/compaction-status-store/**'
-      - 'java/compaction-core/**'
-      - 'java/splitter/**'
       - 'java/ingest/**'
       - 'java/common-job/**'
       - 'java/sketches/**'
@@ -27,4 +22,4 @@ jobs:
   module-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkId: compaction
+      chunkId: ingest-runner

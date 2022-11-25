@@ -44,7 +44,7 @@
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../ingest/docker</directory>
+            <directory>${project.basedir}/../ingest/ingest-runner/docker</directory>
             <outputDirectory>scripts/docker/ingest</outputDirectory>
             <excludes>
                 <exclude>*.jar</exclude>
@@ -77,17 +77,23 @@
             <outputDirectory>scripts/templates</outputDirectory>
         </file>
         <file>
-            <source>${project.basedir}/../ingest/target/ingest-${project.version}-utility.jar</source>
+            <source>
+                ${project.basedir}/../ingest/ingest-runner/target/ingest-runner-${project.version}-utility.jar
+            </source>
             <outputDirectory>scripts/docker/ingest</outputDirectory>
             <destName>ingest.jar</destName>
         </file>
         <file>
-            <source>${project.basedir}/../bulk-import/bulk-import-runner/target/bulk-import-runner-${project.version}-utility.jar</source>
+            <source>
+                ${project.basedir}/../bulk-import/bulk-import-runner/target/bulk-import-runner-${project.version}-utility.jar
+            </source>
             <outputDirectory>scripts/docker/bulk-import-runner</outputDirectory>
             <destName>bulk-import-runner.jar</destName>
         </file>
         <file>
-            <source>${project.basedir}/../compaction-job-execution/target/compaction-job-execution-${project.version}-utility.jar</source>
+            <source>
+                ${project.basedir}/../compaction-job-execution/target/compaction-job-execution-${project.version}-utility.jar
+            </source>
             <outputDirectory>scripts/docker/compaction-job-execution/</outputDirectory>
             <destName>compaction-job-execution.jar</destName>
         </file>
@@ -98,12 +104,15 @@
             <destName>CMakeLists.txt</destName>
         </file>
         <file>
-            <source>${project.basedir}/../compaction-job-creation/target/compaction-job-creation-${project.version}-utility.jar</source>
+            <source>
+                ${project.basedir}/../compaction-job-creation/target/compaction-job-creation-${project.version}-utility.jar
+            </source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>lambda-jobSpecCreationLambda-${project.version}.jar</destName>
         </file>
         <file>
-            <source>${project.basedir}/../garbage-collector/target/garbage-collector-${project.version}-utility.jar</source>
+            <source>${project.basedir}/../garbage-collector/target/garbage-collector-${project.version}-utility.jar
+            </source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>lambda-garbagecollector-${project.version}.jar</destName>
         </file>
@@ -118,12 +127,16 @@
             <destName>query-${project.version}.jar</destName>
         </file>
         <file>
-            <source>${project.basedir}/../compaction-job-execution/target/compaction-job-execution-${project.version}-utility.jar</source>
+            <source>
+                ${project.basedir}/../compaction-job-execution/target/compaction-job-execution-${project.version}-utility.jar
+            </source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>runningjobs-${project.version}.jar</destName>
         </file>
         <file>
-            <source>${project.basedir}/../ingest/target/ingest-${project.version}-utility.jar</source>
+            <source>
+                ${project.basedir}/../ingest/ingest-runner/target/ingest-runner-${project.version}-utility.jar
+            </source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>ingest-${project.version}.jar</destName>
         </file>
@@ -138,12 +151,16 @@
             <destName>athena-${project.version}.jar</destName>
         </file>
         <file>
-            <source>${project.basedir}/../bulk-import/bulk-import-starter/target/bulk-import-starter-${project.version}-utility.jar</source>
+            <source>
+                ${project.basedir}/../bulk-import/bulk-import-starter/target/bulk-import-starter-${project.version}-utility.jar
+            </source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>bulk-import-starter-${project.version}.jar</destName>
         </file>
         <file>
-            <source>${project.basedir}/../bulk-import/bulk-import-runner/target/bulk-import-runner-${project.version}-utility.jar</source>
+            <source>
+                ${project.basedir}/../bulk-import/bulk-import-runner/target/bulk-import-runner-${project.version}-utility.jar
+            </source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>bulk-import-runner-${project.version}.jar</destName>
         </file>
@@ -157,7 +174,9 @@
             <destName>cdk-${project.version}.jar</destName>
         </file>
         <file>
-            <source>${project.basedir}/../cdk-custom-resources/target/cdk-custom-resources-${project.version}-utility.jar</source>
+            <source>
+                ${project.basedir}/../cdk-custom-resources/target/cdk-custom-resources-${project.version}-utility.jar
+            </source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>cdk-custom-resources-${project.version}.jar</destName>
         </file>
