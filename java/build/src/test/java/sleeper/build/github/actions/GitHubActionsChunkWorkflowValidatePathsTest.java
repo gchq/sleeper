@@ -24,8 +24,6 @@ import sleeper.build.maven.InternalDependencyIndex;
 import sleeper.build.maven.TestMavenModuleStructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class GitHubActionsChunkWorkflowValidatePathsTest {
 
@@ -37,16 +35,19 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
         ProjectStructure project = TestProjectStructure.example();
         InternalDependencyIndex maven = TestMavenModuleStructure.example().internalDependencies();
 
+        // When
+        OnPushPathsDiff diff = workflow.getOnPushPathsDiffFromExpected(project, chunk, maven);
+
         // When / Then
-        assertThat(chunk.getExpectedPathsToTriggerBuild(project, maven, workflow)).containsExactly(
+        assertThat(diff.getExpected()).containsExactly(
                 "github-actions/chunk-common.yaml",
                 "github-actions/chunk.yaml",
                 "config/chunks.yaml",
                 "maven/pom.xml",
                 "maven/core/**",
                 "maven/configuration/**");
-        assertThatCode(() -> workflow.validate(project, chunk, maven))
-                .doesNotThrowAnyException();
+        assertThat(diff.getMissingEntries()).isEmpty();
+        assertThat(diff.getExtraEntries()).isEmpty();
     }
 
     @Test
@@ -57,8 +58,11 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
         ProjectStructure project = TestProjectStructure.example();
         InternalDependencyIndex maven = TestMavenModuleStructure.example().internalDependencies();
 
-        // When / Then
-        assertThat(chunk.getExpectedPathsToTriggerBuild(project, maven, workflow)).containsExactly(
+        // When
+        OnPushPathsDiff diff = workflow.getOnPushPathsDiffFromExpected(project, chunk, maven);
+
+        // Then
+        assertThat(diff.getExpected()).containsExactly(
                 "github-actions/chunk-bulk-import.yaml",
                 "github-actions/chunk.yaml",
                 "config/chunks.yaml",
@@ -70,12 +74,12 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
                 "maven/ingest/**",
                 "maven/configuration/**",
                 "maven/core/**");
-        assertThatCode(() -> workflow.validate(project, chunk, maven))
-                .doesNotThrowAnyException();
+        assertThat(diff.getMissingEntries()).isEmpty();
+        assertThat(diff.getExtraEntries()).isEmpty();
     }
 
     @Test
-    public void shouldFailWhenDependencyMissingFromOnPushPaths() {
+    public void shouldFindDependencyMissingFromOnPushPaths() {
         // Given
         GitHubActionsChunkWorkflow workflow = TestGitHubActionsChunkWorkflows.workflow("common",
                 "github-actions/chunk-common.yaml",
@@ -87,33 +91,31 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
         ProjectStructure project = TestProjectStructure.example();
         InternalDependencyIndex maven = TestMavenModuleStructure.example().internalDependencies();
 
-        // When / Then
-        assertThatThrownBy(() -> workflow.validate(project, chunk, maven))
-                .isInstanceOfSatisfying(NotAllDependenciesDeclaredException.class, e -> {
-                    assertThat(e.getChunkId()).isEqualTo("common");
-                    assertThat(e.getDiff().getMissingEntries()).containsExactly("maven/configuration/**");
-                });
+        // When
+        OnPushPathsDiff diff = workflow.getOnPushPathsDiffFromExpected(project, chunk, maven);
+
+        // Then
+        assertThat(diff.getMissingEntries()).containsExactly("maven/configuration/**");
     }
 
     @Test
-    public void shouldFailWhenMultipleDependenciesMissingFromOnPushPaths() {
+    public void shouldFindMultipleDependenciesMissingFromOnPushPaths() {
         // Given
         GitHubActionsChunkWorkflow workflow = TestGitHubActionsChunkWorkflows.workflow("common",
                 "github-actions/chunk-common.yaml",
-                "github-actions/chunk.yaml",
                 "config/chunks.yaml",
-                "maven/pom.xml");
+                "maven/pom.xml",
+                "maven/core/**");
         ProjectChunk chunk = TestChunks.common();
         ProjectStructure project = TestProjectStructure.example();
         InternalDependencyIndex maven = TestMavenModuleStructure.example().internalDependencies();
 
-        // When / Then
-        assertThatThrownBy(() -> workflow.validate(project, chunk, maven))
-                .isInstanceOfSatisfying(NotAllDependenciesDeclaredException.class, e -> {
-                    assertThat(e.getChunkId()).isEqualTo("common");
-                    assertThat(e.getDiff().getMissingEntries()).containsExactly(
-                            "maven/core/**",
-                            "maven/configuration/**");
-                });
+        // When
+        OnPushPathsDiff diff = workflow.getOnPushPathsDiffFromExpected(project, chunk, maven);
+
+        // Then
+        assertThat(diff.getMissingEntries()).containsExactly(
+                "github-actions/chunk.yaml",
+                "maven/configuration/**");
     }
 }

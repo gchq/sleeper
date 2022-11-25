@@ -47,10 +47,14 @@ public class GitHubActionsChunkWorkflow {
     }
 
     public void validate(ProjectStructure project, ProjectChunk chunk, InternalDependencyIndex index) {
-        OnPushPathsDiff.fromExpectedAndActual(
-                        chunk.getExpectedPathsToTriggerBuild(project, index, this),
-                        onPushPaths)
-                .throwIfInvalid(chunk);
+        getOnPushPathsDiffFromExpected(project, chunk, index).throwIfInvalid(chunk);
+    }
+
+    public OnPushPathsDiff getOnPushPathsDiffFromExpected(
+            ProjectStructure project, ProjectChunk chunk, InternalDependencyIndex index) {
+        return OnPushPathsDiff.fromExpectedAndActual(
+                chunk.getExpectedPathsToTriggerBuild(project, index, this),
+                onPushPaths);
     }
 
     @Override
