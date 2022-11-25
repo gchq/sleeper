@@ -42,9 +42,34 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
                 "github-actions/chunk-common.yaml",
                 "github-actions/chunk.yaml",
                 "config/chunks.yaml",
-                "maven/pom.xml");
-//                "maven/configuration/**",
-//                "maven/core/**");
+                "maven/pom.xml",
+                "maven/core/**",
+                "maven/configuration/**");
+        assertThatCode(() -> workflow.validate(project, chunk, maven))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    public void shouldValidateBulkImportExample() {
+        // Given
+        GitHubActionsChunkWorkflow workflow = TestGitHubActionsChunkWorkflows.bulkImport();
+        ProjectChunk chunk = TestChunks.bulkImport();
+        ProjectStructure project = TestProjectStructure.example();
+        InternalDependencyIndex maven = TestMavenModuleStructure.example().internalDependencies();
+
+        // When / Then
+        assertThat(chunk.getExpectedPathsToTriggerBuild(project, maven, workflow)).containsExactly(
+                "github-actions/chunk-bulk-import.yaml",
+                "github-actions/chunk.yaml",
+                "config/chunks.yaml",
+                "maven/pom.xml",
+                "maven/bulk-import/pom.xml",
+                "maven/bulk-import/bulk-import-common/**",
+                "maven/configuration/**",
+                "maven/core/**",
+                "maven/bulk-import/bulk-import-starter/**",
+                "maven/bulk-import/bulk-import-runner/**",
+                "maven/ingest/**");
         assertThatCode(() -> workflow.validate(project, chunk, maven))
                 .doesNotThrowAnyException();
     }

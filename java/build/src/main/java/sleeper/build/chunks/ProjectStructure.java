@@ -17,13 +17,11 @@ package sleeper.build.chunks;
 
 import sleeper.build.github.actions.GitHubActionsChunkWorkflow;
 import sleeper.build.github.actions.GitHubActionsChunkWorkflowYaml;
-import sleeper.build.maven.MavenModuleAndPath;
 import sleeper.build.maven.MavenModuleStructure;
 import sleeper.build.util.PathUtils;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Objects;
 
 public class ProjectStructure {
@@ -55,8 +53,8 @@ public class ProjectStructure {
         return repositoryPath.relativize(chunksYamlAbsolute);
     }
 
-    public Path relativizeMavenProjectListPathInRepository(String projectListPath) {
-        return repositoryPath.relativize(mavenProjectAbsolute).resolve(projectListPath);
+    public Path relativizeMavenPathInRepository(String path) {
+        return repositoryPath.relativize(mavenProjectAbsolute).resolve(path);
     }
 
     public ProjectConfiguration loadProjectConfiguration() throws IOException {
@@ -77,11 +75,6 @@ public class ProjectStructure {
 
     public Path workflowPathInRepository(ProjectChunk chunk) {
         return repositoryPath.relativize(workflowsPathAbsolute).resolve(chunk.getWorkflow());
-    }
-
-    public Path pomPathInRepository(MavenModuleAndPath module) {
-        return repositoryPath.relativize(mavenProjectAbsolute)
-                .resolve(Paths.get(module.getPomPath()));
     }
 
     public static Builder builder() {

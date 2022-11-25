@@ -68,13 +68,15 @@ public class ProjectChunk {
 
     public List<String> getExpectedPathsToTriggerBuild(
             ProjectStructure project, InternalDependencyIndex maven, GitHubActionsChunkWorkflow actualWorkflow) {
-        return Stream.concat(
-                        Stream.of(
-                                project.workflowPathInRepository(this).toString(),
-                                actualWorkflow.getUsesWorkflowPath().normalize().toString(),
-                                project.getChunksYamlRelative().toString()),
-                        maven.ancestorsForModules(modules).map(module ->
-                                project.pomPathInRepository(module).toString()))
+        return Stream.concat(Stream.concat(
+                                Stream.of(
+                                        project.workflowPathInRepository(this).toString(),
+                                        actualWorkflow.getUsesWorkflowPath().normalize().toString(),
+                                        project.getChunksYamlRelative().toString()),
+                                maven.ancestorsForModules(modules).map(module ->
+                                        module.pomPathInRepository(project).toString())),
+                        maven.dependenciesForModules(modules).map(module ->
+                                module.pathInRepository(project).toString() + "/**"))
                 .collect(Collectors.toList());
     }
 

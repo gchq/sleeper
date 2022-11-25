@@ -69,7 +69,11 @@ public class MavenModuleAndPath {
     }
 
     public Path pathInRepository(ProjectStructure project) {
-        return project.relativizeMavenProjectListPathInRepository(path);
+        return project.relativizeMavenPathInRepository(path);
+    }
+
+    public Path pomPathInRepository(ProjectStructure project) {
+        return project.relativizeMavenPathInRepository(getPomPath());
     }
 
     public String getModuleRef() {
