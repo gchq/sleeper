@@ -40,8 +40,8 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
         // When / Then
         assertThat(chunk.getExpectedPathsToTriggerBuild(project, maven, workflow)).containsExactly(
                 "github-actions/chunk-common.yaml",
-                "github-actions/chunk.yaml");
-//                "config/chunks.yaml",
+                "github-actions/chunk.yaml",
+                "config/chunks.yaml");
 //                "maven/pom.xml",
 //                "maven/configuration/**",
 //                "maven/core/**");

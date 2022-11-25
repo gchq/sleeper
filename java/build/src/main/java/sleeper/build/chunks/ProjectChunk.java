@@ -70,7 +70,8 @@ public class ProjectChunk {
             ProjectStructure project, MavenModuleStructure maven, GitHubActionsChunkWorkflow actualWorkflow) {
         return Arrays.asList(
                 project.workflowPathInRepository(this).toString(),
-                actualWorkflow.getUsesWorkflowPath().normalize().toString());
+                actualWorkflow.getUsesWorkflowPath().normalize().toString(),
+                project.getChunksYamlRelative().toString());
     }
 
     public static Builder chunk(String id) {
