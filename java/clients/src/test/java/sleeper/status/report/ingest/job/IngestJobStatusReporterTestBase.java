@@ -147,4 +147,10 @@ public abstract class IngestJobStatusReporterTestBase {
         new StandardIngestJobStatusReporter(output.getPrintStream()).report(statusList, query, numberInQueue);
         return output.toString();
     }
+
+    String getJsonReport(QueryType query, List<IngestJobStatus> statusList, int numberInQueue) {
+        ToStringPrintStream output = new ToStringPrintStream();
+        new JsonIngestJobStatusReporter(output.getPrintStream()).report(statusList, query, numberInQueue);
+        return output.toString();
+    }
 }
