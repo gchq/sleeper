@@ -21,6 +21,8 @@ import sleeper.build.testutil.TestResources;
 import java.io.Reader;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.build.maven.TestMavenModuleStructure.dependency;
+import static sleeper.build.maven.TestMavenModuleStructure.dependencyBuilder;
 
 public class MavenPomTest {
 
@@ -29,10 +31,10 @@ public class MavenPomTest {
         try (Reader reader = TestResources.exampleReader("examples/maven/configuration/pom.xml")) {
             MavenPom pom = MavenPom.from(reader);
             assertThat(pom.getDependencies()).containsExactly(
-                    DependencyReference.groupAndArtifact("org.apache.datasketches", "datasketches-java"),
-                    DependencyReference.groupAndArtifact("sleeper", "core"),
-                    DependencyReference.groupAndArtifact("junit", "junit"),
-                    DependencyReference.groupAndArtifact("sleeper", "core"));
+                    dependency("org.apache.datasketches:datasketches-java"),
+                    dependency("sleeper:core"),
+                    dependencyBuilder("junit:junit").scope("test").exported(false).build(),
+                    dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build());
         }
     }
 }

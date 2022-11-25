@@ -21,14 +21,24 @@ public class DependencyReference {
 
     private final String artifactId;
     private final String groupId;
+    private final String type;
+    private final String scope;
+    private final boolean exported;
 
-    public DependencyReference(String artifactId, String groupId) {
-        this.artifactId = Objects.requireNonNull(artifactId, "artifactId must not be null");
-        this.groupId = Objects.requireNonNull(groupId, "groupId must not be null");
+    private DependencyReference(Builder builder) {
+        artifactId = Objects.requireNonNull(builder.artifactId, "artifactId must not be null");
+        groupId = Objects.requireNonNull(builder.groupId, "groupId must not be null");
+        type = builder.type;
+        scope = builder.scope;
+        exported = builder.exported;
     }
 
     public static DependencyReference groupAndArtifact(String groupId, String artifactId) {
-        return new DependencyReference(artifactId, groupId);
+        return builder().artifactId(artifactId).groupId(groupId).exported(true).build();
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -40,16 +50,66 @@ public class DependencyReference {
             return false;
         }
         DependencyReference that = (DependencyReference) o;
-        return artifactId.equals(that.artifactId) && groupId.equals(that.groupId);
+        return exported == that.exported && artifactId.equals(that.artifactId) && groupId.equals(that.groupId) && Objects.equals(type, that.type) && Objects.equals(scope, that.scope);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(artifactId, groupId);
+        return Objects.hash(artifactId, groupId, type, scope, exported);
     }
 
     @Override
     public String toString() {
-        return groupId + ':' + artifactId;
+        return "DependencyReference{" +
+                "artifactId='" + artifactId + '\'' +
+                ", groupId='" + groupId + '\'' +
+                ", type='" + type + '\'' +
+                ", scope='" + scope + '\'' +
+                ", exported=" + exported +
+                '}';
+    }
+
+    public static final class Builder {
+        private String artifactId;
+        private String groupId;
+        private String type;
+        private String scope;
+        private boolean exported;
+
+        private Builder() {
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public Builder artifactId(String artifactId) {
+            this.artifactId = artifactId;
+            return this;
+        }
+
+        public Builder groupId(String groupId) {
+            this.groupId = groupId;
+            return this;
+        }
+
+        public Builder type(String type) {
+            this.type = type;
+            return this;
+        }
+
+        public Builder scope(String scope) {
+            this.scope = scope;
+            return this;
+        }
+
+        public Builder exported(boolean exported) {
+            this.exported = exported;
+            return this;
+        }
+
+        public DependencyReference build() {
+            return new DependencyReference(this);
+        }
     }
 }
