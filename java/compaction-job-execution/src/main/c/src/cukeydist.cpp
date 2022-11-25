@@ -15,9 +15,7 @@
  */
 #include "cukeydist.hpp"
 
-#include <arrow/api.h>
 #include <arrow/io/file.h>
-#include <arrow/scalar.h>
 #include <parquet/arrow/schema.h>
 #include <parquet/file_reader.h>
 #include <parquet/metadata.h>
@@ -60,6 +58,7 @@
 #include "histo.hpp"
 #include "msgpack/msgpack.hpp"
 #include "output_split.hpp"
+#include "retrieve_first_last.hpp"
 #include "s3_utils.hpp"
 #include "s3_waiting_source.hpp"
 #include "s3_writer.hpp"
@@ -176,13 +175,6 @@ table_for_range_low_mem(std::vector<fileinfo_t> const& sources, cudf::size_type 
     return {nullptr, memUsed};
 }
 
-class Test : public arrow::ScalarVisitor {
-    template <typename T>
-    arrow::Status Visit(T) {
-        return arrow::Status::OK();
-    }
-};
-
 template <typename T>
 row_mem_t write_range_low_mem(std::vector<fileinfo_t> const& sources, cudf::size_type const sort_col,
                               T const& low, T const& high,
@@ -198,19 +190,10 @@ row_mem_t write_range_low_mem(std::vector<fileinfo_t> const& sources, cudf::size
     std::cerr << "Write" << std::endl;
     writer->write(tableMem.first->view());
 
-    cudf::column_view const& firstColumn = tableMem.first->get_column(0).view();
-    std::vector<cudf::column_view> sliced = cudf::slice(firstColumn, {0, 1, firstColumn.size() - 1, firstColumn.size()});
-    std::vector<std::unique_ptr<cudf::column>> column;
-    column.push_back(cudf::concatenate({sliced}));
-    cudf::table tabled{std::move(column)};
-    // pull this back to cpu
-    std::shared_ptr<arrow::Table> cpuTable = cudf::to_arrow(tabled.view(), {{"a"}});
-    std::shared_ptr<arrow::ChunkedArray> cpuColumn = cpuTable->column(0);
-    arrow::Result<std::shared_ptr<arrow::Scalar>> firstVal = cpuColumn->GetScalar(0);
-    if (firstVal.ok()) {
-        std::shared_ptr<arrow::Scalar> val = firstVal.ValueOrDie();
-        Test visit{};
-        val->Accept(&visit);
+    std::vector<T> firstLast = getFirstLast<T>(tableMem.first->get_column(0).view());
+
+    for (auto const & t : firstLast) {
+        std::cerr << t << std::endl;
     }
 
     freeMemory("write tables done");
