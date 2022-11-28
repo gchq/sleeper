@@ -173,7 +173,6 @@ public class RunTasks {
         if (launchType.equalsIgnoreCase("EC2")) {
             memoryLimitMiB = (int) (memoryLimitMiB * 0.95);
         }
-
         return Triple.of(cpu, memoryLimitMiB, gpu);
     }
 
@@ -191,7 +190,7 @@ public class RunTasks {
         Set<String> recentContainerInstanceARNs = new HashSet<>();
 
         if (0 == queueSize) {
-            LOGGER.info("No tasks to launch as queue size is 0");
+            LOGGER.info("Finishing as queue size is 0");
         } else {
             int numRunningTasks = CommonJobUtils.getNumRunningTasks(clusterName, ecsClient);
             LOGGER.info("Number of running tasks is {}", numRunningTasks);

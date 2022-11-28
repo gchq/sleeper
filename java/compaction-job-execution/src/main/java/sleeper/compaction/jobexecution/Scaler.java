@@ -297,7 +297,7 @@ public class Scaler {
                 if (t.getDesiredStatus().equals("RUNNING")) {
                     LOGGER.debug("Task still running, so keep its EC2");
                     shouldKeepEC2 = true;
-                } else if (t.getLastStatus().equals("STOPPED")) {
+                } else if (t.getDesiredStatus().equals("STOPPED")) {
                     // When did the task stop?
                     Date stopped = t.getStoppedAt();
                     if (stopped == null) {
