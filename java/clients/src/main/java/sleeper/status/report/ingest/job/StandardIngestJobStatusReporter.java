@@ -42,6 +42,10 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
 
     private final PrintStream out;
 
+    public StandardIngestJobStatusReporter() {
+        this(System.out);
+    }
+
     public StandardIngestJobStatusReporter(PrintStream out) {
         this.out = out;
         TableWriterFactory.Builder tableFactoryBuilder = TableWriterFactory.builder();
