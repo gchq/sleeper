@@ -46,6 +46,10 @@ public class JobStatusUpdates {
         return recordsLatestFirst.get(recordsLatestFirst.size() - 1);
     }
 
+    public ProcessStatusUpdateRecord getLastRecord() {
+        return recordsLatestFirst.get(0);
+    }
+
     public ProcessRuns getRuns() {
         return runs;
     }

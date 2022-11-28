@@ -45,11 +45,10 @@ public class CompactionJobStatusesBuilder {
     }
 
     private CompactionJobStatus fullStatus(JobStatusUpdates job) {
-        ProcessStatusUpdateRecord firstRecord = job.getFirstRecord();
         return CompactionJobStatus.builder().jobId(job.getJobId())
-                .createdStatus((CompactionJobCreatedStatus) firstRecord.getStatusUpdate())
+                .createdStatus((CompactionJobCreatedStatus) job.getFirstRecord().getStatusUpdate())
                 .jobRuns(job.getRuns())
-                .expiryDate(firstRecord.getExpiryDate())
+                .expiryDate(job.getLastRecord().getExpiryDate())
                 .build();
     }
 }
