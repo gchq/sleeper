@@ -16,6 +16,7 @@
 package sleeper.cdk.stack;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.apache.commons.lang3.tuple.Triple;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
@@ -48,6 +49,7 @@ import software.amazon.awscdk.services.ecs.AsgCapacityProvider;
 import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerDefinitionOptions;
 import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.ecs.CpuArchitecture;
 import software.amazon.awscdk.services.ecs.Ec2TaskDefinition;
 import software.amazon.awscdk.services.ecs.EcsOptimizedImage;
 import software.amazon.awscdk.services.ecs.EcsOptimizedImageOptions;
@@ -55,6 +57,8 @@ import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
 import software.amazon.awscdk.services.ecs.ITaskDefinition;
 import software.amazon.awscdk.services.ecs.MachineImageType;
 import software.amazon.awscdk.services.ecs.NetworkMode;
+import software.amazon.awscdk.services.ecs.OperatingSystemFamily;
+import software.amazon.awscdk.services.ecs.RuntimePlatform;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
@@ -77,6 +81,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
@@ -99,13 +105,19 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPA
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_POOL_MINIMUM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_ROOT_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_GPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_MEMORY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_MEMORY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_GPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
@@ -141,6 +153,8 @@ public class CompactionStack extends NestedStack {
     public static final String SPLITTING_COMPACTION_STACK_DL_QUEUE_URL = "SplittingCompactionStackDLQueueUrlKey";
     public static final String COMPACTION_CLUSTER_NAME = "CompactionClusterName";
     public static final String SPLITTING_COMPACTION_CLUSTER_NAME = "SplittingCompactionClusterName";
+
+    private static final Pattern NUM_MATCH = Pattern.compile("^(\\d+)(\\D*)$");
 
     private Queue compactionJobQ;
     private Queue compactionDLQ;
@@ -391,22 +405,11 @@ public class CompactionStack extends NestedStack {
                 .build();
         instanceProperties.set(COMPACTION_CLUSTER, cluster.getClusterName());
 
-        FargateTaskDefinition fargateTaskDefinition = FargateTaskDefinition.Builder
-                .create(this, "MergeCompactionFGTaskDefinition")
-                .family(instanceProperties.get(ID) + "MergeCompactionFGTaskFamily")
-                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
-                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
-                .build();
-
+        FargateTaskDefinition fargateTaskDefinition = compactionFargateTaskDefinition("Merge");
         String fargateTaskDefinitionFamily = fargateTaskDefinition.getFamily();
         instanceProperties.set(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY, fargateTaskDefinitionFamily);
 
-        Ec2TaskDefinition ec2TaskDefinition = Ec2TaskDefinition.Builder
-                .create(this, "MergeCompactionEC2TaskDefinition")
-                .family(instanceProperties.get(ID) + "MergeCompactionEC2TaskFamily")
-                .networkMode(NetworkMode.BRIDGE)
-                .build();
-
+        Ec2TaskDefinition ec2TaskDefinition = compactionEC2TaskDefinition("Merge");
         String ec2TaskDefinitionFamily = ec2TaskDefinition.getFamily();
         instanceProperties.set(COMPACTION_TASK_EC2_DEFINITION_FAMILY, ec2TaskDefinitionFamily);
 
@@ -417,15 +420,14 @@ public class CompactionStack extends NestedStack {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
 
-        ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
-                .image(containerImage)
-                .environment(environmentVariables)
-                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
-                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
-                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties, "MergeCompactionTasks"))
-                .build();
-        fargateTaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
-        ec2TaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, containerDefinitionOptions);
+        ContainerDefinitionOptions fargateContainerDefinitionOptions = createFargateContainerDefinition(containerImage,
+                environmentVariables, instanceProperties, "Merge");
+        fargateTaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME,
+                fargateContainerDefinitionOptions);
+
+        ContainerDefinitionOptions ec2ContainerDefinitionOptions = createEC2ContainerDefinition(containerImage,
+                environmentVariables, instanceProperties, "Merge");
+        ec2TaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, ec2ContainerDefinitionOptions);
 
         Consumer<ITaskDefinition> grantPermissions = (taskDef) -> {
             configBucket.grantRead(taskDef.getTaskRole());
@@ -473,22 +475,11 @@ public class CompactionStack extends NestedStack {
                 .build();
         instanceProperties.set(SPLITTING_COMPACTION_CLUSTER, cluster.getClusterName());
 
-        FargateTaskDefinition fargateTaskDefinition = FargateTaskDefinition.Builder
-                .create(this, "SplittingMergeCompactionFGTaskDefinition")
-                .family(instanceProperties.get(ID) + "SplittingMergeCompactionFGTaskFamily")
-                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
-                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
-                .build();
-
+        FargateTaskDefinition fargateTaskDefinition = compactionFargateTaskDefinition("SplittingMerge");
         String fargateTaskDefinitionFamily = fargateTaskDefinition.getFamily();
         instanceProperties.set(SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY, fargateTaskDefinitionFamily);
 
-        Ec2TaskDefinition ec2TaskDefinition = Ec2TaskDefinition.Builder
-                .create(this, "SplittingMergeCompactionEC2TaskDefinition")
-                .family(instanceProperties.get(ID) + "SplittingMergeCompactionEC2TaskFamily")
-                .networkMode(NetworkMode.BRIDGE)
-                .build();
-
+        Ec2TaskDefinition ec2TaskDefinition = compactionEC2TaskDefinition("SplittingMerge");
         String ec2TaskDefinitionFamily = ec2TaskDefinition.getFamily();
         instanceProperties.set(SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY, ec2TaskDefinitionFamily);
 
@@ -499,18 +490,15 @@ public class CompactionStack extends NestedStack {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
 
-        ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
-                .image(containerImage)
-                .environment(environmentVariables)
-                .cpu(instanceProperties.getInt(COMPACTION_TASK_CPU))
-                .memoryLimitMiB(instanceProperties.getInt(COMPACTION_TASK_MEMORY))
-                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties,
-                        "SplittingMergeCompactionTasks"))
-                .build();
+        ContainerDefinitionOptions fargateContainerDefinitionOptions = createFargateContainerDefinition(containerImage,
+                environmentVariables, instanceProperties, "SplittingMerge");
         fargateTaskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME,
-                containerDefinitionOptions);
+                fargateContainerDefinitionOptions);
+
+        ContainerDefinitionOptions ec2ContainerDefinitionOptions = createEC2ContainerDefinition(containerImage,
+                environmentVariables, instanceProperties, "SplittingMerge");
         ec2TaskDefinition.addContainer(ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME,
-                containerDefinitionOptions);
+                ec2ContainerDefinitionOptions);
 
         Consumer<ITaskDefinition> grantPermissions = (taskDef) -> {
             configBucket.grantRead(taskDef.getTaskRole());
@@ -558,7 +546,7 @@ public class CompactionStack extends NestedStack {
                 .desiredCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_DESIRED))
                 .maxCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MAXIMUM)).requireImdsv2(true)
                 .instanceType(lookupEC2InstanceType(instanceProperties.get(COMPACTION_EC2_TYPE)))
-                .machineImage(EcsOptimizedImage.amazonLinux2(AmiHardwareType.STANDARD,
+                .machineImage(EcsOptimizedImage.amazonLinux2(AmiHardwareType.GPU,
                         EcsOptimizedImageOptions.builder()
                                 .cachedInContext(false)
                                 .build()))
@@ -595,11 +583,126 @@ public class CompactionStack extends NestedStack {
         String family = ec2InstanceType.substring(0, pos).toUpperCase(Locale.getDefault());
         String size = ec2InstanceType.substring(pos + 1).toUpperCase(Locale.getDefault());
 
+        // since Java identifiers can't start with a number, sizes like "2xlarge"
+        // become "xlarge2" in the enum namespace.
+        String normalisedSize = normaliseSize(size);
+
         // now perform lookup of these against known types
         InstanceClass instanceClass = InstanceClass.valueOf(family);
-        InstanceSize instanceSize = InstanceSize.valueOf(size);
+        InstanceSize instanceSize = InstanceSize.valueOf(normalisedSize);
 
         return InstanceType.of(instanceClass, instanceSize);
+    }
+
+    /**
+     * Normalises EC2 instance size strings so they can be looked up in the
+     * {@link InstanceSize}
+     * enum. Java identifiers can't start with a number, so "2xlarge" becomes
+     * "xlarge2".
+     *
+     * @param size the human readable size
+     * @return the internal enum name
+     */
+    public static String normaliseSize(String size) {
+        if (size == null) {
+            return null;
+        }
+        Matcher sizeMatch = NUM_MATCH.matcher(size);
+        if (sizeMatch.matches()) {
+            // Match occurred so switch the capture groups
+            return sizeMatch.group(2) + sizeMatch.group(1);
+        } else {
+            return size;
+        }
+    }
+
+    /**
+     * Retrieves architecture specific CPU and memory requirements. This returns
+     * a triple containing the CPU requirement in the left element and memory
+     * requirement in the middle and GPU requirement in the right element.
+     *
+     * @param architecture       CPU architecture
+     * @param launchType         the container launch type
+     * @param instanceProperties Sleeper instance properties
+     * @return CPU, memory and GPU requirements as per the CPU architecture
+     */
+    private static Triple<Integer, Integer, Integer> getCpuMemoryForArch(String architecture,
+            String launchType,
+            InstanceProperties instanceProperties) {
+        int cpu;
+        int memoryLimitMiB;
+        int gpu;
+        if (architecture.startsWith("ARM")) {
+            cpu = instanceProperties.getInt(COMPACTION_TASK_ARM_CPU);
+            memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_ARM_MEMORY);
+            gpu = instanceProperties.getInt(COMPACTION_TASK_ARM_GPU);
+        } else {
+            cpu = instanceProperties.getInt(COMPACTION_TASK_X86_CPU);
+            memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_X86_MEMORY);
+            gpu = instanceProperties.getInt(COMPACTION_TASK_X86_GPU);
+        }
+        return Triple.of(cpu, memoryLimitMiB, gpu);
+    }
+
+    private FargateTaskDefinition compactionFargateTaskDefinition(String compactionTypeName) {
+        String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
+        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
+        Triple<Integer, Integer, Integer> requirements = getCpuMemoryForArch(architecture, launchType,
+                instanceProperties);
+        return FargateTaskDefinition.Builder
+                .create(this, compactionTypeName + "CompactionFargateTaskDefinition")
+                .family(instanceProperties.get(ID) + compactionTypeName + "CompactionFargateTaskFamily")
+                .cpu(requirements.getLeft())
+                .memoryLimitMiB(requirements.getMiddle())
+                .runtimePlatform(RuntimePlatform.builder()
+                        .cpuArchitecture(CpuArchitecture.of(architecture))
+                        .operatingSystemFamily(OperatingSystemFamily.LINUX)
+                        .build())
+                .build();
+    }
+
+    private Ec2TaskDefinition compactionEC2TaskDefinition(String compactionTypeName) {
+        return Ec2TaskDefinition.Builder
+                .create(this, compactionTypeName + "CompactionEC2TaskDefinition")
+                .family(instanceProperties.get(ID) + compactionTypeName + "CompactionEC2TaskFamily")
+                .networkMode(NetworkMode.BRIDGE)
+                .build();
+    }
+
+    private ContainerDefinitionOptions createFargateContainerDefinition(ContainerImage image,
+            Map<String, String> environment, InstanceProperties instanceProperties, String compactionTypeName) {
+        String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
+        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
+        Triple<Integer, Integer, Integer> requirements = getCpuMemoryForArch(architecture, launchType,
+                instanceProperties);
+        return ContainerDefinitionOptions.builder()
+                .image(image)
+                .environment(environment)
+                .cpu(requirements.getLeft())
+                .memoryLimitMiB(requirements.getMiddle())
+                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties,
+                        compactionTypeName + "FargateCompactionTasks"))
+                .build();
+    }
+
+    private ContainerDefinitionOptions createEC2ContainerDefinition(ContainerImage image,
+            Map<String, String> environment, InstanceProperties instanceProperties, String compactionTypeName) {
+        String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
+        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
+        Triple<Integer, Integer, Integer> requirements = getCpuMemoryForArch(architecture, launchType,
+                instanceProperties);
+        return ContainerDefinitionOptions.builder()
+                .image(image)
+                .environment(environment)
+                .cpu(requirements.getLeft())
+                //bit hacky: Reduce memory requirement for EC2 to prevent
+                //container allocation failing when we need almost entire resources
+                //of machine
+                .memoryLimitMiB((int)(requirements.getMiddle()*0.95))
+                .gpuCount(requirements.getRight())
+                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties,
+                        compactionTypeName + "EC2CompactionTasks"))
+                .build();
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")

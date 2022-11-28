@@ -33,9 +33,7 @@ import org.apache.spark.serializer.KryoSerializer;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +44,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.SchemaSerDe;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -56,6 +53,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFileAttributes;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -80,6 +79,7 @@ public abstract class BulkImportJobRunner {
     private InstanceProperties instanceProperties;
     private AmazonS3 s3Client;
     private AmazonDynamoDB dynamoClient;
+    private Instant startTime;
 
     public void init(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
         this.instanceProperties = instanceProperties;
@@ -97,7 +97,9 @@ public abstract class BulkImportJobRunner {
             Configuration conf) throws IOException;
 
     public void run(BulkImportJob job) throws IOException {
-        LOGGER.info("Received job: " + job);
+        startTime = Instant.now();
+        LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
+        LOGGER.info("Job is {}", job);
 
         // Initialise Spark
         LOGGER.info("Initialising Spark");
@@ -113,10 +115,7 @@ public abstract class BulkImportJobRunner {
         LOGGER.info("Loading table properties and schema for table {}", job.getTableName());
         TableProperties tableProperties = new TablePropertiesProvider(s3Client, instanceProperties).getTableProperties(job.getTableName());
         Schema schema = tableProperties.getSchema();
-        String schemaAsString = new SchemaSerDe().toJson(schema);
-
         StructType convertedSchema = new StructTypeFactory().getStructType(schema);
-        StructType schemaWithPartitionField = createEnhancedSchema(convertedSchema);
 
         // Load statestore and partitions
         LOGGER.info("Loading statestore and partitions");
@@ -146,14 +145,17 @@ public abstract class BulkImportJobRunner {
                 .schema(convertedSchema)
                 .option("pathGlobFilter", "*.parquet")
                 .option("recursiveFileLookup", "true")
-                .parquet(pathsWithFs.toArray(new String[0]))
-                .mapPartitions(new AddPartitionFunction(schemaAsString, broadcastedPartitions), RowEncoder.apply(schemaWithPartitionField));
+                .parquet(pathsWithFs.toArray(new String[0]));
+        LOGGER.info("Input Dataset has {} partitions", dataWithPartition.rdd().getNumPartitions());
 
         List<FileInfo> fileInfos = createFileInfos(dataWithPartition, job, tableProperties, broadcastedPartitions, conf).collectAsList()
                 .stream()
                 .map(this::createFileInfo)
                 .collect(Collectors.toList());
 
+        long numRecords = fileInfos.stream()
+                .mapToLong(FileInfo::getNumberOfRecords)
+                .sum();
         try {
             stateStore.addFiles(fileInfos);
         } catch (StateStoreException e) {
@@ -161,7 +163,11 @@ public abstract class BulkImportJobRunner {
                     + "be re-imported for clients to accesss data");
         }
         LOGGER.info("Added {} files to statestore", fileInfos.size());
-        LOGGER.info("Finished Bulk import job {}", job.getId());
+        Instant finishTime = Instant.now();
+        LOGGER.info("Finished bulk import job {} at time {}", job.getId(), finishTime);
+        long durationInSeconds = Duration.between(startTime, finishTime).getSeconds();
+        double rate = numRecords / (double) durationInSeconds;
+        LOGGER.info("Bulk import job {} took {} seconds (rate of {} per second)", job.getId(), durationInSeconds, rate);
 
         sparkContext.stop(); // Calling this manually stops it potentially timing out after 10 seconds.
 
@@ -182,12 +188,6 @@ public abstract class BulkImportJobRunner {
                 .add(PARTITION_FIELD_NAME, DataTypes.StringType)
                 .add(FILENAME_FIELD_NAME, DataTypes.StringType)
                 .add(NUM_RECORDS_FIELD_NAME, DataTypes.LongType);
-    }
-
-    private StructType createEnhancedSchema(StructType convertedSchema) {
-        StructType structTypeWithPartition = new StructType(convertedSchema.fields());
-        return structTypeWithPartition
-                .add(new StructField(PARTITION_FIELD_NAME, DataTypes.StringType, false, null));
     }
 
     public static void start(String[] args, BulkImportJobRunner runner) throws Exception {

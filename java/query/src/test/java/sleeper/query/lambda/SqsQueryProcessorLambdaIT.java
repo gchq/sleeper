@@ -70,8 +70,7 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
-import sleeper.ingest.IngestProperties;
-import sleeper.ingest.IngestRecordsFromIterator;
+import sleeper.ingest.IngestFactory;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.query.model.Query;
@@ -90,7 +89,6 @@ import sleeper.statestore.InitialiseStateStore;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.table.job.TableCreator;
 
 import java.io.FileNotFoundException;
@@ -128,10 +126,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNE
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.TABLE_PROPERTIES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
-import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.query.tracker.QueryState.COMPLETED;
 import static sleeper.query.tracker.QueryState.IN_PROGRESS;
@@ -685,25 +680,17 @@ public class SqsQueryProcessorLambdaIT {
     private void loadData(InstanceProperties instanceProperties, TableProperties tableProperties, String dataDir, Integer minYear, Integer maxYear) {
         AmazonDynamoDB dynamoClient = createDynamoClient();
         AmazonS3 s3Client = createS3Client();
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(tableProperties, dynamoClient);
         try {
-            IngestProperties properties = IngestProperties.builder()
-                    .objectFactory(new ObjectFactory(instanceProperties, null, "/tmp"))
+            Configuration hadoopConfiguration = new Configuration();
+            IngestFactory factory = IngestFactory.builder()
+                    .objectFactory(ObjectFactory.noUserJars())
                     .localDir(dataDir)
-                    .maxRecordsToWriteLocally(10L)
-                    .maxInMemoryBatchSize(1000L)
-                    .rowGroupSize(tableProperties.getInt(ROW_GROUP_SIZE))
-                    .pageSize(tableProperties.getInt(PAGE_SIZE))
-                    .compressionCodec(tableProperties.get(COMPRESSION_CODEC))
-                    .stateStore(stateStore)
-                    .schema(tableProperties.getSchema())
-                    .filePathPrefix("file://")
-                    .bucketName(tableProperties.get(DATA_BUCKET))
-                    .ingestPartitionRefreshFrequencyInSecond(10)
+                    .stateStoreProvider(new StateStoreProvider(dynamoClient, instanceProperties, hadoopConfiguration))
+                    .instanceProperties(instanceProperties)
+                    .hadoopConfiguration(hadoopConfiguration)
                     .build();
-            new IngestRecordsFromIterator(properties, generateTimeSeriesData(minYear, maxYear).iterator()).write();
-        } catch (IOException | StateStoreException | IteratorException |
-                 ObjectFactoryException e) {
+            factory.ingestFromRecordIterator(tableProperties, generateTimeSeriesData(minYear, maxYear).iterator());
+        } catch (IOException | StateStoreException | IteratorException e) {
             throw new RuntimeException("Failed to Ingest data", e);
         } finally {
             dynamoClient.shutdown();

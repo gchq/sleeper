@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/chunk-compaction.yaml'
       - '.github/workflows/chunk.yaml'
+      - '.github/config/chunks.yaml'
       - 'code-style/checkstyle*.xml'
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
@@ -26,5 +27,4 @@ jobs:
   module-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkName: Compaction
-      moduleList: compaction-job-execution,compaction-job-creation,compaction-status-store,compaction-core,splitter
+      chunkId: compaction

@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/chunk-bulk-import.yaml'
       - '.github/workflows/chunk.yaml'
+      - '.github/config/chunks.yaml'
       - 'code-style/checkstyle*.xml'
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
@@ -25,5 +26,4 @@ jobs:
   module-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkName: Bulk Import
-      moduleList: bulk-import/bulk-import-common,bulk-import/bulk-import-starter,bulk-import/bulk-import-runner
+      chunkId: bulk-import

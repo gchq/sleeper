@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/chunk-athena.yaml'
       - '.github/workflows/chunk.yaml'
+      - '.github/config/chunks.yaml'
       - 'code-style/checkstyle*.xml'
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
@@ -24,5 +25,4 @@ jobs:
   module-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
-      chunkName: Athena
-      moduleList: athena
+      chunkId: athena

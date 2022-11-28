@@ -100,9 +100,25 @@ sleeper.compaction.job.creation.timeout.seconds=900
 # The timeout for the lambda that creates compaction jobs in seconds
 sleeper.task.runner.timeout.seconds=900
 
-# The cpu and memory for a compaction task. See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.
-sleeper.compaction.task.cpu=2048
-sleeper.compaction.task.memory=4096
+# The CPU architecture to run compaction tasks on.
+# See Task CPU architecture at https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html
+sleeper.compaction.task.cpu.architecture=X86_64
+
+# The CPU and memory for a compaction task. Which of these are used will depend on the chosen CPU architecture.
+# See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.
+sleeper.compaction.task.arm.cpu=1024
+sleeper.compaction.task.arm.memory=4096
+sleeper.compaction.task.x86.cpu=1024
+sleeper.compaction.task.x86.memory=4096
+
+# Flag to enable/disable storage of tracking information for compaction jobs and tasks.
+sleeper.compaction.status.store.enabled=true
+
+# The time to live in seconds for compaction jobs in the status store. Default is 1 week
+sleeper.compaction.job.status.ttl=604800
+
+# The time to live in seconds for compaction tasks in the status store. Default is 1 week
+sleeper.compaction.task.status.ttl=604800
 
 # The retention period for CloudWatch logs. See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html for valid options.
 # Use -1 to indicate infinite retention.
@@ -204,3 +220,8 @@ sleeper.ingest.arrow.max.local.store.bytes=17179869184
 # multiple times and so this parameter does not affect the final size of the Arrow file (arrow only) [1K]
 sleeper.ingest.arrow.max.single.write.to.file.records=1024
 
+# Flag to enable/disable storage of tracking information for ingest jobs and tasks.
+sleeper.ingest.status.store.enabled=true
+
+# The time to live in seconds for ingest jobs in the status store. Default is 1 week
+sleeper.ingest.job.status.ttl=604800

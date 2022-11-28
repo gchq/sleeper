@@ -79,6 +79,10 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     ARROW_INGEST_MAX_LOCAL_STORE_BYTES("sleeper.ingest.arrow.max.local.store.bytes", "17179869184"),                // 16G
     ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS("sleeper.ingest.arrow.max.single.write.to.file.records", "1024"), // 1K
 
+    // Status Store
+    INGEST_STATUS_STORE_ENABLED("sleeper.ingest.status.store.enabled", "true"),
+    INGEST_JOB_STATUS_TTL_IN_SECONDS("sleeper.ingest.job.status.ttl", "604800", Utils::isPositiveInteger), // Default is 1 week
+
     // Bulk Import - properties that are applicable to all bulk import platforms
     BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE("sleeper.bulk.import.min.partitions.coalesce", "100"),
     BULK_IMPORT_CLASS_NAME("sleeper.bulk.import.class.name", "sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeRunner"),
@@ -134,9 +138,12 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     BULK_IMPORT_EMR_SPARK_RDD_COMPRESS("sleeper.bulk.import.emr.spark.rdd.compress", "true"),
     BULK_IMPORT_EMR_SPARK_SHUFFLE_COMPRESS("sleeper.bulk.import.emr.spark.shuffle.compress", "true"),
     BULK_IMPORT_EMR_SPARK_SHUFFLE_SPILL_COMPRESS("sleeper.bulk.import.emr.spark.shuffle.spill.compress", "true"),
+    BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB("sleeper.bulk.import.emr.ebs.volume.size.gb", "256", Utils::isValidEbsSize),
+    BULK_IMPORT_EMR_EBS_VOLUME_TYPE("sleeper.bulk.import.emr.ebs.volume.type", "gp2", Utils::isValidEbsVolumeType),
+    BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE("sleeper.bulk.import.emr.ebs.volumes.per.instance", "4", s -> Utils.isIntLtEqValue(s, 25)),
 
     // Bulk import using the non-persistent EMR approach
-    DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL("sleeper.default.bulk.import.emr.release.label", "emr-6.4.0"),
+    DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL("sleeper.default.bulk.import.emr.release.label", "emr-6.8.0"),
     DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE("sleeper.default.bulk.import.emr.master.instance.type", "m5.xlarge"),
     DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE("sleeper.default.bulk.import.emr.executor.market.type", "SPOT", s -> ("SPOT".equals(s) || "ON_DEMAND".equals(s))),
     DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE("sleeper.default.bulk.import.emr.executor.instance.type", "m5.4xlarge"),
@@ -144,7 +151,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     DEFAULT_BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS("sleeper.default.bulk.import.emr.executor.max.instances", "10"),
 
     // Bulk import using a persistent EMR cluster
-    BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL("sleeper.bulk.import.persistent.emr.release.label", "emr-6.4.0"),
+    BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL("sleeper.bulk.import.persistent.emr.release.label", DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL.defaultValue),
     BULK_IMPORT_PERSISTENT_EMR_MASTER_INSTANCE_TYPE("sleeper.bulk.import.persistent.emr.master.instance.type", DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE.defaultValue),
     BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPE("sleeper.bulk.import.persistent.emr.core.instance.type", DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE.defaultValue),
     BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING("sleeper.bulk.import.persistent.emr.use.managed.scaling", "true"),
@@ -179,10 +186,14 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS("sleeper.compaction.job.creation.timeout.seconds", "900", Utils::isValidLambdaTimeout),
     MAXIMUM_CONCURRENT_COMPACTION_TASKS("sleeper.compaction.max.concurrent.tasks", "300"),
     COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES("sleeper.compaction.task.creation.period.minutes", "1"), // >0
-    COMPACTION_TASK_CPU("sleeper.compaction.task.cpu", "2048"),
-    COMPACTION_TASK_MEMORY("sleeper.compaction.task.memory", "4096"),
+    COMPACTION_TASK_CPU_ARCHITECTURE("sleeper.compaction.task.cpu.architecture", "X86_64"),
+    COMPACTION_TASK_ARM_CPU("sleeper.compaction.task.arm.cpu", "1024"),
+    COMPACTION_TASK_ARM_MEMORY("sleeper.compaction.task.arm.memory", "4096"),
+    COMPACTION_TASK_X86_CPU("sleeper.compaction.task.x86.cpu", "1024"),
+    COMPACTION_TASK_X86_MEMORY("sleeper.compaction.task.x86.memory", "4096"),
     COMPACTION_STATUS_STORE_ENABLED("sleeper.compaction.status.store.enabled", "true"),
     COMPACTION_JOB_STATUS_TTL_IN_SECONDS("sleeper.compaction.job.status.ttl", "604800", Utils::isPositiveInteger), // Default is 1 week
+    COMPACTION_TASK_STATUS_TTL_IN_SECONDS("sleeper.compaction.task.status.ttl", "604800", Utils::isPositiveInteger), // Default is 1 week
     DEFAULT_COMPACTION_STRATEGY_CLASS("sleeper.default.compaction.strategy.class", "sleeper.compaction.strategy.impl.SizeRatioCompactionStrategy"),
     DEFAULT_COMPACTION_FILES_BATCH_SIZE("sleeper.default.compaction.files.batch.size", "11"),
     DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO("sleeper.default.table.compaction.strategy.sizeratio.ratio", "3"),
