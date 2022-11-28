@@ -131,7 +131,11 @@ public class CompactionJobStatus {
         }
 
         public Builder jobRunsLatestFirst(List<ProcessRun> jobRunList) {
-            this.jobRuns = ProcessRuns.latestFirst(jobRunList);
+            return jobRuns(ProcessRuns.latestFirst(jobRunList));
+        }
+
+        public Builder jobRuns(ProcessRuns jobRuns) {
+            this.jobRuns = jobRuns;
             return this;
         }
 

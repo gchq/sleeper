@@ -17,10 +17,14 @@
 package sleeper.core.record.process.status;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class ProcessRuns {
     private final List<ProcessRun> latestFirst;
@@ -35,6 +39,32 @@ public class ProcessRuns {
 
     public static ProcessRuns latestFirst(ProcessRun run) {
         return latestFirst(Collections.singletonList(run));
+    }
+
+    public static ProcessRuns fromRecordsLatestFirst(List<ProcessStatusUpdateRecord> recordList) {
+        Map<String, ProcessRun.Builder> taskBuilders = new HashMap<>();
+        List<ProcessRun.Builder> orderedBuilders = new ArrayList<>();
+        for (int i = recordList.size() - 1; i >= 0; i--) {
+            ProcessStatusUpdateRecord record = recordList.get(i);
+            String taskId = record.getTaskId();
+            ProcessStatusUpdate statusUpdate = record.getStatusUpdate();
+            if (statusUpdate instanceof ProcessStartedStatus) {
+                ProcessRun.Builder builder = ProcessRun.builder()
+                        .startedStatus((ProcessStartedStatus) statusUpdate)
+                        .taskId(taskId);
+                taskBuilders.put(taskId, builder);
+                orderedBuilders.add(builder);
+            } else if (statusUpdate instanceof ProcessFinishedStatus) {
+                taskBuilders.remove(taskId)
+                        .finishedStatus((ProcessFinishedStatus) statusUpdate)
+                        .taskId(taskId);
+            }
+        }
+        List<ProcessRun> jobRuns = orderedBuilders.stream()
+                .map(ProcessRun.Builder::build)
+                .collect(Collectors.toList());
+        Collections.reverse(jobRuns);
+        return new ProcessRuns(jobRuns);
     }
 
     public boolean isStarted() {

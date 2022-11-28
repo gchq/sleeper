@@ -363,7 +363,7 @@ public class CompactionJobRunTest {
     public void shouldBuildCompactionJobRunsWhenJobFinishedDifferentTasksFromDatabaseOutOfOrder() {
         // Given
         CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
-                .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
+                .updateTime(Instant.parse("2022-09-22T09:23:00.012Z"))
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
@@ -371,23 +371,24 @@ public class CompactionJobRunTest {
                 Instant.parse("2022-09-22T09:23:30.012Z"),
                 Instant.parse("2022-09-22T09:23:30.001Z"));
         ProcessFinishedStatus finished1 = ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse("2022-09-23T09:24:00.012Z"),
+                Instant.parse("2022-09-22T09:24:00.012Z"),
                 new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
-                        Instant.parse("2022-09-23T09:23:30.001Z"),
-                        Instant.parse("2022-09-23T09:24:00.001Z")));
+                        Instant.parse("2022-09-22T09:23:30.001Z"),
+                        Instant.parse("2022-09-22T09:24:00.001Z")));
         ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-24T09:23:30.012Z"),
-                Instant.parse("2022-09-24T09:23:30.001Z"));
+                Instant.parse("2022-09-22T09:23:31.012Z"),
+                Instant.parse("2022-09-22T09:23:31.001Z"));
         ProcessFinishedStatus finished2 = ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse("2022-09-24T09:24:00.012Z"),
+                Instant.parse("2022-09-22T09:24:01.012Z"),
                 new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
-                        Instant.parse("2022-09-24T09:23:30.001Z"),
-                        Instant.parse("2022-09-24T09:24:00.001Z")));
+                        Instant.parse("2022-09-22T09:23:31.001Z"),
+                        Instant.parse("2022-09-22T09:24:01.001Z")));
 
         // When
         CompactionJobStatus status = new TestCompactionJobStatusUpdateRecords()
-                .updatesForJobWithTask("job1", DEFAULT_TASK_ID_1, created, finished1, started1)
-                .updatesForJobWithTask("job1", DEFAULT_TASK_ID_2, created, finished2, started2)
+                .jobCreated("job1", created)
+                .updatesForJobWithTask("job1", DEFAULT_TASK_ID_1, finished1, started1)
+                .updatesForJobWithTask("job1", DEFAULT_TASK_ID_2, finished2, started2)
                 .buildSingleStatus();
 
         // Then

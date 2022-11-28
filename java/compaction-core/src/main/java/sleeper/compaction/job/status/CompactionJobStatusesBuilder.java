@@ -15,20 +15,16 @@
  */
 package sleeper.compaction.job.status;
 
+import sleeper.core.record.process.status.JobStatusUpdates;
+import sleeper.core.record.process.status.JobStatusesBuilder;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
-import sleeper.core.record.process.status.ProcessStatusesBuilder;
 
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class CompactionJobStatusesBuilder {
-    private final Map<String, ProcessStatusUpdateRecord> createdUpdateByJobId = new HashMap<>();
-    private final ProcessStatusesBuilder processStatusesBuilder = new ProcessStatusesBuilder();
+    private final JobStatusesBuilder statusesBuilder = new JobStatusesBuilder();
 
     public CompactionJobStatusesBuilder jobUpdates(List<ProcessStatusUpdateRecord> jobUpdates) {
         jobUpdates.forEach(this::jobUpdate);
@@ -36,44 +32,24 @@ public class CompactionJobStatusesBuilder {
     }
 
     public CompactionJobStatusesBuilder jobUpdate(ProcessStatusUpdateRecord jobUpdate) {
-        if (jobUpdate.getStatusUpdate() instanceof CompactionJobCreatedStatus) {
-            createdUpdateByJobId.put(jobUpdate.getJobId(), jobUpdate);
-        } else {
-            processStatusesBuilder.processUpdate(jobUpdate);
-        }
+        statusesBuilder.update(jobUpdate);
         return this;
     }
 
     public Stream<CompactionJobStatus> stream() {
-        return createdUpdateByJobId.entrySet().stream()
-                .sorted(Comparator.comparing(
-                        (Map.Entry<String, ProcessStatusUpdateRecord> update) ->
-                                update.getValue().getStatusUpdate().getUpdateTime()).reversed())
-                .map(entry -> fullStatus(entry.getKey(), entry.getValue()));
+        return statusesBuilder.stream().map(this::fullStatus);
     }
 
     public List<CompactionJobStatus> build() {
         return stream().collect(Collectors.toList());
     }
 
-    private CompactionJobStatus fullStatus(String jobId, ProcessStatusUpdateRecord createdUpdate) {
-        CompactionJobCreatedStatus createdStatus = (CompactionJobCreatedStatus) createdUpdate.getStatusUpdate();
-        List<ProcessStatusUpdateRecord> runUpdates = processStatusesBuilder.runUpdatesOrderedByUpdateTime(jobId);
-
-        return CompactionJobStatus.builder().jobId(jobId)
-                .createdStatus(createdStatus)
-                .jobRunsLatestFirst(processStatusesBuilder.buildRunList(runUpdates))
-                .expiryDate(last(runUpdates)
-                        .map(ProcessStatusUpdateRecord::getExpiryDate)
-                        .orElseGet(createdUpdate::getExpiryDate))
+    private CompactionJobStatus fullStatus(JobStatusUpdates job) {
+        ProcessStatusUpdateRecord firstRecord = job.getFirstRecord();
+        return CompactionJobStatus.builder().jobId(job.getJobId())
+                .createdStatus((CompactionJobCreatedStatus) firstRecord.getStatusUpdate())
+                .jobRuns(job.getRuns())
+                .expiryDate(firstRecord.getExpiryDate())
                 .build();
-    }
-
-    private static <T> Optional<T> last(List<T> list) {
-        if (list.isEmpty()) {
-            return Optional.empty();
-        } else {
-            return Optional.of(list.get(list.size() - 1));
-        }
     }
 }
