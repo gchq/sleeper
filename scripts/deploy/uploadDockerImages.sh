@@ -90,6 +90,7 @@ for stack in "${DOCKER_STACKS[@]}"; do
       echo "Building and Pushing Docker image ${REPO} to repository ${INSTANCE_ID}/${REPO}"
 
       if is_in_array ${stack} BUILDX_STACKS; then
+        # TODO: Restore arm64 build for GPU code
         docker buildx build --platform linux/amd64 -t ${REPO_PREFIX}/${REPO}:${VERSION} --push ./
       else
         docker build -t ${REPO_PREFIX}/${REPO}:${VERSION} ./
