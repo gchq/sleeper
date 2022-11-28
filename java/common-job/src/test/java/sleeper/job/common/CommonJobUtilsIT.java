@@ -53,10 +53,14 @@ public class CommonJobUtilsIT {
         String queueUrl = createQueue(sqsClient);
 
         // Then
-        int numberOfMessages = CommonJobUtils.getNumberOfMessagesInQueue(queueUrl, sqsClient)
-                .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
-        assertThat(numberOfMessages).isEqualTo(0);
-        sqsClient.shutdown();
+        try {
+            int numberOfMessages = CommonJobUtils.getNumberOfMessagesInQueue(queueUrl, sqsClient)
+                    .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
+            assertThat(numberOfMessages).isEqualTo(0);
+        } finally {
+            sqsClient.deleteQueue(queueUrl);
+            sqsClient.shutdown();
+        }
     }
 
     @Test
@@ -71,10 +75,14 @@ public class CommonJobUtilsIT {
         }
 
         // Then
-        int numberOfMessages = CommonJobUtils.getNumberOfMessagesInQueue(queueUrl, sqsClient)
-                .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
-        assertThat(numberOfMessages).isEqualTo(10);
-        sqsClient.shutdown();
+        try {
+            int numberOfMessages = CommonJobUtils.getNumberOfMessagesInQueue(queueUrl, sqsClient)
+                    .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
+            assertThat(numberOfMessages).isEqualTo(10);
+        } finally {
+            sqsClient.deleteQueue(queueUrl);
+            sqsClient.shutdown();
+        }
     }
 
     @Test
@@ -92,9 +100,13 @@ public class CommonJobUtilsIT {
         }
 
         // Then
-        int numberOfMessages = CommonJobUtils.getNumberOfMessagesInQueue(queueUrl, sqsClient)
-                .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
-        assertThat(numberOfMessages).isEqualTo(7);
-        sqsClient.shutdown();
+        try {
+            int numberOfMessages = CommonJobUtils.getNumberOfMessagesInQueue(queueUrl, sqsClient)
+                    .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
+            assertThat(numberOfMessages).isEqualTo(7);
+        } finally {
+            sqsClient.deleteQueue(queueUrl);
+            sqsClient.shutdown();
+        }
     }
 }
