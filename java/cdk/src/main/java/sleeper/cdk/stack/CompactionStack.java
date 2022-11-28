@@ -16,7 +16,8 @@
 package sleeper.cdk.stack;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.apache.commons.lang3.tuple.Triple;
+
+import org.apache.commons.lang3.tuple.Pair;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
@@ -111,12 +112,10 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPA
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_CPU;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_GPU;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_CPU;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_GPU;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -619,41 +618,38 @@ public class CompactionStack extends NestedStack {
     /**
      * Retrieves architecture specific CPU and memory requirements. This returns
      * a triple containing the CPU requirement in the left element and memory
-     * requirement in the middle and GPU requirement in the right element.
+     * requirement in the right element.
      *
      * @param architecture       CPU architecture
      * @param launchType         the container launch type
      * @param instanceProperties Sleeper instance properties
-     * @return CPU, memory and GPU requirements as per the CPU architecture
+     * @return CPU and memory requirements as per the CPU architecture
      */
-    private static Triple<Integer, Integer, Integer> getCpuMemoryForArch(String architecture,
+    private static Pair<Integer, Integer> getCpuMemoryForArch(String architecture,
             String launchType,
             InstanceProperties instanceProperties) {
         int cpu;
         int memoryLimitMiB;
-        int gpu;
         if (architecture.startsWith("ARM")) {
             cpu = instanceProperties.getInt(COMPACTION_TASK_ARM_CPU);
             memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_ARM_MEMORY);
-            gpu = instanceProperties.getInt(COMPACTION_TASK_ARM_GPU);
         } else {
             cpu = instanceProperties.getInt(COMPACTION_TASK_X86_CPU);
             memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_X86_MEMORY);
-            gpu = instanceProperties.getInt(COMPACTION_TASK_X86_GPU);
         }
-        return Triple.of(cpu, memoryLimitMiB, gpu);
+        return Pair.of(cpu, memoryLimitMiB);
     }
 
     private FargateTaskDefinition compactionFargateTaskDefinition(String compactionTypeName) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
-        Triple<Integer, Integer, Integer> requirements = getCpuMemoryForArch(architecture, launchType,
+        Pair<Integer, Integer> requirements = getCpuMemoryForArch(architecture, launchType,
                 instanceProperties);
         return FargateTaskDefinition.Builder
                 .create(this, compactionTypeName + "CompactionFargateTaskDefinition")
                 .family(instanceProperties.get(ID) + compactionTypeName + "CompactionFargateTaskFamily")
                 .cpu(requirements.getLeft())
-                .memoryLimitMiB(requirements.getMiddle())
+                .memoryLimitMiB(requirements.getRight())
                 .runtimePlatform(RuntimePlatform.builder()
                         .cpuArchitecture(CpuArchitecture.of(architecture))
                         .operatingSystemFamily(OperatingSystemFamily.LINUX)
@@ -673,13 +669,13 @@ public class CompactionStack extends NestedStack {
             Map<String, String> environment, InstanceProperties instanceProperties, String compactionTypeName) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
-        Triple<Integer, Integer, Integer> requirements = getCpuMemoryForArch(architecture, launchType,
+        Pair<Integer, Integer> requirements = getCpuMemoryForArch(architecture, launchType,
                 instanceProperties);
         return ContainerDefinitionOptions.builder()
                 .image(image)
                 .environment(environment)
                 .cpu(requirements.getLeft())
-                .memoryLimitMiB(requirements.getMiddle())
+                .memoryLimitMiB(requirements.getRight())
                 .logging(Utils.createFargateContainerLogDriver(this, instanceProperties,
                         compactionTypeName + "FargateCompactionTasks"))
                 .build();
@@ -689,7 +685,7 @@ public class CompactionStack extends NestedStack {
             Map<String, String> environment, InstanceProperties instanceProperties, String compactionTypeName) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
-        Triple<Integer, Integer, Integer> requirements = getCpuMemoryForArch(architecture, launchType,
+        Pair<Integer, Integer> requirements = getCpuMemoryForArch(architecture, launchType,
                 instanceProperties);
         return ContainerDefinitionOptions.builder()
                 .image(image)
@@ -698,7 +694,7 @@ public class CompactionStack extends NestedStack {
                 //bit hacky: Reduce memory requirement for EC2 to prevent
                 //container allocation failing when we need almost entire resources
                 //of machine
-                .memoryLimitMiB((int)(requirements.getMiddle()*0.95))
+                .memoryLimitMiB((int)(requirements.getRight()*0.95))
                 .gpuCount(requirements.getRight())
                 .logging(Utils.createFargateContainerLogDriver(this, instanceProperties,
                         compactionTypeName + "EC2CompactionTasks"))
