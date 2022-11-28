@@ -694,7 +694,7 @@ public class CompactionStack extends NestedStack {
                 //bit hacky: Reduce memory requirement for EC2 to prevent
                 //container allocation failing when we need almost entire resources
                 //of machine
-                .memoryLimitMiB((int)(requirements.getRight()*0.95))
+                .memoryLimitMiB((int) (requirements.getRight() * 0.95))
                 .gpuCount(requirements.getRight())
                 .logging(Utils.createFargateContainerLogDriver(this, instanceProperties,
                         compactionTypeName + "EC2CompactionTasks"))
