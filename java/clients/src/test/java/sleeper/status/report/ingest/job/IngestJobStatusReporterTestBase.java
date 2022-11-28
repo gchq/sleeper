@@ -111,7 +111,7 @@ public abstract class IngestJobStatusReporterTestBase {
                 jobFinished(createJob(4, 1), "task-id", startTime4, updateTime4, finishTime4, 1234L, 1234L));
     }
 
-    public IngestJob createJob(int jobNum, int inputFileCount) {
+    private IngestJob createJob(int jobNum, int inputFileCount) {
         return IngestJob.builder()
                 .id(job(jobNum))
                 .files(IntStream.range(1, inputFileCount + 1)
@@ -120,19 +120,19 @@ public abstract class IngestJobStatusReporterTestBase {
                 .build();
     }
 
-    public IngestJobStatus jobStarted(IngestJob job, String taskId, Instant startTime, Instant startUpdateTime) {
+    private IngestJobStatus jobStarted(IngestJob job, String taskId, Instant startTime, Instant startUpdateTime) {
         return IngestJobStatus.from(job)
                 .jobRun(ProcessRun.started(taskId,
                         ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime)))
                 .build();
     }
 
-    public IngestJobStatus jobFinished(IngestJob job, String taskId, Instant startTime, Instant startUpdateTime, Instant finishTime) {
+    private IngestJobStatus jobFinished(IngestJob job, String taskId, Instant startTime, Instant startUpdateTime, Instant finishTime) {
         return jobFinished(job, taskId, startTime, startUpdateTime, finishTime, 600L, 300L);
     }
 
-    public IngestJobStatus jobFinished(IngestJob job, String taskId, Instant startTime, Instant startUpdateTime, Instant finishTime,
-                                       long linesRead, long linesWritten) {
+    private IngestJobStatus jobFinished(IngestJob job, String taskId, Instant startTime, Instant startUpdateTime, Instant finishTime,
+                                        long linesRead, long linesWritten) {
         RecordsProcessedSummary summary = new RecordsProcessedSummary(
                 new RecordsProcessed(linesRead, linesWritten), startTime, finishTime);
         return IngestJobStatus.from(job)
