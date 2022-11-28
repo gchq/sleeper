@@ -101,41 +101,6 @@ public class CompactionJobTestDataHelper {
                 parentPartitionId, leftPartitionId, rightPartitionId, splitPoint, 0);
     }
 
-    public CompactionJobStatus createdCompactionStatus(Instant createTime) {
-        return createdCompactionStatus(singleFileCompaction(), createTime);
-    }
-
-    public CompactionJobStatus startedCompactionStatus(Instant createTime) {
-        return startedCompactionStatus(singleFileCompaction(), createTime);
-    }
-
-    public CompactionJobStatus finishedCompactionStatus(
-            Instant createTime, Duration runDuration, long linesRead, long linesWritten) {
-        return finishedCompactionStatus(singleFileCompaction(), createTime, runDuration, linesRead, linesWritten);
-    }
-
-    public CompactionJobStatus compactionStatusWithJobRunsStartToFinish(
-            Instant createTime, Consumer<CompactionJobRunsBuilder> runs) {
-        return compactionStatusWithJobRunsStartToFinish(singleFileCompaction(), createTime, runs);
-    }
-
-    public static CompactionJobStatus createdCompactionStatus(CompactionJob job, Instant createTime) {
-        return CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, createTime))
-                .jobRunsLatestFirst(Collections.emptyList())
-                .build();
-    }
-
-    public static CompactionJobStatus startedCompactionStatus(CompactionJob job, Instant createTime) {
-        Instant startTime = createTime.plus(Duration.ofSeconds(10));
-        Instant startUpdateTime = startTime.plus(Duration.ofMillis(123));
-        return CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, createTime))
-                .singleJobRun(ProcessRun.started(DEFAULT_TASK_ID,
-                        ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime)))
-                .build();
-    }
-
     public static CompactionJobStatus finishedCompactionStatus(
             CompactionJob job, Instant createTime, Duration runDuration, long linesRead, long linesWritten) {
         return compactionStatusWithJobRunsStartToFinish(job, createTime, runs -> runs
