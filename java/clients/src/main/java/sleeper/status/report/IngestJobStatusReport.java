@@ -20,11 +20,15 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.QueueAttributeName;
 import sleeper.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.ingest.job.status.DynamoDBIngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.job.common.CommonJobUtils;
 import sleeper.status.report.ingest.job.IngestJobStatusReportArguments;
 import sleeper.status.report.ingest.job.IngestJobStatusReporter;
 
@@ -36,18 +40,26 @@ import java.util.Optional;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.status.report.ingest.job.IngestJobStatusReporter.QueryType;
 
 public class IngestJobStatusReport {
     private final IngestJobStatusStore statusStore;
     private final IngestJobStatusReportArguments arguments;
     private final IngestJobStatusReporter ingestJobStatusReporter;
+    private final AmazonSQS sqsClient;
+    private final String jobQueueUrl;
 
     public IngestJobStatusReport(
             IngestJobStatusStore ingestJobStatusStore,
-            IngestJobStatusReportArguments arguments) {
+            IngestJobStatusReportArguments arguments,
+            AmazonSQS sqsClient,
+            String jobQueueUrl) {
         this.statusStore = ingestJobStatusStore;
         this.arguments = arguments;
         this.ingestJobStatusReporter = arguments.getReporter();
+        this.sqsClient = sqsClient;
+        this.jobQueueUrl = jobQueueUrl;
     }
 
     private void run() {
@@ -90,7 +102,7 @@ public class IngestJobStatusReport {
 
     public void handleAllQuery() {
         List<IngestJobStatus> statusList = statusStore.getAllJobs(arguments.getTableName());
-        ingestJobStatusReporter.report(statusList, IngestJobStatusReporter.QueryType.ALL, 0);
+        ingestJobStatusReporter.report(statusList, QueryType.ALL, getNumberOfMessagesInQueue());
     }
 
     public void handleDetailedQuery(Scanner scanner) {
@@ -110,12 +122,17 @@ public class IngestJobStatusReport {
         List<IngestJobStatus> statusList = jobIds.stream().map(statusStore::getJob)
                 .filter(Optional::isPresent).map(Optional::get)
                 .collect(Collectors.toList());
-        ingestJobStatusReporter.report(statusList, IngestJobStatusReporter.QueryType.DETAILED, 0);
+        ingestJobStatusReporter.report(statusList, QueryType.DETAILED, getNumberOfMessagesInQueue());
     }
 
     public void handleUnfinishedQuery() {
         List<IngestJobStatus> statusList = statusStore.getUnfinishedJobs(arguments.getTableName());
-        ingestJobStatusReporter.report(statusList, IngestJobStatusReporter.QueryType.UNFINISHED, 0);
+        ingestJobStatusReporter.report(statusList, QueryType.UNFINISHED, getNumberOfMessagesInQueue());
+    }
+
+    private int getNumberOfMessagesInQueue() {
+        return CommonJobUtils.getNumberOfMessagesInQueue(jobQueueUrl, sqsClient)
+                .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
     }
 
     public static void main(String[] args) throws IOException {
@@ -134,6 +151,8 @@ public class IngestJobStatusReport {
 
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         IngestJobStatusStore statusStore = DynamoDBIngestJobStatusStore.from(dynamoDBClient, instanceProperties);
-        new IngestJobStatusReport(statusStore, arguments).run();
+        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+        String jobQueueUrl = instanceProperties.get(INGEST_JOB_QUEUE_URL);
+        new IngestJobStatusReport(statusStore, arguments, sqsClient, jobQueueUrl).run();
     }
 }
