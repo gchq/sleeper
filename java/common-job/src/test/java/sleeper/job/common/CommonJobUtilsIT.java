@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.job.common.action;
+package sleeper.job.common;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
@@ -24,7 +24,6 @@ import org.junit.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import sleeper.core.CommonTestConstants;
-import sleeper.job.common.CommonJobUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
