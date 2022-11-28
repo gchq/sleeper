@@ -185,7 +185,7 @@ public class RunTasks {
         Set<String> recentContainerInstanceARNs = new HashSet<>();
 
         if (0 == queueSize) {
-            LOGGER.info("No tasks to launch as queue size is 0");
+            LOGGER.info("Finishing as queue size is 0");
         } else {
             int numRunningTasks = CommonJobUtils.getNumRunningTasks(clusterName, ecsClient);
             LOGGER.info("Number of running tasks is {}", numRunningTasks);
