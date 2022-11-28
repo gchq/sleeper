@@ -45,7 +45,7 @@ public class IngestJobStatusTest {
 
         // Then
         assertThat(status)
-                .extracting(IngestJobStatus::getJobId, IngestJobStatus::getInputFileCount, IngestJobStatus::getJobRuns)
+                .extracting(IngestJobStatus::getJobId, IngestJobStatus::getInputFilesCount, IngestJobStatus::getJobRuns)
                 .containsExactly("test-job", 2,
                         Collections.singletonList(ProcessRun.started("test-task",
                                 ProcessStartedStatus.updateAndStartTime(updateTime, startTime))));
