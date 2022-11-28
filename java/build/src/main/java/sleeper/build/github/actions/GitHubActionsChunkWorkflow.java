@@ -49,7 +49,7 @@ public class GitHubActionsChunkWorkflow {
     public OnPushPathsDiff getOnPushPathsDiffFromExpected(
             ProjectStructure project, ProjectChunk chunk, InternalDependencyIndex index) {
         return OnPushPathsDiff.fromExpectedAndActual(
-                chunk.getExpectedPathsToTriggerBuild(project, index, this),
+                ExpectedOnPushPaths.from(project, index, chunk, this),
                 onPushPaths);
     }
 
