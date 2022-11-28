@@ -22,6 +22,7 @@ import java.util.List;
 
 public interface IngestJobStatusReporter {
     enum QueryType {
+        PROMPT,
         ALL,
         DETAILED,
         UNFINISHED;
