@@ -19,19 +19,21 @@ package sleeper.compaction.job;
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStartedStatus;
 
+import java.time.Duration;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static sleeper.compaction.job.TestCompactionJobStatus.statusFromUpdates;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.startedStatus;
 
 public class CompactionJobRunTest {
-    private static final String DEFAULT_TASK_ID = "task-id-1";
 
     @Test
     public void shouldReportNoRunsWhenJobNotStarted() {
@@ -43,9 +45,7 @@ public class CompactionJobRunTest {
                 .build();
 
         // When
-        CompactionJobStatus status = new TestCompactionJobStatusUpdateRecords()
-                .jobCreated("job1", created)
-                .buildSingleStatus();
+        CompactionJobStatus status = statusFromUpdates(created);
 
         // Then
         assertThat(status.getJobRuns())
@@ -61,14 +61,10 @@ public class CompactionJobRunTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
-        ProcessStartedStatus started = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-23T09:23:30.012Z"),
-                Instant.parse("2022-09-23T09:23:30.001Z"));
+        ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
 
         // When
-        CompactionJobStatus status = new TestCompactionJobStatusUpdateRecords()
-                .updatesForJobWithTask("job1", DEFAULT_TASK_ID, created, started)
-                .buildSingleStatus();
+        CompactionJobStatus status = statusFromUpdates(created, started);
 
         // Then
         assertThat(status.getJobRuns())
@@ -86,19 +82,11 @@ public class CompactionJobRunTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
-        ProcessStartedStatus started = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-24T09:23:30.012Z"),
-                Instant.parse("2022-09-24T09:23:30.001Z"));
-        ProcessFinishedStatus finished = ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse("2022-09-24T09:24:00.012Z"),
-                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
-                        Instant.parse("2022-09-24T09:23:30.001Z"),
-                        Instant.parse("2022-09-24T09:24:00.001Z")));
+        ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        ProcessFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
 
         // When
-        CompactionJobStatus status = new TestCompactionJobStatusUpdateRecords()
-                .updatesForJobWithTask("job1", DEFAULT_TASK_ID, created, started, finished)
-                .buildSingleStatus();
+        CompactionJobStatus status = statusFromUpdates(created, started, finished);
 
         // Then
         assertThat(status.getJobRuns())

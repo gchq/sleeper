@@ -28,7 +28,7 @@ public class TestProcessStatusUpdateRecords {
     public static final String DEFAULT_TASK_ID = "test-task-id";
     public static final String TASK_ID_1 = "task-id-1";
     public static final String TASK_ID_2 = "task-id-2";
-    private static final Instant DEFAULT_EXPIRY = Instant.ofEpochSecond(999999999);
+    public static final Instant DEFAULT_EXPIRY = Instant.ofEpochSecond(999999999);
     private final List<ProcessStatusUpdateRecord> updates = new ArrayList<>();
 
     public static TestProcessStatusUpdateRecords records() {
@@ -46,14 +46,19 @@ public class TestProcessStatusUpdateRecords {
         return fromUpdates(forJobOnTask(DEFAULT_JOB_ID, DEFAULT_TASK_ID, statusUpdates));
     }
 
-    public static TaskUpdates onTask(
-            String taskId, ProcessStatusUpdate... updates) {
-        return forJobOnTask(DEFAULT_JOB_ID, taskId, updates);
-    }
-
     public static TaskUpdates forJobOnTask(
             String jobId, String taskId, ProcessStatusUpdate... updates) {
         return new TaskUpdates(jobId, taskId, Arrays.asList(updates));
+    }
+
+    public static TaskUpdates forJob(
+            String jobId, ProcessStatusUpdate... updates) {
+        return forJobOnTask(jobId, DEFAULT_TASK_ID, updates);
+    }
+
+    public static TaskUpdates onTask(
+            String taskId, ProcessStatusUpdate... updates) {
+        return forJobOnTask(DEFAULT_JOB_ID, taskId, updates);
     }
 
     public Stream<ProcessStatusUpdateRecord> stream() {
