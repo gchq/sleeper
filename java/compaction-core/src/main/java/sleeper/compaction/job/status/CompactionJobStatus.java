@@ -55,11 +55,11 @@ public class CompactionJobStatus {
     }
 
     public static List<CompactionJobStatus> listFrom(Stream<ProcessStatusUpdateRecord> records) {
-        return from(records).collect(Collectors.toList());
+        return streamFrom(records).collect(Collectors.toList());
     }
 
-    public static Stream<CompactionJobStatus> from(Stream<ProcessStatusUpdateRecord> records) {
-        return JobStatusUpdates.from(records)
+    public static Stream<CompactionJobStatus> streamFrom(Stream<ProcessStatusUpdateRecord> records) {
+        return JobStatusUpdates.streamFrom(records)
                 .map(CompactionJobStatus::from);
     }
 

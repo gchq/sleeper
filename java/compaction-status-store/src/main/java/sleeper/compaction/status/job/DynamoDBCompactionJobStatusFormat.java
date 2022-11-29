@@ -104,7 +104,7 @@ public class DynamoDBCompactionJobStatusFormat {
     }
 
     public static Stream<CompactionJobStatus> streamJobStatuses(List<Map<String, AttributeValue>> items) {
-        return CompactionJobStatus.from(items.stream()
+        return CompactionJobStatus.streamFrom(items.stream()
                 .map(DynamoDBCompactionJobStatusFormat::getStatusUpdateRecord));
     }
 

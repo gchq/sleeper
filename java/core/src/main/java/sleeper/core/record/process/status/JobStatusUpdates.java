@@ -39,7 +39,7 @@ public class JobStatusUpdates {
         return new JobStatusUpdates(jobId, recordsLatestFirst, runs);
     }
 
-    public static Stream<JobStatusUpdates> from(Stream<ProcessStatusUpdateRecord> records) {
+    public static Stream<JobStatusUpdates> streamFrom(Stream<ProcessStatusUpdateRecord> records) {
         JobStatusesBuilder builder = new JobStatusesBuilder();
         records.forEach(builder::update);
         return builder.stream();
