@@ -20,6 +20,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.onTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.startedStatus;
@@ -31,9 +33,14 @@ public class TestProcessRuns {
 
     public static ProcessRun finishedRun(
             Instant startTime, Duration runDuration, long linesRead, long linesWritten) {
+        return finishedRun(DEFAULT_TASK_ID, startTime, runDuration, linesRead, linesWritten);
+    }
+
+    public static ProcessRun finishedRun(String taskId,
+                                         Instant startTime, Duration runDuration, long linesRead, long linesWritten) {
         ProcessStartedStatus started = startedStatus(startTime);
         ProcessFinishedStatus finished = finishedStatus(started, runDuration, linesRead, linesWritten);
-        return runFrom(records().fromUpdates(started, finished));
+        return runFrom(records().fromUpdates(onTask(taskId, started, finished)));
     }
 
     public static ProcessRuns runsFromUpdates(ProcessStatusUpdate... updates) {

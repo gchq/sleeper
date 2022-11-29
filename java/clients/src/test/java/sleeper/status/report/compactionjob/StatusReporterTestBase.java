@@ -126,18 +126,22 @@ public abstract class StatusReporterTestBase {
         return Arrays.asList(
                 finishedCompactionStatus(
                         dataHelper.singleFileCompaction(partition("C")),
+                        "task-id",
                         Instant.parse("2022-10-13T12:00:00.000Z"),
                         Duration.ofMillis(123), 600, 300),
                 finishedCompactionStatus(
                         dataHelper.singleFileCompaction(partition("C")),
+                        "task-id",
                         Instant.parse("2022-10-13T12:01:00.000Z"),
                         Duration.ofHours(2), 1000600, 500300),
                 finishedCompactionStatus(
                         dataHelper.singleFileSplittingCompaction(partition("C"), partition("A"), partition("B")),
+                        "task-id",
                         Instant.parse("2022-10-13T14:01:00.000Z"),
                         Duration.ofSeconds(60), 1000600, 500300),
                 finishedCompactionStatus(
                         dataHelper.singleFileSplittingCompaction(partition("C"), partition("A"), partition("B")),
+                        "task-id",
                         Instant.parse("2022-10-13T14:02:00.000Z"),
                         Duration.ofMillis(123), 1234, 1234));
     }

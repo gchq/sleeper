@@ -42,10 +42,9 @@ import static sleeper.compaction.job.CompactionJobTestUtils.KEY_FIELD;
 import static sleeper.compaction.job.CompactionJobTestUtils.createInstanceProperties;
 import static sleeper.compaction.job.CompactionJobTestUtils.createSchema;
 import static sleeper.compaction.job.CompactionJobTestUtils.createTableProperties;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 
 public class CompactionJobTestDataHelper {
-
-    public static final String DEFAULT_TASK_ID = "task-id";
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final Schema schema = createSchema();
@@ -100,8 +99,13 @@ public class CompactionJobTestDataHelper {
 
     public static CompactionJobStatus finishedCompactionStatus(
             CompactionJob job, Instant createTime, Duration runDuration, long linesRead, long linesWritten) {
+        return finishedCompactionStatus(job, DEFAULT_TASK_ID, createTime, runDuration, linesRead, linesWritten);
+    }
+
+    public static CompactionJobStatus finishedCompactionStatus(
+            CompactionJob job, String taskId, Instant createTime, Duration runDuration, long linesRead, long linesWritten) {
         return compactionStatusWithJobRunsStartToFinish(job, createTime, runs -> runs
-                .finishedRun(runDuration, linesRead, linesWritten));
+                .finishedRun(taskId, runDuration, linesRead, linesWritten));
     }
 
     public static CompactionJobStatus compactionStatusWithJobRunsStartToFinish(
@@ -125,6 +129,13 @@ public class CompactionJobTestDataHelper {
 
         public CompactionJobRunsBuilder finishedRun(Duration runDuration, long linesRead, long linesWritten) {
             ProcessRun run = TestProcessRuns.finishedRun(nextStartTime, runDuration, linesRead, linesWritten);
+            nextStartTime = run.getFinishTime().plus(Duration.ofSeconds(10));
+            runs.add(run);
+            return this;
+        }
+
+        public CompactionJobRunsBuilder finishedRun(String taskId, Duration runDuration, long linesRead, long linesWritten) {
+            ProcessRun run = TestProcessRuns.finishedRun(taskId, nextStartTime, runDuration, linesRead, linesWritten);
             nextStartTime = run.getFinishTime().plus(Duration.ofSeconds(10));
             runs.add(run);
             return this;
