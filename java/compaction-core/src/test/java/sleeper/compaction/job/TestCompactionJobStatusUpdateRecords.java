@@ -17,7 +17,7 @@ package sleeper.compaction.job;
 
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
+import sleeper.core.record.process.status.JobStatusesBuilder;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class TestCompactionJobStatusUpdateRecords {
 
@@ -50,8 +51,16 @@ public class TestCompactionJobStatusUpdateRecords {
         return updates;
     }
 
+    public List<CompactionJobStatus> listCompactionJobs() {
+        JobStatusesBuilder builder = new JobStatusesBuilder();
+        updates.forEach(builder::update);
+        return builder.stream()
+                .map(CompactionJobStatus::from)
+                .collect(Collectors.toList());
+    }
+
     public CompactionJobStatus buildSingleStatus() {
-        List<CompactionJobStatus> built = new CompactionJobStatusesBuilder().jobUpdates(updates).build();
+        List<CompactionJobStatus> built = listCompactionJobs();
         if (built.size() != 1) {
             throw new IllegalStateException("Expected single status");
         }

@@ -18,13 +18,11 @@ package sleeper.compaction.job;
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStartedStatus;
-import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -65,13 +63,12 @@ public class CompactionJobStatusesBuilderTest {
                         Instant.parse("2022-09-24T09:23:30.001Z"),
                         Instant.parse("2022-09-24T09:24:00.001Z")));
 
-        List<ProcessStatusUpdateRecord> updates = new TestCompactionJobStatusUpdateRecords()
+        TestCompactionJobStatusUpdateRecords records = new TestCompactionJobStatusUpdateRecords()
                 .updatesForJobWithTask("job1", DEFAULT_TASK_ID, created1, started1, finished1)
-                .updatesForJobWithTask("job2", DEFAULT_TASK_ID, created2, started2, finished2)
-                .list();
+                .updatesForJobWithTask("job2", DEFAULT_TASK_ID, created2, started2, finished2);
 
         // When
-        List<CompactionJobStatus> statuses = new CompactionJobStatusesBuilder().jobUpdates(updates).build();
+        List<CompactionJobStatus> statuses = records.listCompactionJobs();
 
         // Then
         assertThat(statuses).containsExactly(

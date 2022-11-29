@@ -21,9 +21,9 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.job.status.CompactionJobStatusesBuilder;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.JobStatusesBuilder;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
@@ -105,11 +105,12 @@ public class DynamoDBCompactionJobStatusFormat {
     }
 
     public static Stream<CompactionJobStatus> streamJobStatuses(List<Map<String, AttributeValue>> items) {
-        CompactionJobStatusesBuilder builder = new CompactionJobStatusesBuilder();
+        JobStatusesBuilder builder = new JobStatusesBuilder();
         items.stream()
                 .map(DynamoDBCompactionJobStatusFormat::getStatusUpdateRecord)
-                .forEach(builder::jobUpdate);
-        return builder.stream();
+                .forEach(builder::update);
+        return builder.stream()
+                .map(CompactionJobStatus::from);
     }
 
     private static ProcessStatusUpdateRecord getStatusUpdateRecord(Map<String, AttributeValue> item) {
