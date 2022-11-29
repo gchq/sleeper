@@ -45,4 +45,11 @@ public class TestRunStatusUpdates {
         return ProcessFinishedStatus.updateTimeAndSummary(finishUpdateTime, summary);
     }
 
+    public static ProcessStatusUpdate[] finishedUpdates(
+            Instant startTime, Duration runDuration, long linesRead, long linesWritten) {
+        ProcessStartedStatus started = startedStatus(startTime);
+        ProcessFinishedStatus finished = finishedStatus(started, runDuration, linesRead, linesWritten);
+        return new ProcessStatusUpdate[]{started, finished};
+    }
+
 }

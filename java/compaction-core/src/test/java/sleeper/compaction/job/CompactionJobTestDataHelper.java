@@ -42,7 +42,8 @@ import static sleeper.compaction.job.CompactionJobTestUtils.KEY_FIELD;
 import static sleeper.compaction.job.CompactionJobTestUtils.createInstanceProperties;
 import static sleeper.compaction.job.CompactionJobTestUtils.createSchema;
 import static sleeper.compaction.job.CompactionJobTestUtils.createTableProperties;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.onTask;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedUpdates;
 
 public class CompactionJobTestDataHelper {
 
@@ -99,7 +100,8 @@ public class CompactionJobTestDataHelper {
 
     public static CompactionJobStatus finishedCompactionStatus(
             CompactionJob job, Instant createTime, Duration runDuration, long linesRead, long linesWritten) {
-        return finishedCompactionStatus(job, DEFAULT_TASK_ID, createTime, runDuration, linesRead, linesWritten);
+        return compactionStatusWithJobRunsStartToFinish(job, createTime, runs -> runs
+                .finishedRun(runDuration, linesRead, linesWritten));
     }
 
     public static CompactionJobStatus finishedCompactionStatus(
@@ -108,7 +110,7 @@ public class CompactionJobTestDataHelper {
                 .finishedRun(taskId, runDuration, linesRead, linesWritten));
     }
 
-    public static CompactionJobStatus compactionStatusWithJobRunsStartToFinish(
+    private static CompactionJobStatus compactionStatusWithJobRunsStartToFinish(
             CompactionJob job, Instant createTime, Consumer<CompactionJobRunsBuilder> runs) {
         CompactionJobRunsBuilder runsBuilder = new CompactionJobRunsBuilder(createTime);
         runs.accept(runsBuilder);
@@ -128,14 +130,16 @@ public class CompactionJobTestDataHelper {
         }
 
         public CompactionJobRunsBuilder finishedRun(Duration runDuration, long linesRead, long linesWritten) {
-            ProcessRun run = TestProcessRuns.finishedRun(nextStartTime, runDuration, linesRead, linesWritten);
-            nextStartTime = run.getFinishTime().plus(Duration.ofSeconds(10));
-            runs.add(run);
-            return this;
+            return run(TestProcessRuns.runFromUpdates(
+                    finishedUpdates(nextStartTime, runDuration, linesRead, linesWritten)));
         }
 
         public CompactionJobRunsBuilder finishedRun(String taskId, Duration runDuration, long linesRead, long linesWritten) {
-            ProcessRun run = TestProcessRuns.finishedRun(taskId, nextStartTime, runDuration, linesRead, linesWritten);
+            return run(TestProcessRuns.runFromUpdates(onTask(taskId,
+                    finishedUpdates(nextStartTime, runDuration, linesRead, linesWritten))));
+        }
+
+        public CompactionJobRunsBuilder run(ProcessRun run) {
             nextStartTime = run.getFinishTime().plus(Duration.ofSeconds(10));
             runs.add(run);
             return this;

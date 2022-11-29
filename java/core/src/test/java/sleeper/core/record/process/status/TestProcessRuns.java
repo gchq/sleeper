@@ -15,32 +15,14 @@
  */
 package sleeper.core.record.process.status;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.onTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
-import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
-import static sleeper.core.record.process.status.TestRunStatusUpdates.startedStatus;
 
 public class TestProcessRuns {
 
     private TestProcessRuns() {
-    }
-
-    public static ProcessRun finishedRun(
-            Instant startTime, Duration runDuration, long linesRead, long linesWritten) {
-        return finishedRun(DEFAULT_TASK_ID, startTime, runDuration, linesRead, linesWritten);
-    }
-
-    public static ProcessRun finishedRun(String taskId,
-                                         Instant startTime, Duration runDuration, long linesRead, long linesWritten) {
-        ProcessStartedStatus started = startedStatus(startTime);
-        ProcessFinishedStatus finished = finishedStatus(started, runDuration, linesRead, linesWritten);
-        return runFrom(records().fromUpdates(onTask(taskId, started, finished)));
     }
 
     public static ProcessRuns runsFromUpdates(ProcessStatusUpdate... updates) {
@@ -50,6 +32,15 @@ public class TestProcessRuns {
     public static ProcessRuns runsFromUpdates(
             TestProcessStatusUpdateRecords.TaskUpdates... taskUpdates) {
         return runsFrom(records().fromUpdates(taskUpdates));
+    }
+
+    public static ProcessRun runFromUpdates(ProcessStatusUpdate... updates) {
+        return runFrom(records().fromUpdates(updates));
+    }
+
+    public static ProcessRun runFromUpdates(
+            TestProcessStatusUpdateRecords.TaskUpdates... taskUpdates) {
+        return runFrom(records().fromUpdates(taskUpdates));
     }
 
     private static ProcessRuns runsFrom(TestProcessStatusUpdateRecords records) {
@@ -62,8 +53,7 @@ public class TestProcessRuns {
     }
 
     private static ProcessRun runFrom(TestProcessStatusUpdateRecords records) {
-        ProcessRuns runs = runsFrom(records);
-        List<ProcessRun> list = runs.getRunList();
+        List<ProcessRun> list = runsFrom(records).getRunList();
         if (list.size() != 1) {
             throw new IllegalStateException("Expected single run");
         }
