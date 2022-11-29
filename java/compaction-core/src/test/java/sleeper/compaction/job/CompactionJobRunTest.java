@@ -35,7 +35,7 @@ public class CompactionJobRunTest {
     private static final String DEFAULT_TASK_ID_2 = "task-id-2";
 
     @Test
-    public void shouldReportNoJobRunsWhenJobNotStarted() {
+    public void shouldReportNoRunsWhenJobNotStarted() {
         // Given
         CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
@@ -80,7 +80,7 @@ public class CompactionJobRunTest {
     }
 
     @Test
-    public void shouldBuildCompactionJobRunWhenJobFinished() {
+    public void shouldReportRunWhenJobFinished() {
         // Given
         CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
@@ -110,7 +110,7 @@ public class CompactionJobRunTest {
     }
 
     @Test
-    public void shouldBuildCompactionJobRunsWhenJobStartedSameTask() {
+    public void shouldReportTwoRunsLatestFirstByStartTimeOnSameTask() {
         // Given
         CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
@@ -139,7 +139,7 @@ public class CompactionJobRunTest {
     }
 
     @Test
-    public void shouldBuildCompactionJobRunsWhenJobFinishedMultipleTimesSameTask() {
+    public void shouldReportTwoRunsWhenJobFinishedMultipleTimesSameTask() {
         // Given
         CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
@@ -179,7 +179,7 @@ public class CompactionJobRunTest {
     }
 
     @Test
-    public void shouldBuildCompactionJobRunsWhenJobStartedDifferentTasks() {
+    public void shouldReportTwoTasksWithTwoRunsEachForSameJobWithInterleavingStartTimes() {
         // Given
         CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
@@ -218,7 +218,7 @@ public class CompactionJobRunTest {
     }
 
     @Test
-    public void shouldBuildCompactionJobRunsWhenJobFinishedDifferentTasks() {
+    public void shouldReportTwoTasksWithOneFinishedRunEachForSameJob() {
         // Given
         CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
@@ -259,7 +259,7 @@ public class CompactionJobRunTest {
     }
 
     @Test
-    public void shouldBuildCompactionJobRunsWhenJobFinishedReturnedFromDatabaseOutOfOrder() {
+    public void shouldReportRunWhenJobFinishedReturnedFromDatabaseOutOfOrder() {
         // Given
         CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
@@ -289,7 +289,7 @@ public class CompactionJobRunTest {
     }
 
     @Test
-    public void shouldBuildCompactionJobRunsWhenJobStartedReturnedFromDatabaseOutOfOrder() {
+    public void shouldReportRunsWhenJobStartedReturnedFromDatabaseOutOfOrder() {
         // Given
         CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
@@ -322,7 +322,7 @@ public class CompactionJobRunTest {
     }
 
     @Test
-    public void shouldBuildCompactionJobRunsWhenJobFinishedMultipleTimesReturnedFromDatabaseOutOfOrder() {
+    public void shouldReportRunsWhenLastRunFinishedButReturnedFromDatabaseOutOfOrder() {
         // Given
         CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
@@ -360,7 +360,7 @@ public class CompactionJobRunTest {
     }
 
     @Test
-    public void shouldBuildCompactionJobRunsWhenJobFinishedDifferentTasksFromDatabaseOutOfOrder() {
+    public void shouldReportRunsOnDifferentTasksWhenJobFinishedFromDatabaseOutOfOrder() {
         // Given
         CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-22T09:23:00.012Z"))
@@ -401,7 +401,7 @@ public class CompactionJobRunTest {
     }
 
     @Test
-    public void shouldBuildCompactionJobRunsWhenJobRunStartedAndFinshedDuringAnotherRunDifferentTasks() {
+    public void shouldReportRunsOnDifferentTasksWhenJobRunStartedAndFinshedDuringAnotherRun() {
         // Given
         CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
