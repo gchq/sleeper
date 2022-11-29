@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.github;
+package sleeper.build.github.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -28,7 +28,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.build.chunks.TestResources.exampleString;
+import static sleeper.build.testutil.TestResources.exampleString;
 
 public class GitHubRateLimitsTest {
 
@@ -43,7 +43,7 @@ public class GitHubRateLimitsTest {
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/vnd.github+json")
-                        .withBody(exampleString("github-examples/rate-limit.json"))));
+                        .withBody(exampleString("examples/github-api/rate-limit.json"))));
 
         JsonNode response = GitHubRateLimits.get("http://localhost:" + wireMockRule.port(), "test-bearer-token");
         assertThat(GitHubRateLimits.remainingLimit(response)).isEqualTo(4999);

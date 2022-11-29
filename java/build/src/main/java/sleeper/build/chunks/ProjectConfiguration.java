@@ -17,12 +17,13 @@ package sleeper.build.chunks;
 
 import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubWorkflowRuns;
-import sleeper.build.github.GitHubWorkflowRunsImpl;
+import sleeper.build.github.api.GitHubWorkflowRunsImpl;
 import sleeper.build.status.CheckGitHubStatus;
 import sleeper.build.status.ChunkStatuses;
 import sleeper.build.status.WorkflowStatus;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -79,6 +80,10 @@ public class ProjectConfiguration {
 
     public ProjectChunks getChunks() {
         return chunks;
+    }
+
+    public void validate(ProjectStructure structure, PrintStream out) throws IOException {
+        chunks.validate(structure, out);
     }
 
     public long getRetrySeconds() {

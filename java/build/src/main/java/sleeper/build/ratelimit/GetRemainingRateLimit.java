@@ -16,7 +16,7 @@
 package sleeper.build.ratelimit;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import sleeper.build.github.GitHubRateLimits;
+import sleeper.build.github.api.GitHubRateLimits;
 
 public class GetRemainingRateLimit {
 

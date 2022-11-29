@@ -13,11 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.github;
+package sleeper.build.util;
 
-public class GitHubException extends RuntimeException {
+import sleeper.build.chunks.ProjectStructure;
 
-    public GitHubException(Throwable cause) {
-        super("Failed calling GitHub", cause);
+import java.io.PrintStream;
+
+public class ReportableException extends RuntimeException {
+
+    public ReportableException(String message) {
+        super(message);
+    }
+
+    public void report(PrintStream out, ProjectStructure project) {
     }
 }

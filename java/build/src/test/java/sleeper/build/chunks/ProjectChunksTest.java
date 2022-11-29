@@ -22,7 +22,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ProjectChunksTest {
 
-    private static final ProjectChunks CHUNKS = TestChunks.example("example-chunks.yaml");
+    private static final ProjectChunks CHUNKS = TestChunks.example();
+
+    @Test
+    public void shouldReadExample() {
+        assertThat(TestChunks.example("examples/config/chunks.yaml"))
+                .isEqualTo(CHUNKS);
+    }
 
     @Test
     public void shouldGetChunkConfigById() {

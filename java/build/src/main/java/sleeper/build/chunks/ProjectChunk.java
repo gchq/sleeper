@@ -15,10 +15,14 @@
  */
 package sleeper.build.chunks;
 
+import sleeper.build.maven.InternalDependencyIndex;
+import sleeper.build.maven.MavenModuleAndPath;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import static sleeper.build.util.ValidationUtils.ignoreEmpty;
 
@@ -54,6 +58,10 @@ public class ProjectChunk {
 
     public String getMavenProjectList() {
         return String.join(",", getModules());
+    }
+
+    public Stream<MavenModuleAndPath> dependencies(InternalDependencyIndex index) {
+        return index.dependenciesForModules(modules);
     }
 
     public static Builder chunk(String id) {

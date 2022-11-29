@@ -19,6 +19,7 @@ import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.build.maven.TestMavenModuleStructure.dependency;
+import static sleeper.build.maven.TestMavenModuleStructure.dependencyBuilder;
 import static sleeper.build.maven.TestMavenModuleStructure.testedModuleBuilder;
 
 public class InternalDependencyIndexTest {
@@ -29,8 +30,8 @@ public class InternalDependencyIndexTest {
         InternalDependencyIndex index = TestMavenModuleStructure.example().internalDependencies();
 
         // When / Then
-        assertThat(index.dependenciesForModules("core"))
-                .containsExactly("core");
+        assertThat(index.dependencyPathsForModules("core")).containsExactly("core");
+        assertThat(index.pomPathsForAncestors("core")).containsExactly("pom.xml");
     }
 
     @Test
@@ -39,8 +40,10 @@ public class InternalDependencyIndexTest {
         InternalDependencyIndex index = TestMavenModuleStructure.example().internalDependencies();
 
         // When / Then
-        assertThat(index.dependenciesForModules("core", "configuration"))
+        assertThat(index.dependencyPathsForModules("core", "configuration"))
                 .containsExactly("core", "configuration");
+        assertThat(index.pomPathsForAncestors("core", "configuration"))
+                .containsExactly("pom.xml");
     }
 
     @Test
@@ -49,8 +52,10 @@ public class InternalDependencyIndexTest {
         InternalDependencyIndex index = TestMavenModuleStructure.example().internalDependencies();
 
         // When / Then
-        assertThat(index.dependenciesForModules("ingest"))
+        assertThat(index.dependencyPathsForModules("ingest"))
                 .containsExactly("ingest", "configuration", "core");
+        assertThat(index.pomPathsForAncestors("ingest"))
+                .containsExactly("pom.xml");
     }
 
     @Test
@@ -59,14 +64,22 @@ public class InternalDependencyIndexTest {
         InternalDependencyIndex index = TestMavenModuleStructure.example().internalDependencies();
 
         // When / Then
-        assertThat(index.dependenciesForModules(
+        assertThat(index.dependencyPathsForModules(
                 "bulk-import/bulk-import-common",
                 "bulk-import/bulk-import-runner",
                 "bulk-import/bulk-import-starter"))
                 .containsExactly(
-                        "bulk-import/bulk-import-common", "configuration", "core",
-                        "bulk-import/bulk-import-runner", "ingest",
-                        "bulk-import/bulk-import-starter");
+                        "bulk-import/bulk-import-common",
+                        "bulk-import/bulk-import-runner",
+                        "bulk-import/bulk-import-starter",
+                        "ingest", "configuration", "core");
+        assertThat(index.pomPathsForAncestors(
+                "bulk-import/bulk-import-common",
+                "bulk-import/bulk-import-runner",
+                "bulk-import/bulk-import-starter"))
+                .containsExactly(
+                        "pom.xml",
+                        "bulk-import/pom.xml");
     }
 
     @Test
@@ -79,7 +92,79 @@ public class InternalDependencyIndexTest {
         ).build().internalDependencies();
 
         // When / Then
-        assertThat(index.dependenciesForModules("c"))
+        assertThat(index.dependencyPathsForModules("c"))
                 .containsExactly("c", "b", "a");
+    }
+
+    @Test
+    public void shouldIncludeDeeplyTransitiveDependency() {
+        // Given
+        InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
+                testedModuleBuilder("a").build(),
+                testedModuleBuilder("b").dependenciesArray(dependency("sleeper:a")).build(),
+                testedModuleBuilder("c").dependenciesArray(dependency("sleeper:b")).build(),
+                testedModuleBuilder("d").dependenciesArray(dependency("sleeper:c")).build(),
+                testedModuleBuilder("e").dependenciesArray(dependency("sleeper:d")).build()
+        ).build().internalDependencies();
+
+        // When / Then
+        assertThat(index.dependencyPathsForModules("e"))
+                .containsExactly("e", "d", "c", "b", "a");
+    }
+
+    @Test
+    public void shouldExcludeUnexportedDependencyOfDependency() {
+        // Given
+        InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
+                testedModuleBuilder("a").build(),
+                testedModuleBuilder("b").dependenciesArray(
+                        dependencyBuilder("sleeper:a").exported(false).build()).build(),
+                testedModuleBuilder("c").dependenciesArray(dependency("sleeper:b")).build()
+        ).build().internalDependencies();
+
+        // When / Then
+        assertThat(index.dependencyPathsForModules("c"))
+                .containsExactly("c", "b");
+    }
+
+    @Test
+    public void shouldIncludeUnexportedDependencyDirectly() {
+        // Given
+        InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
+                testedModuleBuilder("a").build(),
+                testedModuleBuilder("b").dependenciesArray(
+                        dependencyBuilder("sleeper:a").exported(false).build()).build()
+        ).build().internalDependencies();
+
+        // When / Then
+        assertThat(index.dependencyPathsForModules("b"))
+                .containsExactly("b", "a");
+    }
+
+    @Test
+    public void shouldIncludeDependencyWithExplicitlyDeclaredScope() {
+        // Given
+        InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
+                testedModuleBuilder("a").build(),
+                testedModuleBuilder("b").dependenciesArray(
+                        dependencyBuilder("sleeper:a").scope("something").exported(true).build()).build()
+        ).build().internalDependencies();
+
+        // When / Then
+        assertThat(index.dependencyPathsForModules("b"))
+                .containsExactly("b", "a");
+    }
+
+    @Test
+    public void shouldExcludeDependencyWithWrongGroup() {
+        // Given
+        InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
+                testedModuleBuilder("a").build(),
+                testedModuleBuilder("b").dependenciesArray(dependency("abc:a")).build()
+        ).build().internalDependencies();
+
+        // When / Then
+        assertThat(index.dependencyPathsForModules("b"))
+                .containsExactly("b");
     }
 }

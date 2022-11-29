@@ -15,18 +15,21 @@
  */
 package sleeper.build.chunks;
 
-import java.util.List;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-public class NotAllMavenModulesConfiguredException extends RuntimeException {
+public class TestProjectStructure {
 
-    private final List<String> unconfiguredModuleRefs;
-
-    public NotAllMavenModulesConfiguredException(List<String> unconfiguredModuleRefs) {
-        super("Maven modules not configured in any chunk: " + unconfiguredModuleRefs);
-        this.unconfiguredModuleRefs = unconfiguredModuleRefs;
+    private TestProjectStructure() {
     }
 
-    public List<String> getUnconfiguredModuleRefs() {
-        return unconfiguredModuleRefs;
+    public static ProjectStructure example() {
+        Path basePath = Paths.get("src/test/resources/examples");
+        return ProjectStructure.builder()
+                .chunksYamlPath(basePath.resolve("config/chunks.yaml"))
+                .gitHubPropertiesPath(basePath.resolve("config/github.properties"))
+                .mavenProjectPath(basePath.resolve("maven"))
+                .workflowsPath(basePath.resolve("github-actions"))
+                .build();
     }
 }

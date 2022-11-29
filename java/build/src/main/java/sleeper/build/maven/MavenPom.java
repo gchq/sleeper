@@ -114,17 +114,33 @@ public class MavenPom {
     public static class Dependency {
         private final String artifactId;
         private final String groupId;
+        private final String type;
+        private final String scope;
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public Dependency(
                 @JsonProperty("artifactId") String artifactId,
-                @JsonProperty("groupId") String groupId) {
+                @JsonProperty("groupId") String groupId,
+                @JsonProperty("type") String type,
+                @JsonProperty("scope") String scope) {
             this.artifactId = artifactId;
             this.groupId = groupId;
+            this.type = type;
+            this.scope = scope;
         }
 
         public DependencyReference toReference() {
-            return DependencyReference.groupAndArtifact(groupId, artifactId);
+            return DependencyReference.builder()
+                    .groupId(groupId).artifactId(artifactId)
+                    .type(type).scope(scope)
+                    .exported(isExported())
+                    .build();
+        }
+
+        private boolean isExported() {
+            return scope == null
+                    || scope.equals("compile")
+                    || scope.equals("runtime");
         }
     }
 }
