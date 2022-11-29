@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.job.status;
 
-import sleeper.core.record.process.status.JobStatusUpdates;
 import sleeper.core.record.process.status.JobStatusesBuilder;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
@@ -37,18 +36,10 @@ public class CompactionJobStatusesBuilder {
     }
 
     public Stream<CompactionJobStatus> stream() {
-        return statusesBuilder.stream().map(this::fullStatus);
+        return statusesBuilder.stream().map(CompactionJobStatus::from);
     }
 
     public List<CompactionJobStatus> build() {
         return stream().collect(Collectors.toList());
-    }
-
-    private CompactionJobStatus fullStatus(JobStatusUpdates job) {
-        return CompactionJobStatus.builder().jobId(job.getJobId())
-                .createdStatus((CompactionJobCreatedStatus) job.getFirstRecord().getStatusUpdate())
-                .jobRuns(job.getRuns())
-                .expiryDate(job.getLastRecord().getExpiryDate())
-                .build();
     }
 }

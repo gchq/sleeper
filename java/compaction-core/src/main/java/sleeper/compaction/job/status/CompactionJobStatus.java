@@ -16,6 +16,7 @@
 package sleeper.compaction.job.status;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.core.record.process.status.JobStatusUpdates;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
 
@@ -40,6 +41,14 @@ public class CompactionJobStatus {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static CompactionJobStatus from(JobStatusUpdates updates) {
+        return builder().jobId(updates.getJobId())
+                .createdStatus((CompactionJobCreatedStatus) updates.getFirstRecord().getStatusUpdate())
+                .jobRuns(updates.getRuns())
+                .expiryDate(updates.getLastRecord().getExpiryDate())
+                .build();
     }
 
     public static CompactionJobStatus created(CompactionJob job, Instant updateTime) {
