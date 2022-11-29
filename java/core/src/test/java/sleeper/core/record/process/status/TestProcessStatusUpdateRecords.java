@@ -18,10 +18,10 @@ package sleeper.core.record.process.status;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class TestProcessStatusUpdateRecords {
     private final List<ProcessStatusUpdateRecord> updates = new ArrayList<>();
@@ -54,8 +54,11 @@ public class TestProcessStatusUpdateRecords {
         }
 
         public WithJob updatesWithTask(String taskId, ProcessStatusUpdate... statusUpdates) {
-            Arrays.stream(statusUpdates)
-                    .map(update -> new ProcessStatusUpdateRecord(jobId, expiryDate, update, taskId))
+            return updatesWithTask(taskId, Stream.of(statusUpdates));
+        }
+
+        public WithJob updatesWithTask(String taskId, Stream<ProcessStatusUpdate> statusUpdates) {
+            statusUpdates.map(update -> new ProcessStatusUpdateRecord(jobId, expiryDate, update, taskId))
                     .forEach(updates::add);
             return this;
         }

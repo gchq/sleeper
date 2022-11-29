@@ -20,10 +20,13 @@ import org.junit.Test;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
+import java.time.Duration;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.startedStatus;
 
 public class ProcessRunsTest {
     private static final String DEFAULT_TASK_ID_1 = "task-id-1";
@@ -32,9 +35,7 @@ public class ProcessRunsTest {
     @Test
     public void shouldReportNoFinishedStatusWhenJobNotFinished() {
         // Given
-        ProcessStartedStatus started = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-23T09:23:30.012Z"),
-                Instant.parse("2022-09-23T09:23:30.001Z"));
+        ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
 
         // When
         ProcessRuns runs = new TestProcessStatusUpdateRecords()
@@ -52,14 +53,8 @@ public class ProcessRunsTest {
     @Test
     public void shouldReportRunWhenJobFinished() {
         // Given
-        ProcessStartedStatus started = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-24T09:23:30.012Z"),
-                Instant.parse("2022-09-24T09:23:30.001Z"));
-        ProcessFinishedStatus finished = ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse("2022-09-24T09:24:00.012Z"),
-                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
-                        Instant.parse("2022-09-24T09:23:30.001Z"),
-                        Instant.parse("2022-09-24T09:24:00.001Z")));
+        ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        ProcessFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
 
         // When
         ProcessRuns runs = new TestProcessStatusUpdateRecords()
@@ -77,12 +72,8 @@ public class ProcessRunsTest {
     @Test
     public void shouldReportTwoRunsLatestFirstByStartTimeOnSameTask() {
         // Given
-        ProcessStartedStatus started1 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-24T09:23:30.012Z"),
-                Instant.parse("2022-09-24T09:23:30.001Z"));
-        ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-24T09:24:30.012Z"),
-                Instant.parse("2022-09-24T09:24:30.001Z"));
+        ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:24:30.001Z"));
 
         // When
         ProcessRuns runs = new TestProcessStatusUpdateRecords()
@@ -101,22 +92,10 @@ public class ProcessRunsTest {
     @Test
     public void shouldReportTwoRunsWhenJobFinishedMultipleTimesSameTask() {
         // Given
-        ProcessStartedStatus started1 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-23T09:23:30.012Z"),
-                Instant.parse("2022-09-23T09:23:30.001Z"));
-        ProcessFinishedStatus finished1 = ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse("2022-09-23T09:24:00.012Z"),
-                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
-                        Instant.parse("2022-09-23T09:23:30.001Z"),
-                        Instant.parse("2022-09-23T09:24:00.001Z")));
-        ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-24T09:23:30.012Z"),
-                Instant.parse("2022-09-24T09:23:30.001Z"));
-        ProcessFinishedStatus finished2 = ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse("2022-09-24T09:24:00.012Z"),
-                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
-                        Instant.parse("2022-09-24T09:23:30.001Z"),
-                        Instant.parse("2022-09-24T09:24:00.001Z")));
+        ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
+        ProcessFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 450L, 300L);
+        ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        ProcessFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
 
         // When
         ProcessRuns runs = new TestProcessStatusUpdateRecords()
