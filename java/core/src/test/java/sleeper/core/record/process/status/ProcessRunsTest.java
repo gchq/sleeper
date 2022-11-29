@@ -20,13 +20,11 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static sleeper.core.record.process.status.TestProcessRuns.runsFromUpdates;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.onTask;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.startedStatus;
 
@@ -251,24 +249,6 @@ public class ProcessRunsTest {
                         tuple(TASK_ID_2, started2, finished2),
                         tuple(TASK_ID_1, started1, finished1));
         assertThat(runs.isFinished()).isTrue();
-    }
-
-    private static ProcessRuns runsFromUpdates(ProcessStatusUpdate... updates) {
-        return runsFrom(records().fromUpdates(updates));
-    }
-
-    private static ProcessRuns runsFromUpdates(
-            TestProcessStatusUpdateRecords.TaskUpdates... taskUpdates) {
-        return runsFrom(records().fromUpdates(taskUpdates));
-    }
-
-    private static ProcessRuns runsFrom(TestProcessStatusUpdateRecords records) {
-        List<JobStatusUpdates> built = JobStatusUpdates.streamFrom(records.stream())
-                .collect(Collectors.toList());
-        if (built.size() != 1) {
-            throw new IllegalStateException("Expected single status");
-        }
-        return built.get(0).getRuns();
     }
 
 }
