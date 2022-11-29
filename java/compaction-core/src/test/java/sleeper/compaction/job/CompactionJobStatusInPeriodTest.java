@@ -28,7 +28,7 @@ import java.time.Instant;
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.CompactionJobTestDataHelper.DEFAULT_TASK_ID;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 
 public class CompactionJobStatusInPeriodTest {
 
@@ -43,7 +43,7 @@ public class CompactionJobStatusInPeriodTest {
         Instant startTime = Instant.parse("2022-09-23T11:44:00.000Z");
         Instant updateTime = Instant.parse("2022-09-23T11:44:01.000Z");
         Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
-        CompactionJobStatus status = CompactionJobStatus.created(job, updateTime);
+        CompactionJobStatus status = TestCompactionJobStatus.created(job, updateTime);
 
         // When / Then
         assertThat(status.isInPeriod(startTime, endTime)).isTrue();
@@ -55,7 +55,7 @@ public class CompactionJobStatusInPeriodTest {
         Instant updateTime = Instant.parse("2022-09-23T11:44:00.000Z");
         Instant startTime = Instant.parse("2022-09-23T11:44:01.000Z");
         Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
-        CompactionJobStatus status = CompactionJobStatus.created(job, updateTime);
+        CompactionJobStatus status = TestCompactionJobStatus.created(job, updateTime);
 
         // When / Then
         assertThat(status.isInPeriod(startTime, endTime)).isFalse();
@@ -67,7 +67,7 @@ public class CompactionJobStatusInPeriodTest {
         Instant startTime = Instant.parse("2022-09-23T11:44:00.000Z");
         Instant endTime = Instant.parse("2022-09-23T11:44:01.000Z");
         Instant updateTime = Instant.parse("2022-09-23T11:44:02.000Z");
-        CompactionJobStatus status = CompactionJobStatus.created(job, updateTime);
+        CompactionJobStatus status = TestCompactionJobStatus.created(job, updateTime);
 
         // When / Then
         assertThat(status.isInPeriod(startTime, endTime)).isFalse();

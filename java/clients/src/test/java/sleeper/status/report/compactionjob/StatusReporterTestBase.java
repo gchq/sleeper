@@ -19,6 +19,7 @@ package sleeper.status.report.compactionjob;
 import sleeper.ToStringPrintStream;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
+import sleeper.compaction.job.TestCompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.RecordsProcessed;
@@ -125,18 +126,22 @@ public abstract class StatusReporterTestBase {
         return Arrays.asList(
                 finishedCompactionStatus(
                         dataHelper.singleFileCompaction(partition("C")),
+                        "task-id",
                         Instant.parse("2022-10-13T12:00:00.000Z"),
                         Duration.ofMillis(123), 600, 300),
                 finishedCompactionStatus(
                         dataHelper.singleFileCompaction(partition("C")),
+                        "task-id",
                         Instant.parse("2022-10-13T12:01:00.000Z"),
                         Duration.ofHours(2), 1000600, 500300),
                 finishedCompactionStatus(
                         dataHelper.singleFileSplittingCompaction(partition("C"), partition("A"), partition("B")),
+                        "task-id",
                         Instant.parse("2022-10-13T14:01:00.000Z"),
                         Duration.ofSeconds(60), 1000600, 500300),
                 finishedCompactionStatus(
                         dataHelper.singleFileSplittingCompaction(partition("C"), partition("A"), partition("B")),
+                        "task-id",
                         Instant.parse("2022-10-13T14:02:00.000Z"),
                         Duration.ofMillis(123), 1234, 1234));
     }
@@ -184,7 +189,7 @@ public abstract class StatusReporterTestBase {
     }
 
     protected static CompactionJobStatus jobCreated(CompactionJob job, Instant creationTime) {
-        return CompactionJobStatus.created(job, creationTime);
+        return TestCompactionJobStatus.created(job, creationTime);
     }
 
     protected static CompactionJobStatus jobStarted(CompactionJob job, String taskId, Instant creationTime, Instant startTime, Instant startUpdateTime) {
