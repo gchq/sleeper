@@ -103,7 +103,7 @@ public class Scaler {
             total += Math.min(
                     Math.min(d.availableCPU / this.cpuReservation,
                             d.availableRAM / this.memoryReservation),
-                    d.availableGPU / this.gpuReservation);
+                    (this.gpuReservation == 0) ? 0 : (d.availableGPU / this.gpuReservation));
         }
         return total;
     }
@@ -211,7 +211,7 @@ public class Scaler {
             this.cachedInstanceContainers = Math.min(
                     Math.min(d.totalCPU / this.cpuReservation,
                             d.totalRAM / this.memoryReservation),
-                    d.totalGPU / this.gpuReservation);
+                    (this.gpuReservation == 0) ? 0 : (d.totalGPU / this.gpuReservation));
         });
     }
 
