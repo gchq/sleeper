@@ -17,7 +17,6 @@ package sleeper.compaction.job.status;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.core.record.process.status.JobStatusUpdates;
-import sleeper.core.record.process.status.JobStatusesBuilder;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
@@ -60,9 +59,7 @@ public class CompactionJobStatus {
     }
 
     public static Stream<CompactionJobStatus> from(Stream<ProcessStatusUpdateRecord> records) {
-        JobStatusesBuilder builder = new JobStatusesBuilder();
-        records.forEach(builder::update);
-        return builder.stream()
+        return JobStatusUpdates.from(records)
                 .map(CompactionJobStatus::from);
     }
 

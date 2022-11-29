@@ -18,6 +18,7 @@ package sleeper.core.record.process.status;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class JobStatusUpdates {
 
@@ -36,6 +37,12 @@ public class JobStatusUpdates {
         List<ProcessStatusUpdateRecord> recordsLatestFirst = orderLatestFirst(records);
         ProcessRuns runs = ProcessRuns.fromRecordsLatestFirst(recordsLatestFirst);
         return new JobStatusUpdates(jobId, recordsLatestFirst, runs);
+    }
+
+    public static Stream<JobStatusUpdates> from(Stream<ProcessStatusUpdateRecord> records) {
+        JobStatusesBuilder builder = new JobStatusesBuilder();
+        records.forEach(builder::update);
+        return builder.stream();
     }
 
     public String getJobId() {
