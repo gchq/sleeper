@@ -24,8 +24,10 @@ import java.util.stream.Stream;
 
 public class TestProcessStatusUpdateRecords {
 
-    private static final String DEFAULT_JOB_ID = "test-job-id";
-    private static final String DEFAULT_TASK_ID = "test-task-id";
+    public static final String DEFAULT_JOB_ID = "test-job-id";
+    public static final String DEFAULT_TASK_ID = "test-task-id";
+    public static final String TASK_ID_1 = "task-id-1";
+    public static final String TASK_ID_2 = "task-id-2";
     private static final Instant DEFAULT_EXPIRY = Instant.ofEpochSecond(999999999);
     private final List<ProcessStatusUpdateRecord> updates = new ArrayList<>();
 
