@@ -18,22 +18,41 @@ package sleeper.core.record.process.status;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class TestProcessStatusUpdateRecords {
+
+    private static final String DEFAULT_JOB_ID = "test-job-id";
+    private static final String DEFAULT_TASK_ID = "test-task-id";
+    private static final Instant DEFAULT_EXPIRY = Instant.ofEpochSecond(999999999);
     private final List<ProcessStatusUpdateRecord> updates = new ArrayList<>();
 
-    public TestProcessStatusUpdateRecords updatesForJobWithTask(
-            String jobId, String taskId, ProcessStatusUpdate... statusUpdates) {
-        return forJob(jobId, records -> records.updatesWithTask(taskId, statusUpdates));
+    public static TestProcessStatusUpdateRecords records() {
+        return new TestProcessStatusUpdateRecords();
     }
 
-    public TestProcessStatusUpdateRecords forJob(String jobId, Consumer<WithJob> config) {
-        config.accept(new WithJob(jobId));
+    public TestProcessStatusUpdateRecords fromUpdates(TaskUpdates... taskUpdates) {
+        Stream.of(taskUpdates)
+                .flatMap(task -> task.recordsWithExpiry(DEFAULT_EXPIRY))
+                .forEach(updates::add);
         return this;
+    }
+
+    public TestProcessStatusUpdateRecords fromUpdates(ProcessStatusUpdate... statusUpdates) {
+        return fromUpdates(forJobOnTask(DEFAULT_JOB_ID, DEFAULT_TASK_ID, statusUpdates));
+    }
+
+    public static TaskUpdates onTask(
+            String taskId, ProcessStatusUpdate... updates) {
+        return forJobOnTask(DEFAULT_JOB_ID, taskId, updates);
+    }
+
+    public static TaskUpdates forJobOnTask(
+            String jobId, String taskId, ProcessStatusUpdate... updates) {
+        return new TaskUpdates(jobId, taskId, Arrays.asList(updates));
     }
 
     public ProcessRuns buildRuns() {
@@ -45,22 +64,20 @@ public class TestProcessStatusUpdateRecords {
         return built.get(0).getRuns();
     }
 
-    public class WithJob {
+    public static class TaskUpdates {
         private final String jobId;
-        private final Instant expiryDate = Instant.ofEpochSecond(999999999);
+        private final String taskId;
+        private final List<ProcessStatusUpdate> statusUpdates;
 
-        private WithJob(String jobId) {
+        public TaskUpdates(String jobId, String taskId, List<ProcessStatusUpdate> statusUpdates) {
             this.jobId = jobId;
+            this.taskId = taskId;
+            this.statusUpdates = statusUpdates;
         }
 
-        public WithJob updatesWithTask(String taskId, ProcessStatusUpdate... statusUpdates) {
-            return updatesWithTask(taskId, Stream.of(statusUpdates));
-        }
-
-        public WithJob updatesWithTask(String taskId, Stream<ProcessStatusUpdate> statusUpdates) {
-            statusUpdates.map(update -> new ProcessStatusUpdateRecord(jobId, expiryDate, update, taskId))
-                    .forEach(updates::add);
-            return this;
+        public Stream<ProcessStatusUpdateRecord> recordsWithExpiry(Instant expiryDate) {
+            return statusUpdates.stream()
+                    .map(update -> new ProcessStatusUpdateRecord(jobId, expiryDate, update, taskId));
         }
     }
 }
