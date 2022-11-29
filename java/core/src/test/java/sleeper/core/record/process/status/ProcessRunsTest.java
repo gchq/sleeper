@@ -17,8 +17,6 @@
 package sleeper.core.record.process.status;
 
 import org.junit.Test;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -115,18 +113,10 @@ public class ProcessRunsTest {
     @Test
     public void shouldReportTwoTasksWithTwoRunsEachForSameJobWithInterleavingStartTimes() {
         // Given
-        ProcessStartedStatus started1 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-23T09:23:30.012Z"),
-                Instant.parse("2022-09-23T09:23:30.001Z"));
-        ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-24T09:23:30.012Z"),
-                Instant.parse("2022-09-24T09:23:30.001Z"));
-        ProcessStartedStatus started3 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-25T09:23:30.012Z"),
-                Instant.parse("2022-09-25T09:23:30.001Z"));
-        ProcessStartedStatus started4 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-26T09:23:30.012Z"),
-                Instant.parse("2022-09-26T09:23:30.001Z"));
+        ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
+        ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        ProcessStartedStatus started3 = startedStatus(Instant.parse("2022-09-25T09:23:30.001Z"));
+        ProcessStartedStatus started4 = startedStatus(Instant.parse("2022-09-26T09:23:30.001Z"));
 
         // When
         ProcessRuns runs = new TestProcessStatusUpdateRecords()
@@ -148,22 +138,10 @@ public class ProcessRunsTest {
     @Test
     public void shouldReportTwoTasksWithOneFinishedRunEachForSameJob() {
         // Given
-        ProcessStartedStatus started1 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-23T09:23:30.012Z"),
-                Instant.parse("2022-09-23T09:23:30.001Z"));
-        ProcessFinishedStatus finished1 = ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse("2022-09-23T09:24:00.012Z"),
-                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
-                        Instant.parse("2022-09-23T09:23:30.001Z"),
-                        Instant.parse("2022-09-23T09:24:00.001Z")));
-        ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-24T09:23:30.012Z"),
-                Instant.parse("2022-09-24T09:23:30.001Z"));
-        ProcessFinishedStatus finished2 = ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse("2022-09-24T09:24:00.012Z"),
-                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
-                        Instant.parse("2022-09-24T09:23:30.001Z"),
-                        Instant.parse("2022-09-24T09:24:00.001Z")));
+        ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
+        ProcessFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 450L, 300L);
+        ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        ProcessFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
 
         // When
         ProcessRuns runs = new TestProcessStatusUpdateRecords()
@@ -183,14 +161,8 @@ public class ProcessRunsTest {
     @Test
     public void shouldReportRunWhenJobFinishedReturnedFromDatabaseOutOfOrder() {
         // Given
-        ProcessStartedStatus started = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-24T09:23:30.012Z"),
-                Instant.parse("2022-09-24T09:23:30.001Z"));
-        ProcessFinishedStatus finished = ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse("2022-09-24T09:24:00.012Z"),
-                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
-                        Instant.parse("2022-09-24T09:23:30.001Z"),
-                        Instant.parse("2022-09-24T09:24:00.001Z")));
+        ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        ProcessFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
 
         // When
         ProcessRuns runs = new TestProcessStatusUpdateRecords()
@@ -208,15 +180,9 @@ public class ProcessRunsTest {
     @Test
     public void shouldReportRunsWhenJobStartedReturnedFromDatabaseOutOfOrder() {
         // Given
-        ProcessStartedStatus started1 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-24T09:23:30.012Z"),
-                Instant.parse("2022-09-24T09:23:30.001Z"));
-        ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-25T09:23:30.012Z"),
-                Instant.parse("2022-09-25T09:23:30.001Z"));
-        ProcessStartedStatus started3 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-26T09:23:30.012Z"),
-                Instant.parse("2022-09-26T09:23:30.001Z"));
+        ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-25T09:23:30.001Z"));
+        ProcessStartedStatus started3 = startedStatus(Instant.parse("2022-09-26T09:23:30.001Z"));
 
         // When
         ProcessRuns runs = new TestProcessStatusUpdateRecords()
@@ -236,20 +202,10 @@ public class ProcessRunsTest {
     @Test
     public void shouldReportRunsWhenLastRunFinishedButReturnedFromDatabaseOutOfOrder() {
         // Given
-        ProcessStartedStatus started1 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-24T09:23:30.012Z"),
-                Instant.parse("2022-09-24T09:23:30.001Z"));
-        ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-25T09:23:30.012Z"),
-                Instant.parse("2022-09-25T09:23:30.001Z"));
-        ProcessStartedStatus started3 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-26T09:23:30.012Z"),
-                Instant.parse("2022-09-26T09:23:30.001Z"));
-        ProcessFinishedStatus finished = ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse("2022-09-27T09:24:00.012Z"),
-                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
-                        Instant.parse("2022-09-26T09:23:30.001Z"),
-                        Instant.parse("2022-09-27T09:24:00.001Z")));
+        ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-25T09:23:30.001Z"));
+        ProcessStartedStatus started3 = startedStatus(Instant.parse("2022-09-26T09:23:30.001Z"));
+        ProcessFinishedStatus finished = finishedStatus(started3, Duration.ofSeconds(30), 450L, 300L);
 
         // When
         ProcessRuns runs = new TestProcessStatusUpdateRecords()
@@ -269,22 +225,10 @@ public class ProcessRunsTest {
     @Test
     public void shouldReportRunsOnDifferentTasksWhenJobFinishedFromDatabaseOutOfOrder() {
         // Given
-        ProcessStartedStatus started1 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-22T09:23:30.012Z"),
-                Instant.parse("2022-09-22T09:23:30.001Z"));
-        ProcessFinishedStatus finished1 = ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse("2022-09-22T09:24:00.012Z"),
-                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
-                        Instant.parse("2022-09-22T09:23:30.001Z"),
-                        Instant.parse("2022-09-22T09:24:00.001Z")));
-        ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-22T09:23:31.012Z"),
-                Instant.parse("2022-09-22T09:23:31.001Z"));
-        ProcessFinishedStatus finished2 = ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse("2022-09-22T09:24:01.012Z"),
-                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
-                        Instant.parse("2022-09-22T09:23:31.001Z"),
-                        Instant.parse("2022-09-22T09:24:01.001Z")));
+        ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-22T09:23:30.001Z"));
+        ProcessFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 450L, 300L);
+        ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-22T09:23:31.001Z"));
+        ProcessFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
 
         // When
         ProcessRuns runs = new TestProcessStatusUpdateRecords()
@@ -304,22 +248,10 @@ public class ProcessRunsTest {
     @Test
     public void shouldReportRunsOnDifferentTasksWhenJobRunStartedAndFinshedDuringAnotherRun() {
         // Given
-        ProcessStartedStatus started1 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-23T09:23:30.012Z"),
-                Instant.parse("2022-09-23T09:23:30.001Z"));
-        ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-24T09:23:30.012Z"),
-                Instant.parse("2022-09-24T09:23:30.001Z"));
-        ProcessFinishedStatus finished2 = ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse("2022-09-25T09:24:00.012Z"),
-                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
-                        Instant.parse("2022-09-25T09:23:30.001Z"),
-                        Instant.parse("2022-09-25T09:24:00.001Z")));
-        ProcessFinishedStatus finished1 = ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse("2022-09-26T09:24:00.012Z"),
-                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
-                        Instant.parse("2022-09-26T09:23:30.001Z"),
-                        Instant.parse("2022-09-26T09:24:00.001Z")));
+        ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
+        ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        ProcessFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
+        ProcessFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 450L, 300L);
 
         // When
         ProcessRuns runs = new TestProcessStatusUpdateRecords()
