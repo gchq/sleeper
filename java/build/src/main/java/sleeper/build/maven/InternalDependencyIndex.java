@@ -15,58 +15,124 @@
  */
 package sleeper.build.maven;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class InternalDependencyIndex {
 
-    private final Map<DependencyReference, MavenModuleAndPath> modulesByDependencyRef;
+    private final Map<ArtifactReference, MavenModuleAndPath> modulesByArtifactRef;
     private final Map<String, MavenModuleAndPath> modulesByPath;
 
     InternalDependencyIndex(List<MavenModuleAndPath> paths) {
-        modulesByDependencyRef = paths.stream()
-                .collect(Collectors.toMap(path -> path.getStructure().asDependency(), path -> path));
+        modulesByArtifactRef = paths.stream()
+                .collect(Collectors.toMap(path -> path.getStructure().artifactReference(), path -> path));
         modulesByPath = paths.stream()
                 .collect(Collectors.toMap(MavenModuleAndPath::getPath, path -> path));
     }
 
-    public Stream<String> dependenciesForModules(String... paths) {
-        return Stream.of(paths)
-                .flatMap(this::dependenciesOfPath)
-                .distinct();
-    }
-
-    private Stream<String> dependenciesOfPath(String path) {
-        MavenModuleAndPath module = moduleByPath(path)
-                .orElseThrow(() -> new IllegalArgumentException("Module not found: " + path));
-        return moduleAndDependencies(module)
+    public Stream<String> dependencyPathsForModules(String... paths) {
+        return dependenciesForModules(Arrays.asList(paths))
                 .map(MavenModuleAndPath::getPath);
     }
 
-    private Optional<MavenModuleAndPath> moduleByPath(String path) {
-        return Optional.ofNullable(modulesByPath.get(path));
+    public Stream<MavenModuleAndPath> dependenciesForModules(List<String> paths) {
+        return modulesAndAllDependencies(modulesByPathOrThrow(paths));
     }
 
-    private Stream<MavenModuleAndPath> moduleAndDependencies(MavenModuleAndPath path) {
-        return Stream.concat(Stream.of(path), dependencies(path));
+    public Stream<String> pomPathsForAncestors(String... paths) {
+        return ancestorsForModules(Arrays.asList(paths))
+                .map(MavenModuleAndPath::getPomPath);
     }
 
-    private Stream<MavenModuleAndPath> dependencies(MavenModuleAndPath path) {
-        return path.getStructure().dependencies()
-                .flatMap(this::dependenciesByRef);
+    public Stream<MavenModuleAndPath> ancestorsForModules(List<String> paths) {
+        return modulesByPathOrThrow(paths)
+                .flatMap(this::traverseAncestors)
+                .distinct();
     }
 
-    private Optional<MavenModuleAndPath> moduleByDependencyRef(DependencyReference reference) {
-        return Optional.ofNullable(modulesByDependencyRef.get(reference));
+    private Stream<MavenModuleAndPath> modulesByPathOrThrow(List<String> paths) {
+        return paths.stream().map(this::moduleByPathOrThrow);
     }
 
-    private Stream<MavenModuleAndPath> dependenciesByRef(DependencyReference reference) {
-        return Stream.of(moduleByDependencyRef(reference))
+    private MavenModuleAndPath moduleByPathOrThrow(String path) {
+        return Optional.ofNullable(modulesByPath.get(path))
+                .orElseThrow(() -> new IllegalArgumentException("Module not found: " + path));
+    }
+
+    private Stream<MavenModuleAndPath> modulesAndAllDependencies(Stream<MavenModuleAndPath> modules) {
+        List<MavenModuleAndPath> list = modules.collect(Collectors.toList());
+        return Stream.concat(list.stream(),
+                removeDuplicatesLastFirst(
+                        list.stream().flatMap(MavenModuleAndPath::dependencies)
+                                .flatMap(this::traverseInternalTransitivesByRef),
+                        list));
+    }
+
+    private Stream<MavenModuleAndPath> traverseInternalTransitivesByRef(DependencyReference reference) {
+        return streamByArtifactRef(reference.artifactReference())
+                .flatMap(this::traverseInternalTransitives);
+    }
+
+    private Stream<MavenModuleAndPath> traverseInternalTransitives(MavenModuleAndPath root) {
+        List<MavenModuleAndPath> breadthFirstOrder = new ArrayList<>();
+        Queue<MavenModuleAndPath> queue = new LinkedList<>();
+        for (MavenModuleAndPath module = root; module != null; module = queue.poll()) {
+            breadthFirstOrder.add(module);
+            module.exportedDependencies()
+                    .map(DependencyReference::artifactReference)
+                    .flatMap(this::streamByArtifactRef)
+                    .forEach(queue::add);
+        }
+        return breadthFirstOrder.stream();
+    }
+
+    private Stream<MavenModuleAndPath> traverseAncestors(MavenModuleAndPath path) {
+        return streamByArtifactRef(path.getParentReference())
+                .flatMap(module -> Stream.concat(traverseAncestors(module), Stream.of(module)));
+    }
+
+    private Stream<MavenModuleAndPath> streamByArtifactRef(ArtifactReference reference) {
+        return Stream.of(moduleByArtifactRef(reference))
                 .filter(Optional::isPresent)
-                .map(Optional::get)
-                .flatMap(this::moduleAndDependencies);
+                .map(Optional::get);
+    }
+
+    private Optional<MavenModuleAndPath> moduleByArtifactRef(ArtifactReference reference) {
+        return Optional.ofNullable(reference)
+                .map(modulesByArtifactRef::get);
+    }
+
+    private static <T> Stream<T> removeDuplicatesLastFirst(Stream<T> stream, Collection<T> exclude) {
+        return removeDuplicatesLastFirst(
+                stream.collect(Collectors.toList()), exclude)
+                .stream();
+    }
+
+    private static <T> List<T> removeDuplicatesLastFirst(List<T> list, Collection<T> exclude) {
+        Set<T> set = new HashSet<>(exclude);
+        LinkedList<T> newList = new LinkedList<>();
+        reverseStream(list).forEach(item -> {
+            if (set.add(item)) {
+                newList.addFirst(item);
+            }
+        });
+        return newList;
+    }
+
+    private static <T> Stream<T> reverseStream(List<T> list) {
+        int size = list.size();
+        return IntStream.rangeClosed(1, size)
+                .mapToObj(i -> list.get(size - i));
     }
 }

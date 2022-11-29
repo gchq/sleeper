@@ -13,7 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.github;
+package sleeper.build.github.api;
+
+import sleeper.build.github.GitHubHead;
+import sleeper.build.github.GitHubRunToHead;
+import sleeper.build.github.GitHubWorkflowRun;
+import sleeper.build.github.GitHubWorkflowRuns;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;

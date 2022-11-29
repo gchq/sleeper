@@ -15,14 +15,11 @@
  */
 package sleeper.build.status;
 
-import sleeper.build.chunks.NotAllMavenModulesConfiguredException;
 import sleeper.build.chunks.ProjectConfiguration;
-import sleeper.build.github.GitHubWorkflowRunsImpl;
-import sleeper.build.maven.MavenModuleStructure;
-import sleeper.build.util.PathUtils;
+import sleeper.build.chunks.ProjectStructure;
+import sleeper.build.github.api.GitHubWorkflowRunsImpl;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class CheckGitHubStatusMain {
@@ -36,17 +33,15 @@ public class CheckGitHubStatusMain {
             System.exit(1);
             return;
         }
-        Path gitHubPropertiesPath = Paths.get(args[0]);
-        Path chunksPath = Paths.get(args[1]);
-        Path mavenPath = Paths.get(args[2]);
-        ProjectConfiguration configuration = ProjectConfiguration.fromGitHubAndChunks(gitHubPropertiesPath, chunksPath);
-        MavenModuleStructure mavenProject = MavenModuleStructure.fromProjectBase(mavenPath);
+        ProjectStructure structure = ProjectStructure.builder()
+                .gitHubPropertiesPath(Paths.get(args[0]))
+                .chunksYamlPath(Paths.get(args[1]))
+                .mavenProjectPath(Paths.get(args[2]))
+                .build();
+        ProjectConfiguration configuration = structure.loadProjectConfiguration();
         try {
-            configuration.getChunks().validateAllConfigured(mavenProject);
-        } catch (NotAllMavenModulesConfiguredException e) {
-            System.out.println(e.getMessage());
-            System.out.println("Please ensure chunks are configured correctly at " +
-                    PathUtils.commonPath(chunksPath, mavenPath).relativize(chunksPath));
+            configuration.validate(structure, System.err);
+        } catch (IllegalStateException e) {
             System.exit(1);
             return;
         }

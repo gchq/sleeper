@@ -70,8 +70,8 @@ public class MavenModuleStructure {
                 root.thisAndDescendents().collect(Collectors.toList()));
     }
 
-    public DependencyReference asDependency() {
-        return DependencyReference.groupAndArtifact(groupId, artifactId);
+    public ArtifactReference artifactReference() {
+        return ArtifactReference.groupAndArtifact(groupId, artifactId);
     }
 
     private Stream<String> allTestedModulesForProjectList(MavenModuleAndPath parent) {

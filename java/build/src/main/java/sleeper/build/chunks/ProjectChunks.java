@@ -15,8 +15,12 @@
  */
 package sleeper.build.chunks;
 
+import sleeper.build.github.actions.OnPushPathsDiff;
+import sleeper.build.maven.InternalDependencyIndex;
 import sleeper.build.maven.MavenModuleStructure;
 
+import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -37,15 +41,39 @@ public class ProjectChunks {
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Chunk ID not found: " + id));
     }
 
-    public void validateAllConfigured(MavenModuleStructure project) throws NotAllMavenModulesConfiguredException {
+    public void validate(ProjectStructure project, PrintStream out) throws IOException {
+        MavenModuleStructure maven = project.loadMavenStructure();
+        validateAllConfigured(project, maven, out);
+        validateChunkWorkflows(project, maven.internalDependencies(), out);
+    }
+
+    public void validateAllConfigured(ProjectStructure project, MavenModuleStructure maven, PrintStream out) {
         Set<String> configuredModuleRefs = stream()
                 .flatMap(chunk -> chunk.getModules().stream())
                 .collect(Collectors.toSet());
-        List<String> unconfiguredModuleRefs = project.allTestedModulesForProjectList()
+        List<String> unconfiguredModuleRefs = maven.allTestedModulesForProjectList()
                 .filter(moduleRef -> !configuredModuleRefs.contains(moduleRef))
                 .collect(Collectors.toList());
         if (!unconfiguredModuleRefs.isEmpty()) {
-            throw new NotAllMavenModulesConfiguredException(unconfiguredModuleRefs);
+            out.println("Maven modules not configured in any chunk: " + String.join(", ", unconfiguredModuleRefs));
+            out.println("Please ensure chunks are configured correctly at " + project.getChunksYamlRelative());
+            throw new IllegalStateException("Failed validating chunk Maven modules");
+        }
+    }
+
+    private void validateChunkWorkflows(
+            ProjectStructure project, InternalDependencyIndex dependencies, PrintStream out) throws IOException {
+        boolean failed = false;
+        for (ProjectChunk chunk : chunks) {
+            OnPushPathsDiff diff = project.loadWorkflow(chunk)
+                    .getOnPushPathsDiffFromExpected(project, chunk, dependencies);
+            diff.reportMissingEntries(out, project, chunk);
+            if (!diff.getMissingEntries().isEmpty()) {
+                failed = true;
+            }
+        }
+        if (failed) {
+            throw new IllegalStateException("Failed validating chunk workflows");
         }
     }
 

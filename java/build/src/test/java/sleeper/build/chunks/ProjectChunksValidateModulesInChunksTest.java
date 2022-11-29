@@ -19,29 +19,32 @@ import org.junit.Test;
 import sleeper.build.maven.MavenModuleStructure;
 import sleeper.build.maven.TestMavenModuleStructure;
 
-import java.util.Arrays;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.build.chunks.TestChunks.chunk;
+import static sleeper.build.chunks.TestChunks.chunks;
 
-public class ProjectChunksValidationTest {
+public class ProjectChunksValidateModulesInChunksTest {
+
+    private final OutputStream outputStream = new ByteArrayOutputStream();
+    private final ProjectStructure project = TestProjectStructure.example();
+    private final MavenModuleStructure maven = TestMavenModuleStructure.example();
 
     @Test
     public void shouldValidateWhenAllCompiledModulesAreInChunks() {
         // Given
-        ProjectChunks chunks = chunks(
-                chunk("common", "core", "configuration"),
-                chunk("ingest", "ingest"),
-                chunk("bulk-import",
-                        "bulk-import/bulk-import-common",
-                        "bulk-import/bulk-import-runner",
-                        "bulk-import/bulk-import-starter"));
-        MavenModuleStructure structure = TestMavenModuleStructure.example();
+        ProjectChunks chunks = TestChunks.example();
 
-        // When / Then
-        assertThatNoException().isThrownBy(() ->
-                chunks.validateAllConfigured(structure));
+        // When
+        validateAllConfigured(chunks);
+
+        // Then
+        assertThat(outputStream.toString()).isEmpty();
     }
 
     @Test
@@ -54,13 +57,12 @@ public class ProjectChunksValidationTest {
                         "bulk-import/bulk-import-common",
                         "bulk-import/bulk-import-runner",
                         "bulk-import/bulk-import-starter"));
-        MavenModuleStructure structure = TestMavenModuleStructure.example();
 
         // When / Then
-        assertThatThrownBy(() -> chunks.validateAllConfigured(structure))
-                .isInstanceOfSatisfying(NotAllMavenModulesConfiguredException.class, e ->
-                        assertThat(e.getUnconfiguredModuleRefs())
-                                .containsExactly("configuration"));
+        assertThatThrownBy(() -> validateAllConfigured(chunks))
+                .isInstanceOf(IllegalStateException.class);
+        assertThat(outputStream.toString()).contains(
+                "Maven modules not configured in any chunk: configuration");
     }
 
     @Test
@@ -72,20 +74,23 @@ public class ProjectChunksValidationTest {
                 chunk("bulk-import",
                         "bulk-import/bulk-import-common",
                         "bulk-import/bulk-import-starter"));
-        MavenModuleStructure structure = TestMavenModuleStructure.example();
 
         // When / Then
-        assertThatThrownBy(() -> chunks.validateAllConfigured(structure))
-                .isInstanceOfSatisfying(NotAllMavenModulesConfiguredException.class, e ->
-                        assertThat(e.getUnconfiguredModuleRefs())
-                                .containsExactly("configuration", "bulk-import/bulk-import-runner"));
+        assertThatThrownBy(() -> validateAllConfigured(chunks))
+                .isInstanceOf(IllegalStateException.class);
+        assertThat(outputStream.toString()).contains(
+                "Maven modules not configured in any chunk: configuration, bulk-import/bulk-import-runner");
     }
 
-    private static ProjectChunks chunks(ProjectChunk... chunks) {
-        return new ProjectChunks(Arrays.asList(chunks));
+    private void validateAllConfigured(ProjectChunks chunks) {
+        chunks.validateAllConfigured(project, maven, printStream(outputStream));
     }
 
-    private static ProjectChunk chunk(String id, String... modules) {
-        return ProjectChunk.chunk(id).name(id).workflow(id + ".yaml").modulesArray(modules).build();
+    private static PrintStream printStream(OutputStream outputStream) {
+        try {
+            return new PrintStream(outputStream, false, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new UnsupportedOperationException(e);
+        }
     }
 }

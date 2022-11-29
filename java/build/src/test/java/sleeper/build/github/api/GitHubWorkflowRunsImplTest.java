@@ -13,11 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.github;
+package sleeper.build.github.api;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Rule;
 import org.junit.Test;
+import sleeper.build.github.GitHubHead;
+import sleeper.build.github.GitHubWorkflowRun;
+import sleeper.build.github.GitHubWorkflowRuns;
+import sleeper.build.github.TestGitHubHead;
 
 import java.time.Instant;
 
@@ -27,7 +31,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.build.chunks.TestResources.exampleString;
+import static sleeper.build.testutil.TestResources.exampleString;
 
 public class GitHubWorkflowRunsImplTest {
 
@@ -50,7 +54,7 @@ public class GitHubWorkflowRunsImplTest {
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/vnd.github+json")
-                        .withBody(exampleString("github-examples/workflow-runs-single.json"))));
+                        .withBody(exampleString("examples/github-api/workflow-runs-single.json"))));
 
         assertThat(workflowRuns().getLatestRun(GITHUB_EXAMPLE_HEAD, "test-workflow.yaml"))
                 .contains(GitHubWorkflowRun.builder()
@@ -70,7 +74,7 @@ public class GitHubWorkflowRunsImplTest {
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/vnd.github+json")
-                        .withBody(exampleString("github-examples/workflow-runs-single.json"))));
+                        .withBody(exampleString("examples/github-api/workflow-runs-single.json"))));
 
         stubFor(get("/repos/test-owner/test-repo/compare/" + GITHUB_EXAMPLE_HEAD.getSha() + "...test-sha")
                 .withHeader("Accept", equalTo("application/vnd.github+json"))
@@ -78,7 +82,7 @@ public class GitHubWorkflowRunsImplTest {
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/vnd.github+json")
-                        .withBody(exampleString("github-examples/compare.json"))));
+                        .withBody(exampleString("examples/github-api/compare.json"))));
 
         assertThat(workflowRuns().getLatestRun(TestGitHubHead.example(), "test-workflow.yaml"))
                 .contains(GitHubWorkflowRun.builder()
