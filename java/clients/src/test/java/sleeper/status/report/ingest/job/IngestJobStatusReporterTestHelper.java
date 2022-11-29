@@ -40,14 +40,17 @@ import static sleeper.status.report.StatusReporterTestHelper.jobRunStartedInTask
 import static sleeper.status.report.StatusReporterTestHelper.task;
 import static sleeper.status.report.ingest.job.IngestJobStatusReporter.QueryType;
 
-public abstract class IngestJobStatusReporterTestBase {
-    List<IngestJobStatus> mixedUnfinishedJobStatuses() {
+public class IngestJobStatusReporterTestHelper {
+    private IngestJobStatusReporterTestHelper() {
+    }
+
+    public static List<IngestJobStatus> mixedUnfinishedJobStatuses() {
         return mixedJobStatuses().stream()
                 .filter(status -> !status.isFinished())
                 .collect(Collectors.toList());
     }
 
-    List<IngestJobStatus> mixedJobStatuses() {
+    public static List<IngestJobStatus> mixedJobStatuses() {
         IngestJob job1 = createJob(2, 1);
         Instant updateTime1 = Instant.parse("2022-09-18T13:34:12.001Z");
         Instant startTime1 = Instant.parse("2022-09-18T13:34:12.001Z");
@@ -73,7 +76,7 @@ public abstract class IngestJobStatusReporterTestBase {
         return Arrays.asList(status1, status2, status3, status4);
     }
 
-    List<IngestJobStatus> jobWithMultipleRuns() {
+    public static List<IngestJobStatus> jobWithMultipleRuns() {
         List<ProcessRun> processRuns = Arrays.asList(
                 jobRunStartedInTask(1, "2022-10-12T10:02:00"),
                 jobRunFinishedInTask(2, "2022-10-12T10:01:15", "2022-10-12T10:01:45"),
@@ -87,7 +90,7 @@ public abstract class IngestJobStatusReporterTestBase {
         return Collections.singletonList(status);
     }
 
-    List<IngestJobStatus> jobsWithLargeAndDecimalStatistics() {
+    public static List<IngestJobStatus> jobsWithLargeAndDecimalStatistics() {
         Instant updateTime1 = Instant.parse("2022-10-13T10:01:00Z");
         Instant startTime1 = Instant.parse("2022-10-13T10:00:10.000Z");
         Instant finishTime1 = Instant.parse("2022-10-13T10:00:10.123Z");
@@ -111,7 +114,7 @@ public abstract class IngestJobStatusReporterTestBase {
                 jobFinished(createJob(4, 1), "task-id", startTime4, updateTime4, finishTime4, 1234L, 1234L));
     }
 
-    private IngestJob createJob(int jobNum, int inputFileCount) {
+    private static IngestJob createJob(int jobNum, int inputFileCount) {
         return IngestJob.builder()
                 .id(job(jobNum))
                 .files(IntStream.range(1, inputFileCount + 1)
@@ -120,19 +123,19 @@ public abstract class IngestJobStatusReporterTestBase {
                 .build();
     }
 
-    private IngestJobStatus jobStarted(IngestJob job, String taskId, Instant startTime, Instant startUpdateTime) {
+    private static IngestJobStatus jobStarted(IngestJob job, String taskId, Instant startTime, Instant startUpdateTime) {
         return IngestJobStatus.from(job)
                 .jobRun(ProcessRun.started(taskId,
                         ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime)))
                 .build();
     }
 
-    private IngestJobStatus jobFinished(IngestJob job, String taskId, Instant startTime, Instant startUpdateTime, Instant finishTime) {
+    private static IngestJobStatus jobFinished(IngestJob job, String taskId, Instant startTime, Instant startUpdateTime, Instant finishTime) {
         return jobFinished(job, taskId, startTime, startUpdateTime, finishTime, 600L, 300L);
     }
 
-    private IngestJobStatus jobFinished(IngestJob job, String taskId, Instant startTime, Instant startUpdateTime, Instant finishTime,
-                                        long linesRead, long linesWritten) {
+    private static IngestJobStatus jobFinished(IngestJob job, String taskId, Instant startTime, Instant startUpdateTime, Instant finishTime,
+                                               long linesRead, long linesWritten) {
         RecordsProcessedSummary summary = new RecordsProcessedSummary(
                 new RecordsProcessed(linesRead, linesWritten), startTime, finishTime);
         return IngestJobStatus.from(job)
@@ -148,13 +151,13 @@ public abstract class IngestJobStatusReporterTestBase {
                 .collect(Collectors.toList()), example);
     }
 
-    String getStandardReport(QueryType query, List<IngestJobStatus> statusList, int numberInQueue) {
+    public static String getStandardReport(QueryType query, List<IngestJobStatus> statusList, int numberInQueue) {
         ToStringPrintStream output = new ToStringPrintStream();
         new StandardIngestJobStatusReporter(output.getPrintStream()).report(statusList, query, numberInQueue);
         return output.toString();
     }
 
-    String getJsonReport(QueryType query, List<IngestJobStatus> statusList, int numberInQueue) {
+    public static String getJsonReport(QueryType query, List<IngestJobStatus> statusList, int numberInQueue) {
         ToStringPrintStream output = new ToStringPrintStream();
         new JsonIngestJobStatusReporter(output.getPrintStream()).report(statusList, query, numberInQueue);
         return output.toString();

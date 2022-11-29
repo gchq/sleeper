@@ -25,8 +25,12 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
 import static sleeper.status.report.ingest.job.IngestJobStatusReporter.QueryType;
+import static sleeper.status.report.ingest.job.IngestJobStatusReporterTestHelper.getStandardReport;
+import static sleeper.status.report.ingest.job.IngestJobStatusReporterTestHelper.jobWithMultipleRuns;
+import static sleeper.status.report.ingest.job.IngestJobStatusReporterTestHelper.jobsWithLargeAndDecimalStatistics;
+import static sleeper.status.report.ingest.job.IngestJobStatusReporterTestHelper.mixedJobStatuses;
 
-public class StandardIngestJobStatusReporterAllQueryTest extends IngestJobStatusReporterTestBase {
+public class StandardIngestJobStatusReporterAllQueryTest {
     @Test
     public void shouldReportNoIngestJobs() throws Exception {
         // Given
