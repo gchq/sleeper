@@ -28,6 +28,9 @@ import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.
 
 public class TestCompactionJobStatus {
 
+    private TestCompactionJobStatus() {
+    }
+
     public static CompactionJobStatus statusFromUpdates(ProcessStatusUpdate... updates) {
         return statusFrom(records().fromUpdates(updates));
     }

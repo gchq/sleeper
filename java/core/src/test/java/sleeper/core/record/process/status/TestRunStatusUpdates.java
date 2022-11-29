@@ -23,6 +23,9 @@ import java.time.Instant;
 
 public class TestRunStatusUpdates {
 
+    private TestRunStatusUpdates() {
+    }
+
     public static ProcessStartedStatus startedStatus(Instant startTime) {
         Instant startUpdateTime = startTime.plus(Duration.ofMillis(123));
         return ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime);

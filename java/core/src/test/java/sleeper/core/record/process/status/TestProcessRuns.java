@@ -22,6 +22,9 @@ import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.
 
 public class TestProcessRuns {
 
+    private TestProcessRuns() {
+    }
+
     public static ProcessRuns runsFromUpdates(ProcessStatusUpdate... updates) {
         return runsFrom(records().fromUpdates(updates));
     }
