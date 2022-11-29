@@ -22,6 +22,7 @@ import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -100,7 +101,7 @@ public class IngestJobStatus {
         }
 
         public Builder jobRun(ProcessRun jobRun) {
-            this.jobRuns = ProcessRuns.latestFirst(jobRun);
+            this.jobRuns = ProcessRuns.latestFirst(Collections.singletonList(jobRun));
             return this;
         }
 
