@@ -37,10 +37,6 @@ public class ProcessRuns {
         return new ProcessRuns(latestFirst);
     }
 
-    public static ProcessRuns latestFirst(ProcessRun run) {
-        return latestFirst(Collections.singletonList(run));
-    }
-
     public static ProcessRuns fromRecordsLatestFirst(List<ProcessStatusUpdateRecord> recordList) {
         Map<String, ProcessRun.Builder> taskBuilders = new HashMap<>();
         List<ProcessRun.Builder> orderedBuilders = new ArrayList<>();
