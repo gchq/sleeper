@@ -8,16 +8,17 @@ on:
       - 'code-style/checkstyle*.xml'
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
+      - 'java/ingest/pom.xml'
       - 'java/ingest/ingest-core/**'
       - 'java/ingest/ingest-status-store/**'
       - 'java/statestore/**'
-      - 'java/dynamodb-tools/**'
       - 'java/parquet/**'
       - 'java/configuration/**'
+      - 'java/dynamodb-tools/**'
       - 'java/core/**'
 
 jobs:
-  module-workflow:
+  chunk-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
       chunkId: ingest-common

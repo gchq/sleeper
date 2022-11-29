@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.github;
+package sleeper.build.github.api;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import sleeper.build.github.GitHubRunToHead;
+import sleeper.build.github.GitHubWorkflowRun;
 
 import java.util.Collections;
 import java.util.List;

@@ -26,30 +26,30 @@ public class TestMavenModuleStructure {
                 testedModuleBuilder("configuration").dependenciesArray(
                         dependency("org.apache.datasketches:datasketches-java"),
                         dependency("sleeper:core"),
-                        dependency("junit:junit"),
-                        dependency("sleeper:core")
+                        dependencyBuilder("junit:junit").scope("test").exported(false).build(),
+                        dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build()
                 ).build(),
                 testedModuleBuilder("ingest").dependenciesArray(
                         dependency("org.apache.commons:commons-lang3"),
                         dependency("sleeper:configuration"),
-                        dependency("org.testcontainers:testcontainers"),
-                        dependency("sleeper:core"),
-                        dependency("sleeper:configuration")
+                        dependencyBuilder("org.testcontainers:testcontainers").scope("test").exported(false).build(),
+                        dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build(),
+                        dependencyBuilder("sleeper:configuration").type("test-jar").scope("test").exported(false).build()
                 ).build(),
                 midParentBuilder("bulk-import").modulesArray(
                         testedModuleBuilder("bulk-import-common").dependenciesArray(
                                 dependency("sleeper:configuration"),
-                                dependency("net.javacrumbs.json-unit:json-unit-assertj")
+                                dependencyBuilder("net.javacrumbs.json-unit:json-unit-assertj").scope("test").exported(false).build()
                         ).build(),
                         testedModuleBuilder("bulk-import-runner").dependenciesArray(
                                 dependency("sleeper:bulk-import-common"),
                                 dependency("sleeper:ingest"),
                                 dependency("sleeper:configuration"),
-                                dependency("sleeper:core")
+                                dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build()
                         ).build(),
                         testedModuleBuilder("bulk-import-starter").dependenciesArray(
                                 dependency("sleeper:bulk-import-common"),
-                                dependency("sleeper:core")
+                                dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build()
                         ).build()
                 ).build(),
                 untestedModuleBuilder("distribution").build()
@@ -81,7 +81,11 @@ public class TestMavenModuleStructure {
     }
 
     public static DependencyReference dependency(String ref) {
+        return dependencyBuilder(ref).exported(true).build();
+    }
+
+    public static DependencyReference.Builder dependencyBuilder(String ref) {
         String[] parts = ref.split(":");
-        return DependencyReference.groupAndArtifact(parts[0], parts[1]);
+        return DependencyReference.builder().groupId(parts[0]).artifactId(parts[1]);
     }
 }
