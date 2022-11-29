@@ -20,6 +20,7 @@ import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
+import sleeper.compaction.job.TestCompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 
 import java.time.Instant;
@@ -40,7 +41,7 @@ public class CompactionJobStatusCollectorTest {
     private CompactionJobStatus getJob() {
         CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
         CompactionJob job = dataHelper.singleFileCompaction();
-        return CompactionJobStatus.created(job, Instant.now());
+        return TestCompactionJobStatus.created(job, Instant.now());
     }
 
     @Test

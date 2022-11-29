@@ -44,6 +44,10 @@ public class ProcessStatusUpdateRecord {
         return statusUpdate;
     }
 
+    public Instant getUpdateTime() {
+        return statusUpdate.getUpdateTime();
+    }
+
     public String getTaskId() {
         return taskId;
     }

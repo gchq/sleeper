@@ -24,11 +24,8 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Range;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStartedStatus;
+import sleeper.core.record.process.status.TestProcessRuns;
 import sleeper.core.schema.Schema;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfoFactory;
@@ -45,10 +42,10 @@ import static sleeper.compaction.job.CompactionJobTestUtils.KEY_FIELD;
 import static sleeper.compaction.job.CompactionJobTestUtils.createInstanceProperties;
 import static sleeper.compaction.job.CompactionJobTestUtils.createSchema;
 import static sleeper.compaction.job.CompactionJobTestUtils.createTableProperties;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.onTask;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedUpdates;
 
 public class CompactionJobTestDataHelper {
-
-    public static final String DEFAULT_TASK_ID = "task-id";
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final Schema schema = createSchema();
@@ -101,48 +98,19 @@ public class CompactionJobTestDataHelper {
                 parentPartitionId, leftPartitionId, rightPartitionId, splitPoint, 0);
     }
 
-    public CompactionJobStatus createdCompactionStatus(Instant createTime) {
-        return createdCompactionStatus(singleFileCompaction(), createTime);
-    }
-
-    public CompactionJobStatus startedCompactionStatus(Instant createTime) {
-        return startedCompactionStatus(singleFileCompaction(), createTime);
-    }
-
-    public CompactionJobStatus finishedCompactionStatus(
-            Instant createTime, Duration runDuration, long linesRead, long linesWritten) {
-        return finishedCompactionStatus(singleFileCompaction(), createTime, runDuration, linesRead, linesWritten);
-    }
-
-    public CompactionJobStatus compactionStatusWithJobRunsStartToFinish(
-            Instant createTime, Consumer<CompactionJobRunsBuilder> runs) {
-        return compactionStatusWithJobRunsStartToFinish(singleFileCompaction(), createTime, runs);
-    }
-
-    public static CompactionJobStatus createdCompactionStatus(CompactionJob job, Instant createTime) {
-        return CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, createTime))
-                .jobRunsLatestFirst(Collections.emptyList())
-                .build();
-    }
-
-    public static CompactionJobStatus startedCompactionStatus(CompactionJob job, Instant createTime) {
-        Instant startTime = createTime.plus(Duration.ofSeconds(10));
-        Instant startUpdateTime = startTime.plus(Duration.ofMillis(123));
-        return CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, createTime))
-                .singleJobRun(ProcessRun.started(DEFAULT_TASK_ID,
-                        ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime)))
-                .build();
-    }
-
     public static CompactionJobStatus finishedCompactionStatus(
             CompactionJob job, Instant createTime, Duration runDuration, long linesRead, long linesWritten) {
         return compactionStatusWithJobRunsStartToFinish(job, createTime, runs -> runs
                 .finishedRun(runDuration, linesRead, linesWritten));
     }
 
-    public static CompactionJobStatus compactionStatusWithJobRunsStartToFinish(
+    public static CompactionJobStatus finishedCompactionStatus(
+            CompactionJob job, String taskId, Instant createTime, Duration runDuration, long linesRead, long linesWritten) {
+        return compactionStatusWithJobRunsStartToFinish(job, createTime, runs -> runs
+                .finishedRun(taskId, runDuration, linesRead, linesWritten));
+    }
+
+    private static CompactionJobStatus compactionStatusWithJobRunsStartToFinish(
             CompactionJob job, Instant createTime, Consumer<CompactionJobRunsBuilder> runs) {
         CompactionJobRunsBuilder runsBuilder = new CompactionJobRunsBuilder(createTime);
         runs.accept(runsBuilder);
@@ -150,18 +118,6 @@ public class CompactionJobTestDataHelper {
                 .createdStatus(CompactionJobCreatedStatus.from(job, createTime))
                 .jobRunsLatestFirst(runsBuilder.latestFirst())
                 .build();
-    }
-
-    public static ProcessRun finishedJobRun(
-            Instant startTime, Duration runDuration, long linesRead, long linesWritten) {
-        Instant startUpdateTime = startTime.plus(Duration.ofMillis(123));
-        Instant finishTime = startTime.plus(runDuration);
-        Instant finishUpdateTime = finishTime.plus(Duration.ofMillis(123));
-        RecordsProcessedSummary summary = new RecordsProcessedSummary(
-                new RecordsProcessed(linesRead, linesWritten), startTime, finishTime);
-        return ProcessRun.finished(DEFAULT_TASK_ID,
-                ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime),
-                ProcessFinishedStatus.updateTimeAndSummary(finishUpdateTime, summary));
     }
 
     public static class CompactionJobRunsBuilder {
@@ -174,7 +130,16 @@ public class CompactionJobTestDataHelper {
         }
 
         public CompactionJobRunsBuilder finishedRun(Duration runDuration, long linesRead, long linesWritten) {
-            ProcessRun run = finishedJobRun(nextStartTime, runDuration, linesRead, linesWritten);
+            return run(TestProcessRuns.runFromUpdates(
+                    finishedUpdates(nextStartTime, runDuration, linesRead, linesWritten)));
+        }
+
+        public CompactionJobRunsBuilder finishedRun(String taskId, Duration runDuration, long linesRead, long linesWritten) {
+            return run(TestProcessRuns.runFromUpdates(onTask(taskId,
+                    finishedUpdates(nextStartTime, runDuration, linesRead, linesWritten))));
+        }
+
+        public CompactionJobRunsBuilder run(ProcessRun run) {
             nextStartTime = run.getFinishTime().plus(Duration.ofSeconds(10));
             runs.add(run);
             return this;

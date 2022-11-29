@@ -15,14 +15,17 @@
  */
 package sleeper.compaction.job.status;
 
-import sleeper.compaction.job.CompactionJob;
+import sleeper.core.record.process.status.JobStatusUpdates;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
+import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CompactionJobStatus {
 
@@ -42,12 +45,21 @@ public class CompactionJobStatus {
         return new Builder();
     }
 
-    public static CompactionJobStatus created(CompactionJob job, Instant updateTime) {
-        return builder()
-                .jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, updateTime))
-                .jobRunsLatestFirst(Collections.emptyList())
+    public static CompactionJobStatus from(JobStatusUpdates updates) {
+        return builder().jobId(updates.getJobId())
+                .createdStatus((CompactionJobCreatedStatus) updates.getFirstRecord().getStatusUpdate())
+                .jobRuns(updates.getRuns())
+                .expiryDate(updates.getLastRecord().getExpiryDate())
                 .build();
+    }
+
+    public static List<CompactionJobStatus> listFrom(Stream<ProcessStatusUpdateRecord> records) {
+        return streamFrom(records).collect(Collectors.toList());
+    }
+
+    public static Stream<CompactionJobStatus> streamFrom(Stream<ProcessStatusUpdateRecord> records) {
+        return JobStatusUpdates.streamFrom(records)
+                .map(CompactionJobStatus::from);
     }
 
     public Instant getCreateUpdateTime() {
@@ -131,7 +143,11 @@ public class CompactionJobStatus {
         }
 
         public Builder jobRunsLatestFirst(List<ProcessRun> jobRunList) {
-            this.jobRuns = ProcessRuns.latestFirst(jobRunList);
+            return jobRuns(ProcessRuns.latestFirst(jobRunList));
+        }
+
+        public Builder jobRuns(ProcessRuns jobRuns) {
+            this.jobRuns = jobRuns;
             return this;
         }
 

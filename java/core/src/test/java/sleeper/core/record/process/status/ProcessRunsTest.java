@@ -17,106 +17,159 @@
 package sleeper.core.record.process.status;
 
 import org.junit.Test;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static sleeper.core.record.process.status.TestProcessRuns.runsFromUpdates;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.TASK_ID_1;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.TASK_ID_2;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.onTask;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.startedStatus;
 
 public class ProcessRunsTest {
 
     @Test
-    public void shouldBuildProcessRunsWhenOneProcessStarted() {
+    public void shouldReportNoFinishedStatusWhenJobNotFinished() {
         // Given
-        ProcessStartedStatus started = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-24T09:23:30.012Z"),
-                Instant.parse("2022-09-24T09:23:30.001Z"));
+        ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
 
         // When
-        ProcessRun run = ProcessRun.started("test-task-1", started);
-        ProcessRuns runs = ProcessRuns.latestFirst(run);
+        ProcessRuns runs = runsFromUpdates(started);
 
         // Then
         assertThat(runs.getRunList())
                 .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
-                        tuple("test-task-1", started, null));
-        assertThat(runs.isStarted()).isTrue();
+                        tuple(DEFAULT_TASK_ID, started, null));
         assertThat(runs.isFinished()).isFalse();
     }
 
     @Test
-    public void shouldBuildProcessRunsWhenNoProcessesStarted() {
+    public void shouldReportRunWhenJobFinished() {
         // Given
-        ProcessRuns runs = ProcessRuns.latestFirst(Collections.emptyList());
+        ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        ProcessFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
+
+        // When
+        ProcessRuns runs = runsFromUpdates(started, finished);
 
         // Then
-        assertThat(runs.getRunList()).isEmpty();
-        assertThat(runs.isStarted()).isFalse();
+        assertThat(runs.getRunList())
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
+                .containsExactly(
+                        tuple(DEFAULT_TASK_ID, started, finished));
+        assertThat(runs.isFinished()).isTrue();
+    }
+
+    @Test
+    public void shouldReportTwoRunsLatestFirstByStartTimeOnSameTask() {
+        // Given
+        ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:24:30.001Z"));
+
+        // When
+        ProcessRuns runs = runsFromUpdates(started1, started2);
+
+        // Then
+        assertThat(runs.getRunList())
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
+                .containsExactly(
+                        tuple(DEFAULT_TASK_ID, started2, null),
+                        tuple(DEFAULT_TASK_ID, started1, null));
         assertThat(runs.isFinished()).isFalse();
     }
 
     @Test
-    public void shouldBuildProcessRunsWhenAllRunsFinished() {
+    public void shouldReportTwoRunsWhenJobFinishedMultipleTimesSameTask() {
         // Given
-        ProcessStartedStatus started = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-24T09:23:30.012Z"),
-                Instant.parse("2022-09-24T09:23:30.001Z"));
-        ProcessFinishedStatus finished = ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse("2022-09-24T09:24:00.012Z"),
-                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
-                        Instant.parse("2022-09-24T09:23:30.001Z"),
-                        Instant.parse("2022-09-24T09:24:00.001Z")));
+        ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
+        ProcessFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 450L, 300L);
+        ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        ProcessFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
 
         // When
-        ProcessRun run = ProcessRun.finished("test-task-1", started, finished);
-        ProcessRuns runs = ProcessRuns.latestFirst(run);
+        ProcessRuns runs = runsFromUpdates(started1, finished1, started2, finished2);
 
         // Then
         assertThat(runs.getRunList())
                 .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
-                        tuple("test-task-1", started, finished));
-        assertThat(runs.isStarted()).isTrue();
+                        tuple(DEFAULT_TASK_ID, started2, finished2),
+                        tuple(DEFAULT_TASK_ID, started1, finished1));
         assertThat(runs.isFinished()).isTrue();
     }
 
     @Test
-    public void shouldBuildProcessRunsWhenJobFinishedDifferentTasks() {
+    public void shouldReportTwoTasksWithTwoRunsEachForSameJobWithInterleavingStartTimes() {
         // Given
-        ProcessStartedStatus started1 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-24T09:23:30.012Z"),
-                Instant.parse("2022-09-24T09:23:30.001Z"));
-        ProcessFinishedStatus finished1 = ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse("2022-09-24T09:24:00.012Z"),
-                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
-                        Instant.parse("2022-09-24T09:23:30.001Z"),
-                        Instant.parse("2022-09-24T09:24:00.001Z")));
-        ProcessStartedStatus started2 = ProcessStartedStatus.updateAndStartTime(
-                Instant.parse("2022-09-25T09:23:30.012Z"),
-                Instant.parse("2022-09-25T09:23:30.001Z"));
-        ProcessFinishedStatus finished2 = ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse("2022-09-25T09:24:00.012Z"),
-                new RecordsProcessedSummary(new RecordsProcessed(450L, 300L),
-                        Instant.parse("2022-09-25T09:23:30.001Z"),
-                        Instant.parse("2022-09-25T09:24:00.001Z")));
+        ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
+        ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        ProcessStartedStatus started3 = startedStatus(Instant.parse("2022-09-25T09:23:30.001Z"));
+        ProcessStartedStatus started4 = startedStatus(Instant.parse("2022-09-26T09:23:30.001Z"));
 
         // When
-        ProcessRun run1 = ProcessRun.finished("test-task-1", started1, finished1);
-        ProcessRun run2 = ProcessRun.finished("test-task-2", started2, finished2);
-        ProcessRuns runs = ProcessRuns.latestFirst(Arrays.asList(run2, run1));
+        ProcessRuns runs = runsFromUpdates(
+                onTask(TASK_ID_1, started1, started3),
+                onTask(TASK_ID_2, started2, started4));
 
         // Then
         assertThat(runs.getRunList())
                 .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
-                        tuple("test-task-2", started2, finished2),
-                        tuple("test-task-1", started1, finished1));
-        assertThat(runs.isStarted()).isTrue();
+                        tuple(TASK_ID_2, started4, null),
+                        tuple(TASK_ID_1, started3, null),
+                        tuple(TASK_ID_2, started2, null),
+                        tuple(TASK_ID_1, started1, null));
+        assertThat(runs.isFinished()).isFalse();
+    }
+
+    @Test
+    public void shouldReportTwoTasksWithOneFinishedRunEach() {
+        // Given
+        ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
+        ProcessFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 450L, 300L);
+        ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        ProcessFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
+
+        // When
+        ProcessRuns runs = runsFromUpdates(
+                onTask(TASK_ID_1, started1, finished1),
+                onTask(TASK_ID_2, started2, finished2));
+
+        // Then
+        assertThat(runs.getRunList())
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
+                .containsExactly(
+                        tuple(TASK_ID_2, started2, finished2),
+                        tuple(TASK_ID_1, started1, finished1));
         assertThat(runs.isFinished()).isTrue();
     }
+
+    @Test
+    public void shouldReportRunsOnDifferentTasksWhenJobRunStartedAndFinishedDuringAnotherRun() {
+        // Given
+        ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:00.001Z"));
+        ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
+        ProcessFinishedStatus finished1 = finishedStatus(started1, Duration.ofMinutes(2), 450L, 300L);
+        ProcessFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
+
+        // When
+        ProcessRuns runs = runsFromUpdates(
+                onTask(TASK_ID_1, started1, finished1),
+                onTask(TASK_ID_2, started2, finished2));
+
+        // Then
+        assertThat(runs.getRunList())
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
+                .containsExactly(
+                        tuple(TASK_ID_2, started2, finished2),
+                        tuple(TASK_ID_1, started1, finished1));
+        assertThat(runs.isFinished()).isTrue();
+    }
+
 }
