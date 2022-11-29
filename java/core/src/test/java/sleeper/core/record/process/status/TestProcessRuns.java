@@ -15,14 +15,25 @@
  */
 package sleeper.core.record.process.status;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.startedStatus;
 
 public class TestProcessRuns {
 
     private TestProcessRuns() {
+    }
+
+    public static ProcessRun finishedRun(
+            Instant startTime, Duration runDuration, long linesRead, long linesWritten) {
+        ProcessStartedStatus started = startedStatus(startTime);
+        ProcessFinishedStatus finished = finishedStatus(started, runDuration, linesRead, linesWritten);
+        return runFrom(records().fromUpdates(started, finished));
     }
 
     public static ProcessRuns runsFromUpdates(ProcessStatusUpdate... updates) {
@@ -41,5 +52,14 @@ public class TestProcessRuns {
             throw new IllegalStateException("Expected single status");
         }
         return built.get(0).getRuns();
+    }
+
+    private static ProcessRun runFrom(TestProcessStatusUpdateRecords records) {
+        ProcessRuns runs = runsFrom(records);
+        List<ProcessRun> list = runs.getRunList();
+        if (list.size() != 1) {
+            throw new IllegalStateException("Expected single run");
+        }
+        return list.get(0);
     }
 }

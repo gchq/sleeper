@@ -24,11 +24,8 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Range;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStartedStatus;
+import sleeper.core.record.process.status.TestProcessRuns;
 import sleeper.core.schema.Schema;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfoFactory;
@@ -117,18 +114,6 @@ public class CompactionJobTestDataHelper {
                 .build();
     }
 
-    public static ProcessRun finishedJobRun(
-            Instant startTime, Duration runDuration, long linesRead, long linesWritten) {
-        Instant startUpdateTime = startTime.plus(Duration.ofMillis(123));
-        Instant finishTime = startTime.plus(runDuration);
-        Instant finishUpdateTime = finishTime.plus(Duration.ofMillis(123));
-        RecordsProcessedSummary summary = new RecordsProcessedSummary(
-                new RecordsProcessed(linesRead, linesWritten), startTime, finishTime);
-        return ProcessRun.finished(DEFAULT_TASK_ID,
-                ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime),
-                ProcessFinishedStatus.updateTimeAndSummary(finishUpdateTime, summary));
-    }
-
     public static class CompactionJobRunsBuilder {
 
         private final List<ProcessRun> runs = new ArrayList<>();
@@ -139,7 +124,7 @@ public class CompactionJobTestDataHelper {
         }
 
         public CompactionJobRunsBuilder finishedRun(Duration runDuration, long linesRead, long linesWritten) {
-            ProcessRun run = finishedJobRun(nextStartTime, runDuration, linesRead, linesWritten);
+            ProcessRun run = TestProcessRuns.finishedRun(nextStartTime, runDuration, linesRead, linesWritten);
             nextStartTime = run.getFinishTime().plus(Duration.ofSeconds(10));
             runs.add(run);
             return this;
