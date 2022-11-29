@@ -15,10 +15,13 @@
  */
 package sleeper.compaction.job;
 
+import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.record.process.status.TestProcessStatusUpdateRecords;
 
+import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
@@ -40,5 +43,13 @@ public class TestCompactionJobStatus {
             throw new IllegalStateException("Expected single status");
         }
         return built.get(0);
+    }
+
+    public static CompactionJobStatus created(CompactionJob job, Instant updateTime) {
+        return CompactionJobStatus.builder()
+                .jobId(job.getId())
+                .createdStatus(CompactionJobCreatedStatus.from(job, updateTime))
+                .jobRunsLatestFirst(Collections.emptyList())
+                .build();
     }
 }

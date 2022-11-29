@@ -44,7 +44,7 @@ public class CompactionJobStatusTest {
         Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
 
         // When
-        CompactionJobStatus status = CompactionJobStatus.created(job, updateTime);
+        CompactionJobStatus status = TestCompactionJobStatus.created(job, updateTime);
 
         // Then
         assertThat(status).extracting("createUpdateTime", "partitionId", "inputFilesCount", "childPartitionIds", "splittingCompaction")
@@ -58,7 +58,7 @@ public class CompactionJobStatusTest {
         Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
 
         // When
-        CompactionJobStatus status = CompactionJobStatus.created(job, updateTime);
+        CompactionJobStatus status = TestCompactionJobStatus.created(job, updateTime);
 
         // Then
         assertThat(status).extracting("createUpdateTime", "partitionId", "inputFilesCount", "childPartitionIds", "splittingCompaction")
@@ -72,7 +72,7 @@ public class CompactionJobStatusTest {
         Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
 
         // When
-        CompactionJobStatus status = CompactionJobStatus.created(job, updateTime);
+        CompactionJobStatus status = TestCompactionJobStatus.created(job, updateTime);
 
         // Then
         assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isFinished)
