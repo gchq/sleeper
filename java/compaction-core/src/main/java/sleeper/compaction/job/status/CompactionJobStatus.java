@@ -17,13 +17,17 @@ package sleeper.compaction.job.status;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.core.record.process.status.JobStatusUpdates;
+import sleeper.core.record.process.status.JobStatusesBuilder;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
+import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CompactionJobStatus {
 
@@ -49,6 +53,17 @@ public class CompactionJobStatus {
                 .jobRuns(updates.getRuns())
                 .expiryDate(updates.getLastRecord().getExpiryDate())
                 .build();
+    }
+
+    public static List<CompactionJobStatus> listFrom(Stream<ProcessStatusUpdateRecord> records) {
+        return from(records).collect(Collectors.toList());
+    }
+
+    public static Stream<CompactionJobStatus> from(Stream<ProcessStatusUpdateRecord> records) {
+        JobStatusesBuilder builder = new JobStatusesBuilder();
+        records.forEach(builder::update);
+        return builder.stream()
+                .map(CompactionJobStatus::from);
     }
 
     public static CompactionJobStatus created(CompactionJob job, Instant updateTime) {
