@@ -20,7 +20,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class TestProcessStatusUpdateRecords {
@@ -55,13 +54,8 @@ public class TestProcessStatusUpdateRecords {
         return new TaskUpdates(jobId, taskId, Arrays.asList(updates));
     }
 
-    public ProcessRuns buildRuns() {
-        List<JobStatusUpdates> built = JobStatusUpdates.streamFrom(updates.stream())
-                .collect(Collectors.toList());
-        if (built.size() != 1) {
-            throw new IllegalStateException("Expected single status");
-        }
-        return built.get(0).getRuns();
+    public Stream<ProcessStatusUpdateRecord> stream() {
+        return updates.stream();
     }
 
     public static class TaskUpdates {

@@ -20,6 +20,8 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -252,12 +254,21 @@ public class ProcessRunsTest {
     }
 
     private static ProcessRuns runsFromUpdates(ProcessStatusUpdate... updates) {
-        return records().fromUpdates(updates).buildRuns();
+        return runsFrom(records().fromUpdates(updates));
     }
 
     private static ProcessRuns runsFromUpdates(
             TestProcessStatusUpdateRecords.TaskUpdates... taskUpdates) {
-        return records().fromUpdates(taskUpdates).buildRuns();
+        return runsFrom(records().fromUpdates(taskUpdates));
+    }
+
+    private static ProcessRuns runsFrom(TestProcessStatusUpdateRecords records) {
+        List<JobStatusUpdates> built = JobStatusUpdates.streamFrom(records.stream())
+                .collect(Collectors.toList());
+        if (built.size() != 1) {
+            throw new IllegalStateException("Expected single status");
+        }
+        return built.get(0).getRuns();
     }
 
 }
