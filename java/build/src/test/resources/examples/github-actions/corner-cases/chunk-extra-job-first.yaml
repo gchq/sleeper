@@ -1,0 +1,15 @@
+name: some-chunk
+on:
+  push:
+    paths:
+      - 'github-actions/chunk-extra-job.yaml'
+
+jobs:
+  other-job:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+  chunk-workflow:
+    uses: ./github-actions/chunk.yaml
+    with:
+      chunkId: some-chunk

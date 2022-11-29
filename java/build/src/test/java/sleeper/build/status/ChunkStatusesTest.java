@@ -16,8 +16,8 @@
 package sleeper.build.status;
 
 import org.junit.Test;
-import sleeper.build.chunks.TestProperties;
 import sleeper.build.github.GitHubHead;
+import sleeper.build.github.TestGitHubHead;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -25,7 +25,7 @@ public class ChunkStatusesTest {
 
     @Test
     public void shouldReportAndPassWhenTwoChunksSuccessful() throws Exception {
-        ChunkStatuses status = ChunkStatuses.chunksForHead(TestProperties.exampleHead(),
+        ChunkStatuses status = ChunkStatuses.chunksForHead(TestGitHubHead.exampleFromProperties(),
                 ChunkStatus.chunk("common").success(),
                 ChunkStatus.chunk("data").success());
 
@@ -38,7 +38,7 @@ public class ChunkStatusesTest {
 
     @Test
     public void shouldReportAndPassWhenOneChunkSuccessfulOneInProgressOnHeadSha() throws Exception {
-        GitHubHead head = TestProperties.exampleHead();
+        GitHubHead head = TestGitHubHead.exampleFromProperties();
         ChunkStatuses status = ChunkStatuses.chunksForHead(head,
                 ChunkStatus.chunk("common").success(),
                 ChunkStatus.chunk("data").inProgressWithSha(head.getSha()));
@@ -53,7 +53,7 @@ public class ChunkStatusesTest {
 
     @Test
     public void shouldReportAndFailWhenOneChunkSuccessfulOneInProgressOnOldSha() throws Exception {
-        GitHubHead head = TestProperties.exampleHead();
+        GitHubHead head = TestGitHubHead.exampleFromProperties();
         ChunkStatuses status = ChunkStatuses.chunksForHead(head,
                 ChunkStatus.chunk("common").success(),
                 ChunkStatus.chunk("data").inProgressWithSha("old-sha"));
@@ -68,7 +68,7 @@ public class ChunkStatusesTest {
 
     @Test
     public void shouldReportAndFailWhenOneChunkSuccessfulOneFailed() throws Exception {
-        ChunkStatuses status = ChunkStatuses.chunksForHead(TestProperties.exampleHead(),
+        ChunkStatuses status = ChunkStatuses.chunksForHead(TestGitHubHead.exampleFromProperties(),
                 ChunkStatus.chunk("common").success(),
                 ChunkStatus.chunk("data").failure());
 
@@ -81,7 +81,7 @@ public class ChunkStatusesTest {
 
     @Test
     public void shouldReportAndFailWhenOneChunkSuccessfulOneCancelled() throws Exception {
-        ChunkStatuses status = ChunkStatuses.chunksForHead(TestProperties.exampleHead(),
+        ChunkStatuses status = ChunkStatuses.chunksForHead(TestGitHubHead.exampleFromProperties(),
                 ChunkStatus.chunk("common").success(),
                 ChunkStatus.chunk("data").cancelled());
 
@@ -94,7 +94,7 @@ public class ChunkStatusesTest {
 
     @Test
     public void shouldReportAndPassWhenNoChunksHaveBuilds() throws Exception {
-        ChunkStatuses status = ChunkStatuses.chunksForHead(TestProperties.exampleHead(),
+        ChunkStatuses status = ChunkStatuses.chunksForHead(TestGitHubHead.exampleFromProperties(),
                 ChunkStatus.chunk("common").noBuild(),
                 ChunkStatus.chunk("data").noBuild());
 
