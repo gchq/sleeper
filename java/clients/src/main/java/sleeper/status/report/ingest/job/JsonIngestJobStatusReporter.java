@@ -46,7 +46,14 @@ public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
 
     @Override
     public void report(List<IngestJobStatus> statusList, QueryType queryType, int numberInQueue) {
-        out.println(gson.toJson(statusList));
+        out.println(gson.toJson(createJsonReport(statusList, numberInQueue)));
+    }
+
+    private JsonObject createJsonReport(List<IngestJobStatus> statusList, int numberInQueue) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("numberInQueue", numberInQueue);
+        jsonObject.add("jobList", gson.toJsonTree(statusList));
+        return jsonObject;
     }
 
     private static JsonSerializer<Instant> instantJsonSerializer() {
