@@ -29,7 +29,7 @@ import java.util.TimeZone;
 
 public class RangeCompactionJobQuery implements CompactionJobQuery {
 
-    private static final String DATE_FORMAT = "yyyyMMddhhmmss";
+    private static final String DATE_FORMAT = "yyyyMMddHHmmss";
 
     private final String tableName;
     private final Instant start;
@@ -49,6 +49,9 @@ public class RangeCompactionJobQuery implements CompactionJobQuery {
         } else {
             Instant start = parseDate(queryParameters.split(",")[0]);
             Instant end = parseDate(queryParameters.split(",")[1]);
+            if (start.isAfter(end)) {
+                throw new IllegalArgumentException("Start of range provided is after end");
+            }
             return new RangeCompactionJobQuery(tableName, start, end);
         }
     }

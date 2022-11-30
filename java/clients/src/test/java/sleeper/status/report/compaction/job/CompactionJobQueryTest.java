@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
@@ -114,6 +115,17 @@ public class CompactionJobQueryTest {
 
         // Then
         assertThat(statuses).isEqualTo(exampleStatusList);
+    }
+
+    @Test
+    public void shouldFailRangeQueryWhenStartIsAfterEnd() {
+        // Given
+        QueryType queryType = QueryType.RANGE;
+        String queryParameters = "20221130125442,20221130115442";
+
+        // When / Then
+        assertThatThrownBy(() -> queryStatusesWithParams(queryType, queryParameters))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     private List<CompactionJobStatus> queryStatuses(QueryType queryType) {
