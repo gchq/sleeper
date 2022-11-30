@@ -34,6 +34,24 @@ public class CompactionTaskStatusReportArgumentsTest {
     }
 
     @Test
+    public void shouldSetJsonReporterWhenArgumentProvided() {
+        // Given / When
+        CompactionTaskStatusReportArguments arguments = CompactionTaskStatusReportArguments.fromArgs("test-instance", "json");
+
+        // Then
+        assertThat(arguments.getReporter()).isInstanceOf(JsonCompactionTaskStatusReporter.class);
+    }
+
+    @Test
+    public void shouldSetUnfinishedQueryTypeWhenArgumentProvided() {
+        // Given / When
+        CompactionTaskStatusReportArguments arguments = CompactionTaskStatusReportArguments.fromArgs("test-instance", "standard", "-u");
+
+        // Then
+        assertThat(arguments.getQuery()).isSameAs(CompactionTaskQuery.UNFINISHED);
+    }
+
+    @Test
     public void shouldFailWhenNoInstanceIdSpecified() {
         // When / Then
         assertThatThrownBy(CompactionTaskStatusReportArguments::fromArgs)

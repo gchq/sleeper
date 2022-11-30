@@ -15,19 +15,33 @@
  */
 package sleeper.status.report.compaction.task;
 
+import static sleeper.ClientUtils.optionalArgument;
+
 public class CompactionTaskStatusReportArguments {
 
     private final String instanceId;
+    private final CompactionTaskStatusReporter reporter;
+    private final CompactionTaskQuery query;
 
-    private CompactionTaskStatusReportArguments(String instanceId) {
+    private CompactionTaskStatusReportArguments(String instanceId,
+                                                CompactionTaskStatusReporter reporter,
+                                                CompactionTaskQuery query) {
         this.instanceId = instanceId;
+        this.reporter = reporter;
+        this.query = query;
     }
 
     public static CompactionTaskStatusReportArguments fromArgs(String... args) {
         if (args.length < 1 || args.length > 3) {
             throw new IllegalArgumentException("Wrong number of arguments");
         }
-        return new CompactionTaskStatusReportArguments(args[0]);
+        CompactionTaskStatusReporter reporter = optionalArgument(args, 1)
+                .map(type -> CompactionTaskStatusReporter.from(type, System.out))
+                .orElseGet(() -> new StandardCompactionTaskStatusReporter(System.out));
+        CompactionTaskQuery query = optionalArgument(args, 2)
+                .map(CompactionTaskQuery::from)
+                .orElse(CompactionTaskQuery.ALL);
+        return new CompactionTaskStatusReportArguments(args[0], reporter, query);
     }
 
     public String getInstanceId() {
@@ -35,10 +49,10 @@ public class CompactionTaskStatusReportArguments {
     }
 
     public CompactionTaskStatusReporter getReporter() {
-        return new StandardCompactionTaskStatusReporter(System.out);
+        return reporter;
     }
 
     public CompactionTaskQuery getQuery() {
-        return CompactionTaskQuery.ALL;
+        return query;
     }
 }
