@@ -19,28 +19,16 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.status.report.compaction.job.CompactionJobQuery;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
-public class DetailedCompactionJobsQuery implements CompactionJobQuery {
+public class UnfinishedCompactionJobQuery implements CompactionJobQuery {
+    private final String tableName;
 
-    private final List<String> jobIds;
-
-    public DetailedCompactionJobsQuery(List<String> jobIds) {
-        this.jobIds = jobIds;
+    public UnfinishedCompactionJobQuery(String tableName) {
+        this.tableName = tableName;
     }
 
-    public static DetailedCompactionJobsQuery fromParameters(String queryParameters) {
-        return new DetailedCompactionJobsQuery(Arrays.asList(queryParameters.split(",")));
-    }
-
-    @Override
     public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
-        return jobIds.stream()
-                .map(statusStore::getJob)
-                .filter(Optional::isPresent).map(Optional::get)
-                .collect(Collectors.toList());
+        return statusStore.getUnfinishedJobs(tableName);
     }
 }

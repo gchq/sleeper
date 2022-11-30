@@ -21,10 +21,10 @@ import sleeper.status.report.compaction.job.CompactionJobQuery;
 
 import java.util.List;
 
-public class AllCompactionJobsQuery implements CompactionJobQuery {
+public class AllCompactionJobQuery implements CompactionJobQuery {
     private final String tableName;
 
-    public AllCompactionJobsQuery(String tableName) {
+    public AllCompactionJobQuery(String tableName) {
         this.tableName = tableName;
     }
 

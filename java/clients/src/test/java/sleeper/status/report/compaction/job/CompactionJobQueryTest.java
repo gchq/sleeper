@@ -49,10 +49,10 @@ public class CompactionJobQueryTest {
         when(statusStore.getAllJobs(tableName)).thenReturn(exampleStatusList);
 
         // When
-        CompactionJobQuery query = queryFrom(queryType);
+        List<CompactionJobStatus> statuses = queryStatuses(queryType);
 
         // Then
-        assertThat(query.run(statusStore)).isEqualTo(exampleStatusList);
+        assertThat(statuses).isEqualTo(exampleStatusList);
     }
 
     @Test
@@ -62,10 +62,10 @@ public class CompactionJobQueryTest {
         when(statusStore.getUnfinishedJobs(tableName)).thenReturn(exampleStatusList);
 
         // When
-        CompactionJobQuery query = queryFrom(queryType);
+        List<CompactionJobStatus> statuses = queryStatuses(queryType);
 
         // Then
-        assertThat(query.run(statusStore)).isEqualTo(exampleStatusList);
+        assertThat(statuses).isEqualTo(exampleStatusList);
     }
 
     @Test
@@ -77,17 +77,33 @@ public class CompactionJobQueryTest {
         when(statusStore.getJob("job2")).thenReturn(Optional.of(exampleStatus2));
 
         // When
-        CompactionJobQuery query = queryFrom(queryType, queryParameters);
+        List<CompactionJobStatus> statuses = queryStatuses(queryType, queryParameters);
 
         // Then
-        assertThat(query.run(statusStore)).containsExactly(exampleStatus1, exampleStatus2);
+        assertThat(statuses).containsExactly(exampleStatus1, exampleStatus2);
     }
 
-    private CompactionJobQuery queryFrom(QueryType queryType) {
-        return queryFrom(queryType, null);
+    @Test
+    public void shouldCreateRangeQueryWithSpecifiedDates() {
+        // Given
+        QueryType queryType = QueryType.RANGE;
+        String queryParameters = "20221123115442,20221130115442";
+        Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
+        Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
+        when(statusStore.getJobsInTimePeriod(tableName, start, end)).thenReturn(exampleStatusList);
+
+        // When
+        List<CompactionJobStatus> statuses = queryStatuses(queryType, queryParameters);
+
+        // Then
+        assertThat(statuses).isEqualTo(exampleStatusList);
     }
 
-    private CompactionJobQuery queryFrom(QueryType queryType, String queryParameters) {
-        return CompactionJobQuery.from(tableName, queryType, queryParameters);
+    private List<CompactionJobStatus> queryStatuses(QueryType queryType) {
+        return queryStatuses(queryType, null);
+    }
+
+    private List<CompactionJobStatus> queryStatuses(QueryType queryType, String queryParameters) {
+        return CompactionJobQuery.from(tableName, queryType, queryParameters).run(statusStore);
     }
 }
