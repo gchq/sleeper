@@ -19,6 +19,8 @@ package sleeper.status.report.compaction.job;
 import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.status.report.compaction.job.query.AllCompactionJobQuery;
+import sleeper.status.report.compaction.job.query.DetailedCompactionJobQuery;
+import sleeper.status.report.compaction.job.query.UnfinishedCompactionJobQuery;
 
 public class CompactionJobQueryPrompt {
     private final String tableName;
@@ -36,7 +38,15 @@ public class CompactionJobQueryPrompt {
     }
 
     private CompactionJobQuery promptForQuery() {
-        out.println("All (a), Detailed (d), range (r), or unfinished (u) query? ");
-        return new AllCompactionJobQuery(tableName);
+        String type = in.promptLine("All (a), Detailed (d), range (r), or unfinished (u) query? ");
+        if (type.equalsIgnoreCase("a")) {
+            return new AllCompactionJobQuery(tableName);
+        } else if (type.equalsIgnoreCase("u")) {
+            return new UnfinishedCompactionJobQuery(tableName);
+        } else if (type.equalsIgnoreCase("d")) {
+            String jobIds = in.promptLine("Enter jobId to get detailed information about: ");
+            return DetailedCompactionJobQuery.fromParameters(jobIds);
+        }
+        return null;
     }
 }

@@ -20,6 +20,7 @@ import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobStatus;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -39,6 +40,55 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
         assertThat(printStream.toString())
                 .isEqualTo("All (a), Detailed (d), range (r), or unfinished (u) query? \n");
         assertThat(statuses).isEqualTo(exampleStatusList);
+    }
+
+    @Test
+    public void shouldCreateUnfinishedQueryWithNoParameters() {
+        // Given
+        when(statusStore.getUnfinishedJobs(tableName)).thenReturn(exampleStatusList);
+        consoleInput.enterNextPrompt("u");
+
+        // When
+        List<CompactionJobStatus> statuses = queryStatusByPrompt();
+
+        // Then
+        assertThat(printStream.toString())
+                .isEqualTo("All (a), Detailed (d), range (r), or unfinished (u) query? \n");
+        assertThat(statuses).isEqualTo(exampleStatusList);
+    }
+
+    @Test
+    public void shouldCreateDetailedQueryWithSpecifiedJobIds() {
+        // Given
+        String queryParameters = "job1,job2";
+        when(statusStore.getJob("job1")).thenReturn(Optional.of(exampleStatus1));
+        when(statusStore.getJob("job2")).thenReturn(Optional.of(exampleStatus2));
+        consoleInput.enterNextPrompts("d", queryParameters);
+
+        // When
+        List<CompactionJobStatus> statuses = queryStatusByPrompt();
+
+        // Then
+        assertThat(printStream.toString())
+                .isEqualTo("All (a), Detailed (d), range (r), or unfinished (u) query? \n" +
+                        "Enter jobId to get detailed information about: \n");
+        assertThat(statuses).containsExactly(exampleStatus1, exampleStatus2);
+    }
+
+    @Test
+    public void shouldCreateDetailedQueryWithNoJobIds() {
+        // Given
+        String queryParameters = "";
+        consoleInput.enterNextPrompts("d", queryParameters);
+
+        // When
+        List<CompactionJobStatus> statuses = queryStatusByPrompt();
+
+        // Then
+        assertThat(printStream.toString())
+                .isEqualTo("All (a), Detailed (d), range (r), or unfinished (u) query? \n" +
+                        "Enter jobId to get detailed information about: \n");
+        assertThat(statuses).isEmpty();
     }
 
     private List<CompactionJobStatus> queryStatusByPrompt() {
