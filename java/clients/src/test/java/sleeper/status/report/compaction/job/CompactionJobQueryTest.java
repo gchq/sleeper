@@ -33,7 +33,7 @@ public class CompactionJobQueryTest extends CompactionJobQueryTestBase {
     public void shouldCreateAllQueryWithNoParameters() {
         // Given
         QueryType queryType = QueryType.ALL;
-        when(statusStore.getAllJobs(tableName)).thenReturn(exampleStatusList);
+        when(statusStore.getAllJobs(TABLE_NAME)).thenReturn(exampleStatusList);
 
         // When
         List<CompactionJobStatus> statuses = queryStatuses(queryType);
@@ -46,7 +46,7 @@ public class CompactionJobQueryTest extends CompactionJobQueryTestBase {
     public void shouldCreateUnfinishedQueryWithNoParameters() {
         // Given
         QueryType queryType = QueryType.UNFINISHED;
-        when(statusStore.getUnfinishedJobs(tableName)).thenReturn(exampleStatusList);
+        when(statusStore.getUnfinishedJobs(TABLE_NAME)).thenReturn(exampleStatusList);
 
         // When
         List<CompactionJobStatus> statuses = queryStatuses(queryType);
@@ -87,7 +87,7 @@ public class CompactionJobQueryTest extends CompactionJobQueryTestBase {
         String queryParameters = "20221123115442,20221130115442";
         Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        when(statusStore.getJobsInTimePeriod(tableName, start, end)).thenReturn(exampleStatusList);
+        when(statusStore.getJobsInTimePeriod(TABLE_NAME, start, end)).thenReturn(exampleStatusList);
 
         // When
         List<CompactionJobStatus> statuses = queryStatusesWithParams(queryType, queryParameters);
@@ -102,7 +102,7 @@ public class CompactionJobQueryTest extends CompactionJobQueryTestBase {
         QueryType queryType = QueryType.RANGE;
         Instant start = Instant.parse("2022-11-30T07:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        when(statusStore.getJobsInTimePeriod(tableName, start, end)).thenReturn(exampleStatusList);
+        when(statusStore.getJobsInTimePeriod(TABLE_NAME, start, end)).thenReturn(exampleStatusList);
 
         // When
         List<CompactionJobStatus> statuses = queryStatusesAtTime(queryType, end);

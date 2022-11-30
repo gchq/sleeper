@@ -30,7 +30,7 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
     @Test
     public void shouldCreateAllQueryWithNoParameters() {
         // Given
-        when(statusStore.getAllJobs(tableName)).thenReturn(exampleStatusList);
+        when(statusStore.getAllJobs(TABLE_NAME)).thenReturn(exampleStatusList);
         consoleInput.enterNextPrompt("a");
 
         // When
@@ -44,7 +44,7 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
     @Test
     public void shouldCreateUnfinishedQueryWithNoParameters() {
         // Given
-        when(statusStore.getUnfinishedJobs(tableName)).thenReturn(exampleStatusList);
+        when(statusStore.getUnfinishedJobs(TABLE_NAME)).thenReturn(exampleStatusList);
         consoleInput.enterNextPrompt("u");
 
         // When

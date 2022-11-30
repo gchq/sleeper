@@ -32,7 +32,7 @@ import java.util.List;
 import static org.mockito.Mockito.mock;
 
 public class CompactionJobQueryTestBase {
-    protected static final String tableName = "test-table";
+    protected static final String TABLE_NAME = "test-table";
     protected final CompactionJobStatusStore statusStore = mock(CompactionJobStatusStore.class);
     protected final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
     protected final CompactionJobStatus exampleStatus1 = TestCompactionJobStatus.created(
@@ -58,7 +58,7 @@ public class CompactionJobQueryTestBase {
 
     private List<CompactionJobStatus> queryStatuses(CompactionJobStatusReporter.QueryType queryType, String queryParameters, Clock clock) {
         return CompactionJobStatusReportArguments.builder()
-                .instanceId("test-instance").tableName(tableName)
+                .instanceId("test-instance").tableName(TABLE_NAME)
                 .reporter(new StandardCompactionJobStatusReporter())
                 .queryType(queryType)
                 .queryParameters(queryParameters)
