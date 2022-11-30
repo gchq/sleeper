@@ -28,7 +28,7 @@ import static sleeper.status.report.compaction.job.CompactionJobStatusReporter.Q
 public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
     @Test
     public void shouldCreateAllQueryWithNoParameters() {
-        // Given        
+        // Given
         when(statusStore.getAllJobs(tableName)).thenReturn(exampleStatusList);
         consoleInput.enterNextPrompt("a");
 
