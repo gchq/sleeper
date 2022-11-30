@@ -17,7 +17,6 @@
 package sleeper.status.report.compaction.job;
 
 import sleeper.console.ConsoleInput;
-import sleeper.console.ConsoleOutput;
 import sleeper.status.report.compaction.job.query.AllCompactionJobQuery;
 import sleeper.status.report.compaction.job.query.DetailedCompactionJobQuery;
 import sleeper.status.report.compaction.job.query.RangeCompactionJobQuery;
@@ -30,9 +29,11 @@ public class CompactionJobQueryPrompt {
     private CompactionJobQueryPrompt() {
     }
 
-    public static CompactionJobQuery from(String tableName, ConsoleInput in, ConsoleOutput out, Clock clock) {
+    public static CompactionJobQuery from(String tableName, ConsoleInput in, Clock clock) {
         String type = in.promptLine("All (a), Detailed (d), range (r), or unfinished (u) query? ");
-        if (type.equalsIgnoreCase("a")) {
+        if ("".equals(type)) {
+            return null;
+        } else if (type.equalsIgnoreCase("a")) {
             return new AllCompactionJobQuery(tableName);
         } else if (type.equalsIgnoreCase("u")) {
             return new UnfinishedCompactionJobQuery(tableName);
@@ -41,7 +42,8 @@ public class CompactionJobQueryPrompt {
             return DetailedCompactionJobQuery.fromParameters(jobIds);
         } else if (type.equalsIgnoreCase("r")) {
             return RangeCompactionJobQuery.prompt(tableName, in, clock);
+        } else {
+            return from(tableName, in, clock);
         }
-        return null;
     }
 }

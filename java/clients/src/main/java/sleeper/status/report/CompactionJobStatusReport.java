@@ -25,7 +25,6 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.console.ConsoleInput;
-import sleeper.console.ConsoleOutput;
 import sleeper.status.report.compaction.job.CompactionJobQuery;
 import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
 import sleeper.status.report.compaction.job.CompactionJobStatusReporter;
@@ -48,8 +47,7 @@ public class CompactionJobStatusReport {
 
     public void run() {
         CompactionJobQuery query = arguments.buildQuery(Clock.systemUTC(),
-                new ConsoleInput(System.console()),
-                new ConsoleOutput(System.out));
+                new ConsoleInput(System.console()));
         if (query == null) {
             return;
         }

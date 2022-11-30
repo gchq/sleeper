@@ -172,6 +172,33 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
         assertThat(statuses).isEqualTo(exampleStatusList);
     }
 
+    @Test
+    public void shouldRepeatQueryTypePromptWithInvalidQueryType() {
+        // Given
+        when(statusStore.getAllJobs(TABLE_NAME)).thenReturn(exampleStatusList);
+        in.enterNextPrompts("abc", "a");
+
+        // When
+        List<CompactionJobStatus> statuses = queryStatusByPrompt();
+
+        // Then
+        assertThat(out).hasToString(QUERY_TYPE_PROMPT + QUERY_TYPE_PROMPT);
+        assertThat(statuses).isEqualTo(exampleStatusList);
+    }
+
+    @Test
+    public void shouldReturnNoQueryWhenNoQueryTypeEntered() {
+        // Given
+        in.enterNextPrompts("");
+
+        // When
+        CompactionJobQuery query = queryByPrompt();
+
+        // Then
+        assertThat(out).hasToString(QUERY_TYPE_PROMPT);
+        assertThat(query).isNull();
+    }
+
     private List<CompactionJobStatus> queryStatusByPrompt() {
         return queryStatuses(QueryType.PROMPT);
     }

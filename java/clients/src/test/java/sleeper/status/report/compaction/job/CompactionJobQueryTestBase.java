@@ -70,6 +70,6 @@ public class CompactionJobQueryTestBase {
                 .reporter(new StandardCompactionJobStatusReporter())
                 .queryType(queryType)
                 .queryParameters(queryParameters)
-                .build().buildQuery(clock, in.consoleIn(), out.consoleOut());
+                .build().buildQuery(clock, in.consoleIn());
     }
 }

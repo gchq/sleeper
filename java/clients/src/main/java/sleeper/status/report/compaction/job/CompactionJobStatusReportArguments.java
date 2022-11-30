@@ -16,7 +16,6 @@
 package sleeper.status.report.compaction.job;
 
 import sleeper.console.ConsoleInput;
-import sleeper.console.ConsoleOutput;
 import sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
 
 import java.io.PrintStream;
@@ -101,9 +100,9 @@ public class CompactionJobStatusReportArguments {
         return queryType;
     }
 
-    public CompactionJobQuery buildQuery(Clock clock, ConsoleInput input, ConsoleOutput output) {
+    public CompactionJobQuery buildQuery(Clock clock, ConsoleInput input) {
         if (queryType == QueryType.PROMPT) {
-            return CompactionJobQueryPrompt.from(tableName, input, output, clock);
+            return CompactionJobQueryPrompt.from(tableName, input, clock);
         }
         return CompactionJobQuery.from(tableName, queryType, queryParameters, clock);
     }
