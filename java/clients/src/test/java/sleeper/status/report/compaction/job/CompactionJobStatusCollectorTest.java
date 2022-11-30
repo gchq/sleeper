@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.status.report.compactionjob;
+package sleeper.status.report.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;

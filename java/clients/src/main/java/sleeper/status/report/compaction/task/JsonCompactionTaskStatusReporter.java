@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.status.report.compactiontask;
+package sleeper.status.report.compaction.task;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

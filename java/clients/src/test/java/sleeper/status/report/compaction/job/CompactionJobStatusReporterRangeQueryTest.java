@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.status.report.compactionjob;
+package sleeper.status.report.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobStatus;
@@ -29,8 +29,6 @@ import java.util.TimeZone;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
-import static sleeper.status.report.StatusReporterTestHelper.replaceBracketedJobIds;
-import static sleeper.status.report.StatusReporterTestHelper.replaceStandardJobIds;
 
 public class CompactionJobStatusReporterRangeQueryTest extends CompactionJobStatusReporterTestBase {
 

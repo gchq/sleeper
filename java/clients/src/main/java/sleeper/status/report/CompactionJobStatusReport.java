@@ -25,10 +25,10 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.status.report.compactionjob.CompactionJobStatusCollector;
-import sleeper.status.report.compactionjob.CompactionJobStatusReportArguments;
-import sleeper.status.report.compactionjob.CompactionJobStatusReporter;
-import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
+import sleeper.status.report.compaction.job.CompactionJobStatusCollector;
+import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
+import sleeper.status.report.compaction.job.CompactionJobStatusReporter;
+import sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

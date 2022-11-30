@@ -23,9 +23,9 @@ import sleeper.ClientUtils;
 import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.status.report.compactiontask.CompactionTaskQuery;
-import sleeper.status.report.compactiontask.CompactionTaskStatusReporter;
-import sleeper.status.report.compactiontask.StandardCompactionTaskStatusReporter;
+import sleeper.status.report.compaction.task.CompactionTaskQuery;
+import sleeper.status.report.compaction.task.CompactionTaskStatusReporter;
+import sleeper.status.report.compaction.task.StandardCompactionTaskStatusReporter;
 
 import java.io.IOException;
 import java.io.PrintStream;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.status.report.compactionjob;
+package sleeper.status.report.compaction.job;
 
 import sleeper.compaction.job.status.CompactionJobStatus;
 
