@@ -17,34 +17,18 @@
 package sleeper.status.report.compaction.job;
 
 import org.junit.Test;
-import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.CompactionJobTestDataHelper;
-import sleeper.compaction.job.TestCompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 
-import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
 
-public class CompactionJobQueryTest {
-    private static final String tableName = "test-table";
-    private final CompactionJobStatusStore statusStore = mock(CompactionJobStatusStore.class);
-    private final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
-    private final CompactionJobStatus exampleStatus1 = TestCompactionJobStatus.created(
-            dataHelper.singleFileCompaction(), Instant.parse("2022-09-22T13:33:12.001Z"));
-    private final CompactionJobStatus exampleStatus2 = TestCompactionJobStatus.created(
-            dataHelper.singleFileCompaction(), Instant.parse("2022-09-22T13:53:12.001Z"));
-    private final List<CompactionJobStatus> exampleStatusList = Arrays.asList(exampleStatus1, exampleStatus2);
-
+public class CompactionJobQueryTest extends CompactionJobQueryTestBase {
     @Test
     public void shouldCreateAllQueryWithNoParameters() {
         // Given
@@ -136,27 +120,5 @@ public class CompactionJobQueryTest {
         // When / Then
         assertThatThrownBy(() -> queryStatusesWithParams(queryType, queryParameters))
                 .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    private List<CompactionJobStatus> queryStatuses(QueryType queryType) {
-        return queryStatusesWithParams(queryType, null);
-    }
-
-    private List<CompactionJobStatus> queryStatusesWithParams(QueryType queryType, String queryParameters) {
-        return queryStatuses(queryType, queryParameters, Clock.systemUTC());
-    }
-
-    private List<CompactionJobStatus> queryStatusesAtTime(QueryType queryType, Instant time) {
-        return queryStatuses(queryType, null,
-                Clock.fixed(time, ZoneId.of("UTC")));
-    }
-
-    private List<CompactionJobStatus> queryStatuses(QueryType queryType, String queryParameters, Clock clock) {
-        return CompactionJobStatusReportArguments.builder()
-                .instanceId("test-instance").tableName(tableName)
-                .reporter(new StandardCompactionJobStatusReporter())
-                .queryType(queryType)
-                .queryParameters(queryParameters)
-                .build().buildQuery(clock).run(statusStore);
     }
 }
