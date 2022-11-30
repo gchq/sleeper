@@ -19,6 +19,7 @@ package sleeper.status.report.compaction.job;
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobStatus;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,6 +28,12 @@ import static org.mockito.Mockito.when;
 import static sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
 
 public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
+
+    private static final String QUERY_TYPE_PROMPT = "All (a), Detailed (d), range (r), or unfinished (u) query? \n";
+    private static final String DETAILED_JOB_ID_PROMPT = "Enter jobId to get detailed information about: \n";
+    private static final String RANGE_START_PROMPT = "Enter range start in format yyyyMMddHHmmss (default is 4 hours ago): \n";
+    private static final String RANGE_END_PROMPT = "Enter range end in format yyyyMMddHHmmss (default is now): \n";
+
     @Test
     public void shouldCreateAllQueryWithNoParameters() {
         // Given
@@ -37,7 +44,7 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
         List<CompactionJobStatus> statuses = queryStatusByPrompt();
 
         // Then
-        assertThat(out).hasToString("All (a), Detailed (d), range (r), or unfinished (u) query? \n");
+        assertThat(out).hasToString(QUERY_TYPE_PROMPT);
         assertThat(statuses).isEqualTo(exampleStatusList);
     }
 
@@ -51,7 +58,7 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
         List<CompactionJobStatus> statuses = queryStatusByPrompt();
 
         // Then
-        assertThat(out).hasToString("All (a), Detailed (d), range (r), or unfinished (u) query? \n");
+        assertThat(out).hasToString(QUERY_TYPE_PROMPT);
         assertThat(statuses).isEqualTo(exampleStatusList);
     }
 
@@ -67,9 +74,7 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
         List<CompactionJobStatus> statuses = queryStatusByPrompt();
 
         // Then
-        assertThat(out).hasToString("" +
-                "All (a), Detailed (d), range (r), or unfinished (u) query? \n" +
-                "Enter jobId to get detailed information about: \n");
+        assertThat(out).hasToString(QUERY_TYPE_PROMPT + DETAILED_JOB_ID_PROMPT);
         assertThat(statuses).containsExactly(exampleStatus1, exampleStatus2);
     }
 
@@ -83,10 +88,24 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
         List<CompactionJobStatus> statuses = queryStatusByPrompt();
 
         // Then
-        assertThat(out).hasToString("" +
-                "All (a), Detailed (d), range (r), or unfinished (u) query? \n" +
-                "Enter jobId to get detailed information about: \n");
+        assertThat(out).hasToString(QUERY_TYPE_PROMPT + DETAILED_JOB_ID_PROMPT);
         assertThat(statuses).isEmpty();
+    }
+
+    @Test
+    public void shouldCreateRangeQueryWithSpecifiedDates() {
+        // Given
+        Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
+        Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
+        when(statusStore.getJobsInTimePeriod(TABLE_NAME, start, end)).thenReturn(exampleStatusList);
+        in.enterNextPrompts("r", "20221123115442", "20221130115442");
+
+        // When
+        List<CompactionJobStatus> statuses = queryStatusByPrompt();
+
+        // Then
+        assertThat(out).hasToString(QUERY_TYPE_PROMPT + RANGE_START_PROMPT + RANGE_END_PROMPT);
+        assertThat(statuses).isEqualTo(exampleStatusList);
     }
 
     private List<CompactionJobStatus> queryStatusByPrompt() {

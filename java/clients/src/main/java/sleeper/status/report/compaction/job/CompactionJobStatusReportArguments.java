@@ -111,7 +111,7 @@ public class CompactionJobStatusReportArguments {
 
     public CompactionJobQuery buildQuery(Clock clock, ConsoleInput input, ConsoleOutput output) {
         if (queryType == QueryType.PROMPT) {
-            return CompactionJobQueryPrompt.from(tableName, input, output);
+            return CompactionJobQueryPrompt.from(tableName, input, output, clock);
         }
         return CompactionJobQuery.from(tableName, queryType, queryParameters, clock);
     }

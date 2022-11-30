@@ -20,24 +20,17 @@ import sleeper.console.ConsoleInput;
 import sleeper.console.ConsoleOutput;
 import sleeper.status.report.compaction.job.query.AllCompactionJobQuery;
 import sleeper.status.report.compaction.job.query.DetailedCompactionJobQuery;
+import sleeper.status.report.compaction.job.query.RangeCompactionJobQuery;
 import sleeper.status.report.compaction.job.query.UnfinishedCompactionJobQuery;
 
+import java.time.Clock;
+
 public class CompactionJobQueryPrompt {
-    private final String tableName;
-    private final ConsoleInput in;
-    private final ConsoleOutput out;
 
-    private CompactionJobQueryPrompt(String tableName, ConsoleInput in, ConsoleOutput out) {
-        this.tableName = tableName;
-        this.in = in;
-        this.out = out;
+    private CompactionJobQueryPrompt() {
     }
 
-    public static CompactionJobQuery from(String tableName, ConsoleInput input, ConsoleOutput output) {
-        return new CompactionJobQueryPrompt(tableName, input, output).promptForQuery();
-    }
-
-    private CompactionJobQuery promptForQuery() {
+    public static CompactionJobQuery from(String tableName, ConsoleInput in, ConsoleOutput out, Clock clock) {
         String type = in.promptLine("All (a), Detailed (d), range (r), or unfinished (u) query? ");
         if (type.equalsIgnoreCase("a")) {
             return new AllCompactionJobQuery(tableName);
@@ -46,6 +39,10 @@ public class CompactionJobQueryPrompt {
         } else if (type.equalsIgnoreCase("d")) {
             String jobIds = in.promptLine("Enter jobId to get detailed information about: ");
             return DetailedCompactionJobQuery.fromParameters(jobIds);
+        } else if (type.equalsIgnoreCase("r")) {
+            String start = in.promptLine("Enter range start in format " + RangeCompactionJobQuery.DATE_FORMAT + " (default is 4 hours ago): ");
+            String end = in.promptLine("Enter range end in format " + RangeCompactionJobQuery.DATE_FORMAT + " (default is now): ");
+            return RangeCompactionJobQuery.fromParameters(tableName, start, end, clock);
         }
         return null;
     }

@@ -29,13 +29,16 @@ import java.util.TimeZone;
 
 public class RangeCompactionJobQuery implements CompactionJobQuery {
 
-    private static final String DATE_FORMAT = "yyyyMMddHHmmss";
+    public static final String DATE_FORMAT = "yyyyMMddHHmmss";
 
     private final String tableName;
     private final Instant start;
     private final Instant end;
 
     public RangeCompactionJobQuery(String tableName, Instant start, Instant end) {
+        if (start.isAfter(end)) {
+            throw new IllegalArgumentException("Start of range provided is after end");
+        }
         this.tableName = tableName;
         this.start = start;
         this.end = end;
@@ -47,13 +50,15 @@ public class RangeCompactionJobQuery implements CompactionJobQuery {
             Instant start = end.minus(Duration.ofHours(4));
             return new RangeCompactionJobQuery(tableName, start, end);
         } else {
-            Instant start = parseDate(queryParameters.split(",")[0]);
-            Instant end = parseDate(queryParameters.split(",")[1]);
-            if (start.isAfter(end)) {
-                throw new IllegalArgumentException("Start of range provided is after end");
-            }
-            return new RangeCompactionJobQuery(tableName, start, end);
+            String[] parts = queryParameters.split(",");
+            return fromParameters(tableName, parts[0], parts[1], clock);
         }
+    }
+
+    public static RangeCompactionJobQuery fromParameters(String tableName, String startStr, String endStr, Clock clock) {
+        Instant start = parseDate(startStr);
+        Instant end = parseDate(endStr);
+        return new RangeCompactionJobQuery(tableName, start, end);
     }
 
     @Override
