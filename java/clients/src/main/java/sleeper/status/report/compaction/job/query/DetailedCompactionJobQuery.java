@@ -33,6 +33,9 @@ public class DetailedCompactionJobQuery implements CompactionJobQuery {
     }
 
     public static DetailedCompactionJobQuery fromParameters(String queryParameters) {
+        if ("".equals(queryParameters)) {
+            return null;
+        }
         return new DetailedCompactionJobQuery(Arrays.asList(queryParameters.split(",")));
     }
 

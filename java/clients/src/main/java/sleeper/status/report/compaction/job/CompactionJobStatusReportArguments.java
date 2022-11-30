@@ -93,20 +93,12 @@ public class CompactionJobStatusReportArguments {
         return instanceId;
     }
 
-    public String getTableName() {
-        return tableName;
-    }
-
     public CompactionJobStatusReporter getReporter() {
         return reporter;
     }
 
     public QueryType getQueryType() {
         return queryType;
-    }
-
-    public boolean isPromptForQuery() {
-        return queryType == QueryType.PROMPT;
     }
 
     public CompactionJobQuery buildQuery(Clock clock, ConsoleInput input, ConsoleOutput output) {

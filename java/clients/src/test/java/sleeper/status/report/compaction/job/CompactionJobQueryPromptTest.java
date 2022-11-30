@@ -85,11 +85,11 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
         in.enterNextPrompts("d", queryParameters);
 
         // When
-        List<CompactionJobStatus> statuses = queryStatusByPrompt();
+        CompactionJobQuery query = queryByPrompt();
 
         // Then
         assertThat(out).hasToString(QUERY_TYPE_PROMPT + DETAILED_JOB_ID_PROMPT);
-        assertThat(statuses).isEmpty();
+        assertThat(query).isNull();
     }
 
     @Test
@@ -178,5 +178,9 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
 
     private List<CompactionJobStatus> queryStatusByPromptAtTime(Instant time) {
         return queryStatusesAtTime(QueryType.PROMPT, time);
+    }
+
+    private CompactionJobQuery queryByPrompt() {
+        return queryFrom(QueryType.PROMPT);
     }
 }

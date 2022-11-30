@@ -29,44 +29,14 @@ import sleeper.console.ConsoleOutput;
 import sleeper.status.report.compaction.job.CompactionJobQuery;
 import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
 import sleeper.status.report.compaction.job.CompactionJobStatusReporter;
-import sleeper.status.report.compaction.job.query.AllCompactionJobQuery;
-import sleeper.status.report.compaction.job.query.DetailedCompactionJobQuery;
-import sleeper.status.report.compaction.job.query.RangeCompactionJobQuery;
-import sleeper.status.report.compaction.job.query.UnfinishedCompactionJobQuery;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Clock;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Scanner;
-import java.util.TimeZone;
 
 public class CompactionJobStatusReport {
     private final CompactionJobStatusReportArguments arguments;
     private final CompactionJobStatusReporter compactionJobStatusReporter;
     private final CompactionJobStatusStore compactionJobStatusStore;
-    private static final String DATE_FORMAT = "yyyyMMddhhmmss";
-    private static final Instant DEFAULT_RANGE_START = Instant.now().minus(4L, ChronoUnit.HOURS);
-    private static final Instant DEFAULT_RANGE_END = Instant.now();
-
-    private static SimpleDateFormat createDateInputFormat() {
-        SimpleDateFormat dateInputFormat = new SimpleDateFormat(DATE_FORMAT);
-        dateInputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return dateInputFormat;
-    }
-
-    public static Instant parseDate(String input) throws ParseException {
-        return createDateInputFormat().parse(input).toInstant();
-    }
-
-    public static String formatDate(Instant input) {
-        return createDateInputFormat().format(Date.from(input));
-    }
 
     public CompactionJobStatusReport(
             CompactionJobStatusStore compactionJobStatusStore,
@@ -77,73 +47,13 @@ public class CompactionJobStatusReport {
     }
 
     public void run() {
-        CompactionJobQuery query;
-        if (arguments.isPromptForQuery()) {
-            query = promptForQuery();
-        } else {
-            query = arguments.buildQuery(Clock.systemUTC(),
-                    new ConsoleInput(System.console()),
-                    new ConsoleOutput(System.out));
-        }
+        CompactionJobQuery query = arguments.buildQuery(Clock.systemUTC(),
+                new ConsoleInput(System.console()),
+                new ConsoleOutput(System.out));
         if (query == null) {
             return;
         }
         compactionJobStatusReporter.report(query.run(compactionJobStatusStore), arguments.getQueryType());
-    }
-
-    private CompactionJobQuery promptForQuery() {
-        Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.displayName());
-        while (true) {
-            System.out.print("All (a), Detailed (d), range (r), or unfinished (u) query? ");
-            String type = scanner.nextLine();
-            if ("".equals(type)) {
-                return null;
-            }
-            if (type.equalsIgnoreCase("a")) {
-                return new AllCompactionJobQuery(arguments.getTableName());
-            } else if (type.equalsIgnoreCase("d")) {
-                System.out.print("Enter jobId to get detailed information about:");
-                String input = scanner.nextLine();
-                if ("".equals(input)) {
-                    return null;
-                }
-                return new DetailedCompactionJobQuery(Collections.singletonList(input));
-            } else if (type.equalsIgnoreCase("r")) {
-                Instant startTime = promptForStartRange(scanner);
-                Instant endTime = promptForEndRange(scanner);
-                return new RangeCompactionJobQuery(arguments.getTableName(), startTime, endTime);
-            } else if (type.equalsIgnoreCase("u")) {
-                return new UnfinishedCompactionJobQuery(arguments.getTableName());
-            }
-        }
-    }
-
-    private Instant promptForStartRange(Scanner scanner) {
-        return promptForRange(scanner, "start", DEFAULT_RANGE_START);
-    }
-
-    private Instant promptForEndRange(Scanner scanner) {
-        return promptForRange(scanner, "end", DEFAULT_RANGE_END);
-    }
-
-    private Instant promptForRange(Scanner scanner, String rangeName, Instant defaultRange) {
-        while (true) {
-            System.out.printf("Enter %s range in format %s (default is %s):",
-                    rangeName,
-                    DATE_FORMAT,
-                    formatDate(defaultRange));
-            String time = scanner.nextLine();
-            if ("".equals(time)) {
-                System.out.printf("Using default %s range %s%n", rangeName, formatDate(defaultRange));
-                break;
-            }
-            try {
-                return parseDate(time);
-            } catch (ParseException e) {
-                System.out.println("Error while parsing input string");
-            }
-        }
-        return defaultRange;
     }
 
     public static void main(String[] args) throws IOException {

@@ -56,12 +56,20 @@ public class CompactionJobQueryTestBase {
                 Clock.fixed(time, ZoneId.of("UTC")));
     }
 
+    protected CompactionJobQuery queryFrom(CompactionJobStatusReporter.QueryType queryType) {
+        return queryFrom(queryType, null, Clock.systemUTC());
+    }
+
     private List<CompactionJobStatus> queryStatuses(CompactionJobStatusReporter.QueryType queryType, String queryParameters, Clock clock) {
+        return queryFrom(queryType, queryParameters, clock).run(statusStore);
+    }
+
+    private CompactionJobQuery queryFrom(CompactionJobStatusReporter.QueryType queryType, String queryParameters, Clock clock) {
         return CompactionJobStatusReportArguments.builder()
                 .instanceId("test-instance").tableName(TABLE_NAME)
                 .reporter(new StandardCompactionJobStatusReporter())
                 .queryType(queryType)
                 .queryParameters(queryParameters)
-                .build().buildQuery(clock, in.consoleIn(), out.consoleOut()).run(statusStore);
+                .build().buildQuery(clock, in.consoleIn(), out.consoleOut());
     }
 }
