@@ -18,33 +18,25 @@ package sleeper.status.report.compaction.job;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.status.report.compaction.job.query.AllCompactionJobsQuery;
+import sleeper.status.report.compaction.job.query.UnfinishedCompactionJobsQuery;
 
-import java.util.Collections;
 import java.util.List;
 
 import static sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
 
-public class CompactionJobQuery {
-    private final String tableName;
-    private final QueryType queryType;
+public interface CompactionJobQuery {
 
-    private CompactionJobQuery(String tableName, QueryType queryType) {
-        this.tableName = tableName;
-        this.queryType = queryType;
-    }
-
-    public static CompactionJobQuery from(String tableName, QueryType queryType) {
-        return new CompactionJobQuery(tableName, queryType);
-    }
-
-    public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
+    static CompactionJobQuery from(String tableName, QueryType queryType) {
         switch (queryType) {
             case ALL:
-                return statusStore.getAllJobs(tableName);
+                return new AllCompactionJobsQuery(tableName);
             case UNFINISHED:
-                return statusStore.getUnfinishedJobs(tableName);
+                return new UnfinishedCompactionJobsQuery(tableName);
             default:
-                return Collections.emptyList();
+                throw new UnsupportedOperationException("Not implemented yet");
         }
     }
+
+    List<CompactionJobStatus> run(CompactionJobStatusStore statusStore);
 }
