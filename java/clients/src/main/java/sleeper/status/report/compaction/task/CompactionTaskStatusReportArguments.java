@@ -15,6 +15,8 @@
  */
 package sleeper.status.report.compaction.task;
 
+import java.io.PrintStream;
+
 import static sleeper.ClientUtils.optionalArgument;
 
 public class CompactionTaskStatusReportArguments {
@@ -42,6 +44,13 @@ public class CompactionTaskStatusReportArguments {
                 .map(CompactionTaskQuery::from)
                 .orElse(CompactionTaskQuery.ALL);
         return new CompactionTaskStatusReportArguments(args[0], reporter, query);
+    }
+
+    public static void printUsage(PrintStream out) {
+        out.println("Usage: <instance id> <report_type_standard_or_json> <optional_query_type>\n" +
+                "Query types are:\n" +
+                "-a (Return all tasks)\n" +
+                "-u (Unfinished tasks)");
     }
 
     public String getInstanceId() {

@@ -205,8 +205,8 @@ public class CompactionJobStatusReport {
         try {
             arguments = CompactionJobStatusReportArguments.from(args);
         } catch (IllegalArgumentException e) {
-            System.out.println(e.getMessage());
-            CompactionJobStatusReportArguments.printUsage(System.out);
+            System.err.println(e.getMessage());
+            CompactionJobStatusReportArguments.printUsage(System.err);
             System.exit(1);
             return;
         }

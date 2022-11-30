@@ -24,13 +24,10 @@ import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.status.report.compaction.task.CompactionTaskQuery;
+import sleeper.status.report.compaction.task.CompactionTaskStatusReportArguments;
 import sleeper.status.report.compaction.task.CompactionTaskStatusReporter;
-import sleeper.status.report.compaction.task.StandardCompactionTaskStatusReporter;
 
 import java.io.IOException;
-import java.io.PrintStream;
-
-import static sleeper.ClientUtils.optionalArgument;
 
 public class CompactionTaskStatusReport {
 
@@ -52,41 +49,21 @@ public class CompactionTaskStatusReport {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length < 1 || args.length > 3) {
-            System.out.println("Wrong number of arguments");
-            printUsage(System.out);
-            System.exit(1);
-            return;
-        }
-        String instanceId = args[0];
-        CompactionTaskStatusReporter reporter;
-        CompactionTaskQuery query;
+        CompactionTaskStatusReportArguments arguments;
         try {
-            reporter = optionalArgument(args, 1)
-                    .map(type -> CompactionTaskStatusReporter.from(type, System.out))
-                    .orElseGet(() -> new StandardCompactionTaskStatusReporter(System.out));
-            query = optionalArgument(args, 2)
-                    .map(CompactionTaskQuery::from)
-                    .orElse(CompactionTaskQuery.ALL);
+            arguments = CompactionTaskStatusReportArguments.fromArgs(args);
         } catch (IllegalArgumentException e) {
-            System.out.println(e.getMessage());
-            printUsage(System.out);
+            System.err.println(e.getMessage());
+            CompactionTaskStatusReportArguments.printUsage(System.err);
             System.exit(1);
             return;
         }
 
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
+        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, arguments.getInstanceId());
 
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         CompactionTaskStatusStore statusStore = DynamoDBCompactionTaskStatusStore.from(dynamoDBClient, instanceProperties);
-        new CompactionTaskStatusReport(statusStore, reporter, query).run();
-    }
-
-    private static void printUsage(PrintStream out) {
-        out.println("Usage: <instance id> <report_type_standard_or_json> <optional_query_type>\n" +
-                "Query types are:\n" +
-                "-a (Return all tasks)\n" +
-                "-u (Unfinished tasks)");
+        new CompactionTaskStatusReport(statusStore, arguments.getReporter(), arguments.getQuery()).run();
     }
 }
