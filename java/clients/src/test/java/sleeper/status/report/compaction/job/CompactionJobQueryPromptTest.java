@@ -31,13 +31,13 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
     public void shouldCreateAllQueryWithNoParameters() {
         // Given
         when(statusStore.getAllJobs(TABLE_NAME)).thenReturn(exampleStatusList);
-        consoleInput.enterNextPrompt("a");
+        in.enterNextPrompt("a");
 
         // When
         List<CompactionJobStatus> statuses = queryStatusByPrompt();
 
         // Then
-        assertThat(printStream).hasToString("All (a), Detailed (d), range (r), or unfinished (u) query? \n");
+        assertThat(out).hasToString("All (a), Detailed (d), range (r), or unfinished (u) query? \n");
         assertThat(statuses).isEqualTo(exampleStatusList);
     }
 
@@ -45,13 +45,13 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
     public void shouldCreateUnfinishedQueryWithNoParameters() {
         // Given
         when(statusStore.getUnfinishedJobs(TABLE_NAME)).thenReturn(exampleStatusList);
-        consoleInput.enterNextPrompt("u");
+        in.enterNextPrompt("u");
 
         // When
         List<CompactionJobStatus> statuses = queryStatusByPrompt();
 
         // Then
-        assertThat(printStream).hasToString("All (a), Detailed (d), range (r), or unfinished (u) query? \n");
+        assertThat(out).hasToString("All (a), Detailed (d), range (r), or unfinished (u) query? \n");
         assertThat(statuses).isEqualTo(exampleStatusList);
     }
 
@@ -61,13 +61,13 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
         String queryParameters = "job1,job2";
         when(statusStore.getJob("job1")).thenReturn(Optional.of(exampleStatus1));
         when(statusStore.getJob("job2")).thenReturn(Optional.of(exampleStatus2));
-        consoleInput.enterNextPrompts("d", queryParameters);
+        in.enterNextPrompts("d", queryParameters);
 
         // When
         List<CompactionJobStatus> statuses = queryStatusByPrompt();
 
         // Then
-        assertThat(printStream).hasToString("" +
+        assertThat(out).hasToString("" +
                 "All (a), Detailed (d), range (r), or unfinished (u) query? \n" +
                 "Enter jobId to get detailed information about: \n");
         assertThat(statuses).containsExactly(exampleStatus1, exampleStatus2);
@@ -77,13 +77,13 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
     public void shouldCreateDetailedQueryWithNoJobIds() {
         // Given
         String queryParameters = "";
-        consoleInput.enterNextPrompts("d", queryParameters);
+        in.enterNextPrompts("d", queryParameters);
 
         // When
         List<CompactionJobStatus> statuses = queryStatusByPrompt();
 
         // Then
-        assertThat(printStream).hasToString("" +
+        assertThat(out).hasToString("" +
                 "All (a), Detailed (d), range (r), or unfinished (u) query? \n" +
                 "Enter jobId to get detailed information about: \n");
         assertThat(statuses).isEmpty();

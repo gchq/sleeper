@@ -34,14 +34,14 @@ import static org.mockito.Mockito.mock;
 public class CompactionJobQueryTestBase {
     protected static final String TABLE_NAME = "test-table";
     protected final CompactionJobStatusStore statusStore = mock(CompactionJobStatusStore.class);
-    protected final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
+    private final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
     protected final CompactionJobStatus exampleStatus1 = TestCompactionJobStatus.created(
             dataHelper.singleFileCompaction(), Instant.parse("2022-09-22T13:33:12.001Z"));
     protected final CompactionJobStatus exampleStatus2 = TestCompactionJobStatus.created(
             dataHelper.singleFileCompaction(), Instant.parse("2022-09-22T13:53:12.001Z"));
     protected final List<CompactionJobStatus> exampleStatusList = Arrays.asList(exampleStatus1, exampleStatus2);
-    protected final ToStringPrintStream printStream = new ToStringPrintStream();
-    protected final TestConsoleInput consoleInput = new TestConsoleInput(printStream.consoleOut());
+    protected final ToStringPrintStream out = new ToStringPrintStream();
+    protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
 
     protected List<CompactionJobStatus> queryStatuses(CompactionJobStatusReporter.QueryType queryType) {
         return queryStatusesWithParams(queryType, null);
@@ -62,6 +62,6 @@ public class CompactionJobQueryTestBase {
                 .reporter(new StandardCompactionJobStatusReporter())
                 .queryType(queryType)
                 .queryParameters(queryParameters)
-                .build().buildQuery(clock, consoleInput.consoleIn(), printStream.consoleOut()).run(statusStore);
+                .build().buildQuery(clock, in.consoleIn(), out.consoleOut()).run(statusStore);
     }
 }
