@@ -39,9 +39,9 @@ public class CompactionJobStatusReporterRangeQueryTest extends CompactionJobStat
 
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(replaceStandardJobIds(statusList, example("reports/compactionjobstatus/standard/range/mixedJobs.txt")));
+                .isEqualTo(replaceStandardJobIds(statusList, example("reports/compaction/job/standard/range/mixedJobs.txt")));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/json/mixedJobs.json")));
+                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compaction/job/json/mixedJobs.json")));
     }
 
     @Test
@@ -51,9 +51,9 @@ public class CompactionJobStatusReporterRangeQueryTest extends CompactionJobStat
 
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(example("reports/compactionjobstatus/standard/range/noJobs.txt"));
+                .isEqualTo(example("reports/compaction/job/standard/range/noJobs.txt"));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(example("reports/compactionjobstatus/json/noJobs.json"));
+                .isEqualTo(example("reports/compaction/job/json/noJobs.json"));
     }
 
     @Test

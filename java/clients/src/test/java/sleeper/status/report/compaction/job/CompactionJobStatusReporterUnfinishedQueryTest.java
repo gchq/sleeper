@@ -37,10 +37,10 @@ public class CompactionJobStatusReporterUnfinishedQueryTest extends CompactionJo
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
                 .isEqualTo(replaceStandardJobIds(statusList,
-                        example("reports/compactionjobstatus/standard/unfinished/mixedUnfinishedJobs.txt")));
+                        example("reports/compaction/job/standard/unfinished/mixedUnfinishedJobs.txt")));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
                 .isEqualTo(replaceBracketedJobIds(statusList,
-                        example("reports/compactionjobstatus/json/mixedUnfinishedJobs.json")));
+                        example("reports/compaction/job/json/mixedUnfinishedJobs.json")));
     }
 
     @Test
@@ -50,8 +50,8 @@ public class CompactionJobStatusReporterUnfinishedQueryTest extends CompactionJo
 
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/noJobs.txt"));
+                .isEqualTo(example("reports/compaction/job/standard/unfinished/noJobs.txt"));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/json/noJobs.json"));
+                .isEqualTo(example("reports/compaction/job/json/noJobs.json"));
     }
 }
