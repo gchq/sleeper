@@ -29,6 +29,8 @@ public class CompactionTaskStatusReportArgumentsTest {
 
         // Then
         assertThat(arguments.getInstanceId()).isEqualTo("test-instance");
+        assertThat(arguments.getReporter()).isInstanceOf(StandardCompactionTaskStatusReporter.class);
+        assertThat(arguments.getQuery()).isSameAs(CompactionTaskQuery.ALL);
     }
 
     @Test

@@ -33,4 +33,12 @@ public class CompactionTaskStatusReportArguments {
     public String getInstanceId() {
         return instanceId;
     }
+
+    public CompactionTaskStatusReporter getReporter() {
+        return new StandardCompactionTaskStatusReporter(System.out);
+    }
+
+    public CompactionTaskQuery getQuery() {
+        return CompactionTaskQuery.ALL;
+    }
 }
