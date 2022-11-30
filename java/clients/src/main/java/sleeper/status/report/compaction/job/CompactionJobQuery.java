@@ -41,7 +41,7 @@ public interface CompactionJobQuery {
             case RANGE:
                 return RangeCompactionJobQuery.fromParameters(tableName, queryParameters, clock);
             default:
-                throw new UnsupportedOperationException("Not implemented yet");
+                throw new IllegalArgumentException("Unexpected query type: " + queryType);
         }
     }
 

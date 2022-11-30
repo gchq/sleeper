@@ -22,26 +22,27 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import sleeper.ClientUtils;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.status.report.compaction.job.CompactionJobQuery;
 import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
 import sleeper.status.report.compaction.job.CompactionJobStatusReporter;
-import sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
+import sleeper.status.report.compaction.job.query.AllCompactionJobQuery;
+import sleeper.status.report.compaction.job.query.DetailedCompactionJobQuery;
+import sleeper.status.report.compaction.job.query.RangeCompactionJobQuery;
+import sleeper.status.report.compaction.job.query.UnfinishedCompactionJobQuery;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Date;
-import java.util.List;
-import java.util.Optional;
 import java.util.Scanner;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
 
 public class CompactionJobStatusReport {
     private final CompactionJobStatusReportArguments arguments;
@@ -74,77 +75,43 @@ public class CompactionJobStatusReport {
     }
 
     public void run() {
-        switch (arguments.getQueryType()) {
-            case PROMPT:
-                runWithPrompts();
-                break;
-            case UNFINISHED:
-                handleUnfinishedQuery();
-                break;
-            case DETAILED:
-                List<String> jobIds = Collections.singletonList(arguments.getQueryParameters());
-                handleDetailedQuery(jobIds);
-                break;
-            case RANGE:
-                Instant startRange;
-                Instant endRange;
-                try {
-                    startRange = parseDate(arguments.getQueryParameters().split(",")[0]);
-                    endRange = parseDate(arguments.getQueryParameters().split(",")[1]);
-                } catch (ParseException e) {
-                    System.out.println("Error while parsing input string, using system defaults (past 4 hours)");
-                    startRange = DEFAULT_RANGE_START;
-                    endRange = DEFAULT_RANGE_END;
-                }
-                handleRangeQuery(startRange, endRange);
-                break;
-            case ALL:
-                handleAllQuery();
-                break;
-            default:
-                throw new IllegalArgumentException("Unexpected query type: " + arguments.getQueryType());
+        CompactionJobQuery query;
+        if (arguments.isPromptForQuery()) {
+            query = promptForQuery();
+        } else {
+            query = arguments.buildQuery(Clock.systemUTC());
         }
+        if (query == null) {
+            return;
+        }
+        compactionJobStatusReporter.report(query.run(compactionJobStatusStore), arguments.getQueryType());
     }
 
-    private void runWithPrompts() {
+    private CompactionJobQuery promptForQuery() {
         Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.displayName());
         while (true) {
             System.out.print("All (a), Detailed (d), range (r), or unfinished (u) query? ");
             String type = scanner.nextLine();
             if ("".equals(type)) {
-                break;
+                return null;
             }
             if (type.equalsIgnoreCase("a")) {
-                handleAllQuery();
+                return new AllCompactionJobQuery(arguments.getTableName());
             } else if (type.equalsIgnoreCase("d")) {
-                handleDetailedQuery(scanner);
+                System.out.print("Enter jobId to get detailed information about:");
+                String input = scanner.nextLine();
+                if ("".equals(input)) {
+                    return null;
+                }
+                return new DetailedCompactionJobQuery(Collections.singletonList(input));
             } else if (type.equalsIgnoreCase("r")) {
-                handleRangeQuery(scanner);
+                Instant startTime = promptForStartRange(scanner);
+                Instant endTime = promptForEndRange(scanner);
+                return new RangeCompactionJobQuery(arguments.getTableName(), startTime, endTime);
             } else if (type.equalsIgnoreCase("u")) {
-                handleUnfinishedQuery();
+                return new UnfinishedCompactionJobQuery(arguments.getTableName());
             }
         }
-    }
-
-    public void handleUnfinishedQuery() {
-        List<CompactionJobStatus> statusList = compactionJobStatusStore.getUnfinishedJobs(arguments.getTableName());
-        compactionJobStatusReporter.report(statusList, QueryType.UNFINISHED);
-    }
-
-    public void handleRangeQuery(Scanner scanner) {
-        Instant startTime = promptForStartRange(scanner);
-        Instant endTime = promptForEndRange(scanner);
-        handleRangeQuery(startTime, endTime);
-    }
-
-    public void handleRangeQuery(Instant startRange, Instant endRange) {
-        if (startRange.isAfter(endRange)) {
-            System.out.println("Start range provided is before end range. Using system defaults (past 4 hours)");
-            startRange = DEFAULT_RANGE_START;
-            endRange = DEFAULT_RANGE_END;
-        }
-        List<CompactionJobStatus> statusList = compactionJobStatusStore.getJobsInTimePeriod(arguments.getTableName(), startRange, endRange);
-        compactionJobStatusReporter.report(statusList, QueryType.RANGE);
     }
 
     private Instant promptForStartRange(Scanner scanner) {
@@ -173,31 +140,6 @@ public class CompactionJobStatusReport {
             }
         }
         return defaultRange;
-    }
-
-    public void handleDetailedQuery(Scanner scanner) {
-        List<String> jobIds;
-
-        System.out.print("Enter jobId to get detailed information about:");
-        String input = scanner.nextLine();
-        if ("".equals(input)) {
-            return;
-        }
-        jobIds = Collections.singletonList(input);
-
-        handleDetailedQuery(jobIds);
-    }
-
-    public void handleDetailedQuery(List<String> jobIds) {
-        List<CompactionJobStatus> statusList = jobIds.stream().map(compactionJobStatusStore::getJob)
-                .filter(Optional::isPresent).map(Optional::get)
-                .collect(Collectors.toList());
-        compactionJobStatusReporter.report(statusList, QueryType.DETAILED);
-    }
-
-    public void handleAllQuery() {
-        List<CompactionJobStatus> statusList = compactionJobStatusStore.getAllJobs(arguments.getTableName());
-        compactionJobStatusReporter.report(statusList, QueryType.ALL);
     }
 
     public static void main(String[] args) throws IOException {

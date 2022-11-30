@@ -87,6 +87,16 @@ public class CompactionJobQueryTest {
     }
 
     @Test
+    public void shouldFailDetailedQueryWithNoJobIds() {
+        // Given
+        QueryType queryType = QueryType.DETAILED;
+
+        // When
+        assertThatThrownBy(() -> queryStatuses(queryType))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     public void shouldCreateRangeQueryWithSpecifiedDates() {
         // Given
         QueryType queryType = QueryType.RANGE;
@@ -142,6 +152,11 @@ public class CompactionJobQueryTest {
     }
 
     private List<CompactionJobStatus> queryStatuses(QueryType queryType, String queryParameters, Clock clock) {
-        return CompactionJobQuery.from(tableName, queryType, queryParameters, clock).run(statusStore);
+        return CompactionJobStatusReportArguments.builder()
+                .instanceId("test-instance").tableName(tableName)
+                .reporter(new StandardCompactionJobStatusReporter())
+                .queryType(queryType)
+                .queryParameters(queryParameters)
+                .build().buildQuery(clock).run(statusStore);
     }
 }

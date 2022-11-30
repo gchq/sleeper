@@ -30,7 +30,7 @@ public interface CompactionJobStatusReporter {
         UNFINISHED;
 
         boolean isParametersRequired() {
-            return this == DETAILED || this == RANGE;
+            return this == DETAILED;
         }
     }
 

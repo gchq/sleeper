@@ -18,6 +18,7 @@ package sleeper.status.report.compaction.job;
 import sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
 
 import java.io.PrintStream;
+import java.time.Clock;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -102,8 +103,12 @@ public class CompactionJobStatusReportArguments {
         return queryType;
     }
 
-    public String getQueryParameters() {
-        return queryParameters;
+    public boolean isPromptForQuery() {
+        return queryType == QueryType.PROMPT;
+    }
+
+    public CompactionJobQuery buildQuery(Clock clock) {
+        return CompactionJobQuery.from(tableName, queryType, queryParameters, clock);
     }
 
     private static CompactionJobStatusReporter getReporter(String[] args, int index) {
