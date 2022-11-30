@@ -25,7 +25,6 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.status.report.compaction.job.CompactionJobStatusCollector;
 import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
 import sleeper.status.report.compaction.job.CompactionJobStatusReporter;
 import sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
@@ -39,13 +38,15 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 public class CompactionJobStatusReport {
     private final CompactionJobStatusReportArguments arguments;
     private final CompactionJobStatusReporter compactionJobStatusReporter;
-    private final CompactionJobStatusCollector compactionJobStatusCollector;
+    private final CompactionJobStatusStore compactionJobStatusStore;
     private static final String DATE_FORMAT = "yyyyMMddhhmmss";
     private static final Instant DEFAULT_RANGE_START = Instant.now().minus(4L, ChronoUnit.HOURS);
     private static final Instant DEFAULT_RANGE_END = Instant.now();
@@ -68,7 +69,7 @@ public class CompactionJobStatusReport {
             CompactionJobStatusStore compactionJobStatusStore,
             CompactionJobStatusReportArguments arguments) {
         this.arguments = arguments;
-        this.compactionJobStatusCollector = new CompactionJobStatusCollector(compactionJobStatusStore, arguments.getTableName());
+        this.compactionJobStatusStore = compactionJobStatusStore;
         this.compactionJobStatusReporter = arguments.getReporter();
     }
 
@@ -126,7 +127,7 @@ public class CompactionJobStatusReport {
     }
 
     public void handleUnfinishedQuery() {
-        List<CompactionJobStatus> statusList = compactionJobStatusCollector.runUnfinishedQuery();
+        List<CompactionJobStatus> statusList = compactionJobStatusStore.getUnfinishedJobs(arguments.getTableName());
         compactionJobStatusReporter.report(statusList, QueryType.UNFINISHED);
     }
 
@@ -142,7 +143,7 @@ public class CompactionJobStatusReport {
             startRange = DEFAULT_RANGE_START;
             endRange = DEFAULT_RANGE_END;
         }
-        List<CompactionJobStatus> statusList = compactionJobStatusCollector.runRangeQuery(startRange, endRange);
+        List<CompactionJobStatus> statusList = compactionJobStatusStore.getJobsInTimePeriod(arguments.getTableName(), startRange, endRange);
         compactionJobStatusReporter.report(statusList, QueryType.RANGE);
     }
 
@@ -188,12 +189,14 @@ public class CompactionJobStatusReport {
     }
 
     public void handleDetailedQuery(List<String> jobIds) {
-        List<CompactionJobStatus> statusList = compactionJobStatusCollector.runDetailedQuery(jobIds);
+        List<CompactionJobStatus> statusList = jobIds.stream().map(compactionJobStatusStore::getJob)
+                .filter(Optional::isPresent).map(Optional::get)
+                .collect(Collectors.toList());
         compactionJobStatusReporter.report(statusList, QueryType.DETAILED);
     }
 
     public void handleAllQuery() {
-        List<CompactionJobStatus> statusList = compactionJobStatusCollector.runAllQuery();
+        List<CompactionJobStatus> statusList = compactionJobStatusStore.getAllJobs(arguments.getTableName());
         compactionJobStatusReporter.report(statusList, QueryType.ALL);
     }
 
