@@ -71,8 +71,7 @@ public class CompactionJobStatusReporterRangeQueryTest extends CompactionJobStat
 
         // Then
         assertThat(parsedDatePST)
-                .isEqualTo(dateUTC);
-        assertThat(parsedDatePST)
+                .isEqualTo(dateUTC)
                 .isNotEqualTo(datePST);
     }
 }

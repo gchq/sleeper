@@ -18,7 +18,6 @@ package sleeper.status.report.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.status.report.StatusReporterTestHelper;
 import sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
 
 import java.util.Collections;
@@ -37,9 +36,11 @@ public class CompactionJobStatusReporterUnfinishedQueryTest extends CompactionJo
 
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
-                .isEqualTo(StatusReporterTestHelper.replaceStandardJobIds(statusList, example("reports/compactionjobstatus/standard/unfinished/mixedUnfinishedJobs.txt")));
+                .isEqualTo(replaceStandardJobIds(statusList,
+                        example("reports/compactionjobstatus/standard/unfinished/mixedUnfinishedJobs.txt")));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
-                .isEqualTo(StatusReporterTestHelper.replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/json/mixedUnfinishedJobs.json")));
+                .isEqualTo(replaceBracketedJobIds(statusList,
+                        example("reports/compactionjobstatus/json/mixedUnfinishedJobs.json")));
     }
 
     @Test
