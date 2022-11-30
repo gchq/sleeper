@@ -49,6 +49,19 @@ public class CompactionJobQueryTest {
         assertThat(query.run(statusStore)).isEqualTo(exampleStatusList);
     }
 
+    @Test
+    public void shouldCreateUnfinishedQueryWithNoParameters() {
+        // Given
+        QueryType queryType = QueryType.UNFINISHED;
+        when(statusStore.getUnfinishedJobs(tableName)).thenReturn(exampleStatusList);
+
+        // When
+        CompactionJobQuery query = CompactionJobQuery.from(tableName, queryType);
+
+        // Then
+        assertThat(query.run(statusStore)).isEqualTo(exampleStatusList);
+    }
+
     private List<CompactionJobStatus> exampleStatusList() {
         CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
         return Arrays.asList(

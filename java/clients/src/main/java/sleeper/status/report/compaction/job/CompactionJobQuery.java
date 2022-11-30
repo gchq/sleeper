@@ -38,9 +38,13 @@ public class CompactionJobQuery {
     }
 
     public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
-        if (queryType.equals(QueryType.ALL)) {
-            return statusStore.getAllJobs(tableName);
+        switch (queryType) {
+            case ALL:
+                return statusStore.getAllJobs(tableName);
+            case UNFINISHED:
+                return statusStore.getUnfinishedJobs(tableName);
+            default:
+                return Collections.emptyList();
         }
-        return Collections.emptyList();
     }
 }
