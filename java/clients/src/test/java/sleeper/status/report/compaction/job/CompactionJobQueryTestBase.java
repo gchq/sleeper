@@ -16,10 +16,12 @@
 
 package sleeper.status.report.compaction.job;
 
+import sleeper.ToStringPrintStream;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.TestCompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.console.TestConsoleInput;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -38,6 +40,8 @@ public class CompactionJobQueryTestBase {
     protected final CompactionJobStatus exampleStatus2 = TestCompactionJobStatus.created(
             dataHelper.singleFileCompaction(), Instant.parse("2022-09-22T13:53:12.001Z"));
     protected final List<CompactionJobStatus> exampleStatusList = Arrays.asList(exampleStatus1, exampleStatus2);
+    protected final ToStringPrintStream printStream = new ToStringPrintStream();
+    protected final TestConsoleInput consoleInput = new TestConsoleInput(printStream.consoleOut());
 
     protected List<CompactionJobStatus> queryStatuses(CompactionJobStatusReporter.QueryType queryType) {
         return queryStatusesWithParams(queryType, null);
@@ -58,6 +62,6 @@ public class CompactionJobQueryTestBase {
                 .reporter(new StandardCompactionJobStatusReporter())
                 .queryType(queryType)
                 .queryParameters(queryParameters)
-                .build().buildQuery(clock).run(statusStore);
+                .build().buildQuery(clock, consoleInput.consoleIn(), printStream.consoleOut()).run(statusStore);
     }
 }
