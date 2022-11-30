@@ -19,6 +19,7 @@ package sleeper.status.report.compaction.job;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.status.report.compaction.job.query.AllCompactionJobsQuery;
+import sleeper.status.report.compaction.job.query.DetailedCompactionJobsQuery;
 import sleeper.status.report.compaction.job.query.UnfinishedCompactionJobsQuery;
 
 import java.util.List;
@@ -27,12 +28,14 @@ import static sleeper.status.report.compaction.job.CompactionJobStatusReporter.Q
 
 public interface CompactionJobQuery {
 
-    static CompactionJobQuery from(String tableName, QueryType queryType) {
+    static CompactionJobQuery from(String tableName, QueryType queryType, String queryParameters) {
         switch (queryType) {
             case ALL:
                 return new AllCompactionJobsQuery(tableName);
             case UNFINISHED:
                 return new UnfinishedCompactionJobsQuery(tableName);
+            case DETAILED:
+                return DetailedCompactionJobsQuery.fromParameters(queryParameters);
             default:
                 throw new UnsupportedOperationException("Not implemented yet");
         }

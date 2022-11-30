@@ -25,6 +25,7 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -34,7 +35,12 @@ import static sleeper.status.report.compaction.job.CompactionJobStatusReporter.Q
 public class CompactionJobQueryTest {
     private static final String tableName = "test-table";
     private final CompactionJobStatusStore statusStore = mock(CompactionJobStatusStore.class);
-    private final List<CompactionJobStatus> exampleStatusList = exampleStatusList();
+    private final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
+    private final CompactionJobStatus exampleStatus1 = TestCompactionJobStatus.created(
+            dataHelper.singleFileCompaction(), Instant.parse("2022-09-22T13:33:12.001Z"));
+    private final CompactionJobStatus exampleStatus2 = TestCompactionJobStatus.created(
+            dataHelper.singleFileCompaction(), Instant.parse("2022-09-22T13:53:12.001Z"));
+    private final List<CompactionJobStatus> exampleStatusList = Arrays.asList(exampleStatus1, exampleStatus2);
 
     @Test
     public void shouldCreateAllQueryWithNoParameters() {
@@ -43,7 +49,7 @@ public class CompactionJobQueryTest {
         when(statusStore.getAllJobs(tableName)).thenReturn(exampleStatusList);
 
         // When
-        CompactionJobQuery query = CompactionJobQuery.from(tableName, queryType);
+        CompactionJobQuery query = queryFrom(queryType);
 
         // Then
         assertThat(query.run(statusStore)).isEqualTo(exampleStatusList);
@@ -56,19 +62,32 @@ public class CompactionJobQueryTest {
         when(statusStore.getUnfinishedJobs(tableName)).thenReturn(exampleStatusList);
 
         // When
-        CompactionJobQuery query = CompactionJobQuery.from(tableName, queryType);
+        CompactionJobQuery query = queryFrom(queryType);
 
         // Then
         assertThat(query.run(statusStore)).isEqualTo(exampleStatusList);
     }
 
-    private List<CompactionJobStatus> exampleStatusList() {
-        CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
-        return Arrays.asList(
-                TestCompactionJobStatus.created(dataHelper.singleFileCompaction(),
-                        Instant.parse("2022-09-22T13:33:12.001Z")),
-                TestCompactionJobStatus.created(dataHelper.singleFileCompaction(),
-                        Instant.parse("2022-09-22T13:53:12.001Z"))
-        );
+    @Test
+    public void shouldCreateDetailedQueryWithSpecifiedJobIds() {
+        // Given
+        QueryType queryType = QueryType.DETAILED;
+        String queryParameters = "job1,job2";
+        when(statusStore.getJob("job1")).thenReturn(Optional.of(exampleStatus1));
+        when(statusStore.getJob("job2")).thenReturn(Optional.of(exampleStatus2));
+
+        // When
+        CompactionJobQuery query = queryFrom(queryType, queryParameters);
+
+        // Then
+        assertThat(query.run(statusStore)).containsExactly(exampleStatus1, exampleStatus2);
+    }
+
+    private CompactionJobQuery queryFrom(QueryType queryType) {
+        return queryFrom(queryType, null);
+    }
+
+    private CompactionJobQuery queryFrom(QueryType queryType, String queryParameters) {
+        return CompactionJobQuery.from(tableName, queryType, queryParameters);
     }
 }
