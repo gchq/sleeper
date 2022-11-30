@@ -37,8 +37,7 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
         List<CompactionJobStatus> statuses = queryStatusByPrompt();
 
         // Then
-        assertThat(printStream.toString())
-                .isEqualTo("All (a), Detailed (d), range (r), or unfinished (u) query? \n");
+        assertThat(printStream).hasToString("All (a), Detailed (d), range (r), or unfinished (u) query? \n");
         assertThat(statuses).isEqualTo(exampleStatusList);
     }
 
@@ -52,8 +51,7 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
         List<CompactionJobStatus> statuses = queryStatusByPrompt();
 
         // Then
-        assertThat(printStream.toString())
-                .isEqualTo("All (a), Detailed (d), range (r), or unfinished (u) query? \n");
+        assertThat(printStream).hasToString("All (a), Detailed (d), range (r), or unfinished (u) query? \n");
         assertThat(statuses).isEqualTo(exampleStatusList);
     }
 
@@ -69,9 +67,9 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
         List<CompactionJobStatus> statuses = queryStatusByPrompt();
 
         // Then
-        assertThat(printStream.toString())
-                .isEqualTo("All (a), Detailed (d), range (r), or unfinished (u) query? \n" +
-                        "Enter jobId to get detailed information about: \n");
+        assertThat(printStream).hasToString("" +
+                "All (a), Detailed (d), range (r), or unfinished (u) query? \n" +
+                "Enter jobId to get detailed information about: \n");
         assertThat(statuses).containsExactly(exampleStatus1, exampleStatus2);
     }
 
@@ -85,9 +83,9 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
         List<CompactionJobStatus> statuses = queryStatusByPrompt();
 
         // Then
-        assertThat(printStream.toString())
-                .isEqualTo("All (a), Detailed (d), range (r), or unfinished (u) query? \n" +
-                        "Enter jobId to get detailed information about: \n");
+        assertThat(printStream).hasToString("" +
+                "All (a), Detailed (d), range (r), or unfinished (u) query? \n" +
+                "Enter jobId to get detailed information about: \n");
         assertThat(statuses).isEmpty();
     }
 
