@@ -21,6 +21,8 @@ import sleeper.status.report.compaction.job.CompactionJobQuery;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.TimeZone;
@@ -39,10 +41,16 @@ public class RangeCompactionJobQuery implements CompactionJobQuery {
         this.end = end;
     }
 
-    public static RangeCompactionJobQuery fromParameters(String tableName, String queryParameters) {
-        Instant start = parseDate(queryParameters.split(",")[0]);
-        Instant end = parseDate(queryParameters.split(",")[1]);
-        return new RangeCompactionJobQuery(tableName, start, end);
+    public static RangeCompactionJobQuery fromParameters(String tableName, String queryParameters, Clock clock) {
+        if (queryParameters == null) {
+            Instant end = clock.instant();
+            Instant start = end.minus(Duration.ofHours(4));
+            return new RangeCompactionJobQuery(tableName, start, end);
+        } else {
+            Instant start = parseDate(queryParameters.split(",")[0]);
+            Instant end = parseDate(queryParameters.split(",")[1]);
+            return new RangeCompactionJobQuery(tableName, start, end);
+        }
     }
 
     @Override

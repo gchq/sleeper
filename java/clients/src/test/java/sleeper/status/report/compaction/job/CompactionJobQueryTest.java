@@ -22,7 +22,9 @@ import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.TestCompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -77,7 +79,7 @@ public class CompactionJobQueryTest {
         when(statusStore.getJob("job2")).thenReturn(Optional.of(exampleStatus2));
 
         // When
-        List<CompactionJobStatus> statuses = queryStatuses(queryType, queryParameters);
+        List<CompactionJobStatus> statuses = queryStatusesWithParams(queryType, queryParameters);
 
         // Then
         assertThat(statuses).containsExactly(exampleStatus1, exampleStatus2);
@@ -93,17 +95,41 @@ public class CompactionJobQueryTest {
         when(statusStore.getJobsInTimePeriod(tableName, start, end)).thenReturn(exampleStatusList);
 
         // When
-        List<CompactionJobStatus> statuses = queryStatuses(queryType, queryParameters);
+        List<CompactionJobStatus> statuses = queryStatusesWithParams(queryType, queryParameters);
+
+        // Then
+        assertThat(statuses).isEqualTo(exampleStatusList);
+    }
+
+    @Test
+    public void shouldCreateRangeQueryWithDefaultDates() {
+        // Given
+        QueryType queryType = QueryType.RANGE;
+        Instant start = Instant.parse("2022-11-30T07:54:42.000Z");
+        Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
+        when(statusStore.getJobsInTimePeriod(tableName, start, end)).thenReturn(exampleStatusList);
+
+        // When
+        List<CompactionJobStatus> statuses = queryStatusesAtTime(queryType, end);
 
         // Then
         assertThat(statuses).isEqualTo(exampleStatusList);
     }
 
     private List<CompactionJobStatus> queryStatuses(QueryType queryType) {
-        return queryStatuses(queryType, null);
+        return queryStatusesWithParams(queryType, null);
     }
 
-    private List<CompactionJobStatus> queryStatuses(QueryType queryType, String queryParameters) {
-        return CompactionJobQuery.from(tableName, queryType, queryParameters).run(statusStore);
+    private List<CompactionJobStatus> queryStatusesWithParams(QueryType queryType, String queryParameters) {
+        return queryStatuses(queryType, queryParameters, Clock.systemUTC());
+    }
+
+    private List<CompactionJobStatus> queryStatusesAtTime(QueryType queryType, Instant time) {
+        return queryStatuses(queryType, null,
+                Clock.fixed(time, ZoneId.of("UTC")));
+    }
+
+    private List<CompactionJobStatus> queryStatuses(QueryType queryType, String queryParameters, Clock clock) {
+        return CompactionJobQuery.from(tableName, queryType, queryParameters, clock).run(statusStore);
     }
 }
