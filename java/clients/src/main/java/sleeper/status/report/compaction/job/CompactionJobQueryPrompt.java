@@ -40,9 +40,7 @@ public class CompactionJobQueryPrompt {
             String jobIds = in.promptLine("Enter jobId to get detailed information about: ");
             return DetailedCompactionJobQuery.fromParameters(jobIds);
         } else if (type.equalsIgnoreCase("r")) {
-            String start = in.promptLine("Enter range start in format " + RangeCompactionJobQuery.DATE_FORMAT + " (default is 4 hours ago): ");
-            String end = in.promptLine("Enter range end in format " + RangeCompactionJobQuery.DATE_FORMAT + " (default is now): ");
-            return RangeCompactionJobQuery.fromParameters(tableName, start, end, clock);
+            return RangeCompactionJobQuery.prompt(tableName, in, clock);
         }
         return null;
     }

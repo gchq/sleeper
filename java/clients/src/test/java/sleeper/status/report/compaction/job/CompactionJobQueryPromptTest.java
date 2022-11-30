@@ -108,7 +108,75 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
         assertThat(statuses).isEqualTo(exampleStatusList);
     }
 
+    @Test
+    public void shouldCreateRangeQueryWithDefaultEndTime() {
+        // Given
+        Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
+        Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
+        when(statusStore.getJobsInTimePeriod(TABLE_NAME, start, end)).thenReturn(exampleStatusList);
+        in.enterNextPrompts("r", "20221123115442", "");
+
+        // When
+        List<CompactionJobStatus> statuses = queryStatusByPromptAtTime(end);
+
+        // Then
+        assertThat(out).hasToString(QUERY_TYPE_PROMPT + RANGE_START_PROMPT + RANGE_END_PROMPT);
+        assertThat(statuses).isEqualTo(exampleStatusList);
+    }
+
+    @Test
+    public void shouldCreateRangeQueryWithDefaultStartTime() {
+        // Given
+        Instant start = Instant.parse("2022-11-30T07:54:42.000Z");
+        Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
+        when(statusStore.getJobsInTimePeriod(TABLE_NAME, start, end)).thenReturn(exampleStatusList);
+        in.enterNextPrompts("r", "", "20221130115442");
+
+        // When
+        List<CompactionJobStatus> statuses = queryStatusByPromptAtTime(end);
+
+        // Then
+        assertThat(out).hasToString(QUERY_TYPE_PROMPT + RANGE_START_PROMPT + RANGE_END_PROMPT);
+        assertThat(statuses).isEqualTo(exampleStatusList);
+    }
+
+    @Test
+    public void shouldRepeatRangeQueryPromptWithInvalidStartTime() {
+        // Given
+        Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
+        Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
+        when(statusStore.getJobsInTimePeriod(TABLE_NAME, start, end)).thenReturn(exampleStatusList);
+        in.enterNextPrompts("r", "abc", "20221123115442", "20221130115442");
+
+        // When
+        List<CompactionJobStatus> statuses = queryStatusByPromptAtTime(end);
+
+        // Then
+        assertThat(out).hasToString(QUERY_TYPE_PROMPT + RANGE_START_PROMPT + RANGE_START_PROMPT + RANGE_END_PROMPT);
+        assertThat(statuses).isEqualTo(exampleStatusList);
+    }
+
+    @Test
+    public void shouldRepeatRangeQueryPromptWithInvalidEndTime() {
+        // Given
+        Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
+        Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
+        when(statusStore.getJobsInTimePeriod(TABLE_NAME, start, end)).thenReturn(exampleStatusList);
+        in.enterNextPrompts("r", "20221123115442", "abc", "20221130115442");
+
+        // When
+        List<CompactionJobStatus> statuses = queryStatusByPromptAtTime(end);
+
+        // Then
+        assertThat(out).hasToString(QUERY_TYPE_PROMPT + RANGE_START_PROMPT + RANGE_END_PROMPT + RANGE_END_PROMPT);
+        assertThat(statuses).isEqualTo(exampleStatusList);
+    }
+
     private List<CompactionJobStatus> queryStatusByPrompt() {
         return queryStatuses(QueryType.PROMPT);
+    }
+
+    private List<CompactionJobStatus> queryStatusByPromptAtTime(Instant time) {
+        return queryStatusesAtTime(QueryType.PROMPT, time);
     }
 }

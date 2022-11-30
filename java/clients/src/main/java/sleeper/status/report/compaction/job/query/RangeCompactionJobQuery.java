@@ -17,6 +17,7 @@ package sleeper.status.report.compaction.job.query;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.console.ConsoleInput;
 import sleeper.status.report.compaction.job.CompactionJobQuery;
 
 import java.text.ParseException;
@@ -26,6 +27,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.function.Supplier;
 
 public class RangeCompactionJobQuery implements CompactionJobQuery {
 
@@ -51,14 +53,42 @@ public class RangeCompactionJobQuery implements CompactionJobQuery {
             return new RangeCompactionJobQuery(tableName, start, end);
         } else {
             String[] parts = queryParameters.split(",");
-            return fromParameters(tableName, parts[0], parts[1], clock);
+            Instant start = parseStart(parts[0], clock);
+            Instant end = parseEnd(parts[1], clock);
+            return new RangeCompactionJobQuery(tableName, start, end);
         }
     }
 
-    public static RangeCompactionJobQuery fromParameters(String tableName, String startStr, String endStr, Clock clock) {
-        Instant start = parseDate(startStr);
-        Instant end = parseDate(endStr);
+    public static RangeCompactionJobQuery prompt(String tableName, ConsoleInput in, Clock clock) {
+        Instant start = promptStart(in, clock);
+        Instant end = promptEnd(in, clock);
         return new RangeCompactionJobQuery(tableName, start, end);
+    }
+
+    private static Instant promptStart(ConsoleInput in, Clock clock) {
+        String str = in.promptLine("Enter range start in format " + DATE_FORMAT + " (default is 4 hours ago): ");
+        try {
+            return parseStart(str, clock);
+        } catch (IllegalArgumentException e) {
+            return promptStart(in, clock);
+        }
+    }
+
+    private static Instant promptEnd(ConsoleInput in, Clock clock) {
+        String str = in.promptLine("Enter range end in format " + DATE_FORMAT + " (default is now): ");
+        try {
+            return parseEnd(str, clock);
+        } catch (IllegalArgumentException e) {
+            return promptEnd(in, clock);
+        }
+    }
+
+    public static Instant parseStart(String startStr, Clock clock) {
+        return parseDate(startStr, () -> clock.instant().minus(Duration.ofHours(4)));
+    }
+
+    public static Instant parseEnd(String endStr, Clock clock) {
+        return parseDate(endStr, clock::instant);
     }
 
     @Override
@@ -66,7 +96,10 @@ public class RangeCompactionJobQuery implements CompactionJobQuery {
         return statusStore.getJobsInTimePeriod(tableName, start, end);
     }
 
-    private static Instant parseDate(String input) {
+    private static Instant parseDate(String input, Supplier<Instant> getDefault) {
+        if ("".equals(input)) {
+            return getDefault.get();
+        }
         try {
             return createDateInputFormat().parse(input).toInstant();
         } catch (ParseException e) {
