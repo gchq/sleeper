@@ -46,7 +46,7 @@ public class RangeCompactionJobQuery implements CompactionJobQuery {
         this.end = end;
     }
 
-    public static RangeCompactionJobQuery fromParameters(String tableName, String queryParameters, Clock clock) {
+    public static CompactionJobQuery fromParameters(String tableName, String queryParameters, Clock clock) {
         if (queryParameters == null) {
             Instant end = clock.instant();
             Instant start = end.minus(Duration.ofHours(4));
@@ -59,10 +59,15 @@ public class RangeCompactionJobQuery implements CompactionJobQuery {
         }
     }
 
-    public static RangeCompactionJobQuery prompt(String tableName, ConsoleInput in, Clock clock) {
+    public static CompactionJobQuery prompt(String tableName, ConsoleInput in, Clock clock) {
         Instant start = promptStart(in, clock);
         Instant end = promptEnd(in, clock);
         return new RangeCompactionJobQuery(tableName, start, end);
+    }
+
+    @Override
+    public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
+        return statusStore.getJobsInTimePeriod(tableName, start, end);
     }
 
     private static Instant promptStart(ConsoleInput in, Clock clock) {
@@ -83,17 +88,12 @@ public class RangeCompactionJobQuery implements CompactionJobQuery {
         }
     }
 
-    public static Instant parseStart(String startStr, Clock clock) {
+    private static Instant parseStart(String startStr, Clock clock) {
         return parseDate(startStr, () -> clock.instant().minus(Duration.ofHours(4)));
     }
 
-    public static Instant parseEnd(String endStr, Clock clock) {
+    private static Instant parseEnd(String endStr, Clock clock) {
         return parseDate(endStr, clock::instant);
-    }
-
-    @Override
-    public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
-        return statusStore.getJobsInTimePeriod(tableName, start, end);
     }
 
     private static Instant parseDate(String input, Supplier<Instant> getDefault) {
