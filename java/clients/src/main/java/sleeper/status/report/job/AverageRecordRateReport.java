@@ -27,12 +27,12 @@ public class AverageRecordRateReport {
     }
 
     public static void printf(String format, AverageRecordRate average, PrintStream out) {
-        if (average.getJobCount() < 1) {
+        if (average.getRunCount() < 1) {
             return;
         }
         String rateString = String.format("%s read/s, %s write/s",
-                formatDecimal(average.getAverageJobRecordsReadPerSecond()),
-                formatDecimal(average.getAverageJobRecordsWrittenPerSecond()));
+                formatDecimal(average.getAverageRunRecordsReadPerSecond()),
+                formatDecimal(average.getAverageRunRecordsWrittenPerSecond()));
         out.printf(format, rateString);
     }
 }

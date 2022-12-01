@@ -15,46 +15,79 @@
  */
 package sleeper.core.record.process;
 
+import sleeper.core.record.process.status.ProcessRun;
+
 import java.util.stream.Stream;
 
 public class AverageRecordRate {
 
-    private final int jobCount;
+    private final int runCount;
+    private final long recordsRead;
+    private final long recordsWritten;
+    private final double totalDurationInSeconds;
     private final double recordsReadPerSecond;
     private final double recordsWrittenPerSecond;
+    private final double averageJobRecordsReadPerSecond;
+    private final double averageJobRecordsWrittenPerSecond;
 
     private AverageRecordRate(Builder builder) {
-        jobCount = builder.jobCount;
-        recordsReadPerSecond = builder.totalRecordsReadPerSecond / builder.jobCount;
-        recordsWrittenPerSecond = builder.totalRecordsWrittenPerSecond / builder.jobCount;
+        runCount = builder.runCount;
+        recordsRead = builder.recordsRead;
+        recordsWritten = builder.recordsWritten;
+        totalDurationInSeconds = builder.totalDurationInSeconds;
+        recordsReadPerSecond = recordsRead / totalDurationInSeconds;
+        recordsWrittenPerSecond = recordsWritten / totalDurationInSeconds;
+        averageJobRecordsReadPerSecond = builder.totalRecordsReadPerSecond / runCount;
+        averageJobRecordsWrittenPerSecond = builder.totalRecordsWrittenPerSecond / runCount;
     }
 
-    public static AverageRecordRate of(RecordsProcessedSummary... summaries) {
-        return of(Stream.of(summaries));
-    }
-
-    public static AverageRecordRate of(Stream<RecordsProcessedSummary> summaries) {
-        return builder().summaries(summaries).build();
+    public static AverageRecordRate of(Stream<ProcessRun> runs) {
+        return builder().summaries(runs
+                .filter(ProcessRun::isFinished)
+                .map(ProcessRun::getFinishedSummary)).build();
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public int getJobCount() {
-        return jobCount;
+    public int getRunCount() {
+        return runCount;
     }
 
-    public double getAverageJobRecordsReadPerSecond() {
+    public long getRecordsRead() {
+        return recordsRead;
+    }
+
+    public long getRecordsWritten() {
+        return recordsWritten;
+    }
+
+    public double getTotalDurationInSeconds() {
+        return totalDurationInSeconds;
+    }
+
+    public double getRecordsReadPerSecond() {
         return recordsReadPerSecond;
     }
 
-    public double getAverageJobRecordsWrittenPerSecond() {
+    public double getRecordsWrittenPerSecond() {
         return recordsWrittenPerSecond;
     }
 
+    public double getAverageRunRecordsReadPerSecond() {
+        return averageJobRecordsReadPerSecond;
+    }
+
+    public double getAverageRunRecordsWrittenPerSecond() {
+        return averageJobRecordsWrittenPerSecond;
+    }
+
     public static final class Builder {
-        private int jobCount;
+        private int runCount;
+        private long recordsRead;
+        private long recordsWritten;
+        private double totalDurationInSeconds;
         private double totalRecordsReadPerSecond;
         private double totalRecordsWrittenPerSecond;
 
@@ -67,7 +100,10 @@ public class AverageRecordRate {
         }
 
         public Builder summary(RecordsProcessedSummary summary) {
-            jobCount++;
+            runCount++;
+            recordsRead += summary.getLinesRead();
+            recordsWritten += summary.getLinesWritten();
+            totalDurationInSeconds += summary.getDurationInSeconds();
             totalRecordsReadPerSecond += summary.getRecordsReadPerSecond();
             totalRecordsWrittenPerSecond += summary.getRecordsWrittenPerSecond();
             return this;
