@@ -48,30 +48,40 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
         out.println();
         out.println("Compaction Task Status Report");
         out.println("-----------------------------");
-        List<CompactionTaskStatus> standardTasks = standardTasks(tasks);
-        List<CompactionTaskStatus> splittingTasks = splittingTasks(tasks);
         if (query == CompactionTaskQuery.UNFINISHED) {
-            out.printf("Total tasks in progress: %s%n", tasks.size());
-            out.printf("Total standard tasks in progress: %s%n", standardTasks.size());
-            out.printf("Total splitting tasks in progress: %s%n", splittingTasks.size());
-        } else {
-            out.printf("Total tasks: %s%n", tasks.size());
-            out.println();
-            out.printf("Total standard tasks: %s%n", standardTasks.size());
-            out.printf("Total standard tasks in progress: %s%n", standardTasks.stream().filter(task -> !task.isFinished()).count());
-            out.printf("Total standard tasks finished: %s%n", standardTasks.stream().filter(CompactionTaskStatus::isFinished).count());
-            AverageRecordRateReport.printf("Average standard compaction rate: %s%n", recordRate(standardTasks), out);
-            out.println();
-            out.printf("Total splitting tasks: %s%n", splittingTasks.size());
-            out.printf("Total splitting tasks in progress: %s%n", splittingTasks.stream().filter(task -> !task.isFinished()).count());
-            out.printf("Total splitting tasks finished: %s%n", splittingTasks.stream().filter(CompactionTaskStatus::isFinished).count());
-            AverageRecordRateReport.printf("Average splitting compaction rate: %s%n", recordRate(splittingTasks), out);
+            printUnfinishedSummary(tasks);
+        } else if (query == CompactionTaskQuery.ALL) {
+            printAllSummary(tasks);
         }
 
         tableWriterFactory.tableBuilder()
                 .showFields(query != CompactionTaskQuery.UNFINISHED, processRunReporter.getFinishedFields())
                 .itemsAndWriter(tasks, this::writeRow)
                 .build().write(out);
+    }
+
+    private void printUnfinishedSummary(List<CompactionTaskStatus> tasks) {
+        List<CompactionTaskStatus> standardTasks = standardTasks(tasks);
+        List<CompactionTaskStatus> splittingTasks = splittingTasks(tasks);
+        out.printf("Total tasks in progress: %s%n", tasks.size());
+        out.printf("Total standard tasks in progress: %s%n", standardTasks.size());
+        out.printf("Total splitting tasks in progress: %s%n", splittingTasks.size());
+    }
+
+    private void printAllSummary(List<CompactionTaskStatus> tasks) {
+        List<CompactionTaskStatus> standardTasks = standardTasks(tasks);
+        List<CompactionTaskStatus> splittingTasks = splittingTasks(tasks);
+        out.printf("Total tasks: %s%n", tasks.size());
+        out.println();
+        out.printf("Total standard tasks: %s%n", standardTasks.size());
+        out.printf("Total standard tasks in progress: %s%n", standardTasks.stream().filter(task -> !task.isFinished()).count());
+        out.printf("Total standard tasks finished: %s%n", standardTasks.stream().filter(CompactionTaskStatus::isFinished).count());
+        AverageRecordRateReport.printf("Average standard compaction rate: %s%n", recordRate(standardTasks), out);
+        out.println();
+        out.printf("Total splitting tasks: %s%n", splittingTasks.size());
+        out.printf("Total splitting tasks in progress: %s%n", splittingTasks.stream().filter(task -> !task.isFinished()).count());
+        out.printf("Total splitting tasks finished: %s%n", splittingTasks.stream().filter(CompactionTaskStatus::isFinished).count());
+        AverageRecordRateReport.printf("Average splitting compaction rate: %s%n", recordRate(splittingTasks), out);
     }
 
     private static List<CompactionTaskStatus> standardTasks(List<CompactionTaskStatus> tasks) {
