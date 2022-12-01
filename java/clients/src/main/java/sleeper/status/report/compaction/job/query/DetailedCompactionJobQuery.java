@@ -16,7 +16,6 @@
 package sleeper.status.report.compaction.job.query;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.status.report.compaction.job.CompactionJobQuery;
 
 import java.util.Arrays;
@@ -24,7 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class DetailedCompactionJobQuery implements CompactionJobQuery {
+public class DetailedCompactionJobQuery {
 
     private final List<String> jobIds;
 
@@ -32,18 +31,18 @@ public class DetailedCompactionJobQuery implements CompactionJobQuery {
         this.jobIds = jobIds;
     }
 
+    public CompactionJobQuery forCompaction() {
+        return (CompactionJobStatusStore store) -> jobIds.stream()
+                .map(store::getJob)
+                .filter(Optional::isPresent).map(Optional::get)
+                .collect(Collectors.toList());
+    }
+
     public static CompactionJobQuery fromParameters(String queryParameters) {
         if ("".equals(queryParameters)) {
             return null;
         }
-        return new DetailedCompactionJobQuery(Arrays.asList(queryParameters.split(",")));
+        return new DetailedCompactionJobQuery(Arrays.asList(queryParameters.split(","))).forCompaction();
     }
 
-    @Override
-    public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
-        return jobIds.stream()
-                .map(statusStore::getJob)
-                .filter(Optional::isPresent).map(Optional::get)
-                .collect(Collectors.toList());
-    }
 }

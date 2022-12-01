@@ -34,9 +34,9 @@ public class CompactionJobQueryPrompt {
         if ("".equals(type)) {
             return null;
         } else if (type.equalsIgnoreCase("a")) {
-            return new AllCompactionJobQuery(tableName);
+            return new AllCompactionJobQuery(tableName).forCompaction();
         } else if (type.equalsIgnoreCase("u")) {
-            return new UnfinishedCompactionJobQuery(tableName);
+            return new UnfinishedCompactionJobQuery(tableName).forCompaction();
         } else if (type.equalsIgnoreCase("d")) {
             String jobIds = in.promptLine("Enter jobId to get detailed information about: ");
             return DetailedCompactionJobQuery.fromParameters(jobIds);

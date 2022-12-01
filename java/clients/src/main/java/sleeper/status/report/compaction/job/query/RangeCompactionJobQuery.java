@@ -16,7 +16,6 @@
 package sleeper.status.report.compaction.job.query;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.console.ConsoleInput;
 import sleeper.status.report.compaction.job.CompactionJobQuery;
 
@@ -25,11 +24,10 @@ import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.TimeZone;
 import java.util.function.Supplier;
 
-public class RangeCompactionJobQuery implements CompactionJobQuery {
+public class RangeCompactionJobQuery {
 
     public static final String DATE_FORMAT = "yyyyMMddHHmmss";
 
@@ -46,28 +44,27 @@ public class RangeCompactionJobQuery implements CompactionJobQuery {
         this.end = end;
     }
 
+    public CompactionJobQuery forCompaction() {
+        return (CompactionJobStatusStore store) -> store.getJobsInTimePeriod(tableName, start, end);
+    }
+
     public static CompactionJobQuery fromParameters(String tableName, String queryParameters, Clock clock) {
         if (queryParameters == null) {
             Instant end = clock.instant();
             Instant start = end.minus(Duration.ofHours(4));
-            return new RangeCompactionJobQuery(tableName, start, end);
+            return new RangeCompactionJobQuery(tableName, start, end).forCompaction();
         } else {
             String[] parts = queryParameters.split(",");
             Instant start = parseStart(parts[0], clock);
             Instant end = parseEnd(parts[1], clock);
-            return new RangeCompactionJobQuery(tableName, start, end);
+            return new RangeCompactionJobQuery(tableName, start, end).forCompaction();
         }
     }
 
     public static CompactionJobQuery prompt(String tableName, ConsoleInput in, Clock clock) {
         Instant start = promptStart(in, clock);
         Instant end = promptEnd(in, clock);
-        return new RangeCompactionJobQuery(tableName, start, end);
-    }
-
-    @Override
-    public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
-        return statusStore.getJobsInTimePeriod(tableName, start, end);
+        return new RangeCompactionJobQuery(tableName, start, end).forCompaction();
     }
 
     private static Instant promptStart(ConsoleInput in, Clock clock) {

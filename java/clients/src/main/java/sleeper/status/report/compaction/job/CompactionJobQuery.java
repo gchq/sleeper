@@ -33,9 +33,9 @@ public interface CompactionJobQuery {
     static CompactionJobQuery from(String tableName, QueryType queryType, String queryParameters, Clock clock) {
         switch (queryType) {
             case ALL:
-                return new AllCompactionJobQuery(tableName);
+                return new AllCompactionJobQuery(tableName).forCompaction();
             case UNFINISHED:
-                return new UnfinishedCompactionJobQuery(tableName);
+                return new UnfinishedCompactionJobQuery(tableName).forCompaction();
             case DETAILED:
                 return DetailedCompactionJobQuery.fromParameters(queryParameters);
             case RANGE:
