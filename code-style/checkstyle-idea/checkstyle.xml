@@ -20,7 +20,7 @@
 
 <module name="Checker">
     <module name="SuppressionFilter">
-        <property name="file" value="./.idea/checkstyle-suppressions.xml"/>
+        <property name="file" value="./code-style/checkstyle-idea/checkstyle-suppressions.xml"/>
         <property name="optional" value="false"/>
     </module>
     <module name="Translation">
