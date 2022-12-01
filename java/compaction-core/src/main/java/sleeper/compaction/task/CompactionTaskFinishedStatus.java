@@ -17,6 +17,7 @@
 package sleeper.compaction.task;
 
 import sleeper.core.record.process.AverageRecordRate;
+import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
@@ -71,6 +72,12 @@ public class CompactionTaskFinishedStatus {
 
     public double getRecordsWrittenPerSecond() {
         return recordsWrittenPerSecond;
+    }
+
+    public RecordsProcessedSummary asSummary(Instant startTime) {
+        return new RecordsProcessedSummary(
+                new RecordsProcessed(totalRecordsRead, totalRecordsWritten),
+                startTime, finishTime);
     }
 
     @Override

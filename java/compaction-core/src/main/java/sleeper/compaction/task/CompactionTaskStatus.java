@@ -16,6 +16,10 @@
 
 package sleeper.compaction.task;
 
+import sleeper.core.record.process.status.ProcessFinishedStatus;
+import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessStartedStatus;
+
 import java.time.Instant;
 import java.util.Objects;
 
@@ -75,6 +79,22 @@ public class CompactionTaskStatus {
 
     public boolean isFinished() {
         return finishedStatus != null;
+    }
+
+    public ProcessRun asProcessRun() {
+        return ProcessRun.builder().taskId(taskId)
+                .startedStatus(ProcessStartedStatus.updateAndStartTime(getStartTime(), getStartTime()))
+                .finishedStatus(asProcessFinishedStatus())
+                .build();
+    }
+
+    private ProcessFinishedStatus asProcessFinishedStatus() {
+        if (finishedStatus == null) {
+            return null;
+        }
+        return ProcessFinishedStatus.updateTimeAndSummary(
+                finishedStatus.getFinishTime(),
+                finishedStatus.asSummary(getStartTime()));
     }
 
     @Override
