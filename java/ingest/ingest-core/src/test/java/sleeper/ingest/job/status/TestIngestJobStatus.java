@@ -23,6 +23,9 @@ import java.time.Instant;
 
 public class TestIngestJobStatus {
 
+    private TestIngestJobStatus() {
+    }
+
     public static IngestJobStatus started(IngestJob ingestJob, String taskId, Instant updateTime, Instant startTime) {
         return from(ingestJob)
                 .jobRun(ProcessRun.started(taskId,
