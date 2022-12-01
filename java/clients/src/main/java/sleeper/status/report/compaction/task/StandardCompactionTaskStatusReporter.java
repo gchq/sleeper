@@ -55,7 +55,7 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
         }
 
         tableWriterFactory.tableBuilder()
-                .showFields(query != CompactionTaskQuery.UNFINISHED, processRunReporter.getFinishedFields())
+                .showFields(processRunReporter.getFinishedFields(), query != CompactionTaskQuery.UNFINISHED)
                 .itemsAndWriter(tasks, this::writeRow)
                 .build().write(out);
     }

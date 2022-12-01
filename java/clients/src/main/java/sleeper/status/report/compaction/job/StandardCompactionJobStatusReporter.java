@@ -69,7 +69,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         printSummary(jobStatusList, queryType);
         if (!queryType.equals(JobQuery.Type.DETAILED)) {
             tableFactory.tableBuilder()
-                    .showFields(queryType != JobQuery.Type.UNFINISHED, runReporter.getFinishedFields())
+                    .showFields(runReporter.getFinishedFields(), queryType != JobQuery.Type.UNFINISHED)
                     .itemsAndSplittingWriter(jobStatusList, this::writeJob)
                     .build().write(out);
         }
