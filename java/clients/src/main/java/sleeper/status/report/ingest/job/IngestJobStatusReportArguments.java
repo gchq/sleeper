@@ -16,6 +16,7 @@
 
 package sleeper.status.report.ingest.job;
 
+import sleeper.status.report.query.JobQuery;
 import sleeper.status.report.query.JobQueryArgument;
 
 import java.io.PrintStream;
@@ -24,7 +25,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.ClientUtils.optionalArgument;
-import static sleeper.status.report.ingest.job.IngestJobStatusReporter.QueryType;
 
 public class IngestJobStatusReportArguments {
     private static final String DEFAULT_REPORTER = "STANDARD";
@@ -38,7 +38,7 @@ public class IngestJobStatusReportArguments {
     private final String instanceId;
     private final String tableName;
     private final IngestJobStatusReporter reporter;
-    private final QueryType queryType;
+    private final JobQuery.Type queryType;
     private final String queryParameters;
 
     private IngestJobStatusReportArguments(Builder builder) {
@@ -65,7 +65,7 @@ public class IngestJobStatusReportArguments {
                 .instanceId(args[0])
                 .tableName(args[1])
                 .reporter(getReporter(args, 2))
-                .queryType(JobQueryArgument.readTypeArgument(args, 3).forIngest())
+                .queryType(JobQueryArgument.readTypeArgument(args, 3))
                 .queryParameters(optionalArgument(args, 4).orElse(null))
                 .build();
     }
@@ -92,7 +92,7 @@ public class IngestJobStatusReportArguments {
         return reporter;
     }
 
-    public QueryType getQueryType() {
+    public JobQuery.Type getQueryType() {
         return queryType;
     }
 
@@ -108,7 +108,7 @@ public class IngestJobStatusReportArguments {
         private String instanceId;
         private String tableName;
         private IngestJobStatusReporter reporter;
-        private QueryType queryType;
+        private JobQuery.Type queryType;
         private String queryParameters;
 
         private Builder() {
@@ -129,7 +129,7 @@ public class IngestJobStatusReportArguments {
             return this;
         }
 
-        public Builder queryType(QueryType queryType) {
+        public Builder queryType(JobQuery.Type queryType) {
             this.queryType = queryType;
             return this;
         }
