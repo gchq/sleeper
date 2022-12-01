@@ -17,6 +17,7 @@
 package sleeper.status.report.ingest.job;
 
 import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.status.report.query.JobQuery;
 
 import java.util.List;
 
@@ -30,7 +31,11 @@ public interface IngestJobStatusReporter {
         boolean isParametersRequired() {
             return this == DETAILED;
         }
+
+        public JobQuery.Type forJob() {
+            return JobQuery.Type.valueOf(toString());
+        }
     }
 
-    void report(List<IngestJobStatus> jobStatusList, QueryType queryType, int numberInQueue);
+    void report(List<IngestJobStatus> jobStatusList, JobQuery.Type queryType, int numberInQueue);
 }

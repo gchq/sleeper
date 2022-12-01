@@ -23,6 +23,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.status.report.query.JobQuery;
 
 import java.io.PrintStream;
 import java.time.Instant;
@@ -45,7 +46,7 @@ public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
     }
 
     @Override
-    public void report(List<IngestJobStatus> statusList, QueryType queryType, int numberInQueue) {
+    public void report(List<IngestJobStatus> statusList, JobQuery.Type queryType, int numberInQueue) {
         out.println(gson.toJson(createJsonReport(statusList, numberInQueue)));
     }
 

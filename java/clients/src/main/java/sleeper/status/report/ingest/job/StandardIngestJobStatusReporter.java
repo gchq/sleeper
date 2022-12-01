@@ -20,6 +20,7 @@ import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.status.report.StandardProcessStatusReporter;
+import sleeper.status.report.query.JobQuery;
 import sleeper.status.report.table.TableField;
 import sleeper.status.report.table.TableRow;
 import sleeper.status.report.table.TableWriter;
@@ -56,7 +57,8 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         tableFactory = tableFactoryBuilder.build();
     }
 
-    public void report(List<IngestJobStatus> statusList, QueryType query, int numberInQueue) {
+    public void report(List<IngestJobStatus> statusList, JobQuery.Type jobQuery, int numberInQueue) {
+        QueryType query = jobQuery.forIngest();
         out.println();
         out.println("Ingest Job Status Report");
         out.println("------------------------");

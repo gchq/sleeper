@@ -17,9 +17,9 @@
 package sleeper.status.report.ingest.job;
 
 import org.junit.Test;
+import sleeper.status.report.query.JobQuery;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.status.report.ingest.job.IngestJobStatusReporter.QueryType;
 
 public class IngestJobStatusReportArgumentsTest {
     @Test
@@ -28,7 +28,7 @@ public class IngestJobStatusReportArgumentsTest {
                 .usingRecursiveComparison()
                 .isEqualTo(IngestJobStatusReportArguments.builder()
                         .instanceId("test-instance").tableName("test-table")
-                        .queryType(QueryType.PROMPT)
+                        .queryType(JobQuery.Type.PROMPT)
                         .reporter(new StandardIngestJobStatusReporter(System.out))
                         .build());
     }

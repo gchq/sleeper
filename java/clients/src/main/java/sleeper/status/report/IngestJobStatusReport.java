@@ -31,6 +31,7 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.job.common.CommonJobUtils;
 import sleeper.status.report.ingest.job.IngestJobStatusReportArguments;
 import sleeper.status.report.ingest.job.IngestJobStatusReporter;
+import sleeper.status.report.query.JobQuery;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -41,7 +42,6 @@ import java.util.Scanner;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.status.report.ingest.job.IngestJobStatusReporter.QueryType;
 
 public class IngestJobStatusReport {
     private final IngestJobStatusStore statusStore;
@@ -102,7 +102,7 @@ public class IngestJobStatusReport {
 
     public void handleAllQuery() {
         List<IngestJobStatus> statusList = statusStore.getAllJobs(arguments.getTableName());
-        ingestJobStatusReporter.report(statusList, QueryType.ALL, getNumberOfMessagesInQueue());
+        ingestJobStatusReporter.report(statusList, JobQuery.Type.ALL, getNumberOfMessagesInQueue());
     }
 
     public void handleDetailedQuery(Scanner scanner) {
@@ -122,12 +122,12 @@ public class IngestJobStatusReport {
         List<IngestJobStatus> statusList = jobIds.stream().map(statusStore::getJob)
                 .filter(Optional::isPresent).map(Optional::get)
                 .collect(Collectors.toList());
-        ingestJobStatusReporter.report(statusList, QueryType.DETAILED, getNumberOfMessagesInQueue());
+        ingestJobStatusReporter.report(statusList, JobQuery.Type.DETAILED, getNumberOfMessagesInQueue());
     }
 
     public void handleUnfinishedQuery() {
         List<IngestJobStatus> statusList = statusStore.getUnfinishedJobs(arguments.getTableName());
-        ingestJobStatusReporter.report(statusList, QueryType.UNFINISHED, getNumberOfMessagesInQueue());
+        ingestJobStatusReporter.report(statusList, JobQuery.Type.UNFINISHED, getNumberOfMessagesInQueue());
     }
 
     private int getNumberOfMessagesInQueue() {

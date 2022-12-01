@@ -37,13 +37,13 @@ public class IngestJobStatusReporterTestHelper {
 
     public static String getStandardReport(QueryType query, List<IngestJobStatus> statusList, int numberInQueue) {
         ToStringPrintStream output = new ToStringPrintStream();
-        new StandardIngestJobStatusReporter(output.getPrintStream()).report(statusList, query, numberInQueue);
+        new StandardIngestJobStatusReporter(output.getPrintStream()).report(statusList, query.forJob(), numberInQueue);
         return output.toString();
     }
 
     public static String getJsonReport(QueryType query, List<IngestJobStatus> statusList, int numberInQueue) {
         ToStringPrintStream output = new ToStringPrintStream();
-        new JsonIngestJobStatusReporter(output.getPrintStream()).report(statusList, query, numberInQueue);
+        new JsonIngestJobStatusReporter(output.getPrintStream()).report(statusList, query.forJob(), numberInQueue);
         return output.toString();
     }
 }
