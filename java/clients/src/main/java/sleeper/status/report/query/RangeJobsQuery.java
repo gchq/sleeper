@@ -16,14 +16,15 @@
 package sleeper.status.report.query;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.console.ConsoleInput;
-import sleeper.status.report.compaction.job.CompactionJobQuery;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.function.Supplier;
 
@@ -45,8 +46,8 @@ public class RangeJobsQuery implements JobQuery {
     }
 
     @Override
-    public CompactionJobQuery forCompaction() {
-        return (CompactionJobStatusStore store) -> store.getJobsInTimePeriod(tableName, start, end);
+    public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
+        return statusStore.getJobsInTimePeriod(tableName, start, end);
     }
 
     public static JobQuery fromParameters(String tableName, String queryParameters, Clock clock) {

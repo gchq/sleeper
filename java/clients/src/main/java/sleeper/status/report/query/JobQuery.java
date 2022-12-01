@@ -15,14 +15,16 @@
  */
 package sleeper.status.report.query;
 
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.console.ConsoleInput;
-import sleeper.status.report.compaction.job.CompactionJobQuery;
 
 import java.time.Clock;
+import java.util.List;
 
 public interface JobQuery {
 
-    CompactionJobQuery forCompaction();
+    List<CompactionJobStatus> run(CompactionJobStatusStore statusStore);
 
     static JobQuery from(String tableName, Type queryType, String queryParameters, Clock clock) {
         switch (queryType) {

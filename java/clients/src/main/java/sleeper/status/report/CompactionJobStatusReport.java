@@ -52,7 +52,7 @@ public class CompactionJobStatusReport {
             return;
         }
         compactionJobStatusReporter.report(
-                query.forCompaction().run(compactionJobStatusStore),
+                query.run(compactionJobStatusStore),
                 arguments.getQueryType());
     }
 

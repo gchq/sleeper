@@ -64,7 +64,7 @@ public class JobQueryTestBase {
     }
 
     private List<CompactionJobStatus> queryStatuses(Type queryType, String queryParameters, Clock clock) {
-        return queryFrom(queryType, queryParameters, clock).forCompaction().run(statusStore);
+        return queryFrom(queryType, queryParameters, clock).run(statusStore);
     }
 
     private JobQuery queryFrom(Type queryType, String queryParameters, Clock clock) {

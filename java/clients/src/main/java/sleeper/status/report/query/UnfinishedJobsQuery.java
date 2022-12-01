@@ -16,7 +16,9 @@
 package sleeper.status.report.query;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.status.report.compaction.job.CompactionJobQuery;
+import sleeper.compaction.job.status.CompactionJobStatus;
+
+import java.util.List;
 
 public class UnfinishedJobsQuery implements JobQuery {
     private final String tableName;
@@ -26,7 +28,7 @@ public class UnfinishedJobsQuery implements JobQuery {
     }
 
     @Override
-    public CompactionJobQuery forCompaction() {
-        return (CompactionJobStatusStore store) -> store.getUnfinishedJobs(tableName);
+    public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
+        return statusStore.getUnfinishedJobs(tableName);
     }
 }
