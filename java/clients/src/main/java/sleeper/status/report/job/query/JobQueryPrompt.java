@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.status.report.query;
+package sleeper.status.report.job.query;
 
 import sleeper.console.ConsoleInput;
 

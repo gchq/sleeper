@@ -19,8 +19,9 @@ package sleeper.status.report.ingest.job;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.ingest.job.status.IngestJobStatus;
-import sleeper.status.report.StandardProcessStatusReporter;
-import sleeper.status.report.query.JobQuery;
+import sleeper.status.report.job.AverageRecordRateReport;
+import sleeper.status.report.job.StandardProcessRunReporter;
+import sleeper.status.report.job.query.JobQuery;
 import sleeper.status.report.table.TableField;
 import sleeper.status.report.table.TableRow;
 import sleeper.status.report.table.TableWriter;
@@ -29,9 +30,8 @@ import sleeper.status.report.table.TableWriterFactory;
 import java.io.PrintStream;
 import java.util.List;
 
-import static sleeper.status.report.StandardProcessStatusReporter.STATE_FINISHED;
-import static sleeper.status.report.StandardProcessStatusReporter.STATE_IN_PROGRESS;
-import static sleeper.status.report.StandardProcessStatusReporter.formatDecimal;
+import static sleeper.status.report.job.StandardProcessRunReporter.STATE_FINISHED;
+import static sleeper.status.report.job.StandardProcessRunReporter.STATE_IN_PROGRESS;
 
 public class StandardIngestJobStatusReporter implements IngestJobStatusReporter {
 
@@ -39,7 +39,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     private final TableField jobIdField;
     private final TableField totalFilesField;
     private final TableWriterFactory tableFactory;
-    private final StandardProcessStatusReporter standardProcessStatusReporter;
+    private final StandardProcessRunReporter runReporter;
 
     private final PrintStream out;
 
@@ -53,7 +53,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         stateField = tableFactoryBuilder.addField("STATE");
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
         totalFilesField = tableFactoryBuilder.fieldBuilder("TOTAL_FILES").alignRight().build();
-        standardProcessStatusReporter = new StandardProcessStatusReporter(out, tableFactoryBuilder);
+        runReporter = new StandardProcessRunReporter(out, tableFactoryBuilder);
         tableFactory = tableFactoryBuilder.build();
     }
 
@@ -64,7 +64,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         printSummary(statusList, query, numberInQueue);
         if (!query.equals(JobQuery.Type.DETAILED)) {
             tableFactory.tableBuilder()
-                    .showFields(query != JobQuery.Type.UNFINISHED, standardProcessStatusReporter.getFinishedFields())
+                    .showFields(query != JobQuery.Type.UNFINISHED, runReporter.getFinishedFields())
                     .itemsAndSplittingWriter(statusList, this::writeJob)
                     .build().write(out);
         }
@@ -101,30 +101,19 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         out.printf("State: %s%n", status.isFinished() ? STATE_FINISHED : STATE_IN_PROGRESS);
         out.printf("Number of input files: %d%n", status.getInputFilesCount());
         for (ProcessRun run : status.getJobRuns()) {
-            standardProcessStatusReporter.printProcessJobRun(run);
+            runReporter.printProcessJobRun(run);
         }
     }
 
     private void printAllSummary(List<IngestJobStatus> statusList, int numberInQueue) {
         printUnfinishedSummary(statusList, numberInQueue);
         out.printf("Total jobs finished: %s%n", statusList.stream().filter(IngestJobStatus::isFinished).count());
-        printAverageIngestRate("Average ingest rate: %s%n", statusList);
+        AverageRecordRateReport.printf("Average ingest rate: %s%n", recordRate(statusList), out);
     }
 
     private void printUnfinishedSummary(List<IngestJobStatus> statusList, int numberInQueue) {
         out.printf("Total jobs waiting in queue (excluded from report): %s%n", numberInQueue);
         out.printf("Total jobs in progress: %s%n", statusList.stream().filter(status -> !status.isFinished()).count());
-    }
-
-    private void printAverageIngestRate(String formatString, List<IngestJobStatus> jobs) {
-        AverageRecordRate average = recordRate(jobs);
-        if (average.getJobCount() < 1) {
-            return;
-        }
-        String rateString = String.format("%s read/s, %s write/s",
-                formatDecimal(average.getRecordsReadPerSecond()),
-                formatDecimal(average.getRecordsWrittenPerSecond()));
-        out.printf(formatString, rateString);
     }
 
     private static AverageRecordRate recordRate(List<IngestJobStatus> jobs) {
@@ -137,8 +126,8 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     private void writeJob(IngestJobStatus job, TableWriter.Builder table) {
         job.getJobRuns().forEach(run -> table.row(row -> {
             writeJobFields(job, row);
-            row.value(stateField, StandardProcessStatusReporter.getState(run));
-            standardProcessStatusReporter.writeRunFields(run, row);
+            row.value(stateField, StandardProcessRunReporter.getState(run));
+            runReporter.writeRunFields(run, row);
         }));
 
     }

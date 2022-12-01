@@ -24,7 +24,8 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.console.TestConsoleInput;
 import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
 import sleeper.status.report.compaction.job.StandardCompactionJobStatusReporter;
-import sleeper.status.report.query.JobQuery.Type;
+import sleeper.status.report.job.query.JobQuery;
+import sleeper.status.report.job.query.JobQuery.Type;
 
 import java.time.Clock;
 import java.time.Instant;

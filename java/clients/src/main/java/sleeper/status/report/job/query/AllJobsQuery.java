@@ -13,49 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.status.report.query;
+package sleeper.status.report.job.query;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
-public class DetailedJobsQuery implements JobQuery {
+public class AllJobsQuery implements JobQuery {
+    private final String tableName;
 
-    private final List<String> jobIds;
-
-    public DetailedJobsQuery(List<String> jobIds) {
-        this.jobIds = jobIds;
+    public AllJobsQuery(String tableName) {
+        this.tableName = tableName;
     }
 
     @Override
     public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
-        return run(statusStore::getJob);
+        return statusStore.getAllJobs(tableName);
     }
 
     @Override
     public List<IngestJobStatus> run(IngestJobStatusStore statusStore) {
-        return run(statusStore::getJob);
+        return statusStore.getAllJobs(tableName);
     }
-
-    private <T> List<T> run(Function<String, Optional<T>> getJob) {
-        return jobIds.stream()
-                .map(getJob)
-                .filter(Optional::isPresent).map(Optional::get)
-                .collect(Collectors.toList());
-    }
-
-    public static JobQuery fromParameters(String queryParameters) {
-        if ("".equals(queryParameters)) {
-            return null;
-        }
-        return new DetailedJobsQuery(Arrays.asList(queryParameters.split(",")));
-    }
-
 }
