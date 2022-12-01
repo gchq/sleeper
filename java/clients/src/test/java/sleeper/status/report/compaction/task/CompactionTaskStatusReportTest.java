@@ -31,7 +31,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.ClientTestUtils.example;
 import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedSplittingTask;
+import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedSplittingTaskWithFourRuns;
 import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedTask;
+import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedTaskWithFourRuns;
 import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedSplittingTask;
 import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
 
@@ -83,6 +85,22 @@ public class CompactionTaskStatusReportTest {
                 example("reports/compaction/task/mixedTypes.txt"));
         assertThat(getJsonReport(CompactionTaskQuery.ALL)).hasToString(
                 example("reports/compaction/task/mixedTypes.json"));
+    }
+
+    @Test
+    public void shouldReportMultipleJobRunsOnCompactionTasks() throws Exception {
+        // Given
+        CompactionTaskStatus finishedTask = finishedTaskWithFourRuns("A", "2022-10-06T12:20:00.001Z",
+                "2022-10-06T12:20:40.001Z", 800L, 400L);
+        CompactionTaskStatus finishedSplittingTask = finishedSplittingTaskWithFourRuns("B", "2022-10-06T12:24:00.001Z",
+                "2022-10-06T12:24:40.001Z", 1600L, 800L);
+        when(store.getAllTasks()).thenReturn(Arrays.asList(finishedTask, finishedSplittingTask));
+
+        // When / Then
+        assertThat(getStandardReport(CompactionTaskQuery.ALL)).hasToString(
+                example("reports/compaction/task/multipleJobRunsOnTasks.txt"));
+        assertThat(getJsonReport(CompactionTaskQuery.ALL)).hasToString(
+                example("reports/compaction/task/multipleJobRunsOnTasks.json"));
     }
 
     private String getStandardReport(CompactionTaskQuery query) {

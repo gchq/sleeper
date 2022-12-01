@@ -48,21 +48,66 @@ public class CompactionTaskStatusReportTestHelper {
         return finishedTaskBuilder(taskId, startTime, finishTime, linesRead, linesWritten).build();
     }
 
+    public static CompactionTaskStatus finishedTaskWithFourRuns(String taskId, String startTime,
+                                                                String finishTime, long linesRead, long linesWritten) {
+        return CompactionTaskStatus.builder()
+                .started(Instant.parse(startTime))
+                .finished(taskFinishedStatusWithFourRuns(startTime, finishTime, linesRead, linesWritten),
+                        Instant.parse(finishTime))
+                .taskId(taskId).build();
+    }
+
     public static CompactionTaskStatus finishedSplittingTask(String taskId, String startTime,
                                                              String finishTime, long linesRead, long linesWritten) {
         return finishedTaskBuilder(taskId, startTime, finishTime, linesRead, linesWritten)
                 .type(CompactionTaskType.SPLITTING).build();
     }
 
+    public static CompactionTaskStatus finishedSplittingTaskWithFourRuns(String taskId, String startTime,
+                                                                         String finishTime, long linesRead, long linesWritten) {
+        return CompactionTaskStatus.builder()
+                .started(Instant.parse(startTime))
+                .type(CompactionTaskType.SPLITTING)
+                .finished(taskFinishedStatusWithFourRuns(startTime, finishTime, linesRead, linesWritten),
+                        Instant.parse(finishTime))
+                .taskId(taskId).build();
+    }
+
     private static CompactionTaskStatus.Builder finishedTaskBuilder(String taskId, String startTime,
                                                                     String finishTime, long linesRead, long linesWritten) {
         return CompactionTaskStatus.builder()
                 .started(Instant.parse(startTime))
-                .finished(CompactionTaskFinishedStatus.builder()
-                        .addJobSummary(new RecordsProcessedSummary(
-                                new RecordsProcessed(linesRead, linesWritten),
-                                Instant.parse(startTime), Instant.parse(finishTime)))
-                        .finish(Instant.parse(startTime), Instant.parse(finishTime)), Instant.parse(finishTime))
+                .finished(taskFinishedStatus(startTime, finishTime, linesRead, linesWritten),
+                        Instant.parse(finishTime))
                 .taskId(taskId);
+    }
+
+    private static CompactionTaskFinishedStatus.Builder taskFinishedStatus(
+            String startTime, String finishTime, long linesRead, long linesWritten) {
+        return taskFinishedStatusBuilder(startTime, finishTime, linesRead, linesWritten)
+                .finish(Instant.parse(startTime), Instant.parse(finishTime));
+    }
+
+    private static CompactionTaskFinishedStatus.Builder taskFinishedStatusWithFourRuns(
+            String startTime, String finishTime, long linesRead, long linesWritten) {
+        return CompactionTaskFinishedStatus.builder()
+                .addJobSummary(createSummary(startTime, finishTime, linesRead / 4, linesWritten / 4))
+                .addJobSummary(createSummary(startTime, finishTime, linesRead / 4, linesWritten / 4))
+                .addJobSummary(createSummary(startTime, finishTime, linesRead / 4, linesWritten / 4))
+                .addJobSummary(createSummary(startTime, finishTime, linesRead / 4, linesWritten / 4))
+                .finish(Instant.parse(startTime), Instant.parse(finishTime));
+    }
+
+    private static CompactionTaskFinishedStatus.Builder taskFinishedStatusBuilder(
+            String startTime, String finishTime, long linesRead, long linesWritten) {
+        return CompactionTaskFinishedStatus.builder()
+                .addJobSummary(createSummary(startTime, finishTime, linesRead, linesWritten));
+    }
+
+    private static RecordsProcessedSummary createSummary(
+            String startTime, String finishTime, long linesRead, long linesWritten) {
+        return new RecordsProcessedSummary(
+                new RecordsProcessed(linesRead, linesWritten),
+                Instant.parse(startTime), Instant.parse(finishTime));
     }
 }
