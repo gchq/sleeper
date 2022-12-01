@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.status.report.compactiontask;
+package sleeper.status.report.compaction.task;
 
 import org.junit.Test;
 import sleeper.ToStringPrintStream;
@@ -49,9 +49,9 @@ public class CompactionTaskStatusReportTest {
 
         // When / Then
         assertThat(getStandardReport(CompactionTaskQuery.UNFINISHED)).hasToString(
-                example("reports/compactiontaskstatus/singleTaskUnfinished.txt"));
+                example("reports/compaction/task/singleTaskUnfinished.txt"));
         assertThat(getJsonReport(CompactionTaskQuery.UNFINISHED)).hasToString(
-                example("reports/compactiontaskstatus/singleTaskUnfinished.json"));
+                example("reports/compaction/task/singleTaskUnfinished.json"));
     }
 
     @Test
@@ -73,9 +73,9 @@ public class CompactionTaskStatusReportTest {
 
         // When / Then
         assertThat(getStandardReport(CompactionTaskQuery.ALL)).hasToString(
-                example("reports/compactiontaskstatus/unfinishedAndFinished.txt"));
+                example("reports/compaction/task/unfinishedAndFinished.txt"));
         assertThat(getJsonReport(CompactionTaskQuery.ALL)).hasToString(
-                example("reports/compactiontaskstatus/unfinishedAndFinished.json"));
+                example("reports/compaction/task/unfinishedAndFinished.json"));
     }
 
     private String getStandardReport(CompactionTaskQuery query) {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.status.report.compactionjob;
+package sleeper.status.report.compaction.job;
 
 import sleeper.compaction.job.status.CompactionJobStatus;
 
@@ -30,7 +30,7 @@ public interface CompactionJobStatusReporter {
         UNFINISHED;
 
         boolean isParametersRequired() {
-            return this == DETAILED || this == RANGE;
+            return this == DETAILED;
         }
     }
 

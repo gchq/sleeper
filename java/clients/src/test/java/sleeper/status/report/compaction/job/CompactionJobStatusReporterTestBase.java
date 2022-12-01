@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.status.report.compactionjob;
+package sleeper.status.report.compaction.job;
 
 import sleeper.ToStringPrintStream;
 import sleeper.compaction.job.CompactionJob;
@@ -27,7 +27,8 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStartedStatus;
-import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
+import sleeper.status.report.StatusReporterTestHelper;
+import sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
 
 import java.io.PrintStream;
 import java.time.Duration;
@@ -40,19 +41,14 @@ import java.util.stream.Collectors;
 
 import static sleeper.ClientTestUtils.exampleUUID;
 import static sleeper.compaction.job.CompactionJobTestDataHelper.finishedCompactionStatus;
+import static sleeper.status.report.StatusReporterTestHelper.jobRunFinishedInTask;
+import static sleeper.status.report.StatusReporterTestHelper.jobRunStartedInTask;
+import static sleeper.status.report.StatusReporterTestHelper.task;
 
-public abstract class StatusReporterTestBase {
-
-    protected static String job(int number) {
-        return exampleUUID("job", number);
-    }
+public abstract class CompactionJobStatusReporterTestBase {
 
     protected static String partition(String letter) {
         return exampleUUID("partn", letter);
-    }
-
-    protected static String task(int number) {
-        return exampleUUID("task", number);
     }
 
     protected static List<CompactionJobStatus> mixedJobStatuses() {
@@ -146,48 +142,6 @@ public abstract class StatusReporterTestBase {
                         Duration.ofMillis(123), 1234, 1234));
     }
 
-    private static ProcessRun jobRunStartedInTask(int taskNumber, String startTimeNoMillis) {
-        return ProcessRun.started(task(taskNumber), defaultStartedStatus(startTimeNoMillis));
-    }
-
-    private static ProcessRun jobRunFinishedInTask(int taskNumber, String startTimeNoMillis, String finishTimeNoMillis) {
-        return ProcessRun.finished(task(taskNumber),
-                defaultStartedStatus(startTimeNoMillis),
-                defaultFinishedStatus(startTimeNoMillis, finishTimeNoMillis));
-    }
-
-    private static ProcessStartedStatus defaultStartedStatus(String startTimeNoMillis) {
-        return ProcessStartedStatus.updateAndStartTime(
-                Instant.parse(startTimeNoMillis + ".123Z"),
-                Instant.parse(startTimeNoMillis + ".001Z"));
-    }
-
-    private static ProcessFinishedStatus defaultFinishedStatus(String startTimeNoMillis, String finishTimeNoMillis) {
-        return ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse(finishTimeNoMillis + ".123Z"),
-                new RecordsProcessedSummary(
-                        new RecordsProcessed(300L, 200L),
-                        Instant.parse(startTimeNoMillis + ".001Z"),
-                        Instant.parse(finishTimeNoMillis + ".001Z")));
-    }
-
-    protected static String replaceStandardJobIds(List<CompactionJobStatus> jobs, String example) {
-        return replaceJobIds(jobs, StatusReporterTestBase::job, example);
-    }
-
-    protected static String replaceBracketedJobIds(List<CompactionJobStatus> jobs, String example) {
-        return replaceJobIds(jobs, number -> "$(jobId" + number + ")", example);
-    }
-
-    protected static String replaceJobIds(
-            List<CompactionJobStatus> jobs, Function<Integer, String> getTemplateId, String example) {
-        String replaced = example;
-        for (int i = 0; i < jobs.size(); i++) {
-            replaced = replaced.replace(getTemplateId.apply(i + 1), jobs.get(i).getJobId());
-        }
-        return replaced;
-    }
-
     protected static CompactionJobStatus jobCreated(CompactionJob job, Instant creationTime) {
         return TestCompactionJobStatus.created(job, creationTime);
     }
@@ -207,6 +161,18 @@ public abstract class StatusReporterTestBase {
                 .singleJobRun(ProcessRun.finished(taskId, ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime),
                         ProcessFinishedStatus.updateTimeAndSummary(finishedTime, summary)))
                 .build();
+    }
+
+    public static String replaceStandardJobIds(List<CompactionJobStatus> job, String example) {
+        return StatusReporterTestHelper.replaceStandardJobIds(job.stream()
+                .map(CompactionJobStatus::getJobId)
+                .collect(Collectors.toList()), example);
+    }
+
+    public static String replaceBracketedJobIds(List<CompactionJobStatus> job, String example) {
+        return StatusReporterTestHelper.replaceBracketedJobIds(job.stream()
+                .map(CompactionJobStatus::getJobId)
+                .collect(Collectors.toList()), example);
     }
 
     public String verboseReportString(Function<PrintStream, CompactionJobStatusReporter> getReporter, List<CompactionJobStatus> statusList,

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.status.report.compactiontask;
+package sleeper.status.report.compaction.task;
 
 import sleeper.compaction.task.CompactionTaskStatus;
 

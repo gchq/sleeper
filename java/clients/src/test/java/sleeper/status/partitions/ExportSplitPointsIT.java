@@ -44,7 +44,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ExportSplitPointsTest {
+public class ExportSplitPointsIT {
     private static final int DYNAMO_PORT = 8000;
     private static AmazonDynamoDB dynamoDBClient;
 

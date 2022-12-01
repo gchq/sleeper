@@ -14,23 +14,19 @@
  * limitations under the License.
  */
 
-package sleeper.status.report.compactionjob;
+package sleeper.status.report.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.status.report.CompactionJobStatusReport;
 
-import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import java.util.TimeZone;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
 
-public class StatusReporterRangeQueryTest extends StatusReporterTestBase {
+public class CompactionJobStatusReporterRangeQueryTest extends CompactionJobStatusReporterTestBase {
 
     @Test
     public void shouldReportCompactionJobStatusForStandardAndSplittingCompactionsInRange() throws Exception {
@@ -39,9 +35,9 @@ public class StatusReporterRangeQueryTest extends StatusReporterTestBase {
 
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(replaceStandardJobIds(statusList, example("reports/compactionjobstatus/standard/range/mixedJobs.txt")));
+                .isEqualTo(replaceStandardJobIds(statusList, example("reports/compaction/job/standard/range/mixedJobs.txt")));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/json/mixedJobs.json")));
+                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compaction/job/json/mixedJobs.json")));
     }
 
     @Test
@@ -51,28 +47,8 @@ public class StatusReporterRangeQueryTest extends StatusReporterTestBase {
 
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(example("reports/compactionjobstatus/standard/range/noJobs.txt"));
+                .isEqualTo(example("reports/compaction/job/standard/range/noJobs.txt"));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.RANGE))
-                .isEqualTo(example("reports/compactionjobstatus/json/noJobs.json"));
-    }
-
-    @Test
-    public void shouldConvertInputRangeToUTC() throws Exception {
-        // Given
-        Instant dateUTC = Instant.parse("2022-09-20T10:00:00.000Z");
-
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddhhmmss");
-        dateFormat.setTimeZone(TimeZone.getTimeZone("PST"));
-        String inputPST = "20220920100000";
-        Instant datePST = dateFormat.parse(inputPST).toInstant();
-
-        // When
-        Instant parsedDatePST = CompactionJobStatusReport.parseDate(inputPST);
-
-        // Then
-        assertThat(parsedDatePST)
-                .isEqualTo(dateUTC);
-        assertThat(parsedDatePST)
-                .isNotEqualTo(datePST);
+                .isEqualTo(example("reports/compaction/job/json/noJobs.json"));
     }
 }
