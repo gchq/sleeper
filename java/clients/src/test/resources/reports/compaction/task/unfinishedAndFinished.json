@@ -1,12 +1,14 @@
 [
   {
     "taskId": "unfinished-task",
+    "type": "COMPACTION",
     "startedStatus": {
       "startTime": "2022-10-06T12:17:00.001Z"
     }
   },
   {
     "taskId": "finished-task",
+    "type": "COMPACTION",
     "startedStatus": {
       "startTime": "2022-10-06T12:20:00.001Z"
     },
