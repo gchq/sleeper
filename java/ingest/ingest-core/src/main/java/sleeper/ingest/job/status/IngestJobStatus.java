@@ -18,8 +18,6 @@ package sleeper.ingest.job.status;
 
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
-import sleeper.core.record.process.status.ProcessStartedStatus;
-import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -42,20 +40,6 @@ public class IngestJobStatus {
     public static Builder builder() {
         return new Builder();
     }
-
-    public static IngestJobStatus started(IngestJob ingestJob, String taskId, Instant updateTime, Instant startTime) {
-        return from(ingestJob)
-                .jobRun(ProcessRun.started(taskId,
-                        ProcessStartedStatus.updateAndStartTime(updateTime, startTime)))
-                .build();
-    }
-
-    public static Builder from(IngestJob job) {
-        return builder()
-                .jobId(job.getId())
-                .inputFileCount(job.getFiles().size());
-    }
-
 
     public String getJobId() {
         return jobId;
