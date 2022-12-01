@@ -23,6 +23,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.status.report.query.JobQuery;
 
 import java.io.PrintStream;
 import java.time.Instant;
@@ -45,7 +46,7 @@ public class JsonCompactionJobStatusReporter implements CompactionJobStatusRepor
     }
 
     @Override
-    public void report(List<CompactionJobStatus> statusList, QueryType queryType) {
+    public void report(List<CompactionJobStatus> statusList, JobQuery.Type queryType) {
         out.println(gson.toJson(statusList));
     }
 

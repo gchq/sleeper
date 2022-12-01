@@ -26,7 +26,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
-import static sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
+import static sleeper.status.report.query.JobQuery.Type;
 
 public class JobQueryPromptTest extends JobQueryTestBase {
 
@@ -201,14 +201,14 @@ public class JobQueryPromptTest extends JobQueryTestBase {
     }
 
     private List<CompactionJobStatus> queryStatusByPrompt() {
-        return queryStatuses(QueryType.PROMPT);
+        return queryStatuses(Type.PROMPT);
     }
 
     private List<CompactionJobStatus> queryStatusByPromptAtTime(Instant time) {
-        return queryStatusesAtTime(QueryType.PROMPT, time);
+        return queryStatusesAtTime(Type.PROMPT, time);
     }
 
     private CompactionJobQuery queryByPrompt() {
-        return queryFrom(QueryType.PROMPT);
+        return queryFrom(Type.PROMPT);
     }
 }

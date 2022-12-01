@@ -20,4 +20,16 @@ import sleeper.status.report.compaction.job.CompactionJobQuery;
 public interface JobQuery {
 
     CompactionJobQuery forCompaction();
+
+    enum Type {
+        PROMPT,
+        ALL,
+        DETAILED,
+        RANGE,
+        UNFINISHED;
+
+        public boolean isParametersRequired() {
+            return this == DETAILED;
+        }
+    }
 }

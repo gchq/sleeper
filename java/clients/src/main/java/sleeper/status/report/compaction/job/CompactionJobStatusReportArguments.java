@@ -16,7 +16,7 @@
 package sleeper.status.report.compaction.job;
 
 import sleeper.console.ConsoleInput;
-import sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
+import sleeper.status.report.query.JobQuery;
 
 import java.io.PrintStream;
 import java.time.Clock;
@@ -36,19 +36,19 @@ public class CompactionJobStatusReportArguments {
         REPORTERS.put("JSON", new JsonCompactionJobStatusReporter());
     }
 
-    private static final Map<String, QueryType> QUERY_TYPES = new HashMap<>();
+    private static final Map<String, JobQuery.Type> QUERY_TYPES = new HashMap<>();
 
     static {
-        QUERY_TYPES.put("-a", QueryType.ALL);
-        QUERY_TYPES.put("-d", QueryType.DETAILED);
-        QUERY_TYPES.put("-r", QueryType.RANGE);
-        QUERY_TYPES.put("-u", QueryType.UNFINISHED);
+        QUERY_TYPES.put("-a", JobQuery.Type.ALL);
+        QUERY_TYPES.put("-d", JobQuery.Type.DETAILED);
+        QUERY_TYPES.put("-r", JobQuery.Type.RANGE);
+        QUERY_TYPES.put("-u", JobQuery.Type.UNFINISHED);
     }
 
     private final String instanceId;
     private final String tableName;
     private final CompactionJobStatusReporter reporter;
-    private final QueryType queryType;
+    private final JobQuery.Type queryType;
     private final String queryParameters;
 
     private CompactionJobStatusReportArguments(Builder builder) {
@@ -96,12 +96,12 @@ public class CompactionJobStatusReportArguments {
         return reporter;
     }
 
-    public QueryType getQueryType() {
+    public JobQuery.Type getQueryType() {
         return queryType;
     }
 
     public CompactionJobQuery buildQuery(Clock clock, ConsoleInput input) {
-        if (queryType == QueryType.PROMPT) {
+        if (queryType == JobQuery.Type.PROMPT) {
             return CompactionJobQueryPrompt.from(tableName, input, clock);
         }
         return CompactionJobQuery.from(tableName, queryType, queryParameters, clock);
@@ -117,13 +117,13 @@ public class CompactionJobStatusReportArguments {
         return REPORTERS.get(reporterType);
     }
 
-    private static QueryType getQueryType(String[] args, int index) {
+    private static JobQuery.Type getQueryType(String[] args, int index) {
         return optionalArgument(args, index)
                 .map(CompactionJobStatusReportArguments::readQueryType)
-                .orElse(QueryType.PROMPT);
+                .orElse(JobQuery.Type.PROMPT);
     }
 
-    private static QueryType readQueryType(String queryTypeStr) {
+    private static JobQuery.Type readQueryType(String queryTypeStr) {
         if (!QUERY_TYPES.containsKey(queryTypeStr)) {
             throw new IllegalArgumentException("Invalid query type " + queryTypeStr + ". Valid query types are -d (Detailed), -r (Range), -u (Unfinished)");
         }
@@ -134,7 +134,7 @@ public class CompactionJobStatusReportArguments {
         private String instanceId;
         private String tableName;
         private CompactionJobStatusReporter reporter;
-        private QueryType queryType;
+        private JobQuery.Type queryType;
         private String queryParameters;
 
         private Builder() {
@@ -155,7 +155,7 @@ public class CompactionJobStatusReportArguments {
             return this;
         }
 
-        public Builder queryType(QueryType queryType) {
+        public Builder queryType(JobQuery.Type queryType) {
             this.queryType = queryType;
             return this;
         }

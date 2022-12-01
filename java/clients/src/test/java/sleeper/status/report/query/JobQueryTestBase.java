@@ -24,8 +24,8 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.console.TestConsoleInput;
 import sleeper.status.report.compaction.job.CompactionJobQuery;
 import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
-import sleeper.status.report.compaction.job.CompactionJobStatusReporter;
 import sleeper.status.report.compaction.job.StandardCompactionJobStatusReporter;
+import sleeper.status.report.query.JobQuery.Type;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -47,28 +47,28 @@ public class JobQueryTestBase {
     protected final ToStringPrintStream out = new ToStringPrintStream();
     protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
 
-    protected List<CompactionJobStatus> queryStatuses(CompactionJobStatusReporter.QueryType queryType) {
+    protected List<CompactionJobStatus> queryStatuses(Type queryType) {
         return queryStatusesWithParams(queryType, null);
     }
 
-    protected List<CompactionJobStatus> queryStatusesWithParams(CompactionJobStatusReporter.QueryType queryType, String queryParameters) {
+    protected List<CompactionJobStatus> queryStatusesWithParams(Type queryType, String queryParameters) {
         return queryStatuses(queryType, queryParameters, Clock.systemUTC());
     }
 
-    protected List<CompactionJobStatus> queryStatusesAtTime(CompactionJobStatusReporter.QueryType queryType, Instant time) {
+    protected List<CompactionJobStatus> queryStatusesAtTime(Type queryType, Instant time) {
         return queryStatuses(queryType, null,
                 Clock.fixed(time, ZoneId.of("UTC")));
     }
 
-    protected CompactionJobQuery queryFrom(CompactionJobStatusReporter.QueryType queryType) {
+    protected CompactionJobQuery queryFrom(Type queryType) {
         return queryFrom(queryType, null, Clock.systemUTC());
     }
 
-    private List<CompactionJobStatus> queryStatuses(CompactionJobStatusReporter.QueryType queryType, String queryParameters, Clock clock) {
+    private List<CompactionJobStatus> queryStatuses(Type queryType, String queryParameters, Clock clock) {
         return queryFrom(queryType, queryParameters, clock).run(statusStore);
     }
 
-    private CompactionJobQuery queryFrom(CompactionJobStatusReporter.QueryType queryType, String queryParameters, Clock clock) {
+    private CompactionJobQuery queryFrom(Type queryType, String queryParameters, Clock clock) {
         return CompactionJobStatusReportArguments.builder()
                 .instanceId("test-instance").tableName(TABLE_NAME)
                 .reporter(new StandardCompactionJobStatusReporter())

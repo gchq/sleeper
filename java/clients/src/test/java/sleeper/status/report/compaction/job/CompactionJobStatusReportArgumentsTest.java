@@ -18,7 +18,7 @@ package sleeper.status.report.compaction.job;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
+import static sleeper.status.report.query.JobQuery.Type;
 
 public class CompactionJobStatusReportArgumentsTest {
 
@@ -28,7 +28,7 @@ public class CompactionJobStatusReportArgumentsTest {
                 .usingRecursiveComparison()
                 .isEqualTo(CompactionJobStatusReportArguments.builder()
                         .instanceId("test-instance").tableName("test-table")
-                        .queryType(QueryType.PROMPT)
+                        .queryType(Type.PROMPT)
                         .reporter(new StandardCompactionJobStatusReporter(System.out))
                         .build());
     }

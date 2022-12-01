@@ -26,11 +26,11 @@ import sleeper.status.report.query.UnfinishedJobsQuery;
 import java.time.Clock;
 import java.util.List;
 
-import static sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
+import static sleeper.status.report.query.JobQuery.Type;
 
 public interface CompactionJobQuery {
 
-    static CompactionJobQuery from(String tableName, QueryType queryType, String queryParameters, Clock clock) {
+    static CompactionJobQuery from(String tableName, Type queryType, String queryParameters, Clock clock) {
         switch (queryType) {
             case ALL:
                 return new AllJobsQuery(tableName).forCompaction();

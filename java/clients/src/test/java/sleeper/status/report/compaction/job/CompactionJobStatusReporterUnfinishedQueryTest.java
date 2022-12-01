@@ -18,7 +18,7 @@ package sleeper.status.report.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
+import sleeper.status.report.query.JobQuery;
 
 import java.util.Collections;
 import java.util.List;
@@ -35,10 +35,10 @@ public class CompactionJobStatusReporterUnfinishedQueryTest extends CompactionJo
         List<CompactionJobStatus> statusList = mixedUnfinishedJobStatuses();
 
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.UNFINISHED))
                 .isEqualTo(replaceStandardJobIds(statusList,
                         example("reports/compaction/job/standard/unfinished/mixedUnfinishedJobs.txt")));
-        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
+        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.UNFINISHED))
                 .isEqualTo(replaceBracketedJobIds(statusList,
                         example("reports/compaction/job/json/mixedUnfinishedJobs.json")));
     }
@@ -49,9 +49,9 @@ public class CompactionJobStatusReporterUnfinishedQueryTest extends CompactionJo
         List<CompactionJobStatus> statusList = Collections.emptyList();
 
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.UNFINISHED))
                 .isEqualTo(example("reports/compaction/job/standard/unfinished/noJobs.txt"));
-        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
+        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.UNFINISHED))
                 .isEqualTo(example("reports/compaction/job/json/noJobs.json"));
     }
 }

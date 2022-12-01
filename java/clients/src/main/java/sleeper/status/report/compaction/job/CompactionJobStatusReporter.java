@@ -17,23 +17,12 @@
 package sleeper.status.report.compaction.job;
 
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.status.report.query.JobQuery;
 
 import java.util.List;
 
 public interface CompactionJobStatusReporter {
 
-    enum QueryType {
-        PROMPT,
-        ALL,
-        DETAILED,
-        RANGE,
-        UNFINISHED;
-
-        boolean isParametersRequired() {
-            return this == DETAILED;
-        }
-    }
-
-    void report(List<CompactionJobStatus> jobStatusList, QueryType queryType);
+    void report(List<CompactionJobStatus> jobStatusList, JobQuery.Type queryType);
 
 }
