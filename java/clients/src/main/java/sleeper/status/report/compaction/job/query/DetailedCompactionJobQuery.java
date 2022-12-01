@@ -32,7 +32,7 @@ public class DetailedCompactionJobQuery implements CompactionJobQuery {
         this.jobIds = jobIds;
     }
 
-    public static DetailedCompactionJobQuery fromParameters(String queryParameters) {
+    public static CompactionJobQuery fromParameters(String queryParameters) {
         if ("".equals(queryParameters)) {
             return null;
         }
