@@ -22,20 +22,7 @@ import sleeper.status.report.query.JobQuery;
 import java.util.List;
 
 public interface IngestJobStatusReporter {
-    enum QueryType {
-        PROMPT,
-        ALL,
-        DETAILED,
-        UNFINISHED;
-
-        boolean isParametersRequired() {
-            return this == DETAILED;
-        }
-
-        public JobQuery.Type forJob() {
-            return JobQuery.Type.valueOf(toString());
-        }
-    }
 
     void report(List<IngestJobStatus> jobStatusList, JobQuery.Type queryType, int numberInQueue);
+
 }

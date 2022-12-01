@@ -16,7 +16,6 @@
 package sleeper.status.report.query;
 
 import sleeper.status.report.compaction.job.CompactionJobQuery;
-import sleeper.status.report.ingest.job.IngestJobStatusReporter.QueryType;
 
 import java.time.Clock;
 
@@ -48,10 +47,6 @@ public interface JobQuery {
 
         public boolean isParametersRequired() {
             return this == DETAILED;
-        }
-
-        public QueryType forIngest() {
-            return QueryType.valueOf(toString());
         }
     }
 }

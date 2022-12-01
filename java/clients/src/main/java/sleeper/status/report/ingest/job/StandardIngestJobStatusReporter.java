@@ -57,26 +57,25 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         tableFactory = tableFactoryBuilder.build();
     }
 
-    public void report(List<IngestJobStatus> statusList, JobQuery.Type jobQuery, int numberInQueue) {
-        QueryType query = jobQuery.forIngest();
+    public void report(List<IngestJobStatus> statusList, JobQuery.Type query, int numberInQueue) {
         out.println();
         out.println("Ingest Job Status Report");
         out.println("------------------------");
         printSummary(statusList, query, numberInQueue);
-        if (!query.equals(QueryType.DETAILED)) {
+        if (!query.equals(JobQuery.Type.DETAILED)) {
             tableFactory.tableBuilder()
-                    .showFields(query != QueryType.UNFINISHED, standardProcessStatusReporter.getFinishedFields())
+                    .showFields(query != JobQuery.Type.UNFINISHED, standardProcessStatusReporter.getFinishedFields())
                     .itemsAndSplittingWriter(statusList, this::writeJob)
                     .build().write(out);
         }
     }
 
-    private void printSummary(List<IngestJobStatus> statusList, QueryType queryType, int numberInQueue) {
-        if (queryType.equals(QueryType.DETAILED)) {
+    private void printSummary(List<IngestJobStatus> statusList, JobQuery.Type queryType, int numberInQueue) {
+        if (queryType.equals(JobQuery.Type.DETAILED)) {
             printDetailedSummary(statusList);
-        } else if (queryType.equals(QueryType.ALL)) {
+        } else if (queryType.equals(JobQuery.Type.ALL)) {
             printAllSummary(statusList, numberInQueue);
-        } else if (queryType.equals(QueryType.UNFINISHED)) {
+        } else if (queryType.equals(JobQuery.Type.UNFINISHED)) {
             printUnfinishedSummary(statusList, numberInQueue);
         }
     }
