@@ -27,10 +27,12 @@ public class CompactionTaskStatusesBuilder {
     private final Map<String, CompactionTaskStartedStatus> startedById = new HashMap<>(); // Order by task ID for output
     private final Map<String, CompactionTaskFinishedStatus> finishedById = new HashMap<>();
     private final Map<String, Instant> expiryDateById = new HashMap<>();
+    private final Map<String, CompactionTaskType> typeById = new HashMap<>();
 
     public CompactionTaskStatusesBuilder taskStarted(
-            String taskId, Instant startTime) {
+            String taskId, CompactionTaskType type, Instant startTime) {
         startedById.put(taskId, new CompactionTaskStartedStatus(startTime));
+        typeById.put(taskId, type);
         return this;
     }
 
@@ -57,7 +59,7 @@ public class CompactionTaskStatusesBuilder {
     }
 
     private CompactionTaskStatus fullStatus(String taskId, CompactionTaskStartedStatus startedStatus) {
-        return CompactionTaskStatus.builder().taskId(taskId)
+        return CompactionTaskStatus.builder().taskId(taskId).type(typeById.get(taskId))
                 .startedStatus(startedStatus)
                 .finishedStatus(finishedById.get(taskId))
                 .expiryDate(expiryDateById.get(taskId))

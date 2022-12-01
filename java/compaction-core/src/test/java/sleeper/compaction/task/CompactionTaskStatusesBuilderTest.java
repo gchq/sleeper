@@ -43,7 +43,7 @@ public class CompactionTaskStatusesBuilderTest {
 
         // When
         List<CompactionTaskStatus> statuses = new CompactionTaskStatusesBuilder()
-                .taskStarted(taskId, startTime)
+                .taskStarted(taskId, CompactionTaskType.COMPACTION, startTime)
                 .taskFinished(taskId, finishedStatus)
                 .expiryDate(taskId, expiryDate)
                 .build();
@@ -71,9 +71,9 @@ public class CompactionTaskStatusesBuilderTest {
 
         // When
         List<CompactionTaskStatus> statuses = new CompactionTaskStatusesBuilder()
-                .taskStarted(taskId3, startTime3)
-                .taskStarted(taskId1, startTime1)
-                .taskStarted(taskId2, startTime2)
+                .taskStarted(taskId3, CompactionTaskType.COMPACTION, startTime3)
+                .taskStarted(taskId1, CompactionTaskType.COMPACTION, startTime1)
+                .taskStarted(taskId2, CompactionTaskType.SPLITTING, startTime2)
                 .build();
 
         // Then
@@ -81,7 +81,7 @@ public class CompactionTaskStatusesBuilderTest {
                 .usingRecursiveFieldByFieldElementComparator()
                 .containsExactly(
                         CompactionTaskStatus.builder().taskId(taskId3).started(startTime3).build(),
-                        CompactionTaskStatus.builder().taskId(taskId2).started(startTime2).build(),
+                        CompactionTaskStatus.builder().taskId(taskId2).type(CompactionTaskType.SPLITTING).started(startTime2).build(),
                         CompactionTaskStatus.builder().taskId(taskId1).started(startTime1).build());
     }
 }

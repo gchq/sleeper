@@ -46,6 +46,10 @@ public class CompactionTaskStatus {
         return taskId;
     }
 
+    public CompactionTaskType getType() {
+        return type;
+    }
+
     public CompactionTaskStartedStatus getStartedStatus() {
         return startedStatus;
     }
@@ -117,6 +121,17 @@ public class CompactionTaskStatus {
     @Override
     public int hashCode() {
         return Objects.hash(taskId, type, startedStatus, finishedStatus, expiryDate);
+    }
+
+    @Override
+    public String toString() {
+        return "CompactionTaskStatus{" +
+                "taskId='" + taskId + '\'' +
+                ", type=" + type +
+                ", startedStatus=" + startedStatus +
+                ", finishedStatus=" + finishedStatus +
+                ", expiryDate=" + expiryDate +
+                '}';
     }
 
     public static final class Builder {

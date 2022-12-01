@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusesBuilder;
+import sleeper.compaction.task.CompactionTaskType;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;
@@ -41,6 +42,7 @@ public class DynamoDBCompactionTaskStatusFormat {
     }
 
     public static final String TASK_ID = "TaskId";
+    public static final String TYPE = "Type";
     public static final String UPDATE_TYPE = "UpdateType";
     public static final String START_TIME = "StartTime";
     public static final String UPDATE_TIME = "UpdateTime";
@@ -79,6 +81,7 @@ public class DynamoDBCompactionTaskStatusFormat {
         Long timeNow = Instant.now().toEpochMilli();
         return new DynamoDBRecordBuilder()
                 .string(TASK_ID, taskStatus.getTaskId())
+                .string(TYPE, taskStatus.getType().toString())
                 .number(UPDATE_TIME, timeNow)
                 .string(UPDATE_TYPE, updateType)
                 .number(EXPIRY_DATE, timeNow + timeToLive);
@@ -94,7 +97,8 @@ public class DynamoDBCompactionTaskStatusFormat {
         String taskId = getStringAttribute(item, TASK_ID);
         switch (getStringAttribute(item, UPDATE_TYPE)) {
             case STARTED:
-                builder.taskStarted(taskId, getInstantAttribute(item, START_TIME))
+                CompactionTaskType type = CompactionTaskType.valueOf(getStringAttribute(item, TYPE));
+                builder.taskStarted(taskId, type, getInstantAttribute(item, START_TIME))
                         .expiryDate(taskId, getInstantAttribute(item, EXPIRY_DATE));
                 break;
             case FINISHED:

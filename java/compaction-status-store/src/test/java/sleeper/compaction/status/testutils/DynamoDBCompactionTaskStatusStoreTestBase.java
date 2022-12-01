@@ -23,6 +23,7 @@ import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStoreCreator;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
+import sleeper.compaction.task.CompactionTaskType;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
@@ -83,6 +84,10 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
         return startedTaskWithDefaultsBuilder().build();
     }
 
+    protected static CompactionTaskStatus splittingTaskWithDefaults() {
+        return startedTaskWithDefaultsBuilder().type(CompactionTaskType.SPLITTING).build();
+    }
+
     protected static CompactionTaskStatus.Builder startedTaskWithDefaultsBuilder() {
         return CompactionTaskStatus.builder().taskId(UUID.randomUUID().toString()).started(defaultTaskStartTime());
     }
@@ -102,11 +107,28 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
     }
 
     protected static CompactionTaskStatus taskWithStartTime(Instant startTime) {
-        return CompactionTaskStatus.builder().taskId(UUID.randomUUID().toString()).started(startTime).build();
+        return taskBuilder().started(startTime).build();
     }
 
     protected static CompactionTaskStatus taskWithStartAndFinishTime(Instant startTime, Instant finishTime) {
-        return CompactionTaskStatus.builder().taskId(UUID.randomUUID().toString()).started(startTime)
+        return buildWithStartAndFinishTime(taskBuilder(), startTime, finishTime);
+    }
+
+    protected static CompactionTaskStatus splittingTaskWithStartTime(Instant startTime) {
+        return taskBuilder().type(CompactionTaskType.SPLITTING).started(startTime).build();
+    }
+
+    protected static CompactionTaskStatus splittingTaskWithStartAndFinishTime(Instant startTime, Instant finishTime) {
+        return buildWithStartAndFinishTime(taskBuilder().type(CompactionTaskType.SPLITTING), startTime, finishTime);
+    }
+
+    private static CompactionTaskStatus.Builder taskBuilder() {
+        return CompactionTaskStatus.builder().taskId(UUID.randomUUID().toString());
+    }
+
+    private static CompactionTaskStatus buildWithStartAndFinishTime(
+            CompactionTaskStatus.Builder builder, Instant startTime, Instant finishTime) {
+        return builder.started(startTime)
                 .finished(CompactionTaskFinishedStatus.builder()
                         .addJobSummary(new RecordsProcessedSummary(
                                 new RecordsProcessed(200, 100),

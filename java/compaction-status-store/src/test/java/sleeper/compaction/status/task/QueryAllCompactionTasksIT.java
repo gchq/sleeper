@@ -33,9 +33,9 @@ public class QueryAllCompactionTasksIT extends DynamoDBCompactionTaskStatusStore
         CompactionTaskStatus task2 = taskWithStartAndFinishTime(
                 Instant.parse("2022-10-06T11:19:00.001Z"),
                 Instant.parse("2022-10-06T11:21:00.001Z"));
-        CompactionTaskStatus task3 = taskWithStartTime(
+        CompactionTaskStatus task3 = splittingTaskWithStartTime(
                 Instant.parse("2022-10-06T11:20:00.001Z"));
-        CompactionTaskStatus task4 = taskWithStartAndFinishTime(
+        CompactionTaskStatus task4 = splittingTaskWithStartAndFinishTime(
                 Instant.parse("2022-10-06T11:21:00.001Z"),
                 Instant.parse("2022-10-06T11:22:00.001Z"));
 
