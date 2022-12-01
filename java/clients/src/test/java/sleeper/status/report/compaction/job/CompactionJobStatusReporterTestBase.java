@@ -28,7 +28,7 @@ import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.status.report.StatusReporterTestHelper;
-import sleeper.status.report.query.JobQuery.Type;
+import sleeper.status.report.job.query.JobQuery.Type;
 
 import java.io.PrintStream;
 import java.time.Duration;

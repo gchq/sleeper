@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.status.report;
+package sleeper.status.report.job;
 
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.status.report.table.TableField;
@@ -29,7 +29,7 @@ import java.util.function.Function;
 import static sleeper.ClientUtils.countWithCommas;
 import static sleeper.ClientUtils.decimalWithCommas;
 
-public class StandardProcessStatusReporter {
+public class StandardProcessRunReporter {
     private final TableField taskIdField;
     private final TableField startTimeField;
     private final TableField finishTimeField;
@@ -42,7 +42,7 @@ public class StandardProcessStatusReporter {
     public static final String STATE_IN_PROGRESS = "IN PROGRESS";
     public static final String STATE_FINISHED = "FINISHED";
 
-    public StandardProcessStatusReporter(PrintStream out, TableWriterFactory.Builder tableBuilder) {
+    public StandardProcessRunReporter(PrintStream out, TableWriterFactory.Builder tableBuilder) {
         this.out = out;
         taskIdField = tableBuilder.addField("TASK_ID");
         startTimeField = tableBuilder.addField("START_TIME");

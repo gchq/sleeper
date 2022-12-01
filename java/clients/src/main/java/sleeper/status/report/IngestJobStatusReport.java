@@ -31,7 +31,7 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.job.common.CommonJobUtils;
 import sleeper.status.report.ingest.job.IngestJobStatusReportArguments;
 import sleeper.status.report.ingest.job.IngestJobStatusReporter;
-import sleeper.status.report.query.JobQuery;
+import sleeper.status.report.job.query.JobQuery;
 
 import java.io.IOException;
 import java.time.Clock;

@@ -16,8 +16,8 @@
 package sleeper.status.report.compaction.job;
 
 import sleeper.console.ConsoleInput;
-import sleeper.status.report.query.JobQuery;
-import sleeper.status.report.query.JobQueryArgument;
+import sleeper.status.report.job.query.JobQuery;
+import sleeper.status.report.job.query.JobQueryArgument;
 
 import java.io.PrintStream;
 import java.time.Clock;

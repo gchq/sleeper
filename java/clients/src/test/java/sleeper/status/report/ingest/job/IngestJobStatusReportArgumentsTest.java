@@ -17,7 +17,7 @@
 package sleeper.status.report.ingest.job;
 
 import org.junit.Test;
-import sleeper.status.report.query.JobQuery;
+import sleeper.status.report.job.query.JobQuery;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

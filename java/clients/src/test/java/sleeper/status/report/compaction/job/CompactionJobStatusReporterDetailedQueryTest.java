@@ -18,7 +18,7 @@ package sleeper.status.report.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.status.report.query.JobQuery;
+import sleeper.status.report.job.query.JobQuery;
 
 import java.util.Collections;
 import java.util.List;

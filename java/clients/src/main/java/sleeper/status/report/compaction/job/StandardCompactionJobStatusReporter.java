@@ -19,8 +19,8 @@ package sleeper.status.report.compaction.job;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.status.report.StandardProcessStatusReporter;
-import sleeper.status.report.query.JobQuery;
+import sleeper.status.report.job.StandardProcessRunReporter;
+import sleeper.status.report.job.query.JobQuery;
 import sleeper.status.report.table.TableField;
 import sleeper.status.report.table.TableRow;
 import sleeper.status.report.table.TableWriter;
@@ -30,9 +30,9 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.status.report.StandardProcessStatusReporter.STATE_FINISHED;
-import static sleeper.status.report.StandardProcessStatusReporter.STATE_IN_PROGRESS;
-import static sleeper.status.report.StandardProcessStatusReporter.formatDecimal;
+import static sleeper.status.report.job.StandardProcessRunReporter.STATE_FINISHED;
+import static sleeper.status.report.job.StandardProcessRunReporter.STATE_IN_PROGRESS;
+import static sleeper.status.report.job.StandardProcessRunReporter.formatDecimal;
 
 public class StandardCompactionJobStatusReporter implements CompactionJobStatusReporter {
 
@@ -41,7 +41,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private final TableField jobIdField;
     private final TableField partitionIdField;
     private final TableField typeField;
-    private final StandardProcessStatusReporter standardProcessStatusReporter;
+    private final StandardProcessRunReporter runReporter;
     private final TableWriterFactory tableFactory;
     private final PrintStream out;
 
@@ -59,7 +59,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
         partitionIdField = tableFactoryBuilder.addField("PARTITION_ID");
         typeField = tableFactoryBuilder.addField("TYPE");
-        standardProcessStatusReporter = new StandardProcessStatusReporter(out, tableFactoryBuilder);
+        runReporter = new StandardProcessRunReporter(out, tableFactoryBuilder);
         tableFactory = tableFactoryBuilder.build();
     }
 
@@ -70,7 +70,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         printSummary(jobStatusList, queryType);
         if (!queryType.equals(JobQuery.Type.DETAILED)) {
             tableFactory.tableBuilder()
-                    .showFields(queryType != JobQuery.Type.UNFINISHED, standardProcessStatusReporter.getFinishedFields())
+                    .showFields(queryType != JobQuery.Type.UNFINISHED, runReporter.getFinishedFields())
                     .itemsAndSplittingWriter(jobStatusList, this::writeJob)
                     .build().write(out);
         }
@@ -114,7 +114,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("Creation Time: %s%n", jobStatus.getCreateUpdateTime().toString());
         out.printf("Partition ID: %s%n", jobStatus.getPartitionId());
         out.printf("Child partition IDs: %s%n", jobStatus.getChildPartitionIds().toString());
-        jobStatus.getJobRuns().forEach(standardProcessStatusReporter::printProcessJobRun);
+        jobStatus.getJobRuns().forEach(runReporter::printProcessJobRun);
         out.println("--------------------------");
     }
 
@@ -184,8 +184,8 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         } else {
             job.getJobRuns().forEach(run -> table.row(row -> {
                 writeJobFields(job, row);
-                row.value(stateField, StandardProcessStatusReporter.getState(run));
-                standardProcessStatusReporter.writeRunFields(run, row);
+                row.value(stateField, StandardProcessRunReporter.getState(run));
+                runReporter.writeRunFields(run, row);
             }));
         }
     }
