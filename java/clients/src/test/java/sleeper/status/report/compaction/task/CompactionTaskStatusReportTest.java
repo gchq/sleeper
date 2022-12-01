@@ -17,15 +17,11 @@ package sleeper.status.report.compaction.task;
 
 import org.junit.Test;
 import sleeper.ToStringPrintStream;
-import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.status.report.CompactionTaskStatusReport;
 
 import java.io.PrintStream;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.function.Function;
@@ -34,6 +30,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.ClientTestUtils.example;
+import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedTask;
+import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
 
 public class CompactionTaskStatusReportTest {
 
@@ -42,9 +40,7 @@ public class CompactionTaskStatusReportTest {
     @Test
     public void shouldReportCompactionTaskUnfinished() throws Exception {
         // Given
-        CompactionTaskStatus task = CompactionTaskStatus.builder()
-                .started(Instant.parse("2022-10-06T12:17:00.001Z"))
-                .taskId("A").build();
+        CompactionTaskStatus task = startedTask("A", "2022-10-06T12:17:00.001Z");
         when(store.getTasksInProgress()).thenReturn(Collections.singletonList(task));
 
         // When / Then
@@ -57,18 +53,9 @@ public class CompactionTaskStatusReportTest {
     @Test
     public void shouldReportCompactionTaskUnfinishedAndFinished() throws Exception {
         // Given
-        CompactionTaskStatus unfinishedTask = CompactionTaskStatus.builder()
-                .started(Instant.parse("2022-10-06T12:17:00.001Z"))
-                .taskId("unfinished-task").build();
-        CompactionTaskStatus finishedTask = CompactionTaskStatus.builder()
-                .started(Instant.parse("2022-10-06T12:20:00.001Z"))
-                .taskId("finished-task")
-                .finished(CompactionTaskFinishedStatus.builder()
-                                .addJobSummary(new RecordsProcessedSummary(
-                                        new RecordsProcessed(200L, 100L),
-                                        Instant.parse("2022-10-06T12:20:00.001Z"),
-                                        Instant.parse("2022-10-06T12:20:30.001Z"))),
-                        Instant.parse("2022-10-06T12:20:30.001Z")).build();
+        CompactionTaskStatus unfinishedTask = startedTask("unfinished-task", "2022-10-06T12:17:00.001Z");
+        CompactionTaskStatus finishedTask = finishedTask("finished-task", "2022-10-06T12:20:00.001Z",
+                "2022-10-06T12:20:30.001Z", 200L, 100L);
         when(store.getAllTasks()).thenReturn(Arrays.asList(unfinishedTask, finishedTask));
 
         // When / Then
