@@ -16,6 +16,8 @@
 
 package sleeper.status.report.ingest.job;
 
+import sleeper.status.report.query.JobQueryArgument;
+
 import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Locale;
@@ -31,14 +33,6 @@ public class IngestJobStatusReportArguments {
     static {
         REPORTERS.put(DEFAULT_REPORTER, new StandardIngestJobStatusReporter());
         REPORTERS.put("JSON", new JsonIngestJobStatusReporter());
-    }
-
-    private static final Map<String, QueryType> QUERY_TYPES = new HashMap<>();
-
-    static {
-        QUERY_TYPES.put("-a", QueryType.ALL);
-        QUERY_TYPES.put("-d", QueryType.DETAILED);
-        QUERY_TYPES.put("-u", QueryType.UNFINISHED);
     }
 
     private final String instanceId;
@@ -71,7 +65,7 @@ public class IngestJobStatusReportArguments {
                 .instanceId(args[0])
                 .tableName(args[1])
                 .reporter(getReporter(args, 2))
-                .queryType(getQueryType(args, 3))
+                .queryType(JobQueryArgument.readTypeArgument(args, 3).forIngest())
                 .queryParameters(optionalArgument(args, 4).orElse(null))
                 .build();
     }
@@ -84,19 +78,6 @@ public class IngestJobStatusReportArguments {
             throw new IllegalArgumentException("Output type not supported: " + reporterType);
         }
         return REPORTERS.get(reporterType);
-    }
-
-    private static QueryType getQueryType(String[] args, int index) {
-        return optionalArgument(args, index)
-                .map(IngestJobStatusReportArguments::readQueryType)
-                .orElse(QueryType.PROMPT);
-    }
-
-    private static QueryType readQueryType(String queryTypeStr) {
-        if (!QUERY_TYPES.containsKey(queryTypeStr)) {
-            throw new IllegalArgumentException("Invalid query type " + queryTypeStr + ". Valid query types are -a (All), -d (Detailed), -u (Unfinished)");
-        }
-        return QUERY_TYPES.get(queryTypeStr);
     }
 
     public String getInstanceId() {
