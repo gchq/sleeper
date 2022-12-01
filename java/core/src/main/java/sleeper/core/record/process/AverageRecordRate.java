@@ -45,11 +45,11 @@ public class AverageRecordRate {
         return jobCount;
     }
 
-    public double getRecordsReadPerSecond() {
+    public double getAverageJobRecordsReadPerSecond() {
         return recordsReadPerSecond;
     }
 
-    public double getRecordsWrittenPerSecond() {
+    public double getAverageJobRecordsWrittenPerSecond() {
         return recordsWrittenPerSecond;
     }
 

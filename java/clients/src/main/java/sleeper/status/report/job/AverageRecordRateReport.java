@@ -31,8 +31,8 @@ public class AverageRecordRateReport {
             return;
         }
         String rateString = String.format("%s read/s, %s write/s",
-                formatDecimal(average.getRecordsReadPerSecond()),
-                formatDecimal(average.getRecordsWrittenPerSecond()));
+                formatDecimal(average.getAverageJobRecordsReadPerSecond()),
+                formatDecimal(average.getAverageJobRecordsWrittenPerSecond()));
         out.printf(format, rateString);
     }
 }

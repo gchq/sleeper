@@ -34,8 +34,8 @@ public class AverageRecordRateTest {
         // Then
         assertThat(rate).extracting(
                         AverageRecordRate::getJobCount,
-                        AverageRecordRate::getRecordsReadPerSecond,
-                        AverageRecordRate::getRecordsWrittenPerSecond)
+                        AverageRecordRate::getAverageJobRecordsReadPerSecond,
+                        AverageRecordRate::getAverageJobRecordsWrittenPerSecond)
                 .containsExactly(1, 10.0, 10.0);
     }
 
@@ -53,8 +53,8 @@ public class AverageRecordRateTest {
         // Then
         assertThat(rate).extracting(
                         AverageRecordRate::getJobCount,
-                        AverageRecordRate::getRecordsReadPerSecond,
-                        AverageRecordRate::getRecordsWrittenPerSecond)
+                        AverageRecordRate::getAverageJobRecordsReadPerSecond,
+                        AverageRecordRate::getAverageJobRecordsWrittenPerSecond)
                 .containsExactly(2, 7.5, 7.5);
     }
 
@@ -73,8 +73,8 @@ public class AverageRecordRateTest {
         assertThat(rate)
                 .extracting(
                         AverageRecordRate::getJobCount,
-                        AverageRecordRate::getRecordsReadPerSecond,
-                        AverageRecordRate::getRecordsWrittenPerSecond)
+                        AverageRecordRate::getAverageJobRecordsReadPerSecond,
+                        AverageRecordRate::getAverageJobRecordsWrittenPerSecond)
                 .containsExactly(2, 7.5, 7.5);
     }
 
@@ -87,8 +87,8 @@ public class AverageRecordRateTest {
         assertThat(rate)
                 .extracting(
                         AverageRecordRate::getJobCount,
-                        AverageRecordRate::getRecordsReadPerSecond,
-                        AverageRecordRate::getRecordsWrittenPerSecond)
+                        AverageRecordRate::getAverageJobRecordsReadPerSecond,
+                        AverageRecordRate::getAverageJobRecordsWrittenPerSecond)
                 .containsExactly(0, Double.NaN, Double.NaN);
     }
 
