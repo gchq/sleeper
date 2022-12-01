@@ -3,6 +3,6 @@ Compaction Task Status Report
 -----------------------------
 Total unfinished tasks: 1
 ------------------------------------------------
-| STATE   | START_TIME               | TASK_ID |
-| RUNNING | 2022-10-06T12:17:00.001Z | A       |
+| STATE   | TASK_ID | START_TIME               |
+| RUNNING | A       | 2022-10-06T12:17:00.001Z |
 ------------------------------------------------

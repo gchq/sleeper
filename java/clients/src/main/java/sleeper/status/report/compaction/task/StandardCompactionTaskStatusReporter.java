@@ -16,6 +16,7 @@
 package sleeper.status.report.compaction.task;
 
 import sleeper.compaction.task.CompactionTaskStatus;
+import sleeper.status.report.job.StandardProcessRunReporter;
 import sleeper.status.report.table.TableField;
 import sleeper.status.report.table.TableRow;
 import sleeper.status.report.table.TableWriterFactory;
@@ -25,18 +26,15 @@ import java.util.List;
 
 public class StandardCompactionTaskStatusReporter implements CompactionTaskStatusReporter {
 
-    private static final TableWriterFactory.Builder TABLE_FACTORY_BUILDER = TableWriterFactory.builder();
-
-    private static final TableField STATE = TABLE_FACTORY_BUILDER.addField("STATE");
-    private static final TableField START_TIME = TABLE_FACTORY_BUILDER.addField("START_TIME");
-    private static final TableField FINISH_TIME = TABLE_FACTORY_BUILDER.addField("FINISH_TIME");
-    private static final TableField TASK_ID = TABLE_FACTORY_BUILDER.addField("TASK_ID");
-
-    private static final TableWriterFactory TABLE_FACTORY = TABLE_FACTORY_BUILDER.build();
-
+    private final TableWriterFactory.Builder tableFactoryBuilder = TableWriterFactory.builder();
+    private final TableField stateField = tableFactoryBuilder.addField("STATE");
+    private final TableWriterFactory tableWriterFactory;
     private final PrintStream out;
+    private final StandardProcessRunReporter processRunReporter;
 
     public StandardCompactionTaskStatusReporter(PrintStream out) {
+        this.processRunReporter = new StandardProcessRunReporter(out, tableFactoryBuilder);
+        tableWriterFactory = tableFactoryBuilder.build();
         this.out = out;
     }
 
@@ -53,16 +51,14 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
             out.printf("Total finished tasks: %s%n", tasks.stream().filter(CompactionTaskStatus::isFinished).count());
         }
 
-        TABLE_FACTORY.tableBuilder()
-                .showField(FINISH_TIME, query != CompactionTaskQuery.UNFINISHED)
+        tableWriterFactory.tableBuilder()
+                .showFields(query != CompactionTaskQuery.UNFINISHED, processRunReporter.getFinishedFields())
                 .itemsAndWriter(tasks, this::writeRow)
                 .build().write(out);
     }
 
     private void writeRow(CompactionTaskStatus task, TableRow.Builder builder) {
-        builder.value(STATE, task.isFinished() ? "FINISHED" : "RUNNING")
-                .value(START_TIME, task.getStartTime())
-                .value(FINISH_TIME, task.getFinishTime())
-                .value(TASK_ID, task.getTaskId());
+        builder.value(stateField, task.isFinished() ? "FINISHED" : "RUNNING");
+        processRunReporter.writeRunFields(task.asProcessRun(), builder);
     }
 }
