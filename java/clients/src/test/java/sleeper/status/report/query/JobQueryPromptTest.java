@@ -18,7 +18,6 @@ package sleeper.status.report.query;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.status.report.compaction.job.CompactionJobQuery;
 
 import java.time.Instant;
 import java.util.List;
@@ -86,7 +85,7 @@ public class JobQueryPromptTest extends JobQueryTestBase {
         in.enterNextPrompts("d", queryParameters);
 
         // When
-        CompactionJobQuery query = queryByPrompt();
+        JobQuery query = queryByPrompt();
 
         // Then
         assertThat(out).hasToString(QUERY_TYPE_PROMPT + DETAILED_JOB_ID_PROMPT);
@@ -193,7 +192,7 @@ public class JobQueryPromptTest extends JobQueryTestBase {
         in.enterNextPrompts("");
 
         // When
-        CompactionJobQuery query = queryByPrompt();
+        JobQuery query = queryByPrompt();
 
         // Then
         assertThat(out).hasToString(QUERY_TYPE_PROMPT);
@@ -208,7 +207,7 @@ public class JobQueryPromptTest extends JobQueryTestBase {
         return queryStatusesAtTime(Type.PROMPT, time);
     }
 
-    private CompactionJobQuery queryByPrompt() {
+    private JobQuery queryByPrompt() {
         return queryFrom(Type.PROMPT);
     }
 }

@@ -18,32 +18,10 @@ package sleeper.status.report.compaction.job;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.status.report.query.AllJobsQuery;
-import sleeper.status.report.query.DetailedJobsQuery;
-import sleeper.status.report.query.RangeJobsQuery;
-import sleeper.status.report.query.UnfinishedJobsQuery;
 
-import java.time.Clock;
 import java.util.List;
 
-import static sleeper.status.report.query.JobQuery.Type;
-
 public interface CompactionJobQuery {
-
-    static CompactionJobQuery from(String tableName, Type queryType, String queryParameters, Clock clock) {
-        switch (queryType) {
-            case ALL:
-                return new AllJobsQuery(tableName).forCompaction();
-            case UNFINISHED:
-                return new UnfinishedJobsQuery(tableName).forCompaction();
-            case DETAILED:
-                return DetailedJobsQuery.fromParameters(queryParameters);
-            case RANGE:
-                return RangeJobsQuery.fromParameters(tableName, queryParameters, clock);
-            default:
-                throw new IllegalArgumentException("Unexpected query type: " + queryType);
-        }
-    }
 
     List<CompactionJobStatus> run(CompactionJobStatusStore statusStore);
 }

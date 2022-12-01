@@ -14,29 +14,25 @@
  * limitations under the License.
  */
 
-package sleeper.status.report.compaction.job;
+package sleeper.status.report.query;
 
 import sleeper.console.ConsoleInput;
-import sleeper.status.report.query.AllJobsQuery;
-import sleeper.status.report.query.DetailedJobsQuery;
-import sleeper.status.report.query.RangeJobsQuery;
-import sleeper.status.report.query.UnfinishedJobsQuery;
 
 import java.time.Clock;
 
-public class CompactionJobQueryPrompt {
+public class JobQueryPrompt {
 
-    private CompactionJobQueryPrompt() {
+    private JobQueryPrompt() {
     }
 
-    public static CompactionJobQuery from(String tableName, ConsoleInput in, Clock clock) {
+    public static JobQuery from(String tableName, ConsoleInput in, Clock clock) {
         String type = in.promptLine("All (a), Detailed (d), range (r), or unfinished (u) query? ");
         if ("".equals(type)) {
             return null;
         } else if (type.equalsIgnoreCase("a")) {
-            return new AllJobsQuery(tableName).forCompaction();
+            return new AllJobsQuery(tableName);
         } else if (type.equalsIgnoreCase("u")) {
-            return new UnfinishedJobsQuery(tableName).forCompaction();
+            return new UnfinishedJobsQuery(tableName);
         } else if (type.equalsIgnoreCase("d")) {
             String jobIds = in.promptLine("Enter jobId to get detailed information about: ");
             return DetailedJobsQuery.fromParameters(jobIds);

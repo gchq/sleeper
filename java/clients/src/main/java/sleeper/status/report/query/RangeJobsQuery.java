@@ -49,23 +49,23 @@ public class RangeJobsQuery implements JobQuery {
         return (CompactionJobStatusStore store) -> store.getJobsInTimePeriod(tableName, start, end);
     }
 
-    public static CompactionJobQuery fromParameters(String tableName, String queryParameters, Clock clock) {
+    public static JobQuery fromParameters(String tableName, String queryParameters, Clock clock) {
         if (queryParameters == null) {
             Instant end = clock.instant();
             Instant start = end.minus(Duration.ofHours(4));
-            return new RangeJobsQuery(tableName, start, end).forCompaction();
+            return new RangeJobsQuery(tableName, start, end);
         } else {
             String[] parts = queryParameters.split(",");
             Instant start = parseStart(parts[0], clock);
             Instant end = parseEnd(parts[1], clock);
-            return new RangeJobsQuery(tableName, start, end).forCompaction();
+            return new RangeJobsQuery(tableName, start, end);
         }
     }
 
-    public static CompactionJobQuery prompt(String tableName, ConsoleInput in, Clock clock) {
+    public static JobQuery prompt(String tableName, ConsoleInput in, Clock clock) {
         Instant start = promptStart(in, clock);
         Instant end = promptEnd(in, clock);
-        return new RangeJobsQuery(tableName, start, end).forCompaction();
+        return new RangeJobsQuery(tableName, start, end);
     }
 
     private static Instant promptStart(ConsoleInput in, Clock clock) {

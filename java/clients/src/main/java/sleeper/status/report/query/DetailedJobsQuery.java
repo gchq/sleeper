@@ -39,11 +39,11 @@ public class DetailedJobsQuery implements JobQuery {
                 .collect(Collectors.toList());
     }
 
-    public static CompactionJobQuery fromParameters(String queryParameters) {
+    public static JobQuery fromParameters(String queryParameters) {
         if ("".equals(queryParameters)) {
             return null;
         }
-        return new DetailedJobsQuery(Arrays.asList(queryParameters.split(","))).forCompaction();
+        return new DetailedJobsQuery(Arrays.asList(queryParameters.split(",")));
     }
 
 }

@@ -22,7 +22,6 @@ import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.TestCompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.console.TestConsoleInput;
-import sleeper.status.report.compaction.job.CompactionJobQuery;
 import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
 import sleeper.status.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.status.report.query.JobQuery.Type;
@@ -60,15 +59,15 @@ public class JobQueryTestBase {
                 Clock.fixed(time, ZoneId.of("UTC")));
     }
 
-    protected CompactionJobQuery queryFrom(Type queryType) {
+    protected JobQuery queryFrom(Type queryType) {
         return queryFrom(queryType, null, Clock.systemUTC());
     }
 
     private List<CompactionJobStatus> queryStatuses(Type queryType, String queryParameters, Clock clock) {
-        return queryFrom(queryType, queryParameters, clock).run(statusStore);
+        return queryFrom(queryType, queryParameters, clock).forCompaction().run(statusStore);
     }
 
-    private CompactionJobQuery queryFrom(Type queryType, String queryParameters, Clock clock) {
+    private JobQuery queryFrom(Type queryType, String queryParameters, Clock clock) {
         return CompactionJobStatusReportArguments.builder()
                 .instanceId("test-instance").tableName(TABLE_NAME)
                 .reporter(new StandardCompactionJobStatusReporter())

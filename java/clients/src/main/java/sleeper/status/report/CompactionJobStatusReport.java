@@ -25,9 +25,9 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.console.ConsoleInput;
-import sleeper.status.report.compaction.job.CompactionJobQuery;
 import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
 import sleeper.status.report.compaction.job.CompactionJobStatusReporter;
+import sleeper.status.report.query.JobQuery;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -46,12 +46,14 @@ public class CompactionJobStatusReport {
     }
 
     public void run() {
-        CompactionJobQuery query = arguments.buildQuery(Clock.systemUTC(),
+        JobQuery query = arguments.buildQuery(Clock.systemUTC(),
                 new ConsoleInput(System.console()));
         if (query == null) {
             return;
         }
-        compactionJobStatusReporter.report(query.run(compactionJobStatusStore), arguments.getQueryType());
+        compactionJobStatusReporter.report(
+                query.forCompaction().run(compactionJobStatusStore),
+                arguments.getQueryType());
     }
 
     public static void main(String[] args) throws IOException {
