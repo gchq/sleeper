@@ -26,8 +26,6 @@ import java.util.List;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
-import static sleeper.status.report.StatusReporterTestHelper.replaceBracketedJobIds;
-import static sleeper.status.report.StatusReporterTestHelper.replaceStandardJobIds;
 
 public class CompactionJobStatusReporterAllQueryTest extends CompactionJobStatusReporterTestBase {
 
