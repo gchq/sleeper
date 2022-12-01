@@ -18,6 +18,7 @@ package sleeper.status.report.compaction.task;
 
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
+import sleeper.compaction.task.CompactionTaskType;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
@@ -31,6 +32,11 @@ public class CompactionTaskStatusReportTestHelper {
         return startedTaskBuilder(taskId, startTime).build();
     }
 
+    public static CompactionTaskStatus startedSplittingTask(String taskId, String startTime) {
+        return startedTaskBuilder(taskId, startTime).type(CompactionTaskType.SPLITTING)
+                .build();
+    }
+
     private static CompactionTaskStatus.Builder startedTaskBuilder(String taskId, String startTime) {
         return CompactionTaskStatus.builder()
                 .started(Instant.parse(startTime))
@@ -40,6 +46,12 @@ public class CompactionTaskStatusReportTestHelper {
     public static CompactionTaskStatus finishedTask(String taskId, String startTime,
                                                     String finishTime, long linesRead, long linesWritten) {
         return finishedTaskBuilder(taskId, startTime, finishTime, linesRead, linesWritten).build();
+    }
+
+    public static CompactionTaskStatus finishedSplittingTask(String taskId, String startTime,
+                                                             String finishTime, long linesRead, long linesWritten) {
+        return finishedTaskBuilder(taskId, startTime, finishTime, linesRead, linesWritten)
+                .type(CompactionTaskType.SPLITTING).build();
     }
 
     private static CompactionTaskStatus.Builder finishedTaskBuilder(String taskId, String startTime,

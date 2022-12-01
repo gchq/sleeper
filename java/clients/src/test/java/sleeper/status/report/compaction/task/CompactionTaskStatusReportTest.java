@@ -30,7 +30,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.ClientTestUtils.example;
+import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedSplittingTask;
 import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedTask;
+import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedSplittingTask;
 import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
 
 public class CompactionTaskStatusReportTest {
@@ -63,6 +65,24 @@ public class CompactionTaskStatusReportTest {
                 example("reports/compaction/task/unfinishedAndFinished.txt"));
         assertThat(getJsonReport(CompactionTaskQuery.ALL)).hasToString(
                 example("reports/compaction/task/unfinishedAndFinished.json"));
+    }
+
+    @Test
+    public void shouldReportMixedTypesOfCompactionTask() throws Exception {
+        // Given
+        CompactionTaskStatus unfinishedTask = startedTask("A", "2022-10-06T12:18:00.001Z");
+        CompactionTaskStatus finishedTask = finishedTask("B", "2022-10-06T12:20:00.001Z",
+                "2022-10-06T12:20:30.001Z", 200L, 100L);
+        CompactionTaskStatus unfinishedSplittingTask = startedSplittingTask("C", "2022-10-06T12:22:00.001Z");
+        CompactionTaskStatus finishedSplittingTask = finishedSplittingTask("D", "2022-10-06T12:24:00.001Z",
+                "2022-10-06T12:24:30.001Z", 400L, 200L);
+        when(store.getAllTasks()).thenReturn(Arrays.asList(unfinishedTask, finishedTask, unfinishedSplittingTask, finishedSplittingTask));
+
+        // When / Then
+        assertThat(getStandardReport(CompactionTaskQuery.ALL)).hasToString(
+                example("reports/compaction/task/mixedTypes.txt"));
+        assertThat(getJsonReport(CompactionTaskQuery.ALL)).hasToString(
+                example("reports/compaction/task/mixedTypes.json"));
     }
 
     private String getStandardReport(CompactionTaskQuery query) {
