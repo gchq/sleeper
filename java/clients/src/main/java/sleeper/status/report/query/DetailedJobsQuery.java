@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.status.report.compaction.job.query;
+package sleeper.status.report.query;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.status.report.compaction.job.CompactionJobQuery;
@@ -23,14 +23,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class DetailedCompactionJobQuery {
+public class DetailedJobsQuery implements JobQuery {
 
     private final List<String> jobIds;
 
-    public DetailedCompactionJobQuery(List<String> jobIds) {
+    public DetailedJobsQuery(List<String> jobIds) {
         this.jobIds = jobIds;
     }
 
+    @Override
     public CompactionJobQuery forCompaction() {
         return (CompactionJobStatusStore store) -> jobIds.stream()
                 .map(store::getJob)
@@ -42,7 +43,7 @@ public class DetailedCompactionJobQuery {
         if ("".equals(queryParameters)) {
             return null;
         }
-        return new DetailedCompactionJobQuery(Arrays.asList(queryParameters.split(","))).forCompaction();
+        return new DetailedJobsQuery(Arrays.asList(queryParameters.split(","))).forCompaction();
     }
 
 }

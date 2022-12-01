@@ -13,19 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.status.report.compaction.job.query;
+package sleeper.status.report.query;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.status.report.compaction.job.CompactionJobQuery;
 
-public class UnfinishedCompactionJobQuery {
+public class AllJobsQuery implements JobQuery {
     private final String tableName;
 
-    public UnfinishedCompactionJobQuery(String tableName) {
+    public AllJobsQuery(String tableName) {
         this.tableName = tableName;
     }
 
+    @Override
     public CompactionJobQuery forCompaction() {
-        return (CompactionJobStatusStore store) -> store.getUnfinishedJobs(tableName);
+        return (CompactionJobStatusStore store) -> store.getAllJobs(tableName);
     }
 }

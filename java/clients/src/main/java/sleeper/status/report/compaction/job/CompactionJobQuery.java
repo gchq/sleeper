@@ -18,10 +18,10 @@ package sleeper.status.report.compaction.job;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.status.report.compaction.job.query.AllCompactionJobQuery;
-import sleeper.status.report.compaction.job.query.DetailedCompactionJobQuery;
-import sleeper.status.report.compaction.job.query.RangeCompactionJobQuery;
-import sleeper.status.report.compaction.job.query.UnfinishedCompactionJobQuery;
+import sleeper.status.report.query.AllJobsQuery;
+import sleeper.status.report.query.DetailedJobsQuery;
+import sleeper.status.report.query.RangeJobsQuery;
+import sleeper.status.report.query.UnfinishedJobsQuery;
 
 import java.time.Clock;
 import java.util.List;
@@ -33,13 +33,13 @@ public interface CompactionJobQuery {
     static CompactionJobQuery from(String tableName, QueryType queryType, String queryParameters, Clock clock) {
         switch (queryType) {
             case ALL:
-                return new AllCompactionJobQuery(tableName).forCompaction();
+                return new AllJobsQuery(tableName).forCompaction();
             case UNFINISHED:
-                return new UnfinishedCompactionJobQuery(tableName).forCompaction();
+                return new UnfinishedJobsQuery(tableName).forCompaction();
             case DETAILED:
-                return DetailedCompactionJobQuery.fromParameters(queryParameters);
+                return DetailedJobsQuery.fromParameters(queryParameters);
             case RANGE:
-                return RangeCompactionJobQuery.fromParameters(tableName, queryParameters, clock);
+                return RangeJobsQuery.fromParameters(tableName, queryParameters, clock);
             default:
                 throw new IllegalArgumentException("Unexpected query type: " + queryType);
         }

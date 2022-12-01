@@ -17,10 +17,10 @@
 package sleeper.status.report.compaction.job;
 
 import sleeper.console.ConsoleInput;
-import sleeper.status.report.compaction.job.query.AllCompactionJobQuery;
-import sleeper.status.report.compaction.job.query.DetailedCompactionJobQuery;
-import sleeper.status.report.compaction.job.query.RangeCompactionJobQuery;
-import sleeper.status.report.compaction.job.query.UnfinishedCompactionJobQuery;
+import sleeper.status.report.query.AllJobsQuery;
+import sleeper.status.report.query.DetailedJobsQuery;
+import sleeper.status.report.query.RangeJobsQuery;
+import sleeper.status.report.query.UnfinishedJobsQuery;
 
 import java.time.Clock;
 
@@ -34,14 +34,14 @@ public class CompactionJobQueryPrompt {
         if ("".equals(type)) {
             return null;
         } else if (type.equalsIgnoreCase("a")) {
-            return new AllCompactionJobQuery(tableName).forCompaction();
+            return new AllJobsQuery(tableName).forCompaction();
         } else if (type.equalsIgnoreCase("u")) {
-            return new UnfinishedCompactionJobQuery(tableName).forCompaction();
+            return new UnfinishedJobsQuery(tableName).forCompaction();
         } else if (type.equalsIgnoreCase("d")) {
             String jobIds = in.promptLine("Enter jobId to get detailed information about: ");
-            return DetailedCompactionJobQuery.fromParameters(jobIds);
+            return DetailedJobsQuery.fromParameters(jobIds);
         } else if (type.equalsIgnoreCase("r")) {
-            return RangeCompactionJobQuery.prompt(tableName, in, clock);
+            return RangeJobsQuery.prompt(tableName, in, clock);
         } else {
             return from(tableName, in, clock);
         }

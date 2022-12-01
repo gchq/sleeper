@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package sleeper.status.report.compaction.job;
+package sleeper.status.report.query;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.status.report.compaction.job.CompactionJobQuery;
 
 import java.time.Instant;
 import java.util.List;
@@ -27,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
 
-public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
+public class JobQueryPromptTest extends JobQueryTestBase {
 
     private static final String QUERY_TYPE_PROMPT = "All (a), Detailed (d), range (r), or unfinished (u) query? \n";
     private static final String DETAILED_JOB_ID_PROMPT = "Enter jobId to get detailed information about: \n";

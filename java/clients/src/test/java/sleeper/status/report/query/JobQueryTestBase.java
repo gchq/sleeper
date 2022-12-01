@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.status.report.compaction.job;
+package sleeper.status.report.query;
 
 import sleeper.ToStringPrintStream;
 import sleeper.compaction.job.CompactionJobStatusStore;
@@ -22,6 +22,10 @@ import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.TestCompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.console.TestConsoleInput;
+import sleeper.status.report.compaction.job.CompactionJobQuery;
+import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
+import sleeper.status.report.compaction.job.CompactionJobStatusReporter;
+import sleeper.status.report.compaction.job.StandardCompactionJobStatusReporter;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -31,7 +35,7 @@ import java.util.List;
 
 import static org.mockito.Mockito.mock;
 
-public class CompactionJobQueryTestBase {
+public class JobQueryTestBase {
     protected static final String TABLE_NAME = "test-table";
     protected final CompactionJobStatusStore statusStore = mock(CompactionJobStatusStore.class);
     private final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();

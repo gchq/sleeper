@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.status.report.compaction.job.query;
+package sleeper.status.report.query;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.console.ConsoleInput;
@@ -27,7 +27,7 @@ import java.time.Instant;
 import java.util.TimeZone;
 import java.util.function.Supplier;
 
-public class RangeCompactionJobQuery {
+public class RangeJobsQuery implements JobQuery {
 
     public static final String DATE_FORMAT = "yyyyMMddHHmmss";
 
@@ -35,7 +35,7 @@ public class RangeCompactionJobQuery {
     private final Instant start;
     private final Instant end;
 
-    public RangeCompactionJobQuery(String tableName, Instant start, Instant end) {
+    public RangeJobsQuery(String tableName, Instant start, Instant end) {
         if (start.isAfter(end)) {
             throw new IllegalArgumentException("Start of range provided is after end");
         }
@@ -44,6 +44,7 @@ public class RangeCompactionJobQuery {
         this.end = end;
     }
 
+    @Override
     public CompactionJobQuery forCompaction() {
         return (CompactionJobStatusStore store) -> store.getJobsInTimePeriod(tableName, start, end);
     }
@@ -52,19 +53,19 @@ public class RangeCompactionJobQuery {
         if (queryParameters == null) {
             Instant end = clock.instant();
             Instant start = end.minus(Duration.ofHours(4));
-            return new RangeCompactionJobQuery(tableName, start, end).forCompaction();
+            return new RangeJobsQuery(tableName, start, end).forCompaction();
         } else {
             String[] parts = queryParameters.split(",");
             Instant start = parseStart(parts[0], clock);
             Instant end = parseEnd(parts[1], clock);
-            return new RangeCompactionJobQuery(tableName, start, end).forCompaction();
+            return new RangeJobsQuery(tableName, start, end).forCompaction();
         }
     }
 
     public static CompactionJobQuery prompt(String tableName, ConsoleInput in, Clock clock) {
         Instant start = promptStart(in, clock);
         Instant end = promptEnd(in, clock);
-        return new RangeCompactionJobQuery(tableName, start, end).forCompaction();
+        return new RangeJobsQuery(tableName, start, end).forCompaction();
     }
 
     private static Instant promptStart(ConsoleInput in, Clock clock) {

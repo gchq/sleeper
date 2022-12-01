@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.status.report.compaction.job;
+package sleeper.status.report.query;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobStatus;
@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 import static sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
 
-public class CompactionJobQueryTest extends CompactionJobQueryTestBase {
+public class JobQueryTest extends JobQueryTestBase {
     @Test
     public void shouldCreateAllQueryWithNoParameters() {
         // Given
