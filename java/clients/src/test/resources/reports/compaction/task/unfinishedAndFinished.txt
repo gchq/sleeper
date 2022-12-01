@@ -4,6 +4,7 @@ Compaction Task Status Report
 Total tasks: 2
 Total unfinished tasks: 1
 Total finished tasks: 1
+Average compaction rate: 6.67 read/s, 3.33 write/s
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------
 | STATE    | TASK_ID         | START_TIME               | FINISH_TIME              | DURATION (s) | LINES_READ | LINES_WRITTEN | READ_RATE (s) | WRITE_RATE (s) |
 | RUNNING  | unfinished-task | 2022-10-06T12:17:00.001Z |                          |              |            |               |               |                |

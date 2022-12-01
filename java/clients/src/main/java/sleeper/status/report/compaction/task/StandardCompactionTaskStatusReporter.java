@@ -16,6 +16,8 @@
 package sleeper.status.report.compaction.task;
 
 import sleeper.compaction.task.CompactionTaskStatus;
+import sleeper.core.record.process.AverageRecordRate;
+import sleeper.status.report.job.AverageRecordRateReport;
 import sleeper.status.report.job.StandardProcessRunReporter;
 import sleeper.status.report.table.TableField;
 import sleeper.status.report.table.TableRow;
@@ -49,12 +51,18 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
             out.printf("Total tasks: %s%n", tasks.size());
             out.printf("Total unfinished tasks: %s%n", tasks.stream().filter(task -> !task.isFinished()).count());
             out.printf("Total finished tasks: %s%n", tasks.stream().filter(CompactionTaskStatus::isFinished).count());
+            AverageRecordRateReport.printf("Average compaction rate: %s%n", recordRate(tasks), out);
         }
 
         tableWriterFactory.tableBuilder()
                 .showFields(query != CompactionTaskQuery.UNFINISHED, processRunReporter.getFinishedFields())
                 .itemsAndWriter(tasks, this::writeRow)
                 .build().write(out);
+    }
+
+    private static AverageRecordRate recordRate(List<CompactionTaskStatus> tasks) {
+        return AverageRecordRate.of(tasks.stream()
+                .map(CompactionTaskStatus::asProcessRun));
     }
 
     private void writeRow(CompactionTaskStatus task, TableRow.Builder builder) {
