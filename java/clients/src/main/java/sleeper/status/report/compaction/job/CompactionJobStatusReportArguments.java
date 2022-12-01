@@ -17,6 +17,7 @@ package sleeper.status.report.compaction.job;
 
 import sleeper.console.ConsoleInput;
 import sleeper.status.report.query.JobQuery;
+import sleeper.status.report.query.JobQueryArgument;
 import sleeper.status.report.query.JobQueryPrompt;
 
 import java.io.PrintStream;
@@ -35,15 +36,6 @@ public class CompactionJobStatusReportArguments {
     static {
         REPORTERS.put(DEFAULT_REPORTER, new StandardCompactionJobStatusReporter());
         REPORTERS.put("JSON", new JsonCompactionJobStatusReporter());
-    }
-
-    private static final Map<String, JobQuery.Type> QUERY_TYPES = new HashMap<>();
-
-    static {
-        QUERY_TYPES.put("-a", JobQuery.Type.ALL);
-        QUERY_TYPES.put("-d", JobQuery.Type.DETAILED);
-        QUERY_TYPES.put("-r", JobQuery.Type.RANGE);
-        QUERY_TYPES.put("-u", JobQuery.Type.UNFINISHED);
     }
 
     private final String instanceId;
@@ -80,7 +72,7 @@ public class CompactionJobStatusReportArguments {
                 .instanceId(args[0])
                 .tableName(args[1])
                 .reporter(getReporter(args, 2))
-                .queryType(getQueryType(args, 3))
+                .queryType(JobQueryArgument.readTypeArgument(args, 3))
                 .queryParameters(optionalArgument(args, 4).orElse(null))
                 .build();
     }
@@ -116,19 +108,6 @@ public class CompactionJobStatusReportArguments {
             throw new IllegalArgumentException("Output type not supported: " + reporterType);
         }
         return REPORTERS.get(reporterType);
-    }
-
-    private static JobQuery.Type getQueryType(String[] args, int index) {
-        return optionalArgument(args, index)
-                .map(CompactionJobStatusReportArguments::readQueryType)
-                .orElse(JobQuery.Type.PROMPT);
-    }
-
-    private static JobQuery.Type readQueryType(String queryTypeStr) {
-        if (!QUERY_TYPES.containsKey(queryTypeStr)) {
-            throw new IllegalArgumentException("Invalid query type " + queryTypeStr + ". Valid query types are -d (Detailed), -r (Range), -u (Unfinished)");
-        }
-        return QUERY_TYPES.get(queryTypeStr);
     }
 
     public static final class Builder {
