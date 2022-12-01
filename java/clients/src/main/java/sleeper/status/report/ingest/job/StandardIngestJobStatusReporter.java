@@ -19,6 +19,7 @@ package sleeper.status.report.ingest.job;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.status.report.job.AverageRecordRateReport;
 import sleeper.status.report.job.StandardProcessRunReporter;
 import sleeper.status.report.job.query.JobQuery;
 import sleeper.status.report.table.TableField;
@@ -31,7 +32,6 @@ import java.util.List;
 
 import static sleeper.status.report.job.StandardProcessRunReporter.STATE_FINISHED;
 import static sleeper.status.report.job.StandardProcessRunReporter.STATE_IN_PROGRESS;
-import static sleeper.status.report.job.StandardProcessRunReporter.formatDecimal;
 
 public class StandardIngestJobStatusReporter implements IngestJobStatusReporter {
 
@@ -108,23 +108,12 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     private void printAllSummary(List<IngestJobStatus> statusList, int numberInQueue) {
         printUnfinishedSummary(statusList, numberInQueue);
         out.printf("Total jobs finished: %s%n", statusList.stream().filter(IngestJobStatus::isFinished).count());
-        printAverageIngestRate("Average ingest rate: %s%n", statusList);
+        AverageRecordRateReport.printf("Average ingest rate: %s%n", recordRate(statusList), out);
     }
 
     private void printUnfinishedSummary(List<IngestJobStatus> statusList, int numberInQueue) {
         out.printf("Total jobs waiting in queue (excluded from report): %s%n", numberInQueue);
         out.printf("Total jobs in progress: %s%n", statusList.stream().filter(status -> !status.isFinished()).count());
-    }
-
-    private void printAverageIngestRate(String formatString, List<IngestJobStatus> jobs) {
-        AverageRecordRate average = recordRate(jobs);
-        if (average.getJobCount() < 1) {
-            return;
-        }
-        String rateString = String.format("%s read/s, %s write/s",
-                formatDecimal(average.getRecordsReadPerSecond()),
-                formatDecimal(average.getRecordsWrittenPerSecond()));
-        out.printf(formatString, rateString);
     }
 
     private static AverageRecordRate recordRate(List<IngestJobStatus> jobs) {

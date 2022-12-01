@@ -19,6 +19,7 @@ package sleeper.status.report.compaction.job;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.status.report.job.AverageRecordRateReport;
 import sleeper.status.report.job.StandardProcessRunReporter;
 import sleeper.status.report.job.query.JobQuery;
 import sleeper.status.report.table.TableField;
@@ -32,7 +33,6 @@ import java.util.stream.Collectors;
 
 import static sleeper.status.report.job.StandardProcessRunReporter.STATE_FINISHED;
 import static sleeper.status.report.job.StandardProcessRunReporter.STATE_IN_PROGRESS;
-import static sleeper.status.report.job.StandardProcessRunReporter.formatDecimal;
 
 public class StandardCompactionJobStatusReporter implements CompactionJobStatusReporter {
 
@@ -94,9 +94,9 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private void printRangeSummary(List<CompactionJobStatus> jobStatusList) {
         out.printf("Total jobs in defined range: %d%n",
                 jobStatusList.size());
-        printAverageCompactionRate("Average compaction rate: %s%n", jobStatusList);
-        printAverageCompactionRate("Average standard compaction rate: %s%n", standardJobs(jobStatusList));
-        printAverageCompactionRate("Average splitting compaction rate: %s%n", splittingJobs(jobStatusList));
+        AverageRecordRateReport.printf("Average compaction rate: %s%n", recordRate(jobStatusList), out);
+        AverageRecordRateReport.printf("Average standard compaction rate: %s%n", recordRate(standardJobs(jobStatusList)), out);
+        AverageRecordRateReport.printf("Average splitting compaction rate: %s%n", recordRate(splittingJobs(jobStatusList)), out);
     }
 
     private void printDetailedSummary(List<CompactionJobStatus> jobStatusList) {
@@ -130,19 +130,19 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         List<CompactionJobStatus> splittingJobs = splittingJobs(jobStatusList);
         List<CompactionJobStatus> standardJobs = standardJobs(jobStatusList);
         out.printf("Total jobs: %d%n", jobStatusList.size());
-        printAverageCompactionRate("Average compaction rate: %s%n", jobStatusList);
+        AverageRecordRateReport.printf("Average compaction rate: %s%n", recordRate(jobStatusList), out);
         out.println();
         out.printf("Total standard jobs: %d%n", standardJobs.size());
         out.printf("Total standard jobs pending: %d%n", standardJobs.stream().filter(job -> !job.isStarted()).count());
         out.printf("Total standard jobs in progress: %d%n", standardJobs.stream().filter(job -> job.isStarted() && !job.isFinished()).count());
         out.printf("Total standard jobs finished: %d%n", standardJobs.stream().filter(CompactionJobStatus::isFinished).count());
-        printAverageCompactionRate("Average standard compaction rate: %s%n", standardJobs);
+        AverageRecordRateReport.printf("Average standard compaction rate: %s%n", recordRate(standardJobs), out);
         out.println();
         out.printf("Total splitting jobs: %d%n", splittingJobs.size());
         out.printf("Total splitting jobs pending: %d%n", splittingJobs.stream().filter(job -> !job.isStarted()).count());
         out.printf("Total splitting jobs in progress: %d%n", splittingJobs.stream().filter(job -> job.isStarted() && !job.isFinished()).count());
         out.printf("Total splitting jobs finished: %d%n", splittingJobs.stream().filter(CompactionJobStatus::isFinished).count());
-        printAverageCompactionRate("Average splitting compaction rate: %s%n", splittingJobs);
+        AverageRecordRateReport.printf("Average splitting compaction rate: %s%n", recordRate(splittingJobs), out);
     }
 
     private static List<CompactionJobStatus> standardJobs(List<CompactionJobStatus> jobStatusList) {
@@ -155,17 +155,6 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         return jobStatusList.stream()
                 .filter(CompactionJobStatus::isSplittingCompaction)
                 .collect(Collectors.toList());
-    }
-
-    private void printAverageCompactionRate(String formatString, List<CompactionJobStatus> jobs) {
-        AverageRecordRate average = recordRate(jobs);
-        if (average.getJobCount() < 1) {
-            return;
-        }
-        String rateString = String.format("%s read/s, %s write/s",
-                formatDecimal(average.getRecordsReadPerSecond()),
-                formatDecimal(average.getRecordsWrittenPerSecond()));
-        out.printf(formatString, rateString);
     }
 
     private static AverageRecordRate recordRate(List<CompactionJobStatus> jobs) {
