@@ -16,10 +16,12 @@
 
 package sleeper.status.report.ingest.job;
 
+import sleeper.console.ConsoleInput;
 import sleeper.status.report.query.JobQuery;
 import sleeper.status.report.query.JobQueryArgument;
 
 import java.io.PrintStream;
+import java.time.Clock;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -70,6 +72,10 @@ public class IngestJobStatusReportArguments {
                 .build();
     }
 
+    public JobQuery buildQuery(Clock clock, ConsoleInput input) {
+        return JobQuery.fromParametersOrPrompt(tableName, queryType, queryParameters, clock, input);
+    }
+
     private static IngestJobStatusReporter getReporter(String[] args, int index) {
         String reporterType = optionalArgument(args, index)
                 .map(str -> str.toUpperCase(Locale.ROOT))
@@ -94,10 +100,6 @@ public class IngestJobStatusReportArguments {
 
     public JobQuery.Type getQueryType() {
         return queryType;
-    }
-
-    public String getQueryParameters() {
-        return queryParameters;
     }
 
     public static Builder builder() {

@@ -25,8 +25,8 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.QueueAttributeName;
 import sleeper.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.console.ConsoleInput;
 import sleeper.ingest.job.status.DynamoDBIngestJobStatusStore;
-import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.job.common.CommonJobUtils;
 import sleeper.status.report.ingest.job.IngestJobStatusReportArguments;
@@ -34,12 +34,7 @@ import sleeper.status.report.ingest.job.IngestJobStatusReporter;
 import sleeper.status.report.query.JobQuery;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Scanner;
-import java.util.stream.Collectors;
+import java.time.Clock;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
@@ -63,71 +58,15 @@ public class IngestJobStatusReport {
     }
 
     private void run() {
-        switch (arguments.getQueryType()) {
-            case PROMPT:
-                runWithPrompts();
-                break;
-            case UNFINISHED:
-                handleUnfinishedQuery();
-                break;
-            case DETAILED:
-                List<String> jobIds = Collections.singletonList(arguments.getQueryParameters());
-                handleDetailedQuery(jobIds);
-                break;
-            case ALL:
-                handleAllQuery();
-                break;
-            default:
-                throw new IllegalArgumentException("Unexpected query type: " + arguments.getQueryType());
-        }
-    }
-
-    private void runWithPrompts() {
-        Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.displayName());
-        while (true) {
-            System.out.print("All (a), Detailed (d), or Unfinished (u) query? ");
-            String type = scanner.nextLine();
-            if ("".equals(type)) {
-                break;
-            }
-            if (type.equalsIgnoreCase("a")) {
-                handleAllQuery();
-            } else if (type.equalsIgnoreCase("d")) {
-                handleDetailedQuery(scanner);
-            } else if (type.equalsIgnoreCase("u")) {
-                handleUnfinishedQuery();
-            }
-        }
-    }
-
-    public void handleAllQuery() {
-        List<IngestJobStatus> statusList = statusStore.getAllJobs(arguments.getTableName());
-        ingestJobStatusReporter.report(statusList, JobQuery.Type.ALL, getNumberOfMessagesInQueue());
-    }
-
-    public void handleDetailedQuery(Scanner scanner) {
-        List<String> jobIds;
-
-        System.out.print("Enter jobId to get detailed information about:");
-        String input = scanner.nextLine();
-        if ("".equals(input)) {
+        JobQuery query = arguments.buildQuery(Clock.systemUTC(),
+                new ConsoleInput(System.console()));
+        if (query == null) {
             return;
         }
-        jobIds = Collections.singletonList(input);
-
-        handleDetailedQuery(jobIds);
-    }
-
-    public void handleDetailedQuery(List<String> jobIds) {
-        List<IngestJobStatus> statusList = jobIds.stream().map(statusStore::getJob)
-                .filter(Optional::isPresent).map(Optional::get)
-                .collect(Collectors.toList());
-        ingestJobStatusReporter.report(statusList, JobQuery.Type.DETAILED, getNumberOfMessagesInQueue());
-    }
-
-    public void handleUnfinishedQuery() {
-        List<IngestJobStatus> statusList = statusStore.getUnfinishedJobs(arguments.getTableName());
-        ingestJobStatusReporter.report(statusList, JobQuery.Type.UNFINISHED, getNumberOfMessagesInQueue());
+        ingestJobStatusReporter.report(
+                query.run(statusStore),
+                arguments.getQueryType(),
+                getNumberOfMessagesInQueue());
     }
 
     private int getNumberOfMessagesInQueue() {

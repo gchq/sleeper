@@ -17,6 +17,8 @@ package sleeper.status.report.query;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.util.List;
 
@@ -29,6 +31,11 @@ public class UnfinishedJobsQuery implements JobQuery {
 
     @Override
     public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
+        return statusStore.getUnfinishedJobs(tableName);
+    }
+
+    @Override
+    public List<IngestJobStatus> run(IngestJobStatusStore statusStore) {
         return statusStore.getUnfinishedJobs(tableName);
     }
 }

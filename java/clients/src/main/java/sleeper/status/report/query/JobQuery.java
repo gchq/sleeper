@@ -18,6 +18,8 @@ package sleeper.status.report.query;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.console.ConsoleInput;
+import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.time.Clock;
 import java.util.List;
@@ -25,6 +27,8 @@ import java.util.List;
 public interface JobQuery {
 
     List<CompactionJobStatus> run(CompactionJobStatusStore statusStore);
+
+    List<IngestJobStatus> run(IngestJobStatusStore statusStore);
 
     static JobQuery from(String tableName, Type queryType, String queryParameters, Clock clock) {
         switch (queryType) {

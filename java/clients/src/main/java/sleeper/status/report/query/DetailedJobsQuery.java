@@ -17,10 +17,13 @@ package sleeper.status.report.query;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class DetailedJobsQuery implements JobQuery {
@@ -33,8 +36,17 @@ public class DetailedJobsQuery implements JobQuery {
 
     @Override
     public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
+        return run(statusStore::getJob);
+    }
+
+    @Override
+    public List<IngestJobStatus> run(IngestJobStatusStore statusStore) {
+        return run(statusStore::getJob);
+    }
+
+    private <T> List<T> run(Function<String, Optional<T>> getJob) {
         return jobIds.stream()
-                .map(statusStore::getJob)
+                .map(getJob)
                 .filter(Optional::isPresent).map(Optional::get)
                 .collect(Collectors.toList());
     }

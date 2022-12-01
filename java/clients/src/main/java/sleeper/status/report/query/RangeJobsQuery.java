@@ -18,6 +18,8 @@ package sleeper.status.report.query;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.console.ConsoleInput;
+import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -47,6 +49,11 @@ public class RangeJobsQuery implements JobQuery {
 
     @Override
     public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
+        return statusStore.getJobsInTimePeriod(tableName, start, end);
+    }
+
+    @Override
+    public List<IngestJobStatus> run(IngestJobStatusStore statusStore) {
         return statusStore.getJobsInTimePeriod(tableName, start, end);
     }
 
