@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package sleeper.status.report.compactionjob;
+package sleeper.status.report.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
+import sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
 
 import java.util.Collections;
 import java.util.List;
@@ -36,9 +36,9 @@ public class CompactionJobStatusReporterDetailedQueryTest extends CompactionJobS
 
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
-                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/standard/detailed/mixedJobs.txt")));
+                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compaction/job/standard/detailed/mixedJobs.txt")));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
-                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/json/mixedJobs.json")));
+                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compaction/job/json/mixedJobs.json")));
     }
 
     @Test
@@ -48,9 +48,9 @@ public class CompactionJobStatusReporterDetailedQueryTest extends CompactionJobS
 
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.DETAILED))
-                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/standard/detailed/jobWithMultipleRuns.txt")));
+                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compaction/job/standard/detailed/jobWithMultipleRuns.txt")));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.DETAILED))
-                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/json/jobWithMultipleRuns.json")));
+                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compaction/job/json/jobWithMultipleRuns.json")));
     }
 
     @Test
@@ -60,9 +60,9 @@ public class CompactionJobStatusReporterDetailedQueryTest extends CompactionJobS
 
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.DETAILED))
-                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/standard/detailed/jobsWithLargeAndDecimalStatistics.txt")));
+                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compaction/job/standard/detailed/jobsWithLargeAndDecimalStatistics.txt")));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.DETAILED))
-                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/json/jobsWithLargeAndDecimalStatistics.json")));
+                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compaction/job/json/jobsWithLargeAndDecimalStatistics.json")));
     }
 
     @Test
@@ -72,9 +72,9 @@ public class CompactionJobStatusReporterDetailedQueryTest extends CompactionJobS
 
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
-                .isEqualTo(example("reports/compactionjobstatus/standard/detailed/noJobFound.txt"));
+                .isEqualTo(example("reports/compaction/job/standard/detailed/noJobFound.txt"));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
-                .isEqualTo(example("reports/compactionjobstatus/json/noJobs.json"));
+                .isEqualTo(example("reports/compaction/job/json/noJobs.json"));
 
     }
 }

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package sleeper.status.report.compactionjob;
+package sleeper.status.report.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
+import sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
 
 import java.util.Collections;
 import java.util.List;
@@ -38,9 +38,11 @@ public class CompactionJobStatusReporterUnfinishedQueryTest extends CompactionJo
 
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
-                .isEqualTo(replaceStandardJobIds(statusList, example("reports/compactionjobstatus/standard/unfinished/mixedUnfinishedJobs.txt")));
+                .isEqualTo(replaceStandardJobIds(statusList,
+                        example("reports/compaction/job/standard/unfinished/mixedUnfinishedJobs.txt")));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
-                .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compactionjobstatus/json/mixedUnfinishedJobs.json")));
+                .isEqualTo(replaceBracketedJobIds(statusList,
+                        example("reports/compaction/job/json/mixedUnfinishedJobs.json")));
     }
 
     @Test
@@ -50,8 +52,8 @@ public class CompactionJobStatusReporterUnfinishedQueryTest extends CompactionJo
 
         // When / Then
         assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/standard/unfinished/noJobs.txt"));
+                .isEqualTo(example("reports/compaction/job/standard/unfinished/noJobs.txt"));
         assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.UNFINISHED))
-                .isEqualTo(example("reports/compactionjobstatus/json/noJobs.json"));
+                .isEqualTo(example("reports/compaction/job/json/noJobs.json"));
     }
 }
