@@ -15,6 +15,7 @@
  */
 package sleeper.status.report.query;
 
+import sleeper.console.ConsoleInput;
 import sleeper.status.report.compaction.job.CompactionJobQuery;
 
 import java.time.Clock;
@@ -36,6 +37,14 @@ public interface JobQuery {
             default:
                 throw new IllegalArgumentException("Unexpected query type: " + queryType);
         }
+    }
+
+    static JobQuery fromParametersOrPrompt(
+            String tableName, Type queryType, String queryParameters, Clock clock, ConsoleInput input) {
+        if (queryType == JobQuery.Type.PROMPT) {
+            return JobQueryPrompt.from(tableName, clock, input);
+        }
+        return from(tableName, queryType, queryParameters, clock);
     }
 
     enum Type {

@@ -25,7 +25,7 @@ public class JobQueryPrompt {
     private JobQueryPrompt() {
     }
 
-    public static JobQuery from(String tableName, ConsoleInput in, Clock clock) {
+    public static JobQuery from(String tableName, Clock clock, ConsoleInput in) {
         String type = in.promptLine("All (a), Detailed (d), range (r), or unfinished (u) query? ");
         if ("".equals(type)) {
             return null;
@@ -39,7 +39,7 @@ public class JobQueryPrompt {
         } else if (type.equalsIgnoreCase("r")) {
             return RangeJobsQuery.prompt(tableName, in, clock);
         } else {
-            return from(tableName, in, clock);
+            return from(tableName, clock, in);
         }
     }
 }
