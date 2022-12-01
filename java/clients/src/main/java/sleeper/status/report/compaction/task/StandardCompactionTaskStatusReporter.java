@@ -76,11 +76,17 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
         out.printf("Total standard tasks: %s%n", standardTasks.size());
         out.printf("Total standard tasks in progress: %s%n", standardTasks.stream().filter(task -> !task.isFinished()).count());
         out.printf("Total standard tasks finished: %s%n", standardTasks.stream().filter(CompactionTaskStatus::isFinished).count());
+        if (standardTasks.stream().anyMatch(CompactionTaskStatus::isFinished)) {
+            out.printf("Total standard jobs run: %s%n", getTotalJobsRun(standardTasks));
+        }
         AverageRecordRateReport.printf("Average standard compaction rate: %s%n", recordRate(standardTasks), out);
         out.println();
         out.printf("Total splitting tasks: %s%n", splittingTasks.size());
         out.printf("Total splitting tasks in progress: %s%n", splittingTasks.stream().filter(task -> !task.isFinished()).count());
         out.printf("Total splitting tasks finished: %s%n", splittingTasks.stream().filter(CompactionTaskStatus::isFinished).count());
+        if (splittingTasks.stream().anyMatch(CompactionTaskStatus::isFinished)) {
+            out.printf("Total splitting jobs run: %s%n", getTotalJobsRun(splittingTasks));
+        }
         AverageRecordRateReport.printf("Average splitting compaction rate: %s%n", recordRate(splittingTasks), out);
     }
 
@@ -94,6 +100,13 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
         return tasks.stream()
                 .filter(task -> task.getType() == CompactionTaskType.SPLITTING)
                 .collect(Collectors.toList());
+    }
+
+    private static int getTotalJobsRun(List<CompactionTaskStatus> tasks) {
+        return tasks.stream()
+                .filter(CompactionTaskStatus::isFinished)
+                .mapToInt(task -> task.getFinishedStatus().getTotalJobRuns())
+                .sum();
     }
 
     private static AverageRecordRate recordRate(List<CompactionTaskStatus> tasks) {

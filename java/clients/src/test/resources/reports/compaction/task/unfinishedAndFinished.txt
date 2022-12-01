@@ -6,6 +6,7 @@ Total tasks: 2
 Total standard tasks: 2
 Total standard tasks in progress: 1
 Total standard tasks finished: 1
+Total standard jobs run: 1
 Average standard compaction rate: 6.67 read/s, 3.33 write/s
 
 Total splitting tasks: 0

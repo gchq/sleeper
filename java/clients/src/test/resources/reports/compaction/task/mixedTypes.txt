@@ -6,11 +6,13 @@ Total tasks: 4
 Total standard tasks: 2
 Total standard tasks in progress: 1
 Total standard tasks finished: 1
+Total standard jobs run: 1
 Average standard compaction rate: 6.67 read/s, 3.33 write/s
 
 Total splitting tasks: 2
 Total splitting tasks in progress: 1
 Total splitting tasks finished: 1
+Total splitting jobs run: 1
 Average splitting compaction rate: 13.33 read/s, 6.67 write/s
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | STATE    | TYPE       | TASK_ID | START_TIME               | FINISH_TIME              | DURATION (s) | LINES_READ | LINES_WRITTEN | READ_RATE (s) | WRITE_RATE (s) |
