@@ -17,6 +17,8 @@ package sleeper.core.record.process;
 
 import sleeper.core.record.process.status.ProcessRun;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.stream.Stream;
 
 public class AverageRecordRate {
@@ -34,7 +36,11 @@ public class AverageRecordRate {
         runCount = builder.runCount;
         recordsRead = builder.recordsRead;
         recordsWritten = builder.recordsWritten;
-        totalDurationInSeconds = builder.totalDurationInSeconds;
+        if (builder.startTime == null || builder.finishTime == null) {
+            totalDurationInSeconds = builder.totalRunDurationInSeconds;
+        } else {
+            totalDurationInSeconds = Duration.between(builder.startTime, builder.finishTime).getSeconds();
+        }
         recordsReadPerSecond = recordsRead / totalDurationInSeconds;
         recordsWrittenPerSecond = recordsWritten / totalDurationInSeconds;
         averageJobRecordsReadPerSecond = builder.totalRecordsReadPerSecond / runCount;
@@ -84,10 +90,12 @@ public class AverageRecordRate {
     }
 
     public static final class Builder {
+        private Instant startTime;
+        private Instant finishTime;
         private int runCount;
         private long recordsRead;
         private long recordsWritten;
-        private double totalDurationInSeconds;
+        private double totalRunDurationInSeconds;
         private double totalRecordsReadPerSecond;
         private double totalRecordsWrittenPerSecond;
 
@@ -103,9 +111,19 @@ public class AverageRecordRate {
             runCount++;
             recordsRead += summary.getLinesRead();
             recordsWritten += summary.getLinesWritten();
-            totalDurationInSeconds += summary.getDurationInSeconds();
+            totalRunDurationInSeconds += summary.getDurationInSeconds();
             totalRecordsReadPerSecond += summary.getRecordsReadPerSecond();
             totalRecordsWrittenPerSecond += summary.getRecordsWrittenPerSecond();
+            return this;
+        }
+
+        public Builder startTime(Instant startTime) {
+            this.startTime = startTime;
+            return this;
+        }
+
+        public Builder finishTime(Instant finishTime) {
+            this.finishTime = finishTime;
             return this;
         }
 

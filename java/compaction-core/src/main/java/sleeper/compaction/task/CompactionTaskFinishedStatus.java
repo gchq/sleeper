@@ -16,6 +16,7 @@
 
 package sleeper.compaction.task;
 
+import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
@@ -23,7 +24,7 @@ import java.util.Objects;
 
 public class CompactionTaskFinishedStatus {
     private final Instant finishTime;
-    private final int totalJobs;
+    private final int totalRuns;
     private final double totalRuntimeInSeconds;
     private final long totalRecordsRead;
     private final long totalRecordsWritten;
@@ -32,7 +33,7 @@ public class CompactionTaskFinishedStatus {
 
     private CompactionTaskFinishedStatus(Builder builder) {
         finishTime = Objects.requireNonNull(builder.finishTime, "finishTime must not be null");
-        totalJobs = builder.totalJobs;
+        totalRuns = builder.totalRuns;
         totalRuntimeInSeconds = builder.totalRuntimeInSeconds;
         totalRecordsRead = builder.totalRecordsRead;
         totalRecordsWritten = builder.totalRecordsWritten;
@@ -48,8 +49,8 @@ public class CompactionTaskFinishedStatus {
         return finishTime;
     }
 
-    public int getTotalJobs() {
-        return totalJobs;
+    public int getTotalRuns() {
+        return totalRuns;
     }
 
     public double getTotalRuntimeInSeconds() {
@@ -87,12 +88,12 @@ public class CompactionTaskFinishedStatus {
                 && Double.compare(that.recordsReadPerSecond, recordsReadPerSecond) == 0
                 && Double.compare(that.recordsWrittenPerSecond, recordsWrittenPerSecond) == 0
                 && Objects.equals(finishTime, that.finishTime)
-                && Objects.equals(totalJobs, that.totalJobs);
+                && Objects.equals(totalRuns, that.totalRuns);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(finishTime, totalJobs, totalRuntimeInSeconds,
+        return Objects.hash(finishTime, totalRuns, totalRuntimeInSeconds,
                 totalRecordsRead, totalRecordsWritten, recordsReadPerSecond, recordsWrittenPerSecond);
     }
 
@@ -100,7 +101,7 @@ public class CompactionTaskFinishedStatus {
     public String toString() {
         return "CompactionTaskFinishedStatus{" +
                 "finishTime=" + finishTime +
-                ", totalJobs=" + totalJobs +
+                ", totalJobs=" + totalRuns +
                 ", totalRuntimeInSeconds=" + totalRuntimeInSeconds +
                 ", totalRecordsRead=" + totalRecordsRead +
                 ", totalRecordsWritten=" + totalRecordsWritten +
@@ -109,15 +110,15 @@ public class CompactionTaskFinishedStatus {
                 '}';
     }
 
-
     public static final class Builder {
         private Instant finishTime;
-        private int totalJobs;
+        private int totalRuns;
         private double totalRuntimeInSeconds;
         private long totalRecordsRead;
         private long totalRecordsWritten;
         private double recordsReadPerSecond;
         private double recordsWrittenPerSecond;
+        private final AverageRecordRate.Builder rateBuilder = AverageRecordRate.builder();
 
         private Builder() {
         }
@@ -128,7 +129,7 @@ public class CompactionTaskFinishedStatus {
         }
 
         public Builder totalJobs(int totalJobs) {
-            this.totalJobs = totalJobs;
+            this.totalRuns = totalJobs;
             return this;
         }
 
@@ -158,17 +159,18 @@ public class CompactionTaskFinishedStatus {
         }
 
         public Builder addJobSummary(RecordsProcessedSummary jobSummary) {
-            totalJobs++;
-            totalRecordsRead += jobSummary.getLinesRead();
-            totalRecordsWritten += jobSummary.getLinesWritten();
+            rateBuilder.summary(jobSummary);
             return this;
         }
 
         public Builder finish(Instant startTime, Instant finishTime) {
-            double durationInSeconds = (finishTime.toEpochMilli() - startTime.toEpochMilli()) / 1000.0;
-            recordsReadPerSecond = totalRecordsRead / durationInSeconds;
-            recordsWrittenPerSecond = totalRecordsWritten / durationInSeconds;
-            totalRuntimeInSeconds = durationInSeconds;
+            AverageRecordRate rate = rateBuilder.startTime(startTime).finishTime(finishTime).build();
+            totalRuns = rate.getRunCount();
+            totalRecordsRead = rate.getRecordsRead();
+            totalRecordsWritten = rate.getRecordsWritten();
+            totalRuntimeInSeconds = rate.getTotalDurationInSeconds();
+            recordsReadPerSecond = rate.getRecordsReadPerSecond();
+            recordsWrittenPerSecond = rate.getRecordsWrittenPerSecond();
             this.finishTime = finishTime;
             return this;
         }

@@ -67,7 +67,7 @@ public class DynamoDBCompactionTaskStatusFormat {
                 .number(START_TIME, taskStatus.getStartedStatus().getStartTime().toEpochMilli())
                 .number(FINISH_TIME, taskStatus.getFinishedStatus().getFinishTime().toEpochMilli())
                 .number(DURATION, taskStatus.getFinishedStatus().getTotalRuntimeInSeconds())
-                .number(NUMBER_OF_JOBS, taskStatus.getFinishedStatus().getTotalJobs())
+                .number(NUMBER_OF_JOBS, taskStatus.getFinishedStatus().getTotalRuns())
                 .number(LINES_READ, taskStatus.getFinishedStatus().getTotalRecordsRead())
                 .number(LINES_WRITTEN, taskStatus.getFinishedStatus().getTotalRecordsWritten())
                 .number(READ_RATE, taskStatus.getFinishedStatus().getRecordsReadPerSecond())
