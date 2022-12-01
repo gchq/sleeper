@@ -41,7 +41,7 @@ public class IngestJobStatusTest {
         Instant startTime = Instant.parse("2022-09-22T13:33:00.001Z");
 
         // When
-        IngestJobStatus status = IngestJobStatus.started(job, "test-task", updateTime, startTime);
+        IngestJobStatus status = TestIngestJobStatus.started(job, "test-task", updateTime, startTime);
 
         // Then
         assertThat(status)
@@ -62,7 +62,7 @@ public class IngestJobStatusTest {
         Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
 
         // When
-        IngestJobStatus status = IngestJobStatus.started(job, "test-task", updateTime, startTime);
+        IngestJobStatus status = TestIngestJobStatus.started(job, "test-task", updateTime, startTime);
 
         // Then
         assertThat(status)
