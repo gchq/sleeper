@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/chunk-common.yaml'
       - '.github/workflows/chunk.yaml'
+      - '.github/config/chunks.yaml'
       - 'code-style/checkstyle*.xml'
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
@@ -16,7 +17,7 @@ on:
       - 'java/core/**'
 
 jobs:
-  module-workflow:
+  chunk-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
       chunkId: common

@@ -22,179 +22,38 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import sleeper.ClientUtils;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.status.report.compactionjob.CompactionJobStatusCollector;
-import sleeper.status.report.compactionjob.CompactionJobStatusReportArguments;
-import sleeper.status.report.compactionjob.CompactionJobStatusReporter;
-import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
+import sleeper.console.ConsoleInput;
+import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
+import sleeper.status.report.compaction.job.CompactionJobStatusReporter;
+import sleeper.status.report.query.JobQuery;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Scanner;
-import java.util.TimeZone;
+import java.time.Clock;
 
 public class CompactionJobStatusReport {
     private final CompactionJobStatusReportArguments arguments;
     private final CompactionJobStatusReporter compactionJobStatusReporter;
-    private final CompactionJobStatusCollector compactionJobStatusCollector;
-    private static final String DATE_FORMAT = "yyyyMMddhhmmss";
-    private static final Instant DEFAULT_RANGE_START = Instant.now().minus(4L, ChronoUnit.HOURS);
-    private static final Instant DEFAULT_RANGE_END = Instant.now();
-
-    private static SimpleDateFormat createDateInputFormat() {
-        SimpleDateFormat dateInputFormat = new SimpleDateFormat(DATE_FORMAT);
-        dateInputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return dateInputFormat;
-    }
-
-    public static Instant parseDate(String input) throws ParseException {
-        return createDateInputFormat().parse(input).toInstant();
-    }
-
-    public static String formatDate(Instant input) {
-        return createDateInputFormat().format(Date.from(input));
-    }
+    private final CompactionJobStatusStore compactionJobStatusStore;
 
     public CompactionJobStatusReport(
             CompactionJobStatusStore compactionJobStatusStore,
             CompactionJobStatusReportArguments arguments) {
         this.arguments = arguments;
-        this.compactionJobStatusCollector = new CompactionJobStatusCollector(compactionJobStatusStore, arguments.getTableName());
+        this.compactionJobStatusStore = compactionJobStatusStore;
         this.compactionJobStatusReporter = arguments.getReporter();
     }
 
     public void run() {
-        switch (arguments.getQueryType()) {
-            case PROMPT:
-                runWithPrompts();
-                break;
-            case UNFINISHED:
-                handleUnfinishedQuery();
-                break;
-            case DETAILED:
-                List<String> jobIds = Collections.singletonList(arguments.getQueryParameters());
-                handleDetailedQuery(jobIds);
-                break;
-            case RANGE:
-                Instant startRange;
-                Instant endRange;
-                try {
-                    startRange = parseDate(arguments.getQueryParameters().split(",")[0]);
-                    endRange = parseDate(arguments.getQueryParameters().split(",")[1]);
-                } catch (ParseException e) {
-                    System.out.println("Error while parsing input string, using system defaults (past 4 hours)");
-                    startRange = DEFAULT_RANGE_START;
-                    endRange = DEFAULT_RANGE_END;
-                }
-                handleRangeQuery(startRange, endRange);
-                break;
-            case ALL:
-                handleAllQuery();
-                break;
-            default:
-                throw new IllegalArgumentException("Unexpected query type: " + arguments.getQueryType());
-        }
-    }
-
-    private void runWithPrompts() {
-        Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.displayName());
-        while (true) {
-            System.out.print("All (a), Detailed (d), range (r), or unfinished (u) query? ");
-            String type = scanner.nextLine();
-            if ("".equals(type)) {
-                break;
-            }
-            if (type.equalsIgnoreCase("a")) {
-                handleAllQuery();
-            } else if (type.equalsIgnoreCase("d")) {
-                handleDetailedQuery(scanner);
-            } else if (type.equalsIgnoreCase("r")) {
-                handleRangeQuery(scanner);
-            } else if (type.equalsIgnoreCase("u")) {
-                handleUnfinishedQuery();
-            }
-        }
-    }
-
-    public void handleUnfinishedQuery() {
-        List<CompactionJobStatus> statusList = compactionJobStatusCollector.runUnfinishedQuery();
-        compactionJobStatusReporter.report(statusList, QueryType.UNFINISHED);
-    }
-
-    public void handleRangeQuery(Scanner scanner) {
-        Instant startTime = promptForStartRange(scanner);
-        Instant endTime = promptForEndRange(scanner);
-        handleRangeQuery(startTime, endTime);
-    }
-
-    public void handleRangeQuery(Instant startRange, Instant endRange) {
-        if (startRange.isAfter(endRange)) {
-            System.out.println("Start range provided is before end range. Using system defaults (past 4 hours)");
-            startRange = DEFAULT_RANGE_START;
-            endRange = DEFAULT_RANGE_END;
-        }
-        List<CompactionJobStatus> statusList = compactionJobStatusCollector.runRangeQuery(startRange, endRange);
-        compactionJobStatusReporter.report(statusList, QueryType.RANGE);
-    }
-
-    private Instant promptForStartRange(Scanner scanner) {
-        return promptForRange(scanner, "start", DEFAULT_RANGE_START);
-    }
-
-    private Instant promptForEndRange(Scanner scanner) {
-        return promptForRange(scanner, "end", DEFAULT_RANGE_END);
-    }
-
-    private Instant promptForRange(Scanner scanner, String rangeName, Instant defaultRange) {
-        while (true) {
-            System.out.printf("Enter %s range in format %s (default is %s):",
-                    rangeName,
-                    DATE_FORMAT,
-                    formatDate(defaultRange));
-            String time = scanner.nextLine();
-            if ("".equals(time)) {
-                System.out.printf("Using default %s range %s%n", rangeName, formatDate(defaultRange));
-                break;
-            }
-            try {
-                return parseDate(time);
-            } catch (ParseException e) {
-                System.out.println("Error while parsing input string");
-            }
-        }
-        return defaultRange;
-    }
-
-    public void handleDetailedQuery(Scanner scanner) {
-        List<String> jobIds;
-
-        System.out.print("Enter jobId to get detailed information about:");
-        String input = scanner.nextLine();
-        if ("".equals(input)) {
+        JobQuery query = arguments.buildQuery(Clock.systemUTC(),
+                new ConsoleInput(System.console()));
+        if (query == null) {
             return;
         }
-        jobIds = Collections.singletonList(input);
-
-        handleDetailedQuery(jobIds);
-    }
-
-    public void handleDetailedQuery(List<String> jobIds) {
-        List<CompactionJobStatus> statusList = compactionJobStatusCollector.runDetailedQuery(jobIds);
-        compactionJobStatusReporter.report(statusList, QueryType.DETAILED);
-    }
-
-    public void handleAllQuery() {
-        List<CompactionJobStatus> statusList = compactionJobStatusCollector.runAllQuery();
-        compactionJobStatusReporter.report(statusList, QueryType.ALL);
+        compactionJobStatusReporter.report(
+                query.run(compactionJobStatusStore),
+                arguments.getQueryType());
     }
 
     public static void main(String[] args) throws IOException {
@@ -202,8 +61,8 @@ public class CompactionJobStatusReport {
         try {
             arguments = CompactionJobStatusReportArguments.from(args);
         } catch (IllegalArgumentException e) {
-            System.out.println(e.getMessage());
-            CompactionJobStatusReportArguments.printUsage(System.out);
+            System.err.println(e.getMessage());
+            CompactionJobStatusReportArguments.printUsage(System.err);
             System.exit(1);
             return;
         }
