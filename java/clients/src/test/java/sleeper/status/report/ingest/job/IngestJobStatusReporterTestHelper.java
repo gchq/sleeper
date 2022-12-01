@@ -19,11 +19,10 @@ package sleeper.status.report.ingest.job;
 import sleeper.ToStringPrintStream;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.status.report.StatusReporterTestHelper;
+import sleeper.status.report.query.JobQuery;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static sleeper.status.report.ingest.job.IngestJobStatusReporter.QueryType;
 
 public class IngestJobStatusReporterTestHelper {
     private IngestJobStatusReporterTestHelper() {
@@ -35,15 +34,15 @@ public class IngestJobStatusReporterTestHelper {
                 .collect(Collectors.toList()), example);
     }
 
-    public static String getStandardReport(QueryType query, List<IngestJobStatus> statusList, int numberInQueue) {
+    public static String getStandardReport(JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue) {
         ToStringPrintStream output = new ToStringPrintStream();
-        new StandardIngestJobStatusReporter(output.getPrintStream()).report(statusList, query.forJob(), numberInQueue);
+        new StandardIngestJobStatusReporter(output.getPrintStream()).report(statusList, query, numberInQueue);
         return output.toString();
     }
 
-    public static String getJsonReport(QueryType query, List<IngestJobStatus> statusList, int numberInQueue) {
+    public static String getJsonReport(JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue) {
         ToStringPrintStream output = new ToStringPrintStream();
-        new JsonIngestJobStatusReporter(output.getPrintStream()).report(statusList, query.forJob(), numberInQueue);
+        new JsonIngestJobStatusReporter(output.getPrintStream()).report(statusList, query, numberInQueue);
         return output.toString();
     }
 }

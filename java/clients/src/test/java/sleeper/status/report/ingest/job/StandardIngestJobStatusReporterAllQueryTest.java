@@ -18,13 +18,13 @@ package sleeper.status.report.ingest.job;
 
 import org.junit.Test;
 import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.status.report.query.JobQuery;
 
 import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
-import static sleeper.status.report.ingest.job.IngestJobStatusReporter.QueryType;
 import static sleeper.status.report.ingest.job.IngestJobStatusReporterTestData.jobWithMultipleRuns;
 import static sleeper.status.report.ingest.job.IngestJobStatusReporterTestData.jobsWithLargeAndDecimalStatistics;
 import static sleeper.status.report.ingest.job.IngestJobStatusReporterTestData.mixedJobStatuses;
@@ -37,7 +37,7 @@ public class StandardIngestJobStatusReporterAllQueryTest {
         List<IngestJobStatus> noJobs = Collections.emptyList();
 
         // When / Then
-        assertThat(getStandardReport(QueryType.ALL, noJobs, 0)).hasToString(
+        assertThat(getStandardReport(JobQuery.Type.ALL, noJobs, 0)).hasToString(
                 example("reports/ingest/job/standard/all/noJobs.txt"));
     }
 
@@ -47,7 +47,7 @@ public class StandardIngestJobStatusReporterAllQueryTest {
         List<IngestJobStatus> mixedJobs = mixedJobStatuses();
 
         // When / Then
-        assertThat(getStandardReport(QueryType.ALL, mixedJobs, 2)).hasToString(
+        assertThat(getStandardReport(JobQuery.Type.ALL, mixedJobs, 2)).hasToString(
                 example("reports/ingest/job/standard/all/mixedJobs.txt"));
     }
 
@@ -57,7 +57,7 @@ public class StandardIngestJobStatusReporterAllQueryTest {
         List<IngestJobStatus> jobWithMultipleRuns = jobWithMultipleRuns();
 
         // When / Then
-        assertThat(getStandardReport(QueryType.ALL, jobWithMultipleRuns, 0)).hasToString(
+        assertThat(getStandardReport(JobQuery.Type.ALL, jobWithMultipleRuns, 0)).hasToString(
                 example("reports/ingest/job/standard/all/jobWithMultipleRuns.txt"));
     }
 
@@ -67,7 +67,7 @@ public class StandardIngestJobStatusReporterAllQueryTest {
         List<IngestJobStatus> jobsWithLargeAndDecimalStatistics = jobsWithLargeAndDecimalStatistics();
 
         // When / Then
-        assertThat(getStandardReport(QueryType.ALL, jobsWithLargeAndDecimalStatistics, 0)).hasToString(
+        assertThat(getStandardReport(JobQuery.Type.ALL, jobsWithLargeAndDecimalStatistics, 0)).hasToString(
                 example("reports/ingest/job/standard/all/jobsWithLargeAndDecimalStatistics.txt"));
     }
 }

@@ -18,13 +18,13 @@ package sleeper.status.report.ingest.job;
 
 import org.junit.Test;
 import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.status.report.query.JobQuery;
 
 import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
-import static sleeper.status.report.ingest.job.IngestJobStatusReporter.QueryType;
 import static sleeper.status.report.ingest.job.IngestJobStatusReporterTestData.jobWithMultipleRuns;
 import static sleeper.status.report.ingest.job.IngestJobStatusReporterTestData.jobsWithLargeAndDecimalStatistics;
 import static sleeper.status.report.ingest.job.IngestJobStatusReporterTestData.mixedJobStatuses;
@@ -38,7 +38,7 @@ public class JsonIngestJobStatusReporterAllQueryTest {
         List<IngestJobStatus> noJobs = Collections.emptyList();
 
         // When / Then
-        assertThat(getJsonReport(QueryType.ALL, noJobs, 0)).hasToString(
+        assertThat(getJsonReport(JobQuery.Type.ALL, noJobs, 0)).hasToString(
                 example("reports/ingest/job/json/noJobs.json"));
     }
 
@@ -48,7 +48,7 @@ public class JsonIngestJobStatusReporterAllQueryTest {
         List<IngestJobStatus> mixedJobStatuses = mixedJobStatuses();
 
         // When / Then
-        assertThat(getJsonReport(QueryType.ALL, mixedJobStatuses, 0)).hasToString(
+        assertThat(getJsonReport(JobQuery.Type.ALL, mixedJobStatuses, 0)).hasToString(
                 replaceBracketedJobIds(mixedJobStatuses, example("reports/ingest/job/json/mixedJobs.json")));
     }
 
@@ -58,7 +58,7 @@ public class JsonIngestJobStatusReporterAllQueryTest {
         List<IngestJobStatus> jobWithMultipleRuns = jobWithMultipleRuns();
 
         // When / Then
-        assertThat(getJsonReport(QueryType.ALL, jobWithMultipleRuns, 0)).hasToString(
+        assertThat(getJsonReport(JobQuery.Type.ALL, jobWithMultipleRuns, 0)).hasToString(
                 replaceBracketedJobIds(jobWithMultipleRuns, example("reports/ingest/job/json/jobWithMultipleRuns.json")));
     }
 
@@ -68,7 +68,7 @@ public class JsonIngestJobStatusReporterAllQueryTest {
         List<IngestJobStatus> jobsWithLargeAndDecimalStatistics = jobsWithLargeAndDecimalStatistics();
 
         // When / Then
-        assertThat(getJsonReport(QueryType.ALL, jobsWithLargeAndDecimalStatistics, 0)).hasToString(
+        assertThat(getJsonReport(JobQuery.Type.ALL, jobsWithLargeAndDecimalStatistics, 0)).hasToString(
                 replaceBracketedJobIds(jobsWithLargeAndDecimalStatistics, example("reports/ingest/job/json/jobsWithLargeAndDecimalStatistics.json")));
     }
 }

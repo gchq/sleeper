@@ -18,13 +18,13 @@ package sleeper.status.report.ingest.job;
 
 import org.junit.Test;
 import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.status.report.query.JobQuery;
 
 import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
-import static sleeper.status.report.ingest.job.IngestJobStatusReporter.QueryType;
 import static sleeper.status.report.ingest.job.IngestJobStatusReporterTestData.mixedUnfinishedJobStatuses;
 import static sleeper.status.report.ingest.job.IngestJobStatusReporterTestHelper.getStandardReport;
 
@@ -35,7 +35,7 @@ public class StandardIngestJobStatusReporterUnfinishedQueryTest {
         List<IngestJobStatus> noJobs = Collections.emptyList();
 
         // When / Then
-        assertThat(getStandardReport(QueryType.UNFINISHED, noJobs, 0)).hasToString(
+        assertThat(getStandardReport(JobQuery.Type.UNFINISHED, noJobs, 0)).hasToString(
                 example("reports/ingest/job/standard/unfinished/noJobs.txt"));
     }
 
@@ -45,7 +45,7 @@ public class StandardIngestJobStatusReporterUnfinishedQueryTest {
         List<IngestJobStatus> mixedUnfinishedJobStatuses = mixedUnfinishedJobStatuses();
 
         // When / Then
-        assertThat(getStandardReport(QueryType.UNFINISHED, mixedUnfinishedJobStatuses, 2)).hasToString(
+        assertThat(getStandardReport(JobQuery.Type.UNFINISHED, mixedUnfinishedJobStatuses, 2)).hasToString(
                 example("reports/ingest/job/standard/unfinished/mixedUnfinishedJobs.txt"));
     }
 }
