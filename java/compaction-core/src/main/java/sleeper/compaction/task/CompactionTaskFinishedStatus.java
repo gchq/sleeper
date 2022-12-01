@@ -24,7 +24,7 @@ import java.util.Objects;
 
 public class CompactionTaskFinishedStatus {
     private final Instant finishTime;
-    private final int totalRuns;
+    private final int totalJobRuns;
     private final double totalRuntimeInSeconds;
     private final long totalRecordsRead;
     private final long totalRecordsWritten;
@@ -33,7 +33,7 @@ public class CompactionTaskFinishedStatus {
 
     private CompactionTaskFinishedStatus(Builder builder) {
         finishTime = Objects.requireNonNull(builder.finishTime, "finishTime must not be null");
-        totalRuns = builder.totalRuns;
+        totalJobRuns = builder.totalJobRuns;
         totalRuntimeInSeconds = builder.totalRuntimeInSeconds;
         totalRecordsRead = builder.totalRecordsRead;
         totalRecordsWritten = builder.totalRecordsWritten;
@@ -49,8 +49,8 @@ public class CompactionTaskFinishedStatus {
         return finishTime;
     }
 
-    public int getTotalRuns() {
-        return totalRuns;
+    public int getTotalJobRuns() {
+        return totalJobRuns;
     }
 
     public double getTotalRuntimeInSeconds() {
@@ -88,12 +88,12 @@ public class CompactionTaskFinishedStatus {
                 && Double.compare(that.recordsReadPerSecond, recordsReadPerSecond) == 0
                 && Double.compare(that.recordsWrittenPerSecond, recordsWrittenPerSecond) == 0
                 && Objects.equals(finishTime, that.finishTime)
-                && Objects.equals(totalRuns, that.totalRuns);
+                && Objects.equals(totalJobRuns, that.totalJobRuns);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(finishTime, totalRuns, totalRuntimeInSeconds,
+        return Objects.hash(finishTime, totalJobRuns, totalRuntimeInSeconds,
                 totalRecordsRead, totalRecordsWritten, recordsReadPerSecond, recordsWrittenPerSecond);
     }
 
@@ -101,7 +101,7 @@ public class CompactionTaskFinishedStatus {
     public String toString() {
         return "CompactionTaskFinishedStatus{" +
                 "finishTime=" + finishTime +
-                ", totalJobs=" + totalRuns +
+                ", totalJobs=" + totalJobRuns +
                 ", totalRuntimeInSeconds=" + totalRuntimeInSeconds +
                 ", totalRecordsRead=" + totalRecordsRead +
                 ", totalRecordsWritten=" + totalRecordsWritten +
@@ -112,7 +112,7 @@ public class CompactionTaskFinishedStatus {
 
     public static final class Builder {
         private Instant finishTime;
-        private int totalRuns;
+        private int totalJobRuns;
         private double totalRuntimeInSeconds;
         private long totalRecordsRead;
         private long totalRecordsWritten;
@@ -128,8 +128,8 @@ public class CompactionTaskFinishedStatus {
             return this;
         }
 
-        public Builder totalJobs(int totalJobs) {
-            this.totalRuns = totalJobs;
+        public Builder totalJobRuns(int totalJobRuns) {
+            this.totalJobRuns = totalJobRuns;
             return this;
         }
 
@@ -165,7 +165,7 @@ public class CompactionTaskFinishedStatus {
 
         public Builder finish(Instant startTime, Instant finishTime) {
             AverageRecordRate rate = rateBuilder.startTime(startTime).finishTime(finishTime).build();
-            totalRuns = rate.getRunCount();
+            totalJobRuns = rate.getRunCount();
             totalRecordsRead = rate.getRecordsRead();
             totalRecordsWritten = rate.getRecordsWritten();
             totalRuntimeInSeconds = rate.getTotalDurationInSeconds();
