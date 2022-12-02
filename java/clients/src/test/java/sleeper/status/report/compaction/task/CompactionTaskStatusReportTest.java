@@ -60,7 +60,7 @@ public class CompactionTaskStatusReportTest {
         CompactionTaskStatus unfinishedTask = startedTask("unfinished-task", "2022-10-06T12:17:00.001Z");
         CompactionTaskStatus finishedTask = finishedTask("finished-task", "2022-10-06T12:20:00.001Z",
                 "2022-10-06T12:20:30.001Z", 200L, 100L);
-        when(store.getAllTasks()).thenReturn(Arrays.asList(unfinishedTask, finishedTask));
+        when(store.getAllTasks()).thenReturn(Arrays.asList(finishedTask, unfinishedTask));
 
         // When / Then
         assertThat(getStandardReport(CompactionTaskQuery.ALL)).hasToString(
@@ -78,7 +78,7 @@ public class CompactionTaskStatusReportTest {
         CompactionTaskStatus unfinishedSplittingTask = startedSplittingTask("C", "2022-10-06T12:22:00.001Z");
         CompactionTaskStatus finishedSplittingTask = finishedSplittingTask("D", "2022-10-06T12:24:00.001Z",
                 "2022-10-06T12:24:30.001Z", 400L, 200L);
-        when(store.getAllTasks()).thenReturn(Arrays.asList(unfinishedTask, finishedTask, unfinishedSplittingTask, finishedSplittingTask));
+        when(store.getAllTasks()).thenReturn(Arrays.asList(finishedSplittingTask, unfinishedSplittingTask, finishedTask, unfinishedTask));
 
         // When / Then
         assertThat(getStandardReport(CompactionTaskQuery.ALL)).hasToString(
@@ -94,7 +94,7 @@ public class CompactionTaskStatusReportTest {
                 "2022-10-06T12:20:40.001Z", 800L, 400L);
         CompactionTaskStatus finishedSplittingTask = finishedSplittingTaskWithFourRuns("B", "2022-10-06T12:24:00.001Z",
                 "2022-10-06T12:24:40.001Z", 1600L, 800L);
-        when(store.getAllTasks()).thenReturn(Arrays.asList(finishedTask, finishedSplittingTask));
+        when(store.getAllTasks()).thenReturn(Arrays.asList(finishedSplittingTask, finishedTask));
 
         // When / Then
         assertThat(getStandardReport(CompactionTaskQuery.ALL)).hasToString(
