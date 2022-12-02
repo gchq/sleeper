@@ -60,13 +60,13 @@ public class DynamoDBCompactionTaskStatusFormat {
 
     public static Map<String, AttributeValue> createTaskStartedRecord(CompactionTaskStatus taskStatus, Long timeToLive) {
         return createTaskRecord(taskStatus, STARTED, timeToLive)
-                .number(START_TIME, taskStatus.getStartedStatus().getStartTime().toEpochMilli())
+                .number(START_TIME, taskStatus.getStartTime().toEpochMilli())
                 .build();
     }
 
     public static Map<String, AttributeValue> createTaskFinishedRecord(CompactionTaskStatus taskStatus, Long timeToLive) {
         return createTaskRecord(taskStatus, FINISHED, timeToLive)
-                .number(START_TIME, taskStatus.getStartedStatus().getStartTime().toEpochMilli())
+                .number(START_TIME, taskStatus.getStartTime().toEpochMilli())
                 .number(FINISH_TIME, taskStatus.getFinishedStatus().getFinishTime().toEpochMilli())
                 .number(DURATION, taskStatus.getFinishedStatus().getTotalRuntimeInSeconds())
                 .number(NUMBER_OF_JOBS, taskStatus.getFinishedStatus().getTotalJobRuns())
@@ -98,20 +98,20 @@ public class DynamoDBCompactionTaskStatusFormat {
         switch (getStringAttribute(item, UPDATE_TYPE)) {
             case STARTED:
                 CompactionTaskType type = CompactionTaskType.valueOf(getStringAttribute(item, TYPE));
-                builder.taskStarted(taskId, type, getInstantAttribute(item, START_TIME))
-                        .expiryDate(taskId, getInstantAttribute(item, EXPIRY_DATE));
+                builder.taskStarted(taskId, type,
+                        getInstantAttribute(item, START_TIME),
+                        getInstantAttribute(item, EXPIRY_DATE));
                 break;
             case FINISHED:
                 builder.taskFinished(taskId, CompactionTaskFinishedStatus.builder()
-                                .finishTime(getInstantAttribute(item, FINISH_TIME))
-                                .totalRuntimeInSeconds(Double.parseDouble(getNumberAttribute(item, DURATION)))
-                                .totalJobRuns(getIntAttribute(item, NUMBER_OF_JOBS, 0))
-                                .totalRecordsRead(getLongAttribute(item, LINES_READ, 0))
-                                .totalRecordsWritten(getLongAttribute(item, LINES_WRITTEN, 0))
-                                .recordsReadPerSecond(Double.parseDouble(getNumberAttribute(item, READ_RATE)))
-                                .recordsWrittenPerSecond(Double.parseDouble(getNumberAttribute(item, WRITE_RATE)))
-                                .build())
-                        .expiryDate(taskId, getInstantAttribute(item, EXPIRY_DATE));
+                        .finishTime(getInstantAttribute(item, FINISH_TIME))
+                        .totalRuntimeInSeconds(Double.parseDouble(getNumberAttribute(item, DURATION)))
+                        .totalJobRuns(getIntAttribute(item, NUMBER_OF_JOBS, 0))
+                        .totalRecordsRead(getLongAttribute(item, LINES_READ, 0))
+                        .totalRecordsWritten(getLongAttribute(item, LINES_WRITTEN, 0))
+                        .recordsReadPerSecond(Double.parseDouble(getNumberAttribute(item, READ_RATE)))
+                        .recordsWrittenPerSecond(Double.parseDouble(getNumberAttribute(item, WRITE_RATE)))
+                        .build());
                 break;
             default:
                 LOGGER.warn("Found record with unrecognised update type: {}", item);

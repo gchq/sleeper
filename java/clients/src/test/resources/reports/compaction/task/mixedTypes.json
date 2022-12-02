@@ -2,9 +2,7 @@
   {
     "taskId": "D",
     "type": "SPLITTING",
-    "startedStatus": {
-      "startTime": "2022-10-06T12:24:00.001Z"
-    },
+    "startTime": "2022-10-06T12:24:00.001Z",
     "finishedStatus": {
       "finishTime": "2022-10-06T12:24:30.001Z",
       "totalJobRuns": 1,
@@ -18,16 +16,12 @@
   {
     "taskId": "C",
     "type": "SPLITTING",
-    "startedStatus": {
-      "startTime": "2022-10-06T12:22:00.001Z"
-    }
+    "startTime": "2022-10-06T12:22:00.001Z"
   },
   {
     "taskId": "B",
     "type": "COMPACTION",
-    "startedStatus": {
-      "startTime": "2022-10-06T12:20:00.001Z"
-    },
+    "startTime": "2022-10-06T12:20:00.001Z",
     "finishedStatus": {
       "finishTime": "2022-10-06T12:20:30.001Z",
       "totalJobRuns": 1,
@@ -41,8 +35,6 @@
   {
     "taskId": "A",
     "type": "COMPACTION",
-    "startedStatus": {
-      "startTime": "2022-10-06T12:18:00.001Z"
-    }
+    "startTime": "2022-10-06T12:18:00.001Z"
   }
 ]

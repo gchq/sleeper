@@ -26,13 +26,13 @@ import java.util.Objects;
 public class CompactionTaskStatus {
     private final String taskId;
     private final CompactionTaskType type;
-    private final CompactionTaskStartedStatus startedStatus;
+    private final Instant startTime;
     private final CompactionTaskFinishedStatus finishedStatus;
     private final Instant expiryDate; // Set by database (null before status is saved)
 
     private CompactionTaskStatus(Builder builder) {
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
-        startedStatus = Objects.requireNonNull(builder.startedStatus, "taskId must not be null");
+        startTime = Objects.requireNonNull(builder.startTime, "startTime must not be null");
         type = Objects.requireNonNull(builder.type, "type must not be null");
         finishedStatus = builder.finishedStatus;
         expiryDate = builder.expiryDate;
@@ -50,10 +50,6 @@ public class CompactionTaskStatus {
         return type;
     }
 
-    public CompactionTaskStartedStatus getStartedStatus() {
-        return startedStatus;
-    }
-
     public CompactionTaskFinishedStatus getFinishedStatus() {
         return finishedStatus;
     }
@@ -64,7 +60,7 @@ public class CompactionTaskStatus {
     }
 
     public Instant getStartTime() {
-        return startedStatus.getStartTime();
+        return startTime;
     }
 
     public Instant getFinishTime() {
@@ -75,11 +71,11 @@ public class CompactionTaskStatus {
         }
     }
 
-    public Instant getLastTime() {
+    private Instant getLastTime() {
         if (isFinished()) {
             return finishedStatus.getFinishTime();
         } else {
-            return startedStatus.getStartTime();
+            return startTime;
         }
     }
 
@@ -129,14 +125,14 @@ public class CompactionTaskStatus {
         }
         CompactionTaskStatus that = (CompactionTaskStatus) o;
         return taskId.equals(that.taskId) && type == that.type
-                && startedStatus.equals(that.startedStatus)
+                && startTime.equals(that.startTime)
                 && Objects.equals(finishedStatus, that.finishedStatus)
                 && Objects.equals(expiryDate, that.expiryDate);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(taskId, type, startedStatus, finishedStatus, expiryDate);
+        return Objects.hash(taskId, type, startTime, finishedStatus, expiryDate);
     }
 
     @Override
@@ -144,7 +140,7 @@ public class CompactionTaskStatus {
         return "CompactionTaskStatus{" +
                 "taskId='" + taskId + '\'' +
                 ", type=" + type +
-                ", startedStatus=" + startedStatus +
+                ", startTime=" + startTime +
                 ", finishedStatus=" + finishedStatus +
                 ", expiryDate=" + expiryDate +
                 '}';
@@ -153,11 +149,15 @@ public class CompactionTaskStatus {
     public static final class Builder {
         private String taskId;
         private CompactionTaskType type = CompactionTaskType.COMPACTION;
-        private CompactionTaskStartedStatus startedStatus;
+        private Instant startTime;
         private CompactionTaskFinishedStatus finishedStatus;
         private Instant expiryDate;
 
         private Builder() {
+        }
+
+        public static Builder builder() {
+            return new Builder();
         }
 
         public Builder taskId(String taskId) {
@@ -170,13 +170,9 @@ public class CompactionTaskStatus {
             return this;
         }
 
-        public Builder startedStatus(CompactionTaskStartedStatus startedStatus) {
-            this.startedStatus = startedStatus;
+        public Builder startTime(Instant startTime) {
+            this.startTime = startTime;
             return this;
-        }
-
-        public Builder started(Instant startTime) {
-            return startedStatus(new CompactionTaskStartedStatus(startTime));
         }
 
         public Builder finishedStatus(CompactionTaskFinishedStatus finishedStatus) {
@@ -194,8 +190,8 @@ public class CompactionTaskStatus {
         }
 
         public Builder finished(CompactionTaskFinishedStatus.Builder taskFinishedBuilder, Instant finishTime) {
-            return finishedStatus(taskFinishedBuilder.finish(
-                            startedStatus.getStartTime(), finishTime)
+            return finishedStatus(taskFinishedBuilder
+                    .finish(startTime, finishTime)
                     .build());
         }
 

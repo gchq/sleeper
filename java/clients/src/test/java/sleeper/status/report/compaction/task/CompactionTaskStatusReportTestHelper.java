@@ -39,7 +39,7 @@ public class CompactionTaskStatusReportTestHelper {
 
     private static CompactionTaskStatus.Builder startedTaskBuilder(String taskId, String startTime) {
         return CompactionTaskStatus.builder()
-                .started(Instant.parse(startTime))
+                .startTime(Instant.parse(startTime))
                 .taskId(taskId);
     }
 
@@ -51,7 +51,7 @@ public class CompactionTaskStatusReportTestHelper {
     public static CompactionTaskStatus finishedTaskWithFourRuns(String taskId, String startTime,
                                                                 String finishTime, long linesRead, long linesWritten) {
         return CompactionTaskStatus.builder()
-                .started(Instant.parse(startTime))
+                .startTime(Instant.parse(startTime))
                 .finished(taskFinishedStatusWithFourRuns(startTime, finishTime, linesRead, linesWritten),
                         Instant.parse(finishTime))
                 .taskId(taskId).build();
@@ -66,7 +66,7 @@ public class CompactionTaskStatusReportTestHelper {
     public static CompactionTaskStatus finishedSplittingTaskWithFourRuns(String taskId, String startTime,
                                                                          String finishTime, long linesRead, long linesWritten) {
         return CompactionTaskStatus.builder()
-                .started(Instant.parse(startTime))
+                .startTime(Instant.parse(startTime))
                 .type(CompactionTaskType.SPLITTING)
                 .finished(taskFinishedStatusWithFourRuns(startTime, finishTime, linesRead, linesWritten),
                         Instant.parse(finishTime))
@@ -76,7 +76,7 @@ public class CompactionTaskStatusReportTestHelper {
     private static CompactionTaskStatus.Builder finishedTaskBuilder(String taskId, String startTime,
                                                                     String finishTime, long linesRead, long linesWritten) {
         return CompactionTaskStatus.builder()
-                .started(Instant.parse(startTime))
+                .startTime(Instant.parse(startTime))
                 .finished(taskFinishedStatus(startTime, finishTime, linesRead, linesWritten),
                         Instant.parse(finishTime))
                 .taskId(taskId);

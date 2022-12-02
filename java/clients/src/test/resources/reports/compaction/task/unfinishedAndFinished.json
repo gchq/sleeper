@@ -2,9 +2,7 @@
   {
     "taskId": "finished-task",
     "type": "COMPACTION",
-    "startedStatus": {
-      "startTime": "2022-10-06T12:20:00.001Z"
-    },
+    "startTime": "2022-10-06T12:20:00.001Z",
     "finishedStatus": {
       "finishTime": "2022-10-06T12:20:30.001Z",
       "totalJobRuns": 1,
@@ -18,8 +16,6 @@
   {
     "taskId": "unfinished-task",
     "type": "COMPACTION",
-    "startedStatus": {
-      "startTime": "2022-10-06T12:17:00.001Z"
-    }
+    "startTime": "2022-10-06T12:17:00.001Z"
   }
 ]

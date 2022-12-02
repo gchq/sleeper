@@ -43,9 +43,8 @@ public class CompactionTaskStatusesBuilderTest {
 
         // When
         List<CompactionTaskStatus> statuses = new CompactionTaskStatusesBuilder()
-                .taskStarted(taskId, CompactionTaskType.COMPACTION, startTime)
+                .taskStarted(taskId, CompactionTaskType.COMPACTION, startTime, expiryDate)
                 .taskFinished(taskId, finishedStatus)
-                .expiryDate(taskId, expiryDate)
                 .build();
 
         // Then
@@ -53,7 +52,7 @@ public class CompactionTaskStatusesBuilderTest {
                 .usingRecursiveFieldByFieldElementComparator()
                 .containsExactly(CompactionTaskStatus.builder()
                         .taskId(taskId)
-                        .started(startTime)
+                        .startTime(startTime)
                         .finishedStatus(finishedStatus)
                         .expiryDate(expiryDate)
                         .build());
@@ -68,20 +67,46 @@ public class CompactionTaskStatusesBuilderTest {
         Instant startTime1 = Instant.parse("2022-10-12T15:45:00.001Z");
         Instant startTime2 = Instant.parse("2022-10-12T15:46:00.001Z");
         Instant startTime3 = Instant.parse("2022-10-12T15:47:00.001Z");
+        Instant expiryDate1 = Instant.parse("2022-11-12T15:45:00.001Z");
+        Instant expiryDate2 = Instant.parse("2022-11-12T15:46:00.001Z");
+        Instant expiryDate3 = Instant.parse("2022-11-12T15:47:00.001Z");
 
         // When
         List<CompactionTaskStatus> statuses = new CompactionTaskStatusesBuilder()
-                .taskStarted(taskId3, CompactionTaskType.COMPACTION, startTime3)
-                .taskStarted(taskId1, CompactionTaskType.COMPACTION, startTime1)
-                .taskStarted(taskId2, CompactionTaskType.SPLITTING, startTime2)
+                .taskStarted(taskId3, CompactionTaskType.COMPACTION, startTime3, expiryDate3)
+                .taskStarted(taskId1, CompactionTaskType.COMPACTION, startTime1, expiryDate1)
+                .taskStarted(taskId2, CompactionTaskType.SPLITTING, startTime2, expiryDate2)
                 .build();
 
         // Then
         assertThat(statuses)
                 .usingRecursiveFieldByFieldElementComparator()
                 .containsExactly(
-                        CompactionTaskStatus.builder().taskId(taskId3).started(startTime3).build(),
-                        CompactionTaskStatus.builder().taskId(taskId2).type(CompactionTaskType.SPLITTING).started(startTime2).build(),
-                        CompactionTaskStatus.builder().taskId(taskId1).started(startTime1).build());
+                        CompactionTaskStatus.builder().taskId(taskId3).startTime(startTime3).expiryDate(expiryDate3).build(),
+                        CompactionTaskStatus.builder().taskId(taskId2).type(CompactionTaskType.SPLITTING).startTime(startTime2).expiryDate(expiryDate2).build(),
+                        CompactionTaskStatus.builder().taskId(taskId1).startTime(startTime1).expiryDate(expiryDate1).build());
+    }
+
+    @Test
+    public void shouldIgnoreStatusIfStartedUpdateIsOmittedAsItMayHaveExpired() {
+        // Given
+        String taskId = "test-task";
+        Instant startTime = Instant.parse("2022-10-12T15:45:00.001Z");
+        CompactionTaskFinishedStatus finishedStatus = CompactionTaskFinishedStatus.builder()
+                .addJobSummary(new RecordsProcessedSummary(
+                        new RecordsProcessed(300L, 200L),
+                        Instant.parse("2022-10-12T15:45:01.001Z"),
+                        Instant.parse("2022-10-12T15:46:01.001Z")))
+                .finish(startTime,
+                        Instant.parse("2022-10-12T15:46:02.001Z"))
+                .build();
+
+        // When
+        List<CompactionTaskStatus> statuses = new CompactionTaskStatusesBuilder()
+                .taskFinished(taskId, finishedStatus)
+                .build();
+
+        // Then
+        assertThat(statuses).isEmpty();
     }
 }

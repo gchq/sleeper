@@ -37,7 +37,7 @@ public class CompactionTaskStatusTest {
         CompactionTaskStatus status = startedStatusBuilder(taskStartedTime).build();
 
         // Then
-        assertThat(status).extracting("startedStatus.startTime")
+        assertThat(status).extracting("startTime")
                 .isEqualTo(taskStartedTime);
     }
 
@@ -54,7 +54,7 @@ public class CompactionTaskStatusTest {
         taskStatusBuilder.finished(taskFinishedBuilder, jobFinishTime3.toEpochMilli());
 
         // Then
-        assertThat(taskStatusBuilder.build()).extracting("startedStatus.startTime", "finishedStatus.finishTime",
+        assertThat(taskStatusBuilder.build()).extracting("startTime", "finishedStatus.finishTime",
                         "finishedStatus.totalJobRuns", "finishedStatus.totalRuntimeInSeconds", "finishedStatus.totalRecordsRead",
                         "finishedStatus.totalRecordsWritten", "finishedStatus.recordsReadPerSecond", "finishedStatus.recordsWrittenPerSecond")
                 .containsExactly(taskStartedTime, jobFinishTime3, 3, 14400.0, 14400L, 7200L, 1.0, 0.5);
@@ -73,14 +73,14 @@ public class CompactionTaskStatusTest {
         taskStatusBuilder.finished(taskFinishedBuilder, jobFinishTime3.toEpochMilli());
 
         // Then
-        assertThat(taskStatusBuilder.build()).extracting("startedStatus.startTime", "finishedStatus.finishTime",
+        assertThat(taskStatusBuilder.build()).extracting("startTime", "finishedStatus.finishTime",
                         "finishedStatus.totalJobRuns", "finishedStatus.totalRuntimeInSeconds", "finishedStatus.totalRecordsRead",
                         "finishedStatus.totalRecordsWritten", "finishedStatus.recordsReadPerSecond", "finishedStatus.recordsWrittenPerSecond")
                 .containsExactly(taskStartedTime, jobFinishTime3, 3, 14400.0, 14400L, 7200L, 1.0, 0.5);
     }
 
     private static CompactionTaskStatus.Builder startedStatusBuilder(Instant startTime) {
-        return CompactionTaskStatus.builder().taskId("test-task-id").started(startTime);
+        return CompactionTaskStatus.builder().taskId("test-task-id").startTime(startTime);
     }
 
     private static List<RecordsProcessedSummary> createJobSummaries() {
