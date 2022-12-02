@@ -57,6 +57,8 @@ public class IngestTaskStatusReportTest {
         // When / Then
         assertThat(getStandardReport(IngestTaskQuery.ALL)).hasToString(
                 example("reports/ingest/task/unfinishedAndFinished.txt"));
+        assertThat(getJsonReport(IngestTaskQuery.ALL)).hasToString(
+                example("reports/ingest/task/unfinishedAndFinished.json"));
     }
 
     @Test
@@ -71,6 +73,8 @@ public class IngestTaskStatusReportTest {
         // When / Then
         assertThat(getStandardReport(IngestTaskQuery.ALL)).hasToString(
                 example("reports/ingest/task/multipleJobRunsOnTasks.txt"));
+        assertThat(getJsonReport(IngestTaskQuery.ALL)).hasToString(
+                example("reports/ingest/task/multipleJobRunsOnTasks.json"));
     }
 
     private String getStandardReport(IngestTaskQuery query) {

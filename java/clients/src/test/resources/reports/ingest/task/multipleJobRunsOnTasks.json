@@ -1,0 +1,28 @@
+[
+  {
+    "taskId": "B",
+    "startTime": "2022-10-06T12:22:00.001Z",
+    "finishedStatus": {
+      "finishTime": "2022-10-06T12:22:40.001Z",
+      "totalJobRuns": 4,
+      "totalRuntimeInSeconds": 40.0,
+      "totalRecordsRead": 1600,
+      "totalRecordsWritten": 800,
+      "recordsReadPerSecond": 40.0,
+      "recordsWrittenPerSecond": 20.0
+    }
+  },
+  {
+    "taskId": "A",
+    "startTime": "2022-10-06T12:20:00.001Z",
+    "finishedStatus": {
+      "finishTime": "2022-10-06T12:20:40.001Z",
+      "totalJobRuns": 4,
+      "totalRuntimeInSeconds": 40.0,
+      "totalRecordsRead": 800,
+      "totalRecordsWritten": 400,
+      "recordsReadPerSecond": 20.0,
+      "recordsWrittenPerSecond": 10.0
+    }
+  }
+]
