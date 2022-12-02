@@ -56,13 +56,21 @@ public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporte
         out.println();
         out.println("Ingest Task Status Report");
         out.println("-------------------------");
-        if (query == IngestTaskQuery.ALL) {
+        if (query == IngestTaskQuery.UNFINISHED) {
+            printUnfinishedSummary(tasks);
+        } else if (query == IngestTaskQuery.ALL) {
             printAllSummary(tasks);
         }
 
         TABLE_FACTORY.tableBuilder()
+                .showFields(query != IngestTaskQuery.UNFINISHED,
+                        FINISH_TIME, DURATION, JOB_RUNS, LINES_READ, LINES_WRITTEN, READ_RATE, WRITE_RATE)
                 .itemsAndWriter(tasks, this::writeRow)
                 .build().write(out);
+    }
+
+    private void printUnfinishedSummary(List<IngestTaskStatus> tasks) {
+        out.printf("Total tasks in progress: %s%n", tasks.size());
     }
 
     private void printAllSummary(List<IngestTaskStatus> tasks) {

@@ -23,13 +23,18 @@ import java.util.List;
 @FunctionalInterface
 public interface IngestTaskQuery {
     IngestTaskQuery ALL = IngestTaskStatusStore::getAllTasks;
+    IngestTaskQuery UNFINISHED = IngestTaskStatusStore::getTasksInProgress;
 
     List<IngestTaskStatus> run(IngestTaskStatusStore store);
 
     static IngestTaskQuery from(String type) {
-        if ("-a".equals(type)) {
-            return ALL;
+        switch (type) {
+            case "-a":
+                return ALL;
+            case "-u":
+                return UNFINISHED;
+            default:
+                throw new IllegalArgumentException("Unrecognised query type: " + type);
         }
-        throw new IllegalArgumentException("Unrecognised query type: " + type);
     }
 }

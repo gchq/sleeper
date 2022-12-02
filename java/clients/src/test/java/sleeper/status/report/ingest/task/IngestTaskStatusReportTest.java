@@ -77,6 +77,21 @@ public class IngestTaskStatusReportTest {
                 example("reports/ingest/task/multipleJobRunsOnTasks.json"));
     }
 
+    @Test
+    public void shouldReportUnfinishedIngestTasks() throws Exception {
+        // Given
+        IngestTaskStatus unfinished1 = startedTask("A", "2022-10-06T12:17:00.001Z");
+        IngestTaskStatus unfinished2 = startedTask("B", "2022-10-06T12:20:00.001Z");
+
+        when(store.getTasksInProgress()).thenReturn(Arrays.asList(unfinished2, unfinished1));
+
+        // When / Then
+        assertThat(getStandardReport(IngestTaskQuery.UNFINISHED)).hasToString(
+                example("reports/ingest/task/unfinishedTasks.txt"));
+        assertThat(getJsonReport(IngestTaskQuery.UNFINISHED)).hasToString(
+                example("reports/ingest/task/unfinishedTasks.json"));
+    }
+
     private String getStandardReport(IngestTaskQuery query) {
         return getReport(query, StandardIngestTaskStatusReporter::new);
     }
