@@ -18,10 +18,8 @@ package sleeper.status.report.table;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -75,14 +73,14 @@ public class TableWriter {
     public static final class Builder {
         private final TableStructure structure;
         private final List<TableField> fields;
-        private final Map<TableFieldDefinition, TableField> fieldsByDefinition = new HashMap<>();
+        private final TableFieldIndex fieldIndex;
         private final List<TableRow> rows = new ArrayList<>();
         private final Set<Integer> hideFieldIndexes = new HashSet<>();
 
         Builder(TableStructure structure, List<TableField> fields) {
             this.structure = structure;
             this.fields = fields;
-            fields.forEach(field -> fieldsByDefinition.put(field.getDefinition(), field));
+            this.fieldIndex = new TableFieldIndex(fields);
         }
 
         public <T> Builder itemsAndWriter(List<T> items, BiConsumer<T, TableRow.Builder> writer) {
@@ -100,14 +98,14 @@ public class TableWriter {
         }
 
         public Builder row(Consumer<TableRow.Builder> config) {
-            TableRow.Builder recordBuilder = new TableRow.Builder(fields.size(), fieldsByDefinition);
+            TableRow.Builder recordBuilder = new TableRow.Builder(fields.size(), fieldIndex);
             config.accept(recordBuilder);
             rows.add(recordBuilder.build());
             return this;
         }
 
-        public Builder showField(boolean showField, TableFieldOrDefinition fieldOrDefinition) {
-            TableField field = fieldOrDefinition.getField(fieldsByDefinition);
+        public Builder showField(boolean showField, TableFieldReference fieldReference) {
+            TableField field = fieldIndex.getField(fieldReference);
             if (showField) {
                 hideFieldIndexes.remove(field.getIndex());
             } else {
@@ -116,14 +114,14 @@ public class TableWriter {
             return this;
         }
 
-        public Builder showFields(boolean showFields, List<? extends TableFieldOrDefinition> fields) {
-            for (TableFieldOrDefinition field : fields) {
+        public Builder showFields(boolean showFields, List<? extends TableFieldReference> fields) {
+            for (TableFieldReference field : fields) {
                 showField(showFields, field);
             }
             return this;
         }
 
-        public Builder showFields(boolean showFields, TableFieldOrDefinition... fields) {
+        public Builder showFields(boolean showFields, TableFieldReference... fields) {
             return showFields(showFields, Arrays.asList(fields));
         }
 

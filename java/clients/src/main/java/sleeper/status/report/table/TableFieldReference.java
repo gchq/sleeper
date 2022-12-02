@@ -15,9 +15,6 @@
  */
 package sleeper.status.report.table;
 
-import java.util.Map;
+public interface TableFieldReference {
 
-public interface TableFieldOrDefinition {
-
-    TableField getField(Map<TableFieldDefinition, TableField> map);
 }

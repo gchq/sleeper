@@ -15,10 +15,9 @@
  */
 package sleeper.status.report.table;
 
-import java.util.Map;
 import java.util.Objects;
 
-public class TableFieldDefinition implements TableFieldOrDefinition {
+public class TableFieldDefinition implements TableFieldReference {
     private final String header;
     private final HorizontalAlignment horizontalAlignment;
 
@@ -45,11 +44,6 @@ public class TableFieldDefinition implements TableFieldOrDefinition {
 
     public HorizontalAlignment getHorizontalAlignment() {
         return horizontalAlignment;
-    }
-
-    @Override
-    public TableField getField(Map<TableFieldDefinition, TableField> map) {
-        return map.get(this);
     }
 
     public enum HorizontalAlignment {
