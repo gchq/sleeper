@@ -16,11 +16,16 @@
 
 package sleeper.compaction.task;
 
+import sleeper.core.record.process.status.ProcessFinishedStatus;
+import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessStartedStatus;
+
 import java.time.Instant;
 import java.util.Objects;
 
 public class CompactionTaskStatus {
     private final String taskId;
+    private final CompactionTaskType type;
     private final CompactionTaskStartedStatus startedStatus;
     private final CompactionTaskFinishedStatus finishedStatus;
     private final Instant expiryDate; // Set by database (null before status is saved)
@@ -28,6 +33,7 @@ public class CompactionTaskStatus {
     private CompactionTaskStatus(Builder builder) {
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
         startedStatus = Objects.requireNonNull(builder.startedStatus, "taskId must not be null");
+        type = Objects.requireNonNull(builder.type, "type must not be null");
         finishedStatus = builder.finishedStatus;
         expiryDate = builder.expiryDate;
     }
@@ -38,6 +44,10 @@ public class CompactionTaskStatus {
 
     public String getTaskId() {
         return taskId;
+    }
+
+    public CompactionTaskType getType() {
+        return type;
     }
 
     public CompactionTaskStartedStatus getStartedStatus() {
@@ -77,6 +87,22 @@ public class CompactionTaskStatus {
         return finishedStatus != null;
     }
 
+    public ProcessRun asProcessRun() {
+        return ProcessRun.builder().taskId(taskId)
+                .startedStatus(ProcessStartedStatus.updateAndStartTime(getStartTime(), getStartTime()))
+                .finishedStatus(asProcessFinishedStatus())
+                .build();
+    }
+
+    private ProcessFinishedStatus asProcessFinishedStatus() {
+        if (finishedStatus == null) {
+            return null;
+        }
+        return ProcessFinishedStatus.updateTimeAndSummary(
+                finishedStatus.getFinishTime(),
+                finishedStatus.asSummary(getStartTime()));
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -86,21 +112,22 @@ public class CompactionTaskStatus {
             return false;
         }
         CompactionTaskStatus that = (CompactionTaskStatus) o;
-        return Objects.equals(taskId, that.taskId)
-                && Objects.equals(startedStatus, that.startedStatus)
+        return taskId.equals(that.taskId) && type == that.type
+                && startedStatus.equals(that.startedStatus)
                 && Objects.equals(finishedStatus, that.finishedStatus)
                 && Objects.equals(expiryDate, that.expiryDate);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(taskId, startedStatus, finishedStatus, expiryDate);
+        return Objects.hash(taskId, type, startedStatus, finishedStatus, expiryDate);
     }
 
     @Override
     public String toString() {
         return "CompactionTaskStatus{" +
                 "taskId='" + taskId + '\'' +
+                ", type=" + type +
                 ", startedStatus=" + startedStatus +
                 ", finishedStatus=" + finishedStatus +
                 ", expiryDate=" + expiryDate +
@@ -109,6 +136,7 @@ public class CompactionTaskStatus {
 
     public static final class Builder {
         private String taskId;
+        private CompactionTaskType type = CompactionTaskType.COMPACTION;
         private CompactionTaskStartedStatus startedStatus;
         private CompactionTaskFinishedStatus finishedStatus;
         private Instant expiryDate;
@@ -118,6 +146,11 @@ public class CompactionTaskStatus {
 
         public Builder taskId(String taskId) {
             this.taskId = taskId;
+            return this;
+        }
+
+        public Builder type(CompactionTaskType type) {
+            this.type = type;
             return this;
         }
 

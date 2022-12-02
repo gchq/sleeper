@@ -1,18 +1,20 @@
 [
   {
     "taskId": "unfinished-task",
+    "type": "COMPACTION",
     "startedStatus": {
       "startTime": "2022-10-06T12:17:00.001Z"
     }
   },
   {
     "taskId": "finished-task",
+    "type": "COMPACTION",
     "startedStatus": {
       "startTime": "2022-10-06T12:20:00.001Z"
     },
     "finishedStatus": {
       "finishTime": "2022-10-06T12:20:30.001Z",
-      "totalJobs": 1,
+      "totalJobRuns": 1,
       "totalRuntimeInSeconds": 30.0,
       "totalRecordsRead": 200,
       "totalRecordsWritten": 100,

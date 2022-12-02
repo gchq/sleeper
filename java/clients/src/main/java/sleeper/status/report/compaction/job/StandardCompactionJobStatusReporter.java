@@ -18,7 +18,6 @@ package sleeper.status.report.compaction.job;
 
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.AverageRecordRate;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.status.report.job.AverageRecordRateReport;
 import sleeper.status.report.job.StandardProcessRunReporter;
 import sleeper.status.report.job.query.JobQuery;
@@ -70,7 +69,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         printSummary(jobStatusList, queryType);
         if (!queryType.equals(JobQuery.Type.DETAILED)) {
             tableFactory.tableBuilder()
-                    .showFields(queryType != JobQuery.Type.UNFINISHED, runReporter.getFinishedFields())
+                    .showFields(runReporter.getFinishedFields(), queryType != JobQuery.Type.UNFINISHED)
                     .itemsAndSplittingWriter(jobStatusList, this::writeJob)
                     .build().write(out);
         }
@@ -159,9 +158,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
 
     private static AverageRecordRate recordRate(List<CompactionJobStatus> jobs) {
         return AverageRecordRate.of(jobs.stream()
-                .flatMap(job -> job.getJobRuns().stream())
-                .filter(ProcessRun::isFinished)
-                .map(ProcessRun::getFinishedSummary));
+                .flatMap(job -> job.getJobRuns().stream()));
     }
 
     private void writeJob(CompactionJobStatus job, TableWriter.Builder table) {

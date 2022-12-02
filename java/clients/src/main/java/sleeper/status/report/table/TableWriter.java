@@ -110,7 +110,7 @@ public class TableWriter {
             return this;
         }
 
-        public Builder showFields(boolean showField, List<TableField> fields) {
+        public Builder showFields(List<TableField> fields, boolean showField) {
             for (TableField field : fields) {
                 showField(field, showField);
             }

@@ -65,7 +65,20 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
         assertThat(store.getTask(taskStatus.getTaskId()))
                 .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
                 .isEqualTo(taskStatus);
+    }
 
+    @Test
+    public void shouldReportSplittingCompactionTask() {
+        // Given
+        CompactionTaskStatus taskStatus = splittingTaskWithDefaults();
+
+        // When
+        store.taskStarted(taskStatus);
+
+        // Then
+        assertThat(store.getTask(taskStatus.getTaskId()))
+                .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
+                .isEqualTo(taskStatus);
     }
 
     @Test

@@ -64,7 +64,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         printSummary(statusList, query, numberInQueue);
         if (!query.equals(JobQuery.Type.DETAILED)) {
             tableFactory.tableBuilder()
-                    .showFields(query != JobQuery.Type.UNFINISHED, runReporter.getFinishedFields())
+                    .showFields(runReporter.getFinishedFields(), query != JobQuery.Type.UNFINISHED)
                     .itemsAndSplittingWriter(statusList, this::writeJob)
                     .build().write(out);
         }
@@ -118,9 +118,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
 
     private static AverageRecordRate recordRate(List<IngestJobStatus> jobs) {
         return AverageRecordRate.of(jobs.stream()
-                .flatMap(job -> job.getJobRuns().stream())
-                .filter(ProcessRun::isFinished)
-                .map(ProcessRun::getFinishedSummary));
+                .flatMap(job -> job.getJobRuns().stream()));
     }
 
     private void writeJob(IngestJobStatus job, TableWriter.Builder table) {
