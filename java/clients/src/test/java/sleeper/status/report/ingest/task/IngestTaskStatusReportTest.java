@@ -17,15 +17,23 @@ package sleeper.status.report.ingest.task;
 
 import org.junit.Test;
 import sleeper.ToStringPrintStream;
+import sleeper.ingest.task.IngestTaskStatus;
+import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.status.report.IngestTaskStatusReport;
 
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static sleeper.ClientTestUtils.example;
+import static sleeper.status.report.ingest.task.IngestTaskStatusReportTestHelper.finishedTask;
+import static sleeper.status.report.ingest.task.IngestTaskStatusReportTestHelper.startedTask;
 
 public class IngestTaskStatusReportTest {
+    private final IngestTaskStatusStore store = mock(IngestTaskStatusStore.class);
 
     @Test
     public void shouldReportNoIngestTasks() throws Exception {
@@ -35,15 +43,28 @@ public class IngestTaskStatusReportTest {
                 example("reports/ingest/task/noTasksQueryingForAll.txt"));
     }
 
+    @Test
+    public void shouldReportIngestTaskUnfinishedAndFinished() throws Exception {
+        // Given
+        IngestTaskStatus unfinished = startedTask("unfinished-task", "2022-10-06T12:17:00.001Z");
+        IngestTaskStatus finished = finishedTask("finished-task", "2022-10-06T12:20:00.001Z",
+                "2022-10-06T12:20:30.001Z", 200L, 100L);
+        when(store.getAllTasks()).thenReturn(Arrays.asList(finished, unfinished));
+
+        // When / Then
+        assertThat(getStandardReport(IngestTaskQuery.ALL)).hasToString(
+                example("reports/ingest/task/unfinishedAndFinished.txt"));
+    }
+
     private String getStandardReport(IngestTaskQuery query) {
         return getReport(query, StandardIngestTaskStatusReporter::new);
     }
 
     private String getReport(IngestTaskQuery query, Function<PrintStream, StandardIngestTaskStatusReporter> getReporter) {
         ToStringPrintStream output = new ToStringPrintStream();
-        new IngestTaskStatusReport(
-                getReporter.apply(output.getPrintStream()),
-                query).run();
+        new IngestTaskStatusReport(store,
+                getReporter.apply(output.getPrintStream()), query
+        ).run();
         return output.toString();
     }
 }

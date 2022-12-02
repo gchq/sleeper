@@ -15,22 +15,26 @@
  */
 package sleeper.status.report;
 
+import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.status.report.ingest.task.IngestTaskQuery;
 import sleeper.status.report.ingest.task.StandardIngestTaskStatusReporter;
 
-import java.util.Collections;
-
 public class IngestTaskStatusReport {
+    private final IngestTaskStatusStore statusStore;
 
     private final StandardIngestTaskStatusReporter reporter;
     private final IngestTaskQuery query;
 
-    public IngestTaskStatusReport(StandardIngestTaskStatusReporter reporter, IngestTaskQuery query) {
+    public IngestTaskStatusReport(
+            IngestTaskStatusStore statusStore,
+            StandardIngestTaskStatusReporter reporter,
+            IngestTaskQuery query) {
+        this.statusStore = statusStore;
         this.reporter = reporter;
         this.query = query;
     }
 
     public void run() {
-        reporter.report(query, Collections.emptyList());
+        reporter.report(query, query.run(statusStore));
     }
 }

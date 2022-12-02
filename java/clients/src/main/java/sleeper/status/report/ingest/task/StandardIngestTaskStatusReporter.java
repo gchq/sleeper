@@ -15,9 +15,12 @@
  */
 package sleeper.status.report.ingest.task;
 
+import sleeper.core.record.process.AverageRecordRate;
 import sleeper.ingest.task.IngestTaskStatus;
+import sleeper.status.report.job.AverageRecordRateReport;
 import sleeper.status.report.job.StandardProcessRunReporter;
 import sleeper.status.report.table.TableField;
+import sleeper.status.report.table.TableRow;
 import sleeper.status.report.table.TableWriterFactory;
 
 import java.io.PrintStream;
@@ -41,9 +44,11 @@ public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporte
     private static final TableWriterFactory TABLE_FACTORY = TABLE_FACTORY_BUILDER.build();
 
     private final PrintStream out;
+    private final StandardProcessRunReporter processRunReporter;
 
     public StandardIngestTaskStatusReporter(PrintStream out) {
         this.out = out;
+        processRunReporter = new StandardProcessRunReporter(out);
     }
 
     @Override
@@ -51,11 +56,37 @@ public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporte
         out.println();
         out.println("Ingest Task Status Report");
         out.println("-------------------------");
-        out.printf("Total tasks: %s%n", 0);
-        out.printf("Total unfinished tasks: %s%n", 0);
-        out.printf("Total finished tasks: %s%n", 0);
+        if (query == IngestTaskQuery.ALL) {
+            printAllSummary(tasks);
+        }
 
         TABLE_FACTORY.tableBuilder()
+                .itemsAndWriter(tasks, this::writeRow)
                 .build().write(out);
+    }
+
+    private void printAllSummary(List<IngestTaskStatus> tasks) {
+        out.printf("Total tasks: %s%n", tasks.size());
+        out.printf("Total tasks in progress: %s%n", tasks.stream().filter(task -> !task.isFinished()).count());
+        out.printf("Total tasks finished: %s%n", tasks.stream().filter(IngestTaskStatus::isFinished).count());
+        if (tasks.stream().anyMatch(IngestTaskStatus::isFinished)) {
+            out.printf("Total job runs: %s%n", getTotalJobsRun(tasks));
+        }
+        AverageRecordRateReport.printf("Average standard compaction rate: %s%n", recordRate(tasks), out);
+    }
+
+    private static int getTotalJobsRun(List<IngestTaskStatus> tasks) {
+        return tasks.stream().mapToInt(IngestTaskStatus::getJobRuns).sum();
+    }
+
+    private static AverageRecordRate recordRate(List<IngestTaskStatus> tasks) {
+        return AverageRecordRate.of(tasks.stream()
+                .map(IngestTaskStatus::asProcessRun));
+    }
+
+    private void writeRow(IngestTaskStatus task, TableRow.Builder builder) {
+        builder.value(STATE, task.isFinished() ? "FINISHED" : "RUNNING")
+                .value(JOB_RUNS, task.getJobRunsOrNull());
+        processRunReporter.writeRunFields(task.asProcessRun(), builder);
     }
 }

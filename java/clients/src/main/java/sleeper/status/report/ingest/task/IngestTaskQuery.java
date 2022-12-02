@@ -15,11 +15,21 @@
  */
 package sleeper.status.report.ingest.task;
 
-public interface IngestTaskQuery {
-    IngestTaskQuery ALL = new IngestTaskQuery() {
-    };
+import sleeper.ingest.task.IngestTaskStatus;
+import sleeper.ingest.task.IngestTaskStatusStore;
 
-    // stub method for checkstyle
-    default void run() {
+import java.util.List;
+
+@FunctionalInterface
+public interface IngestTaskQuery {
+    IngestTaskQuery ALL = IngestTaskStatusStore::getAllTasks;
+
+    List<IngestTaskStatus> run(IngestTaskStatusStore store);
+
+    static IngestTaskQuery from(String type) {
+        if ("-a".equals(type)) {
+            return ALL;
+        }
+        throw new IllegalArgumentException("Unrecognised query type: " + type);
     }
 }
