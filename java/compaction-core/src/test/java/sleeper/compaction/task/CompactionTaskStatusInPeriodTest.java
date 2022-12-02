@@ -128,6 +128,6 @@ public class CompactionTaskStatusInPeriodTest {
     }
 
     private static CompactionTaskStatus.Builder taskBuilder(Instant startTime) {
-        return CompactionTaskStatus.builder().taskId("test-task-id").started(startTime);
+        return CompactionTaskStatus.builder().taskId("test-task-id").startTime(startTime);
     }
 }

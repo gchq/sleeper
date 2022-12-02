@@ -89,7 +89,7 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
     }
 
     protected static CompactionTaskStatus.Builder startedTaskWithDefaultsBuilder() {
-        return CompactionTaskStatus.builder().taskId(UUID.randomUUID().toString()).started(defaultTaskStartTime());
+        return CompactionTaskStatus.builder().taskId(UUID.randomUUID().toString()).startTime(defaultTaskStartTime());
     }
 
     protected static CompactionTaskStatus finishedTaskWithDefaults() {
@@ -107,7 +107,7 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
     }
 
     protected static CompactionTaskStatus taskWithStartTime(Instant startTime) {
-        return taskBuilder().started(startTime).build();
+        return taskBuilder().startTime(startTime).build();
     }
 
     protected static CompactionTaskStatus taskWithStartAndFinishTime(Instant startTime, Instant finishTime) {
@@ -115,7 +115,7 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
     }
 
     protected static CompactionTaskStatus splittingTaskWithStartTime(Instant startTime) {
-        return taskBuilder().type(CompactionTaskType.SPLITTING).started(startTime).build();
+        return taskBuilder().type(CompactionTaskType.SPLITTING).startTime(startTime).build();
     }
 
     protected static CompactionTaskStatus splittingTaskWithStartAndFinishTime(Instant startTime, Instant finishTime) {
@@ -128,7 +128,7 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
 
     private static CompactionTaskStatus buildWithStartAndFinishTime(
             CompactionTaskStatus.Builder builder, Instant startTime, Instant finishTime) {
-        return builder.started(startTime)
+        return builder.startTime(startTime)
                 .finished(CompactionTaskFinishedStatus.builder()
                         .addJobSummary(new RecordsProcessedSummary(
                                 new RecordsProcessed(200, 100),
