@@ -48,6 +48,10 @@ public class TableWriterFactory {
             return fieldBuilder(header).build();
         }
 
+        public TableField addNumericField(String header) {
+            return fieldBuilder(header).alignRight().build();
+        }
+
         public TableField.Builder fieldBuilder(String header) {
             return TableField.builder(this, fields.size())
                     .header(header).alignLeft();

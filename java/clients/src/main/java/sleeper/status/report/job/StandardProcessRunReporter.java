@@ -43,15 +43,31 @@ public class StandardProcessRunReporter {
     public static final String STATE_FINISHED = "FINISHED";
 
     public StandardProcessRunReporter(PrintStream out, TableWriterFactory.Builder tableBuilder) {
-        this.out = out;
-        taskIdField = tableBuilder.addField("TASK_ID");
-        startTimeField = tableBuilder.addField("START_TIME");
-        finishTimeField = tableBuilder.addField("FINISH_TIME");
-        durationField = tableBuilder.fieldBuilder("DURATION (s)").alignRight().build();
-        linesReadField = tableBuilder.fieldBuilder("LINES_READ").alignRight().build();
-        linesWrittenField = tableBuilder.fieldBuilder("LINES_WRITTEN").alignRight().build();
-        readRateField = tableBuilder.fieldBuilder("READ_RATE (s)").alignRight().build();
-        writeRateField = tableBuilder.fieldBuilder("WRITE_RATE (s)").alignRight().build();
+        this(builder().out(out)
+                .taskIdField(tableBuilder.addField("TASK_ID"))
+                .startTimeField(tableBuilder.addField("START_TIME"))
+                .finishTimeField(tableBuilder.addField("FINISH_TIME"))
+                .durationField(tableBuilder.addNumericField("DURATION (s)"))
+                .linesReadField(tableBuilder.addNumericField("LINES_READ"))
+                .linesWrittenField(tableBuilder.addNumericField("LINES_WRITTEN"))
+                .readRateField(tableBuilder.addNumericField("READ_RATE (s)"))
+                .writeRateField(tableBuilder.addNumericField("WRITE_RATE (s)")));
+    }
+
+    private StandardProcessRunReporter(Builder builder) {
+        taskIdField = builder.taskIdField;
+        startTimeField = builder.startTimeField;
+        finishTimeField = builder.finishTimeField;
+        durationField = builder.durationField;
+        linesReadField = builder.linesReadField;
+        linesWrittenField = builder.linesWrittenField;
+        readRateField = builder.readRateField;
+        writeRateField = builder.writeRateField;
+        out = builder.out;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public void writeRunFields(ProcessRun run, TableRow.Builder builder) {
@@ -123,5 +139,69 @@ public class StandardProcessRunReporter {
             return null;
         }
         return getter.apply(object);
+    }
+
+    public static final class Builder {
+        private TableField taskIdField;
+        private TableField startTimeField;
+        private TableField finishTimeField;
+        private TableField durationField;
+        private TableField linesReadField;
+        private TableField linesWrittenField;
+        private TableField readRateField;
+        private TableField writeRateField;
+        private PrintStream out;
+
+        private Builder() {
+        }
+
+        public Builder taskIdField(TableField taskIdField) {
+            this.taskIdField = taskIdField;
+            return this;
+        }
+
+        public Builder startTimeField(TableField startTimeField) {
+            this.startTimeField = startTimeField;
+            return this;
+        }
+
+        public Builder finishTimeField(TableField finishTimeField) {
+            this.finishTimeField = finishTimeField;
+            return this;
+        }
+
+        public Builder durationField(TableField durationField) {
+            this.durationField = durationField;
+            return this;
+        }
+
+        public Builder linesReadField(TableField linesReadField) {
+            this.linesReadField = linesReadField;
+            return this;
+        }
+
+        public Builder linesWrittenField(TableField linesWrittenField) {
+            this.linesWrittenField = linesWrittenField;
+            return this;
+        }
+
+        public Builder readRateField(TableField readRateField) {
+            this.readRateField = readRateField;
+            return this;
+        }
+
+        public Builder writeRateField(TableField writeRateField) {
+            this.writeRateField = writeRateField;
+            return this;
+        }
+
+        public Builder out(PrintStream out) {
+            this.out = out;
+            return this;
+        }
+
+        public StandardProcessRunReporter build() {
+            return new StandardProcessRunReporter(this);
+        }
     }
 }

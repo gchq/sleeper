@@ -52,7 +52,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         TableWriterFactory.Builder tableFactoryBuilder = TableWriterFactory.builder();
         stateField = tableFactoryBuilder.addField("STATE");
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
-        totalFilesField = tableFactoryBuilder.fieldBuilder("TOTAL_FILES").alignRight().build();
+        totalFilesField = tableFactoryBuilder.addNumericField("TOTAL_FILES");
         runReporter = new StandardProcessRunReporter(out, tableFactoryBuilder);
         tableFactory = tableFactoryBuilder.build();
     }
@@ -64,7 +64,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         printSummary(statusList, query, numberInQueue);
         if (!query.equals(JobQuery.Type.DETAILED)) {
             tableFactory.tableBuilder()
-                    .showFields(runReporter.getFinishedFields(), query != JobQuery.Type.UNFINISHED)
+                    .showFields(query != JobQuery.Type.UNFINISHED, runReporter.getFinishedFields())
                     .itemsAndSplittingWriter(statusList, this::writeJob)
                     .build().write(out);
         }

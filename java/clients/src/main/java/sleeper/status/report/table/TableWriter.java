@@ -17,6 +17,7 @@ package sleeper.status.report.table;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -101,7 +102,7 @@ public class TableWriter {
             return this;
         }
 
-        public Builder showField(TableField field, boolean showField) {
+        public Builder showField(boolean showField, TableField field) {
             if (showField) {
                 hideFieldIndexes.remove(field.getIndex());
             } else {
@@ -110,11 +111,15 @@ public class TableWriter {
             return this;
         }
 
-        public Builder showFields(List<TableField> fields, boolean showField) {
+        public Builder showFields(boolean showFields, List<TableField> fields) {
             for (TableField field : fields) {
-                showField(field, showField);
+                showField(showFields, field);
             }
             return this;
+        }
+
+        public Builder showFields(boolean showFields, TableField... fields) {
+            return showFields(showFields, Arrays.asList(fields));
         }
 
         public TableWriter build() {
