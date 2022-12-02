@@ -16,19 +16,21 @@
 package sleeper.status.report;
 
 import sleeper.status.report.ingest.task.IngestTaskQuery;
-import sleeper.status.report.ingest.task.IngestTaskStatusReporter;
+import sleeper.status.report.ingest.task.StandardIngestTaskStatusReporter;
+
+import java.util.Collections;
 
 public class IngestTaskStatusReport {
 
-    private final IngestTaskStatusReporter reporter;
+    private final StandardIngestTaskStatusReporter reporter;
     private final IngestTaskQuery query;
 
-    public IngestTaskStatusReport(IngestTaskStatusReporter reporter, IngestTaskQuery query) {
+    public IngestTaskStatusReport(StandardIngestTaskStatusReporter reporter, IngestTaskQuery query) {
         this.reporter = reporter;
         this.query = query;
     }
 
     public void run() {
-        reporter.run(query);
+        reporter.report(query, Collections.emptyList());
     }
 }

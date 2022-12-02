@@ -36,10 +36,10 @@ public class IngestTaskStatusReportTest {
     }
 
     private String getStandardReport(IngestTaskQuery query) {
-        return getReport(query, IngestTaskStatusReporter::new);
+        return getReport(query, StandardIngestTaskStatusReporter::new);
     }
 
-    private String getReport(IngestTaskQuery query, Function<PrintStream, IngestTaskStatusReporter> getReporter) {
+    private String getReport(IngestTaskQuery query, Function<PrintStream, StandardIngestTaskStatusReporter> getReporter) {
         ToStringPrintStream output = new ToStringPrintStream();
         new IngestTaskStatusReport(
                 getReporter.apply(output.getPrintStream()),
