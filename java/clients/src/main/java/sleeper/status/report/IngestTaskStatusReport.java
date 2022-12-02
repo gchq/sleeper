@@ -17,17 +17,17 @@ package sleeper.status.report;
 
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.status.report.ingest.task.IngestTaskQuery;
-import sleeper.status.report.ingest.task.StandardIngestTaskStatusReporter;
+import sleeper.status.report.ingest.task.IngestTaskStatusReporter;
 
 public class IngestTaskStatusReport {
     private final IngestTaskStatusStore statusStore;
 
-    private final StandardIngestTaskStatusReporter reporter;
+    private final IngestTaskStatusReporter reporter;
     private final IngestTaskQuery query;
 
     public IngestTaskStatusReport(
             IngestTaskStatusStore statusStore,
-            StandardIngestTaskStatusReporter reporter,
+            IngestTaskStatusReporter reporter,
             IngestTaskQuery query) {
         this.statusStore = statusStore;
         this.reporter = reporter;

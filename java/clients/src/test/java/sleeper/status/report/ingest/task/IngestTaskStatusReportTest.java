@@ -42,6 +42,8 @@ public class IngestTaskStatusReportTest {
         // When / Then
         assertThat(getStandardReport(IngestTaskQuery.ALL)).hasToString(
                 example("reports/ingest/task/noTasksQueryingForAll.txt"));
+        assertThat(getJsonReport(IngestTaskQuery.ALL)).hasToString(
+                example("reports/ingest/task/noTasksQueryingForAll.json"));
     }
 
     @Test
@@ -75,7 +77,11 @@ public class IngestTaskStatusReportTest {
         return getReport(query, StandardIngestTaskStatusReporter::new);
     }
 
-    private String getReport(IngestTaskQuery query, Function<PrintStream, StandardIngestTaskStatusReporter> getReporter) {
+    private String getJsonReport(IngestTaskQuery query) {
+        return getReport(query, JsonIngestTaskStatusReporter::new);
+    }
+
+    private String getReport(IngestTaskQuery query, Function<PrintStream, IngestTaskStatusReporter> getReporter) {
         ToStringPrintStream output = new ToStringPrintStream();
         new IngestTaskStatusReport(store,
                 getReporter.apply(output.getPrintStream()), query
