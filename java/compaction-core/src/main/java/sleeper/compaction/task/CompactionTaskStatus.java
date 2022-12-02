@@ -87,6 +87,22 @@ public class CompactionTaskStatus {
         return finishedStatus != null;
     }
 
+    public Integer getJobRunsOrNull() {
+        if (isFinished()) {
+            return finishedStatus.getTotalJobRuns();
+        } else {
+            return null;
+        }
+    }
+
+    public int getJobRuns() {
+        if (isFinished()) {
+            return finishedStatus.getTotalJobRuns();
+        } else {
+            return 0;
+        }
+    }
+
     public ProcessRun asProcessRun() {
         return ProcessRun.builder().taskId(taskId)
                 .startedStatus(ProcessStartedStatus.updateAndStartTime(getStartTime(), getStartTime()))

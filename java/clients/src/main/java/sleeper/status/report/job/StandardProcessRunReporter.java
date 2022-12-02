@@ -17,7 +17,7 @@
 package sleeper.status.report.job;
 
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.status.report.table.TableField;
+import sleeper.status.report.table.TableFieldDefinition;
 import sleeper.status.report.table.TableRow;
 import sleeper.status.report.table.TableWriterFactory;
 
@@ -30,39 +30,40 @@ import static sleeper.ClientUtils.countWithCommas;
 import static sleeper.ClientUtils.decimalWithCommas;
 
 public class StandardProcessRunReporter {
-    private final TableField taskIdField;
-    private final TableField startTimeField;
-    private final TableField finishTimeField;
-    private final TableField durationField;
-    private final TableField linesReadField;
-    private final TableField linesWrittenField;
-    private final TableField readRateField;
-    private final TableField writeRateField;
+
+    public static final TableFieldDefinition TASK_ID = TableFieldDefinition.field("TASK_ID");
+    public static final TableFieldDefinition START_TIME = TableFieldDefinition.field("START_TIME");
+    public static final TableFieldDefinition FINISH_TIME = TableFieldDefinition.field("FINISH_TIME");
+    public static final TableFieldDefinition DURATION = TableFieldDefinition.numeric("DURATION (s)");
+    public static final TableFieldDefinition LINES_READ = TableFieldDefinition.numeric("LINES_READ");
+    public static final TableFieldDefinition LINES_WRITTEN = TableFieldDefinition.numeric("LINES_WRITTEN");
+    public static final TableFieldDefinition READ_RATE = TableFieldDefinition.numeric("READ_RATE (s)");
+    public static final TableFieldDefinition WRITE_RATE = TableFieldDefinition.numeric("WRITE_RATE (s)");
+
     private final PrintStream out;
     public static final String STATE_IN_PROGRESS = "IN PROGRESS";
     public static final String STATE_FINISHED = "FINISHED";
 
     public StandardProcessRunReporter(PrintStream out, TableWriterFactory.Builder tableBuilder) {
+        this(out);
+        tableBuilder.addFields(
+                TASK_ID, START_TIME, FINISH_TIME, DURATION,
+                LINES_READ, LINES_WRITTEN, READ_RATE, WRITE_RATE);
+    }
+
+    public StandardProcessRunReporter(PrintStream out) {
         this.out = out;
-        taskIdField = tableBuilder.addField("TASK_ID");
-        startTimeField = tableBuilder.addField("START_TIME");
-        finishTimeField = tableBuilder.addField("FINISH_TIME");
-        durationField = tableBuilder.fieldBuilder("DURATION (s)").alignRight().build();
-        linesReadField = tableBuilder.fieldBuilder("LINES_READ").alignRight().build();
-        linesWrittenField = tableBuilder.fieldBuilder("LINES_WRITTEN").alignRight().build();
-        readRateField = tableBuilder.fieldBuilder("READ_RATE (s)").alignRight().build();
-        writeRateField = tableBuilder.fieldBuilder("WRITE_RATE (s)").alignRight().build();
     }
 
     public void writeRunFields(ProcessRun run, TableRow.Builder builder) {
-        builder.value(taskIdField, run.getTaskId())
-                .value(startTimeField, run.getStartTime())
-                .value(finishTimeField, run.getFinishTime())
-                .value(durationField, getDurationInSeconds(run))
-                .value(linesReadField, getLinesRead(run))
-                .value(linesWrittenField, getLinesWritten(run))
-                .value(readRateField, getRecordsReadPerSecond(run))
-                .value(writeRateField, getRecordsWrittenPerSecond(run));
+        builder.value(TASK_ID, run.getTaskId())
+                .value(START_TIME, run.getStartTime())
+                .value(FINISH_TIME, run.getFinishTime())
+                .value(DURATION, getDurationInSeconds(run))
+                .value(LINES_READ, getLinesRead(run))
+                .value(LINES_WRITTEN, getLinesWritten(run))
+                .value(READ_RATE, getRecordsReadPerSecond(run))
+                .value(WRITE_RATE, getRecordsWrittenPerSecond(run));
     }
 
     public void printProcessJobRun(ProcessRun run) {
@@ -83,8 +84,8 @@ public class StandardProcessRunReporter {
         }
     }
 
-    public List<TableField> getFinishedFields() {
-        return Arrays.asList(finishTimeField, durationField, linesReadField, linesWrittenField, readRateField, writeRateField);
+    public List<TableFieldDefinition> getFinishedFields() {
+        return Arrays.asList(FINISH_TIME, DURATION, LINES_READ, LINES_WRITTEN, READ_RATE, WRITE_RATE);
     }
 
     public static String getState(ProcessRun run) {
@@ -124,4 +125,5 @@ public class StandardProcessRunReporter {
         }
         return getter.apply(object);
     }
+
 }

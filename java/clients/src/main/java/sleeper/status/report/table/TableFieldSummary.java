@@ -43,7 +43,7 @@ class TableFieldSummary {
         return visible;
     }
 
-    public TableField.HorizontalAlignment getHorizontalAlignment() {
+    public TableFieldDefinition.HorizontalAlignment getHorizontalAlignment() {
         return field.getHorizontalAlignment();
     }
 

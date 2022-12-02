@@ -1,12 +1,5 @@
 [
   {
-    "taskId": "unfinished-task",
-    "type": "COMPACTION",
-    "startedStatus": {
-      "startTime": "2022-10-06T12:17:00.001Z"
-    }
-  },
-  {
     "taskId": "finished-task",
     "type": "COMPACTION",
     "startedStatus": {
@@ -20,6 +13,13 @@
       "totalRecordsWritten": 100,
       "recordsReadPerSecond": 6.666666666666667,
       "recordsWrittenPerSecond": 3.3333333333333335
+    }
+  },
+  {
+    "taskId": "unfinished-task",
+    "type": "COMPACTION",
+    "startedStatus": {
+      "startTime": "2022-10-06T12:17:00.001Z"
     }
   }
 ]

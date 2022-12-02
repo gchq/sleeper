@@ -1,9 +1,25 @@
 [
   {
-    "taskId": "A",
-    "type": "COMPACTION",
+    "taskId": "D",
+    "type": "SPLITTING",
     "startedStatus": {
-      "startTime": "2022-10-06T12:18:00.001Z"
+      "startTime": "2022-10-06T12:24:00.001Z"
+    },
+    "finishedStatus": {
+      "finishTime": "2022-10-06T12:24:30.001Z",
+      "totalJobRuns": 1,
+      "totalRuntimeInSeconds": 30.0,
+      "totalRecordsRead": 400,
+      "totalRecordsWritten": 200,
+      "recordsReadPerSecond": 13.333333333333334,
+      "recordsWrittenPerSecond": 6.666666666666667
+    }
+  },
+  {
+    "taskId": "C",
+    "type": "SPLITTING",
+    "startedStatus": {
+      "startTime": "2022-10-06T12:22:00.001Z"
     }
   },
   {
@@ -23,26 +39,10 @@
     }
   },
   {
-    "taskId": "C",
-    "type": "SPLITTING",
+    "taskId": "A",
+    "type": "COMPACTION",
     "startedStatus": {
-      "startTime": "2022-10-06T12:22:00.001Z"
-    }
-  },
-  {
-    "taskId": "D",
-    "type": "SPLITTING",
-    "startedStatus": {
-      "startTime": "2022-10-06T12:24:00.001Z"
-    },
-    "finishedStatus": {
-      "finishTime": "2022-10-06T12:24:30.001Z",
-      "totalJobRuns": 1,
-      "totalRuntimeInSeconds": 30.0,
-      "totalRecordsRead": 400,
-      "totalRecordsWritten": 200,
-      "recordsReadPerSecond": 13.333333333333334,
-      "recordsWrittenPerSecond": 6.666666666666667
+      "startTime": "2022-10-06T12:18:00.001Z"
     }
   }
 ]

@@ -91,7 +91,7 @@ public abstract class CompactionJobStatusReporterTestBase {
         CompactionJobStatus status4 = jobCreated(job4, creationTime4);
         CompactionJobStatus status5 = jobStarted(job5, task(2), creationTime5, startedTime5, startedUpdateTime5);
         CompactionJobStatus status6 = jobFinished(job6, task(2), creationTime6, startedTime6, startedUpdateTime6, finishedTime6);
-        return Arrays.asList(status1, status2, status3, status4, status5, status6);
+        return Arrays.asList(status6, status5, status4, status3, status2, status1);
     }
 
     protected static List<CompactionJobStatus> mixedUnfinishedJobStatuses() {
@@ -121,25 +121,25 @@ public abstract class CompactionJobStatusReporterTestBase {
                 .parentJoining(partition("C"), partition("A"), partition("B")));
         return Arrays.asList(
                 finishedCompactionStatus(
-                        dataHelper.singleFileCompaction(partition("C")),
+                        dataHelper.singleFileSplittingCompaction(partition("C"), partition("A"), partition("B")),
                         "task-id",
-                        Instant.parse("2022-10-13T12:00:00.000Z"),
-                        Duration.ofMillis(123), 600, 300),
-                finishedCompactionStatus(
-                        dataHelper.singleFileCompaction(partition("C")),
-                        "task-id",
-                        Instant.parse("2022-10-13T12:01:00.000Z"),
-                        Duration.ofHours(2), 1000600, 500300),
+                        Instant.parse("2022-10-13T14:02:00.000Z"),
+                        Duration.ofMillis(123), 1234, 1234),
                 finishedCompactionStatus(
                         dataHelper.singleFileSplittingCompaction(partition("C"), partition("A"), partition("B")),
                         "task-id",
                         Instant.parse("2022-10-13T14:01:00.000Z"),
                         Duration.ofSeconds(60), 1000600, 500300),
                 finishedCompactionStatus(
-                        dataHelper.singleFileSplittingCompaction(partition("C"), partition("A"), partition("B")),
+                        dataHelper.singleFileCompaction(partition("C")),
                         "task-id",
-                        Instant.parse("2022-10-13T14:02:00.000Z"),
-                        Duration.ofMillis(123), 1234, 1234));
+                        Instant.parse("2022-10-13T12:01:00.000Z"),
+                        Duration.ofHours(2), 1000600, 500300),
+                finishedCompactionStatus(
+                        dataHelper.singleFileCompaction(partition("C")),
+                        "task-id",
+                        Instant.parse("2022-10-13T12:00:00.000Z"),
+                        Duration.ofMillis(123), 600, 300));
     }
 
     protected static CompactionJobStatus jobCreated(CompactionJob job, Instant creationTime) {

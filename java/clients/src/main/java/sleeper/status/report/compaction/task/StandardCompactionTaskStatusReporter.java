@@ -30,16 +30,24 @@ import java.util.stream.Collectors;
 
 public class StandardCompactionTaskStatusReporter implements CompactionTaskStatusReporter {
 
-    private final TableWriterFactory.Builder tableFactoryBuilder = TableWriterFactory.builder();
-    private final TableField stateField = tableFactoryBuilder.addField("STATE");
-    private final TableField typeField = tableFactoryBuilder.addField("TYPE");
-    private final TableWriterFactory tableWriterFactory;
+    private static final TableWriterFactory.Builder TABLE_FACTORY_BUILDER = TableWriterFactory.builder();
+    private static final TableField STATE = TABLE_FACTORY_BUILDER.addField("STATE");
+    private static final TableField TYPE = TABLE_FACTORY_BUILDER.addField("TYPE");
+    private static final TableField TASK_ID = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.TASK_ID);
+    private static final TableField START_TIME = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.START_TIME);
+    private static final TableField FINISH_TIME = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.FINISH_TIME);
+    private static final TableField DURATION = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.DURATION);
+    private static final TableField JOB_RUNS = TABLE_FACTORY_BUILDER.addNumericField("JOB_RUNS");
+    private static final TableField LINES_READ = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.LINES_READ);
+    private static final TableField LINES_WRITTEN = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.LINES_WRITTEN);
+    private static final TableField READ_RATE = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.READ_RATE);
+    private static final TableField WRITE_RATE = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.WRITE_RATE);
+    private static final TableWriterFactory TABLE_WRITER_FACTORY = TABLE_FACTORY_BUILDER.build();
     private final PrintStream out;
     private final StandardProcessRunReporter processRunReporter;
 
     public StandardCompactionTaskStatusReporter(PrintStream out) {
-        this.processRunReporter = new StandardProcessRunReporter(out, tableFactoryBuilder);
-        tableWriterFactory = tableFactoryBuilder.build();
+        this.processRunReporter = new StandardProcessRunReporter(out);
         this.out = out;
     }
 
@@ -54,8 +62,9 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
             printAllSummary(tasks);
         }
 
-        tableWriterFactory.tableBuilder()
-                .showFields(processRunReporter.getFinishedFields(), query != CompactionTaskQuery.UNFINISHED)
+        TABLE_WRITER_FACTORY.tableBuilder()
+                .showFields(query != CompactionTaskQuery.UNFINISHED,
+                        FINISH_TIME, DURATION, JOB_RUNS, LINES_READ, LINES_WRITTEN, READ_RATE, WRITE_RATE)
                 .itemsAndWriter(tasks, this::writeRow)
                 .build().write(out);
     }
@@ -77,7 +86,7 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
         out.printf("Total standard tasks in progress: %s%n", standardTasks.stream().filter(task -> !task.isFinished()).count());
         out.printf("Total standard tasks finished: %s%n", standardTasks.stream().filter(CompactionTaskStatus::isFinished).count());
         if (standardTasks.stream().anyMatch(CompactionTaskStatus::isFinished)) {
-            out.printf("Total standard jobs run: %s%n", getTotalJobsRun(standardTasks));
+            out.printf("Total standard job runs: %s%n", getTotalJobsRun(standardTasks));
         }
         AverageRecordRateReport.printf("Average standard compaction rate: %s%n", recordRate(standardTasks), out);
         out.println();
@@ -85,7 +94,7 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
         out.printf("Total splitting tasks in progress: %s%n", splittingTasks.stream().filter(task -> !task.isFinished()).count());
         out.printf("Total splitting tasks finished: %s%n", splittingTasks.stream().filter(CompactionTaskStatus::isFinished).count());
         if (splittingTasks.stream().anyMatch(CompactionTaskStatus::isFinished)) {
-            out.printf("Total splitting jobs run: %s%n", getTotalJobsRun(splittingTasks));
+            out.printf("Total splitting job runs: %s%n", getTotalJobsRun(splittingTasks));
         }
         AverageRecordRateReport.printf("Average splitting compaction rate: %s%n", recordRate(splittingTasks), out);
     }
@@ -103,10 +112,7 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
     }
 
     private static int getTotalJobsRun(List<CompactionTaskStatus> tasks) {
-        return tasks.stream()
-                .filter(CompactionTaskStatus::isFinished)
-                .mapToInt(task -> task.getFinishedStatus().getTotalJobRuns())
-                .sum();
+        return tasks.stream().mapToInt(CompactionTaskStatus::getJobRuns).sum();
     }
 
     private static AverageRecordRate recordRate(List<CompactionTaskStatus> tasks) {
@@ -115,8 +121,9 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
     }
 
     private void writeRow(CompactionTaskStatus task, TableRow.Builder builder) {
-        builder.value(stateField, task.isFinished() ? "FINISHED" : "RUNNING")
-                .value(typeField, task.getType());
+        builder.value(STATE, task.isFinished() ? "FINISHED" : "RUNNING")
+                .value(TYPE, task.getType())
+                .value(JOB_RUNS, task.getJobRunsOrNull());
         processRunReporter.writeRunFields(task.asProcessRun(), builder);
     }
 }
