@@ -30,6 +30,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.ClientTestUtils.example;
 import static sleeper.status.report.ingest.task.IngestTaskStatusReportTestHelper.finishedTask;
+import static sleeper.status.report.ingest.task.IngestTaskStatusReportTestHelper.finishedTaskWithFourRuns;
 import static sleeper.status.report.ingest.task.IngestTaskStatusReportTestHelper.startedTask;
 
 public class IngestTaskStatusReportTest {
@@ -54,6 +55,20 @@ public class IngestTaskStatusReportTest {
         // When / Then
         assertThat(getStandardReport(IngestTaskQuery.ALL)).hasToString(
                 example("reports/ingest/task/unfinishedAndFinished.txt"));
+    }
+
+    @Test
+    public void shouldReportMultipleJobRunsOnIngestTasks() throws Exception {
+        // Given
+        IngestTaskStatus finished1 = finishedTaskWithFourRuns("A", "2022-10-06T12:20:00.001Z",
+                "2022-10-06T12:20:40.001Z", 800L, 400L);
+        IngestTaskStatus finished2 = finishedTaskWithFourRuns("B", "2022-10-06T12:22:00.001Z",
+                "2022-10-06T12:22:40.001Z", 1600L, 800L);
+        when(store.getAllTasks()).thenReturn(Arrays.asList(finished2, finished1));
+
+        // When / Then
+        assertThat(getStandardReport(IngestTaskQuery.ALL)).hasToString(
+                example("reports/ingest/task/multipleJobRunsOnTasks.txt"));
     }
 
     private String getStandardReport(IngestTaskQuery query) {
