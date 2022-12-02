@@ -15,6 +15,7 @@
  */
 package sleeper.status.report.table;
 
+import java.util.Map;
 import java.util.Objects;
 
 public class TableRow {
@@ -47,14 +48,20 @@ public class TableRow {
 
     public static final class Builder {
         private final String[] values;
+        private final Map<TableFieldDefinition, TableField> fieldsByDefinition;
 
-        Builder(int fieldCount) {
+        Builder(int fieldCount, Map<TableFieldDefinition, TableField> fieldsByDefinition) {
             this.values = new String[fieldCount];
+            this.fieldsByDefinition = fieldsByDefinition;
         }
 
         public Builder value(TableField field, Object value) {
             values[field.getIndex()] = Objects.toString(value, "");
             return this;
+        }
+
+        public Builder value(TableFieldDefinition field, Object value) {
+            return value(fieldsByDefinition.get(field), value);
         }
 
         public TableRow build() {
