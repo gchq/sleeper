@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusFormat.TASK_ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
@@ -120,8 +121,12 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
         return dynamoDB.putItem(putItemRequest);
     }
 
-    public static DynamoDBCompactionTaskStatusStore from(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
-        return new DynamoDBCompactionTaskStatusStore(dynamoDB, properties);
+    public static CompactionTaskStatusStore from(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+        if (Boolean.TRUE.equals(properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED))) {
+            return new DynamoDBCompactionTaskStatusStore(dynamoDB, properties);
+        } else {
+            return CompactionTaskStatusStore.none();
+        }
     }
 
     public static String taskStatusTableName(String instanceId) {
