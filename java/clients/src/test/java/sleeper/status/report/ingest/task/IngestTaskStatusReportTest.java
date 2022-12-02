@@ -17,6 +17,10 @@ package sleeper.status.report.ingest.task;
 
 import org.junit.Test;
 import sleeper.ToStringPrintStream;
+import sleeper.status.report.IngestTaskStatusReport;
+
+import java.io.PrintStream;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
@@ -32,8 +36,14 @@ public class IngestTaskStatusReportTest {
     }
 
     private String getStandardReport(IngestTaskQuery query) {
+        return getReport(query, IngestTaskStatusReporter::new);
+    }
+
+    private String getReport(IngestTaskQuery query, Function<PrintStream, IngestTaskStatusReporter> getReporter) {
         ToStringPrintStream output = new ToStringPrintStream();
-        new IngestTaskStatusReport(output.getPrintStream()).run(query);
+        new IngestTaskStatusReport(
+                getReporter.apply(output.getPrintStream()),
+                query).run();
         return output.toString();
     }
 }
