@@ -122,10 +122,10 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
     }
 
     public static CompactionTaskStatusStore from(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
-        if (Boolean.TRUE.equals(properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED))) {
+        if (properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
             return new DynamoDBCompactionTaskStatusStore(dynamoDB, properties);
         } else {
-            return CompactionTaskStatusStore.none();
+            return CompactionTaskStatusStore.NONE;
         }
     }
 

@@ -21,10 +21,8 @@ import java.util.List;
 
 public interface CompactionTaskStatusStore {
 
-    static CompactionTaskStatusStore none() {
-        return new CompactionTaskStatusStore() {
-        };
-    }
+    CompactionTaskStatusStore NONE = new CompactionTaskStatusStore() {
+    };
 
     default void taskStarted(CompactionTaskStatus taskStatus) {
     }
