@@ -15,9 +15,10 @@
  */
 package sleeper.status.report.table;
 
+import java.util.Map;
 import java.util.Objects;
 
-public class TableField {
+public class TableField implements TableFieldOrDefinition {
 
     private final int index;
     private final TableFieldDefinition definition;
@@ -45,6 +46,11 @@ public class TableField {
 
     public TableFieldDefinition getDefinition() {
         return definition;
+    }
+
+    @Override
+    public TableField getField(Map<TableFieldDefinition, TableField> map) {
+        return this;
     }
 
     public static final class Builder {

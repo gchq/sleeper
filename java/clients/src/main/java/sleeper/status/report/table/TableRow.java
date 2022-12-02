@@ -55,13 +55,10 @@ public class TableRow {
             this.fieldsByDefinition = fieldsByDefinition;
         }
 
-        public Builder value(TableField field, Object value) {
+        public Builder value(TableFieldOrDefinition fieldOrDefinition, Object value) {
+            TableField field = fieldOrDefinition.getField(fieldsByDefinition);
             values[field.getIndex()] = Objects.toString(value, "");
             return this;
-        }
-
-        public Builder value(TableFieldDefinition field, Object value) {
-            return value(fieldsByDefinition.get(field), value);
         }
 
         public TableRow build() {

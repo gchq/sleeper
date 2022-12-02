@@ -106,7 +106,8 @@ public class TableWriter {
             return this;
         }
 
-        public Builder showField(boolean showField, TableField field) {
+        public Builder showField(boolean showField, TableFieldOrDefinition fieldOrDefinition) {
+            TableField field = fieldOrDefinition.getField(fieldsByDefinition);
             if (showField) {
                 hideFieldIndexes.remove(field.getIndex());
             } else {
@@ -115,21 +116,14 @@ public class TableWriter {
             return this;
         }
 
-        public Builder showFields(boolean showFields, List<TableField> fields) {
-            for (TableField field : fields) {
+        public Builder showFields(boolean showFields, List<? extends TableFieldOrDefinition> fields) {
+            for (TableFieldOrDefinition field : fields) {
                 showField(showFields, field);
             }
             return this;
         }
 
-        public Builder showFieldsByDefinition(boolean showFields, List<TableFieldDefinition> fields) {
-            for (TableFieldDefinition field : fields) {
-                showField(showFields, fieldsByDefinition.get(field));
-            }
-            return this;
-        }
-
-        public Builder showFields(boolean showFields, TableField... fields) {
+        public Builder showFields(boolean showFields, TableFieldOrDefinition... fields) {
             return showFields(showFields, Arrays.asList(fields));
         }
 
