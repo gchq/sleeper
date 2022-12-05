@@ -146,7 +146,6 @@ public abstract class BulkImportJobRunner {
                 .option("pathGlobFilter", "*.parquet")
                 .option("recursiveFileLookup", "true")
                 .parquet(pathsWithFs.toArray(new String[0]));
-        LOGGER.info("Input Dataset has {} partitions", dataWithPartition.rdd().getNumPartitions());
 
         List<FileInfo> fileInfos = createFileInfos(dataWithPartition, job, tableProperties, broadcastedPartitions, conf).collectAsList()
                 .stream()
