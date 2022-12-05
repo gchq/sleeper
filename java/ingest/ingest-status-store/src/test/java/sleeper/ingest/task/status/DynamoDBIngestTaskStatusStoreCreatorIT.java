@@ -38,7 +38,6 @@ public class DynamoDBIngestTaskStatusStoreCreatorIT extends DynamoDBTestBase {
         // Then
         assertThat(dynamoDBClient.describeTable(tableName))
                 .extracting(DescribeTableResult::getTable).isNotNull();
-
     }
 
     @After
