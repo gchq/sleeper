@@ -82,6 +82,8 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     INGEST_STATUS_STORE_ENABLED("sleeper.ingest.status.store.enabled", "true"),
     INGEST_JOB_STATUS_TTL_IN_SECONDS("sleeper.ingest.job.status.ttl", "604800", Utils::isPositiveInteger), // Default is 1 week
 
+    INGEST_TASK_STATUS_TTL_IN_SECONDS("sleeper.ingest.task.status.ttl", "604800", Utils::isPositiveInteger), // Default is 1 week
+
     // Bulk Import - properties that are applicable to all bulk import platforms
     BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE("sleeper.bulk.import.min.partitions.coalesce", "100"),
     BULK_IMPORT_CLASS_NAME("sleeper.bulk.import.class.name", "sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeRunner"),
