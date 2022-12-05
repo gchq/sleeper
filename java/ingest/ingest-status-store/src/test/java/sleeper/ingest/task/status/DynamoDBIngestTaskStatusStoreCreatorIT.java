@@ -28,7 +28,7 @@ import static sleeper.ingest.testutils.IngestStatusStoreTestUtils.createInstance
 
 public class DynamoDBIngestTaskStatusStoreCreatorIT extends DynamoDBTestBase {
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final String tableName = DynamoDBIngestTaskStatusStore.jobStatusTableName(instanceProperties.get(ID));
+    private final String tableName = DynamoDBIngestTaskStatusStore.taskStatusTableName(instanceProperties.get(ID));
 
     @Test
     public void shouldCreateStore() {

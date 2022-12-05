@@ -32,7 +32,7 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
 
     private DynamoDBIngestTaskStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         this.dynamoDB = dynamoDB;
-        this.statusTableName = jobStatusTableName(properties.get(ID));
+        this.statusTableName = taskStatusTableName(properties.get(ID));
         this.timeToLive = properties.getLong(UserDefinedInstanceProperty.INGEST_TASK_STATUS_TTL_IN_SECONDS) * 1000;
     }
 
@@ -44,7 +44,7 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
         }
     }
 
-    public static String jobStatusTableName(String instanceId) {
+    public static String taskStatusTableName(String instanceId) {
         return instanceTableName(instanceId, "ingest-task-status");
     }
 
