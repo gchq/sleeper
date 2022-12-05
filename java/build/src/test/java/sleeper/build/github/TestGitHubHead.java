@@ -15,6 +15,8 @@
  */
 package sleeper.build.github;
 
+import sleeper.build.testutil.TestProperties;
+
 public class TestGitHubHead {
 
     private TestGitHubHead() {
@@ -22,6 +24,10 @@ public class TestGitHubHead {
 
     public static GitHubHead example() {
         return exampleBuilder().build();
+    }
+
+    public static GitHubHead exampleFromProperties() {
+        return GitHubHead.from(TestProperties.example("examples/config/github.properties"));
     }
 
     public static GitHubHead.Builder exampleBuilder() {

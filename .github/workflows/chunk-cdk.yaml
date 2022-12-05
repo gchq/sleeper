@@ -13,21 +13,26 @@ on:
       - 'java/cdk-environment/**'
       - 'java/system-test/**'
       - 'java/bulk-import/bulk-import-common/**'
+      - 'java/ingest/ingest-status-store/**'
       - 'java/clients/**'
       - 'java/query/**'
-      - 'java/splitter/**'
-      - 'java/ingest/**'
+      - 'java/compaction-job-creation/**'
+      - 'java/compaction-status-store/**'
+      - 'java/compaction-core/**'
+      - 'java/ingest/ingest-runner/**'
       - 'java/common-job/**'
+      - 'java/ingest/ingest-core/**'
+      - 'java/splitter/**'
       - 'java/sketches/**'
       - 'java/tables/**'
       - 'java/statestore/**'
-      - 'java/dynamodb-tools/**'
       - 'java/parquet/**'
+      - 'java/dynamodb-tools/**'
       - 'java/configuration/**'
       - 'java/core/**'
 
 jobs:
-  module-workflow:
+  chunk-workflow:
     uses: ./.github/workflows/chunk.yaml
     with:
       chunkId: cdk
