@@ -1,0 +1,17 @@
+name: Build Ingest Modules
+on:
+  push:
+    paths:
+      - 'github-actions/chunk-ingest.yaml'
+      - 'github-actions/chunk.yaml'
+      - 'config/chunks.yaml'
+      - 'maven/pom.xml'
+      - 'maven/ingest/**'
+      - 'maven/configuration/**'
+      - 'maven/core/**'
+
+jobs:
+  chunk-workflow:
+    uses: ./github-actions/chunk.yaml
+    with:
+      chunkId: ingest
