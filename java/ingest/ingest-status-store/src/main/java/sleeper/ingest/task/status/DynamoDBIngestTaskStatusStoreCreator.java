@@ -37,7 +37,7 @@ public class DynamoDBIngestTaskStatusStoreCreator {
     }
 
     public static void create(InstanceProperties properties, AmazonDynamoDB dynamoDB) {
-        String tableName = DynamoDBIngestTaskStatusStore.jobStatusTableName(properties.get(ID));
+        String tableName = DynamoDBIngestTaskStatusStore.taskStatusTableName(properties.get(ID));
         initialiseTable(dynamoDB, tableName,
                 Arrays.asList(
                         new AttributeDefinition(TASK_ID, ScalarAttributeType.S),
