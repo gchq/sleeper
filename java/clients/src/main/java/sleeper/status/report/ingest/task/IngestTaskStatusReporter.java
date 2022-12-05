@@ -26,9 +26,13 @@ public interface IngestTaskStatusReporter {
     void report(IngestTaskQuery query, List<IngestTaskStatus> tasks);
 
     static IngestTaskStatusReporter from(String type, PrintStream out) {
-        if ("standard".equals(type.toLowerCase(Locale.ROOT))) {
-            return new StandardIngestTaskStatusReporter(out);
+        switch (type.toLowerCase(Locale.ROOT)) {
+            case "standard":
+                return new StandardIngestTaskStatusReporter(out);
+            case "json":
+                return new JsonIngestTaskStatusReporter(out);
+            default:
+                throw new IllegalArgumentException("Unrecognised reporter type: " + type);
         }
-        throw new IllegalArgumentException("Unrecognised reporter type: " + type);
     }
 }
