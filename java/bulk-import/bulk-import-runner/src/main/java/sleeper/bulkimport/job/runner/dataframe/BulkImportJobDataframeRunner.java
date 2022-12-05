@@ -78,7 +78,6 @@ public class BulkImportJobDataframeRunner extends BulkImportJobRunner {
         LOGGER.info("Sorting by columns {}", String.join(",", Arrays.stream(sortColumns).map(c -> c.toString()).collect(Collectors.toList())));
 
         Dataset<Row> sortedRows = dataWithPartition.sort(sortColumns);
-        LOGGER.info("There are {} partitions in the sorted Dataset", sortedRows.rdd().getNumPartitions());
 
         int minPartitionsToUseCoalesce = getInstanceProperties().getInt(BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE);
         LOGGER.info("The minimum number of leaf partitions to use coalesce in the bulk import is {}", minPartitionsToUseCoalesce);
@@ -88,7 +87,6 @@ public class BulkImportJobDataframeRunner extends BulkImportJobRunner {
         } else {
             LOGGER.info("Coalescing data to {} partitions", numLeafPartitions);
             sortedRows = sortedRows.coalesce(numLeafPartitions);
-            LOGGER.info("Coalesced data has {} partitions", sortedRows.rdd().getNumPartitions());
         }
 
         return sortedRows.mapPartitions(new WriteParquetFiles(getInstanceProperties().saveAsString(), tableProperties.saveAsString(), conf), RowEncoder.apply(createFileInfoSchema()));
