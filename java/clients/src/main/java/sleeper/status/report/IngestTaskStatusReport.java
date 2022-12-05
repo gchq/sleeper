@@ -17,6 +17,7 @@ package sleeper.status.report;
 
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.status.report.ingest.task.IngestTaskQuery;
+import sleeper.status.report.ingest.task.IngestTaskStatusReportArguments;
 import sleeper.status.report.ingest.task.IngestTaskStatusReporter;
 
 public class IngestTaskStatusReport {
@@ -36,5 +37,20 @@ public class IngestTaskStatusReport {
 
     public void run() {
         reporter.report(query, query.run(statusStore));
+    }
+
+    public static void main(String[] args) {
+        IngestTaskStatusReportArguments arguments;
+        try {
+            arguments = IngestTaskStatusReportArguments.fromArgs(args);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+            IngestTaskStatusReportArguments.printUsage(System.err);
+            System.exit(1);
+            return;
+        }
+
+        IngestTaskStatusStore statusStore = IngestTaskStatusStore.none();
+        new IngestTaskStatusReport(statusStore, arguments.getReporter(), arguments.getQuery()).run();
     }
 }
