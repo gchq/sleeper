@@ -25,13 +25,12 @@ import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.ingest.task.IngestTaskStatus;
+import sleeper.ingest.task.IngestTaskFinishedStatus;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 
-import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -54,8 +53,6 @@ public class IngestJobQueueConsumerFullIT extends IngestJobQueueConsumerTestBase
         StateStoreProvider stateStoreProvider = new StateStoreProvider(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), new InstanceProperties());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
-        IngestTaskStatus.Builder taskStatusBuilder = IngestTaskStatus.started(Instant.now().toEpochMilli());
-
         // Run the job consumer
         IngestJobQueueConsumer ingestJobQueueConsumer = new IngestJobQueueConsumer(
                 new ObjectFactory(instanceProperties, null, temporaryFolder.newFolder().getAbsolutePath()),
@@ -65,7 +62,7 @@ public class IngestJobQueueConsumerFullIT extends IngestJobQueueConsumerTestBase
                 tablePropertiesProvider,
                 stateStoreProvider,
                 localDir,
-                taskStatusBuilder,
+                IngestTaskFinishedStatus.builder(),
                 AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
         ingestJobQueueConsumer.run();

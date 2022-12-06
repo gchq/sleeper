@@ -134,18 +134,19 @@ public class IngestJobQueueConsumerRunner {
     public void run(String taskId) throws InterruptedException, IOException, IteratorException, StateStoreException {
         long startTime = System.currentTimeMillis();
         IngestTaskStatus.Builder taskStatusBuilder = IngestTaskStatus.started(startTime).taskId(taskId);
+        IngestTaskFinishedStatus.Builder taskFinishedStatusBuilder = IngestTaskFinishedStatus.builder();
         IngestTaskStatusStore taskStore = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, instanceProperties);
         taskStore.taskStarted(taskStatusBuilder.build());
         LOGGER.info("IngestTask started at = {}", Instant.ofEpochMilli(startTime));
 
         IngestJobQueueConsumer ingestJobQueueConsumer = new IngestJobQueueConsumer(objectFactory, sqsClient, cloudWatchClient,
                 instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                localDir, taskStatusBuilder, s3AsyncClient, configuration);
+                localDir, taskFinishedStatusBuilder, s3AsyncClient, configuration);
         ingestJobQueueConsumer.run();
 
         long finishTime = System.currentTimeMillis();
         double runTimeInSeconds = (finishTime - startTime) / 1000.0;
-        IngestTaskFinishedStatus.Builder taskFinishedStatus = IngestTaskFinishedStatus.builder()
+        IngestTaskFinishedStatus.Builder taskFinishedStatus = taskFinishedStatusBuilder
                 .finishTime(Instant.ofEpochMilli(finishTime));
         taskStore.taskFinished(taskStatusBuilder.finished(taskFinishedStatus, finishTime).build());
         LOGGER.info("IngestFromIngestJobsQueueRunner total run time = {}", runTimeInSeconds);

@@ -32,8 +32,10 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.ingest.IngestResult;
-import sleeper.ingest.task.IngestTaskStatus;
+import sleeper.ingest.task.IngestTaskFinishedStatus;
 import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.DeleteMessageAction;
 import sleeper.job.common.action.MessageReference;
@@ -43,6 +45,7 @@ import sleeper.statestore.StateStoreProvider;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
@@ -64,7 +67,7 @@ public class IngestJobQueueConsumer {
     private final int visibilityTimeoutInSeconds;
     private final IngestJobSerDe ingestJobSerDe;
     private final IngestJobRunner ingestJobRunner;
-    private final IngestTaskStatus.Builder taskStatusBuilder;
+    private final IngestTaskFinishedStatus.Builder taskFinishedStatusBuilder;
 
     public IngestJobQueueConsumer(ObjectFactory objectFactory,
                                   AmazonSQS sqsClient,
@@ -73,7 +76,7 @@ public class IngestJobQueueConsumer {
                                   TablePropertiesProvider tablePropertiesProvider,
                                   StateStoreProvider stateStoreProvider,
                                   String localDir,
-                                  IngestTaskStatus.Builder taskStatusBuilder,
+                                  IngestTaskFinishedStatus.Builder taskFinishedStatusBuilder,
                                   S3AsyncClient s3AsyncClient,
                                   Configuration hadoopConfiguration) {
         this.sqsClient = sqsClient;
@@ -91,7 +94,7 @@ public class IngestJobQueueConsumer {
                 localDir,
                 s3AsyncClient == null ? S3AsyncClient.create() : s3AsyncClient,
                 hadoopConfiguration == null ? defaultHadoopConfiguration(instanceProperties.get(S3A_INPUT_FADVISE)) : hadoopConfiguration);
-        this.taskStatusBuilder = taskStatusBuilder;
+        this.taskFinishedStatusBuilder = taskFinishedStatusBuilder;
     }
 
     private static Configuration defaultHadoopConfiguration(String fadvise) {
@@ -116,8 +119,14 @@ public class IngestJobQueueConsumer {
             LOGGER.info("Received message {}", messages.get(0).getBody());
             IngestJob ingestJob = ingestJobSerDe.fromJson(messages.get(0).getBody());
             LOGGER.info("Deserialised message to ingest job {}", ingestJob);
+            long startTime = System.currentTimeMillis();
             long recordsWritten = ingest(ingestJob, messages.get(0).getReceiptHandle());
             LOGGER.info("{} records were written", recordsWritten);
+            long finishTime = System.currentTimeMillis();
+            taskFinishedStatusBuilder.addJobSummary(
+                    new RecordsProcessedSummary(
+                            new RecordsProcessed(recordsWritten, recordsWritten),
+                            Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(finishTime)));
         }
     }
 
