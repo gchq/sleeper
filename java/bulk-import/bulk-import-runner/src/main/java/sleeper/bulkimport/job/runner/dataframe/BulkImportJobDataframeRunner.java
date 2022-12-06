@@ -40,8 +40,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE;
-
 /**
  * The {@link BulkImportJobDataframeRunner} is a {@link BulkImportJobRunner} which
  * uses Spark's Dataframe API to efficiently sort and write out the data split by
