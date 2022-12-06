@@ -17,15 +17,32 @@
 package sleeper.ingest.task.status;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
+import com.amazonaws.services.dynamodbv2.model.Condition;
+import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import com.amazonaws.services.dynamodbv2.model.PutItemResult;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryResult;
+import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.ingest.IngestStatusStoreException;
+import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
+
+import java.util.Map;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
+import static sleeper.ingest.task.status.DynamoDBIngestTaskStatusFormat.TASK_ID;
 
 public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestTaskStatusStore.class);
     private final AmazonDynamoDB dynamoDB;
     private final String statusTableName;
     private final long timeToLive;
@@ -46,6 +63,45 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
 
     public static String taskStatusTableName(String instanceId) {
         return instanceTableName(instanceId, "ingest-task-status");
+    }
+
+    public void taskStarted(IngestTaskStatus taskStatus) {
+        try {
+            PutItemResult result = putItem(DynamoDBIngestTaskStatusFormat.createTaskStartedRecord(taskStatus, timeToLive));
+            LOGGER.debug("Put started event for task {} to table {}, capacity consumed = {}",
+                    taskStatus.getTaskId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+        } catch (RuntimeException e) {
+            throw new IngestStatusStoreException("Failed putItem in taskStarted", e);
+        }
+    }
+
+    public void taskFinished(IngestTaskStatus taskStatus) {
+        try {
+            PutItemResult result = putItem(DynamoDBIngestTaskStatusFormat.createTaskFinishedRecord(taskStatus, timeToLive));
+            LOGGER.debug("Put started event for task {} to table {}, capacity consumed = {}",
+                    taskStatus.getTaskId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+        } catch (RuntimeException e) {
+            throw new IngestStatusStoreException("Failed putItem in taskStarted", e);
+        }
+    }
+
+    @Override
+    public IngestTaskStatus getTask(String taskId) {
+        QueryResult result = dynamoDB.query(new QueryRequest()
+                .withTableName(statusTableName)
+                .addKeyConditionsEntry(TASK_ID, new Condition()
+                        .withAttributeValueList(createStringAttribute(taskId))
+                        .withComparisonOperator(ComparisonOperator.EQ)));
+        return DynamoDBIngestTaskStatusFormat.streamTaskStatuses(result.getItems())
+                .findFirst().orElse(null);
+    }
+
+    private PutItemResult putItem(Map<String, AttributeValue> item) {
+        PutItemRequest putItemRequest = new PutItemRequest()
+                .withItem(item)
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                .withTableName(statusTableName);
+        return dynamoDB.putItem(putItemRequest);
     }
 
     // Used to prevent spotbugs from failing
