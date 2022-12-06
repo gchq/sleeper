@@ -140,6 +140,11 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>ingest-status-store</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

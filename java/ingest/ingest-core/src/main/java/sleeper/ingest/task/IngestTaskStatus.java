@@ -22,6 +22,7 @@ import sleeper.core.record.process.status.ProcessStartedStatus;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.UUID;
 
 public class IngestTaskStatus {
     private final String taskId;
@@ -109,6 +110,12 @@ public class IngestTaskStatus {
                 finishedStatus.asSummary(getStartTime()));
     }
 
+    public static IngestTaskStatus.Builder started(long startTime) {
+        return builder()
+                .taskId(UUID.randomUUID().toString())
+                .startTime(startTime);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -155,6 +162,10 @@ public class IngestTaskStatus {
         public Builder taskId(String taskId) {
             this.taskId = taskId;
             return this;
+        }
+
+        public Builder startTime(long startTime) {
+            return startTime(Instant.ofEpochMilli(startTime));
         }
 
         public Builder startTime(Instant startTime) {
