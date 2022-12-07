@@ -22,7 +22,6 @@ import sleeper.core.record.process.status.ProcessStartedStatus;
 
 import java.time.Instant;
 import java.util.Objects;
-import java.util.UUID;
 
 public class IngestTaskStatus {
     private final String taskId;
@@ -108,12 +107,6 @@ public class IngestTaskStatus {
         return ProcessFinishedStatus.updateTimeAndSummary(
                 finishedStatus.getFinishTime(),
                 finishedStatus.asSummary(getStartTime()));
-    }
-
-    public static IngestTaskStatus.Builder started(long startTime) {
-        return builder()
-                .taskId(UUID.randomUUID().toString())
-                .startTime(startTime);
     }
 
     @Override
