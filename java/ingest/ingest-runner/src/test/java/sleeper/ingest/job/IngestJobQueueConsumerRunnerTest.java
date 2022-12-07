@@ -16,19 +16,19 @@
 package sleeper.ingest.job;
 
 import org.junit.Test;
-import sleeper.ingest.task.IngestTaskFinishedStatus;
-import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
+import sleeper.ingest.task.WriteToMemoryIngestTaskStatusStore;
 
 import java.time.Instant;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static sleeper.ingest.task.TestIngestTaskStatus.finishedNoJobs;
 
 public class IngestJobQueueConsumerRunnerTest {
 
     private final IngestJobQueueConsumer queueConsumer = mock(IngestJobQueueConsumer.class);
-    private final IngestTaskStatusStore statusStore = mock(IngestTaskStatusStore.class);
+    private final IngestTaskStatusStore statusStore = new WriteToMemoryIngestTaskStatusStore();
 
     @Test
     public void shouldRunAndReportTaskWithNoJobs() throws Exception {
@@ -39,9 +39,6 @@ public class IngestJobQueueConsumerRunnerTest {
                 () -> startTime, () -> finishTime);
         runner.run();
 
-        verify(statusStore).taskStarted(IngestTaskStatus.builder().taskId(taskId).startTime(startTime).build());
-        verify(statusStore).taskFinished(IngestTaskStatus.builder().taskId(taskId).startTime(startTime)
-                .finishedStatus(IngestTaskFinishedStatus.builder().finish(startTime, finishTime).build())
-                .build());
+        assertThat(statusStore.getAllTasks()).containsExactly(finishedNoJobs(taskId, startTime, finishTime));
     }
 }

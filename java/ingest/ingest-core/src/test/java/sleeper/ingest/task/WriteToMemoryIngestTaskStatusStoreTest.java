@@ -17,10 +17,10 @@ package sleeper.ingest.task;
 
 import org.junit.Test;
 
-import java.time.Instant;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.ingest.task.TestIngestTaskStatus.finishedNoJobsDefault;
+import static sleeper.ingest.task.TestIngestTaskStatus.startedBuilderWithDefaults;
 
 public class WriteToMemoryIngestTaskStatusStoreTest {
 
@@ -82,23 +82,5 @@ public class WriteToMemoryIngestTaskStatusStoreTest {
         // When / Then
         assertThatThrownBy(() -> store.taskStarted(finished))
                 .isInstanceOf(IllegalStateException.class);
-    }
-
-    private IngestTaskStatus finishedNoJobsDefault() {
-        return finishedNoJobsDefault(startedBuilderWithDefaults());
-    }
-
-    private IngestTaskStatus finishedNoJobsDefault(IngestTaskStatus.Builder builder) {
-        return finishedNoJobs(builder, Instant.parse("2022-12-07T14:57:00.001Z"));
-    }
-
-    private IngestTaskStatus finishedNoJobs(IngestTaskStatus.Builder builder, Instant finishTime) {
-        return builder.finished(IngestTaskFinishedStatus.builder(), finishTime).build();
-    }
-
-    private IngestTaskStatus.Builder startedBuilderWithDefaults() {
-        return IngestTaskStatus.builder().taskId("test-task")
-                .startTime(Instant.parse("2022-12-07T14:56:00.001Z"))
-                .expiryDate(Instant.parse("2022-12-14T14:56:00.001Z"));
     }
 }
