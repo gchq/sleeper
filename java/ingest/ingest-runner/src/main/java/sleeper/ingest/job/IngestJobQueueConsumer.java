@@ -133,10 +133,10 @@ public class IngestJobQueueConsumer {
     }
 
     public void run() throws InterruptedException, IOException, StateStoreException, IteratorException {
-        long startTaskTime = System.currentTimeMillis();
-        IngestTaskStatus.Builder taskStatusBuilder = IngestTaskStatus.started(startTaskTime).taskId(taskId);
-        taskStore.taskStarted(taskStatusBuilder.build());
-        LOGGER.info("IngestTask started at = {}", Instant.ofEpochMilli(startTaskTime));
+        run(IngestTaskStatus.builder().taskId(taskId).startTime(System.currentTimeMillis()));
+    }
+
+    public void run(IngestTaskStatus.Builder taskStatusBuilder) throws InterruptedException, IOException, StateStoreException, IteratorException {
         IngestTaskFinishedStatus.Builder taskFinishedStatusBuilder = IngestTaskFinishedStatus.builder();
         while (true) {
             ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(sqsJobQueueUrl)

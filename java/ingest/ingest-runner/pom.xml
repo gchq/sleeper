@@ -92,6 +92,11 @@
             <artifactId>ingest-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>ingest-status-store</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
         <!-- Arrow dependencies -->
         <dependency>
             <groupId>org.apache.arrow</groupId>
@@ -141,9 +146,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>ingest-status-store</artifactId>
-            <version>${project.parent.version}</version>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
