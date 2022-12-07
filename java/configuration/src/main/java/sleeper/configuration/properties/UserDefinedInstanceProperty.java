@@ -84,8 +84,7 @@ public enum UserDefinedInstanceProperty implements InstanceProperty {
     INGEST_JOB_STATUS_TTL_IN_SECONDS("sleeper.ingest.job.status.ttl", "604800", Utils::isPositiveInteger), // Default is 1 week
 
     // Bulk Import - properties that are applicable to all bulk import platforms
-    BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE("sleeper.bulk.import.min.partitions.coalesce", "100"),
-    BULK_IMPORT_CLASS_NAME("sleeper.bulk.import.class.name", "sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeRunner"),
+    BULK_IMPORT_CLASS_NAME("sleeper.bulk.import.class.name", "sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortRunner"),
     BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC("sleeper.bulk.import.emr.spark.shuffle.mapStatus.compression.codec", "lz4"), // Stops "Decompression error: Version not supported" errors - only a value of "lz4" has been tested. This is used to set the value of spark.shuffle.mapStatus.compression.codec on the Spark configuration.
     BULK_IMPORT_SPARK_SPECULATION("sleeper.bulk.import.emr.spark.speculation", "false", Utils::isTrueOrFalse),
     // This is used to set the value of spark.speculation on the Spark configuration.
