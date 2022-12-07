@@ -25,7 +25,9 @@ import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.ingest.task.IngestTaskFinishedStatus;
+import sleeper.ingest.task.IngestTaskStatusStore;
+import sleeper.ingest.task.status.DynamoDBIngestTaskStatusStore;
+import sleeper.ingest.task.status.DynamoDBIngestTaskStatusStoreCreator;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.statestore.StateStore;
@@ -53,6 +55,8 @@ public class IngestJobQueueConsumerFullIT extends IngestJobQueueConsumerTestBase
         StateStoreProvider stateStoreProvider = new StateStoreProvider(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), new InstanceProperties());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
+        DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
+        IngestTaskStatusStore taskStore = DynamoDBIngestTaskStatusStore.from(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), instanceProperties);
         // Run the job consumer
         IngestJobQueueConsumer ingestJobQueueConsumer = new IngestJobQueueConsumer(
                 new ObjectFactory(instanceProperties, null, temporaryFolder.newFolder().getAbsolutePath()),
@@ -62,7 +66,8 @@ public class IngestJobQueueConsumerFullIT extends IngestJobQueueConsumerTestBase
                 tablePropertiesProvider,
                 stateStoreProvider,
                 localDir,
-                IngestTaskFinishedStatus.builder(),
+                UUID.randomUUID().toString(),
+                taskStore,
                 AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
         ingestJobQueueConsumer.run();

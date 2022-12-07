@@ -23,24 +23,20 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
-import sleeper.ingest.task.IngestTaskFinishedStatus;
-import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.ingest.task.status.DynamoDBIngestTaskStatusStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.UUID;
 
 public class IngestJobQueueConsumerRunner {
@@ -53,9 +49,8 @@ public class IngestJobQueueConsumerRunner {
     private final AmazonCloudWatch cloudWatchClient;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
+    private final String taskId;
     private final AmazonDynamoDB dynamoDBClient;
-    private final S3AsyncClient s3AsyncClient;
-    private final Configuration configuration;
 
     public IngestJobQueueConsumerRunner(ObjectFactory objectFactory,
                                         InstanceProperties instanceProperties,
@@ -63,46 +58,26 @@ public class IngestJobQueueConsumerRunner {
                                         AmazonSQS sqsClient,
                                         AmazonCloudWatch cloudWatchClient,
                                         AmazonS3 s3Client,
-                                        AmazonDynamoDB dynamoDBClient) {
-        this(objectFactory,
-                instanceProperties,
-                localDir,
-                sqsClient,
-                cloudWatchClient,
-                dynamoDBClient,
-                new TablePropertiesProvider(s3Client, instanceProperties),
-                new StateStoreProvider(dynamoDBClient, instanceProperties, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties)),
-                S3AsyncClient.create(), HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-    }
-
-    public IngestJobQueueConsumerRunner(ObjectFactory objectFactory,
-                                        InstanceProperties instanceProperties,
-                                        String localDir,
-                                        AmazonSQS sqsClient,
-                                        AmazonCloudWatch cloudWatchClient,
                                         AmazonDynamoDB dynamoDBClient,
-                                        TablePropertiesProvider tablePropertiesProvider,
-                                        StateStoreProvider stateStoreProvider,
-                                        S3AsyncClient s3AsyncClient,
-                                        Configuration configuration) {
+                                        String taskId) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.localDir = localDir;
         this.sqsClient = sqsClient;
         this.cloudWatchClient = cloudWatchClient;
-        this.tablePropertiesProvider = tablePropertiesProvider;
-        this.stateStoreProvider = stateStoreProvider;
+        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+        this.taskId = taskId;
         this.dynamoDBClient = dynamoDBClient;
-        this.s3AsyncClient = s3AsyncClient;
-        this.configuration = configuration;
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws InterruptedException, IOException, StateStoreException, IteratorException, ObjectFactoryException {
         if (1 != args.length) {
             System.err.println("Error: must have 1 argument (s3Bucket)");
             System.exit(1);
         }
 
+        long startTime = System.currentTimeMillis();
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         AmazonCloudWatch cloudWatchClient = AmazonCloudWatchClientBuilder.defaultClient();
@@ -116,7 +91,8 @@ public class IngestJobQueueConsumerRunner {
 
         String localDir = "/mnt/scratch";
         IngestJobQueueConsumerRunner ingestJobQueueConsumerRunner = new IngestJobQueueConsumerRunner(
-                objectFactory, instanceProperties, localDir, sqsClient, cloudWatchClient, s3Client, dynamoDBClient);
+                objectFactory, instanceProperties, localDir, sqsClient, cloudWatchClient, s3Client, dynamoDBClient,
+                UUID.randomUUID().toString());
         ingestJobQueueConsumerRunner.run();
 
         s3Client.shutdown();
@@ -125,30 +101,16 @@ public class IngestJobQueueConsumerRunner {
         LOGGER.info("Shut down sqsClient");
         dynamoDBClient.shutdown();
         LOGGER.info("Shut down dynamoDBClient");
+        long finishTime = System.currentTimeMillis();
+        double runTimeInSeconds = (finishTime - startTime) / 1000.0;
+        LOGGER.info("IngestFromIngestJobsQueueRunner total run time = {}", runTimeInSeconds);
     }
 
     public void run() throws InterruptedException, IOException, IteratorException, StateStoreException {
-        run(UUID.randomUUID().toString());
-    }
-
-    public void run(String taskId) throws InterruptedException, IOException, IteratorException, StateStoreException {
-        long startTime = System.currentTimeMillis();
-        IngestTaskStatus.Builder taskStatusBuilder = IngestTaskStatus.started(startTime).taskId(taskId);
-        IngestTaskFinishedStatus.Builder taskFinishedStatusBuilder = IngestTaskFinishedStatus.builder();
         IngestTaskStatusStore taskStore = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, instanceProperties);
-        taskStore.taskStarted(taskStatusBuilder.build());
-        LOGGER.info("IngestTask started at = {}", Instant.ofEpochMilli(startTime));
-
-        IngestJobQueueConsumer ingestJobQueueConsumer = new IngestJobQueueConsumer(objectFactory, sqsClient, cloudWatchClient,
-                instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                localDir, taskFinishedStatusBuilder, s3AsyncClient, configuration);
+        IngestJobQueueConsumer ingestJobQueueConsumer = new IngestJobQueueConsumer(
+                objectFactory, sqsClient, cloudWatchClient, instanceProperties,
+                tablePropertiesProvider, stateStoreProvider, localDir, taskId, taskStore);
         ingestJobQueueConsumer.run();
-
-        long finishTime = System.currentTimeMillis();
-        double runTimeInSeconds = (finishTime - startTime) / 1000.0;
-        IngestTaskFinishedStatus.Builder taskFinishedStatus = taskFinishedStatusBuilder
-                .finishTime(Instant.ofEpochMilli(finishTime));
-        taskStore.taskFinished(taskStatusBuilder.finished(taskFinishedStatus, finishTime).build());
-        LOGGER.info("IngestFromIngestJobsQueueRunner total run time = {}", runTimeInSeconds);
     }
 }
