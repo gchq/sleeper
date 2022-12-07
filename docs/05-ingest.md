@@ -388,7 +388,7 @@ the data before ingesting data. This will result in more files than there are Sl
 partitions is small then this allow more parallelism than the `BulkImportDataframeLocalSortRunner` approach.
 
 The RDD-based approach uses the `repartitionAndSortWithinPartitions` method on an RDD formed from the input data. This is generally
-significanty less efficient than the Dataframe-based methods.
+significantly less efficient than the Dataframe-based methods.
 
 To change the algorithm usedon a per-job basis, set the `className` field on the JSON for the job, e.g.:
 
