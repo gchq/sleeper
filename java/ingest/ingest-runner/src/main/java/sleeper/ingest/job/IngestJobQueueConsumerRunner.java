@@ -37,11 +37,14 @@ import sleeper.ingest.task.status.DynamoDBIngestTaskStatusStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.function.Supplier;
+
+import static sleeper.ingest.job.IngestJobSource.Callback;
 
 public class IngestJobQueueConsumerRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobQueueConsumerRunner.class);
@@ -51,20 +54,22 @@ public class IngestJobQueueConsumerRunner {
     private final IngestTaskStatusStore statusStore;
     private final Supplier<Instant> getStartTime;
     private final Supplier<Instant> getFinishTime;
+    private final Callback runJobCallback;
 
     public IngestJobQueueConsumerRunner(
             IngestJobQueueConsumer queueConsumer, String taskId, IngestTaskStatusStore statusStore,
-            Supplier<Instant> getStartTime, Supplier<Instant> getFinishTime) {
+            Supplier<Instant> getStartTime, Supplier<Instant> getFinishTime, Callback runJobCallback) {
         this.ingestJobQueueConsumer = queueConsumer;
         this.taskId = taskId;
         this.statusStore = statusStore;
         this.getStartTime = getStartTime;
         this.getFinishTime = getFinishTime;
+        this.runJobCallback = runJobCallback;
     }
 
     public IngestJobQueueConsumerRunner(
-            IngestJobQueueConsumer queueConsumer, String taskId, IngestTaskStatusStore statusStore) {
-        this(queueConsumer, taskId, statusStore, Instant::now, Instant::now);
+            IngestJobQueueConsumer queueConsumer, String taskId, IngestTaskStatusStore statusStore, Callback runJobCallback) {
+        this(queueConsumer, taskId, statusStore, Instant::now, Instant::now, runJobCallback);
     }
 
     public void run() throws InterruptedException, IOException, IteratorException, StateStoreException {
@@ -73,7 +78,7 @@ public class IngestJobQueueConsumerRunner {
         statusStore.taskStarted(taskStatusBuilder.build());
         LOGGER.info("IngestTask started at = {}", startTaskTime);
 
-        ingestJobQueueConsumer.run();
+        ingestJobQueueConsumer.consumeJobs(runJobCallback);
 
         Instant finishTaskTime = getFinishTime.get();
         taskStatusBuilder.finishedStatus(IngestTaskFinishedStatus.builder()
@@ -105,11 +110,17 @@ public class IngestJobQueueConsumerRunner {
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
         IngestTaskStatusStore taskStore = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, instanceProperties);
         String taskId = UUID.randomUUID().toString();
-        IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(
-                objectFactory, sqsClient, cloudWatchClient, instanceProperties,
-                tablePropertiesProvider, stateStoreProvider, localDir);
+        IngestJobRunner ingestJobRunner = new IngestJobRunner(
+                objectFactory,
+                instanceProperties,
+                tablePropertiesProvider,
+                stateStoreProvider,
+                localDir,
+                S3AsyncClient.create(),
+                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+        IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(sqsClient, cloudWatchClient, instanceProperties);
         IngestJobQueueConsumerRunner ingestJobQueueConsumerRunner = new IngestJobQueueConsumerRunner(
-                queueConsumer, taskId, taskStore);
+                queueConsumer, taskId, taskStore, ingestJobRunner::ingest);
         ingestJobQueueConsumerRunner.run();
 
         s3Client.shutdown();

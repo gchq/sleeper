@@ -59,9 +59,11 @@ public class IngestJobQueueConsumerRunnerIT extends IngestJobQueueConsumerTestBa
         IngestTaskStatusStore taskStore = DynamoDBIngestTaskStatusStore.from(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), instanceProperties);
         // Run the job consumer
         IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(
-                new ObjectFactory(instanceProperties, null, temporaryFolder.newFolder().getAbsolutePath()),
                 AWS_EXTERNAL_RESOURCE.getSqsClient(),
                 AWS_EXTERNAL_RESOURCE.getCloudWatchClient(),
+                instanceProperties);
+        IngestJobRunner jobRunner = new IngestJobRunner(
+                new ObjectFactory(instanceProperties, null, temporaryFolder.newFolder().getAbsolutePath()),
                 instanceProperties,
                 tablePropertiesProvider,
                 stateStoreProvider,
@@ -69,7 +71,7 @@ public class IngestJobQueueConsumerRunnerIT extends IngestJobQueueConsumerTestBa
                 AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
         IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(
-                queueConsumer, "test-task", taskStore);
+                queueConsumer, "test-task", taskStore, jobRunner::ingest);
         runner.run();
 
         // Verify the results

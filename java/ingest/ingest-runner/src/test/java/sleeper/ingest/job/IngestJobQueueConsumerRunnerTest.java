@@ -30,17 +30,19 @@ public class IngestJobQueueConsumerRunnerTest {
 
     private final IngestJobQueueConsumer queueConsumer = mock(IngestJobQueueConsumer.class);
     private final IngestTaskStatusStore statusStore = new WriteToMemoryIngestTaskStatusStore();
+    private final IngestJobRunner jobRunner = mock(IngestJobRunner.class);
 
     @Test
     public void shouldRunAndReportTaskWithNoJobs() throws Exception {
         String taskId = "test-task";
         Instant startTime = Instant.parse("2022-12-07T12:37:00.123Z");
         Instant finishTime = Instant.parse("2022-12-07T12:38:00.123Z");
+        IngestJobSource.Callback callback = jobRunner::ingest;
         IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(queueConsumer, taskId, statusStore,
-                () -> startTime, () -> finishTime);
+                () -> startTime, () -> finishTime, callback);
         runner.run();
 
         assertThat(statusStore.getAllTasks()).containsExactly(finishedNoJobs(taskId, startTime, finishTime));
-        verify(queueConsumer).run();
+        verify(queueConsumer).consumeJobs(callback);
     }
 }
