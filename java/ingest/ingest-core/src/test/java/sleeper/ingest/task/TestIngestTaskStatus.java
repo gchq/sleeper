@@ -18,6 +18,8 @@ package sleeper.ingest.task;
 import java.time.Instant;
 
 public class TestIngestTaskStatus {
+    private TestIngestTaskStatus() {
+    }
 
     public static IngestTaskStatus finishedNoJobsDefault() {
         return finishedNoJobsDefault(startedBuilderWithDefaults());
