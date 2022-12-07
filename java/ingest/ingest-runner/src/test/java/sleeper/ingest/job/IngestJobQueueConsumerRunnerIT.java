@@ -43,7 +43,7 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
-public class IngestJobQueueConsumerFullIT extends IngestJobQueueConsumerTestBase {
+public class IngestJobQueueConsumerRunnerIT extends IngestJobQueueConsumerTestBase {
 
     private void consumeAndVerify(Schema sleeperSchema,
                                   List<Record> expectedRecordList,
@@ -58,7 +58,7 @@ public class IngestJobQueueConsumerFullIT extends IngestJobQueueConsumerTestBase
         DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
         IngestTaskStatusStore taskStore = DynamoDBIngestTaskStatusStore.from(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), instanceProperties);
         // Run the job consumer
-        IngestJobQueueConsumer ingestJobQueueConsumer = new IngestJobQueueConsumer(
+        IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(
                 new ObjectFactory(instanceProperties, null, temporaryFolder.newFolder().getAbsolutePath()),
                 AWS_EXTERNAL_RESOURCE.getSqsClient(),
                 AWS_EXTERNAL_RESOURCE.getCloudWatchClient(),
@@ -68,7 +68,9 @@ public class IngestJobQueueConsumerFullIT extends IngestJobQueueConsumerTestBase
                 localDir,
                 AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
-        ingestJobQueueConsumer.run();
+        IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(
+                queueConsumer, "test-task", taskStore);
+        runner.run();
 
         // Verify the results
         ResultVerifier.verify(
