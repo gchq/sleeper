@@ -79,7 +79,7 @@ public class IngestJobRunner {
                 .build();
     }
 
-    public IngestResult ingest(IngestJob job) throws InterruptedException, IteratorException, StateStoreException, IOException {
+    public IngestResult ingest(IngestJob job) throws IteratorException, StateStoreException, IOException {
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(job.getTableName());
         Schema schema = tableProperties.getSchema();
 

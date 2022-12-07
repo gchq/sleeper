@@ -52,7 +52,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.S3A_I
 /**
  * An IngestJobQueueConsumer pulls ingest jobs off an SQS queue and runs them.
  */
-public class IngestJobQueueConsumer {
+public class IngestJobQueueConsumer implements IngestJobSource {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobQueueConsumer.class);
 
     private final AmazonSQS sqsClient;
@@ -117,6 +117,11 @@ public class IngestJobQueueConsumer {
     }
 
     public void run() throws InterruptedException, IOException, StateStoreException, IteratorException {
+        consumeJobs(ingestJobRunner::ingest);
+    }
+
+    @Override
+    public void consumeJobs(Callback runJob) throws IteratorException, StateStoreException, IOException {
         while (true) {
             ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(sqsJobQueueUrl)
                     .withMaxNumberOfMessages(1)
@@ -130,12 +135,12 @@ public class IngestJobQueueConsumer {
             LOGGER.info("Received message {}", messages.get(0).getBody());
             IngestJob ingestJob = ingestJobSerDe.fromJson(messages.get(0).getBody());
             LOGGER.info("Deserialised message to ingest job {}", ingestJob);
-            long recordsWritten = ingest(ingestJob, messages.get(0).getReceiptHandle());
+            long recordsWritten = ingest(ingestJob, messages.get(0).getReceiptHandle(), runJob);
             LOGGER.info("{} records were written", recordsWritten);
         }
     }
 
-    private long ingest(IngestJob job, String receiptHandle) throws InterruptedException, IteratorException, StateStoreException, IOException {
+    private long ingest(IngestJob job, String receiptHandle, Callback runJob) throws IteratorException, StateStoreException, IOException {
         // Create background thread to keep messages alive
         MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl, "Ingest job " + job.getId(), receiptHandle);
         PeriodicActionRunnable changeTimeoutRunnable = new PeriodicActionRunnable(
@@ -145,7 +150,7 @@ public class IngestJobQueueConsumer {
                 job.getId(), keepAlivePeriod);
 
         // Run the ingest
-        IngestResult result = ingestJobRunner.ingest(job);
+        IngestResult result = runJob.ingest(job);
         LOGGER.info("Ingest job {}: Stopping background thread to keep SQS messages alive",
                 job.getId());
         changeTimeoutRunnable.stop();
