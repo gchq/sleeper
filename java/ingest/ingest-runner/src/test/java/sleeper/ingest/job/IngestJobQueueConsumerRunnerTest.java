@@ -23,6 +23,7 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static sleeper.ingest.task.TestIngestTaskStatus.finishedNoJobs;
 
 public class IngestJobQueueConsumerRunnerTest {
@@ -40,5 +41,6 @@ public class IngestJobQueueConsumerRunnerTest {
         runner.run();
 
         assertThat(statusStore.getAllTasks()).containsExactly(finishedNoJobs(taskId, startTime, finishTime));
+        verify(queueConsumer).run();
     }
 }
