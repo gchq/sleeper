@@ -66,8 +66,6 @@ public class IngestJobQueueConsumerFullIT extends IngestJobQueueConsumerTestBase
                 tablePropertiesProvider,
                 stateStoreProvider,
                 localDir,
-                UUID.randomUUID().toString(),
-                taskStore,
                 AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
         ingestJobQueueConsumer.run();

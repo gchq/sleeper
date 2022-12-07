@@ -16,6 +16,7 @@
 package sleeper.ingest.job;
 
 import org.junit.Test;
+import sleeper.ingest.task.IngestTaskFinishedStatus;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
 
@@ -33,10 +34,14 @@ public class IngestJobQueueConsumerRunnerTest {
     public void shouldRunAndReportTaskWithNoJobs() throws Exception {
         String taskId = "test-task";
         Instant startTime = Instant.parse("2022-12-07T12:37:00.123Z");
+        Instant finishTime = Instant.parse("2022-12-07T12:38:00.123Z");
         IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(queueConsumer, taskId, statusStore,
-                () -> startTime);
+                () -> startTime, () -> finishTime);
         runner.run();
 
         verify(statusStore).taskStarted(IngestTaskStatus.builder().taskId(taskId).startTime(startTime).build());
+        verify(statusStore).taskFinished(IngestTaskStatus.builder().taskId(taskId).startTime(startTime)
+                .finishedStatus(IngestTaskFinishedStatus.builder().finish(startTime, finishTime).build())
+                .build());
     }
 }

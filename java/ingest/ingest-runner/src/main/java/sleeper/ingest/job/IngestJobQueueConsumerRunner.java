@@ -30,6 +30,7 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
+import sleeper.ingest.task.IngestTaskFinishedStatus;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.ingest.task.status.DynamoDBIngestTaskStatusStore;
@@ -49,19 +50,21 @@ public class IngestJobQueueConsumerRunner {
     private final String taskId;
     private final IngestTaskStatusStore statusStore;
     private final Supplier<Instant> getStartTime;
+    private final Supplier<Instant> getFinishTime;
 
     public IngestJobQueueConsumerRunner(
             IngestJobQueueConsumer queueConsumer, String taskId, IngestTaskStatusStore statusStore,
-            Supplier<Instant> getStartTime) {
+            Supplier<Instant> getStartTime, Supplier<Instant> getFinishTime) {
         this.ingestJobQueueConsumer = queueConsumer;
         this.taskId = taskId;
         this.statusStore = statusStore;
         this.getStartTime = getStartTime;
+        this.getFinishTime = getFinishTime;
     }
 
     public IngestJobQueueConsumerRunner(
             IngestJobQueueConsumer queueConsumer, String taskId, IngestTaskStatusStore statusStore) {
-        this(queueConsumer, taskId, statusStore, Instant::now);
+        this(queueConsumer, taskId, statusStore, Instant::now, Instant::now);
     }
 
     public void run() throws InterruptedException, IOException, IteratorException, StateStoreException {
@@ -69,7 +72,14 @@ public class IngestJobQueueConsumerRunner {
         IngestTaskStatus.Builder taskStatusBuilder = IngestTaskStatus.builder().taskId(taskId).startTime(startTaskTime);
         statusStore.taskStarted(taskStatusBuilder.build());
         LOGGER.info("IngestTask started at = {}", startTaskTime);
-        ingestJobQueueConsumer.run(taskStatusBuilder);
+
+        ingestJobQueueConsumer.run();
+
+        Instant finishTaskTime = getFinishTime.get();
+        taskStatusBuilder.finishedStatus(IngestTaskFinishedStatus.builder()
+                .finish(startTaskTime, finishTaskTime).build());
+        statusStore.taskFinished(taskStatusBuilder.build());
+        LOGGER.info("IngestTask finished at = {}", finishTaskTime);
     }
 
     public static void main(String[] args) throws InterruptedException, IOException, StateStoreException, IteratorException, ObjectFactoryException {
@@ -97,7 +107,7 @@ public class IngestJobQueueConsumerRunner {
         String taskId = UUID.randomUUID().toString();
         IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(
                 objectFactory, sqsClient, cloudWatchClient, instanceProperties,
-                tablePropertiesProvider, stateStoreProvider, localDir, taskId, taskStore);
+                tablePropertiesProvider, stateStoreProvider, localDir);
         IngestJobQueueConsumerRunner ingestJobQueueConsumerRunner = new IngestJobQueueConsumerRunner(
                 queueConsumer, taskId, taskStore);
         ingestJobQueueConsumerRunner.run();
