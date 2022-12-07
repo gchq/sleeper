@@ -42,33 +42,10 @@ import java.util.UUID;
 public class IngestJobQueueConsumerRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobQueueConsumerRunner.class);
 
-    private final ObjectFactory objectFactory;
-    private final InstanceProperties instanceProperties;
-    private final String localDir;
-    private final AmazonSQS sqsClient;
-    private final AmazonCloudWatch cloudWatchClient;
-    private final TablePropertiesProvider tablePropertiesProvider;
-    private final StateStoreProvider stateStoreProvider;
-    private final String taskId;
-    private final AmazonDynamoDB dynamoDBClient;
+    private final IngestJobQueueConsumer ingestJobQueueConsumer;
 
-    public IngestJobQueueConsumerRunner(ObjectFactory objectFactory,
-                                        InstanceProperties instanceProperties,
-                                        String localDir,
-                                        AmazonSQS sqsClient,
-                                        AmazonCloudWatch cloudWatchClient,
-                                        AmazonS3 s3Client,
-                                        AmazonDynamoDB dynamoDBClient,
-                                        String taskId) {
-        this.objectFactory = objectFactory;
-        this.instanceProperties = instanceProperties;
-        this.localDir = localDir;
-        this.sqsClient = sqsClient;
-        this.cloudWatchClient = cloudWatchClient;
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-        this.taskId = taskId;
-        this.dynamoDBClient = dynamoDBClient;
+    public IngestJobQueueConsumerRunner(IngestJobQueueConsumer queueConsumer) {
+        this.ingestJobQueueConsumer = queueConsumer;
     }
 
     public static void main(String[] args) throws InterruptedException, IOException, StateStoreException, IteratorException, ObjectFactoryException {
@@ -90,9 +67,13 @@ public class IngestJobQueueConsumerRunner {
         ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
 
         String localDir = "/mnt/scratch";
-        IngestJobQueueConsumerRunner ingestJobQueueConsumerRunner = new IngestJobQueueConsumerRunner(
-                objectFactory, instanceProperties, localDir, sqsClient, cloudWatchClient, s3Client, dynamoDBClient,
-                UUID.randomUUID().toString());
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+        IngestTaskStatusStore taskStore = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, instanceProperties);
+        IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(
+                objectFactory, sqsClient, cloudWatchClient, instanceProperties,
+                tablePropertiesProvider, stateStoreProvider, localDir, UUID.randomUUID().toString(), taskStore);
+        IngestJobQueueConsumerRunner ingestJobQueueConsumerRunner = new IngestJobQueueConsumerRunner(queueConsumer);
         ingestJobQueueConsumerRunner.run();
 
         s3Client.shutdown();
@@ -107,10 +88,6 @@ public class IngestJobQueueConsumerRunner {
     }
 
     public void run() throws InterruptedException, IOException, IteratorException, StateStoreException {
-        IngestTaskStatusStore taskStore = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, instanceProperties);
-        IngestJobQueueConsumer ingestJobQueueConsumer = new IngestJobQueueConsumer(
-                objectFactory, sqsClient, cloudWatchClient, instanceProperties,
-                tablePropertiesProvider, stateStoreProvider, localDir, taskId, taskStore);
         ingestJobQueueConsumer.run();
     }
 }
