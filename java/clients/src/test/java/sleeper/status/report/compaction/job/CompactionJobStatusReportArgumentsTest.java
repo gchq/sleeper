@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.status.report.compactionjob;
+package sleeper.status.report.compaction.job;
 
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
+import static sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
 
 public class CompactionJobStatusReportArgumentsTest {
 
@@ -32,13 +31,5 @@ public class CompactionJobStatusReportArgumentsTest {
                         .queryType(QueryType.PROMPT)
                         .reporter(new StandardCompactionJobStatusReporter(System.out))
                         .build());
-    }
-
-    @Test
-    public void shouldFailWhenNoParametersSetForRangeQuery() {
-        assertThatThrownBy(() ->
-                CompactionJobStatusReportArguments.from("test-instance", "test-table", "standard", "-r"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("No parameters provided for query type RANGE");
     }
 }

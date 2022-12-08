@@ -33,11 +33,11 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.status.report.compactionjob.CompactionJobStatusReportArguments;
-import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
-import sleeper.status.report.compactionjob.StandardCompactionJobStatusReporter;
-import sleeper.status.report.compactiontask.CompactionTaskQuery;
-import sleeper.status.report.compactiontask.StandardCompactionTaskStatusReporter;
+import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
+import sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
+import sleeper.status.report.compaction.job.StandardCompactionJobStatusReporter;
+import sleeper.status.report.compaction.task.CompactionTaskQuery;
+import sleeper.status.report.compaction.task.StandardCompactionTaskStatusReporter;
 
 import java.io.IOException;
 

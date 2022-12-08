@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.status.report.compactionjob;
+package sleeper.status.report.compaction.job;
 
-import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
+import sleeper.console.ConsoleInput;
+import sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
 
 import java.io.PrintStream;
+import java.time.Clock;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -90,10 +92,6 @@ public class CompactionJobStatusReportArguments {
         return instanceId;
     }
 
-    public String getTableName() {
-        return tableName;
-    }
-
     public CompactionJobStatusReporter getReporter() {
         return reporter;
     }
@@ -102,8 +100,11 @@ public class CompactionJobStatusReportArguments {
         return queryType;
     }
 
-    public String getQueryParameters() {
-        return queryParameters;
+    public CompactionJobQuery buildQuery(Clock clock, ConsoleInput input) {
+        if (queryType == QueryType.PROMPT) {
+            return CompactionJobQueryPrompt.from(tableName, input, clock);
+        }
+        return CompactionJobQuery.from(tableName, queryType, queryParameters, clock);
     }
 
     private static CompactionJobStatusReporter getReporter(String[] args, int index) {
