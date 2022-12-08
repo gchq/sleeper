@@ -15,7 +15,6 @@
  */
 package sleeper.ingest.job;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.ingest.task.WriteToMemoryIngestTaskStatusStore;
@@ -24,16 +23,13 @@ import java.time.Instant;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static sleeper.ingest.job.IngestJobSource.Callback;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedNoJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJob;
 
 public class IngestJobQueueConsumerRunnerTest {
 
-    private final IngestJobQueueConsumer queueConsumer = mock(IngestJobQueueConsumer.class);
+    private final IngestJobHandler jobRunner = FixedIngestJobHandler.makingDefaultFiles();
     private final IngestTaskStatusStore statusStore = new WriteToMemoryIngestTaskStatusStore();
-    private final IngestJobRunner jobRunner = mock(IngestJobRunner.class);
 
     @Test
     public void shouldRunAndReportTaskWithNoJobs() throws Exception {
@@ -41,19 +37,19 @@ public class IngestJobQueueConsumerRunnerTest {
         String taskId = "test-task";
         Instant startTime = Instant.parse("2022-12-07T12:37:00.123Z");
         Instant finishTime = Instant.parse("2022-12-07T12:38:00.123Z");
-        Callback callback = jobRunner::ingest;
+        FixedIngestJobSource jobs = FixedIngestJobSource.empty();
 
         // When
-        IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(queueConsumer, taskId, statusStore,
-                () -> startTime, () -> finishTime, Instant::now, Instant::now, callback);
+        IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(jobs, taskId, statusStore,
+                () -> startTime, () -> finishTime, Instant::now, Instant::now, jobRunner);
         runner.run();
 
         // Then
         assertThat(statusStore.getAllTasks()).containsExactly(finishedNoJobs(taskId, startTime, finishTime));
+        assertThat(jobs.getIngestResults()).isEmpty();
     }
 
     @Test
-    @Ignore("TODO")
     public void shouldRunAndReportTaskWithOneJob() throws Exception {
         // Given
         String taskId = "test-task";
@@ -61,20 +57,21 @@ public class IngestJobQueueConsumerRunnerTest {
         Instant finishTaskTime = Instant.parse("2022-12-07T12:38:00.123Z");
         Instant startJobTime = Instant.parse("2022-12-07T12:37:20.123Z");
         Instant finishJobTime = Instant.parse("2022-12-07T12:37:50.123Z");
-        Callback callback = jobRunner::ingest;
 
         IngestJob job = IngestJob.builder()
                 .id("test-job")
                 .files(Collections.emptyList())
                 .build();
+        FixedIngestJobSource jobs = FixedIngestJobSource.with(job);
 
         // When
-        IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(queueConsumer, taskId, statusStore,
-                () -> startTaskTime, () -> finishTaskTime, () -> startJobTime, () -> finishJobTime, callback);
+        IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(jobs, taskId, statusStore,
+                () -> startTaskTime, () -> finishTaskTime, () -> startJobTime, () -> finishJobTime, jobRunner);
         runner.run();
 
         // Then
-        assertThat(statusStore.getAllTasks()).containsExactly(finishedOneJob(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime));
+        assertThat(statusStore.getAllTasks()).containsExactly(
+                finishedOneJob(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime));
     }
 
 }

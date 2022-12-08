@@ -16,12 +16,14 @@
 
 package sleeper.ingest.task;
 
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStartedStatus;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 public class IngestTaskStatus {
     private final String taskId;
@@ -184,6 +186,12 @@ public class IngestTaskStatus {
             return finishedStatus(taskFinishedBuilder
                     .finish(startTime, finishTime)
                     .build());
+        }
+
+        public Builder finished(Instant finishTime, Stream<RecordsProcessedSummary> jobSummaries) {
+            IngestTaskFinishedStatus.Builder builder = IngestTaskFinishedStatus.builder();
+            jobSummaries.forEach(builder::addJobSummary);
+            return finishedStatus(builder.finish(startTime, finishTime).build());
         }
 
         public String getTaskId() {

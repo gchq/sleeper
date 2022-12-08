@@ -13,15 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package sleeper.ingest.job;
 
-import sleeper.core.iterator.IteratorException;
-import sleeper.statestore.StateStoreException;
+import sleeper.ingest.IngestResult;
+import sleeper.statestore.FileInfoTestData;
 
-import java.io.IOException;
+import java.util.stream.Collectors;
 
-public interface IngestJobSource {
-    void consumeJobs(IngestJobHandler runJob) throws IteratorException, StateStoreException, IOException;
+public class FixedIngestJobHandler {
 
+    private FixedIngestJobHandler() {
+    }
+
+    public static IngestJobHandler makingDefaultFiles() {
+        return job -> IngestResult.from(job.getFiles().stream()
+                .map(FileInfoTestData::defaultFileOnRootPartition)
+                .collect(Collectors.toList()));
+    }
 }

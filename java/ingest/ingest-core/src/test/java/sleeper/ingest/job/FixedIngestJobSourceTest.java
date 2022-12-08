@@ -16,14 +16,9 @@
 package sleeper.ingest.job;
 
 import org.junit.Test;
-import sleeper.ingest.IngestResult;
-import sleeper.statestore.FileInfoTestData;
-
-import java.util.Collections;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.statestore.FileInfoTestData.defaultFileOnRootPartition;
+import static sleeper.ingest.IngestResultTestData.defaultFileIngestResult;
 
 public class FixedIngestJobSourceTest {
 
@@ -35,31 +30,21 @@ public class FixedIngestJobSourceTest {
         IngestJob job2 = IngestJob.builder()
                 .id("test-job-2").tableName("test-table").files("test-file-2")
                 .build();
-        FixedIngestJobSource jobSource = new FixedIngestJobSource(job1, job2);
+        FixedIngestJobSource jobSource = FixedIngestJobSource.with(job1, job2);
 
-        jobSource.consumeJobs(callbackMakingDefaultFiles());
+        jobSource.consumeJobs(FixedIngestJobHandler.makingDefaultFiles());
 
         assertThat(jobSource.getIngestResults()).containsExactly(
-                expectedDefaultFileIngestResult("test-file-1"),
-                expectedDefaultFileIngestResult("test-file-2"));
+                defaultFileIngestResult("test-file-1"),
+                defaultFileIngestResult("test-file-2"));
     }
 
     @Test
     public void shouldRetrieveNoJobsAndMonitorResults() throws Exception {
-        FixedIngestJobSource jobSource = new FixedIngestJobSource();
+        FixedIngestJobSource jobSource = FixedIngestJobSource.empty();
 
-        jobSource.consumeJobs(callbackMakingDefaultFiles());
+        jobSource.consumeJobs(FixedIngestJobHandler.makingDefaultFiles());
 
         assertThat(jobSource.getIngestResults()).isEmpty();
-    }
-
-    private static IngestJobSource.Callback callbackMakingDefaultFiles() {
-        return job -> IngestResult.from(job.getFiles().stream()
-                .map(FileInfoTestData::defaultFileOnRootPartition)
-                .collect(Collectors.toList()));
-    }
-
-    private static IngestResult expectedDefaultFileIngestResult(String filename) {
-        return IngestResult.from(Collections.singletonList(defaultFileOnRootPartition(filename)));
     }
 }

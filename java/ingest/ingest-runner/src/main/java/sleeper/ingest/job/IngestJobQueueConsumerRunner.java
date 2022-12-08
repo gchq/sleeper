@@ -45,25 +45,23 @@ import java.time.Instant;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static sleeper.ingest.job.IngestJobSource.Callback;
-
 public class IngestJobQueueConsumerRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobQueueConsumerRunner.class);
 
-    private final IngestJobQueueConsumer ingestJobQueueConsumer;
+    private final IngestJobSource jobSource;
     private final String taskId;
     private final IngestTaskStatusStore statusStore;
     private final Supplier<Instant> getTaskStartTime;
     private final Supplier<Instant> getTaskFinishTime;
     private final Supplier<Instant> getJobStartTime;
     private final Supplier<Instant> getJobFinishTime;
-    private final Callback runJobCallback;
+    private final IngestJobHandler runJobCallback;
 
     public IngestJobQueueConsumerRunner(
-            IngestJobQueueConsumer queueConsumer, String taskId, IngestTaskStatusStore statusStore,
+            IngestJobSource jobSource, String taskId, IngestTaskStatusStore statusStore,
             Supplier<Instant> getTaskStartTime, Supplier<Instant> getTaskFinishTime,
-            Supplier<Instant> getJobStartTime, Supplier<Instant> getJobFinishTime, Callback runJobCallback) {
-        this.ingestJobQueueConsumer = queueConsumer;
+            Supplier<Instant> getJobStartTime, Supplier<Instant> getJobFinishTime, IngestJobHandler runJobCallback) {
+        this.jobSource = jobSource;
         this.taskId = taskId;
         this.statusStore = statusStore;
         this.getTaskStartTime = getTaskStartTime;
@@ -74,18 +72,18 @@ public class IngestJobQueueConsumerRunner {
     }
 
     public IngestJobQueueConsumerRunner(
-            IngestJobQueueConsumer queueConsumer, String taskId, IngestTaskStatusStore statusStore, Callback runJobCallback) {
+            IngestJobQueueConsumer queueConsumer, String taskId, IngestTaskStatusStore statusStore, IngestJobHandler runJobCallback) {
         this(queueConsumer, taskId, statusStore, Instant::now, Instant::now, Instant::now, Instant::now, runJobCallback);
     }
 
-    public void run() throws InterruptedException, IOException, IteratorException, StateStoreException {
+    public void run() throws IOException, IteratorException, StateStoreException {
         Instant startTaskTime = getTaskStartTime.get();
         IngestTaskStatus.Builder taskStatusBuilder = IngestTaskStatus.builder().taskId(taskId).startTime(startTaskTime);
         statusStore.taskStarted(taskStatusBuilder.build());
         LOGGER.info("IngestTask started at = {}", startTaskTime);
 
         IngestTaskFinishedStatus.Builder taskFinishedStatusBuilder = IngestTaskFinishedStatus.builder();
-        ingestJobQueueConsumer.consumeJobs((job) -> {
+        jobSource.consumeJobs(job -> {
             Instant startTime = getJobStartTime.get();
             IngestResult result = runJobCallback.ingest(job);
             Instant finishTime = getJobFinishTime.get();
@@ -94,7 +92,7 @@ public class IngestJobQueueConsumerRunner {
         });
 
         Instant finishTaskTime = getTaskFinishTime.get();
-        taskStatusBuilder.finishedStatus(IngestTaskFinishedStatus.builder()
+        taskStatusBuilder.finishedStatus(taskFinishedStatusBuilder
                 .finish(startTaskTime, finishTaskTime).build());
         statusStore.taskFinished(taskStatusBuilder.build());
         LOGGER.info("IngestTask finished at = {}", finishTaskTime);

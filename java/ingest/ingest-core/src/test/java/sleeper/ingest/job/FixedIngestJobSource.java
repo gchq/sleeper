@@ -24,18 +24,27 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class FixedIngestJobSource implements IngestJobSource {
 
     private final List<IngestJob> jobs;
     private final List<IngestResult> ingestResults = new ArrayList<>();
 
-    public FixedIngestJobSource(IngestJob... jobs) {
-        this.jobs = Arrays.asList(jobs);
+    private FixedIngestJobSource(List<IngestJob> jobs) {
+        this.jobs = Objects.requireNonNull(jobs, "jobs must not be null");
+    }
+
+    public static FixedIngestJobSource with(IngestJob... jobs) {
+        return new FixedIngestJobSource(Arrays.asList(jobs));
+    }
+
+    public static FixedIngestJobSource empty() {
+        return new FixedIngestJobSource(Collections.emptyList());
     }
 
     @Override
-    public void consumeJobs(Callback runJob) throws IteratorException, StateStoreException, IOException {
+    public void consumeJobs(IngestJobHandler runJob) throws IteratorException, StateStoreException, IOException {
         for (IngestJob job : jobs) {
             ingestResults.add(runJob.ingest(job));
         }

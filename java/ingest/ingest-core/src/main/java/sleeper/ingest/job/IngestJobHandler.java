@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package sleeper.ingest.job;
 
 import sleeper.core.iterator.IteratorException;
+import sleeper.ingest.IngestResult;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
 
-public interface IngestJobSource {
-    void consumeJobs(IngestJobHandler runJob) throws IteratorException, StateStoreException, IOException;
-
+public interface IngestJobHandler {
+    IngestResult ingest(IngestJob job) throws IteratorException, StateStoreException, IOException;
 }

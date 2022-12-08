@@ -70,7 +70,7 @@ public class IngestJobQueueConsumer implements IngestJobSource {
     }
 
     @Override
-    public void consumeJobs(Callback runJob) throws IteratorException, StateStoreException, IOException {
+    public void consumeJobs(IngestJobHandler runJob) throws IteratorException, StateStoreException, IOException {
         while (true) {
             ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(sqsJobQueueUrl)
                     .withMaxNumberOfMessages(1)
@@ -89,7 +89,7 @@ public class IngestJobQueueConsumer implements IngestJobSource {
         }
     }
 
-    private long ingest(IngestJob job, String receiptHandle, Callback runJob) throws IteratorException, StateStoreException, IOException {
+    private long ingest(IngestJob job, String receiptHandle, IngestJobHandler runJob) throws IteratorException, StateStoreException, IOException {
         // Create background thread to keep messages alive
         MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl, "Ingest job " + job.getId(), receiptHandle);
         PeriodicActionRunnable changeTimeoutRunnable = new PeriodicActionRunnable(

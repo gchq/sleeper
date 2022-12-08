@@ -19,6 +19,7 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
+import java.util.stream.Stream;
 
 public class IngestTaskStatusTestData {
     private IngestTaskStatusTestData() {
@@ -48,12 +49,10 @@ public class IngestTaskStatusTestData {
     public static IngestTaskStatus finishedOneJob(String taskId, Instant startTaskTime, Instant finishTaskTime,
                                                   Instant startJobTime, Instant finishJobTime) {
         return IngestTaskStatus.builder().taskId(taskId).startTime(startTaskTime)
-                .finishedStatus(IngestTaskFinishedStatus.builder().addJobSummary(
-                                new RecordsProcessedSummary(
-                                        new RecordsProcessed(0L, 0L),
-                                        startJobTime, finishJobTime))
-                        .finish(startTaskTime, finishTaskTime)
-                        .build())
+                .finished(finishTaskTime, Stream.of(
+                        new RecordsProcessedSummary(
+                                new RecordsProcessed(0L, 0L),
+                                startJobTime, finishJobTime)))
                 .build();
     }
 

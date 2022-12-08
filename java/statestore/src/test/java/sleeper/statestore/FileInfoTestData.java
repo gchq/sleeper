@@ -24,6 +24,9 @@ import java.time.Instant;
 
 public class FileInfoTestData {
 
+    private FileInfoTestData() {
+    }
+
     private static final Schema DEFAULT_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))
             .build();
