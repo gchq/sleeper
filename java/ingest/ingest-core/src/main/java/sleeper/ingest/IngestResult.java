@@ -20,6 +20,7 @@ import sleeper.statestore.FileInfo;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class IngestResult {
     private final List<FileInfo> fileInfoList;
@@ -42,5 +43,29 @@ public class IngestResult {
 
     public List<FileInfo> getFileInfoList() {
         return Collections.unmodifiableList(fileInfoList);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        IngestResult that = (IngestResult) o;
+        return fileInfoList.equals(that.fileInfoList);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(fileInfoList);
+    }
+
+    @Override
+    public String toString() {
+        return "IngestResult{" +
+                "fileInfoList=" + fileInfoList +
+                '}';
     }
 }
