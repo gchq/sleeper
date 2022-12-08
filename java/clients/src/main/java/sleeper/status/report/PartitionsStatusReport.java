@@ -29,6 +29,7 @@ import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,17 +39,23 @@ import java.util.stream.Collectors;
  */
 public class PartitionsStatusReport {
     private final StateStore stateStore;
+    private final PrintStream out;
 
     public PartitionsStatusReport(StateStore stateStore) {
+        this(stateStore, System.out);
+    }
+
+    public PartitionsStatusReport(StateStore stateStore, PrintStream out) {
         this.stateStore = stateStore;
+        this.out = out;
     }
 
     public void run() throws StateStoreException {
-        System.out.println("\nPartitions Status Report:\n--------------------------");
+        out.println("\nPartitions Status Report:\n--------------------------");
         List<Partition> partitions = stateStore.getAllPartitions();
         List<Partition> leafPartitions = partitions.stream().filter(Partition::isLeafPartition).collect(Collectors.toList());
-        System.out.println("There are " + partitions.size() + " partitions (" + leafPartitions.size() + " leaf partitions)");
-        partitions.stream().forEach(System.out::println);
+        out.println("There are " + partitions.size() + " partitions (" + leafPartitions.size() + " leaf partitions)");
+        partitions.forEach(out::println);
     }
 
     public static void main(String[] args) throws IOException, StateStoreException {

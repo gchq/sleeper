@@ -1,0 +1,7 @@
+
+Partitions Status Report:
+--------------------------
+There are 3 partitions (2 leaf partitions)
+Partition{rowKeyTypes=[StringType{}], region=Region{rowKeyFieldNameToRange={key=Range{field=Field{name=key, type=StringType{}}, min=, minInclusive=true, max=null, maxInclusive=false}}}, id='parent', leafPartition=false, parentPartitionId='null', childPartitionIds=[A, B], dimension=0}
+Partition{rowKeyTypes=[StringType{}], region=Region{rowKeyFieldNameToRange={key=Range{field=Field{name=key, type=StringType{}}, min=, minInclusive=true, max=aaa, maxInclusive=false}}}, id='A', leafPartition=true, parentPartitionId='parent', childPartitionIds=[], dimension=-1}
+Partition{rowKeyTypes=[StringType{}], region=Region{rowKeyFieldNameToRange={key=Range{field=Field{name=key, type=StringType{}}, min=aaa, minInclusive=true, max=null, maxInclusive=false}}}, id='B', leafPartition=true, parentPartitionId='parent', childPartitionIds=[], dimension=-1}
