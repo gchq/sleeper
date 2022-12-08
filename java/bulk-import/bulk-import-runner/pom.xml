@@ -52,6 +52,30 @@
             <artifactId>statestore</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.joom.spark</groupId>
+            <artifactId>spark-platform_${scala.version}</artifactId>
+            <version>${joom.spark.platform.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.spark</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
+            <version>${scala.minor.version}</version>
+        </dependency>
         <!-- STS is required to use the IAM role associated with the Service Account -->
         <dependency>
             <groupId>com.amazonaws</groupId>
