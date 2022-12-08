@@ -17,7 +17,7 @@ package sleeper.compaction.status.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.TestCompactionJobStatus;
 import sleeper.compaction.status.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfoFactory;
@@ -44,7 +44,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(CompactionJobStatus.created(job, ignoredUpdateTime()));
+                .containsExactly(TestCompactionJobStatus.created(job, ignoredUpdateTime()));
     }
 
     @Test
@@ -67,7 +67,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(CompactionJobStatus.created(job, ignoredUpdateTime()));
+                .containsExactly(TestCompactionJobStatus.created(job, ignoredUpdateTime()));
     }
 
     @Test
@@ -87,7 +87,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(CompactionJobStatus.created(job, ignoredUpdateTime()));
+                .containsExactly(TestCompactionJobStatus.created(job, ignoredUpdateTime()));
     }
 
     @Test
@@ -111,8 +111,8 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactlyInAnyOrder(
-                        CompactionJobStatus.created(job1, ignoredUpdateTime()),
-                        CompactionJobStatus.created(job2, ignoredUpdateTime()));
+                        TestCompactionJobStatus.created(job1, ignoredUpdateTime()),
+                        TestCompactionJobStatus.created(job2, ignoredUpdateTime()));
     }
 
     @Test
@@ -137,7 +137,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactlyInAnyOrder(
-                        CompactionJobStatus.created(job1, ignoredUpdateTime()),
-                        CompactionJobStatus.created(job2, ignoredUpdateTime()));
+                        TestCompactionJobStatus.created(job1, ignoredUpdateTime()),
+                        TestCompactionJobStatus.created(job2, ignoredUpdateTime()));
     }
 }

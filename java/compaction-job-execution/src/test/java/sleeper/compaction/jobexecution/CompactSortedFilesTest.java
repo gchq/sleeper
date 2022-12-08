@@ -17,10 +17,10 @@ package sleeper.compaction.jobexecution;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDataHelper;
 import sleeper.core.record.Record;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
@@ -64,7 +64,7 @@ public class CompactSortedFilesTest extends CompactSortedFilesTestBase {
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, DEFAULT_TASK_ID);
-        CompactionJobSummary summary = compactSortedFiles.compact();
+        RecordsProcessedSummary summary = compactSortedFiles.compact();
 
         // Then
         //  - Read output file and check that it contains the right results
@@ -117,7 +117,7 @@ public class CompactSortedFilesTest extends CompactSortedFilesTestBase {
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, DEFAULT_TASK_ID);
-        CompactionJobSummary summary = compactSortedFiles.compact();
+        RecordsProcessedSummary summary = compactSortedFiles.compact();
 
         // Then
         //  - Read output file and check that it contains the right results
@@ -175,7 +175,7 @@ public class CompactSortedFilesTest extends CompactSortedFilesTestBase {
 
         // When
         CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, DEFAULT_TASK_ID);
-        CompactionJobSummary summary = compactSortedFiles.compact();
+        RecordsProcessedSummary summary = compactSortedFiles.compact();
 
         // Then
         //  - Read output file and check that it contains the right results

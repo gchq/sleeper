@@ -17,15 +17,15 @@ package sleeper.compaction.status.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobRecordsProcessed;
-import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.job.status.CompactionJobRun;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFinishedStatus;
+import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.statestore.FileInfoFactory;
 
 import java.time.Instant;
@@ -87,14 +87,14 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         Instant finishTime1 = Instant.parse("2022-10-03T15:19:31.001Z");
         Instant startTime2 = Instant.parse("2022-10-03T15:19:02.001Z");
         Instant finishTime2 = Instant.parse("2022-10-03T15:19:32.001Z");
-        CompactionJobRecordsProcessed processed = new CompactionJobRecordsProcessed(100L, 100L);
+        RecordsProcessed processed = new RecordsProcessed(100L, 100L);
 
         // When
         store.jobCreated(job);
         store.jobStarted(job, startTime1, DEFAULT_TASK_ID);
         store.jobStarted(job, startTime2, DEFAULT_TASK_ID_2);
-        store.jobFinished(job, new CompactionJobSummary(processed, startTime1, finishTime1), DEFAULT_TASK_ID);
-        store.jobFinished(job, new CompactionJobSummary(processed, startTime2, finishTime2), DEFAULT_TASK_ID_2);
+        store.jobFinished(job, new RecordsProcessedSummary(processed, startTime1, finishTime1), DEFAULT_TASK_ID);
+        store.jobFinished(job, new RecordsProcessedSummary(processed, startTime2, finishTime2), DEFAULT_TASK_ID_2);
 
         // Then
         assertThat(getAllJobStatuses())
@@ -104,14 +104,14 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
                                 .createdStatus(CompactionJobCreatedStatus.from(
                                         job, ignoredUpdateTime()))
                                 .jobRunsLatestFirst(Arrays.asList(
-                                        CompactionJobRun.finished(DEFAULT_TASK_ID_2, CompactionJobStartedStatus.updateAndStartTime(
+                                        ProcessRun.finished(DEFAULT_TASK_ID_2, ProcessStartedStatus.updateAndStartTime(
                                                         ignoredUpdateTime(), startTime2),
-                                                CompactionJobFinishedStatus.updateTimeAndSummary(
-                                                        ignoredUpdateTime(), new CompactionJobSummary(processed, startTime2, finishTime2))),
-                                        CompactionJobRun.finished(DEFAULT_TASK_ID, CompactionJobStartedStatus.updateAndStartTime(
+                                                ProcessFinishedStatus.updateTimeAndSummary(
+                                                        ignoredUpdateTime(), new RecordsProcessedSummary(processed, startTime2, finishTime2))),
+                                        ProcessRun.finished(DEFAULT_TASK_ID, ProcessStartedStatus.updateAndStartTime(
                                                         ignoredUpdateTime(), startTime1),
-                                                CompactionJobFinishedStatus.updateTimeAndSummary(
-                                                        ignoredUpdateTime(), new CompactionJobSummary(processed, startTime1, finishTime1)))))
+                                                ProcessFinishedStatus.updateTimeAndSummary(
+                                                        ignoredUpdateTime(), new RecordsProcessedSummary(processed, startTime1, finishTime1)))))
                                 .build());
     }
 

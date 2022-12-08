@@ -17,7 +17,7 @@ package sleeper.compaction.status.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.job.TestCompactionJobStatus;
 import sleeper.compaction.status.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfoFactory;
@@ -47,7 +47,7 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusS
         // Then
         assertThat(getJobStatus(job1.getId()))
                 .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
-                .isEqualTo(CompactionJobStatus.created(job1, ignoredUpdateTime()));
+                .isEqualTo(TestCompactionJobStatus.created(job1, ignoredUpdateTime()));
     }
 
     @Test

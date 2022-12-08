@@ -37,7 +37,7 @@ public class TableWriterHideFieldsTest {
                 .row(row -> row
                         .value(field1, "First")
                         .value(field2, "Value"))
-                .showField(field1, false)
+                .showField(false, field1)
                 .build().write(output.getPrintStream());
 
         // Then
@@ -58,7 +58,7 @@ public class TableWriterHideFieldsTest {
                 .row(row -> row
                         .value(field1, "Value")
                         .value(field2, "Other"))
-                .showField(field2, false)
+                .showField(false, field2)
                 .build().write(output.getPrintStream());
 
         // Then
