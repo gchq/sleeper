@@ -65,6 +65,7 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
         return instanceTableName(instanceId, "ingest-task-status");
     }
 
+    @Override
     public void taskStarted(IngestTaskStatus taskStatus) {
         try {
             PutItemResult result = putItem(DynamoDBIngestTaskStatusFormat.createTaskStartedRecord(taskStatus, timeToLive));
@@ -75,6 +76,7 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
         }
     }
 
+    @Override
     public void taskFinished(IngestTaskStatus taskStatus) {
         try {
             PutItemResult result = putItem(DynamoDBIngestTaskStatusFormat.createTaskFinishedRecord(taskStatus, timeToLive));
@@ -102,20 +104,5 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTableName(statusTableName);
         return dynamoDB.putItem(putItemRequest);
-    }
-
-    // Used to prevent spotbugs from failing
-    public AmazonDynamoDB getDynamoDB() {
-        return dynamoDB;
-    }
-
-    // Used to prevent spotbugs from failing
-    public String getStatusTableName() {
-        return statusTableName;
-    }
-
-    // Used to prevent spotbugs from failing
-    public long getTimeToLive() {
-        return timeToLive;
     }
 }
