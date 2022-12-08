@@ -24,10 +24,8 @@ import java.util.Optional;
 
 public interface CompactionJobStatusStore {
 
-    static CompactionJobStatusStore none() {
-        return new CompactionJobStatusStore() {
-        };
-    }
+    CompactionJobStatusStore NONE = new CompactionJobStatusStore() {
+    };
 
     default void jobCreated(CompactionJob job) {
     }

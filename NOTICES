@@ -65,6 +65,10 @@ Apache Spark (org.apache.spark:spark-sql_2.12:3.1.2):
 
 - Apache License, Version 2.0
 
+Joom Spark Platform (com.joom.spark:spark-platform_2.12:0.1.2)
+
+- MIT License
+
 Apache Arrow (org.apache.arrow:*:8.0.0)
 
 - Apache License, Version 2.0

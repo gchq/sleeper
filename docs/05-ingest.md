@@ -379,8 +379,18 @@ The Spark properties for a job can be overridden by specifying the `sparkConf` s
 
 #### Changing the bulk import class
 
-Sleeper contains two different Spark algorithms for performing the bulk import. The first uses Dataframes and is the default
-approach. The second uses RDDs. To change to the RDD approach on a per-job basis, add the following the the JSON for the job:
+Sleeper contains three different Spark algorithms for performing the bulk import. There are two approaches that use Dataframes and one
+that uses RDDs (recall that algorithms expressed using Spark's Dataframe API are normally more efficient than RDD-based algorithms).
+
+The default algorithm is the `BulkImportDataframeLocalSortRunner`. This partitions the data according to Sleeper's leaf partitions and
+then sorts within partitions. In general this is more efficient than the `BulkImportJobDataframeRunner` algorithm which globally sorts
+the data before ingesting data. This will result in more files than there are Sleeper partitions. However, if the number of Sleeper leaf
+partitions is small then this allow more parallelism than the `BulkImportDataframeLocalSortRunner` approach.
+
+The RDD-based approach uses the `repartitionAndSortWithinPartitions` method on an RDD formed from the input data. This is generally
+significantly less efficient than the Dataframe-based methods.
+
+To change the algorithm usedon a per-job basis, set the `className` field on the JSON for the job, e.g.:
 
 ```JSON
 "className": "sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDRunner"
