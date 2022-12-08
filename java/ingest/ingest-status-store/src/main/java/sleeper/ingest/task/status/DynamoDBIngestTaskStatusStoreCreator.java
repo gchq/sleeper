@@ -28,9 +28,9 @@ import java.util.Arrays;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
-import static sleeper.ingest.job.status.DynamoDBIngestJobStatusFormat.EXPIRY_DATE;
-import static sleeper.ingest.job.status.DynamoDBIngestJobStatusFormat.UPDATE_TIME;
+import static sleeper.ingest.task.status.DynamoDBIngestTaskStatusFormat.EXPIRY_DATE;
 import static sleeper.ingest.task.status.DynamoDBIngestTaskStatusFormat.TASK_ID;
+import static sleeper.ingest.task.status.DynamoDBIngestTaskStatusFormat.UPDATE_TIME;
 
 public class DynamoDBIngestTaskStatusStoreCreator {
     private DynamoDBIngestTaskStatusStoreCreator() {
