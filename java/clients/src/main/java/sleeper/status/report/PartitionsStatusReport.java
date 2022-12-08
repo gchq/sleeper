@@ -23,55 +23,60 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.partition.Partition;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.status.report.partitions.PartitionsQuery;
+import sleeper.status.report.partitions.PartitionsStatusReportArguments;
+import sleeper.status.report.partitions.PartitionsStatusReporter;
+import sleeper.status.report.partitions.StandardPartitionsStatusReporter;
 
 import java.io.IOException;
-import java.io.PrintStream;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * A utility class to report information about the partitions in the system and
  * their status.
  */
 public class PartitionsStatusReport {
-    private final StateStore stateStore;
-    private final PrintStream out;
+    private final StateStore store;
+    private final PartitionsStatusReporter reporter;
+    private final PartitionsQuery query;
 
-    public PartitionsStatusReport(StateStore stateStore) {
-        this(stateStore, System.out);
+    public PartitionsStatusReport(StateStore store) {
+        this(store, new StandardPartitionsStatusReporter(System.out), PartitionsQuery.ALL);
     }
 
-    public PartitionsStatusReport(StateStore stateStore, PrintStream out) {
-        this.stateStore = stateStore;
-        this.out = out;
+    public PartitionsStatusReport(StateStore store, PartitionsStatusReporter reporter,
+                                  PartitionsQuery query) {
+        this.store = store;
+        this.reporter = reporter;
+        this.query = query;
     }
 
     public void run() throws StateStoreException {
-        out.println("\nPartitions Status Report:\n--------------------------");
-        List<Partition> partitions = stateStore.getAllPartitions();
-        List<Partition> leafPartitions = partitions.stream().filter(Partition::isLeafPartition).collect(Collectors.toList());
-        out.println("There are " + partitions.size() + " partitions (" + leafPartitions.size() + " leaf partitions)");
-        partitions.forEach(out::println);
+        reporter.report(query, query.run(store));
     }
 
     public static void main(String[] args) throws IOException, StateStoreException {
-        if (2 != args.length) {
-            throw new IllegalArgumentException("Usage: <instance id> <table name>");
+        PartitionsStatusReportArguments arguments;
+        try {
+            arguments = PartitionsStatusReportArguments.fromArgs(args);
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+            PartitionsStatusReportArguments.printUsage(System.err);
+            System.exit(1);
+            return;
         }
 
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
+        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, arguments.getInstanceId());
 
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(amazonS3, instanceProperties);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
-        StateStore stateStore = stateStoreProvider.getStateStore(args[1], tablePropertiesProvider);
+        StateStore stateStore = stateStoreProvider.getStateStore(arguments.getTableName(), tablePropertiesProvider);
 
-        PartitionsStatusReport statusReport = new PartitionsStatusReport(stateStore);
+        PartitionsStatusReport statusReport = new PartitionsStatusReport(stateStore, arguments.getReporter(), arguments.getQuery());
         statusReport.run();
 
         amazonS3.shutdown();

@@ -25,6 +25,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.status.report.partitions.PartitionsQuery;
+import sleeper.status.report.partitions.StandardPartitionsStatusReporter;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -81,8 +83,8 @@ public class PartitionsStatusReportTest {
 
     private String getStandardReport() throws StateStoreException {
         ToStringPrintStream output = new ToStringPrintStream();
-        PartitionsStatusReport partitionsStatusReport = new PartitionsStatusReport(stateStore, output.getPrintStream());
-        partitionsStatusReport.run();
+        StandardPartitionsStatusReporter reporter = new StandardPartitionsStatusReporter(output.getPrintStream());
+        new PartitionsStatusReport(stateStore, reporter, PartitionsQuery.ALL).run();
         return output.toString();
     }
 }
