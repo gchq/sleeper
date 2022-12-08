@@ -18,7 +18,10 @@ package sleeper.ingest.task;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static sleeper.statestore.FileInfoTestData.DEFAULT_NUMBER_OF_RECORDS;
@@ -65,6 +68,34 @@ public class IngestTaskStatusTestData {
                                 new RecordsProcessed(linesRead, linesWritten),
                                 startJobTime, finishJobTime)))
                 .build();
+    }
+
+    public static IngestTaskStatus finishedMultipleJobs(String taskId, Instant startTaskTime, Instant finishTaskTime,
+                                                        Duration duration, Instant... startJobTimes) {
+        return finishedMultipleJobs(taskId, startTaskTime, finishTaskTime, duration,
+                DEFAULT_NUMBER_OF_RECORDS, DEFAULT_NUMBER_OF_RECORDS, Arrays.asList(startJobTimes));
+
+    }
+
+    public static IngestTaskStatus finishedMultipleJobs(String taskId, Instant startTaskTime, Instant finishTaskTime,
+                                                        Duration duration, long linesRead, long linesWritten,
+                                                        Instant... startJobTimes) {
+        return finishedMultipleJobs(taskId, startTaskTime, finishTaskTime, duration,
+                linesRead, linesWritten, Arrays.asList(startJobTimes));
+    }
+
+    public static IngestTaskStatus finishedMultipleJobs(String taskId, Instant startTaskTime, Instant finishTaskTime,
+                                                        Duration duration, long linesRead, long linesWritten,
+                                                        List<Instant> startJobTimes) {
+        return IngestTaskStatus.builder().taskId(taskId).startTime(startTaskTime)
+                .finished(finishTaskTime, startJobTimes.stream().map(startTime -> createSummary(duration, linesRead, linesWritten, startTime)))
+                .build();
+    }
+
+    public static RecordsProcessedSummary createSummary(Duration duration, long linesRead, long linesWritten, Instant startTime) {
+        return new RecordsProcessedSummary(
+                new RecordsProcessed(linesRead, linesWritten),
+                startTime, startTime.plus(duration));
     }
 
     public static IngestTaskStatus.Builder startedBuilderWithDefaults() {

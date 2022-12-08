@@ -21,12 +21,14 @@ import sleeper.ingest.IngestResultTestData;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.ingest.task.WriteToMemoryIngestTaskStatusStore;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.task.IngestTaskStatusTestData.finishedMultipleJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedNoJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJobNoFiles;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJobOneFile;
@@ -106,6 +108,40 @@ public class IngestJobQueueConsumerRunnerTest {
                 finishedOneJobOneFile(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime));
         assertThat(jobs.getIngestResults())
                 .containsExactly(IngestResultTestData.defaultFileIngestResult("test.parquet"));
+    }
+
+    @Test
+    public void shouldRunAndReportTaskWithMultipleJobs() throws Exception {
+        // Given
+        String taskId = "test-task";
+        Instant startTaskTime = Instant.parse("2022-12-07T12:37:00.123Z");
+        Instant finishTaskTime = Instant.parse("2022-12-07T12:38:00.123Z");
+        Instant startJob1Time = Instant.parse("2022-12-07T12:37:10.123Z");
+        Instant finishJob1Time = Instant.parse("2022-12-07T12:37:20.123Z");
+        Instant startJob2Time = Instant.parse("2022-12-07T12:37:30.123Z");
+        Instant finishJob2Time = Instant.parse("2022-12-07T12:37:40.123Z");
+
+        IngestJob job1 = IngestJob.builder()
+                .id("test-job-1")
+                .files(Collections.singletonList("test1.parquet"))
+                .build();
+        IngestJob job2 = IngestJob.builder()
+                .id("test-job-2")
+                .files(Collections.singletonList("test2.parquet"))
+                .build();
+        FixedIngestJobSource jobs = FixedIngestJobSource.with(job1, job2);
+
+        // When
+        IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(jobs, taskId, statusStore, jobRunner,
+                timesInOrder(startTaskTime, startJob1Time, finishJob1Time, startJob2Time, finishJob2Time, finishTaskTime));
+        runner.run();
+
+        // Then
+        assertThat(statusStore.getAllTasks()).containsExactly(
+                finishedMultipleJobs(taskId, startTaskTime, finishTaskTime, Duration.ofSeconds(10), startJob1Time, startJob2Time));
+        assertThat(jobs.getIngestResults()).containsExactly(
+                IngestResultTestData.defaultFileIngestResult("test1.parquet"),
+                IngestResultTestData.defaultFileIngestResult("test2.parquet"));
     }
 
     private static Supplier<Instant> timesInOrder(Instant... times) {
