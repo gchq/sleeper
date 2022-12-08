@@ -13,7 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job;
+package sleeper.core.record.process.status;
 
-public class TestCompactionJobStatuses {
+import java.time.Instant;
+
+public interface ProcessStatusUpdate {
+
+    Instant getUpdateTime();
 }

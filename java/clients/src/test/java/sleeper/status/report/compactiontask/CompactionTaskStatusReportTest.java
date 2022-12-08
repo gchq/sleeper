@@ -17,11 +17,11 @@ package sleeper.status.report.compactiontask;
 
 import org.junit.Test;
 import sleeper.ToStringPrintStream;
-import sleeper.compaction.job.CompactionJobRecordsProcessed;
-import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.status.report.CompactionTaskStatusReport;
 
 import java.io.PrintStream;
@@ -64,8 +64,8 @@ public class CompactionTaskStatusReportTest {
                 .started(Instant.parse("2022-10-06T12:20:00.001Z"))
                 .taskId("finished-task")
                 .finished(CompactionTaskFinishedStatus.builder()
-                                .addJobSummary(new CompactionJobSummary(
-                                        new CompactionJobRecordsProcessed(200L, 100L),
+                                .addJobSummary(new RecordsProcessedSummary(
+                                        new RecordsProcessed(200L, 100L),
                                         Instant.parse("2022-10-06T12:20:00.001Z"),
                                         Instant.parse("2022-10-06T12:20:30.001Z"))),
                         Instant.parse("2022-10-06T12:20:30.001Z")).build();

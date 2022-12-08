@@ -17,8 +17,8 @@
 package sleeper.compaction.task;
 
 import org.junit.Test;
-import sleeper.compaction.job.CompactionJobRecordsProcessed;
-import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -83,7 +83,7 @@ public class CompactionTaskStatusTest {
         return CompactionTaskStatus.builder().taskId("test-task-id").started(startTime);
     }
 
-    private static List<CompactionJobSummary> createJobSummaries() {
+    private static List<RecordsProcessedSummary> createJobSummaries() {
         Instant jobStartedUpdateTime1 = Instant.parse("2022-09-22T14:00:04.000Z");
         Instant jobFinishTime1 = Instant.parse("2022-09-22T14:00:14.000Z");
 
@@ -93,12 +93,12 @@ public class CompactionTaskStatusTest {
         Instant jobStartedUpdateTime3 = Instant.parse("2022-09-22T16:00:04.000Z");
         Instant jobFinishTime3 = Instant.parse("2022-09-22T16:00:14.000Z");
 
-        CompactionJobSummary summary1 = new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(4800L, 2400L), jobStartedUpdateTime1, jobFinishTime1);
-        CompactionJobSummary summary2 = new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(4800L, 2400L), jobStartedUpdateTime2, jobFinishTime2);
-        CompactionJobSummary summary3 = new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(4800L, 2400L), jobStartedUpdateTime3, jobFinishTime3);
+        RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
+                new RecordsProcessed(4800L, 2400L), jobStartedUpdateTime1, jobFinishTime1);
+        RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
+                new RecordsProcessed(4800L, 2400L), jobStartedUpdateTime2, jobFinishTime2);
+        RecordsProcessedSummary summary3 = new RecordsProcessedSummary(
+                new RecordsProcessed(4800L, 2400L), jobStartedUpdateTime3, jobFinishTime3);
 
         return Arrays.asList(summary1, summary2, summary3);
     }

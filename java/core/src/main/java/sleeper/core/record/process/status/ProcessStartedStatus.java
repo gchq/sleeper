@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.status;
+package sleeper.core.record.process.status;
 
 import java.time.Instant;
 import java.util.Objects;
 
-public class CompactionJobStartedStatus implements CompactionJobStatusUpdate {
+public class ProcessStartedStatus implements ProcessStatusUpdate {
 
     private final Instant updateTime;
     private final Instant startTime;
 
-    private CompactionJobStartedStatus(Instant updateTime, Instant startTime) {
+    private ProcessStartedStatus(Instant updateTime, Instant startTime) {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime may not be null");
         this.startTime = Objects.requireNonNull(startTime, "startTime may not be null");
     }
 
-    public static CompactionJobStartedStatus updateAndStartTime(Instant updateTime, Instant startTime) {
-        return new CompactionJobStartedStatus(updateTime, startTime);
+    public static ProcessStartedStatus updateAndStartTime(Instant updateTime, Instant startTime) {
+        return new ProcessStartedStatus(updateTime, startTime);
     }
 
     public Instant getUpdateTime() {
@@ -49,7 +49,7 @@ public class CompactionJobStartedStatus implements CompactionJobStatusUpdate {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        CompactionJobStartedStatus that = (CompactionJobStartedStatus) o;
+        ProcessStartedStatus that = (ProcessStartedStatus) o;
         return updateTime.equals(that.updateTime) && startTime.equals(that.startTime);
     }
 
@@ -60,7 +60,7 @@ public class CompactionJobStartedStatus implements CompactionJobStatusUpdate {
 
     @Override
     public String toString() {
-        return "CompactionJobStartedStatus{" +
+        return "ProcessStartedStatus{" +
                 "updateTime=" + updateTime +
                 ", startTime=" + startTime +
                 '}';

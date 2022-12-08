@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job;
+package sleeper.core.record.process;
 
 import org.junit.Test;
 
@@ -21,7 +21,7 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class CompactionJobSummaryTest {
+public class RecordsProcessedSummaryTest {
 
     @Test
     public void shouldReturnInputs() {
@@ -29,8 +29,8 @@ public class CompactionJobSummaryTest {
         long linesWritten = 100L;
         Instant startTime = Instant.parse("2022-09-22T09:44:00.000Z");
         Instant finishTime = Instant.parse("2022-09-22T09:45:00.000Z");
-        CompactionJobSummary summary = new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(linesRead, linesWritten),
+        RecordsProcessedSummary summary = new RecordsProcessedSummary(
+                new RecordsProcessed(linesRead, linesWritten),
                 startTime, finishTime);
 
         assertThat(summary).extracting("linesRead", "linesWritten", "startTime", "finishTime")
@@ -39,8 +39,8 @@ public class CompactionJobSummaryTest {
 
     @Test
     public void shouldCalculateDuration() {
-        CompactionJobSummary summary = new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(100L, 100L),
+        RecordsProcessedSummary summary = new RecordsProcessedSummary(
+                new RecordsProcessed(100L, 100L),
                 Instant.parse("2022-09-22T09:44:00.000Z"),
                 Instant.parse("2022-09-22T09:45:00.000Z"));
 
@@ -49,8 +49,8 @@ public class CompactionJobSummaryTest {
 
     @Test
     public void shouldCalculateRecordRate() {
-        CompactionJobSummary summary = new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(450L, 300L),
+        RecordsProcessedSummary summary = new RecordsProcessedSummary(
+                new RecordsProcessed(450L, 300L),
                 Instant.parse("2022-09-22T09:44:00.000Z"),
                 Instant.parse("2022-09-22T09:45:00.000Z"));
 

@@ -16,6 +16,7 @@
 package sleeper.compaction.job;
 
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.List;
@@ -32,7 +33,7 @@ public interface CompactionJobStatusStore {
     default void jobStarted(CompactionJob job, Instant startTime, String taskId) {
     }
 
-    default void jobFinished(CompactionJob compactionJob, CompactionJobSummary summary, String taskId) {
+    default void jobFinished(CompactionJob compactionJob, RecordsProcessedSummary summary, String taskId) {
     }
 
     default List<CompactionJobStatus> getJobsInTimePeriod(String tableName, Instant startTime, Instant endTime) {

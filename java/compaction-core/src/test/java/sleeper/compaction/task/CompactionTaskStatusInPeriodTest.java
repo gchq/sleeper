@@ -16,8 +16,8 @@
 package sleeper.compaction.task;
 
 import org.junit.Test;
-import sleeper.compaction.job.CompactionJobRecordsProcessed;
-import sleeper.compaction.job.CompactionJobSummary;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.time.Period;
@@ -120,8 +120,8 @@ public class CompactionTaskStatusInPeriodTest {
     private static CompactionTaskStatus taskWithStartAndFinishTime(Instant startTime, Instant finishTime) {
         return taskBuilder(startTime)
                 .finished(CompactionTaskFinishedStatus.builder()
-                        .addJobSummary(new CompactionJobSummary(
-                                new CompactionJobRecordsProcessed(200, 100),
+                        .addJobSummary(new RecordsProcessedSummary(
+                                new RecordsProcessed(200, 100),
                                 startTime, finishTime
                         )), finishTime)
                 .build();

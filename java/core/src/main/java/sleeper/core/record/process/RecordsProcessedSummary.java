@@ -13,22 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job;
+package sleeper.core.record.process;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 
-public class CompactionJobSummary {
+public class RecordsProcessedSummary {
 
-    private final CompactionJobRecordsProcessed recordsProcessed;
+    private final RecordsProcessed recordsProcessed;
     private final Instant startTime;
     private final Instant finishTime;
     private final double durationInSeconds;
     private final double recordsReadPerSecond;
     private final double recordsWrittenPerSecond;
 
-    public CompactionJobSummary(CompactionJobRecordsProcessed recordsProcessed, Instant startTime, Instant finishTime) {
+    public RecordsProcessedSummary(RecordsProcessed recordsProcessed, Instant startTime, Duration duration) {
+        this(recordsProcessed, startTime, startTime.plus(duration));
+    }
+
+    public RecordsProcessedSummary(RecordsProcessed recordsProcessed, Instant startTime, Instant finishTime) {
         this.recordsProcessed = Objects.requireNonNull(recordsProcessed, "recordsProcessed must not be null");
         this.startTime = Objects.requireNonNull(startTime, "startTime must not be null");
         this.finishTime = Objects.requireNonNull(finishTime, "finishTime must not be null");
@@ -73,7 +77,7 @@ public class CompactionJobSummary {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        CompactionJobSummary that = (CompactionJobSummary) o;
+        RecordsProcessedSummary that = (RecordsProcessedSummary) o;
         return recordsProcessed.equals(that.recordsProcessed) &&
                 startTime.equals(that.startTime) && finishTime.equals(that.finishTime);
     }
@@ -85,7 +89,7 @@ public class CompactionJobSummary {
 
     @Override
     public String toString() {
-        return "CompactionJobSummary{" +
+        return "RecordsProcessedSummary{" +
                 "recordsProcessed=" + recordsProcessed +
                 ", startTime=" + startTime +
                 ", finishTime=" + finishTime +

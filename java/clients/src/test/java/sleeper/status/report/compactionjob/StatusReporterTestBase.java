@@ -18,14 +18,15 @@ package sleeper.status.report.compactionjob;
 
 import sleeper.ToStringPrintStream;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobRecordsProcessed;
-import sleeper.compaction.job.CompactionJobSummary;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
+import sleeper.compaction.job.TestCompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.job.status.CompactionJobRun;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFinishedStatus;
+import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.status.report.compactionjob.CompactionJobStatusReporter.QueryType;
 
 import java.io.PrintStream;
@@ -125,43 +126,47 @@ public abstract class StatusReporterTestBase {
         return Arrays.asList(
                 finishedCompactionStatus(
                         dataHelper.singleFileCompaction(partition("C")),
+                        "task-id",
                         Instant.parse("2022-10-13T12:00:00.000Z"),
                         Duration.ofMillis(123), 600, 300),
                 finishedCompactionStatus(
                         dataHelper.singleFileCompaction(partition("C")),
+                        "task-id",
                         Instant.parse("2022-10-13T12:01:00.000Z"),
                         Duration.ofHours(2), 1000600, 500300),
                 finishedCompactionStatus(
                         dataHelper.singleFileSplittingCompaction(partition("C"), partition("A"), partition("B")),
+                        "task-id",
                         Instant.parse("2022-10-13T14:01:00.000Z"),
                         Duration.ofSeconds(60), 1000600, 500300),
                 finishedCompactionStatus(
                         dataHelper.singleFileSplittingCompaction(partition("C"), partition("A"), partition("B")),
+                        "task-id",
                         Instant.parse("2022-10-13T14:02:00.000Z"),
                         Duration.ofMillis(123), 1234, 1234));
     }
 
-    private static CompactionJobRun jobRunStartedInTask(int taskNumber, String startTimeNoMillis) {
-        return CompactionJobRun.started(task(taskNumber), defaultStartedStatus(startTimeNoMillis));
+    private static ProcessRun jobRunStartedInTask(int taskNumber, String startTimeNoMillis) {
+        return ProcessRun.started(task(taskNumber), defaultStartedStatus(startTimeNoMillis));
     }
 
-    private static CompactionJobRun jobRunFinishedInTask(int taskNumber, String startTimeNoMillis, String finishTimeNoMillis) {
-        return CompactionJobRun.finished(task(taskNumber),
+    private static ProcessRun jobRunFinishedInTask(int taskNumber, String startTimeNoMillis, String finishTimeNoMillis) {
+        return ProcessRun.finished(task(taskNumber),
                 defaultStartedStatus(startTimeNoMillis),
                 defaultFinishedStatus(startTimeNoMillis, finishTimeNoMillis));
     }
 
-    private static CompactionJobStartedStatus defaultStartedStatus(String startTimeNoMillis) {
-        return CompactionJobStartedStatus.updateAndStartTime(
+    private static ProcessStartedStatus defaultStartedStatus(String startTimeNoMillis) {
+        return ProcessStartedStatus.updateAndStartTime(
                 Instant.parse(startTimeNoMillis + ".123Z"),
                 Instant.parse(startTimeNoMillis + ".001Z"));
     }
 
-    private static CompactionJobFinishedStatus defaultFinishedStatus(String startTimeNoMillis, String finishTimeNoMillis) {
-        return CompactionJobFinishedStatus.updateTimeAndSummary(
+    private static ProcessFinishedStatus defaultFinishedStatus(String startTimeNoMillis, String finishTimeNoMillis) {
+        return ProcessFinishedStatus.updateTimeAndSummary(
                 Instant.parse(finishTimeNoMillis + ".123Z"),
-                new CompactionJobSummary(
-                        new CompactionJobRecordsProcessed(300L, 200L),
+                new RecordsProcessedSummary(
+                        new RecordsProcessed(300L, 200L),
                         Instant.parse(startTimeNoMillis + ".001Z"),
                         Instant.parse(finishTimeNoMillis + ".001Z")));
     }
@@ -184,23 +189,23 @@ public abstract class StatusReporterTestBase {
     }
 
     protected static CompactionJobStatus jobCreated(CompactionJob job, Instant creationTime) {
-        return CompactionJobStatus.created(job, creationTime);
+        return TestCompactionJobStatus.created(job, creationTime);
     }
 
     protected static CompactionJobStatus jobStarted(CompactionJob job, String taskId, Instant creationTime, Instant startTime, Instant startUpdateTime) {
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
-                .singleJobRun(CompactionJobRun.started(taskId, CompactionJobStartedStatus.updateAndStartTime(startUpdateTime, startTime)))
+                .singleJobRun(ProcessRun.started(taskId, ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime)))
                 .build();
     }
 
     protected static CompactionJobStatus jobFinished(CompactionJob job, String taskId, Instant creationTime, Instant startTime, Instant startUpdateTime, Instant finishedTime) {
-        CompactionJobSummary summary = new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(600L, 300L), startUpdateTime, finishedTime);
+        RecordsProcessedSummary summary = new RecordsProcessedSummary(
+                new RecordsProcessed(600L, 300L), startUpdateTime, finishedTime);
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
-                .singleJobRun(CompactionJobRun.finished(taskId, CompactionJobStartedStatus.updateAndStartTime(startUpdateTime, startTime),
-                        CompactionJobFinishedStatus.updateTimeAndSummary(finishedTime, summary)))
+                .singleJobRun(ProcessRun.finished(taskId, ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime),
+                        ProcessFinishedStatus.updateTimeAndSummary(finishedTime, summary)))
                 .build();
     }
 
