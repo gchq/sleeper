@@ -52,7 +52,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         TableWriterFactory.Builder tableFactoryBuilder = TableWriterFactory.builder();
         stateField = tableFactoryBuilder.addField("STATE");
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
-        totalFilesField = tableFactoryBuilder.fieldBuilder("TOTAL_FILES").alignRight().build();
+        totalFilesField = tableFactoryBuilder.addNumericField("TOTAL_FILES");
         runReporter = new StandardProcessRunReporter(out, tableFactoryBuilder);
         tableFactory = tableFactoryBuilder.build();
     }
@@ -118,9 +118,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
 
     private static AverageRecordRate recordRate(List<IngestJobStatus> jobs) {
         return AverageRecordRate.of(jobs.stream()
-                .flatMap(job -> job.getJobRuns().stream())
-                .filter(ProcessRun::isFinished)
-                .map(ProcessRun::getFinishedSummary));
+                .flatMap(job -> job.getJobRuns().stream()));
     }
 
     private void writeJob(IngestJobStatus job, TableWriter.Builder table) {

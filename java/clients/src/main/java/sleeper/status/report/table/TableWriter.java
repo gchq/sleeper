@@ -17,6 +17,7 @@ package sleeper.status.report.table;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -72,12 +73,14 @@ public class TableWriter {
     public static final class Builder {
         private final TableStructure structure;
         private final List<TableField> fields;
+        private final TableFieldIndex fieldIndex;
         private final List<TableRow> rows = new ArrayList<>();
         private final Set<Integer> hideFieldIndexes = new HashSet<>();
 
         Builder(TableStructure structure, List<TableField> fields) {
             this.structure = structure;
             this.fields = fields;
+            this.fieldIndex = new TableFieldIndex(fields);
         }
 
         public <T> Builder itemsAndWriter(List<T> items, BiConsumer<T, TableRow.Builder> writer) {
@@ -95,13 +98,14 @@ public class TableWriter {
         }
 
         public Builder row(Consumer<TableRow.Builder> config) {
-            TableRow.Builder recordBuilder = new TableRow.Builder(fields.size());
+            TableRow.Builder recordBuilder = new TableRow.Builder(fields.size(), fieldIndex);
             config.accept(recordBuilder);
             rows.add(recordBuilder.build());
             return this;
         }
 
-        public Builder showField(TableField field, boolean showField) {
+        public Builder showField(boolean showField, TableFieldReference fieldReference) {
+            TableField field = fieldIndex.getField(fieldReference);
             if (showField) {
                 hideFieldIndexes.remove(field.getIndex());
             } else {
@@ -110,11 +114,15 @@ public class TableWriter {
             return this;
         }
 
-        public Builder showFields(boolean showField, List<TableField> fields) {
-            for (TableField field : fields) {
-                showField(field, showField);
+        public Builder showFields(boolean showFields, List<? extends TableFieldReference> fields) {
+            for (TableFieldReference field : fields) {
+                showField(showFields, field);
             }
             return this;
+        }
+
+        public Builder showFields(boolean showFields, TableFieldReference... fields) {
+            return showFields(showFields, Arrays.asList(fields));
         }
 
         public TableWriter build() {

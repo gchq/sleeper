@@ -71,7 +71,7 @@ public class IngestJobStatusReporterTestData {
         IngestJobStatus status2 = jobFinished(job2, task(1), startTime2, updateTime2, finishTime2);
         IngestJobStatus status3 = jobStarted(job3, task(2), startTime3, updateTime3);
         IngestJobStatus status4 = jobFinished(job4, task(2), startTime4, updateTime4, finishTime4);
-        return Arrays.asList(status1, status2, status3, status4);
+        return Arrays.asList(status4, status3, status2, status1);
     }
 
     public static List<IngestJobStatus> jobWithMultipleRuns() {
@@ -106,10 +106,10 @@ public class IngestJobStatusReporterTestData {
         Instant finishTime4 = Instant.parse("2022-10-13T14:02:10.123Z");
 
         return Arrays.asList(
-                jobFinished(createJob(1, 1), "task-id", startTime1, updateTime1, finishTime1, 600L, 300L),
-                jobFinished(createJob(2, 1), "task-id", startTime2, updateTime2, finishTime2, 1_000_600L, 500_300L),
+                jobFinished(createJob(4, 1), "task-id", startTime4, updateTime4, finishTime4, 1234L, 1234L),
                 jobFinished(createJob(3, 1), "task-id", startTime3, updateTime3, finishTime3, 1_000_600L, 500_300L),
-                jobFinished(createJob(4, 1), "task-id", startTime4, updateTime4, finishTime4, 1234L, 1234L));
+                jobFinished(createJob(2, 1), "task-id", startTime2, updateTime2, finishTime2, 1_000_600L, 500_300L),
+                jobFinished(createJob(1, 1), "task-id", startTime1, updateTime1, finishTime1, 600L, 300L));
     }
 
     private static IngestJob createJob(int jobNum, int inputFileCount) {

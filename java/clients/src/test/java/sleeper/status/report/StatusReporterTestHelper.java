@@ -62,7 +62,7 @@ public class StatusReporterTestHelper {
             List<String> jobIds, Function<Integer, String> getTemplateId, String example) {
         String replaced = example;
         for (int i = 0; i < jobIds.size(); i++) {
-            replaced = replaced.replace(getTemplateId.apply(i + 1), jobIds.get(i));
+            replaced = replaced.replace(getTemplateId.apply(jobIds.size() - i), jobIds.get(i));
         }
         return replaced;
     }

@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusesBuilder;
+import sleeper.compaction.task.CompactionTaskType;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;
@@ -41,6 +42,7 @@ public class DynamoDBCompactionTaskStatusFormat {
     }
 
     public static final String TASK_ID = "TaskId";
+    public static final String TYPE = "Type";
     public static final String UPDATE_TYPE = "UpdateType";
     public static final String START_TIME = "StartTime";
     public static final String UPDATE_TIME = "UpdateTime";
@@ -58,16 +60,16 @@ public class DynamoDBCompactionTaskStatusFormat {
 
     public static Map<String, AttributeValue> createTaskStartedRecord(CompactionTaskStatus taskStatus, Long timeToLive) {
         return createTaskRecord(taskStatus, STARTED, timeToLive)
-                .number(START_TIME, taskStatus.getStartedStatus().getStartTime().toEpochMilli())
+                .number(START_TIME, taskStatus.getStartTime().toEpochMilli())
                 .build();
     }
 
     public static Map<String, AttributeValue> createTaskFinishedRecord(CompactionTaskStatus taskStatus, Long timeToLive) {
         return createTaskRecord(taskStatus, FINISHED, timeToLive)
-                .number(START_TIME, taskStatus.getStartedStatus().getStartTime().toEpochMilli())
+                .number(START_TIME, taskStatus.getStartTime().toEpochMilli())
                 .number(FINISH_TIME, taskStatus.getFinishedStatus().getFinishTime().toEpochMilli())
                 .number(DURATION, taskStatus.getFinishedStatus().getTotalRuntimeInSeconds())
-                .number(NUMBER_OF_JOBS, taskStatus.getFinishedStatus().getTotalJobs())
+                .number(NUMBER_OF_JOBS, taskStatus.getFinishedStatus().getTotalJobRuns())
                 .number(LINES_READ, taskStatus.getFinishedStatus().getTotalRecordsRead())
                 .number(LINES_WRITTEN, taskStatus.getFinishedStatus().getTotalRecordsWritten())
                 .number(READ_RATE, taskStatus.getFinishedStatus().getRecordsReadPerSecond())
@@ -79,6 +81,7 @@ public class DynamoDBCompactionTaskStatusFormat {
         Long timeNow = Instant.now().toEpochMilli();
         return new DynamoDBRecordBuilder()
                 .string(TASK_ID, taskStatus.getTaskId())
+                .string(TYPE, taskStatus.getType().toString())
                 .number(UPDATE_TIME, timeNow)
                 .string(UPDATE_TYPE, updateType)
                 .number(EXPIRY_DATE, timeNow + timeToLive);
@@ -94,20 +97,21 @@ public class DynamoDBCompactionTaskStatusFormat {
         String taskId = getStringAttribute(item, TASK_ID);
         switch (getStringAttribute(item, UPDATE_TYPE)) {
             case STARTED:
-                builder.taskStarted(taskId, getInstantAttribute(item, START_TIME))
-                        .expiryDate(taskId, getInstantAttribute(item, EXPIRY_DATE));
+                CompactionTaskType type = CompactionTaskType.valueOf(getStringAttribute(item, TYPE));
+                builder.taskStarted(taskId, type,
+                        getInstantAttribute(item, START_TIME),
+                        getInstantAttribute(item, EXPIRY_DATE));
                 break;
             case FINISHED:
                 builder.taskFinished(taskId, CompactionTaskFinishedStatus.builder()
-                                .finishTime(getInstantAttribute(item, FINISH_TIME))
-                                .totalRuntimeInSeconds(Double.parseDouble(getNumberAttribute(item, DURATION)))
-                                .totalJobs(getIntAttribute(item, NUMBER_OF_JOBS, 0))
-                                .totalRecordsRead(getLongAttribute(item, LINES_READ, 0))
-                                .totalRecordsWritten(getLongAttribute(item, LINES_WRITTEN, 0))
-                                .recordsReadPerSecond(Double.parseDouble(getNumberAttribute(item, READ_RATE)))
-                                .recordsWrittenPerSecond(Double.parseDouble(getNumberAttribute(item, WRITE_RATE)))
-                                .build())
-                        .expiryDate(taskId, getInstantAttribute(item, EXPIRY_DATE));
+                        .finishTime(getInstantAttribute(item, FINISH_TIME))
+                        .totalRuntimeInSeconds(Double.parseDouble(getNumberAttribute(item, DURATION)))
+                        .totalJobRuns(getIntAttribute(item, NUMBER_OF_JOBS, 0))
+                        .totalRecordsRead(getLongAttribute(item, LINES_READ, 0))
+                        .totalRecordsWritten(getLongAttribute(item, LINES_WRITTEN, 0))
+                        .recordsReadPerSecond(Double.parseDouble(getNumberAttribute(item, READ_RATE)))
+                        .recordsWrittenPerSecond(Double.parseDouble(getNumberAttribute(item, WRITE_RATE)))
+                        .build());
                 break;
             default:
                 LOGGER.warn("Found record with unrecognised update type: {}", item);

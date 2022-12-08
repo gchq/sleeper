@@ -17,15 +17,11 @@ package sleeper.status.report.compaction.task;
 
 import org.junit.Test;
 import sleeper.ToStringPrintStream;
-import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.status.report.CompactionTaskStatusReport;
 
 import java.io.PrintStream;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.function.Function;
@@ -34,6 +30,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.ClientTestUtils.example;
+import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedSplittingTask;
+import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedSplittingTaskWithFourRuns;
+import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedTask;
+import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedTaskWithFourRuns;
+import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedSplittingTask;
+import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
 
 public class CompactionTaskStatusReportTest {
 
@@ -42,9 +44,7 @@ public class CompactionTaskStatusReportTest {
     @Test
     public void shouldReportCompactionTaskUnfinished() throws Exception {
         // Given
-        CompactionTaskStatus task = CompactionTaskStatus.builder()
-                .started(Instant.parse("2022-10-06T12:17:00.001Z"))
-                .taskId("A").build();
+        CompactionTaskStatus task = startedTask("A", "2022-10-06T12:17:00.001Z");
         when(store.getTasksInProgress()).thenReturn(Collections.singletonList(task));
 
         // When / Then
@@ -57,25 +57,50 @@ public class CompactionTaskStatusReportTest {
     @Test
     public void shouldReportCompactionTaskUnfinishedAndFinished() throws Exception {
         // Given
-        CompactionTaskStatus unfinishedTask = CompactionTaskStatus.builder()
-                .started(Instant.parse("2022-10-06T12:17:00.001Z"))
-                .taskId("unfinished-task").build();
-        CompactionTaskStatus finishedTask = CompactionTaskStatus.builder()
-                .started(Instant.parse("2022-10-06T12:20:00.001Z"))
-                .taskId("finished-task")
-                .finished(CompactionTaskFinishedStatus.builder()
-                                .addJobSummary(new RecordsProcessedSummary(
-                                        new RecordsProcessed(200L, 100L),
-                                        Instant.parse("2022-10-06T12:20:00.001Z"),
-                                        Instant.parse("2022-10-06T12:20:30.001Z"))),
-                        Instant.parse("2022-10-06T12:20:30.001Z")).build();
-        when(store.getAllTasks()).thenReturn(Arrays.asList(unfinishedTask, finishedTask));
+        CompactionTaskStatus unfinishedTask = startedTask("unfinished-task", "2022-10-06T12:17:00.001Z");
+        CompactionTaskStatus finishedTask = finishedTask("finished-task", "2022-10-06T12:20:00.001Z",
+                "2022-10-06T12:20:30.001Z", 200L, 100L);
+        when(store.getAllTasks()).thenReturn(Arrays.asList(finishedTask, unfinishedTask));
 
         // When / Then
         assertThat(getStandardReport(CompactionTaskQuery.ALL)).hasToString(
                 example("reports/compaction/task/unfinishedAndFinished.txt"));
         assertThat(getJsonReport(CompactionTaskQuery.ALL)).hasToString(
                 example("reports/compaction/task/unfinishedAndFinished.json"));
+    }
+
+    @Test
+    public void shouldReportMixedTypesOfCompactionTask() throws Exception {
+        // Given
+        CompactionTaskStatus unfinishedTask = startedTask("A", "2022-10-06T12:18:00.001Z");
+        CompactionTaskStatus finishedTask = finishedTask("B", "2022-10-06T12:20:00.001Z",
+                "2022-10-06T12:20:30.001Z", 200L, 100L);
+        CompactionTaskStatus unfinishedSplittingTask = startedSplittingTask("C", "2022-10-06T12:22:00.001Z");
+        CompactionTaskStatus finishedSplittingTask = finishedSplittingTask("D", "2022-10-06T12:24:00.001Z",
+                "2022-10-06T12:24:30.001Z", 400L, 200L);
+        when(store.getAllTasks()).thenReturn(Arrays.asList(finishedSplittingTask, unfinishedSplittingTask, finishedTask, unfinishedTask));
+
+        // When / Then
+        assertThat(getStandardReport(CompactionTaskQuery.ALL)).hasToString(
+                example("reports/compaction/task/mixedTypes.txt"));
+        assertThat(getJsonReport(CompactionTaskQuery.ALL)).hasToString(
+                example("reports/compaction/task/mixedTypes.json"));
+    }
+
+    @Test
+    public void shouldReportMultipleJobRunsOnCompactionTasks() throws Exception {
+        // Given
+        CompactionTaskStatus finishedTask = finishedTaskWithFourRuns("A", "2022-10-06T12:20:00.001Z",
+                "2022-10-06T12:20:40.001Z", 800L, 400L);
+        CompactionTaskStatus finishedSplittingTask = finishedSplittingTaskWithFourRuns("B", "2022-10-06T12:24:00.001Z",
+                "2022-10-06T12:24:40.001Z", 1600L, 800L);
+        when(store.getAllTasks()).thenReturn(Arrays.asList(finishedSplittingTask, finishedTask));
+
+        // When / Then
+        assertThat(getStandardReport(CompactionTaskQuery.ALL)).hasToString(
+                example("reports/compaction/task/multipleJobRunsOnTasks.txt"));
+        assertThat(getJsonReport(CompactionTaskQuery.ALL)).hasToString(
+                example("reports/compaction/task/multipleJobRunsOnTasks.json"));
     }
 
     private String getStandardReport(CompactionTaskQuery query) {
