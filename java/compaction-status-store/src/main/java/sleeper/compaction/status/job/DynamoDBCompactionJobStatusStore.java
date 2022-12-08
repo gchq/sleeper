@@ -64,10 +64,10 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     public static CompactionJobStatusStore from(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
-        if (Boolean.TRUE.equals(properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED))) {
+        if (properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
             return new DynamoDBCompactionJobStatusStore(dynamoDB, properties);
         } else {
-            return CompactionJobStatusStore.none();
+            return CompactionJobStatusStore.NONE;
         }
     }
 

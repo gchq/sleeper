@@ -65,7 +65,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
         return properties.getProperty(property.getPropertyName(), property.getDefaultValue());
     }
 
-    public Boolean getBoolean(T property) {
+    public boolean getBoolean(T property) {
         return Boolean.parseBoolean(get(property));
     }
 

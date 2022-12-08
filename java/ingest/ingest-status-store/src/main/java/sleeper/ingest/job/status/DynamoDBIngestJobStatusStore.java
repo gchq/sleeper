@@ -37,7 +37,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     public static IngestJobStatusStore from(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
-        if (Boolean.TRUE.equals(properties.getBoolean(INGEST_STATUS_STORE_ENABLED))) {
+        if (properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
             return new DynamoDBIngestJobStatusStore(dynamoDB, properties);
         } else {
             return IngestJobStatusStore.none();

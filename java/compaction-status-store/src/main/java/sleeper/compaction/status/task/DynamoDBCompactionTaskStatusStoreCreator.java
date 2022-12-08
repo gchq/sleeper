@@ -28,6 +28,7 @@ import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusFormat.
 import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusFormat.TASK_ID;
 import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusFormat.UPDATE_TIME;
 import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore.taskStatusTableName;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
@@ -38,6 +39,9 @@ public class DynamoDBCompactionTaskStatusStoreCreator {
     }
 
     public static void create(InstanceProperties properties, AmazonDynamoDB dynamoDB) {
+        if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
+            return;
+        }
         String tableName = taskStatusTableName(properties.get(ID));
         initialiseTable(dynamoDB, tableName,
                 Arrays.asList(
@@ -47,5 +51,12 @@ public class DynamoDBCompactionTaskStatusStoreCreator {
                         new KeySchemaElement(TASK_ID, KeyType.HASH),
                         new KeySchemaElement(UPDATE_TIME, KeyType.RANGE)));
         configureTimeToLive(dynamoDB, tableName, EXPIRY_DATE);
+    }
+
+    public static void tearDown(InstanceProperties properties, AmazonDynamoDB dynamoDBClient) {
+        if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
+            return;
+        }
+        dynamoDBClient.deleteTable(taskStatusTableName(properties.get(ID)));
     }
 }

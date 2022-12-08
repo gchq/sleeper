@@ -16,14 +16,18 @@
 package sleeper.compaction.status.task;
 
 import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
+import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import org.junit.After;
 import org.junit.Test;
+import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore.taskStatusTableName;
 import static sleeper.compaction.status.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 public class DynamoDBCompactionTaskStatusStoreCreatorIT extends DynamoDBTestBase {
@@ -35,14 +39,34 @@ public class DynamoDBCompactionTaskStatusStoreCreatorIT extends DynamoDBTestBase
     public void shouldCreateStore() {
         // When
         DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        CompactionTaskStatusStore store = DynamoDBCompactionTaskStatusStore.from(dynamoDBClient, instanceProperties);
 
         // Then
         assertThat(dynamoDBClient.describeTable(tableName))
                 .extracting(DescribeTableResult::getTable).isNotNull();
+        assertThat(store).isInstanceOf(DynamoDBCompactionTaskStatusStore.class);
+    }
+
+    @Test
+    public void shouldNotCreateStoreIfDisabled() {
+        // Given
+        instanceProperties.set(COMPACTION_STATUS_STORE_ENABLED, "false");
+
+        // When
+        DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        CompactionTaskStatusStore store = DynamoDBCompactionTaskStatusStore.from(dynamoDBClient, instanceProperties);
+
+        // Then
+        assertThatThrownBy(() -> dynamoDBClient.describeTable(tableName))
+                .isInstanceOf(ResourceNotFoundException.class);
+        assertThat(store).isSameAs(CompactionTaskStatusStore.NONE);
+        assertThatThrownBy(store::getAllTasks).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(store::getTasksInProgress).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> store.getTask("some-task")).isInstanceOf(UnsupportedOperationException.class);
     }
 
     @After
     public void tearDown() {
-        dynamoDBClient.deleteTable(tableName);
+        DynamoDBCompactionTaskStatusStoreCreator.tearDown(instanceProperties, dynamoDBClient);
     }
 }
