@@ -78,10 +78,10 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
     public void taskFinished(IngestTaskStatus taskStatus) {
         try {
             PutItemResult result = putItem(DynamoDBIngestTaskStatusFormat.createTaskFinishedRecord(taskStatus, timeToLive));
-            LOGGER.debug("Put started event for task {} to table {}, capacity consumed = {}",
+            LOGGER.debug("Put finished event for task {} to table {}, capacity consumed = {}",
                     taskStatus.getTaskId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed putItem in taskStarted", e);
+            throw new IngestStatusStoreException("Failed putItem in taskFinished", e);
         }
     }
 
