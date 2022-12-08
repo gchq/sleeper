@@ -13,37 +13,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.status.report.compaction.job.query;
+package sleeper.status.report.job.query;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.status.report.compaction.job.CompactionJobQuery;
+import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class DetailedCompactionJobQuery implements CompactionJobQuery {
+public class DetailedJobsQuery implements JobQuery {
 
     private final List<String> jobIds;
 
-    public DetailedCompactionJobQuery(List<String> jobIds) {
+    public DetailedJobsQuery(List<String> jobIds) {
         this.jobIds = jobIds;
-    }
-
-    public static CompactionJobQuery fromParameters(String queryParameters) {
-        if ("".equals(queryParameters)) {
-            return null;
-        }
-        return new DetailedCompactionJobQuery(Arrays.asList(queryParameters.split(",")));
     }
 
     @Override
     public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
+        return run(statusStore::getJob);
+    }
+
+    @Override
+    public List<IngestJobStatus> run(IngestJobStatusStore statusStore) {
+        return run(statusStore::getJob);
+    }
+
+    private <T> List<T> run(Function<String, Optional<T>> getJob) {
         return jobIds.stream()
-                .map(statusStore::getJob)
+                .map(getJob)
                 .filter(Optional::isPresent).map(Optional::get)
                 .collect(Collectors.toList());
     }
+
+    public static JobQuery fromParameters(String queryParameters) {
+        if ("".equals(queryParameters)) {
+            return null;
+        }
+        return new DetailedJobsQuery(Arrays.asList(queryParameters.split(",")));
+    }
+
 }

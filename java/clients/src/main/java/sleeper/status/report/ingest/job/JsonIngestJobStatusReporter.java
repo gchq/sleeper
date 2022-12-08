@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.status.report.compaction.job;
+package sleeper.status.report.ingest.job;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -22,52 +22,54 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
-import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.status.report.job.query.JobQuery;
 
 import java.io.PrintStream;
 import java.time.Instant;
 import java.util.List;
 
-public class JsonCompactionJobStatusReporter implements CompactionJobStatusReporter {
+public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
     private final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues()
             .registerTypeAdapter(Instant.class, instantJsonSerializer())
-            .registerTypeAdapter(CompactionJobStatus.class, compactionJobStatusJsonSerializer())
+            .registerTypeAdapter(IngestJobStatus.class, ingestJobStatusJsonSerializer())
             .setPrettyPrinting()
             .create();
     private final PrintStream out;
 
-    public JsonCompactionJobStatusReporter() {
+    public JsonIngestJobStatusReporter() {
         this(System.out);
     }
 
-    public JsonCompactionJobStatusReporter(PrintStream out) {
+    public JsonIngestJobStatusReporter(PrintStream out) {
         this.out = out;
     }
 
     @Override
-    public void report(List<CompactionJobStatus> statusList, JobQuery.Type queryType) {
-        out.println(gson.toJson(statusList));
+    public void report(List<IngestJobStatus> statusList, JobQuery.Type queryType, int numberInQueue) {
+        out.println(gson.toJson(createJsonReport(statusList, numberInQueue)));
+    }
+
+    private JsonObject createJsonReport(List<IngestJobStatus> statusList, int numberInQueue) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("numberInQueue", numberInQueue);
+        jsonObject.add("jobList", gson.toJsonTree(statusList));
+        return jsonObject;
     }
 
     private static JsonSerializer<Instant> instantJsonSerializer() {
         return (instant, type, context) -> new JsonPrimitive(instant.toString());
     }
 
-    private JsonSerializer<CompactionJobStatus> compactionJobStatusJsonSerializer() {
-        return (jobStatus, type, context) -> createCompactionJobJson(jobStatus);
+    private JsonSerializer<IngestJobStatus> ingestJobStatusJsonSerializer() {
+        return (jobStatus, type, context) -> createIngestJobJson(jobStatus);
     }
 
-    private JsonElement createCompactionJobJson(CompactionJobStatus jobStatus) {
+    private JsonElement createIngestJobJson(IngestJobStatus jobStatus) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("jobId", jobStatus.getJobId());
         jsonObject.add("jobRunList", gson.toJsonTree(jobStatus.getJobRuns()));
-        JsonObject createdStatus = new JsonObject();
-        createdStatus.addProperty("updateTime", jobStatus.getCreateUpdateTime().toString());
-        createdStatus.addProperty("partitionId", jobStatus.getPartitionId());
-        createdStatus.add("childPartitionIds", gson.toJsonTree(jobStatus.getChildPartitionIds()));
-        createdStatus.addProperty("inputFilesCount", jobStatus.getInputFilesCount());
-        jsonObject.add("createdStatus", createdStatus);
+        jsonObject.addProperty("inputFilesCount", jobStatus.getInputFilesCount());
         return jsonObject;
     }
 }

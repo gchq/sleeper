@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package sleeper.status.report.compaction.job;
+package sleeper.status.report.query;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.status.report.job.query.JobQuery;
 
 import java.time.Instant;
 import java.util.List;
@@ -25,9 +26,9 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
-import static sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
+import static sleeper.status.report.job.query.JobQuery.Type;
 
-public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
+public class JobQueryPromptTest extends JobQueryTestBase {
 
     private static final String QUERY_TYPE_PROMPT = "All (a), Detailed (d), range (r), or unfinished (u) query? \n";
     private static final String DETAILED_JOB_ID_PROMPT = "Enter jobId to get detailed information about: \n";
@@ -85,7 +86,7 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
         in.enterNextPrompts("d", queryParameters);
 
         // When
-        CompactionJobQuery query = queryByPrompt();
+        JobQuery query = queryByPrompt();
 
         // Then
         assertThat(out).hasToString(QUERY_TYPE_PROMPT + DETAILED_JOB_ID_PROMPT);
@@ -192,7 +193,7 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
         in.enterNextPrompts("");
 
         // When
-        CompactionJobQuery query = queryByPrompt();
+        JobQuery query = queryByPrompt();
 
         // Then
         assertThat(out).hasToString(QUERY_TYPE_PROMPT);
@@ -200,14 +201,14 @@ public class CompactionJobQueryPromptTest extends CompactionJobQueryTestBase {
     }
 
     private List<CompactionJobStatus> queryStatusByPrompt() {
-        return queryStatuses(QueryType.PROMPT);
+        return queryStatuses(Type.PROMPT);
     }
 
     private List<CompactionJobStatus> queryStatusByPromptAtTime(Instant time) {
-        return queryStatusesAtTime(QueryType.PROMPT, time);
+        return queryStatusesAtTime(Type.PROMPT, time);
     }
 
-    private CompactionJobQuery queryByPrompt() {
-        return queryFrom(QueryType.PROMPT);
+    private JobQuery queryByPrompt() {
+        return queryFrom(Type.PROMPT);
     }
 }

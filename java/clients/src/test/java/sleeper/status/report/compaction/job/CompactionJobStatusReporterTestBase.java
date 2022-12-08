@@ -28,7 +28,7 @@ import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.status.report.StatusReporterTestHelper;
-import sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
+import sleeper.status.report.job.query.JobQuery.Type;
 
 import java.io.PrintStream;
 import java.time.Duration;
@@ -176,7 +176,7 @@ public abstract class CompactionJobStatusReporterTestBase {
     }
 
     public String verboseReportString(Function<PrintStream, CompactionJobStatusReporter> getReporter, List<CompactionJobStatus> statusList,
-                                      QueryType queryType) {
+                                      Type queryType) {
         ToStringPrintStream out = new ToStringPrintStream();
         getReporter.apply(out.getPrintStream())
                 .report(statusList, queryType);

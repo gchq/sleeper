@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.status.report.compaction.job;
+package sleeper.status.report.query;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobStatus;
@@ -26,13 +26,13 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
-import static sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
+import static sleeper.status.report.job.query.JobQuery.Type;
 
-public class CompactionJobQueryTest extends CompactionJobQueryTestBase {
+public class JobQueryTest extends JobQueryTestBase {
     @Test
     public void shouldCreateAllQueryWithNoParameters() {
         // Given
-        QueryType queryType = QueryType.ALL;
+        Type queryType = Type.ALL;
         when(statusStore.getAllJobs(TABLE_NAME)).thenReturn(exampleStatusList);
 
         // When
@@ -45,7 +45,7 @@ public class CompactionJobQueryTest extends CompactionJobQueryTestBase {
     @Test
     public void shouldCreateUnfinishedQueryWithNoParameters() {
         // Given
-        QueryType queryType = QueryType.UNFINISHED;
+        Type queryType = Type.UNFINISHED;
         when(statusStore.getUnfinishedJobs(TABLE_NAME)).thenReturn(exampleStatusList);
 
         // When
@@ -58,7 +58,7 @@ public class CompactionJobQueryTest extends CompactionJobQueryTestBase {
     @Test
     public void shouldCreateDetailedQueryWithSpecifiedJobIds() {
         // Given
-        QueryType queryType = QueryType.DETAILED;
+        Type queryType = Type.DETAILED;
         String queryParameters = "job1,job2";
         when(statusStore.getJob("job1")).thenReturn(Optional.of(exampleStatus1));
         when(statusStore.getJob("job2")).thenReturn(Optional.of(exampleStatus2));
@@ -73,7 +73,7 @@ public class CompactionJobQueryTest extends CompactionJobQueryTestBase {
     @Test
     public void shouldFailDetailedQueryWithNoJobIds() {
         // Given
-        QueryType queryType = QueryType.DETAILED;
+        Type queryType = Type.DETAILED;
 
         // When
         assertThatThrownBy(() -> queryStatuses(queryType))
@@ -83,7 +83,7 @@ public class CompactionJobQueryTest extends CompactionJobQueryTestBase {
     @Test
     public void shouldCreateRangeQueryWithSpecifiedDates() {
         // Given
-        QueryType queryType = QueryType.RANGE;
+        Type queryType = Type.RANGE;
         String queryParameters = "20221123115442,20221130115442";
         Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
@@ -99,7 +99,7 @@ public class CompactionJobQueryTest extends CompactionJobQueryTestBase {
     @Test
     public void shouldCreateRangeQueryWithDefaultDates() {
         // Given
-        QueryType queryType = QueryType.RANGE;
+        Type queryType = Type.RANGE;
         Instant start = Instant.parse("2022-11-30T07:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
         when(statusStore.getJobsInTimePeriod(TABLE_NAME, start, end)).thenReturn(exampleStatusList);
@@ -114,7 +114,7 @@ public class CompactionJobQueryTest extends CompactionJobQueryTestBase {
     @Test
     public void shouldFailRangeQueryWhenStartIsAfterEnd() {
         // Given
-        QueryType queryType = QueryType.RANGE;
+        Type queryType = Type.RANGE;
         String queryParameters = "20221130125442,20221130115442";
 
         // When / Then

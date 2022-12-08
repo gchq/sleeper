@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.status.report.compaction.job.query;
+package sleeper.status.report.job.query;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.console.ConsoleInput;
-import sleeper.status.report.compaction.job.CompactionJobQuery;
+import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -29,7 +30,7 @@ import java.util.List;
 import java.util.TimeZone;
 import java.util.function.Supplier;
 
-public class RangeCompactionJobQuery implements CompactionJobQuery {
+public class RangeJobsQuery implements JobQuery {
 
     public static final String DATE_FORMAT = "yyyyMMddHHmmss";
 
@@ -37,7 +38,7 @@ public class RangeCompactionJobQuery implements CompactionJobQuery {
     private final Instant start;
     private final Instant end;
 
-    public RangeCompactionJobQuery(String tableName, Instant start, Instant end) {
+    public RangeJobsQuery(String tableName, Instant start, Instant end) {
         if (start.isAfter(end)) {
             throw new IllegalArgumentException("Start of range provided is after end");
         }
@@ -46,28 +47,33 @@ public class RangeCompactionJobQuery implements CompactionJobQuery {
         this.end = end;
     }
 
-    public static CompactionJobQuery fromParameters(String tableName, String queryParameters, Clock clock) {
+    @Override
+    public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
+        return statusStore.getJobsInTimePeriod(tableName, start, end);
+    }
+
+    @Override
+    public List<IngestJobStatus> run(IngestJobStatusStore statusStore) {
+        return statusStore.getJobsInTimePeriod(tableName, start, end);
+    }
+
+    public static JobQuery fromParameters(String tableName, String queryParameters, Clock clock) {
         if (queryParameters == null) {
             Instant end = clock.instant();
             Instant start = end.minus(Duration.ofHours(4));
-            return new RangeCompactionJobQuery(tableName, start, end);
+            return new RangeJobsQuery(tableName, start, end);
         } else {
             String[] parts = queryParameters.split(",");
             Instant start = parseStart(parts[0], clock);
             Instant end = parseEnd(parts[1], clock);
-            return new RangeCompactionJobQuery(tableName, start, end);
+            return new RangeJobsQuery(tableName, start, end);
         }
     }
 
-    public static CompactionJobQuery prompt(String tableName, ConsoleInput in, Clock clock) {
+    public static JobQuery prompt(String tableName, ConsoleInput in, Clock clock) {
         Instant start = promptStart(in, clock);
         Instant end = promptEnd(in, clock);
-        return new RangeCompactionJobQuery(tableName, start, end);
-    }
-
-    @Override
-    public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
-        return statusStore.getJobsInTimePeriod(tableName, start, end);
+        return new RangeJobsQuery(tableName, start, end);
     }
 
     private static Instant promptStart(ConsoleInput in, Clock clock) {

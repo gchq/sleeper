@@ -13,22 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.status.report.compaction.job.query;
 
-import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.status.report.compaction.job.CompactionJobQuery;
+package sleeper.status.report.ingest.job;
+
+import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.status.report.job.query.JobQuery;
 
 import java.util.List;
 
-public class AllCompactionJobQuery implements CompactionJobQuery {
-    private final String tableName;
+public interface IngestJobStatusReporter {
 
-    public AllCompactionJobQuery(String tableName) {
-        this.tableName = tableName;
-    }
+    void report(List<IngestJobStatus> jobStatusList, JobQuery.Type queryType, int numberInQueue);
 
-    public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
-        return statusStore.getAllJobs(tableName);
-    }
 }

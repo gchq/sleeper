@@ -18,7 +18,7 @@ package sleeper.status.report.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
+import sleeper.status.report.job.query.JobQuery;
 
 import java.util.Collections;
 import java.util.List;
@@ -34,9 +34,9 @@ public class CompactionJobStatusReporterDetailedQueryTest extends CompactionJobS
         List<CompactionJobStatus> statusList = mixedJobStatuses();
 
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.DETAILED))
                 .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compaction/job/standard/detailed/mixedJobs.txt")));
-        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
+        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.DETAILED))
                 .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compaction/job/json/mixedJobs.json")));
     }
 
@@ -46,9 +46,9 @@ public class CompactionJobStatusReporterDetailedQueryTest extends CompactionJobS
         List<CompactionJobStatus> statusList = jobWithMultipleRuns();
 
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.DETAILED))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.DETAILED))
                 .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compaction/job/standard/detailed/jobWithMultipleRuns.txt")));
-        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.DETAILED))
+        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.DETAILED))
                 .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compaction/job/json/jobWithMultipleRuns.json")));
     }
 
@@ -58,9 +58,9 @@ public class CompactionJobStatusReporterDetailedQueryTest extends CompactionJobS
         List<CompactionJobStatus> statusList = jobsWithLargeAndDecimalStatistics();
 
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.DETAILED))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.DETAILED))
                 .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compaction/job/standard/detailed/jobsWithLargeAndDecimalStatistics.txt")));
-        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, CompactionJobStatusReporter.QueryType.DETAILED))
+        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.DETAILED))
                 .isEqualTo(replaceBracketedJobIds(statusList, example("reports/compaction/job/json/jobsWithLargeAndDecimalStatistics.json")));
     }
 
@@ -70,9 +70,9 @@ public class CompactionJobStatusReporterDetailedQueryTest extends CompactionJobS
         List<CompactionJobStatus> statusList = Collections.emptyList();
 
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.DETAILED))
                 .isEqualTo(example("reports/compaction/job/standard/detailed/noJobFound.txt"));
-        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, QueryType.DETAILED))
+        assertThatJson(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.DETAILED))
                 .isEqualTo(example("reports/compaction/job/json/noJobs.json"));
 
     }

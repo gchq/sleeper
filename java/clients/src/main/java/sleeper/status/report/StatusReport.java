@@ -34,10 +34,10 @@ import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
-import sleeper.status.report.compaction.job.CompactionJobStatusReporter.QueryType;
 import sleeper.status.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.status.report.compaction.task.CompactionTaskQuery;
 import sleeper.status.report.compaction.task.StandardCompactionTaskStatusReporter;
+import sleeper.status.report.job.query.JobQuery;
 
 import java.io.IOException;
 
@@ -90,7 +90,7 @@ public class StatusReport {
                 .instanceId(instanceProperties.get(ID))
                 .tableName(tableProperties.get(TABLE_NAME))
                 .reporter(new StandardCompactionJobStatusReporter())
-                .queryType(QueryType.UNFINISHED)
+                .queryType(JobQuery.Type.UNFINISHED)
                 .build()).run();
 
         // Tasks

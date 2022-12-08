@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.status.report.compaction.job;
+
+package sleeper.status.report.ingest.job;
 
 import org.junit.Test;
+import sleeper.status.report.job.query.JobQuery;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.status.report.job.query.JobQuery.Type;
 
-public class CompactionJobStatusReportArgumentsTest {
-
+public class IngestJobStatusReportArgumentsTest {
     @Test
     public void shouldSetDefaultArguments() {
-        assertThat(CompactionJobStatusReportArguments.from("test-instance", "test-table"))
+        assertThat(IngestJobStatusReportArguments.from("test-instance", "test-table"))
                 .usingRecursiveComparison()
-                .isEqualTo(CompactionJobStatusReportArguments.builder()
+                .isEqualTo(IngestJobStatusReportArguments.builder()
                         .instanceId("test-instance").tableName("test-table")
-                        .queryType(Type.PROMPT)
-                        .reporter(new StandardCompactionJobStatusReporter(System.out))
+                        .queryType(JobQuery.Type.PROMPT)
+                        .reporter(new StandardIngestJobStatusReporter(System.out))
                         .build());
     }
 }
