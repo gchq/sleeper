@@ -42,26 +42,26 @@ public class PartitionsStatusReportTest {
     private final StateStore stateStore = mock(StateStore.class);
 
     @Test
-    public void shouldReportRootPartitionWithNoLeaves() throws StateStoreException, IOException {
+    public void shouldReportRootPartitionWithNoChildren() throws StateStoreException, IOException {
         // Given
-        when(stateStore.getAllPartitions()).thenReturn(createRootPartitionWithNoLeaves());
+        when(stateStore.getAllPartitions()).thenReturn(createRootPartitionWithNoChildren());
 
         // When
         assertThat(getStandardReport()).hasToString(
-                example("reports/partitions/rootWithNoLeaves.txt"));
+                example("reports/partitions/rootWithNoChildren.txt"));
     }
 
     @Test
-    public void shouldReportRootPartitionWithTwoLeaves() throws StateStoreException, IOException {
+    public void shouldReportRootPartitionWithTwoChildren() throws StateStoreException, IOException {
         // Given
-        when(stateStore.getAllPartitions()).thenReturn(createRootPartitionWithTwoLeaves());
+        when(stateStore.getAllPartitions()).thenReturn(createRootPartitionWithTwoChildren());
 
         // When
         assertThat(getStandardReport()).hasToString(
-                example("reports/partitions/rootWithTwoLeaves.txt"));
+                example("reports/partitions/rootWithTwoChildren.txt"));
     }
 
-    private List<Partition> createRootPartitionWithTwoLeaves() {
+    private List<Partition> createRootPartitionWithTwoChildren() {
         PartitionFactory partitionFactory = createPartitionFactory();
         Partition a = partitionFactory.partition("A", "", "aaa");
         Partition b = partitionFactory.partition("B", "aaa", null);
@@ -69,7 +69,7 @@ public class PartitionsStatusReportTest {
         return Arrays.asList(parent, a, b);
     }
 
-    private List<Partition> createRootPartitionWithNoLeaves() {
+    private List<Partition> createRootPartitionWithNoChildren() {
         PartitionFactory partitionFactory = createPartitionFactory();
         Partition root = partitionFactory.partition("root", "", null);
         return Collections.singletonList(root);
