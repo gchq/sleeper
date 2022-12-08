@@ -24,6 +24,7 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static sleeper.ingest.job.IngestJobSource.Callback;
 import static sleeper.ingest.task.TestIngestTaskStatus.finishedNoJobs;
 
 public class IngestJobQueueConsumerRunnerTest {
@@ -34,15 +35,46 @@ public class IngestJobQueueConsumerRunnerTest {
 
     @Test
     public void shouldRunAndReportTaskWithNoJobs() throws Exception {
+        // Given
         String taskId = "test-task";
         Instant startTime = Instant.parse("2022-12-07T12:37:00.123Z");
         Instant finishTime = Instant.parse("2022-12-07T12:38:00.123Z");
-        IngestJobSource.Callback callback = jobRunner::ingest;
+        Callback callback = jobRunner::ingest;
+
+        // When
         IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(queueConsumer, taskId, statusStore,
-                () -> startTime, () -> finishTime, callback);
+                () -> startTime, () -> finishTime, Instant::now, Instant::now, callback);
         runner.run();
 
+        // Then
         assertThat(statusStore.getAllTasks()).containsExactly(finishedNoJobs(taskId, startTime, finishTime));
         verify(queueConsumer).consumeJobs(callback);
     }
+/*
+    @Test
+    public void shouldRunAndReportTaskWithOneJob() throws Exception {
+        // Given
+        String taskId = "test-task";
+        Instant startTaskTime = Instant.parse("2022-12-07T12:37:00.123Z");
+        Instant finishTaskTime = Instant.parse("2022-12-07T12:38:00.123Z");
+        Instant startJobTime = Instant.parse("2022-12-07T12:37:20.123Z");
+        Instant finishJobTime = Instant.parse("2022-12-07T12:37:50.123Z");
+        Callback callback = jobRunner::ingest;
+
+        IngestJob job = IngestJob.builder()
+                .id("test-job")
+                .files(Collections.emptyList())
+                .build();
+        when(queueConsumer.waitForMessage()).thenReturn(Optional.of(IngestJobProviderResult.from(job, "receipt")));
+
+        // When
+        IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(queueConsumer, taskId, statusStore,
+                () -> startTaskTime, () -> finishTaskTime, () -> startJobTime, () -> finishJobTime, callback);
+        runner.run();
+
+        // Then
+        assertThat(statusStore.getAllTasks()).containsExactly(finishedOneJob(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime));
+        verify(queueConsumer).consumeJobs(callback);
+    }
+ */
 }

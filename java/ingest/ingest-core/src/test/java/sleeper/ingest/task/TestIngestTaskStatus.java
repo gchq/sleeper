@@ -15,6 +15,9 @@
  */
 package sleeper.ingest.task;
 
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
+
 import java.time.Instant;
 
 public class TestIngestTaskStatus {
@@ -24,6 +27,7 @@ public class TestIngestTaskStatus {
     public static IngestTaskStatus finishedNoJobsDefault() {
         return finishedNoJobsDefault(startedBuilderWithDefaults());
     }
+
 
     public static IngestTaskStatus finishedNoJobsDefault(IngestTaskStatus.Builder builder) {
         return finishedNoJobs(builder, Instant.parse("2022-12-07T14:57:00.001Z"));
@@ -35,6 +39,31 @@ public class TestIngestTaskStatus {
 
     public static IngestTaskStatus finishedNoJobs(IngestTaskStatus.Builder builder, Instant finishTime) {
         return builder.finished(IngestTaskFinishedStatus.builder(), finishTime).build();
+    }
+
+    public static IngestTaskStatus finishedOneJobDefault() {
+        return finishedOneJob(startedBuilderWithDefaults(), IngestTaskFinishedStatus.builder());
+    }
+
+    public static IngestTaskStatus finishedOneJob(String taskId, Instant startTaskTime, Instant finishTaskTime,
+                                                  Instant startJobTime, Instant finishJobTime) {
+        return IngestTaskStatus.builder().taskId(taskId).startTime(startTaskTime)
+                .finishedStatus(IngestTaskFinishedStatus.builder().addJobSummary(
+                                new RecordsProcessedSummary(
+                                        new RecordsProcessed(0L, 0L),
+                                        startJobTime, finishJobTime))
+                        .finish(startTaskTime, finishTaskTime)
+                        .build())
+                .build();
+    }
+
+    public static IngestTaskStatus finishedOneJob(IngestTaskStatus.Builder builder, IngestTaskFinishedStatus.Builder finishedStatusBuilder) {
+        return builder.finished(IngestTaskFinishedStatus.builder()
+                        .addJobSummary(new RecordsProcessedSummary(
+                                new RecordsProcessed(0L, 0L),
+                                Instant.parse("2022-12-07T12:37:20.123Z"),
+                                Instant.parse("2022-12-07T12:37:50.123Z"))),
+                Instant.parse("2022-12-07T12:38:00.123Z")).build();
     }
 
     public static IngestTaskStatus.Builder startedBuilderWithDefaults() {

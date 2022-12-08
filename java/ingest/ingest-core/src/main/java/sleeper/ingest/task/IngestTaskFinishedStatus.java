@@ -19,6 +19,7 @@ package sleeper.ingest.task;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.ingest.IngestResult;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -163,6 +164,13 @@ public class IngestTaskFinishedStatus {
         public Builder recordsWrittenPerSecond(double recordsWrittenPerSecond) {
             this.recordsWrittenPerSecond = recordsWrittenPerSecond;
             return this;
+        }
+
+        public Builder addIngestResult(IngestResult result, Instant startTime, Instant finishTime) {
+            return addJobSummary(
+                    new RecordsProcessedSummary(
+                            new RecordsProcessed(result.getNumberOfRecords(), result.getNumberOfRecords()),
+                            startTime, finishTime));
         }
 
         public Builder addJobSummary(RecordsProcessedSummary jobSummary) {
