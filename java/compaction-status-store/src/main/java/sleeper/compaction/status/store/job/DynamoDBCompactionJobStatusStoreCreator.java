@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.status.task;
+package sleeper.compaction.status.store.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
@@ -24,31 +24,31 @@ import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.Arrays;
 
-import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusFormat.EXPIRY_DATE;
-import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusFormat.TASK_ID;
-import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusFormat.UPDATE_TIME;
-import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore.taskStatusTableName;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.EXPIRY_DATE;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 
-public class DynamoDBCompactionTaskStatusStoreCreator {
+public class DynamoDBCompactionJobStatusStoreCreator {
 
-    private DynamoDBCompactionTaskStatusStoreCreator() {
+    private DynamoDBCompactionJobStatusStoreCreator() {
     }
 
     public static void create(InstanceProperties properties, AmazonDynamoDB dynamoDB) {
         if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
             return;
         }
-        String tableName = taskStatusTableName(properties.get(ID));
+        String tableName = jobStatusTableName(properties.get(ID));
         initialiseTable(dynamoDB, tableName,
                 Arrays.asList(
-                        new AttributeDefinition(TASK_ID, ScalarAttributeType.S),
+                        new AttributeDefinition(JOB_ID, ScalarAttributeType.S),
                         new AttributeDefinition(UPDATE_TIME, ScalarAttributeType.N)),
                 Arrays.asList(
-                        new KeySchemaElement(TASK_ID, KeyType.HASH),
+                        new KeySchemaElement(JOB_ID, KeyType.HASH),
                         new KeySchemaElement(UPDATE_TIME, KeyType.RANGE)));
         configureTimeToLive(dynamoDB, tableName, EXPIRY_DATE);
     }
@@ -57,6 +57,6 @@ public class DynamoDBCompactionTaskStatusStoreCreator {
         if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
             return;
         }
-        dynamoDBClient.deleteTable(taskStatusTableName(properties.get(ID)));
+        dynamoDBClient.deleteTable(jobStatusTableName(properties.get(ID)));
     }
 }

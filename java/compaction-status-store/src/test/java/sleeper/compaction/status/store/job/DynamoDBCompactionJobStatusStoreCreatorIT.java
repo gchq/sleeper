@@ -13,38 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.status.task;
+package sleeper.compaction.status.store.job;
 
 import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import org.junit.After;
 import org.junit.Test;
-import sleeper.compaction.task.CompactionTaskStatusStore;
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore.taskStatusTableName;
-import static sleeper.compaction.status.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
-public class DynamoDBCompactionTaskStatusStoreCreatorIT extends DynamoDBTestBase {
+public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase {
 
-    private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final String tableName = taskStatusTableName(instanceProperties.get(ID));
+    private final InstanceProperties instanceProperties = CompactionStatusStoreTestUtils.createInstanceProperties();
+    private final String tableName = DynamoDBCompactionJobStatusStore.jobStatusTableName(instanceProperties.get(ID));
 
     @Test
     public void shouldCreateStore() {
         // When
-        DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDBClient);
-        CompactionTaskStatusStore store = DynamoDBCompactionTaskStatusStore.from(dynamoDBClient, instanceProperties);
+        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        CompactionJobStatusStore store = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
 
         // Then
         assertThat(dynamoDBClient.describeTable(tableName))
                 .extracting(DescribeTableResult::getTable).isNotNull();
-        assertThat(store).isInstanceOf(DynamoDBCompactionTaskStatusStore.class);
+        assertThat(store).isInstanceOf(DynamoDBCompactionJobStatusStore.class);
     }
 
     @Test
@@ -53,20 +52,20 @@ public class DynamoDBCompactionTaskStatusStoreCreatorIT extends DynamoDBTestBase
         instanceProperties.set(COMPACTION_STATUS_STORE_ENABLED, "false");
 
         // When
-        DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDBClient);
-        CompactionTaskStatusStore store = DynamoDBCompactionTaskStatusStore.from(dynamoDBClient, instanceProperties);
+        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        CompactionJobStatusStore store = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, instanceProperties);
 
         // Then
         assertThatThrownBy(() -> dynamoDBClient.describeTable(tableName))
                 .isInstanceOf(ResourceNotFoundException.class);
-        assertThat(store).isSameAs(CompactionTaskStatusStore.NONE);
-        assertThatThrownBy(store::getAllTasks).isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(store::getTasksInProgress).isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(() -> store.getTask("some-task")).isInstanceOf(UnsupportedOperationException.class);
+        assertThat(store).isSameAs(CompactionJobStatusStore.NONE);
+        assertThatThrownBy(() -> store.getAllJobs("some-table")).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> store.getUnfinishedJobs("some-table")).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> store.getJob("some-job")).isInstanceOf(UnsupportedOperationException.class);
     }
 
     @After
     public void tearDown() {
-        DynamoDBCompactionTaskStatusStoreCreator.tearDown(instanceProperties, dynamoDBClient);
+        DynamoDBCompactionJobStatusStoreCreator.tearDown(instanceProperties, dynamoDBClient);
     }
 }

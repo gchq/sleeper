@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.status.testutils;
+package sleeper.compaction.status.store.testutils;
 
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.After;
@@ -23,8 +23,8 @@ import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
-import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStoreCreator;
+import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
@@ -44,10 +44,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
-import static sleeper.compaction.status.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
-import static sleeper.compaction.status.testutils.CompactionStatusStoreTestUtils.createSchema;
-import static sleeper.compaction.status.testutils.CompactionStatusStoreTestUtils.createTableProperties;
+import static sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
+import static sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils.createSchema;
+import static sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils.createTableProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -59,7 +58,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     public static final String DEFAULT_TASK_ID = "task-id";
     public static final String DEFAULT_TASK_ID_2 = "task-id-2";
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final String jobStatusTableName = jobStatusTableName(instanceProperties.get(ID));
+    private final String jobStatusTableName = DynamoDBCompactionJobStatusStore.jobStatusTableName(instanceProperties.get(ID));
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
 

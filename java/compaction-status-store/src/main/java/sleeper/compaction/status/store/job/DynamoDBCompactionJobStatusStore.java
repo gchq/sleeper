@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.status.job;
+package sleeper.compaction.status.store.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.status.CompactionStatusStoreException;
+import sleeper.compaction.status.store.CompactionStatusStoreException;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.core.record.process.RecordsProcessedSummary;
@@ -43,8 +43,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
-import static sleeper.compaction.status.job.DynamoDBCompactionJobStatusFormat.TABLE_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
@@ -124,7 +122,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     private Stream<CompactionJobStatus> getJobStream(String jobId) {
         QueryResult result = dynamoDB.query(new QueryRequest()
                 .withTableName(statusTableName)
-                .addKeyConditionsEntry(JOB_ID, new Condition()
+                .addKeyConditionsEntry(DynamoDBCompactionJobStatusFormat.JOB_ID, new Condition()
                         .withAttributeValueList(createStringAttribute(jobId))
                         .withComparisonOperator(ComparisonOperator.EQ)));
         return DynamoDBCompactionJobStatusFormat.streamJobStatuses(result.getItems());
@@ -164,7 +162,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     private ScanRequest createScanRequestByTable(String tableName) {
         return new ScanRequest()
                 .withTableName(statusTableName)
-                .addScanFilterEntry(TABLE_NAME, new Condition()
+                .addScanFilterEntry(DynamoDBCompactionJobStatusFormat.TABLE_NAME, new Condition()
                         .withAttributeValueList(createStringAttribute(tableName))
                         .withComparisonOperator(ComparisonOperator.EQ));
     }

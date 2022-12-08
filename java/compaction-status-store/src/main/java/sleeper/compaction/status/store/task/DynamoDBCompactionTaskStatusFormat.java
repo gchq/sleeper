@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.status.task;
+package sleeper.compaction.status.store.task;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import org.slf4j.Logger;

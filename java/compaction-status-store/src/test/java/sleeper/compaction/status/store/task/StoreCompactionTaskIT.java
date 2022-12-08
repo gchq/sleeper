@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package sleeper.compaction.status.task;
+package sleeper.compaction.status.store.task;
 
 import org.junit.Test;
-import sleeper.compaction.status.testutils.DynamoDBCompactionTaskStatusStoreTestBase;
+import sleeper.compaction.status.store.testutils.DynamoDBCompactionTaskStatusStoreTestBase;
 import sleeper.compaction.task.CompactionTaskStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;

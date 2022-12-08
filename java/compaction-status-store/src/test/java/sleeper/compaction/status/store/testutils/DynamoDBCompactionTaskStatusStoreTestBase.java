@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.status.testutils;
+package sleeper.compaction.status.store.testutils;
 
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.After;
 import org.junit.Before;
-import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore;
-import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStoreCreator;
+import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
+import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCreator;
 import sleeper.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
@@ -32,15 +32,14 @@ import sleeper.dynamodb.tools.DynamoDBTestBase;
 import java.time.Instant;
 import java.util.UUID;
 
-import static sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore.taskStatusTableName;
-import static sleeper.compaction.status.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
+import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore.taskStatusTableName;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase {
 
     protected static final RecursiveComparisonConfiguration IGNORE_EXPIRY_DATE = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("expiryDate").build();
-    private final InstanceProperties instanceProperties = createInstanceProperties();
+    private final InstanceProperties instanceProperties = CompactionStatusStoreTestUtils.createInstanceProperties();
     private final String taskStatusTableName = taskStatusTableName(instanceProperties.get(ID));
     protected final CompactionTaskStatusStore store = DynamoDBCompactionTaskStatusStore.from(dynamoDBClient, instanceProperties);
 
