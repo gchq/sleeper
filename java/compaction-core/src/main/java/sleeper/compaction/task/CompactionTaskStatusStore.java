@@ -16,17 +16,13 @@
 
 package sleeper.compaction.task;
 
-import sleeper.compaction.job.CompactionJobStatusStore;
-
 import java.time.Instant;
 import java.util.List;
 
 public interface CompactionTaskStatusStore {
 
-    static CompactionJobStatusStore none() {
-        return new CompactionJobStatusStore() {
-        };
-    }
+    CompactionTaskStatusStore NONE = new CompactionTaskStatusStore() {
+    };
 
     default void taskStarted(CompactionTaskStatus taskStatus) {
     }
