@@ -93,7 +93,7 @@ public class CompactSortedFilesTestUtils {
 
     public static CompactSortedFiles createCompactSortedFiles(
             Schema schema, CompactionJob compactionJob, StateStore stateStore, String taskId) {
-        return createCompactSortedFiles(schema, compactionJob, stateStore, CompactionJobStatusStore.none(), taskId);
+        return createCompactSortedFiles(schema, compactionJob, stateStore, CompactionJobStatusStore.NONE, taskId);
     }
 
     public static CompactSortedFiles createCompactSortedFiles(
