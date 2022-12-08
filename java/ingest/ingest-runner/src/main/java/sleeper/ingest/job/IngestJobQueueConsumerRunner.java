@@ -51,54 +51,47 @@ public class IngestJobQueueConsumerRunner {
     private final IngestJobSource jobSource;
     private final String taskId;
     private final IngestTaskStatusStore statusStore;
-    private final Supplier<Instant> getTaskStartTime;
-    private final Supplier<Instant> getTaskFinishTime;
-    private final Supplier<Instant> getJobStartTime;
-    private final Supplier<Instant> getJobFinishTime;
+    private final Supplier<Instant> getTimeNow;
     private final IngestJobHandler runJobCallback;
 
     public IngestJobQueueConsumerRunner(
             IngestJobSource jobSource, String taskId, IngestTaskStatusStore statusStore,
-            Supplier<Instant> getTaskStartTime, Supplier<Instant> getTaskFinishTime,
-            Supplier<Instant> getJobStartTime, Supplier<Instant> getJobFinishTime, IngestJobHandler runJobCallback) {
+            IngestJobHandler runJobCallback, Supplier<Instant> getTimeNow) {
+        this.getTimeNow = getTimeNow;
         this.jobSource = jobSource;
         this.taskId = taskId;
         this.statusStore = statusStore;
-        this.getTaskStartTime = getTaskStartTime;
-        this.getTaskFinishTime = getTaskFinishTime;
-        this.getJobStartTime = getJobStartTime;
-        this.getJobFinishTime = getJobFinishTime;
         this.runJobCallback = runJobCallback;
     }
 
     public IngestJobQueueConsumerRunner(
             IngestJobQueueConsumer queueConsumer, String taskId, IngestTaskStatusStore statusStore, IngestJobHandler runJobCallback) {
-        this(queueConsumer, taskId, statusStore, Instant::now, Instant::now, Instant::now, Instant::now, runJobCallback);
+        this(queueConsumer, taskId, statusStore, runJobCallback, Instant::now);
     }
 
     public void run() throws IOException, IteratorException, StateStoreException {
-        Instant startTaskTime = getTaskStartTime.get();
+        Instant startTaskTime = getTimeNow.get();
         IngestTaskStatus.Builder taskStatusBuilder = IngestTaskStatus.builder().taskId(taskId).startTime(startTaskTime);
         statusStore.taskStarted(taskStatusBuilder.build());
         LOGGER.info("IngestTask started at = {}", startTaskTime);
 
         IngestTaskFinishedStatus.Builder taskFinishedStatusBuilder = IngestTaskFinishedStatus.builder();
         jobSource.consumeJobs(job -> {
-            Instant startTime = getJobStartTime.get();
+            Instant startTime = getTimeNow.get();
             IngestResult result = runJobCallback.ingest(job);
-            Instant finishTime = getJobFinishTime.get();
+            Instant finishTime = getTimeNow.get();
             taskFinishedStatusBuilder.addIngestResult(result, startTime, finishTime);
             return result;
         });
 
-        Instant finishTaskTime = getTaskFinishTime.get();
+        Instant finishTaskTime = getTimeNow.get();
         taskStatusBuilder.finishedStatus(taskFinishedStatusBuilder
                 .finish(startTaskTime, finishTaskTime).build());
         statusStore.taskFinished(taskStatusBuilder.build());
         LOGGER.info("IngestTask finished at = {}", finishTaskTime);
     }
 
-    public static void main(String[] args) throws InterruptedException, IOException, StateStoreException, IteratorException, ObjectFactoryException {
+    public static void main(String[] args) throws IOException, StateStoreException, IteratorException, ObjectFactoryException {
         if (1 != args.length) {
             System.err.println("Error: must have 1 argument (s3Bucket)");
             System.exit(1);

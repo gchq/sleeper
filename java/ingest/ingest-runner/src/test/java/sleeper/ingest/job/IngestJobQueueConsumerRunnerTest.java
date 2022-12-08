@@ -22,7 +22,9 @@ import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.ingest.task.WriteToMemoryIngestTaskStatusStore;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedNoJobs;
@@ -43,8 +45,8 @@ public class IngestJobQueueConsumerRunnerTest {
         FixedIngestJobSource jobs = FixedIngestJobSource.empty();
 
         // When
-        IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(jobs, taskId, statusStore,
-                () -> startTime, () -> finishTime, Instant::now, Instant::now, jobRunner);
+        IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(jobs, taskId, statusStore, jobRunner,
+                timesInOrder(startTime, finishTime));
         runner.run();
 
         // Then
@@ -68,8 +70,8 @@ public class IngestJobQueueConsumerRunnerTest {
         FixedIngestJobSource jobs = FixedIngestJobSource.with(job);
 
         // When
-        IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(jobs, taskId, statusStore,
-                () -> startTaskTime, () -> finishTaskTime, () -> startJobTime, () -> finishJobTime, jobRunner);
+        IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(jobs, taskId, statusStore, jobRunner,
+                timesInOrder(startTaskTime, startJobTime, finishJobTime, finishTaskTime));
         runner.run();
 
         // Then
@@ -95,8 +97,8 @@ public class IngestJobQueueConsumerRunnerTest {
         FixedIngestJobSource jobs = FixedIngestJobSource.with(job);
 
         // When
-        IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(jobs, taskId, statusStore,
-                () -> startTaskTime, () -> finishTaskTime, () -> startJobTime, () -> finishJobTime, jobRunner);
+        IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(jobs, taskId, statusStore, jobRunner,
+                timesInOrder(startTaskTime, startJobTime, finishJobTime, finishTaskTime));
         runner.run();
 
         // Then
@@ -104,5 +106,9 @@ public class IngestJobQueueConsumerRunnerTest {
                 finishedOneJobOneFile(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime));
         assertThat(jobs.getIngestResults())
                 .containsExactly(IngestResultTestData.defaultFileIngestResult("test.parquet"));
+    }
+
+    private static Supplier<Instant> timesInOrder(Instant... times) {
+        return Arrays.asList(times).iterator()::next;
     }
 }
