@@ -21,6 +21,8 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import java.time.Instant;
 import java.util.stream.Stream;
 
+import static sleeper.statestore.FileInfoTestData.DEFAULT_NUMBER_OF_RECORDS;
+
 public class IngestTaskStatusTestData {
     private IngestTaskStatusTestData() {
     }
@@ -42,27 +44,27 @@ public class IngestTaskStatusTestData {
         return builder.finished(IngestTaskFinishedStatus.builder(), finishTime).build();
     }
 
-    public static IngestTaskStatus finishedOneJobDefault() {
-        return finishedOneJobDefault(startedBuilderWithDefaults());
+    public static IngestTaskStatus finishedOneJobNoFiles(String taskId, Instant startTaskTime, Instant finishTaskTime,
+                                                         Instant startJobTime, Instant finishJobTime) {
+        return finishedOneJob(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime, 0L, 0L);
+    }
+
+    public static IngestTaskStatus finishedOneJobOneFile(String taskId, Instant startTaskTime, Instant finishTaskTime,
+                                                         Instant startJobTime, Instant finishJobTime) {
+        return finishedOneJob(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime,
+                DEFAULT_NUMBER_OF_RECORDS, DEFAULT_NUMBER_OF_RECORDS);
+
     }
 
     public static IngestTaskStatus finishedOneJob(String taskId, Instant startTaskTime, Instant finishTaskTime,
-                                                  Instant startJobTime, Instant finishJobTime) {
+                                                  Instant startJobTime, Instant finishJobTime,
+                                                  long linesRead, long linesWritten) {
         return IngestTaskStatus.builder().taskId(taskId).startTime(startTaskTime)
                 .finished(finishTaskTime, Stream.of(
                         new RecordsProcessedSummary(
-                                new RecordsProcessed(0L, 0L),
+                                new RecordsProcessed(linesRead, linesWritten),
                                 startJobTime, finishJobTime)))
                 .build();
-    }
-
-    public static IngestTaskStatus finishedOneJobDefault(IngestTaskStatus.Builder builder) {
-        return builder.finished(IngestTaskFinishedStatus.builder()
-                        .addJobSummary(new RecordsProcessedSummary(
-                                new RecordsProcessed(0L, 0L),
-                                Instant.parse("2022-12-07T12:37:20.123Z"),
-                                Instant.parse("2022-12-07T12:37:50.123Z"))),
-                Instant.parse("2022-12-07T12:38:00.123Z")).build();
     }
 
     public static IngestTaskStatus.Builder startedBuilderWithDefaults() {

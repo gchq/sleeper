@@ -16,6 +16,8 @@
 package sleeper.ingest.job;
 
 import org.junit.Test;
+import sleeper.ingest.IngestResult;
+import sleeper.ingest.IngestResultTestData;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.ingest.task.WriteToMemoryIngestTaskStatusStore;
 
@@ -24,7 +26,8 @@ import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedNoJobs;
-import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJob;
+import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJobNoFiles;
+import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJobOneFile;
 
 public class IngestJobQueueConsumerRunnerTest {
 
@@ -50,7 +53,7 @@ public class IngestJobQueueConsumerRunnerTest {
     }
 
     @Test
-    public void shouldRunAndReportTaskWithOneJob() throws Exception {
+    public void shouldRunAndReportTaskWithOneJobAndNoFiles() throws Exception {
         // Given
         String taskId = "test-task";
         Instant startTaskTime = Instant.parse("2022-12-07T12:37:00.123Z");
@@ -71,7 +74,35 @@ public class IngestJobQueueConsumerRunnerTest {
 
         // Then
         assertThat(statusStore.getAllTasks()).containsExactly(
-                finishedOneJob(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime));
+                finishedOneJobNoFiles(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime));
+        assertThat(jobs.getIngestResults()).containsExactly(
+                IngestResult.from(Collections.emptyList()));
     }
 
+    @Test
+    public void shouldRunAndReportTaskWithOneJobAndOneFile() throws Exception {
+        // Given
+        String taskId = "test-task";
+        Instant startTaskTime = Instant.parse("2022-12-07T12:37:00.123Z");
+        Instant finishTaskTime = Instant.parse("2022-12-07T12:38:00.123Z");
+        Instant startJobTime = Instant.parse("2022-12-07T12:37:20.123Z");
+        Instant finishJobTime = Instant.parse("2022-12-07T12:37:50.123Z");
+
+        IngestJob job = IngestJob.builder()
+                .id("test-job")
+                .files(Collections.singletonList("test.parquet"))
+                .build();
+        FixedIngestJobSource jobs = FixedIngestJobSource.with(job);
+
+        // When
+        IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(jobs, taskId, statusStore,
+                () -> startTaskTime, () -> finishTaskTime, () -> startJobTime, () -> finishJobTime, jobRunner);
+        runner.run();
+
+        // Then
+        assertThat(statusStore.getAllTasks()).containsExactly(
+                finishedOneJobOneFile(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime));
+        assertThat(jobs.getIngestResults())
+                .containsExactly(IngestResultTestData.defaultFileIngestResult("test.parquet"));
+    }
 }

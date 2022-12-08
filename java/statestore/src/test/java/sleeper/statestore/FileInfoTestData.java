@@ -23,9 +23,10 @@ import sleeper.core.schema.type.StringType;
 import java.time.Instant;
 
 public class FileInfoTestData {
-
     private FileInfoTestData() {
     }
+
+    public static final long DEFAULT_NUMBER_OF_RECORDS = 100L;
 
     private static final Schema DEFAULT_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))
@@ -36,7 +37,7 @@ public class FileInfoTestData {
                 .rowKeyTypes(DEFAULT_SCHEMA.getRowKeyTypes())
                 .minRowKey(Key.create("")).maxRowKey(null)
                 .filename(filename).partitionId("root")
-                .numberOfRecords(100L).fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(DEFAULT_NUMBER_OF_RECORDS).fileStatus(FileInfo.FileStatus.ACTIVE)
                 .lastStateStoreUpdateTime(Instant.parse("2022-12-08T11:03:00.001Z"))
                 .build();
     }
