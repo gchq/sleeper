@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.job.status;
+package sleeper.ingest.status.store.task;
 
 import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
 import org.junit.After;
@@ -24,16 +24,16 @@ import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.ingest.testutils.IngestStatusStoreTestUtils.createInstanceProperties;
+import static sleeper.ingest.status.store.testutils.IngestStatusStoreTestUtils.createInstanceProperties;
 
-public class DynamoDBIngestJobStatusStoreCreatorIT extends DynamoDBTestBase {
+public class DynamoDBIngestTaskStatusStoreCreatorIT extends DynamoDBTestBase {
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final String tableName = DynamoDBIngestJobStatusStore.jobStatusTableName(instanceProperties.get(ID));
+    private final String tableName = DynamoDBIngestTaskStatusStore.taskStatusTableName(instanceProperties.get(ID));
 
     @Test
     public void shouldCreateStore() {
         // When
-        DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, dynamoDBClient);
 
         // Then
         assertThat(dynamoDBClient.describeTable(tableName))

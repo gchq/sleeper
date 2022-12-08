@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.task.status;
+package sleeper.ingest.status.store.task;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
@@ -28,9 +28,9 @@ import java.util.Arrays;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
-import static sleeper.ingest.task.status.DynamoDBIngestTaskStatusFormat.EXPIRY_DATE;
-import static sleeper.ingest.task.status.DynamoDBIngestTaskStatusFormat.TASK_ID;
-import static sleeper.ingest.task.status.DynamoDBIngestTaskStatusFormat.UPDATE_TIME;
+import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.EXPIRY_DATE;
+import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.TASK_ID;
+import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.UPDATE_TIME;
 
 public class DynamoDBIngestTaskStatusStoreCreator {
     private DynamoDBIngestTaskStatusStoreCreator() {

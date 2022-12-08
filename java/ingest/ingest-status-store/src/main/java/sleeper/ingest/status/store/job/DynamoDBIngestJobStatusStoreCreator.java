@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.job.status;
+package sleeper.ingest.status.store.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
@@ -28,9 +28,9 @@ import java.util.Arrays;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
-import static sleeper.ingest.job.status.DynamoDBIngestJobStatusFormat.EXPIRY_DATE;
-import static sleeper.ingest.job.status.DynamoDBIngestJobStatusFormat.JOB_ID;
-import static sleeper.ingest.job.status.DynamoDBIngestJobStatusFormat.UPDATE_TIME;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.EXPIRY_DATE;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.JOB_ID;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.UPDATE_TIME;
 
 public class DynamoDBIngestJobStatusStoreCreator {
     private DynamoDBIngestJobStatusStoreCreator() {

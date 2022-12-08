@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.task.status;
+package sleeper.ingest.status.store.task;
 
 public class DynamoDBIngestTaskStatusFormat {
 

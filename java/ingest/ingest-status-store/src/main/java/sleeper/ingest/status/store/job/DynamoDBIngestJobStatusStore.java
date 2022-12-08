@@ -14,38 +14,39 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.task.status;
+package sleeper.ingest.status.store.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
-import sleeper.ingest.task.IngestTaskStatusStore;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 
-public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
+public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
+
     private final AmazonDynamoDB dynamoDB;
     private final String statusTableName;
     private final long timeToLive;
 
-    private DynamoDBIngestTaskStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+    private DynamoDBIngestJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         this.dynamoDB = dynamoDB;
-        this.statusTableName = taskStatusTableName(properties.get(ID));
-        this.timeToLive = properties.getLong(UserDefinedInstanceProperty.INGEST_TASK_STATUS_TTL_IN_SECONDS) * 1000;
+        this.statusTableName = jobStatusTableName(properties.get(ID));
+        this.timeToLive = properties.getLong(UserDefinedInstanceProperty.INGEST_JOB_STATUS_TTL_IN_SECONDS) * 1000;
     }
 
-    public static IngestTaskStatusStore from(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
-        if (Boolean.TRUE.equals(properties.getBoolean(INGEST_STATUS_STORE_ENABLED))) {
-            return new DynamoDBIngestTaskStatusStore(dynamoDB, properties);
+    public static IngestJobStatusStore from(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+        if (properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
+            return new DynamoDBIngestJobStatusStore(dynamoDB, properties);
         } else {
-            return IngestTaskStatusStore.none();
+            return IngestJobStatusStore.none();
         }
     }
 
-    public static String taskStatusTableName(String instanceId) {
-        return instanceTableName(instanceId, "ingest-task-status");
+    public static String jobStatusTableName(String instanceId) {
+        return instanceTableName(instanceId, "ingest-job-status");
     }
 
     // Used to prevent spotbugs from failing

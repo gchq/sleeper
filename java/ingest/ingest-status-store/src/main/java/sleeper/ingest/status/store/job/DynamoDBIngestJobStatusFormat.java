@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.job.status;
+package sleeper.ingest.status.store.job;
 
 public class DynamoDBIngestJobStatusFormat {
 
