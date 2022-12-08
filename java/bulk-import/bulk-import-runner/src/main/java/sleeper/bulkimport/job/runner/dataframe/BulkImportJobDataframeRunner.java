@@ -40,8 +40,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE;
-
 /**
  * The {@link BulkImportJobDataframeRunner} is a {@link BulkImportJobRunner} which
  * uses Spark's Dataframe API to efficiently sort and write out the data split by
@@ -78,18 +76,6 @@ public class BulkImportJobDataframeRunner extends BulkImportJobRunner {
         LOGGER.info("Sorting by columns {}", String.join(",", Arrays.stream(sortColumns).map(c -> c.toString()).collect(Collectors.toList())));
 
         Dataset<Row> sortedRows = dataWithPartition.sort(sortColumns);
-        LOGGER.info("There are {} partitions in the sorted Dataset", sortedRows.rdd().getNumPartitions());
-
-        int minPartitionsToUseCoalesce = getInstanceProperties().getInt(BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE);
-        LOGGER.info("The minimum number of leaf partitions to use coalesce in the bulk import is {}", minPartitionsToUseCoalesce);
-
-        if (numLeafPartitions < minPartitionsToUseCoalesce) {
-            LOGGER.info("Not using coalesce");
-        } else {
-            LOGGER.info("Coalescing data to {} partitions", numLeafPartitions);
-            sortedRows = sortedRows.coalesce(numLeafPartitions);
-            LOGGER.info("Coalesced data has {} partitions", sortedRows.rdd().getNumPartitions());
-        }
 
         return sortedRows.mapPartitions(new WriteParquetFiles(getInstanceProperties().saveAsString(), tableProperties.saveAsString(), conf), RowEncoder.apply(createFileInfoSchema()));
     }

@@ -35,6 +35,7 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeRunner;
+import sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortRunner;
 import sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDRunner;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -76,7 +77,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
@@ -97,7 +97,11 @@ public class BulkImportJobRunnerIT {
 
     @Parameters
     public static Collection<Object[]> getParameters() {
-        return Lists.newArrayList(new Object[][]{{new BulkImportJobDataframeRunner()}, {new BulkImportJobRDDRunner()}});
+        return Lists.newArrayList(new Object[][]{
+            {new BulkImportJobDataframeRunner()},
+            {new BulkImportJobRDDRunner()},
+            {new BulkImportDataframeLocalSortRunner()}
+        });
     }
 
     @ClassRule
@@ -171,7 +175,6 @@ public class BulkImportJobRunnerIT {
         instanceProperties.set(VPC_ID, "");
         instanceProperties.set(SUBNET, "");
         instanceProperties.set(TABLE_PROPERTIES, "");
-        instanceProperties.set(BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE, "0");
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
 
@@ -312,8 +315,6 @@ public class BulkImportJobRunnerIT {
         //  - Instance and table properties
         String dataDir = folder.newFolder().getAbsolutePath();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
-        //  - Set min number of partitions for a coalesce to 100 so that no coalesce will happen
-        instanceProperties.set(BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE, "100");
         String tableName = UUID.randomUUID().toString();
         String localDir = UUID.randomUUID().toString();
         TableProperties tableProperties = createTable(s3Client, dynamoDBClient, instanceProperties, tableName, localDir, schema);
@@ -364,8 +365,6 @@ public class BulkImportJobRunnerIT {
         //  - Instance and table properties
         String dataDir = folder.newFolder().getAbsolutePath();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
-        //  - Set min number of partitions for a coalesce to 100 so that no coalesce will happen
-        instanceProperties.set(BULK_IMPORT_MIN_PARTITIONS_TO_USE_COALESCE, "100");
         String tableName = UUID.randomUUID().toString();
         String localDir = UUID.randomUUID().toString();
         TableProperties tableProperties = createTable(s3Client, dynamoDBClient, instanceProperties, tableName, localDir, schema);
