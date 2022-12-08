@@ -42,7 +42,7 @@ public class TestIngestTaskStatus {
     }
 
     public static IngestTaskStatus finishedOneJobDefault() {
-        return finishedOneJob(startedBuilderWithDefaults(), IngestTaskFinishedStatus.builder());
+        return finishedOneJobDefault(startedBuilderWithDefaults());
     }
 
     public static IngestTaskStatus finishedOneJob(String taskId, Instant startTaskTime, Instant finishTaskTime,
@@ -57,7 +57,7 @@ public class TestIngestTaskStatus {
                 .build();
     }
 
-    public static IngestTaskStatus finishedOneJob(IngestTaskStatus.Builder builder, IngestTaskFinishedStatus.Builder finishedStatusBuilder) {
+    public static IngestTaskStatus finishedOneJobDefault(IngestTaskStatus.Builder builder) {
         return builder.finished(IngestTaskFinishedStatus.builder()
                         .addJobSummary(new RecordsProcessedSummary(
                                 new RecordsProcessed(0L, 0L),

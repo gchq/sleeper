@@ -38,7 +38,6 @@ import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS;
@@ -57,18 +56,10 @@ public class IngestJobQueueConsumer implements IngestJobSource {
     private final int keepAlivePeriod;
     private final int visibilityTimeoutInSeconds;
     private final IngestJobSerDe ingestJobSerDe;
-    private final IngestJobProvider jobProvider;
 
     public IngestJobQueueConsumer(AmazonSQS sqsClient,
                                   AmazonCloudWatch cloudWatchClient,
                                   InstanceProperties instanceProperties) {
-        this(sqsClient, cloudWatchClient, instanceProperties, null);
-    }
-
-    public IngestJobQueueConsumer(AmazonSQS sqsClient,
-                                  AmazonCloudWatch cloudWatchClient,
-                                  InstanceProperties instanceProperties,
-                                  IngestJobProvider jobProvider) {
         this.sqsClient = sqsClient;
         this.cloudWatchClient = cloudWatchClient;
         this.instanceProperties = instanceProperties;
@@ -76,39 +67,26 @@ public class IngestJobQueueConsumer implements IngestJobSource {
         this.keepAlivePeriod = instanceProperties.getInt(INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS);
         this.visibilityTimeoutInSeconds = instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS);
         this.ingestJobSerDe = new IngestJobSerDe();
-        this.jobProvider = jobProvider == null ? this::waitForMessage : jobProvider;
     }
 
     @Override
     public void consumeJobs(Callback runJob) throws IteratorException, StateStoreException, IOException {
         while (true) {
-            Optional<IngestJobProviderResult> jobAndReceipt = jobProvider.waitForJob();
-            if (!jobAndReceipt.isPresent()) {
+            ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(sqsJobQueueUrl)
+                    .withMaxNumberOfMessages(1)
+                    .withWaitTimeSeconds(20); // Must be >= 0 and <= 20
+            ReceiveMessageResult receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
+            List<Message> messages = receiveMessageResult.getMessages();
+            if (messages.isEmpty()) {
                 LOGGER.info("Finishing as no jobs have been received");
                 break;
-            } else {
-                IngestJobProviderResult jobProviderResult = jobAndReceipt.get();
-                LOGGER.info("Deserialised message to ingest job {}", jobProviderResult.getJob());
-                long recordsWritten = ingest(jobProviderResult.getJob(), jobProviderResult.getReceipt(), runJob);
-                LOGGER.info("{} records were written", recordsWritten);
             }
+            LOGGER.info("Received message {}", messages.get(0).getBody());
+            IngestJob ingestJob = ingestJobSerDe.fromJson(messages.get(0).getBody());
+            LOGGER.info("Deserialised message to ingest job {}", ingestJob);
+            long recordsWritten = ingest(ingestJob, messages.get(0).getReceiptHandle(), runJob);
+            LOGGER.info("{} records were written", recordsWritten);
         }
-    }
-
-    protected Optional<IngestJobProviderResult> waitForMessage() {
-        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(sqsJobQueueUrl)
-                .withMaxNumberOfMessages(1)
-                .withWaitTimeSeconds(20); // Must be >= 0 and <= 20
-        ReceiveMessageResult receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
-        List<Message> messages = receiveMessageResult.getMessages();
-        if (messages.isEmpty()) {
-            return Optional.empty();
-        }
-        LOGGER.info("Received message {}", messages.get(0).getBody());
-        return Optional.of(
-                IngestJobProviderResult.from(
-                        ingestJobSerDe.fromJson(messages.get(0).getBody()),
-                        messages.get(0).getReceiptHandle()));
     }
 
     private long ingest(IngestJob job, String receiptHandle, Callback runJob) throws IteratorException, StateStoreException, IOException {

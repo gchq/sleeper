@@ -15,17 +15,19 @@
  */
 package sleeper.ingest.job;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.ingest.task.WriteToMemoryIngestTaskStatusStore;
 
 import java.time.Instant;
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static sleeper.ingest.job.IngestJobSource.Callback;
 import static sleeper.ingest.task.TestIngestTaskStatus.finishedNoJobs;
+import static sleeper.ingest.task.TestIngestTaskStatus.finishedOneJob;
 
 public class IngestJobQueueConsumerRunnerTest {
 
@@ -48,10 +50,10 @@ public class IngestJobQueueConsumerRunnerTest {
 
         // Then
         assertThat(statusStore.getAllTasks()).containsExactly(finishedNoJobs(taskId, startTime, finishTime));
-        verify(queueConsumer).consumeJobs(callback);
     }
-/*
+
     @Test
+    @Ignore("TODO")
     public void shouldRunAndReportTaskWithOneJob() throws Exception {
         // Given
         String taskId = "test-task";
@@ -65,7 +67,6 @@ public class IngestJobQueueConsumerRunnerTest {
                 .id("test-job")
                 .files(Collections.emptyList())
                 .build();
-        when(queueConsumer.waitForMessage()).thenReturn(Optional.of(IngestJobProviderResult.from(job, "receipt")));
 
         // When
         IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(queueConsumer, taskId, statusStore,
@@ -74,7 +75,6 @@ public class IngestJobQueueConsumerRunnerTest {
 
         // Then
         assertThat(statusStore.getAllTasks()).containsExactly(finishedOneJob(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime));
-        verify(queueConsumer).consumeJobs(callback);
     }
- */
+
 }
