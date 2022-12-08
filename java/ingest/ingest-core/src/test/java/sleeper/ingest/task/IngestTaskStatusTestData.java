@@ -20,8 +20,8 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
 
-public class TestIngestTaskStatus {
-    private TestIngestTaskStatus() {
+public class IngestTaskStatusTestData {
+    private IngestTaskStatusTestData() {
     }
 
     public static IngestTaskStatus finishedNoJobsDefault() {

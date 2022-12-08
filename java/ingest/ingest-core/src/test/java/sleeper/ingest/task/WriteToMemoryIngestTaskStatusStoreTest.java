@@ -19,8 +19,8 @@ import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.ingest.task.TestIngestTaskStatus.finishedNoJobsDefault;
-import static sleeper.ingest.task.TestIngestTaskStatus.startedBuilderWithDefaults;
+import static sleeper.ingest.task.IngestTaskStatusTestData.finishedNoJobsDefault;
+import static sleeper.ingest.task.IngestTaskStatusTestData.startedBuilderWithDefaults;
 
 public class WriteToMemoryIngestTaskStatusStoreTest {
 

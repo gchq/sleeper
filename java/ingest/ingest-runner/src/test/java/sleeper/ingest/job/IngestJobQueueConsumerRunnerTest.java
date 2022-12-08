@@ -26,8 +26,8 @@ import java.util.Collections;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static sleeper.ingest.job.IngestJobSource.Callback;
-import static sleeper.ingest.task.TestIngestTaskStatus.finishedNoJobs;
-import static sleeper.ingest.task.TestIngestTaskStatus.finishedOneJob;
+import static sleeper.ingest.task.IngestTaskStatusTestData.finishedNoJobs;
+import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJob;
 
 public class IngestJobQueueConsumerRunnerTest {
 
