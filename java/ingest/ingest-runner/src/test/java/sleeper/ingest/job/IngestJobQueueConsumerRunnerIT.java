@@ -20,15 +20,12 @@ import org.junit.Test;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
 import sleeper.ingest.task.IngestTaskRunner;
-import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.statestore.StateStore;
@@ -52,27 +49,11 @@ public class IngestJobQueueConsumerRunnerIT extends IngestJobQueueConsumerTestBa
         String localDir = temporaryFolder.newFolder().getAbsolutePath();
         InstanceProperties instanceProperties = getInstanceProperties();
         TableProperties tableProperties = createTable(sleeperSchema);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(AWS_EXTERNAL_RESOURCE.getS3Client(), instanceProperties);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), new InstanceProperties());
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), instanceProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
         DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
-        IngestTaskStatusStore taskStore = DynamoDBIngestTaskStatusStore.from(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), instanceProperties);
-        // Run the job consumer
-        IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(
-                AWS_EXTERNAL_RESOURCE.getSqsClient(),
-                AWS_EXTERNAL_RESOURCE.getCloudWatchClient(),
-                instanceProperties);
-        IngestJobRunner jobRunner = new IngestJobRunner(
-                new ObjectFactory(instanceProperties, null, temporaryFolder.newFolder().getAbsolutePath()),
-                instanceProperties,
-                tablePropertiesProvider,
-                stateStoreProvider,
-                localDir,
-                AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
-                AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
-        IngestTaskRunner runner = new IngestTaskRunner(
-                queueConsumer, "test-task", taskStore, jobRunner::ingest);
+        IngestTaskRunner runner = createTaskRunner(instanceProperties, localDir, "test-task");
         runner.run();
 
         // Verify the results
@@ -84,6 +65,16 @@ public class IngestJobQueueConsumerRunnerIT extends IngestJobQueueConsumerTestBa
                 Collections.singletonMap(0, expectedNoOfFiles),
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
                 temporaryFolder.newFolder().getAbsolutePath());
+    }
+
+    private IngestTaskRunner createTaskRunner(InstanceProperties instanceProperties,
+                                              String localDir,
+                                              String taskId) {
+        return IngestJobQueueConsumerRunner.createTaskRunner(
+                ObjectFactory.noUserJars(), instanceProperties, localDir, taskId,
+                AWS_EXTERNAL_RESOURCE.getS3Client(), AWS_EXTERNAL_RESOURCE.getDynamoDBClient(),
+                AWS_EXTERNAL_RESOURCE.getSqsClient(), AWS_EXTERNAL_RESOURCE.getCloudWatchClient(),
+                AWS_EXTERNAL_RESOURCE.getS3AsyncClient(), AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
     }
 
     @Test

@@ -23,6 +23,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactory;
@@ -64,23 +65,12 @@ public class IngestJobQueueConsumerRunner {
         instanceProperties.loadFromS3(s3Client, s3Bucket);
 
         ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
-
         String localDir = "/mnt/scratch";
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-        IngestTaskStatusStore taskStore = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, instanceProperties);
         String taskId = UUID.randomUUID().toString();
-        IngestJobRunner ingestJobRunner = new IngestJobRunner(
-                objectFactory,
-                instanceProperties,
-                tablePropertiesProvider,
-                stateStoreProvider,
-                localDir,
-                S3AsyncClient.create(),
+
+        IngestTaskRunner ingestTaskRunner = createTaskRunner(objectFactory, instanceProperties, localDir,
+                taskId, s3Client, dynamoDBClient, sqsClient, cloudWatchClient, S3AsyncClient.create(),
                 HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-        IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(sqsClient, cloudWatchClient, instanceProperties);
-        IngestTaskRunner ingestTaskRunner = new IngestTaskRunner(
-                queueConsumer, taskId, taskStore, ingestJobRunner::ingest);
         ingestTaskRunner.run();
 
         s3Client.shutdown();
@@ -92,5 +82,31 @@ public class IngestJobQueueConsumerRunner {
         long finishTime = System.currentTimeMillis();
         double runTimeInSeconds = (finishTime - startTime) / 1000.0;
         LOGGER.info("IngestFromIngestJobsQueueRunner total run time = {}", runTimeInSeconds);
+    }
+
+    public static IngestTaskRunner createTaskRunner(ObjectFactory objectFactory,
+                                                    InstanceProperties instanceProperties,
+                                                    String localDir,
+                                                    String taskId,
+                                                    AmazonS3 s3Client,
+                                                    AmazonDynamoDB dynamoDBClient,
+                                                    AmazonSQS sqsClient,
+                                                    AmazonCloudWatch cloudWatchClient,
+                                                    S3AsyncClient s3AsyncClient,
+                                                    Configuration hadoopConfiguration) {
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+        IngestTaskStatusStore taskStore = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, instanceProperties);
+        IngestJobRunner ingestJobRunner = new IngestJobRunner(
+                objectFactory,
+                instanceProperties,
+                tablePropertiesProvider,
+                stateStoreProvider,
+                localDir,
+                s3AsyncClient,
+                hadoopConfiguration);
+        IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(sqsClient, cloudWatchClient, instanceProperties);
+        return new IngestTaskRunner(
+                queueConsumer, taskId, taskStore, ingestJobRunner::ingest);
     }
 }
