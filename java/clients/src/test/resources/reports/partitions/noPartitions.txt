@@ -2,4 +2,5 @@
 Partitions Status Report:
 --------------------------
 There are 0 partitions (0 leaf partitions)
+There are 0 leaf partitions that need splitting
 --------------------------

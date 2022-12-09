@@ -80,7 +80,7 @@ public class StatusReport {
     private void run() throws StateStoreException {
         System.out.println("\nFull Status Report:\n--------------------------");
         // Partitions
-        new PartitionsStatusReport(stateStore).run();
+        new PartitionsStatusReport(stateStore, tableProperties).run();
 
         // Data files
         new FilesStatusReport(stateStore, 1000, verbose).run();

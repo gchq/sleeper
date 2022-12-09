@@ -17,17 +17,25 @@
 package sleeper.status.report.partitions;
 
 import sleeper.ToStringPrintStream;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionFactory;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.splitter.FindPartitionsToSplit;
+import sleeper.statestore.FileInfo;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+
 public class PartitionStatusReportTestHelper {
+    private static final long SPLITTING_THRESHOLD = 5L;
 
     private PartitionStatusReportTestHelper() {
     }
@@ -52,10 +60,24 @@ public class PartitionStatusReportTestHelper {
         return new PartitionFactory(schema);
     }
 
-    public static String getStandardReport(PartitionsQuery queryType, List<Partition> partitionList) {
+    public static String getStandardReport(PartitionsQuery queryType, List<Partition> partitionList, List<FileInfo> allFileInfos) {
         ToStringPrintStream output = new ToStringPrintStream();
         StandardPartitionsStatusReporter reporter = new StandardPartitionsStatusReporter(output.getPrintStream());
-        reporter.report(queryType, partitionList);
+        reporter.report(queryType, partitionList, partition -> checkPartitionNeedsSplitting(partition, allFileInfos));
         return output.toString();
+    }
+
+    private static TableProperties createTableProperties() {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(TABLE_NAME, "test-table");
+        tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, SPLITTING_THRESHOLD);
+        return tableProperties;
+    }
+
+    private static boolean checkPartitionNeedsSplitting(Partition partition, List<FileInfo> allFiles) {
+        TableProperties tableProperties = createTableProperties();
+        return FindPartitionsToSplit.partitionNeedsSplitting(tableProperties, partition,
+                FindPartitionsToSplit.getRelevantFileInfos(partition, allFiles));
     }
 }

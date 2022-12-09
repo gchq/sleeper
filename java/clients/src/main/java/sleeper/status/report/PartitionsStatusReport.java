@@ -22,7 +22,10 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import sleeper.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.partition.Partition;
+import sleeper.splitter.FindPartitionsToSplit;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
@@ -41,20 +44,29 @@ public class PartitionsStatusReport {
     private final StateStore store;
     private final PartitionsStatusReporter reporter;
     private final PartitionsQuery query;
+    private final TableProperties tableProperties;
 
-    public PartitionsStatusReport(StateStore store) {
-        this(store, new StandardPartitionsStatusReporter(System.out), PartitionsQuery.ALL);
+    public PartitionsStatusReport(StateStore store, TableProperties tableProperties) {
+        this(store, tableProperties, new StandardPartitionsStatusReporter(System.out), PartitionsQuery.ALL);
     }
 
-    public PartitionsStatusReport(StateStore store, PartitionsStatusReporter reporter,
-                                  PartitionsQuery query) {
+    public PartitionsStatusReport(StateStore store, TableProperties tableProperties, PartitionsStatusReporter reporter, PartitionsQuery query) {
         this.store = store;
         this.reporter = reporter;
         this.query = query;
+        this.tableProperties = tableProperties;
     }
 
     public void run() throws StateStoreException {
-        reporter.report(query, query.run(store));
+        reporter.report(query, query.run(store), this::checkPartitionNeedsSplitting);
+    }
+
+    public boolean checkPartitionNeedsSplitting(Partition partition) {
+        try {
+            return FindPartitionsToSplit.partitionNeedsSplitting(tableProperties, partition, store.getActiveFiles());
+        } catch (StateStoreException exception) {
+            return false;
+        }
     }
 
     public static void main(String[] args) throws IOException, StateStoreException {
@@ -73,10 +85,11 @@ public class PartitionsStatusReport {
 
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(amazonS3, instanceProperties);
+        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(arguments.getTableName());
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
         StateStore stateStore = stateStoreProvider.getStateStore(arguments.getTableName(), tablePropertiesProvider);
 
-        PartitionsStatusReport statusReport = new PartitionsStatusReport(stateStore, arguments.getReporter(), arguments.getQuery());
+        PartitionsStatusReport statusReport = new PartitionsStatusReport(stateStore, tableProperties, arguments.getReporter(), arguments.getQuery());
         statusReport.run();
 
         amazonS3.shutdown();
