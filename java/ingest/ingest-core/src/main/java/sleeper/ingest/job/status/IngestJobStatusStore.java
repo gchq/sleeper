@@ -28,9 +28,6 @@ public interface IngestJobStatusStore {
         };
     }
 
-    default void jobCreated(IngestJob job) {
-    }
-
     default void jobStarted(IngestJob job) {
     }
 
