@@ -23,7 +23,7 @@ import java.util.Objects;
 
 public class ProcessRun {
     private final String taskId;
-    private final ProcessStartedStatus startedStatus;
+    private final ProcessRunStartedUpdate startedStatus;
     private final ProcessFinishedStatus finishedStatus;
 
     private ProcessRun(Builder builder) {
@@ -36,13 +36,13 @@ public class ProcessRun {
         return new Builder();
     }
 
-    public static ProcessRun started(String taskId, ProcessStartedStatus startedStatus) {
+    public static ProcessRun started(String taskId, ProcessRunStartedUpdate startedStatus) {
         return builder().taskId(taskId)
                 .startedStatus(startedStatus)
                 .build();
     }
 
-    public static ProcessRun finished(String taskId, ProcessStartedStatus startedStatus, ProcessFinishedStatus finishedStatus) {
+    public static ProcessRun finished(String taskId, ProcessRunStartedUpdate startedStatus, ProcessFinishedStatus finishedStatus) {
         return builder().taskId(taskId)
                 .startedStatus(startedStatus)
                 .finishedStatus(finishedStatus)
@@ -53,7 +53,7 @@ public class ProcessRun {
         return taskId;
     }
 
-    public ProcessStartedStatus getStartedStatus() {
+    public ProcessRunStartedUpdate getStartedStatus() {
         return startedStatus;
     }
 
@@ -135,7 +135,7 @@ public class ProcessRun {
 
     public static final class Builder {
         private String taskId;
-        private ProcessStartedStatus startedStatus;
+        private ProcessRunStartedUpdate startedStatus;
         private ProcessFinishedStatus finishedStatus;
 
         private Builder() {
@@ -146,7 +146,7 @@ public class ProcessRun {
             return this;
         }
 
-        public Builder startedStatus(ProcessStartedStatus startedStatus) {
+        public Builder startedStatus(ProcessRunStartedUpdate startedStatus) {
             this.startedStatus = startedStatus;
             return this;
         }

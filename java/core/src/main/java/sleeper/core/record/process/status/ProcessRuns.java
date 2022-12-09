@@ -44,9 +44,9 @@ public class ProcessRuns {
             ProcessStatusUpdateRecord record = recordList.get(i);
             String taskId = record.getTaskId();
             ProcessStatusUpdate statusUpdate = record.getStatusUpdate();
-            if (statusUpdate instanceof ProcessStartedStatus) {
+            if (statusUpdate instanceof ProcessRunStartedUpdate) {
                 ProcessRun.Builder builder = ProcessRun.builder()
-                        .startedStatus((ProcessStartedStatus) statusUpdate)
+                        .startedStatus((ProcessRunStartedUpdate) statusUpdate)
                         .taskId(taskId);
                 taskBuilders.put(taskId, builder);
                 orderedBuilders.add(builder);

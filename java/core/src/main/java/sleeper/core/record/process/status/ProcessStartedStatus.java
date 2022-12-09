@@ -18,7 +18,7 @@ package sleeper.core.record.process.status;
 import java.time.Instant;
 import java.util.Objects;
 
-public class ProcessStartedStatus implements ProcessStatusUpdate {
+public class ProcessStartedStatus implements ProcessRunStartedUpdate {
 
     private final Instant updateTime;
     private final Instant startTime;
@@ -32,10 +32,12 @@ public class ProcessStartedStatus implements ProcessStatusUpdate {
         return new ProcessStartedStatus(updateTime, startTime);
     }
 
+    @Override
     public Instant getUpdateTime() {
         return updateTime;
     }
 
+    @Override
     public Instant getStartTime() {
         return startTime;
     }
