@@ -25,6 +25,8 @@ import com.amazonaws.services.dynamodbv2.model.PutItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.InstanceProperties;
@@ -33,7 +35,10 @@ import sleeper.ingest.IngestStatusStoreException;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
@@ -96,6 +101,29 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
                         .withComparisonOperator(ComparisonOperator.EQ)));
         return DynamoDBIngestTaskStatusFormat.streamTaskStatuses(result.getItems())
                 .findFirst().orElse(null);
+    }
+
+    @Override
+    public List<IngestTaskStatus> getAllTasks() {
+        ScanResult result = dynamoDB.scan(new ScanRequest().withTableName(statusTableName));
+        return DynamoDBIngestTaskStatusFormat.streamTaskStatuses(result.getItems())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<IngestTaskStatus> getTasksInTimePeriod(Instant startTime, Instant endTime) {
+        ScanResult result = dynamoDB.scan(new ScanRequest().withTableName(statusTableName));
+        return DynamoDBIngestTaskStatusFormat.streamTaskStatuses(result.getItems())
+                .filter(task -> task.isInPeriod(startTime, endTime))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<IngestTaskStatus> getTasksInProgress() {
+        ScanResult result = dynamoDB.scan(new ScanRequest().withTableName(statusTableName));
+        return DynamoDBIngestTaskStatusFormat.streamTaskStatuses(result.getItems())
+                .filter(task -> !task.isFinished())
+                .collect(Collectors.toList());
     }
 
     private PutItemResult putItem(Map<String, AttributeValue> item) {
