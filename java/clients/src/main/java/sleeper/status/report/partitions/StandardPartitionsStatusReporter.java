@@ -38,6 +38,9 @@ public class StandardPartitionsStatusReporter implements PartitionsStatusReporte
     }
 
     private void printAllPartitions(List<Partition> partitions) {
+        out.println();
+        out.println("Partitions Status Report:");
+        out.println("--------------------------");
         List<Partition> leafPartitions = partitions.stream().filter(Partition::isLeafPartition).collect(Collectors.toList());
         out.println("There are " + partitions.size() + " partitions (" + leafPartitions.size() + " leaf partitions)");
         partitions.forEach(out::println);
