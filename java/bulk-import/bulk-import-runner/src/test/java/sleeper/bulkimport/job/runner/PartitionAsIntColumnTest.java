@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -64,21 +65,12 @@ public class PartitionAsIntColumnTest {
         Column column = PartitionAsIntColumn.getColumn(partitionTree, schema);
 
         // Then
-        SparkSession spark = SparkSession.builder().appName("test").master("local").getOrCreate();
-        List<Row> list = new ArrayList<>();
-        list.add(RowFactory.create(Integer.MIN_VALUE));
-        list.add(RowFactory.create(1));
-        list.add(RowFactory.create(10));
-        list.add(RowFactory.create(100));
-        Dataset<Row> df = spark.createDataFrame(list, new StructTypeFactory().getStructType(schema))
-                .withColumn("partitionAsInt", column);
-        Set<Row> rowsWithPartitionIds = new HashSet<>(df.collectAsList());
-        Set<Row> expected = new HashSet<>();
-        expected.add(RowFactory.create(Integer.MIN_VALUE, 0));
-        expected.add(RowFactory.create(1, 0));
-        expected.add(RowFactory.create(10, 1));
-        expected.add(RowFactory.create(100, 1));
-        assertThat(rowsWithPartitionIds).isEqualTo(expected);
+        List<Row> keys = new ArrayList<>();
+        keys.add(RowFactory.create(Integer.MIN_VALUE));
+        keys.add(RowFactory.create(1));
+        keys.add(RowFactory.create(10));
+        keys.add(RowFactory.create(100));
+        validatePartitions(keys, Arrays.asList(0, 0, 1, 1), schema, column);
     }
 
     @Test
@@ -103,20 +95,12 @@ public class PartitionAsIntColumnTest {
 
         // Then
         SparkSession spark = SparkSession.builder().appName("test").master("local").getOrCreate();
-        List<Row> list = new ArrayList<>();
-        list.add(RowFactory.create(""));
-        list.add(RowFactory.create("A"));
-        list.add(RowFactory.create("E"));
-        list.add(RowFactory.create("ZZZ"));
-        Dataset<Row> df = spark.createDataFrame(list, new StructTypeFactory().getStructType(schema))
-                .withColumn("partitionAsInt", column);
-        Set<Row> rowsWithPartitionIds = new HashSet<>(df.collectAsList());
-        Set<Row> expected = new HashSet<>();
-        expected.add(RowFactory.create("", 0));
-        expected.add(RowFactory.create("A", 0));
-        expected.add(RowFactory.create("E", 1));
-        expected.add(RowFactory.create("ZZZ", 1));
-        assertThat(rowsWithPartitionIds).isEqualTo(expected);
+        List<Row> keys = new ArrayList<>();
+        keys.add(RowFactory.create(""));
+        keys.add(RowFactory.create("A"));
+        keys.add(RowFactory.create("E"));
+        keys.add(RowFactory.create("ZZZ"));
+        validatePartitions(keys, Arrays.asList(0, 0, 1, 1), schema, column);
     }
 
     @Test
@@ -141,13 +125,82 @@ public class PartitionAsIntColumnTest {
         Column column = PartitionAsIntColumn.getColumn(partitionTree, schema);
 
         // Then
-        List<Row> keyToExpectedPartitionId = new ArrayList<>();
-        keyToExpectedPartitionId.add(RowFactory.create(new byte[]{}));
-        keyToExpectedPartitionId.add(RowFactory.create(new byte[]{1}));
-        keyToExpectedPartitionId.add(RowFactory.create(new byte[]{25}));
-        keyToExpectedPartitionId.add(RowFactory.create(new byte[]{25, 0}));
-        keyToExpectedPartitionId.add(RowFactory.create(new byte[]{64, 1}));
-        validatePartitions(keyToExpectedPartitionId, Arrays.asList(0, 0, 1, 1, 1), schema, column);
+        List<Row> keys = new ArrayList<>();
+        keys.add(RowFactory.create(new byte[]{}));
+        keys.add(RowFactory.create(new byte[]{1}));
+        keys.add(RowFactory.create(new byte[]{25}));
+        keys.add(RowFactory.create(new byte[]{25, 0}));
+        keys.add(RowFactory.create(new byte[]{64, 1}));
+        validatePartitions(keys, Arrays.asList(0, 0, 1, 1, 1), schema, column);
+    }
+
+    @Test
+    public void shouldComputeColumnUnbalancedTree() {
+        // Given
+        Field rowKeyField = new Field("key", new StringType());
+        Schema schema = Schema.builder().rowKeyFields(rowKeyField).build();
+        List<Partition> partitions = new PartitionsFromSplitPoints(schema, Arrays.asList("E", "P")).construct();
+        PartitionTree partitionTree = new PartitionTree(schema, partitions);
+
+        // When
+        Column column = PartitionAsIntColumn.getColumn(partitionTree, schema);
+
+        // Then
+        SparkSession spark = SparkSession.builder().appName("test").master("local").getOrCreate();
+        List<Row> list = new ArrayList<>();
+        list.add(RowFactory.create(""));
+        list.add(RowFactory.create("E"));
+        list.add(RowFactory.create("P"));
+        list.add(RowFactory.create("ZZZ"));
+        Dataset<Row> df = spark.createDataFrame(list, new StructTypeFactory().getStructType(schema))
+                .withColumn("partitionAsInt", column)
+                .select("partitionAsInt");
+        List<Integer> partitionsAsInt = df.collectAsList().stream().map(r -> r.getInt(0)).collect(Collectors.toList());
+        Set<Integer> partitionIds = new HashSet<>(partitionsAsInt);
+        assertThat(partitionIds).hasSize(3);
+        Set<Integer> expectedIds = new HashSet<>();
+        for (int i = 0; i < 3; i++) {
+            expectedIds.add(i);
+        }
+        assertThat(partitionIds).isEqualTo(expectedIds);
+    }
+
+    @Test
+    public void shouldComputeColumnLotsOfLeafPartitions() {
+        // Given
+        Field rowKeyField = new Field("key", new IntType());
+        Schema schema = Schema.builder().rowKeyFields(rowKeyField).build();
+        List<Object> splitPoints = new ArrayList<>();
+        // - Split points of 10, 20, ..., 10230
+        //   gives 1024 leaf partitions
+        for (int i = 1; i < 1024; i++) {
+            splitPoints.add(i * 10);
+        }
+        List<Partition> partitions = new PartitionsFromSplitPoints(schema, splitPoints).construct();
+        PartitionTree partitionTree = new PartitionTree(schema, partitions);
+
+        // When
+        Column column = PartitionAsIntColumn.getColumn(partitionTree, schema);
+        System.out.println(column);
+
+        // Then
+        SparkSession spark = SparkSession.builder().appName("test").master("local").getOrCreate();
+        List<Row> list = new ArrayList<>();
+        // - Create points in each of the 1024 partitions
+        for (int i = 0; i < 1024; i++) {
+            list.add(RowFactory.create(i * 10));
+        }
+        Dataset<Row> df = spark.createDataFrame(list, new StructTypeFactory().getStructType(schema))
+                .withColumn("partitionAsInt", column)
+                .select("partitionAsInt");
+        List<Integer> partitionsAsInt = df.collectAsList().stream().map(r -> r.getInt(0)).collect(Collectors.toList());
+        Set<Integer> partitionIds = new HashSet<>(partitionsAsInt);
+        assertThat(partitionIds).hasSize(1024);
+        Set<Integer> expectedIds = new HashSet<>();
+        for (int i = 0; i < 1024; i++) {
+            expectedIds.add(i);
+        }
+        assertThat(partitionIds).isEqualTo(expectedIds);
     }
 
     private void validatePartitions(List<Row> keys, List<Integer> expectedPartitionIds, Schema schema, Column column) {
