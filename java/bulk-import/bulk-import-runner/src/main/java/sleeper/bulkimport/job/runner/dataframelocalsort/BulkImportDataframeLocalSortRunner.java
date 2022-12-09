@@ -22,19 +22,15 @@ import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
-import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.runner.BulkImportJobRunner;
-import sleeper.bulkimport.job.runner.StructTypeFactory;
 import sleeper.bulkimport.job.runner.rdd.WriteParquetFile;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.SchemaSerDe;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -58,14 +54,12 @@ public class BulkImportDataframeLocalSortRunner extends BulkImportJobRunner {
         LOGGER.info("Running bulk import job with id {}", job.getId());
 
         Schema schema = tableProperties.getSchema();
-        String schemaAsString = new SchemaSerDe().toJson(schema);
-        StructType convertedSchema = new StructTypeFactory().getStructType(schema);
-        StructType schemaWithPartitionField = createEnhancedSchema(convertedSchema);
-
         int numLeafPartitions = (int) broadcastedPartitions.value().stream().filter(Partition::isLeafPartition).count();
         LOGGER.info("There are {} leaf partitions", numLeafPartitions);
 
-        Dataset<Row> dataWithPartition = rows.mapPartitions(new AddPartitionAsIntFunction(schemaAsString, broadcastedPartitions), RowEncoder.apply(schemaWithPartitionField));
+        PartitionTree partitionTree = new PartitionTree(schema, broadcastedPartitions.getValue());
+        Dataset<Row> dataWithPartition = rows.withColumn(PARTITION_FIELD_NAME, PartitionAsIntColumn.getColumn(partitionTree, schema));
+
         LOGGER.info("After adding partition id as int, there are {} partitions", dataWithPartition.rdd().getNumPartitions());
 
         Dataset<Row> repartitionedData = new com.joom.spark.package$implicits$ExplicitRepartitionWrapper(dataWithPartition).explicitRepartition(numLeafPartitions, new Column(PARTITION_FIELD_NAME));
@@ -87,11 +81,5 @@ public class BulkImportDataframeLocalSortRunner extends BulkImportJobRunner {
 
     public static void main(String[] args) throws Exception {
         BulkImportJobRunner.start(args, new BulkImportDataframeLocalSortRunner());
-    }
-
-    private StructType createEnhancedSchema(StructType convertedSchema) {
-        StructType structTypeWithPartition = new StructType(convertedSchema.fields());
-        return structTypeWithPartition
-              .add(new StructField(PARTITION_FIELD_NAME, DataTypes.IntegerType, false, null));
     }
 }
