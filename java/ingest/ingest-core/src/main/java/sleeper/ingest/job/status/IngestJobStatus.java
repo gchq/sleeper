@@ -65,6 +65,36 @@ public class IngestJobStatus {
         return jobRuns.isFinished();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        IngestJobStatus that = (IngestJobStatus) o;
+        return inputFilesCount == that.inputFilesCount
+                && jobId.equals(that.jobId)
+                && jobRuns.equals(that.jobRuns)
+                && Objects.equals(expiryDate, that.expiryDate);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(jobId, inputFilesCount, jobRuns, expiryDate);
+    }
+
+    @Override
+    public String toString() {
+        return "IngestJobStatus{" +
+                "jobId='" + jobId + '\'' +
+                ", inputFilesCount=" + inputFilesCount +
+                ", jobRuns=" + jobRuns +
+                ", expiryDate=" + expiryDate +
+                '}';
+    }
+
     public static final class Builder {
         private String jobId;
         private int inputFileCount;

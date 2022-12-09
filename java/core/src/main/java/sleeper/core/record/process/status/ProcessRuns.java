@@ -104,4 +104,10 @@ public class ProcessRuns {
         return Objects.hash(latestFirst);
     }
 
+    @Override
+    public String toString() {
+        return "ProcessRuns{" +
+                "latestFirst=" + latestFirst +
+                '}';
+    }
 }

@@ -16,6 +16,12 @@
 package sleeper.ingest.job.status;
 
 import org.junit.Test;
+import sleeper.ingest.job.IngestJob;
+
+import java.time.Instant;
+import java.util.Collections;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class WriteToMemoryIngestJobStatusStoreTest {
 
@@ -23,6 +29,17 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
     @Test
     public void shouldReturnOneFinishedJob() {
-        // TODO report job started, finished, assert against getAllJobs
+        String tableName = "test-table";
+        String taskId = "test-task";
+        Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
+        IngestJob job = IngestJob.builder()
+                .id("test-job")
+                .tableName(tableName)
+                .files(Collections.emptyList())
+                .build();
+
+        store.jobStarted(taskId, job, startTime);
+        assertThat(store.getAllJobs(tableName)).containsExactly(
+                TestIngestJobStatus.started(job, taskId, startTime, startTime));
     }
 }

@@ -28,7 +28,7 @@ public interface IngestJobStatusStore {
         };
     }
 
-    default void jobStarted(IngestJob job) {
+    default void jobStarted(String taskId, IngestJob job, Instant startTime) {
     }
 
     default void jobFinished(IngestJob job) {
