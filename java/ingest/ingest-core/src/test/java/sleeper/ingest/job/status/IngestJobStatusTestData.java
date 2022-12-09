@@ -15,26 +15,58 @@
  */
 package sleeper.ingest.job.status;
 
+import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
+import java.time.temporal.ChronoField;
+import java.util.Arrays;
 
 public class IngestJobStatusTestData {
 
     private IngestJobStatusTestData() {
     }
 
-    public static IngestJobStatus started(IngestJob ingestJob, String taskId, Instant updateTime, Instant startTime) {
-        return from(ingestJob)
-                .jobRun(ProcessRun.started(taskId,
-                        IngestJobStartedStatus.updateAndStartTime(ingestJob, updateTime, startTime)))
+    public static IngestJobStatus jobStatus(IngestJob job, ProcessRun... runs) {
+        return IngestJobStatus.builder()
+                .jobId(job.getId())
+                .jobRuns(ProcessRuns.latestFirst(Arrays.asList(runs)))
                 .build();
     }
 
-    public static IngestJobStatus.Builder from(IngestJob job) {
-        return IngestJobStatus.builder()
-                .jobId(job.getId())
-                .inputFileCount(job.getFiles().size());
+    public static IngestJobStatus startedIngestJob(IngestJob job, String taskId, Instant startTime) {
+        return jobStatus(job, startedIngestRun(job, taskId, startTime));
+    }
+
+    public static IngestJobStatus finishedIngestJob(IngestJob job, String taskId, RecordsProcessedSummary summary) {
+        return jobStatus(job, finishedIngestRun(job, taskId, summary));
+    }
+
+    public static ProcessRun startedIngestRun(IngestJob job, String taskId, Instant startTime) {
+        return startedIngestRun(job, taskId, startTime, startTime.with(ChronoField.MILLI_OF_SECOND, 123));
+    }
+
+    public static ProcessRun startedIngestRun(IngestJob job, String taskId, Instant startTime, Instant updateTime) {
+        return ProcessRun.started(taskId,
+                IngestJobStartedStatus.updateAndStartTime(job, updateTime, startTime));
+    }
+
+    public static ProcessRun finishedIngestRun(
+            IngestJob job, String taskId, RecordsProcessedSummary summary) {
+        return finishedIngestRun(job, taskId,
+                summary.getStartTime().with(ChronoField.MILLI_OF_SECOND, 123),
+                summary.getFinishTime().with(ChronoField.MILLI_OF_SECOND, 123),
+                summary);
+    }
+
+    public static ProcessRun finishedIngestRun(
+            IngestJob job, String taskId, Instant startUpdateTime, Instant finishUpdateTime, RecordsProcessedSummary summary) {
+
+        return ProcessRun.finished(taskId,
+                IngestJobStartedStatus.updateAndStartTime(job, startUpdateTime, summary.getStartTime()),
+                ProcessFinishedStatus.updateTimeAndSummary(finishUpdateTime, summary));
     }
 }

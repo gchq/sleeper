@@ -69,16 +69,31 @@ public class StatusReporterTestHelper {
 
     public static ProcessStartedStatus defaultStartedStatus(String startTimeNoMillis) {
         return ProcessStartedStatus.updateAndStartTime(
-                Instant.parse(startTimeNoMillis + ".123Z"),
-                Instant.parse(startTimeNoMillis + ".001Z"));
+                defaultUpdateTime(startTimeNoMillis),
+                defaultHappenedTime(startTimeNoMillis));
     }
 
     public static ProcessFinishedStatus defaultFinishedStatus(String startTimeNoMillis, String finishTimeNoMillis) {
         return ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse(finishTimeNoMillis + ".123Z"),
+                defaultUpdateTime(finishTimeNoMillis),
                 new RecordsProcessedSummary(
                         new RecordsProcessed(300L, 200L),
-                        Instant.parse(startTimeNoMillis + ".001Z"),
-                        Instant.parse(finishTimeNoMillis + ".001Z")));
+                        defaultHappenedTime(startTimeNoMillis),
+                        defaultHappenedTime(finishTimeNoMillis)));
+    }
+
+    public static RecordsProcessedSummary defaultSummary(String startTimeNoMillis, String finishTimeNoMillis) {
+        return new RecordsProcessedSummary(
+                new RecordsProcessed(300L, 200L),
+                defaultHappenedTime(startTimeNoMillis),
+                defaultHappenedTime(finishTimeNoMillis));
+    }
+
+    public static Instant defaultUpdateTime(String noMillis) {
+        return Instant.parse(noMillis + ".123Z");
+    }
+
+    public static Instant defaultHappenedTime(String noMillis) {
+        return Instant.parse(noMillis + ".001Z");
     }
 }

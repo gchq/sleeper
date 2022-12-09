@@ -71,7 +71,7 @@ public class IngestJobStartedStatus implements ProcessRunStartedUpdate {
 
     @Override
     public String toString() {
-        return "ProcessStartedStatus{" +
+        return "IngestJobStartedStatus{" +
                 "updateTime=" + updateTime +
                 ", startTime=" + startTime +
                 '}';

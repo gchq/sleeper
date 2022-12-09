@@ -27,13 +27,11 @@ import java.util.Objects;
 
 public class IngestJobStatus {
     private final String jobId;
-    private final int inputFilesCount;
     private final ProcessRuns jobRuns;
     private final Instant expiryDate;
 
     private IngestJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
-        inputFilesCount = builder.inputFileCount;
         jobRuns = Objects.requireNonNull(builder.jobRuns, "jobRuns must not be null");
         expiryDate = builder.expiryDate;
     }
@@ -46,15 +44,7 @@ public class IngestJobStatus {
         return builder()
                 .jobRuns(statusUpdates.getRuns())
                 .jobId(statusUpdates.getJobId())
-                .inputFileCount(lastInputFileCount(statusUpdates.getRuns()))
                 .build();
-    }
-
-    private static int lastInputFileCount(ProcessRuns runs) {
-        return runs.getLatestRun()
-                .map(run -> (IngestJobStartedStatus) run.getStartedStatus())
-                .map(IngestJobStartedStatus::getInputFileCount)
-                .orElse(0);
     }
 
     public String getJobId() {
@@ -62,7 +52,10 @@ public class IngestJobStatus {
     }
 
     public int getInputFilesCount() {
-        return inputFilesCount;
+        return jobRuns.getLatestRun()
+                .map(run -> (IngestJobStartedStatus) run.getStartedStatus())
+                .map(IngestJobStartedStatus::getInputFileCount)
+                .orElse(0);
     }
 
     public Instant getExpiryDate() {
@@ -90,22 +83,20 @@ public class IngestJobStatus {
             return false;
         }
         IngestJobStatus that = (IngestJobStatus) o;
-        return inputFilesCount == that.inputFilesCount
-                && jobId.equals(that.jobId)
+        return jobId.equals(that.jobId)
                 && jobRuns.equals(that.jobRuns)
                 && Objects.equals(expiryDate, that.expiryDate);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, inputFilesCount, jobRuns, expiryDate);
+        return Objects.hash(jobId, jobRuns, expiryDate);
     }
 
     @Override
     public String toString() {
         return "IngestJobStatus{" +
                 "jobId='" + jobId + '\'' +
-                ", inputFilesCount=" + inputFilesCount +
                 ", jobRuns=" + jobRuns +
                 ", expiryDate=" + expiryDate +
                 '}';
@@ -113,7 +104,6 @@ public class IngestJobStatus {
 
     public static final class Builder {
         private String jobId;
-        private int inputFileCount;
         private ProcessRuns jobRuns;
         private Instant expiryDate;
 
@@ -122,11 +112,6 @@ public class IngestJobStatus {
 
         public Builder jobId(String jobId) {
             this.jobId = jobId;
-            return this;
-        }
-
-        public Builder inputFileCount(int inputFileCount) {
-            this.inputFileCount = inputFileCount;
             return this;
         }
 

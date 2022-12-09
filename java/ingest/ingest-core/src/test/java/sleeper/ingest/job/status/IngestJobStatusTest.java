@@ -19,15 +19,16 @@ package sleeper.ingest.job.status;
 import org.junit.Test;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
 
 public class IngestJobStatusTest {
     @Test
@@ -41,7 +42,7 @@ public class IngestJobStatusTest {
         Instant startTime = Instant.parse("2022-09-22T13:33:00.001Z");
 
         // When
-        IngestJobStatus status = IngestJobStatusTestData.started(job, "test-task", updateTime, startTime);
+        IngestJobStatus status = jobStatus(job, startedIngestRun(job, "test-task", startTime, updateTime));
 
         // Then
         assertThat(status)
@@ -58,11 +59,10 @@ public class IngestJobStatusTest {
                 .files("test.parquet", "test2.parquet")
                 .id("test-job")
                 .build();
-        Instant updateTime = Instant.parse("2022-09-22T13:34:00.001Z");
         Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
 
         // When
-        IngestJobStatus status = IngestJobStatusTestData.started(job, "test-task", updateTime, startTime);
+        IngestJobStatus status = jobStatus(job, startedIngestRun(job, "test-task", startTime));
 
         // Then
         assertThat(status)
@@ -77,20 +77,13 @@ public class IngestJobStatusTest {
                 .files("test.parquet", "test2.parquet")
                 .id("test-job")
                 .build();
-        Instant updateTime = Instant.parse("2022-09-22T13:34:00.001Z");
         Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
         Instant finishTime = Instant.parse("2022-09-22T13:34:10.001Z");
         RecordsProcessedSummary summary = new RecordsProcessedSummary(
                 new RecordsProcessed(450L, 300L), startTime, finishTime);
 
         // When
-        IngestJobStatus status = IngestJobStatus.builder()
-                .jobId(job.getId())
-                .inputFileCount(job.getFiles().size())
-                .jobRun(ProcessRun.finished("test-task",
-                        ProcessStartedStatus.updateAndStartTime(updateTime, startTime),
-                        ProcessFinishedStatus.updateTimeAndSummary(finishTime, summary)))
-                .build();
+        IngestJobStatus status = jobStatus(job, finishedIngestRun(job, "test-task", summary));
 
         // Then
         assertThat(status)

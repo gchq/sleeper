@@ -22,6 +22,8 @@ import java.time.Instant;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
 
 public class WriteToMemoryIngestJobStatusStoreTest {
 
@@ -40,7 +42,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
         store.jobStarted(taskId, job, startTime);
         assertThat(store.getAllJobs(tableName)).containsExactly(
-                IngestJobStatusTestData.started(job, taskId, startTime, startTime));
+                jobStatus(job, startedIngestRun(job, taskId, startTime, startTime)));
     }
 
     @Test
@@ -56,6 +58,6 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
         store.jobStarted(taskId, job, startTime);
         assertThat(store.getAllJobs(tableName)).containsExactly(
-                IngestJobStatusTestData.started(job, taskId, startTime, startTime));
+                jobStatus(job, startedIngestRun(job, taskId, startTime, startTime)));
     }
 }
