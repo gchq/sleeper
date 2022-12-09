@@ -229,6 +229,7 @@ public class IngestStack extends NestedStack {
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDefinition.getTaskRole()));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadPartitionMetadata(taskDefinition.getTaskRole()));
         statusStore.grantWriteJobEvent(taskDefinition.getTaskRole());
+        statusStore.grantWriteTaskEvent(taskDefinition.getTaskRole());
         ingestJobQueue.grantConsumeMessages(taskDefinition.getTaskRole());
         taskDefinition.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
@@ -290,6 +291,7 @@ public class IngestStack extends NestedStack {
         ingestJobQueue.grantSendMessages(handler);
         ingestJobQueue.grant(handler, "sqs:GetQueueAttributes");
         statusStore.grantWriteJobEvent(handler);
+        statusStore.grantWriteTaskEvent(handler);
         // Grant this function permission to query ECS for the number of tasks, etc
         PolicyStatement policyStatement = PolicyStatement.Builder
                 .create()

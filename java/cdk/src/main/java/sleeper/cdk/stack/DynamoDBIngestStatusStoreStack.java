@@ -17,8 +17,10 @@
 package sleeper.cdk.stack;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.ingest.job.status.DynamoDBIngestJobStatusFormat;
-import sleeper.ingest.job.status.DynamoDBIngestJobStatusStore;
+import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat;
+import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
+import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat;
+import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
@@ -31,14 +33,15 @@ import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 public class DynamoDBIngestStatusStoreStack implements IngestStatusStoreStack {
-    private final Table table;
+    private final Table jobsTable;
+    private final Table tasksTable;
 
     public DynamoDBIngestStatusStoreStack(Construct scope, InstanceProperties instanceProperties) {
         String instanceId = instanceProperties.get(ID);
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
-        this.table = Table.Builder
+        this.jobsTable = Table.Builder
                 .create(scope, "DynamoDBIngestJobStatusTable")
                 .tableName(DynamoDBIngestJobStatusStore.jobStatusTableName(instanceId))
                 .removalPolicy(removalPolicy)
@@ -54,10 +57,31 @@ public class DynamoDBIngestStatusStoreStack implements IngestStatusStoreStack {
                 .timeToLiveAttribute(DynamoDBIngestJobStatusFormat.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
+        this.tasksTable = Table.Builder
+                .create(scope, "DynamoDBIngestTaskStatusTable")
+                .tableName(DynamoDBIngestTaskStatusStore.taskStatusTableName(instanceId))
+                .removalPolicy(removalPolicy)
+                .billingMode(BillingMode.PAY_PER_REQUEST)
+                .partitionKey(Attribute.builder()
+                        .name(DynamoDBIngestTaskStatusFormat.TASK_ID)
+                        .type(AttributeType.STRING)
+                        .build())
+                .sortKey(Attribute.builder()
+                        .name(DynamoDBIngestTaskStatusFormat.UPDATE_TIME)
+                        .type(AttributeType.NUMBER)
+                        .build())
+                .timeToLiveAttribute(DynamoDBIngestTaskStatusFormat.EXPIRY_DATE)
+                .pointInTimeRecovery(false)
+                .build();
     }
 
     @Override
     public void grantWriteJobEvent(IGrantable grantee) {
-        table.grantWriteData(grantee);
+        jobsTable.grantWriteData(grantee);
+    }
+
+    @Override
+    public void grantWriteTaskEvent(IGrantable grantee) {
+        tasksTable.grantWriteData(grantee);
     }
 }
