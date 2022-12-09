@@ -42,6 +42,8 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import java.io.IOException;
 import java.util.UUID;
 
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.S3A_INPUT_FADVISE;
+
 public class IngestJobQueueConsumerRunner {
     private IngestJobQueueConsumerRunner() {
     }
@@ -70,7 +72,8 @@ public class IngestJobQueueConsumerRunner {
 
         IngestTaskRunner ingestTaskRunner = createTaskRunner(objectFactory, instanceProperties, localDir,
                 taskId, s3Client, dynamoDBClient, sqsClient, cloudWatchClient, S3AsyncClient.create(),
-                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties),
+                ingestHadoopConfiguration(instanceProperties));
         ingestTaskRunner.run();
 
         s3Client.shutdown();
@@ -93,9 +96,10 @@ public class IngestJobQueueConsumerRunner {
                                                     AmazonSQS sqsClient,
                                                     AmazonCloudWatch cloudWatchClient,
                                                     S3AsyncClient s3AsyncClient,
+                                                    Configuration stateStoreHadoopConfiguration,
                                                     Configuration hadoopConfiguration) {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, stateStoreHadoopConfiguration);
         IngestTaskStatusStore taskStore = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, instanceProperties);
         IngestJobRunner ingestJobRunner = new IngestJobRunner(
                 objectFactory,
@@ -108,5 +112,12 @@ public class IngestJobQueueConsumerRunner {
         IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(sqsClient, cloudWatchClient, instanceProperties);
         return new IngestTaskRunner(
                 queueConsumer, taskId, taskStore, ingestJobRunner::ingest);
+    }
+
+    private static Configuration ingestHadoopConfiguration(InstanceProperties instanceProperties) {
+        Configuration conf = HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
+        conf.set("fs.s3a.connection.maximum", "10");
+        conf.set("fs.s3a.experimental.input.fadvise", instanceProperties.get(S3A_INPUT_FADVISE));
+        return conf;
     }
 }
