@@ -16,20 +16,19 @@
 package sleeper.ingest.job.status;
 
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
 
-public class TestIngestJobStatus {
+public class IngestJobStatusTestData {
 
-    private TestIngestJobStatus() {
+    private IngestJobStatusTestData() {
     }
 
     public static IngestJobStatus started(IngestJob ingestJob, String taskId, Instant updateTime, Instant startTime) {
         return from(ingestJob)
                 .jobRun(ProcessRun.started(taskId,
-                        ProcessStartedStatus.updateAndStartTime(updateTime, startTime)))
+                        IngestJobStartedStatus.updateAndStartTime(ingestJob, updateTime, startTime)))
                 .build();
     }
 

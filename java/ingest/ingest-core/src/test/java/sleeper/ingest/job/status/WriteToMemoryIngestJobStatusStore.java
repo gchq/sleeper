@@ -16,8 +16,6 @@
 package sleeper.ingest.job.status;
 
 import sleeper.core.record.process.status.JobStatusUpdates;
-import sleeper.core.record.process.status.ProcessRuns;
-import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.ingest.job.IngestJob;
 
@@ -26,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     private final Map<String, List<ProcessStatusUpdateRecord>> jobIdToUpdateRecords = new HashMap<>();
@@ -33,7 +32,7 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     @Override
     public void jobStarted(String taskId, IngestJob job, Instant startTime) {
         ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
-                ProcessStartedStatus.updateAndStartTime(startTime, startTime), taskId);
+                IngestJobStartedStatus.updateAndStartTime(job, startTime, startTime), taskId);
         jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>()).add(updateRecord);
     }
 
@@ -43,14 +42,9 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
 
     @Override
     public List<IngestJobStatus> getAllJobs(String tableName) {
-        List<IngestJobStatus> statusList = new ArrayList<>();
-        for (String jobId : jobIdToUpdateRecords.keySet()) {
-            ProcessRuns runs = JobStatusUpdates.from(jobId, jobIdToUpdateRecords.get(jobId)).getRuns();
-            statusList.add(IngestJobStatus.builder()
-                    .jobRuns(runs)
-                    .jobId(jobId)
-                    .build());
-        }
-        return statusList;
+        return jobIdToUpdateRecords.entrySet().stream()
+                .map(entry -> JobStatusUpdates.from(entry.getKey(), entry.getValue()))
+                .map(IngestJobStatus::from)
+                .collect(Collectors.toList());
     }
 }

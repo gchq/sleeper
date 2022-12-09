@@ -24,7 +24,7 @@ import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobStatus;
-import sleeper.ingest.job.status.TestIngestJobStatus;
+import sleeper.ingest.job.status.IngestJobStatusTestData;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -122,7 +122,7 @@ public class IngestJobStatusReporterTestData {
     }
 
     private static IngestJobStatus jobStarted(IngestJob job, String taskId, Instant startTime, Instant startUpdateTime) {
-        return TestIngestJobStatus.from(job)
+        return IngestJobStatusTestData.from(job)
                 .jobRun(ProcessRun.started(taskId,
                         ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime)))
                 .build();
@@ -136,7 +136,7 @@ public class IngestJobStatusReporterTestData {
                                                long linesRead, long linesWritten) {
         RecordsProcessedSummary summary = new RecordsProcessedSummary(
                 new RecordsProcessed(linesRead, linesWritten), startTime, finishTime);
-        return TestIngestJobStatus.from(job)
+        return IngestJobStatusTestData.from(job)
                 .jobRun(ProcessRun.finished(taskId,
                         ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime),
                         ProcessFinishedStatus.updateTimeAndSummary(finishTime, summary)))

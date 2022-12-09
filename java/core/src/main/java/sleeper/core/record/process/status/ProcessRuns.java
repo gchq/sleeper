@@ -79,7 +79,7 @@ public class ProcessRuns {
         return getLatestRun().map(ProcessRun::getLatestUpdateTime);
     }
 
-    private Optional<ProcessRun> getLatestRun() {
+    public Optional<ProcessRun> getLatestRun() {
         return latestFirst.stream().findFirst();
     }
 

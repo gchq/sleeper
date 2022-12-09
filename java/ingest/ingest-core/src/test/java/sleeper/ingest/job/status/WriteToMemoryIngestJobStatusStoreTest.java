@@ -28,7 +28,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
     private final WriteToMemoryIngestJobStatusStore store = new WriteToMemoryIngestJobStatusStore();
 
     @Test
-    public void shouldReturnOneFinishedJob() {
+    public void shouldReturnOneStartedJobWithNoFiles() {
         String tableName = "test-table";
         String taskId = "test-task";
         Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
@@ -40,6 +40,22 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
         store.jobStarted(taskId, job, startTime);
         assertThat(store.getAllJobs(tableName)).containsExactly(
-                TestIngestJobStatus.started(job, taskId, startTime, startTime));
+                IngestJobStatusTestData.started(job, taskId, startTime, startTime));
+    }
+
+    @Test
+    public void shouldReturnOneStartedJobWithFiles() {
+        String tableName = "test-table";
+        String taskId = "test-task";
+        Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
+        IngestJob job = IngestJob.builder()
+                .id("test-job")
+                .tableName(tableName)
+                .files("test-file-1.parquet", "test-file-2.parquet")
+                .build();
+
+        store.jobStarted(taskId, job, startTime);
+        assertThat(store.getAllJobs(tableName)).containsExactly(
+                IngestJobStatusTestData.started(job, taskId, startTime, startTime));
     }
 }

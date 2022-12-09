@@ -41,14 +41,14 @@ public class IngestJobStatusTest {
         Instant startTime = Instant.parse("2022-09-22T13:33:00.001Z");
 
         // When
-        IngestJobStatus status = TestIngestJobStatus.started(job, "test-task", updateTime, startTime);
+        IngestJobStatus status = IngestJobStatusTestData.started(job, "test-task", updateTime, startTime);
 
         // Then
         assertThat(status)
                 .extracting(IngestJobStatus::getJobId, IngestJobStatus::getInputFilesCount, IngestJobStatus::getJobRuns)
                 .containsExactly("test-job", 2,
                         Collections.singletonList(ProcessRun.started("test-task",
-                                ProcessStartedStatus.updateAndStartTime(updateTime, startTime))));
+                                IngestJobStartedStatus.updateAndStartTime(job, updateTime, startTime))));
     }
 
     @Test
@@ -62,7 +62,7 @@ public class IngestJobStatusTest {
         Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
 
         // When
-        IngestJobStatus status = TestIngestJobStatus.started(job, "test-task", updateTime, startTime);
+        IngestJobStatus status = IngestJobStatusTestData.started(job, "test-task", updateTime, startTime);
 
         // Then
         assertThat(status)

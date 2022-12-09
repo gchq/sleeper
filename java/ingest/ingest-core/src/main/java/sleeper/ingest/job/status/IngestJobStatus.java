@@ -16,6 +16,7 @@
 
 package sleeper.ingest.job.status;
 
+import sleeper.core.record.process.status.JobStatusUpdates;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
 
@@ -39,6 +40,21 @@ public class IngestJobStatus {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static IngestJobStatus from(JobStatusUpdates statusUpdates) {
+        return builder()
+                .jobRuns(statusUpdates.getRuns())
+                .jobId(statusUpdates.getJobId())
+                .inputFileCount(lastInputFileCount(statusUpdates.getRuns()))
+                .build();
+    }
+
+    private static int lastInputFileCount(ProcessRuns runs) {
+        return runs.getLatestRun()
+                .map(run -> (IngestJobStartedStatus) run.getStartedStatus())
+                .map(IngestJobStartedStatus::getInputFileCount)
+                .orElse(0);
     }
 
     public String getJobId() {
