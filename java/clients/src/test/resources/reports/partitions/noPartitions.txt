@@ -1,0 +1,5 @@
+
+Partitions Status Report:
+--------------------------
+There are 0 partitions (0 leaf partitions)
+--------------------------

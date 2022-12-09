@@ -20,6 +20,7 @@ import org.junit.Test;
 import sleeper.core.partition.Partition;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,6 +30,16 @@ import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.c
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.getStandardReport;
 
 public class PartitionsStatusReportTest {
+    @Test
+    public void shouldReportNoPartitions() throws IOException {
+        // Given
+        List<Partition> partitions = Collections.emptyList();
+
+        // When
+        assertThat(getStandardReport(PartitionsQuery.ALL, partitions)).hasToString(
+                example("reports/partitions/noPartitions.txt"));
+    }
+
     @Test
     public void shouldReportRootPartitionWithNoChildren() throws IOException {
         // Given
