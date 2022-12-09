@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.job;
+package sleeper.ingest.task;
 
 import org.junit.Test;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.IngestResultTestData;
-import sleeper.ingest.task.IngestTaskStatusStore;
-import sleeper.ingest.task.WriteToMemoryIngestTaskStatusStore;
+import sleeper.ingest.job.FixedIngestJobHandler;
+import sleeper.ingest.job.FixedIngestJobSource;
+import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.IngestJobHandler;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -33,7 +35,7 @@ import static sleeper.ingest.task.IngestTaskStatusTestData.finishedNoJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJobNoFiles;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJobOneFile;
 
-public class IngestJobQueueConsumerRunnerTest {
+public class IngestTaskRunnerTest {
 
     private final IngestJobHandler jobRunner = FixedIngestJobHandler.makingDefaultFiles();
     private final IngestTaskStatusStore statusStore = new WriteToMemoryIngestTaskStatusStore();
@@ -47,7 +49,7 @@ public class IngestJobQueueConsumerRunnerTest {
         FixedIngestJobSource jobs = FixedIngestJobSource.empty();
 
         // When
-        IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(jobs, taskId, statusStore, jobRunner,
+        IngestTaskRunner runner = new IngestTaskRunner(jobs, taskId, statusStore, jobRunner,
                 timesInOrder(startTime, finishTime));
         runner.run();
 
@@ -72,7 +74,7 @@ public class IngestJobQueueConsumerRunnerTest {
         FixedIngestJobSource jobs = FixedIngestJobSource.with(job);
 
         // When
-        IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(jobs, taskId, statusStore, jobRunner,
+        IngestTaskRunner runner = new IngestTaskRunner(jobs, taskId, statusStore, jobRunner,
                 timesInOrder(startTaskTime, startJobTime, finishJobTime, finishTaskTime));
         runner.run();
 
@@ -99,7 +101,7 @@ public class IngestJobQueueConsumerRunnerTest {
         FixedIngestJobSource jobs = FixedIngestJobSource.with(job);
 
         // When
-        IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(jobs, taskId, statusStore, jobRunner,
+        IngestTaskRunner runner = new IngestTaskRunner(jobs, taskId, statusStore, jobRunner,
                 timesInOrder(startTaskTime, startJobTime, finishJobTime, finishTaskTime));
         runner.run();
 
@@ -132,7 +134,7 @@ public class IngestJobQueueConsumerRunnerTest {
         FixedIngestJobSource jobs = FixedIngestJobSource.with(job1, job2);
 
         // When
-        IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(jobs, taskId, statusStore, jobRunner,
+        IngestTaskRunner runner = new IngestTaskRunner(jobs, taskId, statusStore, jobRunner,
                 timesInOrder(startTaskTime, startJob1Time, finishJob1Time, startJob2Time, finishJob2Time, finishTaskTime));
         runner.run();
 

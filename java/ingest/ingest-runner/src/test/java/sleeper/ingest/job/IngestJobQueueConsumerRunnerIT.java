@@ -27,6 +27,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
+import sleeper.ingest.task.IngestTaskRunner;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
@@ -70,7 +71,7 @@ public class IngestJobQueueConsumerRunnerIT extends IngestJobQueueConsumerTestBa
                 localDir,
                 AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
-        IngestJobQueueConsumerRunner runner = new IngestJobQueueConsumerRunner(
+        IngestTaskRunner runner = new IngestTaskRunner(
                 queueConsumer, "test-task", taskStore, jobRunner::ingest);
         runner.run();
 
