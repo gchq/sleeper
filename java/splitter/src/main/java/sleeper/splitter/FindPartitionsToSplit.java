@@ -18,6 +18,7 @@ package sleeper.splitter;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfo;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
  * This finds partitions that need splitting. It does this by querying the
@@ -77,13 +79,10 @@ public class FindPartitionsToSplit {
         }
     }
 
-    private void splitPartitionIfNecessary(Partition partition, List<FileInfo> fileInfos) throws StateStoreException, IOException {
+    private void splitPartitionIfNecessary(Partition partition, List<FileInfo> fileInfos) throws IOException {
         // Find files in this partition
         List<FileInfo> relevantFiles = getRelevantFileInfos(partition, fileInfos);
-        // Calculate number of records in partition
-        long numberOfRecordsInPartition = relevantFiles.stream().map(FileInfo::getNumberOfRecords).mapToLong(Long::longValue).sum();
-        LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), tableName, numberOfRecordsInPartition);
-        if (numberOfRecordsInPartition >= splitThreshold) {
+        if (partitionNeedsSplitting(tablePropertiesProvider.getTableProperties(tableName), partition, relevantFiles)) {
             LOGGER.info("Partition {} needs splitting as (split threshold is {})", partition.getId(), splitThreshold);
             // If there are more than PartitionSplittingMaxFilesInJob files then pick the largest ones.
             List<String> filesForJob = new ArrayList<>();
@@ -106,6 +105,13 @@ public class FindPartitionsToSplit {
         } else {
             LOGGER.info("Partition {} does not need splitting (split threshold is {})", partition.getId(), splitThreshold);
         }
+    }
+
+    public static boolean partitionNeedsSplitting(TableProperties properties, Partition partition, List<FileInfo> relevantFiles) {
+        // Calculate number of records in partition
+        long numberOfRecordsInPartition = relevantFiles.stream().map(FileInfo::getNumberOfRecords).mapToLong(Long::longValue).sum();
+        LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), properties.get(TABLE_NAME), numberOfRecordsInPartition);
+        return numberOfRecordsInPartition >= properties.getLong(PARTITION_SPLIT_THRESHOLD);
     }
 
     public static List<FileInfo> getRelevantFileInfos(Partition partition, List<FileInfo> fileInfos) {
