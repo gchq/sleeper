@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.status.report;
+package sleeper.status.report.partitions;
 
 import org.junit.Test;
 import sleeper.ToStringPrintStream;
@@ -25,8 +25,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.status.report.partitions.PartitionsQuery;
-import sleeper.status.report.partitions.StandardPartitionsStatusReporter;
+import sleeper.status.report.PartitionsStatusReport;
 
 import java.io.IOException;
 import java.util.Arrays;
