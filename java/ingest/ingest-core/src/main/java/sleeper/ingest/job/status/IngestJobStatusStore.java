@@ -18,6 +18,10 @@ package sleeper.ingest.job.status;
 
 import sleeper.ingest.job.IngestJob;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+
 public interface IngestJobStatusStore {
     static IngestJobStatusStore none() {
         return new IngestJobStatusStore() {
@@ -25,14 +29,31 @@ public interface IngestJobStatusStore {
     }
 
     default void jobCreated(IngestJob job) {
-
     }
 
     default void jobStarted(IngestJob job) {
-
     }
 
     default void jobFinished(IngestJob job) {
+    }
 
+    default List<IngestJobStatus> getJobsInTimePeriod(String tableName, Instant start, Instant end) {
+        throw new UnsupportedOperationException("Instance has no ingest job status store");
+    }
+
+    default List<IngestJobStatus> getAllJobs(String tableName) {
+        throw new UnsupportedOperationException("Instance has no ingest job status store");
+    }
+
+    default List<IngestJobStatus> getUnfinishedJobs(String tableName) {
+        throw new UnsupportedOperationException("Instance has no ingest job status store");
+    }
+
+    default Optional<IngestJobStatus> getJob(String jobId) {
+        throw new UnsupportedOperationException("Instance has no ingest job status store");
+    }
+
+    default List<IngestJobStatus> getJobsByTaskId(String tableName, String taskId) {
+        throw new UnsupportedOperationException("Instance has no ingest job status store");
     }
 }

@@ -27,6 +27,9 @@ public interface IngestStatusStoreStack {
     default void grantWriteJobEvent(IGrantable grantee) {
     }
 
+    default void grantWriteTaskEvent(IGrantable grantee) {
+    }
+
     static IngestStatusStoreStack from(Construct scope, InstanceProperties properties) {
         if (properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
             return new DynamoDBIngestStatusStoreStack(scope, properties);

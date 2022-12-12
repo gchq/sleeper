@@ -17,18 +17,20 @@ package sleeper.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.job.status.CompactionJobRun;
-import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.partition.Partition;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFinishedStatus;
+import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessStartedStatus;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.CompactionJobTestDataHelper.DEFAULT_TASK_ID;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 
 public class CompactionJobStatusTest {
 
@@ -42,7 +44,7 @@ public class CompactionJobStatusTest {
         Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
 
         // When
-        CompactionJobStatus status = CompactionJobStatus.created(job, updateTime);
+        CompactionJobStatus status = TestCompactionJobStatus.created(job, updateTime);
 
         // Then
         assertThat(status).extracting("createUpdateTime", "partitionId", "inputFilesCount", "childPartitionIds", "splittingCompaction")
@@ -56,7 +58,7 @@ public class CompactionJobStatusTest {
         Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
 
         // When
-        CompactionJobStatus status = CompactionJobStatus.created(job, updateTime);
+        CompactionJobStatus status = TestCompactionJobStatus.created(job, updateTime);
 
         // Then
         assertThat(status).extracting("createUpdateTime", "partitionId", "inputFilesCount", "childPartitionIds", "splittingCompaction")
@@ -70,7 +72,7 @@ public class CompactionJobStatusTest {
         Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
 
         // When
-        CompactionJobStatus status = CompactionJobStatus.created(job, updateTime);
+        CompactionJobStatus status = TestCompactionJobStatus.created(job, updateTime);
 
         // Then
         assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isFinished)
@@ -87,8 +89,8 @@ public class CompactionJobStatusTest {
         // When
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, Instant.parse("2022-09-22T13:33:12.001Z")))
-                .singleJobRun(CompactionJobRun.started(DEFAULT_TASK_ID,
-                        CompactionJobStartedStatus.updateAndStartTime(updateTime, startTime)))
+                .singleJobRun(ProcessRun.started(DEFAULT_TASK_ID,
+                        ProcessStartedStatus.updateAndStartTime(updateTime, startTime)))
                 .build();
 
         // Then
@@ -103,16 +105,16 @@ public class CompactionJobStatusTest {
         Instant updateTime = Instant.parse("2022-09-22T13:34:00.001Z");
         Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
         Instant finishTime = Instant.parse("2022-09-22T13:34:10.001Z");
-        CompactionJobSummary summary = new CompactionJobSummary(
-                new CompactionJobRecordsProcessed(450L, 300L), startTime, finishTime);
+        RecordsProcessedSummary summary = new RecordsProcessedSummary(
+                new RecordsProcessed(450L, 300L), startTime, finishTime);
 
         // When
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, Instant.parse("2022-09-22T13:33:00.001Z")))
-                .singleJobRun(CompactionJobRun.finished(DEFAULT_TASK_ID,
-                        CompactionJobStartedStatus.updateAndStartTime(
+                .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID,
+                        ProcessStartedStatus.updateAndStartTime(
                                 Instant.parse("2022-09-22T13:33:09.001Z"), startTime),
-                        CompactionJobFinishedStatus.updateTimeAndSummary(updateTime, summary)))
+                        ProcessFinishedStatus.updateTimeAndSummary(updateTime, summary)))
                 .build();
 
         // Then

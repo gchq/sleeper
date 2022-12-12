@@ -20,35 +20,31 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class CompactionTaskStatusesBuilder {
-    private final Map<String, CompactionTaskStartedStatus> startedById = new HashMap<>(); // Order by task ID for output
-    private final Map<String, CompactionTaskFinishedStatus> finishedById = new HashMap<>();
-    private final Map<String, Instant> expiryDateById = new HashMap<>();
+    private final Map<String, CompactionTaskStatus.Builder> builderById = new HashMap<>();
 
     public CompactionTaskStatusesBuilder taskStarted(
-            String taskId, Instant startTime) {
-        startedById.put(taskId, new CompactionTaskStartedStatus(startTime));
+            String taskId, CompactionTaskType type, Instant startTime, Instant expiryDate) {
+        builderById.computeIfAbsent(taskId,
+                        id -> CompactionTaskStatus.builder().taskId(id))
+                .type(type).startTime(startTime).expiryDate(expiryDate);
         return this;
     }
 
     public CompactionTaskStatusesBuilder taskFinished(
             String taskId, CompactionTaskFinishedStatus finishedStatus) {
-        finishedById.put(taskId, finishedStatus);
-        return this;
-    }
-
-    public CompactionTaskStatusesBuilder expiryDate(
-            String taskId, Instant expiryDate) {
-        expiryDateById.put(taskId, expiryDate);
+        Optional.ofNullable(builderById.get(taskId))
+                .ifPresent(builder -> builder.finishedStatus(finishedStatus));
         return this;
     }
 
     public Stream<CompactionTaskStatus> stream() {
-        return startedById.entrySet().stream()
-                .map(entry -> fullStatus(entry.getKey(), entry.getValue()))
+        return builderById.values().stream()
+                .map(CompactionTaskStatus.Builder::build)
                 .sorted(Comparator.comparing(CompactionTaskStatus::getStartTime).reversed());
     }
 
@@ -56,11 +52,4 @@ public class CompactionTaskStatusesBuilder {
         return stream().collect(Collectors.toList());
     }
 
-    private CompactionTaskStatus fullStatus(String taskId, CompactionTaskStartedStatus startedStatus) {
-        return CompactionTaskStatus.builder().taskId(taskId)
-                .startedStatus(startedStatus)
-                .finishedStatus(finishedById.get(taskId))
-                .expiryDate(expiryDateById.get(taskId))
-                .build();
-    }
 }

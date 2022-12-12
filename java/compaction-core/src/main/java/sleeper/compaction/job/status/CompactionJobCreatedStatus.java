@@ -16,13 +16,14 @@
 package sleeper.compaction.job.status;
 
 import sleeper.compaction.job.CompactionJob;
+import sleeper.core.record.process.status.ProcessStatusUpdate;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public class CompactionJobCreatedStatus implements CompactionJobStatusUpdate {
+public class CompactionJobCreatedStatus implements ProcessStatusUpdate {
 
     private final Instant updateTime;
     private final String partitionId;

@@ -18,6 +18,7 @@ package sleeper.build.chunks;
 import org.junit.Test;
 import sleeper.build.github.TestGitHubHead;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,10 +26,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ProjectConfigurationTest {
 
     @Test
-    public void shouldLoadFromYamlAndGitHubProperties() {
-        ProjectConfiguration configuration = ProjectConfiguration.fromGitHubAndChunks(
-                TestProperties.example("example-github.properties"),
-                TestChunks.example("example-chunks.yaml"));
+    public void shouldLoadFromYamlAndGitHubProperties() throws IOException {
+        ProjectConfiguration configuration = TestProjectStructure.example().loadProjectConfiguration();
 
         assertThat(configuration).isEqualTo(
                 ProjectConfiguration.builder()

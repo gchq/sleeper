@@ -24,13 +24,10 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
 import sleeper.ingest.IngestResult;
 import sleeper.job.common.action.ActionException;
@@ -38,8 +35,6 @@ import sleeper.job.common.action.DeleteMessageAction;
 import sleeper.job.common.action.MessageReference;
 import sleeper.job.common.action.thread.PeriodicActionRunnable;
 import sleeper.statestore.StateStoreException;
-import sleeper.statestore.StateStoreProvider;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
 import java.util.List;
@@ -47,12 +42,11 @@ import java.util.List;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.S3A_INPUT_FADVISE;
 
 /**
  * An IngestJobQueueConsumer pulls ingest jobs off an SQS queue and runs them.
  */
-public class IngestJobQueueConsumer {
+public class IngestJobQueueConsumer implements IngestJobSource {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobQueueConsumer.class);
 
     private final AmazonSQS sqsClient;
@@ -62,35 +56,10 @@ public class IngestJobQueueConsumer {
     private final int keepAlivePeriod;
     private final int visibilityTimeoutInSeconds;
     private final IngestJobSerDe ingestJobSerDe;
-    private final IngestJobRunner ingestJobRunner;
 
-    public IngestJobQueueConsumer(ObjectFactory objectFactory,
-                                  AmazonSQS sqsClient,
+    public IngestJobQueueConsumer(AmazonSQS sqsClient,
                                   AmazonCloudWatch cloudWatchClient,
-                                  InstanceProperties instanceProperties,
-                                  TablePropertiesProvider tablePropertiesProvider,
-                                  StateStoreProvider stateStoreProvider,
-                                  String localDir) {
-        this(objectFactory,
-                sqsClient,
-                cloudWatchClient,
-                instanceProperties,
-                tablePropertiesProvider,
-                stateStoreProvider,
-                localDir,
-                S3AsyncClient.create(),
-                defaultHadoopConfiguration(instanceProperties.get(S3A_INPUT_FADVISE)));
-    }
-
-    public IngestJobQueueConsumer(ObjectFactory objectFactory,
-                                  AmazonSQS sqsClient,
-                                  AmazonCloudWatch cloudWatchClient,
-                                  InstanceProperties instanceProperties,
-                                  TablePropertiesProvider tablePropertiesProvider,
-                                  StateStoreProvider stateStoreProvider,
-                                  String localDir,
-                                  S3AsyncClient s3AsyncClient,
-                                  Configuration hadoopConfiguration) {
+                                  InstanceProperties instanceProperties) {
         this.sqsClient = sqsClient;
         this.cloudWatchClient = cloudWatchClient;
         this.instanceProperties = instanceProperties;
@@ -98,25 +67,10 @@ public class IngestJobQueueConsumer {
         this.keepAlivePeriod = instanceProperties.getInt(INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS);
         this.visibilityTimeoutInSeconds = instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS);
         this.ingestJobSerDe = new IngestJobSerDe();
-        this.ingestJobRunner = new IngestJobRunner(
-                objectFactory,
-                instanceProperties,
-                tablePropertiesProvider,
-                stateStoreProvider,
-                localDir,
-                s3AsyncClient,
-                hadoopConfiguration);
     }
 
-    private static Configuration defaultHadoopConfiguration(String fadvise) {
-        Configuration conf = new Configuration();
-        conf.set("fs.s3a.connection.maximum", "10");
-        conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
-        conf.set("fs.s3a.experimental.input.fadvise", fadvise);
-        return conf;
-    }
-
-    public void run() throws InterruptedException, IOException, StateStoreException, IteratorException {
+    @Override
+    public void consumeJobs(IngestJobHandler runJob) throws IteratorException, StateStoreException, IOException {
         while (true) {
             ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(sqsJobQueueUrl)
                     .withMaxNumberOfMessages(1)
@@ -125,18 +79,17 @@ public class IngestJobQueueConsumer {
             List<Message> messages = receiveMessageResult.getMessages();
             if (messages.isEmpty()) {
                 LOGGER.info("Finishing as no jobs have been received");
-                return;
+                break;
             }
             LOGGER.info("Received message {}", messages.get(0).getBody());
             IngestJob ingestJob = ingestJobSerDe.fromJson(messages.get(0).getBody());
             LOGGER.info("Deserialised message to ingest job {}", ingestJob);
-
-            long recordsWritten = ingest(ingestJob, messages.get(0).getReceiptHandle());
+            long recordsWritten = ingest(ingestJob, messages.get(0).getReceiptHandle(), runJob);
             LOGGER.info("{} records were written", recordsWritten);
         }
     }
 
-    public long ingest(IngestJob job, String receiptHandle) throws InterruptedException, IteratorException, StateStoreException, IOException {
+    private long ingest(IngestJob job, String receiptHandle, IngestJobHandler runJob) throws IteratorException, StateStoreException, IOException {
         // Create background thread to keep messages alive
         MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl, "Ingest job " + job.getId(), receiptHandle);
         PeriodicActionRunnable changeTimeoutRunnable = new PeriodicActionRunnable(
@@ -146,7 +99,7 @@ public class IngestJobQueueConsumer {
                 job.getId(), keepAlivePeriod);
 
         // Run the ingest
-        IngestResult result = ingestJobRunner.ingest(job);
+        IngestResult result = runJob.ingest(job);
         LOGGER.info("Ingest job {}: Stopping background thread to keep SQS messages alive",
                 job.getId());
         changeTimeoutRunnable.stop();

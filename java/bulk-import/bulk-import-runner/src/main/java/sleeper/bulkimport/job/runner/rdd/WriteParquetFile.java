@@ -17,10 +17,10 @@ package sleeper.bulkimport.job.runner.rdd;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.api.java.function.MapPartitionsFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.Row;
 import org.apache.spark.util.SerializableConfiguration;
-
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
@@ -33,7 +33,7 @@ import java.util.List;
 /**
  * A {@link WriteParquetFile} writes sorted Rows to a Parquet file.
  */
-public class WriteParquetFile implements FlatMapFunction<Iterator<Row>, Row> {
+public class WriteParquetFile implements FlatMapFunction<Iterator<Row>, Row>, MapPartitionsFunction<Row, Row> {
     private static final long serialVersionUID = 1873341639622053831L;
 
     private final String instancePropertiesStr;

@@ -197,7 +197,7 @@ public class Utils {
     }
 
     public static RemovalPolicy removalPolicy(InstanceProperties properties) {
-        if (Boolean.TRUE.equals(properties.getBoolean(RETAIN_INFRA_AFTER_DESTROY))) {
+        if (properties.getBoolean(RETAIN_INFRA_AFTER_DESTROY)) {
             return RemovalPolicy.RETAIN;
         } else {
             return RemovalPolicy.DESTROY;

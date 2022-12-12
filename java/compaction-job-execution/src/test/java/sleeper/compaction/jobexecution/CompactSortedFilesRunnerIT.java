@@ -34,11 +34,12 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStore;
-import sleeper.compaction.status.job.DynamoDBCompactionJobStatusStoreCreator;
-import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStore;
-import sleeper.compaction.status.task.DynamoDBCompactionTaskStatusStoreCreator;
+import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
+import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
+import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCreator;
 import sleeper.compaction.task.CompactionTaskStatusStore;
+import sleeper.compaction.task.CompactionTaskType;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
@@ -273,7 +274,7 @@ public class CompactSortedFilesRunnerIT {
         CompactSortedFilesRunner runner = new CompactSortedFilesRunner(
                 instanceProperties, ObjectFactory.noUserJars(),
                 tablePropertiesProvider, stateStoreProvider, jobStatusStore, taskStatusStore,
-                "task-id", instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqsClient,
+                "task-id", instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqsClient, CompactionTaskType.COMPACTION,
                 1, 5);
         runner.run();
 
