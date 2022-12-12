@@ -41,7 +41,7 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
-public class IngestJobQueueConsumerRunnerIT extends IngestJobQueueConsumerTestBase {
+public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
 
     private void consumeAndVerify(Schema sleeperSchema,
                                   List<Record> expectedRecordList,
@@ -70,7 +70,7 @@ public class IngestJobQueueConsumerRunnerIT extends IngestJobQueueConsumerTestBa
     private IngestTaskRunner createTaskRunner(InstanceProperties instanceProperties,
                                               String localDir,
                                               String taskId) {
-        return IngestJobQueueConsumerRunner.createTaskRunner(
+        return ECSIngestTaskRunner.createTaskRunner(
                 ObjectFactory.noUserJars(), instanceProperties, localDir, taskId,
                 AWS_EXTERNAL_RESOURCE.getS3Client(), AWS_EXTERNAL_RESOURCE.getDynamoDBClient(),
                 AWS_EXTERNAL_RESOURCE.getSqsClient(), AWS_EXTERNAL_RESOURCE.getCloudWatchClient(),

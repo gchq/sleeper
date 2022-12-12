@@ -44,11 +44,11 @@ import java.util.UUID;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.S3A_INPUT_FADVISE;
 
-public class IngestJobQueueConsumerRunner {
-    private IngestJobQueueConsumerRunner() {
+public class ECSIngestTaskRunner {
+    private ECSIngestTaskRunner() {
     }
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobQueueConsumerRunner.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ECSIngestTaskRunner.class);
 
     public static void main(String[] args) throws IOException, StateStoreException, IteratorException, ObjectFactoryException {
         if (1 != args.length) {
