@@ -127,8 +127,41 @@ this folder somewhere safe.
 
 #### Scripts in Docker
 
-The automated scripts can also be run from inside a Docker container. You can get into a Docker container with all
-the dependencies needed for deployment
+The automated scripts can also be run from inside a Docker container. You can build a Docker container with all
+the dependencies needed for deployment, using the Dockerfile in the scripts directory.
+
+This can let you avoid needing to install AWS CDK, CLI or NodeJS/NPM.
+
+Starting in the scripts directory, run these commands:
+
+```shell
+./build/buildForTest.sh
+docker build -t sleeper .
+```
+
+You can then run that image like this:
+
+```shell
+./runInDocker.sh sleeper
+```
+
+That will get you a shell inside the Docker image, as though you were in the scripts directory of the repository. The
+rest of the repository will not be present.
+
+If you have AWS CLI installed, it will use your configuration from the host. Otherwise, any configuration you set in
+the container will be persisted in the host home directory. AWS authentication environment variables will be propagated
+to the container as well.
+
+The host Docker environment will be propagated to the container via the Docker socket.
+
+The files generated for the Sleeper instance will be persisted in the host home directory, so that if you run the
+Docker container multiple times you will still have details of the last Sleeper instance you worked with.
+
+If you add a command on the end, you can run a specific script like this:
+
+```shell
+./runInDocker.sh sleeper ./test/deployTest.sh myinstanceid myvpc mysubnet
+```
 
 ### Manual Deployment
 
