@@ -28,7 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.TestCompactionJobStatus.statusListFromUpdates;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusListFromUpdates;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_EXPIRY;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
@@ -56,7 +56,7 @@ public class CompactionJobStatusesBuilderTest {
         ProcessFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
 
         // When
-        List<CompactionJobStatus> statuses = statusListFromUpdates(
+        List<CompactionJobStatus> statuses = jobStatusListFromUpdates(
                 forJob("job1", created1, started1, finished1),
                 forJob("job2", created2, started2, finished2));
 

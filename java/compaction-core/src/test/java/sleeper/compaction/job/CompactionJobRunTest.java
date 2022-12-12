@@ -28,7 +28,7 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
-import static sleeper.compaction.job.TestCompactionJobStatus.statusFromUpdates;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFromUpdates;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.startedStatus;
@@ -45,7 +45,7 @@ public class CompactionJobRunTest {
                 .build();
 
         // When
-        CompactionJobStatus status = statusFromUpdates(created);
+        CompactionJobStatus status = jobStatusFromUpdates(created);
 
         // Then
         assertThat(status.getJobRuns())
@@ -64,7 +64,7 @@ public class CompactionJobRunTest {
         ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
 
         // When
-        CompactionJobStatus status = statusFromUpdates(created, started);
+        CompactionJobStatus status = jobStatusFromUpdates(created, started);
 
         // Then
         assertThat(status.getJobRuns())
@@ -86,7 +86,7 @@ public class CompactionJobRunTest {
         ProcessFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
 
         // When
-        CompactionJobStatus status = statusFromUpdates(created, started, finished);
+        CompactionJobStatus status = jobStatusFromUpdates(created, started, finished);
 
         // Then
         assertThat(status.getJobRuns())

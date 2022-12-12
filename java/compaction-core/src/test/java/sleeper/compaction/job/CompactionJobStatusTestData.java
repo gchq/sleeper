@@ -16,16 +16,32 @@
 
 package sleeper.compaction.job;
 
+import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStartedStatus;
+import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessStatusUpdate;
+import sleeper.core.record.process.status.TestProcessStatusUpdateRecords;
 
 import java.time.Instant;
 import java.time.temporal.ChronoField;
+import java.util.Collections;
+import java.util.List;
+
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 
 public class CompactionJobStatusTestData {
     private CompactionJobStatusTestData() {
+    }
+
+    public static CompactionJobStatus jobCreated(CompactionJob job, Instant updateTime) {
+        return CompactionJobStatus.builder()
+                .jobId(job.getId())
+                .createdStatus(CompactionJobCreatedStatus.from(job, updateTime))
+                .jobRunsLatestFirst(Collections.emptyList())
+                .build();
     }
 
     public static ProcessRun startedCompactionRun(String taskId, Instant startTime) {
@@ -41,5 +57,22 @@ public class CompactionJobStatusTestData {
 
     private static Instant defaultUpdateTime(Instant time) {
         return time.with(ChronoField.MILLI_OF_SECOND, 123);
+    }
+
+    public static CompactionJobStatus jobStatusFromUpdates(ProcessStatusUpdate... updates) {
+        return jobStatusFrom(records().fromUpdates(updates));
+    }
+
+    public static List<CompactionJobStatus> jobStatusListFromUpdates(
+            TestProcessStatusUpdateRecords.TaskUpdates... updates) {
+        return CompactionJobStatus.listFrom(records().fromUpdates(updates).stream());
+    }
+
+    private static CompactionJobStatus jobStatusFrom(TestProcessStatusUpdateRecords records) {
+        List<CompactionJobStatus> built = CompactionJobStatus.listFrom(records.stream());
+        if (built.size() != 1) {
+            throw new IllegalStateException("Expected single status");
+        }
+        return built.get(0);
     }
 }

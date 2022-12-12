@@ -18,8 +18,8 @@ package sleeper.status.report.compaction.job;
 
 import sleeper.ToStringPrintStream;
 import sleeper.compaction.job.CompactionJob;
+import sleeper.compaction.job.CompactionJobStatusTestData;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
-import sleeper.compaction.job.TestCompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.RecordsProcessed;
@@ -148,7 +148,7 @@ public abstract class CompactionJobStatusReporterTestBase {
     }
 
     protected static CompactionJobStatus jobCreated(CompactionJob job, Instant creationTime) {
-        return TestCompactionJobStatus.created(job, creationTime);
+        return CompactionJobStatusTestData.jobCreated(job, creationTime);
     }
 
     protected static CompactionJobStatus jobStarted(CompactionJob job, String taskId, Instant creationTime, Instant startTime, Instant startUpdateTime) {
