@@ -21,12 +21,12 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusTestData;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.status.report.StatusReporterTestHelper;
 import sleeper.status.report.job.query.JobQuery.Type;
 
@@ -154,7 +154,7 @@ public abstract class CompactionJobStatusReporterTestBase {
     protected static CompactionJobStatus jobStarted(CompactionJob job, String taskId, Instant creationTime, Instant startTime, Instant startUpdateTime) {
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
-                .singleJobRun(ProcessRun.started(taskId, ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime)))
+                .singleJobRun(ProcessRun.started(taskId, CompactionJobStartedStatus.startAndUpdateTime(startTime, startUpdateTime)))
                 .build();
     }
 
@@ -163,7 +163,7 @@ public abstract class CompactionJobStatusReporterTestBase {
                 new RecordsProcessed(600L, 300L), startUpdateTime, finishedTime);
         return CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, creationTime))
-                .singleJobRun(ProcessRun.finished(taskId, ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime),
+                .singleJobRun(ProcessRun.finished(taskId, CompactionJobStartedStatus.startAndUpdateTime(startTime, startUpdateTime),
                         ProcessFinishedStatus.updateTimeAndSummary(finishedTime, summary)))
                 .build();
     }
