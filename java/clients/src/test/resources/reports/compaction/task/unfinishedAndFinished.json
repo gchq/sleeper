@@ -1,0 +1,21 @@
+[
+  {
+    "taskId": "finished-task",
+    "type": "COMPACTION",
+    "startTime": "2022-10-06T12:20:00.001Z",
+    "finishedStatus": {
+      "finishTime": "2022-10-06T12:20:30.001Z",
+      "totalJobRuns": 1,
+      "totalRuntimeInSeconds": 30.0,
+      "totalRecordsRead": 200,
+      "totalRecordsWritten": 100,
+      "recordsReadPerSecond": 6.666666666666667,
+      "recordsWrittenPerSecond": 3.3333333333333335
+    }
+  },
+  {
+    "taskId": "unfinished-task",
+    "type": "COMPACTION",
+    "startTime": "2022-10-06T12:17:00.001Z"
+  }
+]

@@ -49,7 +49,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_R
 /**
  * An IngestJobRunner takes ingest jobs and runs them.
  */
-public class IngestJobRunner {
+public class IngestJobRunner implements IngestJobHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobRunner.class);
 
     private final InstanceProperties instanceProperties;
@@ -79,7 +79,8 @@ public class IngestJobRunner {
                 .build();
     }
 
-    public IngestResult ingest(IngestJob job) throws InterruptedException, IteratorException, StateStoreException, IOException {
+    @Override
+    public IngestResult ingest(IngestJob job) throws IteratorException, StateStoreException, IOException {
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(job.getTableName());
         Schema schema = tableProperties.getSchema();
 

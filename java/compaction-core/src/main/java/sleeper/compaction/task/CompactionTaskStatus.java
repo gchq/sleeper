@@ -16,18 +16,24 @@
 
 package sleeper.compaction.task;
 
+import sleeper.core.record.process.status.ProcessFinishedStatus;
+import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessStartedStatus;
+
 import java.time.Instant;
 import java.util.Objects;
 
 public class CompactionTaskStatus {
     private final String taskId;
-    private final CompactionTaskStartedStatus startedStatus;
+    private final CompactionTaskType type;
+    private final Instant startTime;
     private final CompactionTaskFinishedStatus finishedStatus;
     private final Instant expiryDate; // Set by database (null before status is saved)
 
     private CompactionTaskStatus(Builder builder) {
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
-        startedStatus = Objects.requireNonNull(builder.startedStatus, "taskId must not be null");
+        startTime = Objects.requireNonNull(builder.startTime, "startTime must not be null");
+        type = Objects.requireNonNull(builder.type, "type must not be null");
         finishedStatus = builder.finishedStatus;
         expiryDate = builder.expiryDate;
     }
@@ -40,8 +46,8 @@ public class CompactionTaskStatus {
         return taskId;
     }
 
-    public CompactionTaskStartedStatus getStartedStatus() {
-        return startedStatus;
+    public CompactionTaskType getType() {
+        return type;
     }
 
     public CompactionTaskFinishedStatus getFinishedStatus() {
@@ -54,7 +60,7 @@ public class CompactionTaskStatus {
     }
 
     public Instant getStartTime() {
-        return startedStatus.getStartTime();
+        return startTime;
     }
 
     public Instant getFinishTime() {
@@ -65,16 +71,48 @@ public class CompactionTaskStatus {
         }
     }
 
-    public Instant getLastTime() {
+    private Instant getLastTime() {
         if (isFinished()) {
             return finishedStatus.getFinishTime();
         } else {
-            return startedStatus.getStartTime();
+            return startTime;
         }
     }
 
     public boolean isFinished() {
         return finishedStatus != null;
+    }
+
+    public Integer getJobRunsOrNull() {
+        if (isFinished()) {
+            return finishedStatus.getTotalJobRuns();
+        } else {
+            return null;
+        }
+    }
+
+    public int getJobRuns() {
+        if (isFinished()) {
+            return finishedStatus.getTotalJobRuns();
+        } else {
+            return 0;
+        }
+    }
+
+    public ProcessRun asProcessRun() {
+        return ProcessRun.builder().taskId(taskId)
+                .startedStatus(ProcessStartedStatus.updateAndStartTime(getStartTime(), getStartTime()))
+                .finishedStatus(asProcessFinishedStatus())
+                .build();
+    }
+
+    private ProcessFinishedStatus asProcessFinishedStatus() {
+        if (finishedStatus == null) {
+            return null;
+        }
+        return ProcessFinishedStatus.updateTimeAndSummary(
+                finishedStatus.getFinishTime(),
+                finishedStatus.asSummary(getStartTime()));
     }
 
     @Override
@@ -86,22 +124,23 @@ public class CompactionTaskStatus {
             return false;
         }
         CompactionTaskStatus that = (CompactionTaskStatus) o;
-        return Objects.equals(taskId, that.taskId)
-                && Objects.equals(startedStatus, that.startedStatus)
+        return taskId.equals(that.taskId) && type == that.type
+                && startTime.equals(that.startTime)
                 && Objects.equals(finishedStatus, that.finishedStatus)
                 && Objects.equals(expiryDate, that.expiryDate);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(taskId, startedStatus, finishedStatus, expiryDate);
+        return Objects.hash(taskId, type, startTime, finishedStatus, expiryDate);
     }
 
     @Override
     public String toString() {
         return "CompactionTaskStatus{" +
                 "taskId='" + taskId + '\'' +
-                ", startedStatus=" + startedStatus +
+                ", type=" + type +
+                ", startTime=" + startTime +
                 ", finishedStatus=" + finishedStatus +
                 ", expiryDate=" + expiryDate +
                 '}';
@@ -109,11 +148,16 @@ public class CompactionTaskStatus {
 
     public static final class Builder {
         private String taskId;
-        private CompactionTaskStartedStatus startedStatus;
+        private CompactionTaskType type = CompactionTaskType.COMPACTION;
+        private Instant startTime;
         private CompactionTaskFinishedStatus finishedStatus;
         private Instant expiryDate;
 
         private Builder() {
+        }
+
+        public static Builder builder() {
+            return new Builder();
         }
 
         public Builder taskId(String taskId) {
@@ -121,13 +165,14 @@ public class CompactionTaskStatus {
             return this;
         }
 
-        public Builder startedStatus(CompactionTaskStartedStatus startedStatus) {
-            this.startedStatus = startedStatus;
+        public Builder type(CompactionTaskType type) {
+            this.type = type;
             return this;
         }
 
-        public Builder started(Instant startTime) {
-            return startedStatus(new CompactionTaskStartedStatus(startTime));
+        public Builder startTime(Instant startTime) {
+            this.startTime = startTime;
+            return this;
         }
 
         public Builder finishedStatus(CompactionTaskFinishedStatus finishedStatus) {
@@ -145,8 +190,8 @@ public class CompactionTaskStatus {
         }
 
         public Builder finished(CompactionTaskFinishedStatus.Builder taskFinishedBuilder, Instant finishTime) {
-            return finishedStatus(taskFinishedBuilder.finish(
-                            startedStatus.getStartTime(), finishTime)
+            return finishedStatus(taskFinishedBuilder
+                    .finish(startTime, finishTime)
                     .build());
         }
 

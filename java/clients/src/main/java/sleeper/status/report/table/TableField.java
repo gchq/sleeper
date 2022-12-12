@@ -17,16 +17,14 @@ package sleeper.status.report.table;
 
 import java.util.Objects;
 
-public class TableField {
+public class TableField implements TableFieldReference {
 
     private final int index;
-    private final String header;
-    private final HorizontalAlignment horizontalAlignment;
+    private final TableFieldDefinition definition;
 
     private TableField(Builder builder) {
         index = builder.index;
-        header = Objects.requireNonNull(builder.header, "header must not be null");
-        horizontalAlignment = Objects.requireNonNull(builder.horizontalAlignment, "horizontalAlignment must not be null");
+        definition = Objects.requireNonNull(builder.definition, "definition must not be null");
     }
 
     static Builder builder(TableWriterFactory.Builder table, int index) {
@@ -34,52 +32,39 @@ public class TableField {
     }
 
     public String getHeader() {
-        return header;
+        return definition.getHeader();
     }
 
     public int getIndex() {
         return index;
     }
 
-    public HorizontalAlignment getHorizontalAlignment() {
-        return horizontalAlignment;
+    public TableFieldDefinition.HorizontalAlignment getHorizontalAlignment() {
+        return definition.getHorizontalAlignment();
     }
 
-    public enum HorizontalAlignment {
-        LEFT, RIGHT
+    public TableFieldDefinition getDefinition() {
+        return definition;
     }
 
     public static final class Builder {
         private final TableWriterFactory.Builder table;
         private final int index;
-        private String header;
-        private HorizontalAlignment horizontalAlignment;
+        private TableFieldDefinition definition;
 
         private Builder(TableWriterFactory.Builder table, int index) {
             this.table = table;
             this.index = index;
         }
 
-        public Builder header(String header) {
-            this.header = header;
-            return this;
-        }
-
-        public Builder alignLeft() {
-            return horizontalAlignment(HorizontalAlignment.LEFT);
-        }
-
-        public Builder alignRight() {
-            return horizontalAlignment(HorizontalAlignment.RIGHT);
-        }
-
-        private Builder horizontalAlignment(HorizontalAlignment horizontalAlignment) {
-            this.horizontalAlignment = horizontalAlignment;
+        public Builder definition(TableFieldDefinition definition) {
+            this.definition = definition;
             return this;
         }
 
         public TableField build() {
             return table.addField(new TableField(this));
         }
+
     }
 }

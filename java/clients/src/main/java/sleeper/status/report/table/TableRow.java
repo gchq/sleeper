@@ -47,12 +47,15 @@ public class TableRow {
 
     public static final class Builder {
         private final String[] values;
+        private final TableFieldIndex fieldIndex;
 
-        Builder(int fieldCount) {
+        Builder(int fieldCount, TableFieldIndex fieldIndex) {
             this.values = new String[fieldCount];
+            this.fieldIndex = fieldIndex;
         }
 
-        public Builder value(TableField field, Object value) {
+        public Builder value(TableFieldReference fieldReference, Object value) {
+            TableField field = fieldIndex.getField(fieldReference);
             values[field.getIndex()] = Objects.toString(value, "");
             return this;
         }

@@ -116,10 +116,10 @@ sleeper.compaction.task.x86.gpu=0
 # Flag to enable/disable storage of tracking information for compaction jobs and tasks.
 sleeper.compaction.status.store.enabled=true
 
-# The time to live in seconds for compaction jobs in the status store. Default is 1 week
+# The time to live in seconds for compaction job updates in the status store. Default is 1 week
 sleeper.compaction.job.status.ttl=604800
 
-# The time to live in seconds for compaction tasks in the status store. Default is 1 week
+# The time to live in seconds for compaction task updates in the status store. Default is 1 week
 sleeper.compaction.task.status.ttl=604800
 
 # The retention period for CloudWatch logs. See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html for valid options.
@@ -228,5 +228,8 @@ sleeper.ingest.arrow.max.single.write.to.file.records=1024
 # Flag to enable/disable storage of tracking information for ingest jobs and tasks.
 sleeper.ingest.status.store.enabled=true
 
-# The time to live in seconds for ingest jobs in the status store. Default is 1 week
+# The time to live in seconds for ingest job updates in the status store. Default is 1 week
 sleeper.ingest.job.status.ttl=604800
+
+# The time to live in seconds for ingest task updates in the status store. Default is 1 week
+sleeper.ingest.task.status.ttl=604800
