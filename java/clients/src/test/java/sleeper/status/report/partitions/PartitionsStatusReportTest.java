@@ -62,4 +62,15 @@ public class PartitionsStatusReportTest {
         assertThat(getStandardReport(PartitionsQuery.ALL, partitions, splittingPartitionCount)).hasToString(
                 example("reports/partitions/rootWithTwoChildren.txt"));
     }
+
+    @Test
+    public void shouldReportRootPartitionWithTwoChildrenBothNeedSplitting() throws IOException {
+        // Given
+        List<Partition> partitions = createRootPartitionWithTwoChildren();
+        int splittingPartitionCount = 2;
+
+        // When
+        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, splittingPartitionCount)).hasToString(
+                example("reports/partitions/rootWithTwoChildrenBothNeedSplitting.txt"));
+    }
 }
