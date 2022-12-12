@@ -22,22 +22,26 @@ import sleeper.core.partition.Partition;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithNoChildren;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildren;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.getStandardReport;
+import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.setNumberOfRecordsForPartitionsNonSplitting;
+import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.setNumberOfRecordsForPartitionsSplitting;
 
 public class PartitionsStatusReportTest {
     @Test
     public void shouldReportNoPartitions() throws IOException {
         // Given
         List<Partition> partitions = Collections.emptyList();
+        Map<String, Long> recordsPerPartition = setNumberOfRecordsForPartitionsNonSplitting(partitions);
         int splittingPartitionCount = 0;
 
         // When
-        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, splittingPartitionCount)).hasToString(
+        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, recordsPerPartition, splittingPartitionCount)).hasToString(
                 example("reports/partitions/noPartitions.txt"));
     }
 
@@ -45,10 +49,11 @@ public class PartitionsStatusReportTest {
     public void shouldReportRootPartitionWithNoChildren() throws IOException {
         // Given
         List<Partition> partitions = createRootPartitionWithNoChildren();
+        Map<String, Long> recordsPerPartition = setNumberOfRecordsForPartitionsNonSplitting(partitions);
         int splittingPartitionCount = 0;
 
         // When
-        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, splittingPartitionCount)).hasToString(
+        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, recordsPerPartition, splittingPartitionCount)).hasToString(
                 example("reports/partitions/rootWithNoChildren.txt"));
     }
 
@@ -56,10 +61,11 @@ public class PartitionsStatusReportTest {
     public void shouldReportRootPartitionWithTwoChildren() throws IOException {
         // Given
         List<Partition> partitions = createRootPartitionWithTwoChildren();
+        Map<String, Long> recordsPerPartition = setNumberOfRecordsForPartitionsNonSplitting(partitions);
         int splittingPartitionCount = 0;
 
         // When
-        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, splittingPartitionCount)).hasToString(
+        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, recordsPerPartition, splittingPartitionCount)).hasToString(
                 example("reports/partitions/rootWithTwoChildren.txt"));
     }
 
@@ -67,10 +73,11 @@ public class PartitionsStatusReportTest {
     public void shouldReportRootPartitionWithTwoChildrenBothNeedSplitting() throws IOException {
         // Given
         List<Partition> partitions = createRootPartitionWithTwoChildren();
+        Map<String, Long> recordsPerPartition = setNumberOfRecordsForPartitionsSplitting(partitions);
         int splittingPartitionCount = 2;
 
         // When
-        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, splittingPartitionCount)).hasToString(
+        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, recordsPerPartition, splittingPartitionCount)).hasToString(
                 example("reports/partitions/rootWithTwoChildrenBothNeedSplitting.txt"));
     }
 }

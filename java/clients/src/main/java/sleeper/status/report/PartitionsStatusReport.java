@@ -35,7 +35,9 @@ import sleeper.status.report.partitions.PartitionsStatusReporter;
 import sleeper.status.report.partitions.StandardPartitionsStatusReporter;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static sleeper.splitter.FindPartitionsToSplit.partitionNeedsSplitting;
 
@@ -61,7 +63,7 @@ public class PartitionsStatusReport {
     }
 
     public void run() throws StateStoreException {
-        reporter.report(query, query.run(store), getSplittingPartitionCount());
+        reporter.report(query, query.run(store), getPartitionMapToNumberOfRecords(), getSplittingPartitionCount());
     }
 
     private int getSplittingPartitionCount() throws StateStoreException {
@@ -69,6 +71,19 @@ public class PartitionsStatusReport {
         List<FileInfo> allFiles = store.getActiveFiles();
         return (int) allPartitions.stream()
                 .filter(partition -> partitionNeedsSplitting(tableProperties, partition, allFiles)).count();
+    }
+
+    private Map<String, Long> getPartitionMapToNumberOfRecords() throws StateStoreException {
+        List<FileInfo> files = store.getActiveFiles();
+        Map<String, Long> partitionToFiles = new HashMap<>();
+        for (FileInfo fileInfo : files) {
+            String partition = fileInfo.getPartitionId();
+            if (!partitionToFiles.containsKey(partition)) {
+                partitionToFiles.put(partition, 0L);
+            }
+            partitionToFiles.put(partition, (partitionToFiles.get(partition)) + fileInfo.getNumberOfRecords());
+        }
+        return partitionToFiles;
     }
 
     public static void main(String[] args) throws IOException, StateStoreException {

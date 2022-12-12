@@ -20,6 +20,7 @@ import sleeper.core.partition.Partition;
 
 import java.io.PrintStream;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class StandardPartitionsStatusReporter implements PartitionsStatusReporter {
@@ -29,22 +30,27 @@ public class StandardPartitionsStatusReporter implements PartitionsStatusReporte
         this.out = out;
     }
 
-    public void report(PartitionsQuery query, List<Partition> partitions, int splittingPartitionCount) {
+    public void report(PartitionsQuery query, List<Partition> partitions, Map<String, Long> recordsPerPartitions, int splittingPartitionCount) {
         if (query == PartitionsQuery.ALL) {
-            printAllPartitions(partitions, splittingPartitionCount);
+            printAllPartitions(partitions, recordsPerPartitions, splittingPartitionCount);
         } else {
             throw new IllegalArgumentException("Unrecognised query type: " + query);
         }
     }
 
-    private void printAllPartitions(List<Partition> partitions, int splittingPartitionCount) {
+    private void printAllPartitions(List<Partition> partitions, Map<String, Long> recordsPerPartitions, int splittingPartitionCount) {
         out.println();
         out.println("Partitions Status Report:");
         out.println("--------------------------");
         List<Partition> leafPartitions = partitions.stream().filter(Partition::isLeafPartition).collect(Collectors.toList());
         out.println("There are " + partitions.size() + " partitions (" + leafPartitions.size() + " leaf partitions)");
         out.println("There are " + splittingPartitionCount + " leaf partitions that need splitting");
-        partitions.forEach(out::println);
+        partitions.forEach(partition -> {
+            out.println(partition);
+            if (partition.isLeafPartition()) {
+                out.println(" - Number of records: " + recordsPerPartitions.getOrDefault(partition.getId(), 0L));
+            }
+        });
         out.println("--------------------------");
     }
 }

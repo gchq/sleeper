@@ -25,7 +25,9 @@ import sleeper.core.schema.type.StringType;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PartitionStatusReportTestHelper {
 
@@ -52,10 +54,27 @@ public class PartitionStatusReportTestHelper {
         return new PartitionFactory(schema);
     }
 
-    public static String getStandardReport(PartitionsQuery queryType, List<Partition> partitionList, int splittingPartitionCount) {
+    public static Map<String, Long> setNumberOfRecordsForPartitionsNonSplitting(List<Partition> partitions) {
+        return setNumberOfRecordsForPartitions(partitions, 10L);
+    }
+
+    public static Map<String, Long> setNumberOfRecordsForPartitionsSplitting(List<Partition> partitions) {
+        return setNumberOfRecordsForPartitions(partitions, 10000L);
+    }
+
+    public static Map<String, Long> setNumberOfRecordsForPartitions(List<Partition> partitions, Long records) {
+        Map<String, Long> recordsToPartition = new HashMap<>();
+        partitions.stream()
+                .filter(Partition::isLeafPartition)
+                .forEach(partition -> recordsToPartition.put(partition.getId(), records));
+        return recordsToPartition;
+    }
+
+    public static String getStandardReport(PartitionsQuery queryType, List<Partition> partitionList,
+                                           Map<String, Long> recordsPerPartitions, int splittingPartitionCount) {
         ToStringPrintStream output = new ToStringPrintStream();
         StandardPartitionsStatusReporter reporter = new StandardPartitionsStatusReporter(output.getPrintStream());
-        reporter.report(queryType, partitionList, splittingPartitionCount);
+        reporter.report(queryType, partitionList, recordsPerPartitions, splittingPartitionCount);
         return output.toString();
     }
 }
