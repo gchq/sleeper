@@ -695,7 +695,6 @@ public class CompactionStack extends NestedStack {
                 //container allocation failing when we need almost entire resources
                 //of machine
                 .memoryLimitMiB((int) (requirements.getRight() * 0.95))
-                .gpuCount(requirements.getRight())
                 .logging(Utils.createFargateContainerLogDriver(this, instanceProperties,
                         compactionTypeName + "EC2CompactionTasks"))
                 .build();
