@@ -43,7 +43,7 @@ public class PartitionsStatusReportStatisticsTest {
     private final TableProperties tableProperties = createTableProperties();
 
     @Test
-    public void shouldReportPartitionStatisticsWhenThresholdNotExceeded() throws StateStoreException {
+    public void shouldReportPartitionStatisticsWhenSplittingThresholdNotExceeded() throws StateStoreException {
         // Given
         List<Partition> partitions = createRootPartitionWithTwoChildren();
         when(query.run(store)).thenReturn(partitions);
@@ -58,7 +58,7 @@ public class PartitionsStatusReportStatisticsTest {
     }
 
     @Test
-    public void shouldReportPartitionStatisticsWhenThresholdExceeded() throws StateStoreException {
+    public void shouldReportPartitionStatisticsWhenSplittingThresholdExceeded() throws StateStoreException {
         // Given
         List<Partition> partitions = createRootPartitionWithTwoChildren();
         when(query.run(store)).thenReturn(partitions);
@@ -68,20 +68,6 @@ public class PartitionsStatusReportStatisticsTest {
         // When/Then
         PartitionsStatusReport partitionsStatusReport = new PartitionsStatusReport(store, tableProperties, reporter, query);
         assertThat(partitionsStatusReport.getSplittingPartitionCount()).isEqualTo(2);
-        assertThat(partitionsStatusReport.getPartitionMapToNumberOfRecords())
-                .containsExactly(entry("A", 100L), entry("B", 100L));
-    }
-
-    @Test
-    public void shouldCountNumberOfRecordsCorrectly() throws StateStoreException {
-        // Given
-        List<Partition> partitions = createRootPartitionWithTwoChildren();
-        when(query.run(store)).thenReturn(partitions);
-        List<FileInfo> allFiles = createFileInfosSplitting(partitions);
-        when(store.getActiveFiles()).thenReturn(allFiles);
-
-        // When/Then
-        PartitionsStatusReport partitionsStatusReport = new PartitionsStatusReport(store, tableProperties, reporter, query);
         assertThat(partitionsStatusReport.getPartitionMapToNumberOfRecords())
                 .containsExactly(entry("A", 100L), entry("B", 100L));
     }
