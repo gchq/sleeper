@@ -17,20 +17,16 @@ package sleeper.compaction.status.store.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.CompactionJobStatusTestData;
-import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
-import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.statestore.FileInfoFactory;
 
-import java.util.Arrays;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 
 public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
@@ -54,8 +50,8 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         assertThat(store.getUnfinishedJobs(tableName))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
-                        CompactionJobStatusTestData.jobCreated(job2, ignoredUpdateTime()),
-                        CompactionJobStatusTestData.jobCreated(job1, ignoredUpdateTime()));
+                        jobCreated(job2, ignoredUpdateTime()),
+                        jobCreated(job1, ignoredUpdateTime()));
     }
 
     @Test
@@ -79,7 +75,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         // Then
         assertThat(store.getUnfinishedJobs(tableName))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(CompactionJobStatusTestData.jobCreated(job1, ignoredUpdateTime()));
+                .containsExactly(jobCreated(job1, ignoredUpdateTime()));
     }
 
     @Test
@@ -101,7 +97,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         // Then
         assertThat(store.getUnfinishedJobs(tableName))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(CompactionJobStatusTestData.jobCreated(job1, ignoredUpdateTime()));
+                .containsExactly(jobCreated(job1, ignoredUpdateTime()));
     }
 
     @Test
@@ -123,14 +119,8 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         // Then
         assertThat(store.getUnfinishedJobs(tableName))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(CompactionJobStatus.builder().jobId(job.getId())
-                        .createdStatus(CompactionJobCreatedStatus.from(job, ignoredUpdateTime()))
-                        .jobRunsLatestFirst(Arrays.asList(
-                                ProcessRun.started(DEFAULT_TASK_ID,
-                                        ProcessStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())),
-                                ProcessRun.finished(DEFAULT_TASK_ID,
-                                        ProcessStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime()),
-                                        ProcessFinishedStatus.updateTimeAndSummary(ignoredUpdateTime(), defaultSummary()))
-                        )).build());
+                .containsExactly(jobCreated(job, ignoredUpdateTime(),
+                        startedCompactionRun(DEFAULT_TASK_ID, defaultStartTime()),
+                        finishedCompactionRun(DEFAULT_TASK_ID, defaultSummary())));
     }
 }

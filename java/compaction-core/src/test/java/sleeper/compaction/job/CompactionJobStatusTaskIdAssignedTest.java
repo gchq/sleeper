@@ -19,7 +19,6 @@ import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStartedStatus;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -28,6 +27,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 
 public class CompactionJobStatusTaskIdAssignedTest {
 
@@ -81,7 +81,6 @@ public class CompactionJobStatusTaskIdAssignedTest {
     }
 
     private static ProcessRun runWithTaskId(String taskId) {
-        return ProcessRun.started(taskId,
-                ProcessStartedStatus.updateAndStartTime(Instant.now(), Instant.now()));
+        return startedCompactionRun(taskId, Instant.now());
     }
 }
