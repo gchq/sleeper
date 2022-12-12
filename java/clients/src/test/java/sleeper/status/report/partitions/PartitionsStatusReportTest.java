@@ -34,10 +34,10 @@ public class PartitionsStatusReportTest {
     public void shouldReportNoPartitions() throws IOException {
         // Given
         List<Partition> partitions = Collections.emptyList();
-        List<Partition> splittingPartitions = Collections.emptyList();
+        int splittingPartitionCount = 0;
 
         // When
-        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, splittingPartitions)).hasToString(
+        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, splittingPartitionCount)).hasToString(
                 example("reports/partitions/noPartitions.txt"));
     }
 
@@ -45,10 +45,10 @@ public class PartitionsStatusReportTest {
     public void shouldReportRootPartitionWithNoChildren() throws IOException {
         // Given
         List<Partition> partitions = createRootPartitionWithNoChildren();
-        List<Partition> splittingPartitions = Collections.emptyList();
+        int splittingPartitionCount = 0;
 
         // When
-        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, splittingPartitions)).hasToString(
+        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, splittingPartitionCount)).hasToString(
                 example("reports/partitions/rootWithNoChildren.txt"));
     }
 
@@ -56,10 +56,10 @@ public class PartitionsStatusReportTest {
     public void shouldReportRootPartitionWithTwoChildren() throws IOException {
         // Given
         List<Partition> partitions = createRootPartitionWithTwoChildren();
-        List<Partition> splittingPartitions = Collections.emptyList();
+        int splittingPartitionCount = 0;
 
         // When
-        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, splittingPartitions)).hasToString(
+        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, splittingPartitionCount)).hasToString(
                 example("reports/partitions/rootWithTwoChildren.txt"));
     }
 }

@@ -36,7 +36,6 @@ import sleeper.status.report.partitions.StandardPartitionsStatusReporter;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static sleeper.splitter.FindPartitionsToSplit.partitionNeedsSplitting;
 
@@ -62,15 +61,14 @@ public class PartitionsStatusReport {
     }
 
     public void run() throws StateStoreException {
-        reporter.report(query, query.run(store), getSplittingPartitions());
+        reporter.report(query, query.run(store), getSplittingPartitionCount());
     }
 
-    private List<Partition> getSplittingPartitions() throws StateStoreException {
+    private int getSplittingPartitionCount() throws StateStoreException {
         List<Partition> allPartitions = query.run(store);
         List<FileInfo> allFiles = store.getActiveFiles();
-        return allPartitions.stream()
-                .filter(partition -> partitionNeedsSplitting(tableProperties, partition, allFiles))
-                .collect(Collectors.toList());
+        return (int) allPartitions.stream()
+                .filter(partition -> partitionNeedsSplitting(tableProperties, partition, allFiles)).count();
     }
 
     public static void main(String[] args) throws IOException, StateStoreException {

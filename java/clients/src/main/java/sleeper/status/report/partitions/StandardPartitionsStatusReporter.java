@@ -29,21 +29,21 @@ public class StandardPartitionsStatusReporter implements PartitionsStatusReporte
         this.out = out;
     }
 
-    public void report(PartitionsQuery query, List<Partition> partitions, List<Partition> splittingPartitions) {
+    public void report(PartitionsQuery query, List<Partition> partitions, int splittingPartitionCount) {
         if (query == PartitionsQuery.ALL) {
-            printAllPartitions(partitions, splittingPartitions);
+            printAllPartitions(partitions, splittingPartitionCount);
         } else {
             throw new IllegalArgumentException("Unrecognised query type: " + query);
         }
     }
 
-    private void printAllPartitions(List<Partition> partitions, List<Partition> splittingPartitions) {
+    private void printAllPartitions(List<Partition> partitions, int splittingPartitionCount) {
         out.println();
         out.println("Partitions Status Report:");
         out.println("--------------------------");
         List<Partition> leafPartitions = partitions.stream().filter(Partition::isLeafPartition).collect(Collectors.toList());
         out.println("There are " + partitions.size() + " partitions (" + leafPartitions.size() + " leaf partitions)");
-        out.println("There are " + splittingPartitions.size() + " leaf partitions that need splitting");
+        out.println("There are " + splittingPartitionCount + " leaf partitions that need splitting");
         partitions.forEach(out::println);
         out.println("--------------------------");
     }
