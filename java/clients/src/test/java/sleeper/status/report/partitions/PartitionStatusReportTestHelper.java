@@ -17,19 +17,27 @@
 package sleeper.status.report.partitions;
 
 import sleeper.ToStringPrintStream;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionFactory;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.statestore.FileInfo;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+
 public class PartitionStatusReportTestHelper {
+    private static final Long TEST_THRESHOLD = 10L;
 
     private PartitionStatusReportTestHelper() {
     }
@@ -76,5 +84,36 @@ public class PartitionStatusReportTestHelper {
         StandardPartitionsStatusReporter reporter = new StandardPartitionsStatusReporter(output.getPrintStream());
         reporter.report(queryType, partitionList, recordsPerPartitions, splittingPartitionCount);
         return output.toString();
+    }
+
+    public static List<FileInfo> createFileInfosNonSplitting(List<Partition> partitions) {
+        return createFileInfos(partitions, 5L);
+    }
+
+    public static List<FileInfo> createFileInfosSplitting(List<Partition> partitions) {
+        return createFileInfos(partitions, 100L);
+    }
+
+    public static List<FileInfo> createFileInfos(List<Partition> partitions, Long records) {
+        List<FileInfo> fileInfos = new ArrayList<>();
+        partitions.forEach(partition -> {
+            if (partition.isLeafPartition()) {
+                fileInfos.add(FileInfo.builder()
+                        .numberOfRecords(records)
+                        .filename("test" + partition.getId() + ".parquet")
+                        .partitionId(partition.getId())
+                        .jobId("test-job")
+                        .build());
+            }
+        });
+        return fileInfos;
+    }
+
+    public static TableProperties createTableProperties() {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(TABLE_NAME, "test-table");
+        tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, TEST_THRESHOLD);
+        return tableProperties;
     }
 }
