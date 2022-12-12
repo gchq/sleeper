@@ -27,7 +27,7 @@ import sleeper.core.record.process.status.TestProcessStatusUpdateRecords;
 
 import java.time.Instant;
 import java.time.temporal.ChronoField;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
@@ -37,10 +37,14 @@ public class CompactionJobStatusTestData {
     }
 
     public static CompactionJobStatus jobCreated(CompactionJob job, Instant updateTime) {
+        return jobStatus(job, updateTime);
+    }
+
+    public static CompactionJobStatus jobStatus(CompactionJob job, Instant createdTime, ProcessRun... runsLatestFirst) {
         return CompactionJobStatus.builder()
                 .jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, updateTime))
-                .jobRunsLatestFirst(Collections.emptyList())
+                .createdStatus(CompactionJobCreatedStatus.from(job, createdTime))
+                .jobRunsLatestFirst(Arrays.asList(runsLatestFirst))
                 .build();
     }
 

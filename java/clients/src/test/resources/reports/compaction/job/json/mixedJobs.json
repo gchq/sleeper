@@ -14,18 +14,18 @@
       {
         "taskId": "task2222-2222-2222-2222-222222222222",
         "startedStatus": {
-          "updateTime": "2022-09-22T13:39:12.001Z",
+          "updateTime": "2022-09-22T13:34:12.123Z",
           "startTime": "2022-09-22T13:34:12.001Z"
         },
         "finishedStatus": {
-          "updateTime": "2022-09-22T13:40:12.001Z",
+          "updateTime": "2022-09-22T13:35:12.123Z",
           "summary": {
             "recordsProcessed": {
               "linesRead": 600,
               "linesWritten": 300
             },
-            "startTime": "2022-09-22T13:39:12.001Z",
-            "finishTime": "2022-09-22T13:40:12.001Z",
+            "startTime": "2022-09-22T13:34:12.001Z",
+            "finishTime": "2022-09-22T13:35:12.001Z",
             "durationInSeconds": 60.0,
             "recordsReadPerSecond": 10.0,
             "recordsWrittenPerSecond": 5.0
@@ -49,7 +49,7 @@
       {
         "taskId": "task2222-2222-2222-2222-222222222222",
         "startedStatus": {
-          "updateTime": "2022-09-21T13:39:12.001Z",
+          "updateTime": "2022-09-21T13:34:12.123Z",
           "startTime": "2022-09-21T13:34:12.001Z"
         }
       }
@@ -80,18 +80,18 @@
       {
         "taskId": "task1111-1111-1111-1111-111111111111",
         "startedStatus": {
-          "updateTime": "2022-09-19T13:39:12.001Z",
+          "updateTime": "2022-09-19T13:34:12.123Z",
           "startTime": "2022-09-19T13:34:12.001Z"
         },
         "finishedStatus": {
-          "updateTime": "2022-09-19T13:40:12.001Z",
+          "updateTime": "2022-09-19T13:35:12.123Z",
           "summary": {
             "recordsProcessed": {
               "linesRead": 600,
               "linesWritten": 300
             },
-            "startTime": "2022-09-19T13:39:12.001Z",
-            "finishTime": "2022-09-19T13:40:12.001Z",
+            "startTime": "2022-09-19T13:34:12.001Z",
+            "finishTime": "2022-09-19T13:35:12.001Z",
             "durationInSeconds": 60.0,
             "recordsReadPerSecond": 10.0,
             "recordsWrittenPerSecond": 5.0
@@ -112,7 +112,7 @@
       {
         "taskId": "task1111-1111-1111-1111-111111111111",
         "startedStatus": {
-          "updateTime": "2022-09-18T13:39:12.001Z",
+          "updateTime": "2022-09-18T13:34:12.123Z",
           "startTime": "2022-09-18T13:34:12.001Z"
         }
       }
