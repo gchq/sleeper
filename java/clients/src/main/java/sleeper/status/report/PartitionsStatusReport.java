@@ -25,7 +25,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
-import sleeper.splitter.FindPartitionsToSplit;
+import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
@@ -35,6 +35,10 @@ import sleeper.status.report.partitions.PartitionsStatusReporter;
 import sleeper.status.report.partitions.StandardPartitionsStatusReporter;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static sleeper.splitter.FindPartitionsToSplit.partitionNeedsSplitting;
 
 /**
  * A utility class to report information about the partitions in the system and
@@ -58,15 +62,15 @@ public class PartitionsStatusReport {
     }
 
     public void run() throws StateStoreException {
-        reporter.report(query, query.run(store), this::checkPartitionNeedsSplitting);
+        reporter.report(query, query.run(store), getSplittingPartitions());
     }
 
-    public boolean checkPartitionNeedsSplitting(Partition partition) {
-        try {
-            return FindPartitionsToSplit.partitionNeedsSplitting(tableProperties, partition, store.getActiveFiles());
-        } catch (StateStoreException exception) {
-            return false;
-        }
+    private List<Partition> getSplittingPartitions() throws StateStoreException {
+        List<Partition> allPartitions = query.run(store);
+        List<FileInfo> allFiles = store.getActiveFiles();
+        return allPartitions.stream()
+                .filter(partition -> partitionNeedsSplitting(tableProperties, partition, allFiles))
+                .collect(Collectors.toList());
     }
 
     public static void main(String[] args) throws IOException, StateStoreException {

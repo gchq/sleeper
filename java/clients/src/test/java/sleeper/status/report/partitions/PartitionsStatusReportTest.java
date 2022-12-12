@@ -18,7 +18,6 @@ package sleeper.status.report.partitions;
 
 import org.junit.Test;
 import sleeper.core.partition.Partition;
-import sleeper.statestore.FileInfo;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -35,10 +34,10 @@ public class PartitionsStatusReportTest {
     public void shouldReportNoPartitions() throws IOException {
         // Given
         List<Partition> partitions = Collections.emptyList();
-        List<FileInfo> fileInfos = Collections.emptyList();
+        List<Partition> splittingPartitions = Collections.emptyList();
 
         // When
-        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, fileInfos)).hasToString(
+        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, splittingPartitions)).hasToString(
                 example("reports/partitions/noPartitions.txt"));
     }
 
@@ -46,10 +45,10 @@ public class PartitionsStatusReportTest {
     public void shouldReportRootPartitionWithNoChildren() throws IOException {
         // Given
         List<Partition> partitions = createRootPartitionWithNoChildren();
-        List<FileInfo> fileInfos = Collections.emptyList();
+        List<Partition> splittingPartitions = Collections.emptyList();
 
         // When
-        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, fileInfos)).hasToString(
+        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, splittingPartitions)).hasToString(
                 example("reports/partitions/rootWithNoChildren.txt"));
     }
 
@@ -57,10 +56,10 @@ public class PartitionsStatusReportTest {
     public void shouldReportRootPartitionWithTwoChildren() throws IOException {
         // Given
         List<Partition> partitions = createRootPartitionWithTwoChildren();
-        List<FileInfo> fileInfos = Collections.emptyList();
+        List<Partition> splittingPartitions = Collections.emptyList();
 
         // When
-        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, fileInfos)).hasToString(
+        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, splittingPartitions)).hasToString(
                 example("reports/partitions/rootWithTwoChildren.txt"));
     }
 }

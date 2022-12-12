@@ -21,10 +21,9 @@ import sleeper.core.partition.Partition;
 import java.io.PrintStream;
 import java.util.List;
 import java.util.Locale;
-import java.util.function.Predicate;
 
 public interface PartitionsStatusReporter {
-    void report(PartitionsQuery query, List<Partition> partitions, Predicate<Partition> splittingCheck);
+    void report(PartitionsQuery query, List<Partition> partitions, List<Partition> splittingPartitions);
 
     static PartitionsStatusReporter from(String type, PrintStream out) {
         if ("standard".equals(type.toLowerCase(Locale.ROOT))) {

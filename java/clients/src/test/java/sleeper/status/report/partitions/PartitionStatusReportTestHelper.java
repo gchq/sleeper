@@ -24,7 +24,6 @@ import sleeper.core.partition.PartitionFactory;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.splitter.FindPartitionsToSplit;
 import sleeper.statestore.FileInfo;
 
 import java.util.Arrays;
@@ -33,6 +32,8 @@ import java.util.List;
 
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.splitter.FindPartitionsToSplit.getRelevantFileInfos;
+import static sleeper.splitter.FindPartitionsToSplit.partitionNeedsSplitting;
 
 public class PartitionStatusReportTestHelper {
     private static final long SPLITTING_THRESHOLD = 5L;
@@ -60,10 +61,10 @@ public class PartitionStatusReportTestHelper {
         return new PartitionFactory(schema);
     }
 
-    public static String getStandardReport(PartitionsQuery queryType, List<Partition> partitionList, List<FileInfo> allFileInfos) {
+    public static String getStandardReport(PartitionsQuery queryType, List<Partition> partitionList, List<Partition> splittingPartitions) {
         ToStringPrintStream output = new ToStringPrintStream();
         StandardPartitionsStatusReporter reporter = new StandardPartitionsStatusReporter(output.getPrintStream());
-        reporter.report(queryType, partitionList, partition -> checkPartitionNeedsSplitting(partition, allFileInfos));
+        reporter.report(queryType, partitionList, splittingPartitions);
         return output.toString();
     }
 
@@ -77,7 +78,7 @@ public class PartitionStatusReportTestHelper {
 
     private static boolean checkPartitionNeedsSplitting(Partition partition, List<FileInfo> allFiles) {
         TableProperties tableProperties = createTableProperties();
-        return FindPartitionsToSplit.partitionNeedsSplitting(tableProperties, partition,
-                FindPartitionsToSplit.getRelevantFileInfos(partition, allFiles));
+        return partitionNeedsSplitting(tableProperties, partition,
+                getRelevantFileInfos(partition, allFiles));
     }
 }

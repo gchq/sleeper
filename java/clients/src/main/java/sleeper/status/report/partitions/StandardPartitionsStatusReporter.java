@@ -20,7 +20,6 @@ import sleeper.core.partition.Partition;
 
 import java.io.PrintStream;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class StandardPartitionsStatusReporter implements PartitionsStatusReporter {
@@ -30,22 +29,21 @@ public class StandardPartitionsStatusReporter implements PartitionsStatusReporte
         this.out = out;
     }
 
-    public void report(PartitionsQuery query, List<Partition> partitions, Predicate<Partition> splittingCheck) {
+    public void report(PartitionsQuery query, List<Partition> partitions, List<Partition> splittingPartitions) {
         if (query == PartitionsQuery.ALL) {
-            printAllPartitions(partitions, splittingCheck);
+            printAllPartitions(partitions, splittingPartitions);
         } else {
             throw new IllegalArgumentException("Unrecognised query type: " + query);
         }
     }
 
-    private void printAllPartitions(List<Partition> partitions, Predicate<Partition> splittingCheck) {
+    private void printAllPartitions(List<Partition> partitions, List<Partition> splittingPartitions) {
         out.println();
         out.println("Partitions Status Report:");
         out.println("--------------------------");
         List<Partition> leafPartitions = partitions.stream().filter(Partition::isLeafPartition).collect(Collectors.toList());
         out.println("There are " + partitions.size() + " partitions (" + leafPartitions.size() + " leaf partitions)");
-        List<Partition> partitionsThatNeedSplitting = leafPartitions.stream().filter(splittingCheck).collect(Collectors.toList());
-        out.println("There are " + partitionsThatNeedSplitting.size() + " leaf partitions that need splitting");
+        out.println("There are " + splittingPartitions.size() + " leaf partitions that need splitting");
         partitions.forEach(out::println);
         out.println("--------------------------");
     }
