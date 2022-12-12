@@ -50,17 +50,16 @@ public class BulkImportDataframeLocalSortRunner extends BulkImportJobRunner {
             Dataset<Row> rows,
             BulkImportJob job,
             TableProperties tableProperties,
-            Broadcast<List<Partition>> broadcastedPartitions, Configuration conf) throws IOException {
+            Broadcast<List<Partition>> broadcastedPartitions,
+            Configuration conf) throws IOException {
         LOGGER.info("Running bulk import job with id {}", job.getId());
 
         Schema schema = tableProperties.getSchema();
         int numLeafPartitions = (int) broadcastedPartitions.value().stream().filter(Partition::isLeafPartition).count();
         LOGGER.info("There are {} leaf partitions", numLeafPartitions);
 
-        PartitionTree partitionTree = new PartitionTree(schema, broadcastedPartitions.getValue());
+        PartitionTree partitionTree = new PartitionTree(schema, broadcastedPartitions.value());
         Dataset<Row> dataWithPartition = rows.withColumn(PARTITION_FIELD_NAME, PartitionAsIntColumn.getColumn(partitionTree, schema));
-
-        LOGGER.info("After adding partition id as int, there are {} partitions", dataWithPartition.rdd().getNumPartitions());
 
         Dataset<Row> repartitionedData = new com.joom.spark.package$implicits$ExplicitRepartitionWrapper(dataWithPartition).explicitRepartition(numLeafPartitions, new Column(PARTITION_FIELD_NAME));
         LOGGER.info("After repartitioning data, there are {} partitions", repartitionedData.rdd().getNumPartitions());
@@ -71,10 +70,8 @@ public class BulkImportDataframeLocalSortRunner extends BulkImportJobRunner {
                 .map(Column::new)
                 .collect(Collectors.toList())
                 .toArray(new Column[0]);
-        LOGGER.info("Sorting by columns {}", String.join(",", Arrays.stream(sortColumns).map(c -> c.toString()).collect(Collectors.toList())));
-
+        LOGGER.info("Sorting by columns {}", String.join(",", Arrays.stream(sortColumns).map(Column::toString).collect(Collectors.toList())));
         Dataset<Row> sortedRows = repartitionedData.sortWithinPartitions(sortColumns);
-        LOGGER.info("There are {} partitions in the sorted-within-partition Dataset", sortedRows.rdd().getNumPartitions());
 
         return sortedRows.mapPartitions(new WriteParquetFile(getInstanceProperties().saveAsString(), tableProperties.saveAsString(), conf, broadcastedPartitions), RowEncoder.apply(createFileInfoSchema()));
     }
