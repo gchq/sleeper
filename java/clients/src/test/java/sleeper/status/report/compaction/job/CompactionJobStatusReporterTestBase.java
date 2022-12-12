@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 
 import static sleeper.ClientTestUtils.exampleUUID;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
-import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatus;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.status.report.StatusReporterTestHelper.task;
@@ -73,12 +73,12 @@ public abstract class CompactionJobStatusReporterTestBase {
         Instant creationTime6 = Instant.parse("2022-09-22T13:33:12.001Z");
         Instant startedTime6 = Instant.parse("2022-09-22T13:34:12.001Z");
 
-        CompactionJobStatus status1 = jobStatus(job1, creationTime1);
-        CompactionJobStatus status2 = jobStatus(job2, creationTime2, startedCompactionRun(task(1), startedTime2));
-        CompactionJobStatus status3 = jobStatus(job3, creationTime3, finishedCompactionRun(task(1), summary(startedTime3, Duration.ofMinutes(1), 600, 300)));
-        CompactionJobStatus status4 = jobStatus(job4, creationTime4);
-        CompactionJobStatus status5 = jobStatus(job5, creationTime5, startedCompactionRun(task(2), startedTime5));
-        CompactionJobStatus status6 = jobStatus(job6, creationTime6, finishedCompactionRun(task(2), summary(startedTime6, Duration.ofMinutes(1), 600, 300)));
+        CompactionJobStatus status1 = jobCreated(job1, creationTime1);
+        CompactionJobStatus status2 = jobCreated(job2, creationTime2, startedCompactionRun(task(1), startedTime2));
+        CompactionJobStatus status3 = jobCreated(job3, creationTime3, finishedCompactionRun(task(1), summary(startedTime3, Duration.ofMinutes(1), 600, 300)));
+        CompactionJobStatus status4 = jobCreated(job4, creationTime4);
+        CompactionJobStatus status5 = jobCreated(job5, creationTime5, startedCompactionRun(task(2), startedTime5));
+        CompactionJobStatus status6 = jobCreated(job6, creationTime6, finishedCompactionRun(task(2), summary(startedTime6, Duration.ofMinutes(1), 600, 300)));
         return Arrays.asList(status6, status5, status4, status3, status2, status1);
     }
 
@@ -92,7 +92,7 @@ public abstract class CompactionJobStatusReporterTestBase {
         CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
 
         CompactionJob job = dataHelper.singleFileCompaction();
-        CompactionJobStatus status = jobStatus(job, Instant.parse("2022-10-12T10:00:00.001Z"),
+        CompactionJobStatus status = jobCreated(job, Instant.parse("2022-10-12T10:00:00.001Z"),
                 startedCompactionRun(task(1), Instant.parse("2022-10-12T10:02:00.001Z")),
                 finishedCompactionRun(task(2), summary(
                         Instant.parse("2022-10-12T10:01:15.001Z"),
@@ -123,13 +123,13 @@ public abstract class CompactionJobStatusReporterTestBase {
         Instant startedTime4 = Instant.parse("2022-10-13T14:02:10.000Z");
 
         return Arrays.asList(
-                jobStatus(job4, creationTime4, finishedCompactionRun("task-id",
+                jobCreated(job4, creationTime4, finishedCompactionRun("task-id",
                         summary(startedTime4, Duration.ofMillis(123), 1234, 1234))),
-                jobStatus(job3, creationTime3, finishedCompactionRun("task-id",
+                jobCreated(job3, creationTime3, finishedCompactionRun("task-id",
                         summary(startedTime3, Duration.ofSeconds(60), 1000600, 500300))),
-                jobStatus(job2, creationTime2, finishedCompactionRun("task-id",
+                jobCreated(job2, creationTime2, finishedCompactionRun("task-id",
                         summary(startedTime2, Duration.ofHours(2), 1000600, 500300))),
-                jobStatus(job1, creationTime1, finishedCompactionRun("task-id",
+                jobCreated(job1, creationTime1, finishedCompactionRun("task-id",
                         summary(startedTime1, Duration.ofMillis(123), 600, 300))));
     }
 

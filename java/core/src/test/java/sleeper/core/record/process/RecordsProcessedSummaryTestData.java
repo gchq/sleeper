@@ -24,8 +24,12 @@ public class RecordsProcessedSummaryTestData {
     }
 
     public static RecordsProcessedSummary summary(Instant startTime, Duration duration, long linesRead, long linesWritten) {
+        return summary(startTime, startTime.plus(duration), linesRead, linesWritten);
+    }
+
+    public static RecordsProcessedSummary summary(Instant startTime, Instant finishTime, long linesRead, long linesWritten) {
         return new RecordsProcessedSummary(
                 new RecordsProcessed(linesRead, linesWritten),
-                startTime, startTime.plus(duration));
+                startTime, finishTime);
     }
 }

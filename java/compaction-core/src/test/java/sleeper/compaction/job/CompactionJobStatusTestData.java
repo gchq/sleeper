@@ -36,11 +36,7 @@ public class CompactionJobStatusTestData {
     private CompactionJobStatusTestData() {
     }
 
-    public static CompactionJobStatus jobCreated(CompactionJob job, Instant updateTime) {
-        return jobStatus(job, updateTime);
-    }
-
-    public static CompactionJobStatus jobStatus(CompactionJob job, Instant createdTime, ProcessRun... runsLatestFirst) {
+    public static CompactionJobStatus jobCreated(CompactionJob job, Instant createdTime, ProcessRun... runsLatestFirst) {
         return CompactionJobStatus.builder()
                 .jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, createdTime))
