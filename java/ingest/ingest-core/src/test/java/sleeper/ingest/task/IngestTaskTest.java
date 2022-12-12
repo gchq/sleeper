@@ -35,7 +35,7 @@ import static sleeper.ingest.task.IngestTaskStatusTestData.finishedNoJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJobNoFiles;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJobOneFile;
 
-public class IngestTaskRunnerTest {
+public class IngestTaskTest {
 
     private final IngestJobHandler jobRunner = FixedIngestJobHandler.makingDefaultFiles();
     private final IngestTaskStatusStore statusStore = new WriteToMemoryIngestTaskStatusStore();
@@ -49,7 +49,7 @@ public class IngestTaskRunnerTest {
         FixedIngestJobSource jobs = FixedIngestJobSource.empty();
 
         // When
-        IngestTaskRunner runner = new IngestTaskRunner(jobs, taskId, statusStore, jobRunner,
+        IngestTask runner = new IngestTask(jobs, taskId, statusStore, jobRunner,
                 timesInOrder(startTime, finishTime));
         runner.run();
 
@@ -74,7 +74,7 @@ public class IngestTaskRunnerTest {
         FixedIngestJobSource jobs = FixedIngestJobSource.with(job);
 
         // When
-        IngestTaskRunner runner = new IngestTaskRunner(jobs, taskId, statusStore, jobRunner,
+        IngestTask runner = new IngestTask(jobs, taskId, statusStore, jobRunner,
                 timesInOrder(startTaskTime, startJobTime, finishJobTime, finishTaskTime));
         runner.run();
 
@@ -101,7 +101,7 @@ public class IngestTaskRunnerTest {
         FixedIngestJobSource jobs = FixedIngestJobSource.with(job);
 
         // When
-        IngestTaskRunner runner = new IngestTaskRunner(jobs, taskId, statusStore, jobRunner,
+        IngestTask runner = new IngestTask(jobs, taskId, statusStore, jobRunner,
                 timesInOrder(startTaskTime, startJobTime, finishJobTime, finishTaskTime));
         runner.run();
 
@@ -134,7 +134,7 @@ public class IngestTaskRunnerTest {
         FixedIngestJobSource jobs = FixedIngestJobSource.with(job1, job2);
 
         // When
-        IngestTaskRunner runner = new IngestTaskRunner(jobs, taskId, statusStore, jobRunner,
+        IngestTask runner = new IngestTask(jobs, taskId, statusStore, jobRunner,
                 timesInOrder(startTaskTime, startJob1Time, finishJob1Time, startJob2Time, finishJob2Time, finishTaskTime));
         runner.run();
 

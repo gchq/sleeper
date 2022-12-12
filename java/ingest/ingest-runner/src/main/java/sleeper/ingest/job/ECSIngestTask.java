@@ -32,7 +32,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
-import sleeper.ingest.task.IngestTaskRunner;
+import sleeper.ingest.task.IngestTask;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
@@ -44,11 +44,11 @@ import java.util.UUID;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.S3A_INPUT_FADVISE;
 
-public class IngestJobQueueConsumerRunner {
-    private IngestJobQueueConsumerRunner() {
+public class ECSIngestTask {
+    private ECSIngestTask() {
     }
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobQueueConsumerRunner.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ECSIngestTask.class);
 
     public static void main(String[] args) throws IOException, StateStoreException, IteratorException, ObjectFactoryException {
         if (1 != args.length) {
@@ -70,11 +70,10 @@ public class IngestJobQueueConsumerRunner {
         String localDir = "/mnt/scratch";
         String taskId = UUID.randomUUID().toString();
 
-        IngestTaskRunner ingestTaskRunner = createTaskRunner(objectFactory, instanceProperties, localDir,
+        IngestTask ingestTask = createIngestTask(objectFactory, instanceProperties, localDir,
                 taskId, s3Client, dynamoDBClient, sqsClient, cloudWatchClient, S3AsyncClient.create(),
-                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties),
                 ingestHadoopConfiguration(instanceProperties));
-        ingestTaskRunner.run();
+        ingestTask.run();
 
         s3Client.shutdown();
         LOGGER.info("Shut down s3Client");
@@ -87,19 +86,18 @@ public class IngestJobQueueConsumerRunner {
         LOGGER.info("IngestFromIngestJobsQueueRunner total run time = {}", runTimeInSeconds);
     }
 
-    public static IngestTaskRunner createTaskRunner(ObjectFactory objectFactory,
-                                                    InstanceProperties instanceProperties,
-                                                    String localDir,
-                                                    String taskId,
-                                                    AmazonS3 s3Client,
-                                                    AmazonDynamoDB dynamoDBClient,
-                                                    AmazonSQS sqsClient,
-                                                    AmazonCloudWatch cloudWatchClient,
-                                                    S3AsyncClient s3AsyncClient,
-                                                    Configuration stateStoreHadoopConfiguration,
-                                                    Configuration hadoopConfiguration) {
+    public static IngestTask createIngestTask(ObjectFactory objectFactory,
+                                              InstanceProperties instanceProperties,
+                                              String localDir,
+                                              String taskId,
+                                              AmazonS3 s3Client,
+                                              AmazonDynamoDB dynamoDBClient,
+                                              AmazonSQS sqsClient,
+                                              AmazonCloudWatch cloudWatchClient,
+                                              S3AsyncClient s3AsyncClient,
+                                              Configuration hadoopConfiguration) {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, stateStoreHadoopConfiguration);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, hadoopConfiguration);
         IngestTaskStatusStore taskStore = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, instanceProperties);
         IngestJobRunner ingestJobRunner = new IngestJobRunner(
                 objectFactory,
@@ -110,13 +108,12 @@ public class IngestJobQueueConsumerRunner {
                 s3AsyncClient,
                 hadoopConfiguration);
         IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(sqsClient, cloudWatchClient, instanceProperties);
-        return new IngestTaskRunner(
-                queueConsumer, taskId, taskStore, ingestJobRunner::ingest);
+        return new IngestTask(
+                queueConsumer, taskId, taskStore, ingestJobRunner);
     }
 
     private static Configuration ingestHadoopConfiguration(InstanceProperties instanceProperties) {
         Configuration conf = HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
-        conf.set("fs.s3a.connection.maximum", "10");
         conf.set("fs.s3a.experimental.input.fadvise", instanceProperties.get(S3A_INPUT_FADVISE));
         return conf;
     }
