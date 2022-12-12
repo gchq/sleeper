@@ -40,9 +40,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static sleeper.ClientTestUtils.exampleUUID;
+import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
+import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.compaction.job.CompactionJobTestDataHelper.finishedCompactionStatus;
-import static sleeper.status.report.StatusReporterTestHelper.jobRunFinishedInTask;
-import static sleeper.status.report.StatusReporterTestHelper.jobRunStartedInTask;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.status.report.StatusReporterTestHelper.task;
 
 public abstract class CompactionJobStatusReporterTestBase {
@@ -107,9 +108,13 @@ public abstract class CompactionJobStatusReporterTestBase {
         CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
                 .createdStatus(CompactionJobCreatedStatus.from(job, Instant.parse("2022-10-12T10:00:00.001Z")))
                 .jobRunsLatestFirst(Arrays.asList(
-                        jobRunStartedInTask(1, "2022-10-12T10:02:00"),
-                        jobRunFinishedInTask(2, "2022-10-12T10:01:15", "2022-10-12T10:01:45"),
-                        jobRunFinishedInTask(1, "2022-10-12T10:01:00", "2022-10-12T10:01:20")))
+                        startedCompactionRun(task(1), Instant.parse("2022-10-12T10:02:00.001Z")),
+                        finishedCompactionRun(task(2), summary(
+                                Instant.parse("2022-10-12T10:01:15.001Z"),
+                                Duration.ofSeconds(30), 300L, 200L)),
+                        finishedCompactionRun(task(1), summary(
+                                Instant.parse("2022-10-12T10:01:00.001Z"),
+                                Duration.ofSeconds(20), 300L, 200L))))
                 .build();
         return Collections.singletonList(status);
     }

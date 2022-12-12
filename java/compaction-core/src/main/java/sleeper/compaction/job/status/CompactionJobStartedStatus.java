@@ -31,7 +31,7 @@ public class CompactionJobStartedStatus implements ProcessRunStartedUpdate {
         this.startTime = Objects.requireNonNull(startTime, "startTime may not be null");
     }
 
-    public static CompactionJobStartedStatus updateAndStartTime(Instant updateTime, Instant startTime) {
+    public static CompactionJobStartedStatus startAndUpdateTime(Instant startTime, Instant updateTime) {
         return new CompactionJobStartedStatus(updateTime, startTime);
     }
 
