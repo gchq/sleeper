@@ -22,37 +22,23 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
-import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.LongType;
 import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.RecordGenerator;
-import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.io.parquet.record.ParquetRecordWriter;
 import sleeper.io.parquet.record.SchemaConverter;
-import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
-import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
@@ -66,20 +52,20 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_TAB
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public class IngestJobQueueConsumerFullIT {
+public abstract class IngestJobQueueConsumerTestBase {
     @ClassRule
     public static final AwsExternalResource AWS_EXTERNAL_RESOURCE = new AwsExternalResource(
             LocalStackContainer.Service.S3,
             LocalStackContainer.Service.SQS,
             LocalStackContainer.Service.DYNAMODB,
             LocalStackContainer.Service.CLOUDWATCH);
-    private static final String TEST_INSTANCE_NAME = "myinstance";
-    private static final String TEST_TABLE_NAME = "mytable";
-    private static final String INGEST_QUEUE_NAME = TEST_INSTANCE_NAME + "-ingestqueue";
-    private static final String CONFIG_BUCKET_NAME = TEST_INSTANCE_NAME + "-configbucket";
-    private static final String INGEST_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-ingestdata";
-    private static final String TABLE_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-tabledata";
-    private static final String FILE_SYSTEM_PREFIX = "s3a://";
+    protected static final String TEST_INSTANCE_NAME = "myinstance";
+    protected static final String TEST_TABLE_NAME = "mytable";
+    protected static final String INGEST_QUEUE_NAME = TEST_INSTANCE_NAME + "-ingestqueue";
+    protected static final String CONFIG_BUCKET_NAME = TEST_INSTANCE_NAME + "-configbucket";
+    protected static final String INGEST_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-ingestdata";
+    protected static final String TABLE_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-tabledata";
+    protected static final String FILE_SYSTEM_PREFIX = "s3a://";
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder(CommonTestConstants.TMP_DIRECTORY);
 
@@ -96,7 +82,7 @@ public class IngestJobQueueConsumerFullIT {
         AWS_EXTERNAL_RESOURCE.clear();
     }
 
-    private InstanceProperties getInstanceProperties() {
+    protected InstanceProperties getInstanceProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, TEST_INSTANCE_NAME);
         instanceProperties.set(CONFIG_BUCKET, CONFIG_BUCKET_NAME);
@@ -107,7 +93,7 @@ public class IngestJobQueueConsumerFullIT {
         return instanceProperties;
     }
 
-    private TableProperties createTable(Schema schema) throws IOException, StateStoreException {
+    protected TableProperties createTable(Schema schema) throws IOException, StateStoreException {
         InstanceProperties instanceProperties = getInstanceProperties();
 
         TableProperties tableProperties = new TableProperties(instanceProperties);
@@ -128,15 +114,15 @@ public class IngestJobQueueConsumerFullIT {
         return tableProperties;
     }
 
-    private String getTableDataBucket() {
+    protected String getTableDataBucket() {
         return TABLE_DATA_BUCKET_NAME;
     }
 
-    private String getIngestBucket() {
+    protected String getIngestBucket() {
         return INGEST_DATA_BUCKET_NAME;
     }
 
-    private List<String> writeParquetFilesForIngest(
+    protected List<String> writeParquetFilesForIngest(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
             String subDirectory,
             int numberOfFiles) throws IOException {
@@ -158,86 +144,5 @@ public class IngestJobQueueConsumerFullIT {
         }
 
         return files;
-    }
-
-    private void consumeAndVerify(Schema sleeperSchema,
-                                  List<Record> expectedRecordList,
-                                  int expectedNoOfFiles) throws Exception {
-        String localDir = temporaryFolder.newFolder().getAbsolutePath();
-        InstanceProperties instanceProperties = getInstanceProperties();
-        TableProperties tableProperties = createTable(sleeperSchema);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(AWS_EXTERNAL_RESOURCE.getS3Client(), instanceProperties);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), new InstanceProperties());
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        stateStore.initialise();
-
-        // Run the job consumer
-        IngestJobQueueConsumer ingestJobQueueConsumer = new IngestJobQueueConsumer(
-                new ObjectFactory(instanceProperties, null, temporaryFolder.newFolder().getAbsolutePath()),
-                AWS_EXTERNAL_RESOURCE.getSqsClient(),
-                AWS_EXTERNAL_RESOURCE.getCloudWatchClient(),
-                instanceProperties,
-                tablePropertiesProvider,
-                stateStoreProvider,
-                localDir,
-                AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
-                AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
-        ingestJobQueueConsumer.run();
-
-        // Verify the results
-        ResultVerifier.verify(
-                stateStore,
-                sleeperSchema,
-                key -> 0,
-                expectedRecordList,
-                Collections.singletonMap(0, expectedNoOfFiles),
-                AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
-                temporaryFolder.newFolder().getAbsolutePath());
-    }
-
-    @Test
-    public void shouldIngestParquetFilesPutOnTheQueue() throws Exception {
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
-                new LongType(),
-                LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        List<String> files = writeParquetFilesForIngest(recordListAndSchema, "", 2);
-        List<Record> doubledRecords = Stream.of(recordListAndSchema.recordList, recordListAndSchema.recordList)
-                .flatMap(List::stream)
-                .sorted(new RecordComparator(recordListAndSchema.sleeperSchema))
-                .collect(Collectors.toList());
-        IngestJob ingestJob = IngestJob.builder()
-                .tableName(TEST_TABLE_NAME).id("id").files(files)
-                .build();
-        AWS_EXTERNAL_RESOURCE.getSqsClient()
-                .sendMessage(getInstanceProperties().get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(ingestJob));
-        consumeAndVerify(recordListAndSchema.sleeperSchema, doubledRecords, 1);
-    }
-
-    @Test
-    public void shouldContinueReadingFromQueueWhileMoreMessagesExist() throws Exception {
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
-                new LongType(),
-                LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        int noOfJobs = 10;
-        int noOfFilesPerJob = 4;
-        List<IngestJob> ingestJobs = IntStream.range(0, noOfJobs)
-                .mapToObj(jobNo -> {
-                    try {
-                        List<String> files = writeParquetFilesForIngest(recordListAndSchema, "job-" + jobNo, noOfFilesPerJob);
-                        return IngestJob.builder()
-                                .tableName(TEST_TABLE_NAME).id(UUID.randomUUID().toString()).files(files)
-                                .build();
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }).collect(Collectors.toList());
-        List<Record> expectedRecords = Stream.of(Collections.nCopies(noOfJobs * noOfFilesPerJob, recordListAndSchema.recordList))
-                .flatMap(List::stream)
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
-        ingestJobs.forEach(ingestJob ->
-                AWS_EXTERNAL_RESOURCE.getSqsClient()
-                        .sendMessage(getInstanceProperties().get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(ingestJob)));
-        consumeAndVerify(recordListAndSchema.sleeperSchema, expectedRecords, noOfJobs);
     }
 }
