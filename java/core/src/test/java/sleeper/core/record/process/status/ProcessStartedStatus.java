@@ -42,7 +42,6 @@ public class ProcessStartedStatus implements ProcessRunStartedUpdate {
         return startTime;
     }
 
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
