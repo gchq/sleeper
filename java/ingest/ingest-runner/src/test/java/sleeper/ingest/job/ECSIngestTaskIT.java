@@ -25,7 +25,7 @@ import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
-import sleeper.ingest.task.IngestTaskRunner;
+import sleeper.ingest.task.IngestTask;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.statestore.StateStore;
@@ -41,7 +41,7 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
-public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
+public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
 
     private void consumeAndVerify(Schema sleeperSchema,
                                   List<Record> expectedRecordList,
@@ -53,7 +53,7 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
         DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
-        IngestTaskRunner runner = createTaskRunner(instanceProperties, localDir, "test-task");
+        IngestTask runner = createTaskRunner(instanceProperties, localDir, "test-task");
         runner.run();
 
         // Verify the results
@@ -67,10 +67,10 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
                 temporaryFolder.newFolder().getAbsolutePath());
     }
 
-    private IngestTaskRunner createTaskRunner(InstanceProperties instanceProperties,
-                                              String localDir,
-                                              String taskId) {
-        return ECSIngestTaskRunner.createTaskRunner(
+    private IngestTask createTaskRunner(InstanceProperties instanceProperties,
+                                        String localDir,
+                                        String taskId) {
+        return ECSIngestTask.createIngestTask(
                 ObjectFactory.noUserJars(), instanceProperties, localDir, taskId,
                 AWS_EXTERNAL_RESOURCE.getS3Client(), AWS_EXTERNAL_RESOURCE.getDynamoDBClient(),
                 AWS_EXTERNAL_RESOURCE.getSqsClient(), AWS_EXTERNAL_RESOURCE.getCloudWatchClient(),

@@ -32,7 +32,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
-import sleeper.ingest.task.IngestTaskRunner;
+import sleeper.ingest.task.IngestTask;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
@@ -44,11 +44,11 @@ import java.util.UUID;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.S3A_INPUT_FADVISE;
 
-public class ECSIngestTaskRunner {
-    private ECSIngestTaskRunner() {
+public class ECSIngestTask {
+    private ECSIngestTask() {
     }
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ECSIngestTaskRunner.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ECSIngestTask.class);
 
     public static void main(String[] args) throws IOException, StateStoreException, IteratorException, ObjectFactoryException {
         if (1 != args.length) {
@@ -70,10 +70,10 @@ public class ECSIngestTaskRunner {
         String localDir = "/mnt/scratch";
         String taskId = UUID.randomUUID().toString();
 
-        IngestTaskRunner ingestTaskRunner = createTaskRunner(objectFactory, instanceProperties, localDir,
+        IngestTask ingestTask = createIngestTask(objectFactory, instanceProperties, localDir,
                 taskId, s3Client, dynamoDBClient, sqsClient, cloudWatchClient, S3AsyncClient.create(),
                 ingestHadoopConfiguration(instanceProperties));
-        ingestTaskRunner.run();
+        ingestTask.run();
 
         s3Client.shutdown();
         LOGGER.info("Shut down s3Client");
@@ -86,16 +86,16 @@ public class ECSIngestTaskRunner {
         LOGGER.info("IngestFromIngestJobsQueueRunner total run time = {}", runTimeInSeconds);
     }
 
-    public static IngestTaskRunner createTaskRunner(ObjectFactory objectFactory,
-                                                    InstanceProperties instanceProperties,
-                                                    String localDir,
-                                                    String taskId,
-                                                    AmazonS3 s3Client,
-                                                    AmazonDynamoDB dynamoDBClient,
-                                                    AmazonSQS sqsClient,
-                                                    AmazonCloudWatch cloudWatchClient,
-                                                    S3AsyncClient s3AsyncClient,
-                                                    Configuration hadoopConfiguration) {
+    public static IngestTask createIngestTask(ObjectFactory objectFactory,
+                                              InstanceProperties instanceProperties,
+                                              String localDir,
+                                              String taskId,
+                                              AmazonS3 s3Client,
+                                              AmazonDynamoDB dynamoDBClient,
+                                              AmazonSQS sqsClient,
+                                              AmazonCloudWatch cloudWatchClient,
+                                              S3AsyncClient s3AsyncClient,
+                                              Configuration hadoopConfiguration) {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, hadoopConfiguration);
         IngestTaskStatusStore taskStore = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, instanceProperties);
@@ -108,7 +108,7 @@ public class ECSIngestTaskRunner {
                 s3AsyncClient,
                 hadoopConfiguration);
         IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(sqsClient, cloudWatchClient, instanceProperties);
-        return new IngestTaskRunner(
+        return new IngestTask(
                 queueConsumer, taskId, taskStore, ingestJobRunner::ingest);
     }
 

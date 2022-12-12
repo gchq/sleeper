@@ -28,8 +28,8 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.function.Supplier;
 
-public class IngestTaskRunner {
-    private static final Logger LOGGER = LoggerFactory.getLogger(IngestTaskRunner.class);
+public class IngestTask {
+    private static final Logger LOGGER = LoggerFactory.getLogger(IngestTask.class);
 
     private final IngestJobSource jobSource;
     private final String taskId;
@@ -37,7 +37,7 @@ public class IngestTaskRunner {
     private final Supplier<Instant> getTimeNow;
     private final IngestJobHandler runJobCallback;
 
-    public IngestTaskRunner(
+    public IngestTask(
             IngestJobSource jobSource, String taskId, IngestTaskStatusStore statusStore,
             IngestJobHandler runJobCallback, Supplier<Instant> getTimeNow) {
         this.getTimeNow = getTimeNow;
@@ -47,7 +47,7 @@ public class IngestTaskRunner {
         this.runJobCallback = runJobCallback;
     }
 
-    public IngestTaskRunner(
+    public IngestTask(
             IngestJobSource jobSource, String taskId,
             IngestTaskStatusStore statusStore, IngestJobHandler runJobCallback) {
         this(jobSource, taskId, statusStore, runJobCallback, Instant::now);
