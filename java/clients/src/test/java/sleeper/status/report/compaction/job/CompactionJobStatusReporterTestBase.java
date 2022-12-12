@@ -19,7 +19,6 @@ package sleeper.status.report.compaction.job;
 import sleeper.ToStringPrintStream;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
-import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.status.report.StatusReporterTestHelper;
 import sleeper.status.report.job.query.JobQuery.Type;
@@ -94,17 +93,14 @@ public abstract class CompactionJobStatusReporterTestBase {
         CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
 
         CompactionJob job = dataHelper.singleFileCompaction();
-        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, Instant.parse("2022-10-12T10:00:00.001Z")))
-                .jobRunsLatestFirst(Arrays.asList(
-                        startedCompactionRun(task(1), Instant.parse("2022-10-12T10:02:00.001Z")),
-                        finishedCompactionRun(task(2), summary(
-                                Instant.parse("2022-10-12T10:01:15.001Z"),
-                                Duration.ofSeconds(30), 300L, 200L)),
-                        finishedCompactionRun(task(1), summary(
-                                Instant.parse("2022-10-12T10:01:00.001Z"),
-                                Duration.ofSeconds(20), 300L, 200L))))
-                .build();
+        CompactionJobStatus status = jobStatus(job, Instant.parse("2022-10-12T10:00:00.001Z"),
+                startedCompactionRun(task(1), Instant.parse("2022-10-12T10:02:00.001Z")),
+                finishedCompactionRun(task(2), summary(
+                        Instant.parse("2022-10-12T10:01:15.001Z"),
+                        Duration.ofSeconds(30), 300L, 200L)),
+                finishedCompactionRun(task(1), summary(
+                        Instant.parse("2022-10-12T10:01:00.001Z"),
+                        Duration.ofSeconds(20), 300L, 200L)));
         return Collections.singletonList(status);
     }
 
