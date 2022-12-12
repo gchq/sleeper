@@ -109,7 +109,7 @@ public class ECSIngestTask {
                 hadoopConfiguration);
         IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(sqsClient, cloudWatchClient, instanceProperties);
         return new IngestTask(
-                queueConsumer, taskId, taskStore, ingestJobRunner::ingest);
+                queueConsumer, taskId, taskStore, ingestJobRunner);
     }
 
     private static Configuration ingestHadoopConfiguration(InstanceProperties instanceProperties) {
