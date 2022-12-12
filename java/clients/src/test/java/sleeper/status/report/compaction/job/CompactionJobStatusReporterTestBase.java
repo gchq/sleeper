@@ -36,7 +36,6 @@ import static sleeper.ClientTestUtils.exampleUUID;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatus;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
-import static sleeper.compaction.job.CompactionJobTestDataHelper.finishedCompactionStatus;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.status.report.StatusReporterTestHelper.task;
 
@@ -109,27 +108,29 @@ public abstract class CompactionJobStatusReporterTestBase {
         dataHelper.partitionTree(builder -> builder
                 .leavesWithSplits(Arrays.asList(partition("A"), partition("B")), Collections.singletonList("ggg"))
                 .parentJoining(partition("C"), partition("A"), partition("B")));
+
+        CompactionJob job1 = dataHelper.singleFileCompaction(partition("C"));
+        Instant creationTime1 = Instant.parse("2022-10-13T12:00:00.000Z");
+        Instant startedTime1 = Instant.parse("2022-10-13T12:00:10.000Z");
+        CompactionJob job2 = dataHelper.singleFileCompaction(partition("C"));
+        Instant creationTime2 = Instant.parse("2022-10-13T12:01:00.000Z");
+        Instant startedTime2 = Instant.parse("2022-10-13T12:01:10.000Z");
+        CompactionJob job3 = dataHelper.singleFileSplittingCompaction(partition("C"), partition("A"), partition("B"));
+        Instant creationTime3 = Instant.parse("2022-10-13T14:01:00.000Z");
+        Instant startedTime3 = Instant.parse("2022-10-13T14:01:10.000Z");
+        CompactionJob job4 = dataHelper.singleFileSplittingCompaction(partition("C"), partition("A"), partition("B"));
+        Instant creationTime4 = Instant.parse("2022-10-13T14:02:00.000Z");
+        Instant startedTime4 = Instant.parse("2022-10-13T14:02:10.000Z");
+
         return Arrays.asList(
-                finishedCompactionStatus(
-                        dataHelper.singleFileSplittingCompaction(partition("C"), partition("A"), partition("B")),
-                        "task-id",
-                        Instant.parse("2022-10-13T14:02:00.000Z"),
-                        Duration.ofMillis(123), 1234, 1234),
-                finishedCompactionStatus(
-                        dataHelper.singleFileSplittingCompaction(partition("C"), partition("A"), partition("B")),
-                        "task-id",
-                        Instant.parse("2022-10-13T14:01:00.000Z"),
-                        Duration.ofSeconds(60), 1000600, 500300),
-                finishedCompactionStatus(
-                        dataHelper.singleFileCompaction(partition("C")),
-                        "task-id",
-                        Instant.parse("2022-10-13T12:01:00.000Z"),
-                        Duration.ofHours(2), 1000600, 500300),
-                finishedCompactionStatus(
-                        dataHelper.singleFileCompaction(partition("C")),
-                        "task-id",
-                        Instant.parse("2022-10-13T12:00:00.000Z"),
-                        Duration.ofMillis(123), 600, 300));
+                jobStatus(job4, creationTime4, finishedCompactionRun("task-id",
+                        summary(startedTime4, Duration.ofMillis(123), 1234, 1234))),
+                jobStatus(job3, creationTime3, finishedCompactionRun("task-id",
+                        summary(startedTime3, Duration.ofSeconds(60), 1000600, 500300))),
+                jobStatus(job2, creationTime2, finishedCompactionRun("task-id",
+                        summary(startedTime2, Duration.ofHours(2), 1000600, 500300))),
+                jobStatus(job1, creationTime1, finishedCompactionRun("task-id",
+                        summary(startedTime1, Duration.ofMillis(123), 600, 300))));
     }
 
     public static String replaceStandardJobIds(List<CompactionJobStatus> job, String example) {
