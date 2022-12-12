@@ -60,7 +60,6 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COM
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_EXPERIMENTAL_GPU_ENABLE;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
@@ -204,7 +203,7 @@ public class CompactSortedFilesRunner {
                 stateStore, jobStatusStore, tableProperties.getInt(ROW_GROUP_SIZE), tableProperties.getInt(PAGE_SIZE),
                 tableProperties.get(COMPRESSION_CODEC), tableProperties.getBoolean(COMPACTION_EXPERIMENTAL_GPU_ENABLE),
                 taskId);
-        CompactionJobSummary summary = compactSortedFiles.compact();
+        RecordsProcessedSummary summary = compactSortedFiles.compact();
 
 
         // Delete message from queue

@@ -137,7 +137,7 @@ public class CompactSortedFiles {
         LOGGER.info("Compaction job {}: compaction called at {}", id, startTime);
         jobStatusStore.jobStarted(compactionJob, startTime, taskId);
 
-        CompactionJobRecordsProcessed recordsProcessed = null;
+        RecordsProcessed recordsProcessed = null;
         try {
             if (this.gpuEnabled) {
                 recordsProcessed = gpuCompact();
@@ -165,7 +165,7 @@ public class CompactSortedFiles {
         return summary;
     }
 
-    private CompactionJobRecordsProcessed gpuCompact() throws IOException {
+    private RecordsProcessed gpuCompact() throws IOException {
         // for now we only support single field sorting on GPU
         if (schema.getRowKeyFields().size() > 1) {
             throw new IllegalStateException("can't use GPU compaction on table " + compactionJob.getTableName() +
@@ -204,7 +204,7 @@ public class CompactSortedFiles {
                     stateStore,
                     schema.getRowKeyTypes());
             long linesWritten = gpuData.rowsWritten.stream().mapToLong(Long::longValue).sum();
-            return new CompactionJobRecordsProcessed(gpuData.rowsRead, linesWritten);
+            return new RecordsProcessed(gpuData.rowsRead, linesWritten);
         } else {
             if (gpuData.maxKeys.size() != 1) {
                 throw new IllegalStateException("Compaction expected 1 set of output data, got " +
@@ -219,7 +219,7 @@ public class CompactSortedFiles {
                     finishTime,
                     stateStore,
                     schema.getRowKeyTypes());
-            return new CompactionJobRecordsProcessed(gpuData.rowsRead, gpuData.rowsWritten.get(0));
+            return new RecordsProcessed(gpuData.rowsRead, gpuData.rowsWritten.get(0));
         }
     }
 
@@ -413,7 +413,7 @@ public class CompactSortedFiles {
         }
     }
 
-    private CompactionJobRecordsProcessed compactNoSplitting() throws IOException, IteratorException {
+    private RecordsProcessed compactNoSplitting() throws IOException, IteratorException {
         Configuration conf = getConfiguration();
 
         // Create a reader for each file
@@ -622,7 +622,7 @@ public class CompactSortedFiles {
                 stateStore,
                 schema.getRowKeyTypes());
         LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(), LocalDateTime.now());
-        return new CompactionJobRecordsProcessed(totalNumberOfLinesRead,
+        return new RecordsProcessed(totalNumberOfLinesRead,
                 linesWrittenToLeftFile + linesWrittenToRightFile);
     }
 
