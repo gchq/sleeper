@@ -72,7 +72,6 @@ public class ECSIngestTaskRunner {
 
         IngestTaskRunner ingestTaskRunner = createTaskRunner(objectFactory, instanceProperties, localDir,
                 taskId, s3Client, dynamoDBClient, sqsClient, cloudWatchClient, S3AsyncClient.create(),
-                HadoopConfigurationProvider.getConfigurationForECS(instanceProperties),
                 ingestHadoopConfiguration(instanceProperties));
         ingestTaskRunner.run();
 
@@ -96,10 +95,9 @@ public class ECSIngestTaskRunner {
                                                     AmazonSQS sqsClient,
                                                     AmazonCloudWatch cloudWatchClient,
                                                     S3AsyncClient s3AsyncClient,
-                                                    Configuration stateStoreHadoopConfiguration,
                                                     Configuration hadoopConfiguration) {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, stateStoreHadoopConfiguration);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, hadoopConfiguration);
         IngestTaskStatusStore taskStore = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, instanceProperties);
         IngestJobRunner ingestJobRunner = new IngestJobRunner(
                 objectFactory,
@@ -116,7 +114,6 @@ public class ECSIngestTaskRunner {
 
     private static Configuration ingestHadoopConfiguration(InstanceProperties instanceProperties) {
         Configuration conf = HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
-        conf.set("fs.s3a.connection.maximum", "10");
         conf.set("fs.s3a.experimental.input.fadvise", instanceProperties.get(S3A_INPUT_FADVISE));
         return conf;
     }
