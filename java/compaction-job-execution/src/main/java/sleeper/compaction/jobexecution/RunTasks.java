@@ -33,6 +33,7 @@ import com.amazonaws.services.sqs.model.QueueAttributeName;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sleeper.configuration.Requirements;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.job.common.CommonJobUtils;
 
@@ -43,6 +44,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
@@ -57,11 +59,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_EC2_SCALING_GRACE_PERIOD;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_ECS_LAUNCHTYPE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_CPU;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_CPU;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
@@ -69,9 +67,8 @@ import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
 import static sleeper.core.ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME;
 
 /**
- * Finds the number of messages on a queue, and starts up one EC2 or Fargate
- * task for
- * each, up to a configurable maximum.
+ * Finds the number of messages on a queue, and starts up one EC2 or Fargate task for each, up to a
+ * configurable maximum.
  */
 public class RunTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunTasks.class);
@@ -92,11 +89,11 @@ public class RunTasks {
     private final Scaler scaler;
 
     public RunTasks(AmazonSQS sqsClient,
-            AmazonECS ecsClient,
-            AmazonS3 s3Client,
-            AmazonAutoScaling asClient,
-            String s3Bucket,
-            String type) throws IOException {
+                    AmazonECS ecsClient,
+                    AmazonS3 s3Client,
+                    AmazonAutoScaling asClient,
+                    String s3Bucket,
+                    String type) throws IOException {
         this.sqsClient = sqsClient;
         this.ecsClient = ecsClient;
         this.s3Bucket = s3Bucket;
@@ -128,36 +125,7 @@ public class RunTasks {
         this.launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
 
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        Pair<Integer, Integer> requirements = getCpuMemoryForArch(architecture, launchType, instanceProperties);
-
-        this.scaler = new Scaler(asClient, ecsClient, autoScalingGroupName, this.clusterName,
-                requirements.getLeft(),
-                requirements.getRight(),
-                Duration.ofSeconds(instanceProperties.getInt(COMPACTION_EC2_SCALING_GRACE_PERIOD)));
-    }
-
-    /**
-     * Retrieves architecture specific CPU and memory requirements. This returns
-     * a triple containing the CPU requirement in the left element and memory
-     * requirement in the right element.
-     *
-     * @param architecture CPU architecture
-     * @param launchType the container launch type
-     * @param instanceProperties Sleeper instance properties
-     * @return CPU and memory requirements as per the CPU architecture
-     */
-    private static Pair<Integer, Integer> getCpuMemoryForArch(String architecture,
-            String launchType,
-            InstanceProperties instanceProperties) {
-        int cpu;
-        int memoryLimitMiB;
-        if (architecture.startsWith("ARM")) {
-            cpu = instanceProperties.getInt(COMPACTION_TASK_ARM_CPU);
-            memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_ARM_MEMORY);
-        } else {
-            cpu = instanceProperties.getInt(COMPACTION_TASK_X86_CPU);
-            memoryLimitMiB = instanceProperties.getInt(COMPACTION_TASK_X86_MEMORY);
-        }
+        Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType, instanceProperties);
 
         // bit hacky: EC2s don't give 100% of their memory for container use (OS
         // headroom, system tasks, etc.) so since we want a whole GPU
@@ -165,10 +133,13 @@ public class RunTasks {
         // the EC2 memory requirement by 5%. If we don't we end up asking for
         // 16GiB of RAM on a 16GiB box and allocation will fail.
         if (launchType.equalsIgnoreCase("EC2")) {
-            memoryLimitMiB = (int) (memoryLimitMiB * 0.95);
+            requirements = Pair.of(requirements.getLeft(), (int) (requirements.getRight() * 0.95));
         }
 
-        return Pair.of(cpu, memoryLimitMiB);
+        this.scaler = new Scaler(asClient, ecsClient, autoScalingGroupName, this.clusterName,
+                        requirements.getLeft(),
+                        requirements.getRight(),
+                        Duration.ofSeconds(instanceProperties.getInt(COMPACTION_EC2_SCALING_GRACE_PERIOD)));
     }
 
     public void run() throws InterruptedException {
@@ -176,7 +147,7 @@ public class RunTasks {
 
         // Find out number of messages in queue that are not being processed
         int queueSize = CommonJobUtils.getNumberOfMessagesInQueue(sqsJobQueueUrl, sqsClient)
-                .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
+                        .get(QueueAttributeName.ApproximateNumberOfMessages.toString());
         LOGGER.info("Queue size is {}", queueSize);
 
         // Obtain details of instances in this cluster
@@ -198,86 +169,16 @@ public class RunTasks {
             if (launchType.equalsIgnoreCase("EC2")) {
                 scaler.possiblyScaleOut(maxNumTasksThatWillBeCreated, details);
             }
+
+            List<String> args = new ArrayList<>();
+            args.add(s3Bucket);
+            args.add(type);
+            TaskOverride override = createOverride(args, containerName);
+            NetworkConfiguration networkConfiguration = networkConfig(subnet);
+
             // Create 1 task for each item on the queue
-            int numTasksCreated = 0;
-            for (int i = 0; i < queueSize && i < maxNumTasksToCreate; i++) {
-                List<String> args = new ArrayList<>();
-                args.add(s3Bucket);
-                args.add(type);
-
-                ContainerOverride containerOverride = new ContainerOverride()
-                        .withName(containerName)
-                        .withCommand(args);
-
-                TaskOverride override = new TaskOverride()
-                        .withContainerOverrides(containerOverride);
-
-                AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
-                        .withSubnets(subnet);
-
-                NetworkConfiguration networkConfiguration = new NetworkConfiguration()
-                        .withAwsvpcConfiguration(vpcConfiguration);
-
-                RunTaskRequest runTaskRequest = new RunTaskRequest()
-                        .withCluster(clusterName)
-                        .withOverrides(override)
-                        .withPropagateTags(PropagateTags.TASK_DEFINITION);
-
-                String defUsed;
-                if (launchType.equals("FARGATE")) {
-                    defUsed = fargateTaskDefinition;
-                    runTaskRequest = runTaskRequest
-                            .withTaskDefinition(defUsed)
-                            .withNetworkConfiguration(networkConfiguration)
-                            .withPlatformVersion(fargateVersion)
-                            .withLaunchType(LaunchType.FARGATE);
-                } else {
-                    defUsed = ec2TaskDefinition;
-                    runTaskRequest = runTaskRequest
-                            .withTaskDefinition(defUsed)
-                            .withLaunchType(LaunchType.EC2);
-                }
-
-                try {
-                    RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
-                    LOGGER.info(
-                            "Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
-                            clusterName, launchType, containerName, defUsed);
-                    runTaskResult.getTasks().stream()
-                            .filter(task -> task.getContainerInstanceArn() != null)
-                            .forEach(task -> {
-                                recentContainerInstanceARNs.add(task.getContainerInstanceArn());
-                            });
-
-                    if (runTaskResult.getFailures().size() > 0) {
-                        LOGGER.warn("Run task request has {} failures", runTaskResult.getFailures().size());
-                        for (Failure f : runTaskResult.getFailures()) {
-                            LOGGER.error("Failure: ARN {} Reason {} Detail {}", f.getArn(), f.getReason(),
-                                    f.getDetail());
-                        }
-                        break;
-                    }
-                    numTasksCreated++;
-
-                    // This lambda is triggered every minute so abort once get
-                    // close to 1 minute
-                    if (System.currentTimeMillis() - startTime > 50 * 1000L) {
-                        LOGGER.info("RunTasks has been running for more than 50 seconds, aborting");
-                        break;
-                    }
-
-                    if (0 == numTasksCreated % 10) {
-                        // Sleep for 10 seconds - API allows 1 job per second
-                        // with a burst of 10 jobs in
-                        // a second
-                        // so run 10 every 11 seconds for safety
-                        LOGGER.info("Sleeping for 11 seconds as 10 tasks have been created");
-                        Thread.sleep(11000L);
-                    }
-                } catch (AmazonClientException e) {
-                    LOGGER.error("Couldn't launch tasks", e);
-                }
-            }
+            Set<String> newArns = launchTasks(startTime, queueSize, maxNumTasksToCreate, override, networkConfiguration);
+            recentContainerInstanceARNs.addAll(newArns);
         }
 
         try {
@@ -286,6 +187,158 @@ public class RunTasks {
             }
         } catch (AmazonClientException e) {
             LOGGER.error("Scale-in exception", e);
+        }
+    }
+
+    /**
+     * Attempts to launch some tasks on ECS.
+     *
+     * @param startTime start time of Lambda
+     * @param queueSize length of SQS queue
+     * @param maxNumTasksToCreate number of tasks to attempt to launch
+     * @param override other container overrides
+     * @param networkConfiguration container network configuration
+     * @return set of EC2 container instance ARNs containing new tasks
+     * @throws InterruptedException if error occurs during sleep
+     */
+    private Set<String> launchTasks(final long startTime, final int queueSize, int maxNumTasksToCreate,
+                    TaskOverride override, NetworkConfiguration networkConfiguration)
+                    throws InterruptedException {
+        int numTasksCreated = 0;
+        Set<String> recentArns = new HashSet<>();
+
+        for (int i = 0; i < queueSize && i < maxNumTasksToCreate; i++) {
+            String defUsed = (launchType.equals("FARGATE")) ? fargateTaskDefinition : ec2TaskDefinition;
+            RunTaskRequest runTaskRequest = createRunTaskRequest(clusterName, launchType, fargateVersion,
+                            override, networkConfiguration, defUsed);
+
+            try {
+                RunTaskResult runTaskResult = ecsClient.runTask(runTaskRequest);
+                LOGGER.info("Submitted RunTaskRequest (cluster = {}, type = {}, container name = {}, task definition = {})",
+                                clusterName, launchType, containerName, defUsed);
+                runTaskResult.getTasks().stream()
+                                .filter(task -> task.getContainerInstanceArn() != null)
+                                .forEach(task -> {
+                                    recentArns.add(task.getContainerInstanceArn());
+                                });
+
+                if (checkFailure(runTaskResult)) {
+                    break;
+                }
+                numTasksCreated++;
+
+                // This lambda is triggered every minute so abort once get
+                // close to 1 minute
+                if (System.currentTimeMillis() - startTime > 50 * 1000L) {
+                    LOGGER.info("RunTasks has been running for more than 50 seconds, aborting");
+                    break;
+                }
+
+                maybeSleep(numTasksCreated);
+            } catch (AmazonClientException e) {
+                LOGGER.error("Couldn't launch tasks", e);
+            }
+        }
+
+        return recentArns;
+    }
+
+    /**
+     * Checks for failures in run task results.
+     *
+     * @param runTaskResult result from recent run_tasks API call.
+     * @return true if a task launch failure occurs
+     */
+    private static boolean checkFailure(RunTaskResult runTaskResult) {
+        if (runTaskResult.getFailures().size() > 0) {
+            LOGGER.warn("Run task request has {} failures", runTaskResult.getFailures().size());
+            for (Failure f : runTaskResult.getFailures()) {
+                LOGGER.error("Failure: ARN {} Reason {} Detail {}", f.getArn(), f.getReason(),
+                                f.getDetail());
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Create the container networking configuration.
+     *
+     * @param subnet the subnet name
+     * @return task network configuration
+     */
+    private static NetworkConfiguration networkConfig(String subnet) {
+        AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
+                        .withSubnets(subnet);
+
+        NetworkConfiguration networkConfiguration = new NetworkConfiguration()
+                        .withAwsvpcConfiguration(vpcConfiguration);
+        return networkConfiguration;
+    }
+
+    /**
+     * Create the container definition overrides for the task launch.
+     *
+     * @param args container runtime args
+     * @param containerName name of container used for overriding
+     * @return the container definition overrides
+     */
+    private static TaskOverride createOverride(List<String> args, String containerName) {
+        ContainerOverride containerOverride = new ContainerOverride()
+                        .withName(containerName)
+                        .withCommand(args);
+
+        TaskOverride override = new TaskOverride()
+                        .withContainerOverrides(containerOverride);
+        return override;
+    }
+
+    /**
+     * Sleep if the tasks created is divisible by 10.
+     *
+     * @param numTasksCreated tasks created this Lambda invocation
+     * @throws InterruptedException if sleep interrupted
+     */
+    private static void maybeSleep(int numTasksCreated) throws InterruptedException {
+        if (0 == numTasksCreated % 10) {
+            // Sleep for 10 seconds - API allows 1 job per second
+            // with a burst of 10 jobs in
+            // a second
+            // so run 10 every 11 seconds for safety
+            LOGGER.info("Sleeping for 11 seconds as 10 tasks have been created");
+            Thread.sleep(11000L);
+        }
+    }
+
+    /**
+     * Creates a new task request that can be passed to ECS.
+     *
+     * @param clusterName ECS cluster
+     * @param launchType either FARGATE or EC2
+     * @param fargateVersion version string if running on Fargate
+     * @param override specific container overrides
+     * @param networkConfiguration the networking configuration for the container
+     * @param defUsed which task definition to use
+     * @return the request for ECS
+     * @throws IllegalArgumentException if <code>launchType</code> is FARGATE and version is null
+     */
+    private static RunTaskRequest createRunTaskRequest(String clusterName, String launchType, String fargateVersion,
+                    TaskOverride override, NetworkConfiguration networkConfiguration, String defUsed) {
+        RunTaskRequest runTaskRequest = new RunTaskRequest()
+                        .withCluster(clusterName)
+                        .withOverrides(override)
+                        .withTaskDefinition(defUsed)
+                        .withPropagateTags(PropagateTags.TASK_DEFINITION);
+
+        if (launchType.equals("FARGATE")) {
+            Objects.requireNonNull(fargateVersion, "fargateVersion cannot be null");
+            return runTaskRequest
+                            .withNetworkConfiguration(networkConfiguration)
+                            .withPlatformVersion(fargateVersion)
+                            .withLaunchType(LaunchType.FARGATE);
+        } else {
+            return runTaskRequest
+                            .withLaunchType(LaunchType.EC2);
         }
     }
 }

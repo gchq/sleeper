@@ -151,7 +151,7 @@ public class Utils {
         }
     }
 
-    public static LogDriver createFargateContainerLogDriver(Construct scope, InstanceProperties instanceProperties, String id) {
+    public static LogDriver createECSContainerLogDriver(Construct scope, InstanceProperties instanceProperties, String id) {
         AwsLogDriverProps logDriverProps = AwsLogDriverProps.builder()
                 .streamPrefix(instanceProperties.get(ID) + "-" + id)
                 .logGroup(LogGroup.Builder.create(scope, id)
