@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.core.iterator.IteratorException;
 import sleeper.ingest.IngestResult;
+import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobHandler;
 import sleeper.ingest.job.IngestJobSource;
 import sleeper.statestore.StateStoreException;
@@ -60,7 +61,7 @@ public class IngestTask {
         LOGGER.info("IngestTask started at = {}", startTaskTime);
 
         IngestTaskFinishedStatus.Builder taskFinishedStatusBuilder = IngestTaskFinishedStatus.builder();
-        jobSource.consumeJobs(job -> {
+        jobSource.consumeJobs((IngestJob job) -> {
             Instant startTime = getTimeNow.get();
             IngestResult result = runJobCallback.ingest(job);
             Instant finishTime = getTimeNow.get();

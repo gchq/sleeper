@@ -46,27 +46,18 @@ public class IngestJobStatusTestData {
     }
 
     public static ProcessRun startedIngestRun(IngestJob job, String taskId, Instant startTime) {
-        return startedIngestRun(job, taskId, startTime, startTime.with(ChronoField.MILLI_OF_SECOND, 123));
-    }
-
-    public static ProcessRun startedIngestRun(IngestJob job, String taskId, Instant startTime, Instant updateTime) {
         return ProcessRun.started(taskId,
-                IngestJobStartedStatus.updateAndStartTime(job, updateTime, startTime));
+                IngestJobStartedStatus.updateAndStartTime(job, defaultUpdateTime(startTime), startTime));
     }
 
     public static ProcessRun finishedIngestRun(
             IngestJob job, String taskId, RecordsProcessedSummary summary) {
-        return finishedIngestRun(job, taskId,
-                summary.getStartTime().with(ChronoField.MILLI_OF_SECOND, 123),
-                summary.getFinishTime().with(ChronoField.MILLI_OF_SECOND, 123),
-                summary);
+        return ProcessRun.finished(taskId,
+                IngestJobStartedStatus.updateAndStartTime(job, defaultUpdateTime(summary.getStartTime()), summary.getStartTime()),
+                ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary));
     }
 
-    public static ProcessRun finishedIngestRun(
-            IngestJob job, String taskId, Instant startUpdateTime, Instant finishUpdateTime, RecordsProcessedSummary summary) {
-
-        return ProcessRun.finished(taskId,
-                IngestJobStartedStatus.updateAndStartTime(job, startUpdateTime, summary.getStartTime()),
-                ProcessFinishedStatus.updateTimeAndSummary(finishUpdateTime, summary));
+    public static Instant defaultUpdateTime(Instant startTime) {
+        return startTime.with(ChronoField.MILLI_OF_SECOND, 123);
     }
 }

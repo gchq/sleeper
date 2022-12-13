@@ -15,7 +15,9 @@
  */
 package sleeper.ingest.job.status;
 
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.JobStatusUpdates;
+import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.ingest.job.IngestJob;
 
@@ -26,18 +28,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static sleeper.ingest.job.status.IngestJobStatusTestData.defaultUpdateTime;
+
 public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     private final Map<String, List<ProcessStatusUpdateRecord>> jobIdToUpdateRecords = new HashMap<>();
 
     @Override
     public void jobStarted(String taskId, IngestJob job, Instant startTime) {
         ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
-                IngestJobStartedStatus.updateAndStartTime(job, startTime, startTime), taskId);
+                IngestJobStartedStatus.updateAndStartTime(job, defaultUpdateTime(startTime), startTime), taskId);
         jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>()).add(updateRecord);
     }
 
     @Override
-    public void jobFinished(IngestJob job) {
+    public void jobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {
+        ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
+                ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary), taskId);
+        jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>()).add(updateRecord);
     }
 
     @Override

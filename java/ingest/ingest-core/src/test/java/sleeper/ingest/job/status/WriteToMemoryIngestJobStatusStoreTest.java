@@ -16,12 +16,15 @@
 package sleeper.ingest.job.status;
 
 import org.junit.Test;
+import sleeper.core.record.process.RecordsProcessed;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
 
@@ -42,7 +45,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
         store.jobStarted(taskId, job, startTime);
         assertThat(store.getAllJobs(tableName)).containsExactly(
-                jobStatus(job, startedIngestRun(job, taskId, startTime, startTime)));
+                jobStatus(job, startedIngestRun(job, taskId, startTime)));
     }
 
     @Test
@@ -58,6 +61,26 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
         store.jobStarted(taskId, job, startTime);
         assertThat(store.getAllJobs(tableName)).containsExactly(
-                jobStatus(job, startedIngestRun(job, taskId, startTime, startTime)));
+                jobStatus(job, startedIngestRun(job, taskId, startTime)));
+    }
+
+    @Test
+    public void shouldReturnOneFinishedJobWithFiles() {
+        String tableName = "test-table";
+        String taskId = "test-task";
+        Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
+        Instant finishTime = Instant.parse("2022-09-22T12:00:44.000Z");
+        IngestJob job = IngestJob.builder()
+                .id("test-job")
+                .tableName(tableName)
+                .files("test-file-1.parquet", "test-file-2.parquet")
+                .build();
+        RecordsProcessedSummary summary = new RecordsProcessedSummary(
+                new RecordsProcessed(200L, 200L), startTime, finishTime);
+
+        store.jobStarted(taskId, job, startTime);
+        store.jobFinished(taskId, job, summary);
+        assertThat(store.getAllJobs(tableName)).containsExactly(
+                jobStatus(job, finishedIngestRun(job, taskId, summary)));
     }
 }

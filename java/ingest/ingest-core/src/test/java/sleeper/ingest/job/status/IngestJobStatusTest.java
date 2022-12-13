@@ -19,11 +19,9 @@ package sleeper.ingest.job.status;
 import org.junit.Test;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
-import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
@@ -31,27 +29,6 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
 
 public class IngestJobStatusTest {
-    @Test
-    public void shouldBuildIngestJobStartedFromJob() {
-        // Given
-        IngestJob job = IngestJob.builder()
-                .files("test.parquet", "test2.parquet")
-                .id("test-job")
-                .build();
-        Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
-        Instant startTime = Instant.parse("2022-09-22T13:33:00.001Z");
-
-        // When
-        IngestJobStatus status = jobStatus(job, startedIngestRun(job, "test-task", startTime, updateTime));
-
-        // Then
-        assertThat(status)
-                .extracting(IngestJobStatus::getJobId, IngestJobStatus::getInputFilesCount, IngestJobStatus::getJobRuns)
-                .containsExactly("test-job", 2,
-                        Collections.singletonList(ProcessRun.started("test-task",
-                                IngestJobStartedStatus.updateAndStartTime(job, updateTime, startTime))));
-    }
-
     @Test
     public void shouldBuildAndReportIngestJobStarted() {
         // Given
