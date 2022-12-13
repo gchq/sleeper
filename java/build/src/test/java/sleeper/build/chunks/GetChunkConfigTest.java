@@ -16,28 +16,44 @@
 package sleeper.build.chunks;
 
 import org.junit.Test;
+import sleeper.build.maven.MavenModuleStructure;
+import sleeper.build.maven.TestMavenModuleStructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class GetChunkConfigTest {
 
     private static final ProjectChunks CHUNKS = TestChunks.example();
+    private static final MavenModuleStructure MAVEN = TestMavenModuleStructure.example();
+
+    private String getChunkProperty(String chunkId, String propertyName) {
+        return GetChunkConfig.get(CHUNKS.getById(chunkId), MAVEN, propertyName);
+    }
 
     @Test
     public void shouldGetChunkName() {
-        assertThat(GetChunkConfig.get(CHUNKS.getById("ingest"), "name")).isEqualTo("Ingest");
+        assertThat(getChunkProperty("ingest", "name")).isEqualTo("Ingest");
     }
 
     @Test
     public void shouldGetChunkProjectList() {
-        assertThat(GetChunkConfig.get(CHUNKS.getById("bulk-import"), "maven_project_list"))
+        assertThat(getChunkProperty("bulk-import", "maven_project_list"))
                 .isEqualTo("bulk-import/bulk-import-common,bulk-import/bulk-import-starter,bulk-import/bulk-import-runner");
     }
 
     @Test
     public void shouldGetGitHubActionsOutputs() {
-        assertThat(GetChunkConfig.get(CHUNKS.getById("common"), "github_actions_outputs"))
+        assertThat(getChunkProperty("common", "github_actions_outputs"))
                 .isEqualTo("chunkName=Common\n" +
-                        "moduleList=core,configuration");
+                        "moduleList=core,configuration\n" +
+                        "dependencyList=core,configuration");
+    }
+
+    @Test
+    public void shouldGetGitHubActionsOutputsWithDependencies() {
+        assertThat(getChunkProperty("ingest", "github_actions_outputs"))
+                .isEqualTo("chunkName=Ingest\n" +
+                        "moduleList=ingest\n" +
+                        "dependencyList=ingest,configuration,core");
     }
 }

@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.build.util.ValidationUtils.ignoreEmpty;
@@ -58,6 +59,10 @@ public class ProjectChunk {
 
     public String getMavenProjectList() {
         return String.join(",", getModules());
+    }
+
+    public String getMavenDependencyList(InternalDependencyIndex index) {
+        return dependencies(index).map(MavenModuleAndPath::getPath).collect(Collectors.joining(","));
     }
 
     public Stream<MavenModuleAndPath> dependencies(InternalDependencyIndex index) {

@@ -38,7 +38,9 @@ jobs:
             -Dexec.args="${{ inputs.chunkId }} github_actions_outputs ${{ github.workspace }}/.github/config/chunks.yaml" \
             >> $GITHUB_OUTPUT
       - name: Compile
-        run: mvn --batch-mode clean install -am -pl ${{ steps.config.outputs.moduleList }} -Pquick,skipShade -Dmaven.repo.local=.m2/repository
+        run: |
+          mvn --batch-mode clean install -pl ${{ steps.config.outputs.dependencyList }} \
+            -Pquick,skipShade -Dmaven.test.skip=true -Dmaven.repo.local=.m2/repository
         working-directory: ./java
       - name: Test
         run: mvn --batch-mode --fail-at-end verify -pl ${{ steps.config.outputs.moduleList }} -Dmaven.repo.local=.m2/repository
