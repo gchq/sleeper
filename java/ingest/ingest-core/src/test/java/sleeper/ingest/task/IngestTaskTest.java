@@ -16,13 +16,19 @@
 package sleeper.ingest.task;
 
 import org.junit.Test;
+import sleeper.core.iterator.IteratorException;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.IngestResultTestData;
 import sleeper.ingest.job.FixedIngestJobHandler;
 import sleeper.ingest.job.FixedIngestJobSource;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobHandler;
+import sleeper.ingest.job.IngestJobSource;
+import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
+import sleeper.statestore.StateStoreException;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -38,7 +44,8 @@ import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJobOneFile
 public class IngestTaskTest {
 
     private final IngestJobHandler jobRunner = FixedIngestJobHandler.makingDefaultFiles();
-    private final IngestTaskStatusStore statusStore = new WriteToMemoryIngestTaskStatusStore();
+    private final IngestTaskStatusStore taskStatusStore = new WriteToMemoryIngestTaskStatusStore();
+    private final IngestJobStatusStore jobStatusStore = new WriteToMemoryIngestJobStatusStore();
 
     @Test
     public void shouldRunAndReportTaskWithNoJobs() throws Exception {
@@ -49,12 +56,10 @@ public class IngestTaskTest {
         FixedIngestJobSource jobs = FixedIngestJobSource.empty();
 
         // When
-        IngestTask runner = new IngestTask(jobs, taskId, statusStore, jobRunner,
-                timesInOrder(startTime, finishTime));
-        runner.run();
+        runTask(jobs, taskId, timesInOrder(startTime, finishTime));
 
         // Then
-        assertThat(statusStore.getAllTasks()).containsExactly(finishedNoJobs(taskId, startTime, finishTime));
+        assertThat(taskStatusStore.getAllTasks()).containsExactly(finishedNoJobs(taskId, startTime, finishTime));
         assertThat(jobs.getIngestResults()).isEmpty();
     }
 
@@ -74,12 +79,13 @@ public class IngestTaskTest {
         FixedIngestJobSource jobs = FixedIngestJobSource.with(job);
 
         // When
-        IngestTask runner = new IngestTask(jobs, taskId, statusStore, jobRunner,
-                timesInOrder(startTaskTime, startJobTime, finishJobTime, finishTaskTime));
-        runner.run();
+        runTask(jobs, taskId, timesInOrder(
+                startTaskTime,
+                startJobTime, finishJobTime,
+                finishTaskTime));
 
         // Then
-        assertThat(statusStore.getAllTasks()).containsExactly(
+        assertThat(taskStatusStore.getAllTasks()).containsExactly(
                 finishedOneJobNoFiles(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime));
         assertThat(jobs.getIngestResults()).containsExactly(
                 IngestResult.from(Collections.emptyList()));
@@ -101,12 +107,13 @@ public class IngestTaskTest {
         FixedIngestJobSource jobs = FixedIngestJobSource.with(job);
 
         // When
-        IngestTask runner = new IngestTask(jobs, taskId, statusStore, jobRunner,
-                timesInOrder(startTaskTime, startJobTime, finishJobTime, finishTaskTime));
-        runner.run();
+        runTask(jobs, taskId, timesInOrder(
+                startTaskTime,
+                startJobTime, finishJobTime,
+                finishTaskTime));
 
         // Then
-        assertThat(statusStore.getAllTasks()).containsExactly(
+        assertThat(taskStatusStore.getAllTasks()).containsExactly(
                 finishedOneJobOneFile(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime));
         assertThat(jobs.getIngestResults())
                 .containsExactly(IngestResultTestData.defaultFileIngestResult("test.parquet"));
@@ -134,16 +141,24 @@ public class IngestTaskTest {
         FixedIngestJobSource jobs = FixedIngestJobSource.with(job1, job2);
 
         // When
-        IngestTask runner = new IngestTask(jobs, taskId, statusStore, jobRunner,
-                timesInOrder(startTaskTime, startJob1Time, finishJob1Time, startJob2Time, finishJob2Time, finishTaskTime));
-        runner.run();
+        runTask(jobs, taskId, timesInOrder(
+                startTaskTime,
+                startJob1Time, finishJob1Time,
+                startJob2Time, finishJob2Time,
+                finishTaskTime));
 
         // Then
-        assertThat(statusStore.getAllTasks()).containsExactly(
+        assertThat(taskStatusStore.getAllTasks()).containsExactly(
                 finishedMultipleJobs(taskId, startTaskTime, finishTaskTime, Duration.ofSeconds(10), startJob1Time, startJob2Time));
         assertThat(jobs.getIngestResults()).containsExactly(
                 IngestResultTestData.defaultFileIngestResult("test1.parquet"),
                 IngestResultTestData.defaultFileIngestResult("test2.parquet"));
+    }
+
+    private void runTask(IngestJobSource jobs, String taskId, Supplier<Instant> times)
+            throws IteratorException, StateStoreException, IOException {
+        IngestTask runner = new IngestTask(jobs, taskId, taskStatusStore, jobRunner, times);
+        runner.run();
     }
 
     private static Supplier<Instant> timesInOrder(Instant... times) {
