@@ -165,7 +165,8 @@ sleeper.compaction.ec2.type=t3.xlarge
 # The minimum / initial desired / maximum number of instances for the cluster.
 sleeper.compaction.ec2.pool.minimum=0
 sleeper.compaction.ec2.pool.desired=0
-sleeper.compaction.ec2.pool.maximum=3
+# Maximum set by dividing initial maximum containers by number that should fit on instance type
+sleeper.compaction.ec2.pool.maximum=75
 
 # What launch type should compaction containers use? Valid options: FARGATE, EC2
 sleeper.compaction.ecs.launch.type=FARGATE
