@@ -35,7 +35,7 @@ jobs:
         run: |
           mvn compile exec:java -q -Dexec.mainClass=sleeper.build.chunks.GetChunkConfig \
             -Dmaven.repo.local=../.m2/repository \
-            -Dexec.args="${{ inputs.chunkId }} github_actions_outputs ${{ github.workspace }}/.github/config/chunks.yaml" \
+            -Dexec.args="${{ inputs.chunkId }} github_actions_outputs ${{ github.workspace }}/.github/config/chunks.yaml ${{ github.workspace}}/java" \
             >> $GITHUB_OUTPUT
       - name: Compile
         run: |
