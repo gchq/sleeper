@@ -56,9 +56,9 @@ public class IngestTask {
 
     public IngestTask(
             IngestJobSource jobSource, String taskId,
-            IngestTaskStatusStore statusStore, IngestJobStatusStore jobStatusStore,
+            IngestTaskStatusStore taskStatusStore, IngestJobStatusStore jobStatusStore,
             IngestJobHandler runJobCallback) {
-        this(jobSource, taskId, statusStore, jobStatusStore, runJobCallback, Instant::now);
+        this(jobSource, taskId, taskStatusStore, jobStatusStore, runJobCallback, Instant::now);
     }
 
     public void run() throws IOException, IteratorException, StateStoreException {
