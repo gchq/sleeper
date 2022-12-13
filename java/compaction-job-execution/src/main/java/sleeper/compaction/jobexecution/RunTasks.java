@@ -208,7 +208,7 @@ public class RunTasks {
         Set<String> recentArns = new HashSet<>();
 
         for (int i = 0; i < queueSize && i < maxNumTasksToCreate; i++) {
-            String defUsed = (launchType.equals("FARGATE")) ? fargateTaskDefinition : ec2TaskDefinition;
+            String defUsed = (launchType.equalsIgnoreCase("FARGATE")) ? fargateTaskDefinition : ec2TaskDefinition;
             RunTaskRequest runTaskRequest = createRunTaskRequest(clusterName, launchType, fargateVersion,
                             override, networkConfiguration, defUsed);
 
