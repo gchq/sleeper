@@ -45,14 +45,17 @@ public class CompactionJobStatusTestData {
     }
 
     public static ProcessRun startedCompactionRun(String taskId, Instant startTime) {
-        return ProcessRun.started(taskId, CompactionJobStartedStatus.startAndUpdateTime(
-                startTime, defaultUpdateTime(startTime)));
+        return ProcessRun.started(taskId, startedCompactionStatus(startTime));
     }
 
     public static ProcessRun finishedCompactionRun(String taskId, RecordsProcessedSummary summary) {
         return ProcessRun.finished(taskId,
-                CompactionJobStartedStatus.startAndUpdateTime(summary.getStartTime(), defaultUpdateTime(summary.getStartTime())),
+                startedCompactionStatus(summary.getStartTime()),
                 ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary));
+    }
+
+    public static CompactionJobStartedStatus startedCompactionStatus(Instant startTime) {
+        return CompactionJobStartedStatus.startAndUpdateTime(startTime, defaultUpdateTime(startTime));
     }
 
     private static Instant defaultUpdateTime(Instant time) {

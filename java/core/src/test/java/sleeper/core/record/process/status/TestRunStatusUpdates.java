@@ -32,7 +32,7 @@ public class TestRunStatusUpdates {
     }
 
     public static ProcessFinishedStatus finishedStatus(
-            ProcessStartedStatus startedStatus, Duration runDuration, long linesRead, long linesWritten) {
+            ProcessRunStartedUpdate startedStatus, Duration runDuration, long linesRead, long linesWritten) {
         return finishedStatus(startedStatus.getStartTime(), runDuration, linesRead, linesWritten);
     }
 
@@ -44,12 +44,4 @@ public class TestRunStatusUpdates {
                 new RecordsProcessed(linesRead, linesWritten), startTime, finishTime);
         return ProcessFinishedStatus.updateTimeAndSummary(finishUpdateTime, summary);
     }
-
-    public static ProcessStatusUpdate[] finishedUpdates(
-            Instant startTime, Duration runDuration, long linesRead, long linesWritten) {
-        ProcessStartedStatus started = startedStatus(startTime);
-        ProcessFinishedStatus finished = finishedStatus(started, runDuration, linesRead, linesWritten);
-        return new ProcessStatusUpdate[]{started, finished};
-    }
-
 }

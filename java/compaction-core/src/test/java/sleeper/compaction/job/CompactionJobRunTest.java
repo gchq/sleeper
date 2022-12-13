@@ -18,10 +18,10 @@ package sleeper.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStartedStatus;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -29,9 +29,9 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFromUpdates;
+import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionStatus;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
-import static sleeper.core.record.process.status.TestRunStatusUpdates.startedStatus;
 
 public class CompactionJobRunTest {
 
@@ -61,7 +61,7 @@ public class CompactionJobRunTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
-        ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
+        CompactionJobStartedStatus started = startedCompactionStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
 
         // When
         CompactionJobStatus status = jobStatusFromUpdates(created, started);
@@ -82,7 +82,7 @@ public class CompactionJobRunTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
-        ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        CompactionJobStartedStatus started = startedCompactionStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
         ProcessFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
 
         // When
