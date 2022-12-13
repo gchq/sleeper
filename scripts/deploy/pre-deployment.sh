@@ -45,25 +45,25 @@ SLEEPER_JARS=${SLEEPER_JARS:-sleeper-${INSTANCE_ID}-jars}
 ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
 set +e
 [ "${REGION}" = "" ] && REGION=$(aws configure get region)
-[ "${REGION}" = "" ] && REGION=$(TOKEN=`curl --silent -m 5 -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"` \
+[ "${REGION}" = "" ] && REGION=$(TOKEN=$(curl --silent -m 5 -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600") \
 && curl --silent -m 5 -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/dynamic/instance-identity/document | grep region | cut -d'"' -f 4)
 [ "${REGION}" = "" ] && REGION=$(curl --silent -m 5 http://169.254.169.254/latest/dynamic/instance-identity/document | grep region | cut -d'"' -f 4)
 [ "${REGION}" = "" ] && echo "Unable to locate Region" && exit 1
 set -e
 
 DOCKER_REGISTRY=${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com
-BASE_DIR=$(cd $(dirname $0) && cd "../../" && pwd)
-JAR_DIR=${BASE_DIR}/scripts/jars
-BASE_DOCKERFILE_DIR=${BASE_DIR}/scripts/docker
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+JAR_DIR=${SCRIPTS_DIR}/jars
+BASE_DOCKERFILE_DIR=${SCRIPTS_DIR}/docker
 VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 
 echo "Using Account: ${ACCOUNT}"
 echo "Using Region: ${REGION}"
 echo "SLEEPER_JARS: ${SLEEPER_JARS}"
 echo "DOCKER_REGISTRY: ${DOCKER_REGISTRY}"
-echo "BASE_DIR:${BASE_DIR}"
-echo "JAR_DIR:${JAR_DIR}"
-echo "VERSION:${VERSION}"
+echo "SCRIPTS_DIR: ${SCRIPTS_DIR}"
+echo "JAR_DIR: ${JAR_DIR}"
+echo "VERSION: ${VERSION}"
 
 #############################
 # Generate Property files #
@@ -77,23 +77,23 @@ SCHEMA=${GENERATED_DIR}/schema.json
 
 # Tags
 sed -e "s/Name=.*/Name=${INSTANCE_ID}/" \
- ${TEMPLATE_DIR}/tags.template \
- > ${TAGS}
+ "${TEMPLATE_DIR}/tags.template" \
+ > "${TAGS}"
 
 # Schema
-cp ${TEMPLATE_DIR}/schema.template ${SCHEMA}
+cp "${TEMPLATE_DIR}/schema.template" "${SCHEMA}"
 
 # Table Properties
 sed \
   -e "s|^sleeper.table.schema.file=.*|sleeper.table.schema.file=${SCHEMA}|" \
   -e "s|^sleeper.table.name=.*|sleeper.table.name=${TABLE_NAME}|" \
-	${TEMPLATE_DIR}/tableproperties.template \
-	> ${TABLE_PROPERTIES}
+	"${TEMPLATE_DIR}/tableproperties.template" \
+	> "${TABLE_PROPERTIES}"
 
 # Instance Properties
 # Note this sed command uses the file in generated dir not the template dir
 # as this was required to include some pre-generated system test specific properties
-source "${BASE_DIR}/scripts/functions/sedInPlace.sh"
+source "${SCRIPTS_DIR}/functions/sedInPlace.sh"
 sed_in_place \
 	-e "s|^sleeper.account=.*|sleeper.account=${ACCOUNT}|" \
 	-e "s|^sleeper.region=.*|sleeper.region=${REGION}|" \
@@ -107,25 +107,25 @@ sed_in_place \
 	-e "s|^sleeper.subnet=.*|sleeper.subnet=${SUBNET}|" \
 	-e "s|^sleeper.tags.file=.*|sleeper.tags.file=${TAGS}|" \
 	-e "s|^sleeper.table.properties=.*|sleeper.table.properties=${TABLE_PROPERTIES}|" \
-	${INSTANCE_PROPERTIES}
+	"${INSTANCE_PROPERTIES}"
 
 ###################################
 # Build and publish Docker images #
 ###################################
-STACKS=`grep sleeper.optional.stacks ${INSTANCE_PROPERTIES} | cut -d'=' -f2`
-${BASE_DIR}/scripts/deploy/uploadDockerImages.sh ${INSTANCE_ID} ${DOCKER_REGISTRY} ${VERSION} ${STACKS} ${BASE_DOCKERFILE_DIR}
+STACKS=$(grep sleeper.optional.stacks "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
+"${SCRIPTS_DIR}/deploy/uploadDockerImages.sh" "${INSTANCE_ID}" "${DOCKER_REGISTRY}" "${VERSION}" "${STACKS}" "${BASE_DOCKERFILE_DIR}"
 
 #####################
 # Upload JARS to S3 #
 #####################
-${BASE_DIR}/scripts/deploy/uploadJars.sh ${SLEEPER_JARS} ${REGION} ${VERSION} ${JAR_DIR}
+"${SCRIPTS_DIR}/deploy/uploadJars.sh" "${SLEEPER_JARS}" "${REGION}" "${VERSION}" "${JAR_DIR}"
 
 #######################
 # Output Bucket Names #
 #######################
 CONFIG_BUCKET=sleeper-${INSTANCE_ID}-config
-echo "${CONFIG_BUCKET}" > ${GENERATED_DIR}/configBucket.txt
+echo "${CONFIG_BUCKET}" > "${GENERATED_DIR}/configBucket.txt"
 TABLE_BUCKET=sleeper-${INSTANCE_ID}-table-${TABLE_NAME}
-echo "${TABLE_BUCKET}" > ${GENERATED_DIR}/tableBucket.txt
+echo "${TABLE_BUCKET}" > "${GENERATED_DIR}/tableBucket.txt"
 QUERY_BUCKET=sleeper-${INSTANCE_ID}-query-results
-echo "${QUERY_BUCKET}" > ${GENERATED_DIR}/queryResultsBucket.txt
+echo "${QUERY_BUCKET}" > "${GENERATED_DIR}/queryResultsBucket.txt"

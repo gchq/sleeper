@@ -33,18 +33,18 @@ public interface IngestTaskStatusStore {
     }
 
     default IngestTaskStatus getTask(String taskId) {
-        throw new UnsupportedOperationException("Instance has no compaction task status store");
+        throw new UnsupportedOperationException("Instance has no ingest task status store");
     }
 
     default List<IngestTaskStatus> getAllTasks() {
-        throw new UnsupportedOperationException("Instance has no compaction task status store");
+        throw new UnsupportedOperationException("Instance has no ingest task status store");
     }
 
     default List<IngestTaskStatus> getTasksInTimePeriod(Instant startTime, Instant endTime) {
-        throw new UnsupportedOperationException("Instance has no compaction task status store");
+        throw new UnsupportedOperationException("Instance has no ingest task status store");
     }
 
     default List<IngestTaskStatus> getTasksInProgress() {
-        throw new UnsupportedOperationException("Instance has no compaction task status store");
+        throw new UnsupportedOperationException("Instance has no ingest task status store");
     }
 }
