@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 # Copyright 2022 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +14,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+# The image should be built using commands like this:
+# ./build/buildForTest.sh
+# docker build -t sleeper .
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
-java -cp ${SCRIPTS_DIR}/jars/clients-*-utility.jar sleeper.clients.QueryLambdaClient "$@"
+# You can then run that image like this:
+# ./runInDocker.sh sleeper
+
+HOME_IN_IMAGE=/root
+
+docker run -it --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v "$HOME/.sleeper/generated:/sleeper/generated" \
+  -v "$HOME/.aws:$HOME_IN_IMAGE/.aws" \
+  -e AWS_ACCESS_KEY_ID \
+  -e AWS_SECRET_ACCESS_KEY \
+  -e AWS_SESSION_TOKEN \
+  -e AWS_PROFILE \
+  -e AWS_REGION \
+  -e AWS_DEFAULT_REGION \
+  "$@"
