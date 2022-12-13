@@ -25,7 +25,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.ingest.job.status.IngestJobStatusTestData.defaultUpdateTime;
 
@@ -44,25 +46,33 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     public void jobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {
         ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
                 ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary), taskId);
-        if (!tableNameToJobs.containsKey(job.getTableName())) {
-            throw new IllegalStateException("No jobs in table yet: " + job.getTableName());
-        }
-        TableJobs tableJobs = tableNameToJobs.get(job.getTableName());
-        if (!tableJobs.jobIdToUpdateRecords.containsKey(job.getId())) {
-            throw new IllegalStateException("Job not started: " + job.getId());
-        }
-        tableJobs.jobIdToUpdateRecords.get(job.getId()).add(updateRecord);
+        List<ProcessStatusUpdateRecord> jobRecords = tableJobs(job.getTableName())
+                .map(jobs -> jobs.jobIdToUpdateRecords.get(job.getId()))
+                .orElseThrow(() -> new IllegalStateException("Job not started: " + job.getId()));
+        jobRecords.add(updateRecord);
     }
 
     @Override
     public List<IngestJobStatus> getAllJobs(String tableName) {
-        return IngestJobStatus.streamFrom(
-                        tableNameToJobs.getOrDefault(tableName, new TableJobs())
-                                .jobIdToUpdateRecords.values().stream().flatMap(List::stream))
+        return IngestJobStatus.streamFrom(streamTableRecords(tableName))
                 .collect(Collectors.toList());
+    }
+
+    private Stream<ProcessStatusUpdateRecord> streamTableRecords(String tableName) {
+        return tableJobs(tableName)
+                .map(TableJobs::streamAllRecords)
+                .orElse(Stream.empty());
+    }
+
+    private Optional<TableJobs> tableJobs(String tableName) {
+        return Optional.ofNullable(tableNameToJobs.get(tableName));
     }
 
     private static class TableJobs {
         private final Map<String, List<ProcessStatusUpdateRecord>> jobIdToUpdateRecords = new HashMap<>();
+
+        private Stream<ProcessStatusUpdateRecord> streamAllRecords() {
+            return jobIdToUpdateRecords.values().stream().flatMap(List::stream);
+        }
     }
 }
