@@ -16,15 +16,22 @@
 
 package sleeper.ingest.job;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class IngestJobTestData {
     private IngestJobTestData() {
     }
 
-    public static IngestJob createJob(String jobId, String tableName, String... filenames) {
+    public static IngestJob createJob(String jobId, String tableName, List<String> filenames) {
         return IngestJob.builder()
                 .id(jobId)
                 .files(filenames)
                 .tableName(tableName)
                 .build();
+    }
+
+    public static IngestJob createJob(String jobId, String tableName, String... filenames) {
+        return createJob(jobId, tableName, Arrays.asList(filenames));
     }
 }

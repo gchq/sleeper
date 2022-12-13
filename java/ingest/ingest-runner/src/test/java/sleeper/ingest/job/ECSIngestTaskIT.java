@@ -40,6 +40,7 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.ingest.job.IngestJobTestData.createJob;
 
 public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
 
@@ -87,9 +88,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
                 .flatMap(List::stream)
                 .sorted(new RecordComparator(recordListAndSchema.sleeperSchema))
                 .collect(Collectors.toList());
-        IngestJob ingestJob = IngestJob.builder()
-                .tableName(TEST_TABLE_NAME).id("id").files(files)
-                .build();
+        IngestJob ingestJob = createJob("id", TEST_TABLE_NAME, files);
         AWS_EXTERNAL_RESOURCE.getSqsClient()
                 .sendMessage(getInstanceProperties().get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(ingestJob));
         consumeAndVerify(recordListAndSchema.sleeperSchema, doubledRecords, 1);

@@ -51,11 +51,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         String tableName = "test-table";
         String taskId = "test-task";
         Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
-        IngestJob job = IngestJob.builder()
-                .id("test-job")
-                .tableName(tableName)
-                .files("test-file-1.parquet", "test-file-2.parquet")
-                .build();
+        IngestJob job = createJob("test-job", tableName, "test-file-1.parquet", "test-file-2.parquet");
 
         store.jobStarted(taskId, job, startTime);
         assertThat(store.getAllJobs(tableName)).containsExactly(
@@ -68,11 +64,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         String taskId = "test-task";
         Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
         Instant finishTime = Instant.parse("2022-09-22T12:00:44.000Z");
-        IngestJob job = IngestJob.builder()
-                .id("test-job")
-                .tableName(tableName)
-                .files("test-file-1.parquet", "test-file-2.parquet")
-                .build();
+        IngestJob job = createJob("test-job", tableName, "test-file-1.parquet", "test-file-2.parquet");
         RecordsProcessedSummary summary = new RecordsProcessedSummary(
                 new RecordsProcessed(200L, 200L), startTime, finishTime);
 
@@ -88,11 +80,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         String taskId = "test-task";
         Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
         Instant finishTime = Instant.parse("2022-09-22T12:00:44.000Z");
-        IngestJob job = IngestJob.builder()
-                .id("test-job")
-                .tableName(tableName)
-                .files("test-file-1.parquet", "test-file-2.parquet")
-                .build();
+        IngestJob job = createJob("test-job", tableName, "test-file-1.parquet", "test-file-2.parquet");
         RecordsProcessedSummary summary = new RecordsProcessedSummary(
                 new RecordsProcessed(200L, 200L), startTime, finishTime);
 
@@ -104,11 +92,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
     public void shouldReturnTwoRunsOnSameJob() {
         String tableName = "test-table";
         String taskId = "test-task";
-        IngestJob job = IngestJob.builder()
-                .id("test-job")
-                .tableName(tableName)
-                .files("test-file-1.parquet", "test-file-2.parquet")
-                .build();
+        IngestJob job = createJob("test-job", tableName, "test-file-1.parquet", "test-file-2.parquet");
         Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
         Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
         RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
@@ -131,16 +115,8 @@ public class WriteToMemoryIngestJobStatusStoreTest {
     public void shouldReturnTwoJobs() {
         String tableName = "test-table";
         String taskId = "test-task";
-        IngestJob job1 = IngestJob.builder()
-                .id("test-job-1")
-                .tableName(tableName)
-                .files("test-file-1.parquet", "test-file-2.parquet")
-                .build();
-        IngestJob job2 = IngestJob.builder()
-                .id("test-job-2")
-                .tableName(tableName)
-                .files("test-file-3.parquet")
-                .build();
+        IngestJob job1 = createJob("test-job-1", tableName, "test-file-1.parquet", "test-file-2.parquet");
+        IngestJob job2 = createJob("test-job-2", tableName, "test-file-3.parquet");
         Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
         Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
         RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
@@ -164,16 +140,8 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         String tableName1 = "test-table-1";
         String tableName2 = "test-table-2";
         String taskId = "test-task";
-        IngestJob job1 = IngestJob.builder()
-                .id("test-job-1")
-                .tableName(tableName1)
-                .files("test-file-1.parquet", "test-file-2.parquet")
-                .build();
-        IngestJob job2 = IngestJob.builder()
-                .id("test-job-2")
-                .tableName(tableName2)
-                .files("test-file-3.parquet")
-                .build();
+        IngestJob job1 = createJob("test-job-1", tableName1, "test-file-1.parquet", "test-file-2.parquet");
+        IngestJob job2 = createJob("test-job-2", tableName2, "test-file-3.parquet");
         Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
         Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
         RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
@@ -204,16 +172,8 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         String tableName1 = "test-table-1";
         String tableName2 = "test-table-2";
         String taskId = "test-task";
-        IngestJob job1 = IngestJob.builder()
-                .id("test-job")
-                .tableName(tableName1)
-                .files("test-file-1.parquet", "test-file-2.parquet")
-                .build();
-        IngestJob job2 = IngestJob.builder()
-                .id("test-job")
-                .tableName(tableName2)
-                .files("test-file-3.parquet")
-                .build();
+        IngestJob job1 = createJob("test-job", tableName1, "test-file-1.parquet", "test-file-2.parquet");
+        IngestJob job2 = createJob("test-job", tableName2, "test-file-3.parquet");
         Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
         Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
 
