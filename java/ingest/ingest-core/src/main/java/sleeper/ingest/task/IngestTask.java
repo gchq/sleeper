@@ -19,10 +19,12 @@ package sleeper.ingest.task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.core.iterator.IteratorException;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobHandler;
 import sleeper.ingest.job.IngestJobSource;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
@@ -34,45 +36,57 @@ public class IngestTask {
 
     private final IngestJobSource jobSource;
     private final String taskId;
-    private final IngestTaskStatusStore statusStore;
+    private final IngestTaskStatusStore taskStatusStore;
+    private final IngestJobStatusStore jobStatusStore;
     private final Supplier<Instant> getTimeNow;
     private final IngestJobHandler runJobCallback;
 
     public IngestTask(
-            IngestJobSource jobSource, String taskId, IngestTaskStatusStore statusStore,
+            IngestJobSource jobSource, String taskId,
+            IngestTaskStatusStore taskStatusStore,
+            IngestJobStatusStore jobStatusStore,
             IngestJobHandler runJobCallback, Supplier<Instant> getTimeNow) {
         this.getTimeNow = getTimeNow;
         this.jobSource = jobSource;
         this.taskId = taskId;
-        this.statusStore = statusStore;
+        this.taskStatusStore = taskStatusStore;
+        this.jobStatusStore = jobStatusStore;
         this.runJobCallback = runJobCallback;
     }
 
     public IngestTask(
             IngestJobSource jobSource, String taskId,
-            IngestTaskStatusStore statusStore, IngestJobHandler runJobCallback) {
-        this(jobSource, taskId, statusStore, runJobCallback, Instant::now);
+            IngestTaskStatusStore statusStore, IngestJobStatusStore jobStatusStore,
+            IngestJobHandler runJobCallback) {
+        this(jobSource, taskId, statusStore, jobStatusStore, runJobCallback, Instant::now);
     }
 
     public void run() throws IOException, IteratorException, StateStoreException {
         Instant startTaskTime = getTimeNow.get();
         IngestTaskStatus.Builder taskStatusBuilder = IngestTaskStatus.builder().taskId(taskId).startTime(startTaskTime);
-        statusStore.taskStarted(taskStatusBuilder.build());
+        taskStatusStore.taskStarted(taskStatusBuilder.build());
         LOGGER.info("IngestTask started at = {}", startTaskTime);
 
         IngestTaskFinishedStatus.Builder taskFinishedStatusBuilder = IngestTaskFinishedStatus.builder();
         jobSource.consumeJobs((IngestJob job) -> {
+
             Instant startTime = getTimeNow.get();
+            jobStatusStore.jobStarted(taskId, job, startTime);
+
             IngestResult result = runJobCallback.ingest(job);
+
             Instant finishTime = getTimeNow.get();
-            taskFinishedStatusBuilder.addIngestResult(result, startTime, finishTime);
+            RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), startTime, finishTime);
+            jobStatusStore.jobFinished(taskId, job, summary);
+            taskFinishedStatusBuilder.addJobSummary(summary);
+
             return result;
         });
 
         Instant finishTaskTime = getTimeNow.get();
         taskStatusBuilder.finishedStatus(taskFinishedStatusBuilder
                 .finish(startTaskTime, finishTaskTime).build());
-        statusStore.taskFinished(taskStatusBuilder.build());
+        taskStatusStore.taskFinished(taskStatusBuilder.build());
         LOGGER.info("IngestTask finished at = {}", finishTaskTime);
     }
 }

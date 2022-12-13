@@ -31,6 +31,7 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 import sleeper.ingest.task.IngestTask;
 import sleeper.ingest.task.IngestTaskStatusStore;
@@ -99,6 +100,7 @@ public class ECSIngestTask {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, hadoopConfiguration);
         IngestTaskStatusStore taskStore = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, instanceProperties);
+        IngestJobStatusStore jobStore = IngestJobStatusStore.none();
         IngestJobRunner ingestJobRunner = new IngestJobRunner(
                 objectFactory,
                 instanceProperties,
@@ -109,7 +111,7 @@ public class ECSIngestTask {
                 hadoopConfiguration);
         IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(sqsClient, cloudWatchClient, instanceProperties);
         return new IngestTask(
-                queueConsumer, taskId, taskStore, ingestJobRunner);
+                queueConsumer, taskId, taskStore, jobStore, ingestJobRunner);
     }
 
     private static Configuration ingestHadoopConfiguration(InstanceProperties instanceProperties) {

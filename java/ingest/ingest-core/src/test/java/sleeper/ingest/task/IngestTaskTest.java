@@ -36,12 +36,15 @@ import java.util.Collections;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.ingest.job.IngestJobTestData.DEFAULT_TABLE_NAME;
 import static sleeper.ingest.job.IngestJobTestData.createJobInDefaultTable;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedMultipleJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedNoJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJobNoFiles;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJobOneFile;
+import static sleeper.statestore.FileInfoTestData.DEFAULT_NUMBER_OF_RECORDS;
 
 public class IngestTaskTest {
     private final IngestJobHandler jobRunner = FixedIngestJobHandler.makingDefaultFiles();
@@ -88,6 +91,8 @@ public class IngestTaskTest {
                 finishedOneJobNoFiles(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime));
         assertThat(jobs.getIngestResults()).containsExactly(
                 IngestResult.from(Collections.emptyList()));
+        assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE_NAME)).containsExactly(
+                finishedIngestJob(job, taskId, summary(startJobTime, finishJobTime, 0, 0)));
     }
 
     @Test
@@ -113,6 +118,8 @@ public class IngestTaskTest {
                 finishedOneJobOneFile(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime));
         assertThat(jobs.getIngestResults())
                 .containsExactly(IngestResultTestData.defaultFileIngestResult("test.parquet"));
+        assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE_NAME)).containsExactly(
+                finishedIngestJob(job, taskId, summary(startJobTime, finishJobTime, DEFAULT_NUMBER_OF_RECORDS, DEFAULT_NUMBER_OF_RECORDS)));
     }
 
     @Test
@@ -143,11 +150,14 @@ public class IngestTaskTest {
         assertThat(jobs.getIngestResults()).containsExactly(
                 IngestResultTestData.defaultFileIngestResult("test1.parquet"),
                 IngestResultTestData.defaultFileIngestResult("test2.parquet"));
+        assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE_NAME)).containsExactly(
+                finishedIngestJob(job2, taskId, summary(startJob2Time, finishJob2Time, DEFAULT_NUMBER_OF_RECORDS, DEFAULT_NUMBER_OF_RECORDS)),
+                finishedIngestJob(job1, taskId, summary(startJob1Time, finishJob1Time, DEFAULT_NUMBER_OF_RECORDS, DEFAULT_NUMBER_OF_RECORDS)));
     }
 
     private void runTask(IngestJobSource jobs, String taskId, Supplier<Instant> times)
             throws IteratorException, StateStoreException, IOException {
-        IngestTask runner = new IngestTask(jobs, taskId, taskStatusStore, jobRunner, times);
+        IngestTask runner = new IngestTask(jobs, taskId, taskStatusStore, jobStatusStore, jobRunner, times);
         runner.run();
     }
 
