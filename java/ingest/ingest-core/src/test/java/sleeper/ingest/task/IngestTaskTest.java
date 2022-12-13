@@ -36,14 +36,14 @@ import java.util.Collections;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.job.IngestJobTestData.createJob;
+import static sleeper.ingest.job.IngestJobTestData.DEFAULT_TABLE_NAME;
+import static sleeper.ingest.job.IngestJobTestData.createJobInDefaultTable;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedMultipleJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedNoJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJobNoFiles;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJobOneFile;
 
 public class IngestTaskTest {
-    private static final String TEST_TABLE_NAME = "test-table";
     private final IngestJobHandler jobRunner = FixedIngestJobHandler.makingDefaultFiles();
     private final IngestTaskStatusStore taskStatusStore = new WriteToMemoryIngestTaskStatusStore();
     private final IngestJobStatusStore jobStatusStore = new WriteToMemoryIngestJobStatusStore();
@@ -62,7 +62,7 @@ public class IngestTaskTest {
         // Then
         assertThat(taskStatusStore.getAllTasks()).containsExactly(finishedNoJobs(taskId, startTime, finishTime));
         assertThat(jobs.getIngestResults()).isEmpty();
-        assertThat(jobStatusStore.getAllJobs(TEST_TABLE_NAME)).isEmpty();
+        assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE_NAME)).isEmpty();
     }
 
     @Test
@@ -74,7 +74,7 @@ public class IngestTaskTest {
         Instant startJobTime = Instant.parse("2022-12-07T12:37:20.123Z");
         Instant finishJobTime = Instant.parse("2022-12-07T12:37:50.123Z");
 
-        IngestJob job = createJobWithTestTable("test-job");
+        IngestJob job = createJobInDefaultTable("test-job");
         FixedIngestJobSource jobs = FixedIngestJobSource.with(job);
 
         // When
@@ -99,7 +99,7 @@ public class IngestTaskTest {
         Instant startJobTime = Instant.parse("2022-12-07T12:37:20.123Z");
         Instant finishJobTime = Instant.parse("2022-12-07T12:37:50.123Z");
 
-        IngestJob job = createJobWithTestTable("test-job", "test.parquet");
+        IngestJob job = createJobInDefaultTable("test-job", "test.parquet");
         FixedIngestJobSource jobs = FixedIngestJobSource.with(job);
 
         // When
@@ -126,8 +126,8 @@ public class IngestTaskTest {
         Instant startJob2Time = Instant.parse("2022-12-07T12:37:30.123Z");
         Instant finishJob2Time = Instant.parse("2022-12-07T12:37:40.123Z");
 
-        IngestJob job1 = createJobWithTestTable("test-job-1", "test1.parquet");
-        IngestJob job2 = createJobWithTestTable("test-job-2", "test2.parquet");
+        IngestJob job1 = createJobInDefaultTable("test-job-1", "test1.parquet");
+        IngestJob job2 = createJobInDefaultTable("test-job-2", "test2.parquet");
         FixedIngestJobSource jobs = FixedIngestJobSource.with(job1, job2);
 
         // When
@@ -149,10 +149,6 @@ public class IngestTaskTest {
             throws IteratorException, StateStoreException, IOException {
         IngestTask runner = new IngestTask(jobs, taskId, taskStatusStore, jobRunner, times);
         runner.run();
-    }
-
-    private IngestJob createJobWithTestTable(String jobId, String... filenames) {
-        return createJob(jobId, TEST_TABLE_NAME, filenames);
     }
 
     private static Supplier<Instant> timesInOrder(Instant... times) {

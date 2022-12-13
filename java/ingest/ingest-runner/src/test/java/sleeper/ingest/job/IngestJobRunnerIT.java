@@ -71,7 +71,7 @@ import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.ingest.job.IngestJobTestData.createJob;
+import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
 
 @RunWith(Parameterized.class)
 public class IngestJobRunnerIT {
@@ -237,7 +237,7 @@ public class IngestJobRunnerIT {
                 .flatMap(List::stream)
                 .sorted(new RecordComparator(recordListAndSchema.sleeperSchema))
                 .collect(Collectors.toList());
-        IngestJob ingestJob = createJob("id", TEST_TABLE_NAME, files);
+        IngestJob ingestJob = createJobWithTableAndFiles("id", TEST_TABLE_NAME, files);
         consumeAndVerify(recordListAndSchema.sleeperSchema, ingestJob, doubledRecords, 1);
     }
 

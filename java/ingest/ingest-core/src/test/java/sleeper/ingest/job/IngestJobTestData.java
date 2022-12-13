@@ -20,10 +20,13 @@ import java.util.Arrays;
 import java.util.List;
 
 public class IngestJobTestData {
+
+    public static final String DEFAULT_TABLE_NAME = "test-table";
+
     private IngestJobTestData() {
     }
 
-    public static IngestJob createJob(String jobId, String tableName, List<String> filenames) {
+    public static IngestJob createJobWithTableAndFiles(String jobId, String tableName, List<String> filenames) {
         return IngestJob.builder()
                 .id(jobId)
                 .files(filenames)
@@ -31,7 +34,11 @@ public class IngestJobTestData {
                 .build();
     }
 
-    public static IngestJob createJob(String jobId, String tableName, String... filenames) {
-        return createJob(jobId, tableName, Arrays.asList(filenames));
+    public static IngestJob createJobWithTableAndFiles(String jobId, String tableName, String... filenames) {
+        return createJobWithTableAndFiles(jobId, tableName, Arrays.asList(filenames));
+    }
+
+    public static IngestJob createJobInDefaultTable(String jobId, String... filenames) {
+        return createJobWithTableAndFiles(jobId, DEFAULT_TABLE_NAME, filenames);
     }
 }
