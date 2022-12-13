@@ -44,7 +44,10 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     public void jobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {
         ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
                 ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary), taskId);
-        jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>()).add(updateRecord);
+        if (!jobIdToUpdateRecords.containsKey(job.getId())) {
+            throw new IllegalStateException("Job not started: " + job.getId());
+        }
+        jobIdToUpdateRecords.get(job.getId()).add(updateRecord);
     }
 
     @Override
