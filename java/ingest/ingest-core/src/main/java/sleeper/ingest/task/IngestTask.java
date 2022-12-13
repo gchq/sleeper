@@ -69,23 +69,7 @@ public class IngestTask {
 
         IngestTaskFinishedStatus.Builder taskFinishedStatusBuilder = IngestTaskFinishedStatus.builder();
         try {
-            jobSource.consumeJobs((IngestJob job) -> {
-
-                Instant startTime = getTimeNow.get();
-                jobStatusStore.jobStarted(taskId, job, startTime);
-
-                IngestResult result = IngestResult.none();
-                try {
-                    result = runJobCallback.ingest(job);
-                } finally {
-                    Instant finishTime = getTimeNow.get();
-                    RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), startTime, finishTime);
-                    jobStatusStore.jobFinished(taskId, job, summary);
-                    taskFinishedStatusBuilder.addJobSummary(summary);
-                }
-
-                return result;
-            });
+            jobSource.consumeJobs(job -> runJob(job, taskFinishedStatusBuilder));
         } finally {
             Instant finishTaskTime = getTimeNow.get();
             taskStatusBuilder.finishedStatus(taskFinishedStatusBuilder
@@ -93,5 +77,24 @@ public class IngestTask {
             taskStatusStore.taskFinished(taskStatusBuilder.build());
             LOGGER.info("IngestTask finished at = {}", finishTaskTime);
         }
+    }
+
+    private IngestResult runJob(IngestJob job, IngestTaskFinishedStatus.Builder taskBuilder)
+            throws IteratorException, StateStoreException, IOException {
+
+        Instant startTime = getTimeNow.get();
+        jobStatusStore.jobStarted(taskId, job, startTime);
+
+        IngestResult result = IngestResult.none();
+        try {
+            result = runJobCallback.ingest(job);
+        } finally {
+            Instant finishTime = getTimeNow.get();
+            RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), startTime, finishTime);
+            jobStatusStore.jobFinished(taskId, job, summary);
+            taskBuilder.addJobSummary(summary);
+        }
+
+        return result;
     }
 }
