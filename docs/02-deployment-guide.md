@@ -89,8 +89,7 @@ The first step is to build Sleeper. We have a section in our
 
 ## Deployment
 
-There are two ways to deploy Sleeper: you can use the automated scripts or a more manual
-approach.
+There are two ways to deploy Sleeper: you can use the automated scripts or a more manual approach.
 
 ### Automated Deployment
 
@@ -351,10 +350,8 @@ That leaves the following stacks as optional:
 * `QueryStack` - for handling queries
 * `EmrBulkImportStack` - for running BulkImport jobs using Spark running on an EMR cluster that is created on demand
 * `PersistentEmrBulkImportStack` - for running BulkImport jobs using Spark running on a persistent EMR cluster, i.e. one
-  that
-  is always running (and therefore always costing money). By default, this uses EMR's managed scaling to scale up and
-  down on
-  demand.
+  that is always running (and therefore always costing money). By default, this uses EMR's managed scaling to scale up
+  and down on demand.
 * `DashboardStack` - for creating Cloudwatch metrics showing statistics such as the number of records in a table over
   time
 
