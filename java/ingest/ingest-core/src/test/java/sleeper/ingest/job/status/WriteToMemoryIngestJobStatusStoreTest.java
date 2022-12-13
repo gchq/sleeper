@@ -193,4 +193,38 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         assertThat(store.getAllJobs(tableName1)).containsExactly(
                 jobStatus(job1, finishedIngestRun(job1, taskId, summary1)));
     }
+
+    @Test
+    public void shouldReturnNoJobsIfTableHasNoJobs() {
+        assertThat(store.getAllJobs("table-with-no-jobs")).isEmpty();
+    }
+
+    @Test
+    public void shouldReturnJobsWithSameIdOnDifferentTables() {
+        String tableName1 = "test-table-1";
+        String tableName2 = "test-table-2";
+        String taskId = "test-task";
+        IngestJob job1 = IngestJob.builder()
+                .id("test-job")
+                .tableName(tableName1)
+                .files("test-file-1.parquet", "test-file-2.parquet")
+                .build();
+        IngestJob job2 = IngestJob.builder()
+                .id("test-job")
+                .tableName(tableName2)
+                .files("test-file-3.parquet")
+                .build();
+        Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
+        Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
+
+        // When
+        store.jobStarted(taskId, job1, startTime1);
+        store.jobStarted(taskId, job2, startTime2);
+
+        // Then
+        assertThat(store.getAllJobs(tableName2)).containsExactly(
+                jobStatus(job2, startedIngestRun(job2, taskId, startTime2)));
+        assertThat(store.getAllJobs(tableName1)).containsExactly(
+                jobStatus(job1, startedIngestRun(job1, taskId, startTime1)));
+    }
 }
