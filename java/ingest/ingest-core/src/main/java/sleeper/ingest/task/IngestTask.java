@@ -68,25 +68,27 @@ public class IngestTask {
         LOGGER.info("IngestTask started at = {}", startTaskTime);
 
         IngestTaskFinishedStatus.Builder taskFinishedStatusBuilder = IngestTaskFinishedStatus.builder();
-        jobSource.consumeJobs((IngestJob job) -> {
+        try {
+            jobSource.consumeJobs((IngestJob job) -> {
 
-            Instant startTime = getTimeNow.get();
-            jobStatusStore.jobStarted(taskId, job, startTime);
+                Instant startTime = getTimeNow.get();
+                jobStatusStore.jobStarted(taskId, job, startTime);
 
-            IngestResult result = runJobCallback.ingest(job);
+                IngestResult result = runJobCallback.ingest(job);
 
-            Instant finishTime = getTimeNow.get();
-            RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), startTime, finishTime);
-            jobStatusStore.jobFinished(taskId, job, summary);
-            taskFinishedStatusBuilder.addJobSummary(summary);
+                Instant finishTime = getTimeNow.get();
+                RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), startTime, finishTime);
+                jobStatusStore.jobFinished(taskId, job, summary);
+                taskFinishedStatusBuilder.addJobSummary(summary);
 
-            return result;
-        });
-
-        Instant finishTaskTime = getTimeNow.get();
-        taskStatusBuilder.finishedStatus(taskFinishedStatusBuilder
-                .finish(startTaskTime, finishTaskTime).build());
-        taskStatusStore.taskFinished(taskStatusBuilder.build());
-        LOGGER.info("IngestTask finished at = {}", finishTaskTime);
+                return result;
+            });
+        } finally {
+            Instant finishTaskTime = getTimeNow.get();
+            taskStatusBuilder.finishedStatus(taskFinishedStatusBuilder
+                    .finish(startTaskTime, finishTaskTime).build());
+            taskStatusStore.taskFinished(taskStatusBuilder.build());
+            LOGGER.info("IngestTask finished at = {}", finishTaskTime);
+        }
     }
 }

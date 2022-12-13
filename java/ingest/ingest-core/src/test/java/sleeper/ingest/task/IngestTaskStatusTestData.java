@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.statestore.FileInfoTestData.DEFAULT_NUMBER_OF_RECORDS;
 
 public class IngestTaskStatusTestData {
@@ -88,14 +89,8 @@ public class IngestTaskStatusTestData {
                                                         Duration duration, long linesRead, long linesWritten,
                                                         List<Instant> startJobTimes) {
         return IngestTaskStatus.builder().taskId(taskId).startTime(startTaskTime)
-                .finished(finishTaskTime, startJobTimes.stream().map(startTime -> createSummary(duration, linesRead, linesWritten, startTime)))
+                .finished(finishTaskTime, startJobTimes.stream().map(startTime -> summary(startTime, duration, linesRead, linesWritten)))
                 .build();
-    }
-
-    public static RecordsProcessedSummary createSummary(Duration duration, long linesRead, long linesWritten, Instant startTime) {
-        return new RecordsProcessedSummary(
-                new RecordsProcessed(linesRead, linesWritten),
-                startTime, startTime.plus(duration));
     }
 
     public static IngestTaskStatus.Builder startedBuilderWithDefaults() {

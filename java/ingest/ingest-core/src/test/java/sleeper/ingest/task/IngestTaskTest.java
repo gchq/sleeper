@@ -36,6 +36,10 @@ import java.util.Collections;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.ingest.job.IngestJobTestData.DEFAULT_TABLE_NAME;
 import static sleeper.ingest.job.IngestJobTestData.createJobInDefaultTable;
@@ -152,6 +156,37 @@ public class IngestTaskTest {
                 IngestResultTestData.defaultFileIngestResult("test2.parquet"));
         assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE_NAME)).containsExactly(
                 finishedIngestJob(job2, taskId, summary(startJob2Time, finishJob2Time, DEFAULT_NUMBER_OF_RECORDS, DEFAULT_NUMBER_OF_RECORDS)),
+                finishedIngestJob(job1, taskId, summary(startJob1Time, finishJob1Time, DEFAULT_NUMBER_OF_RECORDS, DEFAULT_NUMBER_OF_RECORDS)));
+    }
+
+    @Test
+    public void shouldReportFailureRetrievingSecondJob() throws Exception {
+        // Given
+        String taskId = "test-task";
+        Instant startTaskTime = Instant.parse("2022-12-07T12:37:00.123Z");
+        Instant finishTaskTime = Instant.parse("2022-12-07T12:38:00.123Z");
+        Instant startJob1Time = Instant.parse("2022-12-07T12:37:10.123Z");
+        Instant finishJob1Time = Instant.parse("2022-12-07T12:37:20.123Z");
+
+        IngestJob job1 = createJobInDefaultTable("test-job-1", "test1.parquet");
+
+        IngestJobSource jobSource = mock(IngestJobSource.class);
+        IOException failure = new IOException("Failed loading second job");
+        doAnswer(invocation -> {
+            IngestJobHandler callback = invocation.getArgument(0);
+            callback.ingest(job1);
+            throw failure;
+        }).when(jobSource).consumeJobs(any());
+        Supplier<Instant> times = timesInOrder(
+                startTaskTime,
+                startJob1Time, finishJob1Time,
+                finishTaskTime);
+
+        // When / Then
+        assertThatThrownBy(() -> runTask(jobSource, taskId, times)).isSameAs(failure);
+        assertThat(taskStatusStore.getAllTasks()).containsExactly(
+                finishedOneJobOneFile(taskId, startTaskTime, finishTaskTime, startJob1Time, finishJob1Time));
+        assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE_NAME)).containsExactly(
                 finishedIngestJob(job1, taskId, summary(startJob1Time, finishJob1Time, DEFAULT_NUMBER_OF_RECORDS, DEFAULT_NUMBER_OF_RECORDS)));
     }
 
