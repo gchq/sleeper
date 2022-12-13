@@ -16,21 +16,21 @@
 set -e
 # Tears down a Sleeper instance
 
-THIS_DIR=$(cd $(dirname $0) && pwd)
-BASE_DIR=$(cd $(dirname $0) && cd "../../" && pwd)
-GENERATED_DIR=${BASE_DIR}/scripts/generated
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
+GENERATED_DIR=${SCRIPTS_DIR}/generated
 INSTANCE_PROPERTIES=${GENERATED_DIR}/instance.properties
-INSTANCE_ID=$(fgrep sleeper.id ${INSTANCE_PROPERTIES} | cut -d'=' -f2)
-CONFIG_BUCKET=$(cat ${GENERATED_DIR}/configBucket.txt)
-TABLE_BUCKET=$(cat ${GENERATED_DIR}/tableBucket.txt)
-QUERY_BUCKET=$(cat ${GENERATED_DIR}/queryResultsBucket.txt)
+INSTANCE_ID=$(grep -F sleeper.id "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
+CONFIG_BUCKET=$(cat "${GENERATED_DIR}/configBucket.txt")
+TABLE_BUCKET=$(cat "${GENERATED_DIR}/tableBucket.txt")
+QUERY_BUCKET=$(cat "${GENERATED_DIR}/queryResultsBucket.txt")
 
 echo "--------------------------------------------------------"
 echo "Tear Down"
 echo "--------------------------------------------------------"
 
 echo "THIS_DIR: ${THIS_DIR}"
-echo "BASE_DIR: ${BASE_DIR}"
+echo "SCRIPTS_DIR: ${SCRIPTS_DIR}"
 echo "GENERATED_DIR: ${GENERATED_DIR}"
 echo "INSTANCE_PROPERTIES: ${INSTANCE_PROPERTIES}"
 echo "INSTANCE_ID: ${INSTANCE_ID}"
@@ -38,34 +38,31 @@ echo "CONFIG_BUCKET: ${CONFIG_BUCKET}"
 echo "TABLE_BUCKET: ${TABLE_BUCKET}"
 echo "QUERY_BUCKET: ${QUERY_BUCKET}"
 
-pushd ${BASE_DIR}
-
 echo "Pausing the system"
-java -cp ${BASE_DIR}/scripts/jars/clients-*-utility.jar "sleeper.status.update.PauseSystem" ${INSTANCE_ID}
+java -cp "${SCRIPTS_DIR}/jars/clients-*-utility.jar" "sleeper.status.update.PauseSystem" "${INSTANCE_ID}"
 
-RETAIN_INFRA=`grep sleeper.retain.infra.after.destroy ${INSTANCE_PROPERTIES} | cut -d'=' -f2 | awk '{print tolower($0)}'`
+RETAIN_INFRA=$(grep sleeper.retain.infra.after.destroy "${INSTANCE_PROPERTIES}" | cut -d'=' -f2 | awk '{print tolower($0)}')
 if [[ "${RETAIN_INFRA}" == "false" ]]; then
   echo "Removing all data from config, table and query results buckets"
   echo "Removing: ${CONFIG_BUCKET}"
   echo "Removing: ${TABLE_BUCKET}"
   echo "Removing: ${QUERY_BUCKET}"
   # Don't fail script if buckets don't exist
-  aws s3 rm s3://${CONFIG_BUCKET} --recursive || true
-  aws s3 rm s3://${TABLE_BUCKET} --recursive || true
-  aws s3 rm s3://${QUERY_BUCKET} --recursive || true
+  aws s3 rm "s3://${CONFIG_BUCKET}" --recursive || true
+  aws s3 rm "s3://${TABLE_BUCKET}" --recursive || true
+  aws s3 rm "s3://${QUERY_BUCKET}" --recursive || true
 fi
 
-SLEEPER_VERSION=`grep sleeper.version ${INSTANCE_PROPERTIES} | cut -d'=' -f2`
+SLEEPER_VERSION=$(grep sleeper.version "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
 
 echo "Running cdk destroy to remove the system"
-cdk -a "java -cp ${BASE_DIR}/scripts/jars/cdk-${SLEEPER_VERSION}*.jar sleeper.cdk.SleeperCdkApp" \
-destroy -c propertiesfile=${INSTANCE_PROPERTIES} "*"
+cdk -a "java -cp ${SCRIPTS_DIR}/jars/cdk-${SLEEPER_VERSION}*.jar sleeper.cdk.SleeperCdkApp" \
+destroy -c propertiesfile="${INSTANCE_PROPERTIES}" "*"
 
 echo "Removing the Jars bucket and docker containers"
-${THIS_DIR}/removeUploads.sh ${INSTANCE_PROPERTIES}
-popd
+"${THIS_DIR}/removeUploads.sh" "${INSTANCE_PROPERTIES}"
 
 echo "Removing generated files"
-rm -r ${BASE_DIR}/scripts/generated
+rm -r "${GENERATED_DIR:?}"/*
 
 echo "Successfully torn down"
