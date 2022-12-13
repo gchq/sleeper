@@ -23,13 +23,16 @@ import sleeper.ingest.job.IngestJob;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static sleeper.ingest.job.status.IngestJobStatusTestData.defaultUpdateTime;
 
 public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
+    private final Map<String, Set<String>> tableNameToJobId = new HashMap<>();
     private final Map<String, List<ProcessStatusUpdateRecord>> jobIdToUpdateRecords = new HashMap<>();
 
     @Override
@@ -37,6 +40,7 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
         ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
                 IngestJobStartedStatus.updateAndStartTime(job, defaultUpdateTime(startTime), startTime), taskId);
         jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>()).add(updateRecord);
+        tableNameToJobId.computeIfAbsent(job.getTableName(), tableName -> new HashSet<>()).add(job.getId());
     }
 
     @Override
@@ -52,7 +56,7 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     @Override
     public List<IngestJobStatus> getAllJobs(String tableName) {
         return IngestJobStatus.streamFrom(
-                        jobIdToUpdateRecords.values().stream().flatMap(List::stream))
+                        tableNameToJobId.get(tableName).stream().map(jobIdToUpdateRecords::get).flatMap(List::stream))
                 .collect(Collectors.toList());
     }
 }
