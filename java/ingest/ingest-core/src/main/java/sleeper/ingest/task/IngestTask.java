@@ -74,12 +74,15 @@ public class IngestTask {
                 Instant startTime = getTimeNow.get();
                 jobStatusStore.jobStarted(taskId, job, startTime);
 
-                IngestResult result = runJobCallback.ingest(job);
-
-                Instant finishTime = getTimeNow.get();
-                RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), startTime, finishTime);
-                jobStatusStore.jobFinished(taskId, job, summary);
-                taskFinishedStatusBuilder.addJobSummary(summary);
+                IngestResult result = IngestResult.none();
+                try {
+                    result = runJobCallback.ingest(job);
+                } finally {
+                    Instant finishTime = getTimeNow.get();
+                    RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), startTime, finishTime);
+                    jobStatusStore.jobFinished(taskId, job, summary);
+                    taskFinishedStatusBuilder.addJobSummary(summary);
+                }
 
                 return result;
             });

@@ -38,6 +38,10 @@ public class IngestResult {
         return new IngestResult(fileInfoList);
     }
 
+    public static IngestResult none() {
+        return from(Collections.emptyList());
+    }
+
     public long getNumberOfRecords() {
         return numberOfRecords;
     }

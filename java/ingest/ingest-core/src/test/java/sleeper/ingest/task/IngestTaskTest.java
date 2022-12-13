@@ -40,6 +40,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.ingest.job.IngestJobTestData.DEFAULT_TABLE_NAME;
 import static sleeper.ingest.job.IngestJobTestData.createJobInDefaultTable;
@@ -170,27 +171,70 @@ public class IngestTaskTest {
 
         IngestJob job1 = createJobInDefaultTable("test-job-1", "test1.parquet");
 
-        IngestJobSource jobSource = mock(IngestJobSource.class);
+        IngestJobSource mockJobs = mock(IngestJobSource.class);
         IOException failure = new IOException("Failed loading second job");
         doAnswer(invocation -> {
             IngestJobHandler callback = invocation.getArgument(0);
             callback.ingest(job1);
             throw failure;
-        }).when(jobSource).consumeJobs(any());
+        }).when(mockJobs).consumeJobs(any());
         Supplier<Instant> times = timesInOrder(
                 startTaskTime,
                 startJob1Time, finishJob1Time,
                 finishTaskTime);
 
         // When / Then
-        assertThatThrownBy(() -> runTask(jobSource, taskId, times)).isSameAs(failure);
+        assertThatThrownBy(() -> runTask(mockJobs, taskId, times)).isSameAs(failure);
         assertThat(taskStatusStore.getAllTasks()).containsExactly(
                 finishedOneJobOneFile(taskId, startTaskTime, finishTaskTime, startJob1Time, finishJob1Time));
         assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE_NAME)).containsExactly(
                 finishedIngestJob(job1, taskId, summary(startJob1Time, finishJob1Time, DEFAULT_NUMBER_OF_RECORDS, DEFAULT_NUMBER_OF_RECORDS)));
     }
 
+    @Test
+    public void shouldReportFailureRunningSecondJob() throws Exception {
+        // Given
+        String taskId = "test-task";
+        Instant startTaskTime = Instant.parse("2022-12-07T12:37:00.123Z");
+        Instant finishTaskTime = Instant.parse("2022-12-07T12:38:00.123Z");
+        Instant startJob1Time = Instant.parse("2022-12-07T12:37:10.123Z");
+        Instant finishJob1Time = Instant.parse("2022-12-07T12:37:20.123Z");
+        Instant startJob2Time = Instant.parse("2022-12-07T12:37:30.123Z");
+        Instant finishJob2Time = Instant.parse("2022-12-07T12:37:40.123Z");
+
+        IngestJob job1 = createJobInDefaultTable("test-job-1", "test1.parquet");
+        IngestJob job2 = createJobInDefaultTable("test-job-2", "test2.parquet");
+        FixedIngestJobSource jobs = FixedIngestJobSource.with(job1, job2);
+
+        IngestJobHandler mockJobRunner = mock(IngestJobHandler.class);
+        IOException failure = new IOException("Failed running second job");
+        when(mockJobRunner.ingest(job1)).thenReturn(jobRunner.ingest(job1));
+        when(mockJobRunner.ingest(job2)).thenThrow(failure);
+        Supplier<Instant> times = timesInOrder(
+                startTaskTime,
+                startJob1Time, finishJob1Time,
+                startJob2Time, finishJob2Time,
+                finishTaskTime);
+
+        // When / Then
+        assertThatThrownBy(() -> runTask(jobs, taskId, mockJobRunner, times)).isSameAs(failure);
+        assertThat(taskStatusStore.getAllTasks()).containsExactly(
+                finishedMultipleJobs(taskId, startTaskTime, finishTaskTime,
+                        summary(startJob1Time, finishJob1Time, DEFAULT_NUMBER_OF_RECORDS, DEFAULT_NUMBER_OF_RECORDS),
+                        summary(startJob2Time, finishJob2Time, 0, 0)));
+        assertThat(jobs.getIngestResults()).containsExactly(
+                IngestResultTestData.defaultFileIngestResult("test1.parquet"));
+        assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE_NAME)).containsExactly(
+                finishedIngestJob(job2, taskId, summary(startJob2Time, finishJob2Time, 0, 0)),
+                finishedIngestJob(job1, taskId, summary(startJob1Time, finishJob1Time, DEFAULT_NUMBER_OF_RECORDS, DEFAULT_NUMBER_OF_RECORDS)));
+    }
+
     private void runTask(IngestJobSource jobs, String taskId, Supplier<Instant> times)
+            throws IteratorException, StateStoreException, IOException {
+        runTask(jobs, taskId, jobRunner, times);
+    }
+
+    private void runTask(IngestJobSource jobs, String taskId, IngestJobHandler jobRunner, Supplier<Instant> times)
             throws IteratorException, StateStoreException, IOException {
         IngestTask runner = new IngestTask(jobs, taskId, taskStatusStore, jobStatusStore, jobRunner, times);
         runner.run();

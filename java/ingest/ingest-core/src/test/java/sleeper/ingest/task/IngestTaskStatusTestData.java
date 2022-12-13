@@ -93,6 +93,13 @@ public class IngestTaskStatusTestData {
                 .build();
     }
 
+    public static IngestTaskStatus finishedMultipleJobs(String taskId, Instant startTaskTime, Instant finishTaskTime,
+                                                        RecordsProcessedSummary... summaries) {
+        return IngestTaskStatus.builder().taskId(taskId).startTime(startTaskTime)
+                .finished(finishTaskTime, Stream.of(summaries))
+                .build();
+    }
+
     public static IngestTaskStatus.Builder startedBuilderWithDefaults() {
         return IngestTaskStatus.builder().taskId("test-task")
                 .startTime(Instant.parse("2022-12-07T14:56:00.001Z"));
