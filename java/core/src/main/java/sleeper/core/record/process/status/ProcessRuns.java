@@ -50,7 +50,8 @@ public class ProcessRuns {
                         .taskId(taskId);
                 taskBuilders.put(taskId, builder);
                 orderedBuilders.add(builder);
-            } else if (statusUpdate instanceof ProcessFinishedStatus) {
+            } else if ((statusUpdate instanceof ProcessFinishedStatus)
+                    && taskBuilders.containsKey(taskId)) {
                 taskBuilders.remove(taskId)
                         .finishedStatus((ProcessFinishedStatus) statusUpdate)
                         .taskId(taskId);

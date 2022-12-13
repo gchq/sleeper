@@ -16,7 +16,6 @@
 package sleeper.ingest.job.status;
 
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.JobStatusUpdates;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.ingest.job.IngestJob;
@@ -52,9 +51,8 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
 
     @Override
     public List<IngestJobStatus> getAllJobs(String tableName) {
-        return jobIdToUpdateRecords.entrySet().stream()
-                .map(entry -> JobStatusUpdates.from(entry.getKey(), entry.getValue()))
-                .map(IngestJobStatus::from)
+        return IngestJobStatus.streamFrom(
+                        jobIdToUpdateRecords.values().stream().flatMap(List::stream))
                 .collect(Collectors.toList());
     }
 }

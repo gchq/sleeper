@@ -19,11 +19,13 @@ package sleeper.ingest.job.status;
 import sleeper.core.record.process.status.JobStatusUpdates;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
+import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 public class IngestJobStatus {
     private final String jobId;
@@ -45,6 +47,11 @@ public class IngestJobStatus {
                 .jobRuns(statusUpdates.getRuns())
                 .jobId(statusUpdates.getJobId())
                 .build();
+    }
+
+    public static Stream<IngestJobStatus> streamFrom(Stream<ProcessStatusUpdateRecord> records) {
+        return JobStatusUpdates.streamFrom(records)
+                .map(IngestJobStatus::from);
     }
 
     public String getJobId() {

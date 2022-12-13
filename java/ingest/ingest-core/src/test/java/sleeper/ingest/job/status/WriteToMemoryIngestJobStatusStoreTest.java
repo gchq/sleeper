@@ -20,6 +20,7 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.ingest.job.IngestJob;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 
@@ -101,5 +102,63 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
         assertThatThrownBy(() -> store.jobFinished(taskId, job, summary))
                 .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    public void shouldReturnTwoRunsOnSameJob() {
+        String tableName = "test-table";
+        String taskId = "test-task";
+        IngestJob job = IngestJob.builder()
+                .id("test-job")
+                .tableName(tableName)
+                .files("test-file-1.parquet", "test-file-2.parquet")
+                .build();
+        Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
+        Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
+        RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
+                new RecordsProcessed(100L, 100L), startTime1, Duration.ofSeconds(15));
+        RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
+                new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
+
+        store.jobStarted(taskId, job, startTime1);
+        store.jobFinished(taskId, job, summary1);
+        store.jobStarted(taskId, job, startTime2);
+        store.jobFinished(taskId, job, summary2);
+
+        assertThat(store.getAllJobs(tableName)).containsExactly(
+                jobStatus(job,
+                        finishedIngestRun(job, taskId, summary2),
+                        finishedIngestRun(job, taskId, summary1)));
+    }
+
+    @Test
+    public void shouldReturnTwoJobs() {
+        String tableName = "test-table";
+        String taskId = "test-task";
+        IngestJob job1 = IngestJob.builder()
+                .id("test-job-1")
+                .tableName(tableName)
+                .files("test-file-1.parquet", "test-file-2.parquet")
+                .build();
+        IngestJob job2 = IngestJob.builder()
+                .id("test-job-2")
+                .tableName(tableName)
+                .files("test-file-3.parquet")
+                .build();
+        Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
+        Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
+        RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
+                new RecordsProcessed(100L, 100L), startTime1, Duration.ofSeconds(15));
+        RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
+                new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
+
+        store.jobStarted(taskId, job1, startTime1);
+        store.jobFinished(taskId, job1, summary1);
+        store.jobStarted(taskId, job2, startTime2);
+        store.jobFinished(taskId, job2, summary2);
+
+        assertThat(store.getAllJobs(tableName)).containsExactly(
+                jobStatus(job2, finishedIngestRun(job2, taskId, summary2)),
+                jobStatus(job1, finishedIngestRun(job1, taskId, summary1)));
     }
 }
