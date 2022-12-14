@@ -28,4 +28,10 @@ public class IngestResultTestData {
         return IngestResult.allReadWereWritten(Collections.singletonList(
                 FileInfoTestData.defaultFileOnRootPartition(filename)));
     }
+
+    public static IngestResult defaultFileIngestResultReadAndWritten(
+            String filename, long recordsRead, long recordsWritten) {
+        return IngestResult.fromReadAndWritten(recordsRead, Collections.singletonList(
+                FileInfoTestData.defaultFileOnRootPartitionWithRecords(filename, recordsWritten)));
+    }
 }

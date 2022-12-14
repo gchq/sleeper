@@ -33,11 +33,15 @@ public class FileInfoTestData {
             .build();
 
     public static FileInfo defaultFileOnRootPartition(String filename) {
+        return defaultFileOnRootPartitionWithRecords(filename, DEFAULT_NUMBER_OF_RECORDS);
+    }
+
+    public static FileInfo defaultFileOnRootPartitionWithRecords(String filename, long records) {
         return FileInfo.builder()
                 .rowKeyTypes(DEFAULT_SCHEMA.getRowKeyTypes())
                 .minRowKey(Key.create("")).maxRowKey(null)
                 .filename(filename).partitionId("root")
-                .numberOfRecords(DEFAULT_NUMBER_OF_RECORDS).fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(records).fileStatus(FileInfo.FileStatus.ACTIVE)
                 .lastStateStoreUpdateTime(Instant.parse("2022-12-08T11:03:00.001Z"))
                 .build();
     }
