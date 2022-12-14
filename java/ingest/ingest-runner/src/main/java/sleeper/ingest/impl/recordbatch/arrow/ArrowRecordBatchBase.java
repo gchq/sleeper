@@ -178,8 +178,8 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
                 + "\tschema of {}\n\tlocalWorkingDirectory of {}\n\tworkingArrowBufferAllocatorBytes of {}\n"
                 + "\tminBatchArrowBufferAllocatorBytes of {}\n\tmaxBatchArrowBufferAllocatorBytes of {}\n"
                 + "\tmaxNoOfBytesToWriteLocally of {}\n\tmaxNoOfRecordsToWriteToArrowFileAtOnce of {}",
-                this.sleeperSchema, this.localWorkingDirectory, this.workingArrowBufferAllocatorBytes,
-                this.minBatchArrowBufferAllocatorBytes, this.maxBatchArrowBufferAllocatorBytes,
+                this.sleeperSchema, this.localWorkingDirectory, workingArrowBufferAllocatorBytes,
+                minBatchArrowBufferAllocatorBytes, maxBatchArrowBufferAllocatorBytes,
                 this.maxNoOfBytesToWriteLocally, this.maxNoOfRecordsToWriteToArrowFileAtOnce);
     }
 

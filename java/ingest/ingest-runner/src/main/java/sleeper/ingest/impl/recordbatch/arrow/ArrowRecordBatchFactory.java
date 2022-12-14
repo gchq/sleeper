@@ -35,7 +35,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
 
 public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFactory<INCOMINGDATATYPE> {
-    private static final java.util.logging.Logger LOGGER = LoggerFactory.getLogger(ArrowRecordBatchFactory.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ArrowRecordBatchFactory.class);
 
     private final Schema schema;
     private final String localWorkingDirectory;
@@ -82,9 +82,9 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
                 + "\tschema of {}\n\tlocalWorkingDirectory of {}\n\tworkingBufferAllocatorBytes of {}\n"
                 + "\tmaxBatchBufferAllocatorBytes of {}\n\tmaxNoOfBytesToWriteLocally of {}\n"
                 + "\tmaxNoOfRecordsToWriteToArrowFileAtOnce of {}\n\tcreateBatchFn of {}",
-                this.schema, this.localWorkingDirectory, this.workingBufferAllocatorBytes,
+                this.schema.toString(), this.localWorkingDirectory, this.workingBufferAllocatorBytes,
                 this.maxBatchBufferAllocatorBytes, this.maxNoOfBytesToWriteLocally,
-                this.maxNoOfRecordsToWriteToArrowFileAtOnce, this.createBatchFn);
+                this.maxNoOfRecordsToWriteToArrowFileAtOnce, this.createBatchFn.toString());
     }
 
     public static Builder builder() {
