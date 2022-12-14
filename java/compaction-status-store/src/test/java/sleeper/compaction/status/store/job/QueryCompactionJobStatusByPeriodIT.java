@@ -17,7 +17,7 @@ package sleeper.compaction.status.store.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.TestCompactionJobStatus;
+import sleeper.compaction.job.CompactionJobStatusTestData;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfoFactory;
@@ -52,8 +52,8 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         assertThat(store.getJobsInTimePeriod(tableName, epochStart, farFuture))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
-                        TestCompactionJobStatus.created(job2, ignoredUpdateTime()),
-                        TestCompactionJobStatus.created(job1, ignoredUpdateTime()));
+                        CompactionJobStatusTestData.jobCreated(job2, ignoredUpdateTime()),
+                        CompactionJobStatusTestData.jobCreated(job1, ignoredUpdateTime()));
     }
 
     @Test
@@ -95,7 +95,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         Instant farFuture = epochStart.plus(Period.ofDays(999999999));
         assertThat(store.getJobsInTimePeriod(tableName, epochStart, farFuture))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(TestCompactionJobStatus.created(job1, ignoredUpdateTime()));
+                .containsExactly(CompactionJobStatusTestData.jobCreated(job1, ignoredUpdateTime()));
     }
 
     @Test

@@ -18,8 +18,8 @@ package sleeper.status.report.query;
 
 import sleeper.ToStringPrintStream;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.CompactionJobStatusTestData;
 import sleeper.compaction.job.CompactionJobTestDataHelper;
-import sleeper.compaction.job.TestCompactionJobStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.console.TestConsoleInput;
 import sleeper.status.report.compaction.job.CompactionJobStatusReportArguments;
@@ -39,9 +39,9 @@ public class JobQueryTestBase {
     protected static final String TABLE_NAME = "test-table";
     protected final CompactionJobStatusStore statusStore = mock(CompactionJobStatusStore.class);
     private final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
-    protected final CompactionJobStatus exampleStatus1 = TestCompactionJobStatus.created(
+    protected final CompactionJobStatus exampleStatus1 = CompactionJobStatusTestData.jobCreated(
             dataHelper.singleFileCompaction(), Instant.parse("2022-09-22T13:33:12.001Z"));
-    protected final CompactionJobStatus exampleStatus2 = TestCompactionJobStatus.created(
+    protected final CompactionJobStatus exampleStatus2 = CompactionJobStatusTestData.jobCreated(
             dataHelper.singleFileCompaction(), Instant.parse("2022-09-22T13:53:12.001Z"));
     protected final List<CompactionJobStatus> exampleStatusList = Arrays.asList(exampleStatus1, exampleStatus2);
     protected final ToStringPrintStream out = new ToStringPrintStream();

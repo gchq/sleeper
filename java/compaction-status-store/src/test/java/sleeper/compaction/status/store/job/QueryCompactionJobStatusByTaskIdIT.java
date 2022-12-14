@@ -17,18 +17,15 @@ package sleeper.compaction.status.store.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.CompactionJob;
-import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
-import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.statestore.FileInfoFactory;
 
-import java.util.Arrays;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 
 public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
@@ -54,11 +51,8 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobSta
         // Then
         assertThat(store.getJobsByTaskId(tableName, searchingTaskId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(CompactionJobStatus.builder().jobId(job1.getId())
-                        .createdStatus(CompactionJobCreatedStatus.from(job1, ignoredUpdateTime()))
-                        .singleJobRun(ProcessRun.started(searchingTaskId,
-                                ProcessStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())))
-                        .build());
+                .containsExactly(jobCreated(job1, ignoredUpdateTime(),
+                        startedCompactionRun(searchingTaskId, defaultStartTime())));
     }
 
     @Test
@@ -82,16 +76,10 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobSta
         // Then
         assertThat(store.getJobsByTaskId(tableName, searchingTaskId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(CompactionJobStatus.builder().jobId(job.getId())
-                        .createdStatus(CompactionJobCreatedStatus.from(job, ignoredUpdateTime()))
-                        .jobRunsLatestFirst(Arrays.asList(
-                                ProcessRun.started(taskId3,
-                                        ProcessStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())),
-                                ProcessRun.started(searchingTaskId,
-                                        ProcessStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime())),
-                                ProcessRun.started(taskId1,
-                                        ProcessStartedStatus.updateAndStartTime(ignoredUpdateTime(), defaultStartTime()))
-                        )).build());
+                .containsExactly(jobCreated(job, ignoredUpdateTime(),
+                        startedCompactionRun(taskId3, defaultStartTime()),
+                        startedCompactionRun(searchingTaskId, defaultStartTime()),
+                        startedCompactionRun(taskId1, defaultStartTime())));
     }
 
     @Test

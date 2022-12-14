@@ -17,10 +17,10 @@ package sleeper.compaction.job;
 
 import org.junit.Test;
 import sleeper.compaction.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStartedStatus;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -28,12 +28,12 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.job.TestCompactionJobStatus.statusListFromUpdates;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusListFromUpdates;
+import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionStatus;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_EXPIRY;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
-import static sleeper.core.record.process.status.TestRunStatusUpdates.startedStatus;
 
 public class CompactionJobStatusesBuilderTest {
 
@@ -45,18 +45,18 @@ public class CompactionJobStatusesBuilderTest {
                 .partitionId("partition1").childPartitionIds(null)
                 .inputFilesCount(11)
                 .build();
-        ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
+        CompactionJobStartedStatus started1 = startedCompactionStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
         ProcessFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 200L, 100L);
         CompactionJobCreatedStatus created2 = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-24T09:23:00.012Z"))
                 .partitionId("partition2").childPartitionIds(Arrays.asList("A", "B"))
                 .inputFilesCount(12)
                 .build();
-        ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        CompactionJobStartedStatus started2 = startedCompactionStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
         ProcessFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
 
         // When
-        List<CompactionJobStatus> statuses = statusListFromUpdates(
+        List<CompactionJobStatus> statuses = jobStatusListFromUpdates(
                 forJob("job1", created1, started1, finished1),
                 forJob("job2", created2, started2, finished2));
 

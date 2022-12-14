@@ -16,18 +16,17 @@
 package sleeper.compaction.job;
 
 import org.junit.Test;
-import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
-import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStartedStatus;
+import sleeper.core.record.process.RecordsProcessedSummaryTestData;
 
 import java.time.Instant;
-import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 
 public class CompactionJobStatusInPeriodTest {
@@ -37,120 +36,112 @@ public class CompactionJobStatusInPeriodTest {
             new RecordsProcessed(200L, 100L),
             Instant.parse("2022-09-23T11:00:00.000Z"), Instant.parse("2022-09-23T11:30:00.000Z"));
 
+    private static RecordsProcessedSummary startAndFinishTime(Instant startTime, Instant finishTime) {
+        return RecordsProcessedSummaryTestData.summary(startTime, finishTime, 200, 100);
+    }
+
     @Test
-    public void shouldBeInPeriodWithCreatedUpdateTime() {
+    public void shouldBeInPeriodWithCreatedTime() {
         // Given
         Instant startTime = Instant.parse("2022-09-23T11:44:00.000Z");
-        Instant updateTime = Instant.parse("2022-09-23T11:44:01.000Z");
+        Instant middleTime = Instant.parse("2022-09-23T11:44:01.000Z");
         Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
-        CompactionJobStatus status = TestCompactionJobStatus.created(job, updateTime);
+        CompactionJobStatus status = jobCreated(job, middleTime);
 
         // When / Then
         assertThat(status.isInPeriod(startTime, endTime)).isTrue();
     }
 
     @Test
-    public void shouldBeBeforePeriodWithCreatedUpdateTime() {
+    public void shouldBeBeforePeriodWithCreatedTime() {
         // Given
-        Instant updateTime = Instant.parse("2022-09-23T11:44:00.000Z");
+        Instant beforeTime = Instant.parse("2022-09-23T11:44:00.000Z");
         Instant startTime = Instant.parse("2022-09-23T11:44:01.000Z");
         Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
-        CompactionJobStatus status = TestCompactionJobStatus.created(job, updateTime);
+        CompactionJobStatus status = jobCreated(job, beforeTime);
 
         // When / Then
         assertThat(status.isInPeriod(startTime, endTime)).isFalse();
     }
 
     @Test
-    public void shouldBeAfterPeriodWithCreatedUpdateTime() {
-        // Given
-        Instant startTime = Instant.parse("2022-09-23T11:44:00.000Z");
-        Instant endTime = Instant.parse("2022-09-23T11:44:01.000Z");
-        Instant updateTime = Instant.parse("2022-09-23T11:44:02.000Z");
-        CompactionJobStatus status = TestCompactionJobStatus.created(job, updateTime);
-
-        // When / Then
-        assertThat(status.isInPeriod(startTime, endTime)).isFalse();
-    }
-
-    @Test
-    public void shouldOverlapPeriodWithStartedUpdateTime() {
-        // Given
-        Instant beforeTime = Instant.parse("2022-09-23T11:43:00.000Z");
-        Instant startTime = Instant.parse("2022-09-23T11:44:00.000Z");
-        Instant updateTime = Instant.parse("2022-09-23T11:44:01.000Z");
-        Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
-        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
-                .singleJobRun(ProcessRun.started(DEFAULT_TASK_ID,
-                        ProcessStartedStatus.updateAndStartTime(updateTime, beforeTime)))
-                .build();
-
-        // When / Then
-        assertThat(status.isInPeriod(startTime, endTime)).isTrue();
-    }
-
-    @Test
-    public void shouldIncludePeriodWithStartedUpdateTime() {
-        // Given
-        Instant beforeTime = Instant.parse("2022-09-23T11:43:00.000Z");
-        Instant startTime = Instant.parse("2022-09-23T11:44:00.000Z");
-        Instant endTime = Instant.parse("2022-09-23T11:44:01.000Z");
-        Instant updateTime = Instant.parse("2022-09-23T11:44:02.000Z");
-        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
-                .singleJobRun(ProcessRun.started(DEFAULT_TASK_ID, ProcessStartedStatus.updateAndStartTime(updateTime, beforeTime)))
-                .build();
-
-        // When / Then
-        assertThat(status.isInPeriod(startTime, endTime)).isTrue();
-    }
-
-    @Test
-    public void shouldBeBeforePeriodWithStartedUpdateTime() {
-        // Given
-        Instant beforeTime = Instant.parse("2022-09-23T11:43:00.000Z");
-        Instant updateTime = Instant.parse("2022-09-23T11:44:00.000Z");
-        Instant startTime = Instant.parse("2022-09-23T11:44:01.000Z");
-        Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
-        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
-                .singleJobRun(ProcessRun.started(DEFAULT_TASK_ID, ProcessStartedStatus.updateAndStartTime(updateTime, beforeTime)))
-                .build();
-
-        // When / Then
-        assertThat(status.isInPeriod(startTime, endTime)).isFalse();
-    }
-
-    @Test
-    public void shouldBeAfterPeriodWithStartedUpdateTime() {
+    public void shouldBeAfterPeriodWithCreatedTime() {
         // Given
         Instant startTime = Instant.parse("2022-09-23T11:44:00.000Z");
         Instant endTime = Instant.parse("2022-09-23T11:44:01.000Z");
         Instant afterTime = Instant.parse("2022-09-23T11:44:02.000Z");
-        Instant updateTime = Instant.parse("2022-09-23T11:44:03.000Z");
-        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, afterTime))
-                .singleJobRun(ProcessRun.started(DEFAULT_TASK_ID, ProcessStartedStatus.updateAndStartTime(updateTime, afterTime)))
-                .build();
+        CompactionJobStatus status = jobCreated(job, afterTime);
 
         // When / Then
         assertThat(status.isInPeriod(startTime, endTime)).isFalse();
     }
 
     @Test
-    public void shouldOverlapPeriodWithFinishedUpdateTime() {
+    public void shouldOverlapPeriodWithStartedTime() {
         // Given
         Instant beforeTime = Instant.parse("2022-09-23T11:43:00.000Z");
         Instant startTime = Instant.parse("2022-09-23T11:44:00.000Z");
-        Instant updateTime = Instant.parse("2022-09-23T11:44:01.000Z");
+        Instant middleTime = Instant.parse("2022-09-23T11:44:01.000Z");
         Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
-        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
-                .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID,
-                        ProcessStartedStatus.updateAndStartTime(beforeTime, beforeTime),
-                        ProcessFinishedStatus.updateTimeAndSummary(updateTime, summary)))
-                .build();
+        CompactionJobStatus status = jobCreated(job, beforeTime,
+                startedCompactionRun(DEFAULT_TASK_ID, middleTime));
+
+        // When / Then
+        assertThat(status.isInPeriod(startTime, endTime)).isTrue();
+    }
+
+    @Test
+    public void shouldIncludePeriodWithStartedTime() {
+        // Given
+        Instant beforeTime = Instant.parse("2022-09-23T11:43:00.000Z");
+        Instant startTime = Instant.parse("2022-09-23T11:44:00.000Z");
+        Instant endTime = Instant.parse("2022-09-23T11:44:01.000Z");
+        Instant afterTime = Instant.parse("2022-09-23T11:44:02.000Z");
+        CompactionJobStatus status = jobCreated(job, beforeTime,
+                startedCompactionRun(DEFAULT_TASK_ID, afterTime));
+
+        // When / Then
+        assertThat(status.isInPeriod(startTime, endTime)).isTrue();
+    }
+
+    @Test
+    public void shouldBeBeforePeriodWithStartedTime() {
+        // Given
+        Instant beforeTime1 = Instant.parse("2022-09-23T11:43:00.000Z");
+        Instant beforeTime2 = Instant.parse("2022-09-23T11:44:00.000Z");
+        Instant startTime = Instant.parse("2022-09-23T11:44:01.000Z");
+        Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
+        CompactionJobStatus status = jobCreated(job, beforeTime1,
+                startedCompactionRun(DEFAULT_TASK_ID, beforeTime2));
+
+        // When / Then
+        assertThat(status.isInPeriod(startTime, endTime)).isFalse();
+    }
+
+    @Test
+    public void shouldBeAfterPeriodWithStartedTime() {
+        // Given
+        Instant startTime = Instant.parse("2022-09-23T11:44:00.000Z");
+        Instant endTime = Instant.parse("2022-09-23T11:44:01.000Z");
+        Instant afterTime1 = Instant.parse("2022-09-23T11:44:02.000Z");
+        Instant afterTime2 = Instant.parse("2022-09-23T11:44:03.000Z");
+        CompactionJobStatus status = jobCreated(job, afterTime1,
+                startedCompactionRun(DEFAULT_TASK_ID, afterTime2));
+
+        // When / Then
+        assertThat(status.isInPeriod(startTime, endTime)).isFalse();
+    }
+
+    @Test
+    public void shouldOverlapPeriodWithFinishedTime() {
+        // Given
+        Instant beforeTime1 = Instant.parse("2022-09-23T11:43:00.000Z");
+        Instant beforeTime2 = Instant.parse("2022-09-23T11:43:01.000Z");
+        Instant startTime = Instant.parse("2022-09-23T11:44:00.000Z");
+        Instant middleTime = Instant.parse("2022-09-23T11:44:01.000Z");
+        Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
+        CompactionJobStatus status = jobCreated(job, beforeTime1,
+                finishedCompactionRun(DEFAULT_TASK_ID, startAndFinishTime(beforeTime2, middleTime)));
 
         // When / Then
         assertThat(status.isInPeriod(startTime, endTime)).isTrue();
@@ -159,16 +150,13 @@ public class CompactionJobStatusInPeriodTest {
     @Test
     public void shouldIncludePeriodWithFinishedUpdateTime() {
         // Given
-        Instant beforeTime = Instant.parse("2022-09-23T11:43:00.000Z");
+        Instant beforeTime1 = Instant.parse("2022-09-23T11:43:00.000Z");
+        Instant beforeTime2 = Instant.parse("2022-09-23T11:43:01.000Z");
         Instant startTime = Instant.parse("2022-09-23T11:44:00.000Z");
         Instant endTime = Instant.parse("2022-09-23T11:44:01.000Z");
-        Instant updateTime = Instant.parse("2022-09-23T11:44:02.000Z");
-        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
-                .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID,
-                        ProcessStartedStatus.updateAndStartTime(beforeTime, beforeTime),
-                        ProcessFinishedStatus.updateTimeAndSummary(updateTime, summary)))
-                .build();
+        Instant afterTime = Instant.parse("2022-09-23T11:44:02.000Z");
+        CompactionJobStatus status = jobCreated(job, beforeTime1,
+                finishedCompactionRun(DEFAULT_TASK_ID, startAndFinishTime(beforeTime2, afterTime)));
 
         // When / Then
         assertThat(status.isInPeriod(startTime, endTime)).isTrue();
@@ -177,16 +165,13 @@ public class CompactionJobStatusInPeriodTest {
     @Test
     public void shouldBeBeforePeriodWithFinishedUpdateTime() {
         // Given
-        Instant beforeTime = Instant.parse("2022-09-23T11:43:00.000Z");
-        Instant updateTime = Instant.parse("2022-09-23T11:44:00.000Z");
+        Instant beforeTime1 = Instant.parse("2022-09-23T11:43:00.000Z");
+        Instant beforeTime2 = Instant.parse("2022-09-23T11:43:01.000Z");
+        Instant beforeTime3 = Instant.parse("2022-09-23T11:43:31.000Z");
         Instant startTime = Instant.parse("2022-09-23T11:44:01.000Z");
         Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
-        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, beforeTime))
-                .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID,
-                        ProcessStartedStatus.updateAndStartTime(beforeTime, beforeTime),
-                        ProcessFinishedStatus.updateTimeAndSummary(updateTime, summary)))
-                .build();
+        CompactionJobStatus status = jobCreated(job, beforeTime1,
+                finishedCompactionRun(DEFAULT_TASK_ID, startAndFinishTime(beforeTime2, beforeTime3)));
 
         // When / Then
         assertThat(status.isInPeriod(startTime, endTime)).isFalse();
@@ -197,14 +182,11 @@ public class CompactionJobStatusInPeriodTest {
         // Given
         Instant startTime = Instant.parse("2022-09-23T11:44:00.000Z");
         Instant endTime = Instant.parse("2022-09-23T11:44:01.000Z");
-        Instant afterTime = Instant.parse("2022-09-23T11:44:02.000Z");
-        Instant updateTime = Instant.parse("2022-09-23T11:44:03.000Z");
-        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, afterTime))
-                .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID,
-                        ProcessStartedStatus.updateAndStartTime(afterTime, afterTime),
-                        ProcessFinishedStatus.updateTimeAndSummary(updateTime, summary)))
-                .build();
+        Instant afterTime1 = Instant.parse("2022-09-23T11:44:02.000Z");
+        Instant afterTime2 = Instant.parse("2022-09-23T11:44:03.000Z");
+        Instant afterTime3 = Instant.parse("2022-09-23T11:44:33.000Z");
+        CompactionJobStatus status = jobCreated(job, afterTime1,
+                finishedCompactionRun(DEFAULT_TASK_ID, startAndFinishTime(afterTime2, afterTime3)));
 
         // When / Then
         assertThat(status.isInPeriod(startTime, endTime)).isFalse();
@@ -219,18 +201,9 @@ public class CompactionJobStatusInPeriodTest {
         Instant periodStart = Instant.parse("2022-09-23T11:45:45.000Z");
         Instant run2StartTime = Instant.parse("2022-09-23T11:46:00.000Z");
         Instant periodEnd = Instant.parse("2022-09-23T12:00:00.000Z");
-        CompactionJobStatus status = CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, createTime))
-                .jobRunsLatestFirst(Arrays.asList(
-                        ProcessRun.started(DEFAULT_TASK_ID,
-                                ProcessStartedStatus.updateAndStartTime(run2StartTime, run2StartTime)),
-                        ProcessRun.finished(DEFAULT_TASK_ID,
-                                ProcessStartedStatus.updateAndStartTime(run1StartTime, run1StartTime),
-                                ProcessFinishedStatus.updateTimeAndSummary(run1FinishTime,
-                                        new RecordsProcessedSummary(
-                                                new RecordsProcessed(300L, 200L),
-                                                run1StartTime, run1FinishTime)))))
-                .build();
+        CompactionJobStatus status = jobCreated(job, createTime,
+                startedCompactionRun(DEFAULT_TASK_ID, run2StartTime),
+                finishedCompactionRun(DEFAULT_TASK_ID, startAndFinishTime(run1StartTime, run1FinishTime)));
 
         // When / Then
         assertThat(status.isInPeriod(periodStart, periodEnd)).isTrue();

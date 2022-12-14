@@ -13,29 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.record.process.status;
+package sleeper.ingest.job.status;
+
+import sleeper.core.record.process.status.ProcessRunStartedUpdate;
+import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
 import java.util.Objects;
 
-public class ProcessStartedStatus implements ProcessStatusUpdate {
+public class IngestJobStartedStatus implements ProcessRunStartedUpdate {
 
-    private final Instant updateTime;
+    private final int inputFileCount;
     private final Instant startTime;
+    private final Instant updateTime;
 
-    private ProcessStartedStatus(Instant updateTime, Instant startTime) {
+    private IngestJobStartedStatus(int inputFileCount, Instant updateTime, Instant startTime) {
+        this.inputFileCount = inputFileCount;
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime may not be null");
         this.startTime = Objects.requireNonNull(startTime, "startTime may not be null");
     }
 
-    public static ProcessStartedStatus updateAndStartTime(Instant updateTime, Instant startTime) {
-        return new ProcessStartedStatus(updateTime, startTime);
+    public static IngestJobStartedStatus updateAndStartTime(IngestJob job, Instant updateTime, Instant startTime) {
+        return new IngestJobStartedStatus(job.getFiles().size(), updateTime, startTime);
     }
 
+    public int getInputFileCount() {
+        return inputFileCount;
+    }
+
+    @Override
     public Instant getUpdateTime() {
         return updateTime;
     }
 
+    @Override
     public Instant getStartTime() {
         return startTime;
     }
@@ -49,7 +60,7 @@ public class ProcessStartedStatus implements ProcessStatusUpdate {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ProcessStartedStatus that = (ProcessStartedStatus) o;
+        IngestJobStartedStatus that = (IngestJobStartedStatus) o;
         return updateTime.equals(that.updateTime) && startTime.equals(that.startTime);
     }
 
@@ -60,7 +71,7 @@ public class ProcessStartedStatus implements ProcessStatusUpdate {
 
     @Override
     public String toString() {
-        return "ProcessStartedStatus{" +
+        return "IngestJobStartedStatus{" +
                 "updateTime=" + updateTime +
                 ", startTime=" + startTime +
                 '}';
