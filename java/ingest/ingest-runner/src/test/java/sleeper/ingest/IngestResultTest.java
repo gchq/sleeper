@@ -33,7 +33,7 @@ public class IngestResultTest extends IngestRecordsTestBase {
         IngestResult result = ingestRecords(schema, stateStore, getRecords());
 
         // Then
-        assertThat(result.getNumberOfRecords())
+        assertThat(result.getRecordsWritten())
                 .isEqualTo(2L);
     }
 

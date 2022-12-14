@@ -91,7 +91,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        long numWritten = ingestRecords(schema, stateStore, getRecords()).getNumberOfRecords();
+        long numWritten = ingestRecords(schema, stateStore, getRecords()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -155,7 +155,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        long numWritten = ingestRecords(schema, stateStore, getRecordsByteArrayKey()).getNumberOfRecords();
+        long numWritten = ingestRecords(schema, stateStore, getRecordsByteArrayKey()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -226,7 +226,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        long numWritten = ingestRecords(schema, stateStore, getRecords2DimByteArrayKey()).getNumberOfRecords();
+        long numWritten = ingestRecords(schema, stateStore, getRecords2DimByteArrayKey()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -345,7 +345,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         //  appear in partition 1 then partition 2 then partition 1, then 2, etc
         long numWritten = ingestRecordsWithTableProperties(schema, stateStore,
                 getRecordsOscillatingBetween2Partitions(),
-                tableProperties -> tableProperties.set(COMPRESSION_CODEC, "snappy")).getNumberOfRecords();
+                tableProperties -> tableProperties.set(COMPRESSION_CODEC, "snappy")).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -420,7 +420,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        long numWritten = ingestRecords(schema, stateStore, getRecordsInFirstPartitionOnly()).getNumberOfRecords();
+        long numWritten = ingestRecords(schema, stateStore, getRecordsInFirstPartitionOnly()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -456,7 +456,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         // When
         List<Record> records = new ArrayList<>(getRecords());
         records.addAll(getRecords());
-        long numWritten = ingestRecords(schema, stateStore, records).getNumberOfRecords();
+        long numWritten = ingestRecords(schema, stateStore, records).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -507,7 +507,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         long numWritten = ingestRecordsWithInstanceProperties(schema, stateStore, records, instanceProperties -> {
             instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 1000L);
             instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 5);
-        }).getNumberOfRecords();
+        }).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -624,7 +624,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         long numWritten = ingestRecordsWithInstanceProperties(schema, stateStore, records, instanceProperties -> {
             instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 10L);
             instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 5);
-        }).getNumberOfRecords();
+        }).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -710,7 +710,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         StateStore stateStore = getStateStore(schema);
 
         // When
-        long numWritten = ingestRecords(schema, stateStore, getUnsortedRecords()).getNumberOfRecords();
+        long numWritten = ingestRecords(schema, stateStore, getUnsortedRecords()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -756,7 +756,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         // When
         long numWritten = ingestRecordsWithTableProperties(schema, stateStore, getRecordsForAggregationIteratorTest(),
                 tableProperties -> tableProperties.set(ITERATOR_CLASS_NAME, AdditionIterator.class.getName()))
-                .getNumberOfRecords();
+                .getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written

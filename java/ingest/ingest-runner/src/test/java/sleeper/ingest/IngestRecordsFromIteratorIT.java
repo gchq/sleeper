@@ -37,7 +37,7 @@ public class IngestRecordsFromIteratorIT extends IngestRecordsITBase {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        long numWritten = ingestFromRecordIterator(schema, stateStore, getRecords().iterator()).getNumberOfRecords();
+        long numWritten = ingestFromRecordIterator(schema, stateStore, getRecords().iterator()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written

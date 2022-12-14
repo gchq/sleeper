@@ -25,13 +25,15 @@ import java.util.Objects;
 
 public class IngestResult {
     private final List<FileInfo> fileInfoList;
-    private final long numberOfRecords;
+    private final long recordsRead;
+    private final long recordsWritten;
 
     private IngestResult(List<FileInfo> fileInfoList) {
         this.fileInfoList = fileInfoList;
-        this.numberOfRecords = fileInfoList.stream()
+        this.recordsWritten = fileInfoList.stream()
                 .mapToLong(FileInfo::getNumberOfRecords)
                 .sum();
+        this.recordsRead = recordsWritten;
     }
 
     public static IngestResult from(List<FileInfo> fileInfoList) {
@@ -42,8 +44,8 @@ public class IngestResult {
         return from(Collections.emptyList());
     }
 
-    public long getNumberOfRecords() {
-        return numberOfRecords;
+    public long getRecordsWritten() {
+        return recordsWritten;
     }
 
     public List<FileInfo> getFileInfoList() {
@@ -51,7 +53,7 @@ public class IngestResult {
     }
 
     public RecordsProcessed asRecordsProcessed() {
-        return new RecordsProcessed(numberOfRecords, numberOfRecords);
+        return new RecordsProcessed(recordsRead, recordsWritten);
     }
 
     @Override
@@ -74,7 +76,8 @@ public class IngestResult {
     @Override
     public String toString() {
         return "IngestResult{" +
-                "fileInfoList=" + fileInfoList +
+                "recordsWritten=" + recordsWritten +
+                ",fileInfoList=" + fileInfoList +
                 '}';
     }
 }

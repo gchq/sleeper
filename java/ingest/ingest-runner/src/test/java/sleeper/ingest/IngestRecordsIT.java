@@ -38,7 +38,7 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        long numWritten = ingestRecords(schema, stateStore, getRecords()).getNumberOfRecords();
+        long numWritten = ingestRecords(schema, stateStore, getRecords()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -74,7 +74,7 @@ public class IngestRecordsIT extends IngestRecordsITBase {
         DynamoDBStateStore stateStore = getStateStore(schema);
 
         // When
-        long numWritten = ingestRecords(schema, stateStore, Collections.emptyList()).getNumberOfRecords();
+        long numWritten = ingestRecords(schema, stateStore, Collections.emptyList()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written

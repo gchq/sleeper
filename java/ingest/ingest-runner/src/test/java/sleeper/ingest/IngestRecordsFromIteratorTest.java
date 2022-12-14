@@ -59,7 +59,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        long numWritten = ingestFromRecordIterator(schema, stateStore, getRecords().iterator()).getNumberOfRecords();
+        long numWritten = ingestFromRecordIterator(schema, stateStore, getRecords().iterator()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -119,7 +119,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
                 Arrays.asList(rootPartition, partition1, partition2));
 
         // When
-        long numWritten = ingestFromRecordIterator(schema, stateStore, getSingleRecord().iterator()).getNumberOfRecords();
+        long numWritten = ingestFromRecordIterator(schema, stateStore, getSingleRecord().iterator()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -155,7 +155,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         StateStore stateStore = getStateStore(schema);
 
         // When
-        long numWritten = ingestFromRecordIterator(schema, stateStore, Collections.emptyIterator()).getNumberOfRecords();
+        long numWritten = ingestFromRecordIterator(schema, stateStore, Collections.emptyIterator()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
