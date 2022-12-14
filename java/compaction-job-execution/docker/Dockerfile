@@ -24,7 +24,7 @@ RUN ["useradd", "-ms", "/bin/bash", "worker"]
 USER worker
 WORKDIR /home/worker
 # Install some runtime dependencies
-RUN ["/opt/conda/condabin/mamba", "install", "-y", "-c", "nvidia", "-c", "conda-forge", "gmp", "cuda-nvtx", "cuda-cudart"]
+RUN ["/opt/conda/condabin/mamba", "install", "-y", "-c", "nvidia", "-c", "conda-forge", "gmp", "cuda-nvtx=11.5", "cuda-cudart=11.5"]
 
 # Now create builder image with extra tools built in
 FROM base AS compiler
@@ -33,8 +33,8 @@ USER root
 RUN ["apt-get", "install", "-y", "gcc", "g++", "make"]
 USER worker
 WORKDIR /home/worker
-# Install CUDA and compiler and cmake
-RUN ["/opt/conda/condabin/mamba", "install", "-y", "-c", "nvidia", "-c", "conda-forge", "cmake", "cuda-nvcc", "cuda-cudart-dev", "libopenssl-static", "pkg-config"]
+# Install CUDA and compiler and cmake (if upgrading to CUDA 12, add cuda-cudart-static as a dependency!)
+RUN ["/opt/conda/condabin/mamba", "install", "-y", "-c", "nvidia", "-c", "conda-forge", "cmake", "cuda-nvcc=11.5", "cuda-cudart-dev=11.5", "libopenssl-static", "pkg-config"]
 
 # Copy and build the code
 FROM compiler AS builder
