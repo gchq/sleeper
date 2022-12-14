@@ -24,7 +24,6 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Region;
 import sleeper.core.record.CloneRecord;
 import sleeper.core.record.Record;
@@ -36,12 +35,7 @@ import sleeper.ingest.IngestFactory;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
-import sleeper.statestore.DelegatingStateStore;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.inmemory.FixedPartitionStore;
-import sleeper.statestore.inmemory.InMemoryFileInfoStore;
 
 import java.io.File;
 import java.io.IOException;
@@ -324,13 +318,4 @@ public class IngestRecordsTestDataHelper {
         return new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
     }
 
-    public static StateStore getStateStore(Schema schema) throws StateStoreException {
-        return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct());
-    }
-
-    public static StateStore getStateStore(Schema schema, List<Partition> initialPartitions) throws StateStoreException {
-        StateStore stateStore = new DelegatingStateStore(new InMemoryFileInfoStore(), new FixedPartitionStore(schema));
-        stateStore.initialise(initialPartitions);
-        return stateStore;
-    }
 }

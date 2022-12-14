@@ -43,7 +43,7 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUt
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTwoTypedValuesAndKeyFields;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createStateStore;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
 public class CompactSortedFilesSplittingTest extends CompactSortedFilesTestBase {
 
@@ -51,8 +51,7 @@ public class CompactSortedFilesSplittingTest extends CompactSortedFilesTestBase 
     public void filesShouldMergeAndSplitCorrectlyAndStateStoreUpdated() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-        StateStore stateStore = createStateStore(schema);
-        stateStore.initialise(new PartitionsBuilder(schema)
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
                 .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(100L))
                 .parentJoining("C", "A", "B")
                 .buildList());
@@ -96,8 +95,7 @@ public class CompactSortedFilesSplittingTest extends CompactSortedFilesTestBase 
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
         Schema schema = createSchemaWithTwoTypedValuesAndKeyFields(new LongType(), new LongType(), field1, field2);
-        StateStore stateStore = createStateStore(schema);
-        stateStore.initialise(new PartitionsBuilder(schema)
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
                 .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(100L))
                 .parentJoining("C", "A", "B")
                 .buildList());
@@ -147,8 +145,7 @@ public class CompactSortedFilesSplittingTest extends CompactSortedFilesTestBase 
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
         Schema schema = createSchemaWithTwoTypedValuesAndKeyFields(new LongType(), new LongType(), field1, field2);
-        StateStore stateStore = createStateStore(schema);
-        stateStore.initialise(new PartitionsBuilder(schema)
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
                 .leavesWithSplitsOnDimension(1, Arrays.asList("A", "B"), Collections.singletonList("A2"))
                 .parentJoining("C", "A", "B")
                 .buildList());

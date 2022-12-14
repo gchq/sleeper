@@ -37,8 +37,9 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createRootPar
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSingleRecord;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getStateStore;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
 
@@ -55,8 +56,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         Region region2 = new Region(range2);
         Partition partition2 = createLeafPartition("partition2", region2, new LongType());
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
-        StateStore stateStore = getStateStore(schema,
-                Arrays.asList(rootPartition, partition1, partition2));
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(rootPartition, partition1, partition2);
 
         // When
         long numWritten = ingestFromRecordIterator(schema, stateStore, getRecords().iterator()).getRecordsWritten();
@@ -115,8 +115,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
         Region region2 = new Region(range2);
         Partition partition2 = createLeafPartition("partition2", region2, new LongType());
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
-        StateStore stateStore = getStateStore(schema,
-                Arrays.asList(rootPartition, partition1, partition2));
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(rootPartition, partition1, partition2);
 
         // When
         long numWritten = ingestFromRecordIterator(schema, stateStore, getSingleRecord().iterator()).getRecordsWritten();
@@ -152,7 +151,7 @@ public class IngestRecordsFromIteratorTest extends IngestRecordsTestBase {
     @Test
     public void shouldWriteNoRecordsWhenIteratorIsEmpty() throws Exception {
         // Given
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
 
         // When
         long numWritten = ingestFromRecordIterator(schema, stateStore, Collections.emptyIterator()).getRecordsWritten();

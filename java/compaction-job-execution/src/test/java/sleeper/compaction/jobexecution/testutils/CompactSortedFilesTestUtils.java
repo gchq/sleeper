@@ -29,13 +29,10 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.Type;
 import sleeper.io.parquet.record.SchemaConverter;
-import sleeper.statestore.DelegatingStateStore;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
-import sleeper.statestore.inmemory.FixedPartitionStore;
-import sleeper.statestore.inmemory.InMemoryFileInfoStore;
 
 import java.util.Arrays;
 import java.util.List;
@@ -69,16 +66,6 @@ public class CompactSortedFilesTestUtils {
                 .rowKeyFields(key)
                 .valueFields(new Field("timestamp", new LongType()), new Field("value", new LongType()))
                 .build();
-    }
-
-    public static StateStore createInitStateStore(Schema schema) throws StateStoreException {
-        StateStore stateStore = createStateStore(schema);
-        stateStore.initialise();
-        return stateStore;
-    }
-
-    public static StateStore createStateStore(Schema schema) {
-        return new DelegatingStateStore(new InMemoryFileInfoStore(), new FixedPartitionStore(schema));
     }
 
     public static StateStore createInitStateStore(String tablenameStub, Schema schema, AmazonDynamoDB dynamoDBClient) throws StateStoreException {

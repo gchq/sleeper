@@ -68,10 +68,11 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsFor
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsInFirstPartitionOnly;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecordsOscillatingBetween2Partitions;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getStateStore;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getUnsortedRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 public class IngestRecordsTest extends IngestRecordsTestBase {
     @Test
@@ -87,8 +88,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         Region region2 = new Region(range2);
         Partition partition2 = createLeafPartition("partition2", region2, new LongType());
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
-        StateStore stateStore = getStateStore(schema,
-                Arrays.asList(rootPartition, partition1, partition2));
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(rootPartition, partition1, partition2);
 
         // When
         long numWritten = ingestRecords(schema, stateStore, getRecords()).getRecordsWritten();
@@ -151,8 +151,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         Region region2 = new Region(range2);
         Partition partition2 = createLeafPartition("partition2", region2, new ByteArrayType());
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
-        StateStore stateStore = getStateStore(schema,
-                Arrays.asList(rootPartition, partition1, partition2));
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(rootPartition, partition1, partition2);
 
         // When
         long numWritten = ingestRecords(schema, stateStore, getRecordsByteArrayKey()).getRecordsWritten();
@@ -222,8 +221,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         Region region2 = new Region(Arrays.asList(range21, range22));
         Partition partition2 = createLeafPartition("partition2", region2, new ByteArrayType(), new ByteArrayType());
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
-        StateStore stateStore = getStateStore(schema,
-                Arrays.asList(rootPartition, partition1, partition2));
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(rootPartition, partition1, partition2);
 
         // When
         long numWritten = ingestRecords(schema, stateStore, getRecords2DimByteArrayKey()).getRecordsWritten();
@@ -337,8 +335,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         Partition partition2 = createLeafPartition("partition2", region2, new IntType(), new LongType());
         partition2.setDimension(-1);
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
-        StateStore stateStore = getStateStore(schema,
-                Arrays.asList(rootPartition, partition1, partition2));
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(rootPartition, partition1, partition2);
 
         // When
         //  - When sorted the records in getRecordsOscillateBetweenTwoPartitions
@@ -416,8 +413,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         Region region2 = new Region(range2);
         Partition partition2 = createLeafPartition("partition2", region2, new LongType());
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
-        StateStore stateStore = getStateStore(schema,
-                Arrays.asList(rootPartition, partition1, partition2));
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(rootPartition, partition1, partition2);
 
         // When
         long numWritten = ingestRecords(schema, stateStore, getRecordsInFirstPartitionOnly()).getRecordsWritten();
@@ -451,7 +447,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
     @Test
     public void shouldWriteDuplicateRecords() throws Exception {
         // Given
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
 
         // When
         List<Record> records = new ArrayList<>(getRecords());
@@ -499,8 +495,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         Region region2 = new Region(range2);
         Partition partition2 = createLeafPartition("partition2", region2, new LongType());
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
-        StateStore stateStore = getStateStore(schema,
-                Arrays.asList(rootPartition, partition1, partition2));
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(rootPartition, partition1, partition2);
         List<Record> records = getLotsOfRecords();
 
         // When
@@ -616,8 +611,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
         Region region2 = new Region(range2);
         Partition partition2 = createLeafPartition("partition2", region2, new LongType());
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
-        StateStore stateStore = getStateStore(schema,
-                Arrays.asList(rootPartition, partition1, partition2));
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(rootPartition, partition1, partition2);
         List<Record> records = getLotsOfRecords();
 
         // When
@@ -707,7 +701,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
     @Test
     public void shouldSortRecords() throws Exception {
         // Given
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
 
         // When
         long numWritten = ingestRecords(schema, stateStore, getUnsortedRecords()).getRecordsWritten();
@@ -751,7 +745,7 @@ public class IngestRecordsTest extends IngestRecordsTestBase {
                 .sortKeyFields(new Field("sort", new LongType()))
                 .valueFields(new Field("value", new LongType()))
                 .build();
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
 
         // When
         long numWritten = ingestRecordsWithTableProperties(schema, stateStore, getRecordsForAggregationIteratorTest(),
