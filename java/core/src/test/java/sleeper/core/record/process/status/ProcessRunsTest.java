@@ -172,4 +172,22 @@ public class ProcessRunsTest {
         assertThat(runs.isFinished()).isTrue();
     }
 
+    @Test
+    public void shouldIgnoreExtraFinishedStatus() {
+        // Given
+        ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        ProcessFinishedStatus finished1 = finishedStatus(started, Duration.ofSeconds(30), 100, 100);
+        ProcessFinishedStatus finished2 = finishedStatus(started, Duration.ofSeconds(40), 200, 200);
+
+        // When
+        ProcessRuns runs = runsFromUpdates(started, finished1, finished2);
+
+        // Then
+        assertThat(runs.getRunList())
+                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
+                .containsExactly(
+                        tuple(DEFAULT_TASK_ID, started, finished1));
+        assertThat(runs.isFinished()).isTrue();
+    }
+
 }

@@ -7,11 +7,12 @@
         {
           "taskId": "task2222-2222-2222-2222-222222222222",
           "startedStatus": {
-            "updateTime": "2022-09-22T13:34:12.001Z",
-            "startTime": "2022-09-22T13:34:12.001Z"
+            "inputFileCount": 4,
+            "startTime": "2022-09-22T13:34:12.001Z",
+            "updateTime": "2022-09-22T13:34:12.123Z"
           },
           "finishedStatus": {
-            "updateTime": "2022-09-22T13:35:12.001Z",
+            "updateTime": "2022-09-22T13:35:12.123Z",
             "summary": {
               "recordsProcessed": {
                 "linesRead": 600,
@@ -25,8 +26,7 @@
             }
           }
         }
-      ],
-      "inputFilesCount": 4
+      ]
     },
     {
       "jobId": "$(jobId3)",
@@ -34,12 +34,12 @@
         {
           "taskId": "task2222-2222-2222-2222-222222222222",
           "startedStatus": {
-            "updateTime": "2022-09-21T13:34:12.001Z",
-            "startTime": "2022-09-21T13:34:12.001Z"
+            "inputFileCount": 3,
+            "startTime": "2022-09-21T13:34:12.001Z",
+            "updateTime": "2022-09-21T13:34:12.123Z"
           }
         }
-      ],
-      "inputFilesCount": 3
+      ]
     },
     {
       "jobId": "$(jobId2)",
@@ -47,11 +47,12 @@
         {
           "taskId": "task1111-1111-1111-1111-111111111111",
           "startedStatus": {
-            "updateTime": "2022-09-19T13:34:12.001Z",
-            "startTime": "2022-09-19T13:34:12.001Z"
+            "inputFileCount": 2,
+            "startTime": "2022-09-19T13:34:12.001Z",
+            "updateTime": "2022-09-19T13:34:12.123Z"
           },
           "finishedStatus": {
-            "updateTime": "2022-09-19T13:35:12.001Z",
+            "updateTime": "2022-09-19T13:35:12.123Z",
             "summary": {
               "recordsProcessed": {
                 "linesRead": 600,
@@ -65,8 +66,7 @@
             }
           }
         }
-      ],
-      "inputFilesCount": 2
+      ]
     },
     {
       "jobId": "$(jobId1)",
@@ -74,12 +74,12 @@
         {
           "taskId": "task1111-1111-1111-1111-111111111111",
           "startedStatus": {
-            "updateTime": "2022-09-18T13:34:12.001Z",
-            "startTime": "2022-09-18T13:34:12.001Z"
+            "inputFileCount": 1,
+            "startTime": "2022-09-18T13:34:12.001Z",
+            "updateTime": "2022-09-18T13:34:12.123Z"
           }
         }
-      ],
-      "inputFilesCount": 1
+      ]
     }
   ]
 }

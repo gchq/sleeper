@@ -7,15 +7,17 @@
         {
           "taskId": "task1111-1111-1111-1111-111111111111",
           "startedStatus": {
-            "updateTime": "2022-10-12T10:02:00.123Z",
-            "startTime": "2022-10-12T10:02:00.001Z"
+            "inputFileCount": 1,
+            "startTime": "2022-10-12T10:02:00.001Z",
+            "updateTime": "2022-10-12T10:02:00.123Z"
           }
         },
         {
           "taskId": "task2222-2222-2222-2222-222222222222",
           "startedStatus": {
-            "updateTime": "2022-10-12T10:01:15.123Z",
-            "startTime": "2022-10-12T10:01:15.001Z"
+            "inputFileCount": 1,
+            "startTime": "2022-10-12T10:01:15.001Z",
+            "updateTime": "2022-10-12T10:01:15.123Z"
           },
           "finishedStatus": {
             "updateTime": "2022-10-12T10:01:45.123Z",
@@ -35,8 +37,9 @@
         {
           "taskId": "task1111-1111-1111-1111-111111111111",
           "startedStatus": {
-            "updateTime": "2022-10-12T10:01:00.123Z",
-            "startTime": "2022-10-12T10:01:00.001Z"
+            "inputFileCount": 1,
+            "startTime": "2022-10-12T10:01:00.001Z",
+            "updateTime": "2022-10-12T10:01:00.123Z"
           },
           "finishedStatus": {
             "updateTime": "2022-10-12T10:01:20.123Z",
@@ -53,8 +56,7 @@
             }
           }
         }
-      ],
-      "inputFilesCount": 1
+      ]
     }
   ]
 }

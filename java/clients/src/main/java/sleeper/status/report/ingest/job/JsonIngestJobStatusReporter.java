@@ -69,7 +69,6 @@ public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("jobId", jobStatus.getJobId());
         jsonObject.add("jobRunList", gson.toJsonTree(jobStatus.getJobRuns()));
-        jsonObject.addProperty("inputFilesCount", jobStatus.getInputFilesCount());
         return jsonObject;
     }
 }

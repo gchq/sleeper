@@ -2,43 +2,44 @@
   "numberInQueue": 0,
   "jobList": [
     {
-      "jobId": "$(jobId4)",
+      "jobId": "job44444-4444-4444-4444-444444444444",
       "jobRunList": [
         {
           "taskId": "task-id",
           "startedStatus": {
-            "updateTime": "2022-10-13T14:02:00Z",
-            "startTime": "2022-10-13T14:02:10Z"
+            "inputFileCount": 1,
+            "startTime": "2022-10-13T14:02:10Z",
+            "updateTime": "2022-10-13T14:02:10.123Z"
           },
           "finishedStatus": {
-            "updateTime": "2022-10-13T14:02:10.123Z",
+            "updateTime": "2022-10-13T14:04:13.123Z",
             "summary": {
               "recordsProcessed": {
-                "linesRead": 1234,
-                "linesWritten": 1234
+                "linesRead": 1234000,
+                "linesWritten": 1234000
               },
               "startTime": "2022-10-13T14:02:10Z",
-              "finishTime": "2022-10-13T14:02:10.123Z",
-              "durationInSeconds": 0.123,
-              "recordsReadPerSecond": 10032.520325203252,
-              "recordsWrittenPerSecond": 10032.520325203252
+              "finishTime": "2022-10-13T14:04:13.456Z",
+              "durationInSeconds": 123.456,
+              "recordsReadPerSecond": 9995.463970969415,
+              "recordsWrittenPerSecond": 9995.463970969415
             }
           }
         }
-      ],
-      "inputFilesCount": 1
+      ]
     },
     {
-      "jobId": "$(jobId3)",
+      "jobId": "job33333-3333-3333-3333-333333333333",
       "jobRunList": [
         {
           "taskId": "task-id",
           "startedStatus": {
-            "updateTime": "2022-10-12T10:01:00Z",
-            "startTime": "2022-10-13T14:01:10Z"
+            "inputFileCount": 1,
+            "startTime": "2022-10-13T14:01:10Z",
+            "updateTime": "2022-10-13T14:01:10.123Z"
           },
           "finishedStatus": {
-            "updateTime": "2022-10-13T14:02:10Z",
+            "updateTime": "2022-10-13T14:02:10.123Z",
             "summary": {
               "recordsProcessed": {
                 "linesRead": 1000600,
@@ -52,20 +53,20 @@
             }
           }
         }
-      ],
-      "inputFilesCount": 1
+      ]
     },
     {
-      "jobId": "$(jobId2)",
+      "jobId": "job22222-2222-2222-2222-222222222222",
       "jobRunList": [
         {
           "taskId": "task-id",
           "startedStatus": {
-            "updateTime": "2022-10-13T12:01:00Z",
-            "startTime": "2022-10-13T12:01:10Z"
+            "inputFileCount": 1,
+            "startTime": "2022-10-13T12:01:10Z",
+            "updateTime": "2022-10-13T12:01:10.123Z"
           },
           "finishedStatus": {
-            "updateTime": "2022-10-13T14:01:10Z",
+            "updateTime": "2022-10-13T14:01:10.123Z",
             "summary": {
               "recordsProcessed": {
                 "linesRead": 1000600,
@@ -79,35 +80,34 @@
             }
           }
         }
-      ],
-      "inputFilesCount": 1
+      ]
     },
     {
-      "jobId": "$(jobId1)",
+      "jobId": "job11111-1111-1111-1111-111111111111",
       "jobRunList": [
         {
           "taskId": "task-id",
           "startedStatus": {
-            "updateTime": "2022-10-13T10:01:00Z",
-            "startTime": "2022-10-13T10:00:10Z"
+            "inputFileCount": 1,
+            "startTime": "2022-10-13T10:00:10Z",
+            "updateTime": "2022-10-13T10:00:10.123Z"
           },
           "finishedStatus": {
-            "updateTime": "2022-10-13T10:00:10.123Z",
+            "updateTime": "2022-10-13T10:02:13.123Z",
             "summary": {
               "recordsProcessed": {
-                "linesRead": 600,
-                "linesWritten": 300
+                "linesRead": 600000,
+                "linesWritten": 300000
               },
               "startTime": "2022-10-13T10:00:10Z",
-              "finishTime": "2022-10-13T10:00:10.123Z",
-              "durationInSeconds": 0.123,
-              "recordsReadPerSecond": 4878.048780487805,
-              "recordsWrittenPerSecond": 2439.0243902439024
+              "finishTime": "2022-10-13T10:02:13.123Z",
+              "durationInSeconds": 123.123,
+              "recordsReadPerSecond": 4873.175604882922,
+              "recordsWrittenPerSecond": 2436.587802441461
             }
           }
         }
-      ],
-      "inputFilesCount": 1
+      ]
     }
   ]
 }

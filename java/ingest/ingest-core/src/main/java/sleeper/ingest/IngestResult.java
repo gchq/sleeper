@@ -16,6 +16,7 @@
 
 package sleeper.ingest;
 
+import sleeper.core.record.process.RecordsProcessed;
 import sleeper.statestore.FileInfo;
 
 import java.util.Collections;
@@ -37,12 +38,20 @@ public class IngestResult {
         return new IngestResult(fileInfoList);
     }
 
+    public static IngestResult noFiles() {
+        return from(Collections.emptyList());
+    }
+
     public long getNumberOfRecords() {
         return numberOfRecords;
     }
 
     public List<FileInfo> getFileInfoList() {
         return Collections.unmodifiableList(fileInfoList);
+    }
+
+    public RecordsProcessed asRecordsProcessed() {
+        return new RecordsProcessed(numberOfRecords, numberOfRecords);
     }
 
     @Override

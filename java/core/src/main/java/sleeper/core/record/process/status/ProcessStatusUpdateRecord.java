@@ -27,7 +27,7 @@ public class ProcessStatusUpdateRecord {
 
     public ProcessStatusUpdateRecord(String jobId, Instant expiryDate, ProcessStatusUpdate statusUpdate, String taskId) {
         this.jobId = Objects.requireNonNull(jobId, "jobId must not be null");
-        this.expiryDate = Objects.requireNonNull(expiryDate, "expiryDate must not be null");
+        this.expiryDate = expiryDate;
         this.statusUpdate = Objects.requireNonNull(statusUpdate, "statusUpdate must not be null");
         this.taskId = taskId;
     }

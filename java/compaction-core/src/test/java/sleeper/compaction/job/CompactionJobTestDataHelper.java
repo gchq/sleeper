@@ -15,8 +15,6 @@
  */
 package sleeper.compaction.job;
 
-import sleeper.compaction.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
@@ -24,15 +22,10 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Range;
-import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.TestProcessRuns;
 import sleeper.core.schema.Schema;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfoFactory;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -42,8 +35,6 @@ import static sleeper.compaction.job.CompactionJobTestUtils.KEY_FIELD;
 import static sleeper.compaction.job.CompactionJobTestUtils.createInstanceProperties;
 import static sleeper.compaction.job.CompactionJobTestUtils.createSchema;
 import static sleeper.compaction.job.CompactionJobTestUtils.createTableProperties;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.onTask;
-import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedUpdates;
 
 public class CompactionJobTestDataHelper {
 
@@ -96,59 +87,6 @@ public class CompactionJobTestDataHelper {
         return jobFactory.createSplittingCompactionJob(
                 Collections.singletonList(fileInPartition(partitionTree.getPartition(parentPartitionId))),
                 parentPartitionId, leftPartitionId, rightPartitionId, splitPoint, 0);
-    }
-
-    public static CompactionJobStatus finishedCompactionStatus(
-            CompactionJob job, Instant createTime, Duration runDuration, long linesRead, long linesWritten) {
-        return compactionStatusWithJobRunsStartToFinish(job, createTime, runs -> runs
-                .finishedRun(runDuration, linesRead, linesWritten));
-    }
-
-    public static CompactionJobStatus finishedCompactionStatus(
-            CompactionJob job, String taskId, Instant createTime, Duration runDuration, long linesRead, long linesWritten) {
-        return compactionStatusWithJobRunsStartToFinish(job, createTime, runs -> runs
-                .finishedRun(taskId, runDuration, linesRead, linesWritten));
-    }
-
-    private static CompactionJobStatus compactionStatusWithJobRunsStartToFinish(
-            CompactionJob job, Instant createTime, Consumer<CompactionJobRunsBuilder> runs) {
-        CompactionJobRunsBuilder runsBuilder = new CompactionJobRunsBuilder(createTime);
-        runs.accept(runsBuilder);
-        return CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, createTime))
-                .jobRunsLatestFirst(runsBuilder.latestFirst())
-                .build();
-    }
-
-    public static class CompactionJobRunsBuilder {
-
-        private final List<ProcessRun> runs = new ArrayList<>();
-        private Instant nextStartTime;
-
-        private CompactionJobRunsBuilder(Instant jobCreateTime) {
-            this.nextStartTime = jobCreateTime.plus(Duration.ofSeconds(10));
-        }
-
-        public CompactionJobRunsBuilder finishedRun(Duration runDuration, long linesRead, long linesWritten) {
-            return run(TestProcessRuns.runFromUpdates(
-                    finishedUpdates(nextStartTime, runDuration, linesRead, linesWritten)));
-        }
-
-        public CompactionJobRunsBuilder finishedRun(String taskId, Duration runDuration, long linesRead, long linesWritten) {
-            return run(TestProcessRuns.runFromUpdates(onTask(taskId,
-                    finishedUpdates(nextStartTime, runDuration, linesRead, linesWritten))));
-        }
-
-        public CompactionJobRunsBuilder run(ProcessRun run) {
-            nextStartTime = run.getFinishTime().plus(Duration.ofSeconds(10));
-            runs.add(run);
-            return this;
-        }
-
-        private List<ProcessRun> latestFirst() {
-            Collections.reverse(runs);
-            return runs;
-        }
     }
 
     private FileInfo fileInPartition(Partition partition) {

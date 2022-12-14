@@ -21,7 +21,6 @@ import org.junit.Before;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
@@ -32,9 +31,6 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
-import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStartedStatus;
 import sleeper.core.schema.Schema;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 import sleeper.statestore.FileInfoFactory;
@@ -44,6 +40,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
+import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
 import static sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils.createSchema;
 import static sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils.createTableProperties;
@@ -115,23 +114,13 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static CompactionJobStatus startedStatusWithDefaults(CompactionJob job) {
-        return CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(
-                        job, ignoredUpdateTime()))
-                .singleJobRun(ProcessRun.started(DEFAULT_TASK_ID, ProcessStartedStatus.updateAndStartTime(
-                        ignoredUpdateTime(), defaultStartTime())))
-                .build();
+        return jobCreated(job, ignoredUpdateTime(),
+                startedCompactionRun(DEFAULT_TASK_ID, defaultStartTime()));
     }
 
     protected static CompactionJobStatus finishedStatusWithDefaults(CompactionJob job) {
-        return CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(
-                        job, ignoredUpdateTime()))
-                .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID, ProcessStartedStatus.updateAndStartTime(
-                                ignoredUpdateTime(), defaultStartTime()),
-                        ProcessFinishedStatus.updateTimeAndSummary(
-                                ignoredUpdateTime(), defaultSummary())))
-                .build();
+        return jobCreated(job, ignoredUpdateTime(),
+                finishedCompactionRun(DEFAULT_TASK_ID, defaultSummary()));
     }
 
     protected CompactionJobStatus getJobStatus(String jobId) {

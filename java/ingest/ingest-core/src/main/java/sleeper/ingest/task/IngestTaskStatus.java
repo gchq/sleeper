@@ -19,7 +19,6 @@ package sleeper.ingest.task;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStartedStatus;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -97,7 +96,7 @@ public class IngestTaskStatus {
 
     public ProcessRun asProcessRun() {
         return ProcessRun.builder().taskId(taskId)
-                .startedStatus(ProcessStartedStatus.updateAndStartTime(getStartTime(), getStartTime()))
+                .startedStatus(IngestTaskStartedStatus.startTime(getStartTime()))
                 .finishedStatus(asProcessFinishedStatus())
                 .build();
     }
