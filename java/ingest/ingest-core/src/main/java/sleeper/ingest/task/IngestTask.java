@@ -85,7 +85,7 @@ public class IngestTask {
         Instant startTime = getTimeNow.get();
         jobStatusStore.jobStarted(taskId, job, startTime);
 
-        IngestResult result = IngestResult.none();
+        IngestResult result = IngestResult.noFiles();
         try {
             result = runJobCallback.ingest(job);
         } finally {

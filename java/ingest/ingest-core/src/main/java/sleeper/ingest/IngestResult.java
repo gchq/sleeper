@@ -38,7 +38,7 @@ public class IngestResult {
         return new IngestResult(fileInfoList);
     }
 
-    public static IngestResult none() {
+    public static IngestResult noFiles() {
         return from(Collections.emptyList());
     }
 

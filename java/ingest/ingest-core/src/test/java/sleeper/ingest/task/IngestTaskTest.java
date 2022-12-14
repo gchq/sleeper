@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -94,8 +93,7 @@ public class IngestTaskTest {
         // Then
         assertThat(taskStatusStore.getAllTasks()).containsExactly(
                 finishedOneJobNoFiles(taskId, startTaskTime, finishTaskTime, startJobTime, finishJobTime));
-        assertThat(jobs.getIngestResults()).containsExactly(
-                IngestResult.from(Collections.emptyList()));
+        assertThat(jobs.getIngestResults()).containsExactly(IngestResult.noFiles());
         assertThat(jobStatusStore.getAllJobs(DEFAULT_TABLE_NAME)).containsExactly(
                 finishedIngestJob(job, taskId, summary(startJobTime, finishJobTime, 0, 0)));
     }
