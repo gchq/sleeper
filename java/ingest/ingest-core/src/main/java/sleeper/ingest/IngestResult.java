@@ -19,11 +19,9 @@ package sleeper.ingest;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.statestore.FileInfo;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 public class IngestResult {
     private final List<FileInfo> fileInfoList;
@@ -36,19 +34,17 @@ public class IngestResult {
         this.recordsWritten = recordsWritten;
     }
 
-    public static IngestResult from(List<FileInfo> fileInfoList) {
+    public static IngestResult allReadWereWritten(List<FileInfo> fileInfoList) {
         long recordsWritten = recordsWritten(fileInfoList);
         return new IngestResult(fileInfoList, recordsWritten, recordsWritten);
     }
 
-    public static IngestResult from(long recordsRead, Stream<List<FileInfo>> results) {
-        List<FileInfo> fileInfoList = new ArrayList<>();
-        results.forEach(fileInfoList::addAll);
+    public static IngestResult fromReadAndWritten(long recordsRead, List<FileInfo> fileInfoList) {
         return new IngestResult(fileInfoList, recordsRead, recordsWritten(fileInfoList));
     }
 
     public static IngestResult noFiles() {
-        return from(Collections.emptyList());
+        return new IngestResult(Collections.emptyList(), 0, 0);
     }
 
     public long getRecordsWritten() {

@@ -25,7 +25,7 @@ public class IngestResultTestData {
     }
 
     public static IngestResult defaultFileIngestResult(String filename) {
-        return IngestResult.from(Collections.singletonList(
+        return IngestResult.allReadWereWritten(Collections.singletonList(
                 FileInfoTestData.defaultFileOnRootPartition(filename)));
     }
 }

@@ -26,7 +26,7 @@ public class FixedIngestJobHandler {
     }
 
     public static IngestJobHandler makingDefaultFiles() {
-        return job -> IngestResult.from(job.getFiles().stream()
+        return job -> IngestResult.allReadWereWritten(job.getFiles().stream()
                 .map(FileInfoTestData::defaultFileOnRootPartition)
                 .collect(Collectors.toList()));
     }

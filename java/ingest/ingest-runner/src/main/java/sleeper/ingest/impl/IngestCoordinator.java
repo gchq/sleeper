@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
@@ -279,8 +280,9 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         return CompletableFuture.allOf(ingestFutures.toArray(new CompletableFuture[0]))
                 .whenComplete((msg, ex) -> internalClose())
                 .thenApply(dummy -> {
-                    IngestResult result = IngestResult.from(recordsRead,
-                            ingestFutures.stream().map(CompletableFuture::join));
+                    IngestResult result = IngestResult.fromReadAndWritten(recordsRead,
+                            ingestFutures.stream().map(CompletableFuture::join)
+                                    .flatMap(List::stream).collect(Collectors.toList()));
                     long noOfRecordsWritten = result.getRecordsWritten();
                     double elapsedSeconds = (System.currentTimeMillis() - ingestCoordinatorCreationTime) / 1000.0;
                     METRICS_LOGGER.info(String.format("Wrote %d records to S3 in %.1f seconds at %.1f per second",
