@@ -25,6 +25,9 @@ import java.util.List;
 
 public class StateStoreTestHelper {
 
+    private StateStoreTestHelper() {
+    }
+
     public static StateStore inMemoryStateStoreWithFixedPartitions(Partition... partitions) {
         return inMemoryStateStoreWithFixedPartitions(Arrays.asList(partitions));
     }
