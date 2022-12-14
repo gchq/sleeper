@@ -41,6 +41,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -54,12 +55,17 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
 
     private final AmazonDynamoDB dynamoDB;
     private final String statusTableName;
-    private final long timeToLive;
+    private final DynamoDBIngestJobStatusFormat format;
 
     private DynamoDBIngestJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+        this(dynamoDB, properties, Instant::now);
+    }
+
+    public DynamoDBIngestJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
         this.dynamoDB = dynamoDB;
         this.statusTableName = jobStatusTableName(properties.get(ID));
-        this.timeToLive = properties.getLong(UserDefinedInstanceProperty.INGEST_JOB_STATUS_TTL_IN_SECONDS) * 1000;
+        long timeToLiveInSeconds = properties.getLong(UserDefinedInstanceProperty.INGEST_JOB_STATUS_TTL_IN_SECONDS);
+        this.format = new DynamoDBIngestJobStatusFormat(timeToLiveInSeconds, getTimeNow);
     }
 
     public static IngestJobStatusStore from(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
@@ -77,7 +83,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     @Override
     public void jobStarted(String taskId, IngestJob job, Instant startTime) {
         try {
-            PutItemResult result = putItem(DynamoDBIngestJobStatusFormat.createJobStartedRecord(job, startTime, taskId, timeToLive));
+            PutItemResult result = putItem(format.createJobStartedRecord(job, startTime, taskId));
             LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
                     job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
@@ -88,7 +94,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     @Override
     public void jobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {
         try {
-            PutItemResult result = putItem(DynamoDBIngestJobStatusFormat.createJobFinishedRecord(job, summary, taskId, timeToLive));
+            PutItemResult result = putItem(format.createJobFinishedRecord(job, summary, taskId));
             LOGGER.debug("Put finished event for job {} to table {}, capacity consumed = {}",
                     job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {

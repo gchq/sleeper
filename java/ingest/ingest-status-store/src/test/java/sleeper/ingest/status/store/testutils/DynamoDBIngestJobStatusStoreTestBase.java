@@ -32,6 +32,7 @@ import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -64,6 +65,11 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     @After
     public void tearDown() {
         dynamoDBClient.deleteTable(jobStatusTableName);
+    }
+
+    protected IngestJobStatusStore storeSettingUpdateTimes(Instant... updateTimes) {
+        return new DynamoDBIngestJobStatusStore(dynamoDBClient, instanceProperties,
+                Arrays.stream(updateTimes).iterator()::next);
     }
 
     protected static RecordsProcessedSummary defaultSummary(Instant startTime, Instant finishTIme) {
