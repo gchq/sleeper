@@ -108,7 +108,7 @@ public class SystemTestStack extends NestedStack {
 
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
-                .logging(Utils.createFargateContainerLogDriver(this, systemTestProperties, "SystemTestTasks"))
+                .logging(Utils.createECSContainerLogDriver(this, systemTestProperties, "SystemTestTasks"))
                 .environment(Utils.createDefaultEnvironment(systemTestProperties))
                 .build();
         taskDefinition.addContainer(SYSTEM_TEST_CONTAINER, containerDefinitionOptions);
