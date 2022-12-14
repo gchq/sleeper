@@ -280,9 +280,9 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         return CompletableFuture.allOf(ingestFutures.toArray(new CompletableFuture[0]))
                 .whenComplete((msg, ex) -> internalClose())
                 .thenApply(dummy -> {
-                    IngestResult result = IngestResult.fromReadAndWritten(recordsRead,
-                            ingestFutures.stream().map(CompletableFuture::join)
-                                    .flatMap(List::stream).collect(Collectors.toList()));
+                    List<FileInfo> filesWritten = ingestFutures.stream().map(CompletableFuture::join)
+                            .flatMap(List::stream).collect(Collectors.toList());
+                    IngestResult result = IngestResult.fromReadAndWritten(recordsRead, filesWritten);
                     long noOfRecordsWritten = result.getRecordsWritten();
                     double elapsedSeconds = (System.currentTimeMillis() - ingestCoordinatorCreationTime) / 1000.0;
                     METRICS_LOGGER.info(String.format("Wrote %d records to S3 in %.1f seconds at %.1f per second",
