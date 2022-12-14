@@ -134,14 +134,15 @@ public class RunTasks {
         // the EC2 memory requirement by 5%. If we don't we end up asking for
         // 16GiB of RAM on a 16GiB box and allocation will fail.
         if (launchType.equalsIgnoreCase("EC2")) {
-            requirements = Pair.of(requirements.getLeft(), (int) (requirements.getRight() * 0.95));
+            requirements = Triple.of(requirements.getLeft(), requirements.getMiddle(),
+                            (int) (requirements.getRight() * 0.95));
         }
 
         this.scaler = new Scaler(asClient, ecsClient, autoScalingGroupName, this.clusterName,
-                requirements.getLeft(),
-                requirements.getMiddle(),
-                requirements.getRight(),
-                Duration.ofSeconds(instanceProperties.getInt(COMPACTION_EC2_SCALING_GRACE_PERIOD)));
+                        requirements.getLeft(),
+                        requirements.getMiddle(),
+                        requirements.getRight(),
+                        Duration.ofSeconds(instanceProperties.getInt(COMPACTION_EC2_SCALING_GRACE_PERIOD)));
     }
 
     public void run() throws InterruptedException {

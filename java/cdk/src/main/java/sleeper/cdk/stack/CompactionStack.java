@@ -619,18 +619,18 @@ public class CompactionStack extends NestedStack {
     private FargateTaskDefinition compactionFargateTaskDefinition(String compactionTypeName) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
-        Triple<Integer, Integer, Integer> requirements = getCpuMemoryForArch(architecture, launchType,
-                instanceProperties);
+        Triple<Integer, Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType,
+                        instanceProperties);
         return FargateTaskDefinition.Builder
-                .create(this, compactionTypeName + "CompactionFargateTaskDefinition")
-                .family(instanceProperties.get(ID) + compactionTypeName + "CompactionFargateTaskFamily")
-                .cpu(requirements.getLeft())
-                .memoryLimitMiB(requirements.getMiddle())
-                .runtimePlatform(RuntimePlatform.builder()
-                        .cpuArchitecture(CpuArchitecture.of(architecture))
-                        .operatingSystemFamily(OperatingSystemFamily.LINUX)
-                        .build())
-                .build();
+                        .create(this, compactionTypeName + "CompactionFargateTaskDefinition")
+                        .family(instanceProperties.get(ID) + compactionTypeName + "CompactionFargateTaskFamily")
+                        .cpu(requirements.getLeft())
+                        .memoryLimitMiB(requirements.getMiddle())
+                        .runtimePlatform(RuntimePlatform.builder()
+                                        .cpuArchitecture(CpuArchitecture.of(architecture))
+                                        .operatingSystemFamily(OperatingSystemFamily.LINUX)
+                                        .build())
+                        .build();
     }
 
     private Ec2TaskDefinition compactionEC2TaskDefinition(String compactionTypeName) {
@@ -646,15 +646,15 @@ public class CompactionStack extends NestedStack {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
         Triple<Integer, Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType,
-                instanceProperties);
+                        instanceProperties);
         return ContainerDefinitionOptions.builder()
-                .image(image)
-                .environment(environment)
-                .cpu(requirements.getLeft())
-                .memoryLimitMiB(requirements.getMiddle())
-                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties,
-                        compactionTypeName + "FargateCompactionTasks"))
-                .build();
+                        .image(image)
+                        .environment(environment)
+                        .cpu(requirements.getLeft())
+                        .memoryLimitMiB(requirements.getMiddle())
+                        .logging(Utils.createECSContainerLogDriver(this, instanceProperties,
+                                        compactionTypeName + "FargateCompactionTasks"))
+                        .build();
     }
 
     private ContainerDefinitionOptions createEC2ContainerDefinition(ContainerImage image,
@@ -662,19 +662,19 @@ public class CompactionStack extends NestedStack {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
         Triple<Integer, Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType,
-                instanceProperties);
+                        instanceProperties);
         return ContainerDefinitionOptions.builder()
-                .image(image)
-                .environment(environment)
-                .cpu(requirements.getLeft())
-                //bit hacky: Reduce memory requirement for EC2 to prevent
-                //container allocation failing when we need almost entire resources
-                //of machine
-                .memoryLimitMiB((int) (requirements.getMiddle() * 0.95))
-                .gpuCount(requirements.getRight())
-                .logging(Utils.createFargateContainerLogDriver(this, instanceProperties,
-                        compactionTypeName + "EC2CompactionTasks"))
-                .build();
+                        .image(image)
+                        .environment(environment)
+                        .cpu(requirements.getLeft())
+                        // bit hacky: Reduce memory requirement for EC2 to prevent
+                        // container allocation failing when we need almost entire resources
+                        // of machine
+                        .memoryLimitMiB((int) (requirements.getMiddle() * 0.95))
+                        .gpuCount(requirements.getRight())
+                        .logging(Utils.createECSContainerLogDriver(this, instanceProperties,
+                                        compactionTypeName + "EC2CompactionTasks"))
+                        .build();
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")

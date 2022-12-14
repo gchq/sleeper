@@ -15,33 +15,34 @@
  */
 package sleeper.configuration;
 
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import sleeper.configuration.properties.InstanceProperties;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_CPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_GPU;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_CPU;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_MEMORY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_ARM_GPU;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_GPU;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_X86_MEMORY;
+
 public final class Requirements {
 
-  private Requirements() {
-  }
+    private Requirements() {
+    }
 
- /**
-     * Retrieves architecture specific CPU and memory requirements. This returns
-     * a triple containing the CPU requirement in the left element and memory
-     * requirement in the middle and GPU requirement in the right element.
+    /**
+     * Retrieves architecture specific CPU and memory requirements. This returns a triple containing
+     * the CPU requirement in the left element and memory requirement in the middle and GPU
+     * requirement in the right element.
      *
-     * @param architecture       CPU architecture
-     * @param launchType         the container launch type
+     * @param architecture CPU architecture
+     * @param launchType the container launch type
      * @param instanceProperties Sleeper instance properties
      * @return CPU, memory and GPU requirements as per the CPU architecture
      */
-    private static Triple<Integer, Integer, Integer> getArchRequirements(String architecture,
-            String launchType,
-            InstanceProperties instanceProperties) {
+    public static Triple<Integer, Integer, Integer> getArchRequirements(String architecture,
+                    String launchType,
+                    InstanceProperties instanceProperties) {
         int cpu;
         int memoryLimitMiB;
         int gpu;
