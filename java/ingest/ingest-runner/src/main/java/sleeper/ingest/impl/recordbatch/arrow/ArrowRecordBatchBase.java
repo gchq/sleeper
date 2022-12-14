@@ -76,9 +76,9 @@ import static java.util.Objects.requireNonNull;
  * @param <INCOMINGDATATYPE> The type of data that can be appended to this record batch
  */
 public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBatch<INCOMINGDATATYPE> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ArrowRecordBatchBase.class);
     public static final String MAP_KEY_FIELD_NAME = "key";
     public static final String MAP_VALUE_FIELD_NAME = "value";
-    private static final Logger LOGGER = LoggerFactory.getLogger(ArrowRecordBatchBase.class);
     private static final int INITIAL_ARROW_VECTOR_CAPACITY = 1024;
 
     protected final VectorSchemaRoot vectorSchemaRoot;
@@ -174,6 +174,13 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
             }
             throw e1;
         }
+        LOGGER.info("Created ArrowRecordBatchBase with:\n"
+                + "\tschema of {}\n\tlocalWorkingDirectory of {}\n\tworkingArrowBufferAllocatorBytes of {}\n"
+                + "\tminBatchArrowBufferAllocatorBytes of {}\n\tmaxBatchArrowBufferAllocatorBytes of {}\n"
+                + "\tmaxNoOfBytesToWriteLocally of {}\n\tmaxNoOfRecordsToWriteToArrowFileAtOnce of {}",
+                this.sleeperSchema, this.localWorkingDirectory, this.workingArrowBufferAllocatorBytes,
+                this.minBatchArrowBufferAllocatorBytes, this.maxBatchArrowBufferAllocatorBytes,
+                this.maxNoOfBytesToWriteLocally, this.maxNoOfRecordsToWriteToArrowFileAtOnce);
     }
 
     /**
@@ -389,7 +396,7 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
                         LOGGER.error("Failed to delete local file {}", localFileName);
                     }
                 } catch (Exception e) {
-                    LOGGER.error("Failed to delete local file " + localFileName, e);
+                    LOGGER.error("Failed to delete local file {}: {}", localFileName, e.toString());
                 }
             });
         }
@@ -408,7 +415,7 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
         // Follow the Arrow pattern of create > allocate > mutate > set value count > access > clear
         // Here we do the set value count > access > clear
         long time1 = System.currentTimeMillis();
-        LOGGER.debug(String.format("Writing %s records to local Arrow file %s", currentInsertIndex, localFileName));
+        LOGGER.debug("Writing {} records to local Arrow file {}", currentInsertIndex, localFileName);
         long bytesWrittenToLocalFile;
         try {
             bytesWrittenToLocalFile = sortArrowAndWriteToLocalFile(
@@ -433,6 +440,7 @@ public abstract class ArrowRecordBatchBase<INCOMINGDATATYPE> implements RecordBa
         // Record the local file name for later, and update the counters
         localArrowFileNames.add(localFileName);
         noOfBytesInLocalFiles += bytesWrittenToLocalFile;
+        LOGGER.info("Total number of bytes written to local files is {}", noOfBytesInLocalFiles);
         currentBatchNo++;
     }
 
