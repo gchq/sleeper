@@ -24,6 +24,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.range.Range;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.ingest.IngestResult;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriter;
 import sleeper.statestore.FileInfo;
 
@@ -107,8 +108,9 @@ class IngesterIntoPartitions {
      * partition file that has been created
      * @throws IOException -
      */
-    public CompletableFuture<List<FileInfo>> initiateIngest(CloseableIterator<Record> orderedRecordIterator,
-                                                            PartitionTree partitionTree) throws IOException {
+    public CompletableFuture<IngestResult> initiateIngest(
+            CloseableIterator<Record> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
+
         List<String> rowKeyNames = sleeperSchema.getRowKeyFieldNames();
         String firstDimensionRowKey = rowKeyNames.get(0);
         Map<String, PartitionFileWriter> partitionIdToFileWriterMap = new HashMap<>();
@@ -122,7 +124,7 @@ class IngesterIntoPartitions {
         // Log and return if the iterator is empty
         if (!orderedRecordIterator.hasNext()) {
             LOGGER.info("There are no records");
-            return CompletableFuture.completedFuture(new ArrayList<>());
+            return CompletableFuture.completedFuture(IngestResult.noFiles());
         }
 
         // Loop through the iterator, creating new partition files whenever this is required.
@@ -161,6 +163,8 @@ class IngesterIntoPartitions {
         // Create a future where all of the partitions have finished uploading and then return the FileInfo
         // objects as a list
         return CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[0]))
-                .thenApply(dummy -> completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList()));
+                .thenApply(dummy -> IngestResult.from(completableFutures.stream()
+                        .map(CompletableFuture::join)
+                        .collect(Collectors.toList())));
     }
 }

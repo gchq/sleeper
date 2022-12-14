@@ -19,9 +19,11 @@ package sleeper.ingest;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.statestore.FileInfo;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 public class IngestResult {
     private final List<FileInfo> fileInfoList;
@@ -38,6 +40,12 @@ public class IngestResult {
 
     public static IngestResult from(List<FileInfo> fileInfoList) {
         return new IngestResult(fileInfoList);
+    }
+
+    public static IngestResult from(Stream<IngestResult> results) {
+        List<FileInfo> fileInfoList = new ArrayList<>();
+        results.forEach(result -> fileInfoList.addAll(result.fileInfoList));
+        return from(fileInfoList);
     }
 
     public static IngestResult noFiles() {

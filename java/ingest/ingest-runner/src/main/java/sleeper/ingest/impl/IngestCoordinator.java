@@ -26,6 +26,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.ingest.IngestResult;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
 import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
@@ -35,10 +36,8 @@ import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
@@ -79,7 +78,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     private final PartitionFileWriterFactory partitionFileWriterFactory;
     private final IngesterIntoPartitions ingesterIntoPartitions;
 
-    private final List<CompletableFuture<List<FileInfo>>> ingestFutures;
+    private final List<CompletableFuture<IngestResult>> ingestFutures;
     private final long ingestCoordinatorCreationTime;
     protected RecordBatch<INCOMINGDATATYPE> currentRecordBatch;
     private long lastPartitionsUpdateTime;
@@ -184,11 +183,11 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                 // and the state store updated.
                 // Note that once initiateIngest() has been called, below, the record batch has been consumed and is no
                 // longer required.
-                CompletableFuture<List<FileInfo>> consumedFuture = ingesterIntoPartitions
+                CompletableFuture<IngestResult> consumedFuture = ingesterIntoPartitions
                         .initiateIngest(recordIteratorWithSleeperIteratorApplied, partitionTree)
-                        .thenApply(fileInfoList -> {
-                            updateStateStore(sleeperStateStore, fileInfoList);
-                            return fileInfoList;
+                        .thenApply(result -> {
+                            updateStateStore(sleeperStateStore, result.getFileInfoList());
+                            return result;
                         });
                 ingestFutures.add(consumedFuture);
             }
@@ -224,7 +223,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * Close this ingester synchronously, as required by {@link AutoCloseable}. This is the only closing method that may
      * be called more than once. Second and subsequent calls are ignored and a warning is logged.
      * <p>
-     * This method uses {@link #asyncCloseReturningFileInfoList()} and waits for that future to complete before
+     * This method uses {@link #asyncCloseReturningResult()} and waits for that future to complete before
      * returning.
      *
      * @throws IOException         -
@@ -236,13 +235,13 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         if (isClosed) {
             LOGGER.warn("Closing an IngestCoordinator that has already been closed");
         } else {
-            asyncCloseReturningFileInfoList().join();
+            asyncCloseReturningResult().join();
         }
     }
 
     /**
      * Close this ingester synchronously, returning information about every file that was ingested and added to the
-     * state store. This method uses {@link #asyncCloseReturningFileInfoList()} and waits for that future to complete
+     * state store. This method uses {@link #asyncCloseReturningResult()} and waits for that future to complete
      * before returning.
      *
      * @return Details about every file that was added to the state store.
@@ -250,8 +249,8 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * @throws IteratorException   -
      * @throws StateStoreException -
      */
-    public List<FileInfo> closeReturningFileInfoList() throws StateStoreException, IteratorException, IOException {
-        return asyncCloseReturningFileInfoList().join();
+    public IngestResult closeReturningResult() throws StateStoreException, IteratorException, IOException {
+        return asyncCloseReturningResult().join();
     }
 
     /**
@@ -266,7 +265,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      * @throws IteratorException   -
      * @throws StateStoreException -
      */
-    public CompletableFuture<List<FileInfo>> asyncCloseReturningFileInfoList()
+    public CompletableFuture<IngestResult> asyncCloseReturningResult()
             throws StateStoreException, IteratorException, IOException {
         if (isClosed) {
             throw new AssertionError("Attempt to close IngestCoordinator and return results twice");
@@ -279,19 +278,15 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         return CompletableFuture.allOf(ingestFutures.toArray(new CompletableFuture[0]))
                 .whenComplete((msg, ex) -> internalClose())
                 .thenApply(dummy -> {
-                    List<FileInfo> fileInfoList = ingestFutures.stream()
-                            .map(CompletableFuture::join)
-                            .flatMap(Collection::stream)
-                            .collect(Collectors.toList());
-                    long noOfRecordsWritten = fileInfoList.stream()
-                            .mapToLong(FileInfo::getNumberOfRecords)
-                            .sum();
+                    IngestResult result = IngestResult.from(
+                            ingestFutures.stream().map(CompletableFuture::join));
+                    long noOfRecordsWritten = result.getRecordsWritten();
                     double elapsedSeconds = (System.currentTimeMillis() - ingestCoordinatorCreationTime) / 1000.0;
                     METRICS_LOGGER.info(String.format("Wrote %d records to S3 in %.1f seconds at %.1f per second",
                             noOfRecordsWritten,
                             elapsedSeconds,
                             noOfRecordsWritten / elapsedSeconds));
-                    return fileInfoList;
+                    return result;
                 });
     }
 
