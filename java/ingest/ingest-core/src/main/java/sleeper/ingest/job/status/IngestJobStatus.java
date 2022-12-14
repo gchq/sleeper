@@ -22,7 +22,6 @@ import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -46,6 +45,7 @@ public class IngestJobStatus {
         return builder()
                 .jobRuns(statusUpdates.getRuns())
                 .jobId(statusUpdates.getJobId())
+                .expiryDate(statusUpdates.getLastRecord().getExpiryDate())
                 .build();
     }
 
@@ -124,11 +124,6 @@ public class IngestJobStatus {
 
         public Builder jobId(String jobId) {
             this.jobId = jobId;
-            return this;
-        }
-
-        public Builder jobRun(ProcessRun jobRun) {
-            this.jobRuns = ProcessRuns.latestFirst(Collections.singletonList(jobRun));
             return this;
         }
 
