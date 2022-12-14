@@ -21,6 +21,7 @@ import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.model.AwsVpcConfiguration;
 import com.amazonaws.services.ecs.model.ContainerOverride;
 import com.amazonaws.services.ecs.model.Failure;
+import com.amazonaws.services.ecs.model.InvalidParameterException;
 import com.amazonaws.services.ecs.model.LaunchType;
 import com.amazonaws.services.ecs.model.NetworkConfiguration;
 import com.amazonaws.services.ecs.model.PropagateTags;
@@ -235,6 +236,9 @@ public class RunTasks {
                 }
 
                 maybeSleep(numTasksCreated);
+            } catch (InvalidParameterException e) {
+                LOGGER.error("Couldn't launch tasks due to " + e.getErrorMessage() +
+                                ". This error is expected if there are no EC2 container instances in the cluster.");
             } catch (AmazonClientException e) {
                 LOGGER.error("Couldn't launch tasks", e);
             }
