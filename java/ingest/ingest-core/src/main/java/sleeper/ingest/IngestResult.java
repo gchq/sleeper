@@ -30,22 +30,21 @@ public class IngestResult {
     private final long recordsRead;
     private final long recordsWritten;
 
-    private IngestResult(List<FileInfo> fileInfoList) {
+    private IngestResult(List<FileInfo> fileInfoList, long recordsRead, long recordsWritten) {
         this.fileInfoList = fileInfoList;
-        this.recordsWritten = fileInfoList.stream()
-                .mapToLong(FileInfo::getNumberOfRecords)
-                .sum();
-        this.recordsRead = recordsWritten;
+        this.recordsRead = recordsRead;
+        this.recordsWritten = recordsWritten;
     }
 
     public static IngestResult from(List<FileInfo> fileInfoList) {
-        return new IngestResult(fileInfoList);
+        long recordsWritten = recordsWritten(fileInfoList);
+        return new IngestResult(fileInfoList, recordsWritten, recordsWritten);
     }
 
-    public static IngestResult from(Stream<IngestResult> results) {
+    public static IngestResult from(long recordsRead, Stream<List<FileInfo>> results) {
         List<FileInfo> fileInfoList = new ArrayList<>();
-        results.forEach(result -> fileInfoList.addAll(result.fileInfoList));
-        return from(fileInfoList);
+        results.forEach(fileInfoList::addAll);
+        return new IngestResult(fileInfoList, recordsRead, recordsWritten(fileInfoList));
     }
 
     public static IngestResult noFiles() {
@@ -87,5 +86,11 @@ public class IngestResult {
                 "recordsWritten=" + recordsWritten +
                 ",fileInfoList=" + fileInfoList +
                 '}';
+    }
+
+    private static long recordsWritten(List<FileInfo> fileInfoList) {
+        return fileInfoList.stream()
+                .mapToLong(FileInfo::getNumberOfRecords)
+                .sum();
     }
 }

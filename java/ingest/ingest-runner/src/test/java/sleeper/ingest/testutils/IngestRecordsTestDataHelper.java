@@ -32,9 +32,11 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.ingest.IngestFactory;
+import sleeper.ingest.IngestResult;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
+import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.File;
@@ -44,6 +46,7 @@ import java.nio.file.LinkOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
@@ -297,6 +300,21 @@ public class IngestRecordsTestDataHelper {
         records.add(record3);
         records.add(record4);
         return records;
+    }
+
+    public static List<Record> readIngestedRecords(IngestResult result, Schema schema) {
+        return result.getFileInfoList().stream()
+                .map(FileInfo::getFilename)
+                .flatMap(filename -> readRecordsFromParquetFileOrThrow(filename, schema).stream())
+                .collect(Collectors.toList());
+    }
+
+    public static List<Record> readRecordsFromParquetFileOrThrow(String filename, Schema schema) {
+        try {
+            return readRecordsFromParquetFile(filename, schema);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed reading records", e);
+        }
     }
 
     public static List<Record> readRecordsFromParquetFile(String filename, Schema schema) throws IOException {

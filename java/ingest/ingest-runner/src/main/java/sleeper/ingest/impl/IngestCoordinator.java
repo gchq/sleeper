@@ -78,10 +78,11 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     private final PartitionFileWriterFactory partitionFileWriterFactory;
     private final IngesterIntoPartitions ingesterIntoPartitions;
 
-    private final List<CompletableFuture<IngestResult>> ingestFutures;
+    private final List<CompletableFuture<List<FileInfo>>> ingestFutures;
     private final long ingestCoordinatorCreationTime;
     protected RecordBatch<INCOMINGDATATYPE> currentRecordBatch;
     private long lastPartitionsUpdateTime;
+    private long recordsRead;
     private PartitionTree partitionTree;
     private boolean isClosed;
 
@@ -183,11 +184,11 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                 // and the state store updated.
                 // Note that once initiateIngest() has been called, below, the record batch has been consumed and is no
                 // longer required.
-                CompletableFuture<IngestResult> consumedFuture = ingesterIntoPartitions
+                CompletableFuture<List<FileInfo>> consumedFuture = ingesterIntoPartitions
                         .initiateIngest(recordIteratorWithSleeperIteratorApplied, partitionTree)
-                        .thenApply(result -> {
-                            updateStateStore(sleeperStateStore, result.getFileInfoList());
-                            return result;
+                        .thenApply(fileInfoList -> {
+                            updateStateStore(sleeperStateStore, fileInfoList);
+                            return fileInfoList;
                         });
                 ingestFutures.add(consumedFuture);
             }
@@ -278,7 +279,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         return CompletableFuture.allOf(ingestFutures.toArray(new CompletableFuture[0]))
                 .whenComplete((msg, ex) -> internalClose())
                 .thenApply(dummy -> {
-                    IngestResult result = IngestResult.from(
+                    IngestResult result = IngestResult.from(recordsRead,
                             ingestFutures.stream().map(CompletableFuture::join));
                     long noOfRecordsWritten = result.getRecordsWritten();
                     double elapsedSeconds = (System.currentTimeMillis() - ingestCoordinatorCreationTime) / 1000.0;
@@ -340,6 +341,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         try {
             initiateIngestIfNecessary(false);
             currentRecordBatch.append(data);
+            recordsRead++;
         } catch (Exception e) {
             internalClose();
             throw e;

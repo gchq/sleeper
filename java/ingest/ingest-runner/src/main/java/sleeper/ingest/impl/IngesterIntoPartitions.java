@@ -24,13 +24,13 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.range.Range;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.ingest.IngestResult;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriter;
 import sleeper.statestore.FileInfo;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -108,7 +108,7 @@ class IngesterIntoPartitions {
      * partition file that has been created
      * @throws IOException -
      */
-    public CompletableFuture<IngestResult> initiateIngest(
+    public CompletableFuture<List<FileInfo>> initiateIngest(
             RecordIteratorWithSleeperIteratorApplied orderedRecordIterator, PartitionTree partitionTree) throws IOException {
 
         List<String> rowKeyNames = sleeperSchema.getRowKeyFieldNames();
@@ -124,7 +124,7 @@ class IngesterIntoPartitions {
         // Log and return if the iterator is empty
         if (!orderedRecordIterator.hasNext()) {
             LOGGER.info("There are no records");
-            return CompletableFuture.completedFuture(IngestResult.noFiles());
+            return CompletableFuture.completedFuture(Collections.emptyList());
         }
 
         // Loop through the iterator, creating new partition files whenever this is required.
@@ -163,8 +163,8 @@ class IngesterIntoPartitions {
         // Create a future where all of the partitions have finished uploading and then return the FileInfo
         // objects as a list
         return CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[0]))
-                .thenApply(dummy -> IngestResult.from(completableFutures.stream()
+                .thenApply(dummy -> completableFutures.stream()
                         .map(CompletableFuture::join)
-                        .collect(Collectors.toList())));
+                        .collect(Collectors.toList()));
     }
 }
