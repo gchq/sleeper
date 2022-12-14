@@ -172,7 +172,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
             // Apply the Sleeper iterator to the record batch, within a try-with-resources block. This will ensure that
             // the iterators are closed in both success and failure
             try (CloseableIterator<Record> orderedRecordIteratorFromBatch = currentRecordBatch.createOrderedRecordIterator();
-                 CloseableIterator<Record> recordIteratorWithSleeperIteratorApplied =
+                 RecordIteratorWithSleeperIteratorApplied recordIteratorWithSleeperIteratorApplied =
                          new RecordIteratorWithSleeperIteratorApplied(
                                  objectFactory,
                                  sleeperSchema,

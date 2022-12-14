@@ -109,7 +109,7 @@ class IngesterIntoPartitions {
      * @throws IOException -
      */
     public CompletableFuture<IngestResult> initiateIngest(
-            CloseableIterator<Record> orderedRecordIterator, PartitionTree partitionTree) throws IOException {
+            RecordIteratorWithSleeperIteratorApplied orderedRecordIterator, PartitionTree partitionTree) throws IOException {
 
         List<String> rowKeyNames = sleeperSchema.getRowKeyFieldNames();
         String firstDimensionRowKey = rowKeyNames.get(0);
