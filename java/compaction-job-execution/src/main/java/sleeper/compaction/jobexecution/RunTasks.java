@@ -129,10 +129,9 @@ public class RunTasks {
         Pair<Integer, Integer> requirements = Requirements.getArchRequirements(architecture, launchType, instanceProperties);
 
         // bit hacky: EC2s don't give 100% of their memory for container use (OS
-        // headroom, system tasks, etc.) so since we want a whole GPU
-        // with only 1 GPU per typical system, we have to make sure to reduce
+        // headroom, system tasks, etc.) so we have to make sure to reduce
         // the EC2 memory requirement by 5%. If we don't we end up asking for
-        // 16GiB of RAM on a 16GiB box and allocation will fail.
+        // 16GiB of RAM on a 16GiB box for example and container allocation will fail.
         if (launchType.equalsIgnoreCase("EC2")) {
             requirements = Pair.of(requirements.getLeft(), (int) (requirements.getRight() * 0.95));
         }
