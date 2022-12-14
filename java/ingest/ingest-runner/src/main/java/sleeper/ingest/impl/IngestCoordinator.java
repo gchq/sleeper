@@ -86,7 +86,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     private PartitionTree partitionTree;
     private boolean isClosed;
 
-    private IngestCoordinator(Builder builder, RecordBatchFactory<INCOMINGDATATYPE> recordBatchFactory) {
+    private IngestCoordinator(Builder<INCOMINGDATATYPE> builder) {
         LOGGER.info("Creating IngestCoordinator with schema of {}", builder.schema);
 
         // Supplied member variables
@@ -96,7 +96,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         this.sleeperIteratorClassName = builder.iteratorClassName;
         this.sleeperIteratorConfig = builder.iteratorConfig;
         this.ingestPartitionRefreshFrequencyInSeconds = builder.ingestPartitionRefreshFrequencyInSeconds;
-        this.recordBatchFactory = requireNonNull(recordBatchFactory);
+        this.recordBatchFactory = requireNonNull(builder.recordBatchFactory);
 
         // Other member variables
         this.ingestCoordinatorCreationTime = System.currentTimeMillis();
@@ -468,7 +468,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         }
 
         public IngestCoordinator<T> build() {
-            return new IngestCoordinator<>(this, recordBatchFactory);
+            return new IngestCoordinator<>(this);
         }
     }
 }
