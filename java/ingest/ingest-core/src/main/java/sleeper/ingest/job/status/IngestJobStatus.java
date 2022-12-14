@@ -81,6 +81,11 @@ public class IngestJobStatus {
         return jobRuns.isFinished();
     }
 
+    public boolean isInPeriod(Instant startTime, Instant endTime) {
+        return startTime.isBefore(jobRuns.lastTime().orElse(endTime))
+                && endTime.isAfter(jobRuns.firstTime().orElse(startTime));
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
