@@ -202,7 +202,7 @@ public class RunTasks {
      * @return set of EC2 container instance ARNs containing new tasks
      * @throws InterruptedException if error occurs during sleep
      */
-    private Set<String> launchTasks(final long startTime, final int queueSize, int maxNumTasksToCreate,
+    private Set<String> launchTasks(long startTime, int queueSize, int maxNumTasksToCreate,
                     TaskOverride override, NetworkConfiguration networkConfiguration)
                     throws InterruptedException {
         int numTasksCreated = 0;
