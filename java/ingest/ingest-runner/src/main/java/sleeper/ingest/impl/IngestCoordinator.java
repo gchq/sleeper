@@ -124,12 +124,9 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
      *
      * @param sleeperStateStore The state store to update
      * @param fileInfoList      The details of the files to add to the state store
-     * @throws StateStoreException  -
-     * @throws InterruptedException -
      */
     private static void updateStateStore(StateStore sleeperStateStore,
-                                         List<FileInfo> fileInfoList)
-            throws StateStoreException, InterruptedException {
+                                         List<FileInfo> fileInfoList) {
         boolean success = false;
         int numberOfFailures = 0;
         while (!success) {
@@ -140,10 +137,15 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                 LOGGER.error("Failed to update DynamoDB with new files", e);
                 numberOfFailures++;
                 if (numberOfFailures >= 10) {
-                    throw new StateStoreException("Unable to update StateStore after 10 attempts (most recent exception was " + e.getMessage() + ")", e);
+                    throw new RetryStateStoreException("Unable to update StateStore after 10 attempts (most recent exception was " + e.getMessage() + ")", e);
                 }
                 // Sleep with exponential back-off
-                Thread.sleep((long) Math.pow(2.0D, numberOfFailures));
+                try {
+                    Thread.sleep((long) Math.pow(2.0D, numberOfFailures));
+                } catch (InterruptedException e2) {
+                    Thread.currentThread().interrupt();
+                    throw new RetryStateStoreException("Interrupted retrying state store update after previous failure", e);
+                }
             }
         }
     }
@@ -185,11 +187,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                 CompletableFuture<List<FileInfo>> consumedFuture = ingesterIntoPartitions
                         .initiateIngest(recordIteratorWithSleeperIteratorApplied, partitionTree)
                         .thenApply(fileInfoList -> {
-                            try {
-                                updateStateStore(sleeperStateStore, fileInfoList);
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
+                            updateStateStore(sleeperStateStore, fileInfoList);
                             return fileInfoList;
                         });
                 ingestFutures.add(consumedFuture);
