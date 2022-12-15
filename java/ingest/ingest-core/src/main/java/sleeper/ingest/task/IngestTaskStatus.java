@@ -66,6 +66,10 @@ public class IngestTaskStatus {
         }
     }
 
+    public Instant getExpiryDate() {
+        return expiryDate;
+    }
+
     private Instant getLastTime() {
         if (isFinished()) {
             return finishedStatus.getFinishTime();

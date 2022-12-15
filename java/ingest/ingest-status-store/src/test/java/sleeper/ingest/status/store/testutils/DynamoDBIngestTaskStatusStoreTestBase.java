@@ -28,9 +28,12 @@ import sleeper.ingest.task.IngestTaskFinishedStatus;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.UUID;
 
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_STATUS_TTL_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore.taskStatusTableName;
 
@@ -52,6 +55,12 @@ public class DynamoDBIngestTaskStatusStoreTestBase extends DynamoDBTestBase {
         dynamoDBClient.deleteTable(taskStatusTableName);
     }
 
+    protected IngestTaskStatusStore storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
+        instanceProperties.set(COMPACTION_TASK_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
+        return new DynamoDBIngestTaskStatusStore(dynamoDBClient, instanceProperties,
+                Arrays.stream(updateTimes).iterator()::next);
+    }
+
     private static Instant defaultJobStartTime() {
         return Instant.parse("2022-09-22T14:00:04.000Z");
     }
@@ -60,11 +69,11 @@ public class DynamoDBIngestTaskStatusStoreTestBase extends DynamoDBTestBase {
         return Instant.parse("2022-09-22T14:00:14.000Z");
     }
 
-    private static Instant defaultTaskStartTime() {
+    protected static Instant defaultTaskStartTime() {
         return Instant.parse("2022-09-22T12:30:00.000Z");
     }
 
-    private static Instant defaultTaskFinishTime() {
+    protected static Instant defaultTaskFinishTime() {
         return Instant.parse("2022-09-22T16:30:00.000Z");
     }
 

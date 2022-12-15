@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.status.store.task;
+package sleeper.ingest.status.store.task;
 
 import org.junit.Test;
-import sleeper.compaction.status.store.testutils.DynamoDBCompactionTaskStatusStoreTestBase;
-import sleeper.compaction.task.CompactionTaskStatus;
-import sleeper.compaction.task.CompactionTaskStatusStore;
+import sleeper.ingest.status.store.testutils.DynamoDBIngestTaskStatusStoreTestBase;
+import sleeper.ingest.task.IngestTaskStatus;
+import sleeper.ingest.task.IngestTaskStatusStore;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -26,14 +26,14 @@ import java.time.temporal.ChronoField;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class StoreCompactionTaskExpiryIT extends DynamoDBCompactionTaskStatusStoreTestBase {
+public class StoreIngestTaskExpiryIT extends DynamoDBIngestTaskStatusStoreTestBase {
 
     @Test
     public void shouldUpdateExpiryDateForCompactionTaskStatusStarted() {
         // Given
-        CompactionTaskStatus taskStatus = startedTaskWithDefaults();
+        IngestTaskStatus taskStatus = startedTaskWithDefaults();
         Duration timeToLive = Duration.ofDays(7);
-        CompactionTaskStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
+        IngestTaskStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
 
         // When
         store.taskStarted(taskStatus);
@@ -46,9 +46,9 @@ public class StoreCompactionTaskExpiryIT extends DynamoDBCompactionTaskStatusSto
     @Test
     public void shouldUpdateExpiryDateForCompactionTaskStatusFinished() {
         // Given
-        CompactionTaskStatus taskStatus = finishedTaskWithDefaults();
+        IngestTaskStatus taskStatus = finishedTaskWithDefaults();
         Duration timeToLive = Duration.ofDays(7);
-        CompactionTaskStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
+        IngestTaskStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
                 defaultTaskStartTime(), defaultTaskFinishTime());
 
         // When
