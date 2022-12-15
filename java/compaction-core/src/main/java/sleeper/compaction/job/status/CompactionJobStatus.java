@@ -18,12 +18,14 @@ package sleeper.compaction.job.status;
 import sleeper.core.record.process.status.JobStatusUpdates;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
+import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -45,21 +47,27 @@ public class CompactionJobStatus {
         return new Builder();
     }
 
-    public static CompactionJobStatus from(JobStatusUpdates updates) {
-        return builder().jobId(updates.getJobId())
-                .createdStatus((CompactionJobCreatedStatus) updates.getFirstRecord().getStatusUpdate())
-                .jobRuns(updates.getRuns())
-                .expiryDate(updates.getFirstRecord().getExpiryDate())
-                .build();
-    }
-
     public static List<CompactionJobStatus> listFrom(Stream<ProcessStatusUpdateRecord> records) {
         return streamFrom(records).collect(Collectors.toList());
     }
 
     public static Stream<CompactionJobStatus> streamFrom(Stream<ProcessStatusUpdateRecord> records) {
         return JobStatusUpdates.streamFrom(records)
-                .map(CompactionJobStatus::from);
+                .map(CompactionJobStatus::from)
+                .filter(Optional::isPresent)
+                .map(Optional::get);
+    }
+
+    private static Optional<CompactionJobStatus> from(JobStatusUpdates updates) {
+        ProcessStatusUpdate firstUpdate = updates.getFirstRecord().getStatusUpdate();
+        if (!(firstUpdate instanceof CompactionJobCreatedStatus)) {
+            return Optional.empty();
+        }
+        return Optional.of(builder().jobId(updates.getJobId())
+                .createdStatus((CompactionJobCreatedStatus) firstUpdate)
+                .jobRuns(updates.getRuns())
+                .expiryDate(updates.getFirstRecord().getExpiryDate())
+                .build());
     }
 
     public Instant getCreateUpdateTime() {
