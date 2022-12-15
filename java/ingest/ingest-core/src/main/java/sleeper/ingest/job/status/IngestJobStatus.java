@@ -24,6 +24,7 @@ import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 public class IngestJobStatus {
@@ -41,17 +42,23 @@ public class IngestJobStatus {
         return new Builder();
     }
 
-    public static IngestJobStatus from(JobStatusUpdates statusUpdates) {
-        return builder()
-                .jobRuns(statusUpdates.getRuns())
-                .jobId(statusUpdates.getJobId())
-                .expiryDate(statusUpdates.getLastRecord().getExpiryDate())
-                .build();
-    }
-
     public static Stream<IngestJobStatus> streamFrom(Stream<ProcessStatusUpdateRecord> records) {
         return JobStatusUpdates.streamFrom(records)
-                .map(IngestJobStatus::from);
+                .map(IngestJobStatus::from)
+                .filter(Optional::isPresent)
+                .map(Optional::get);
+    }
+
+    private static Optional<IngestJobStatus> from(JobStatusUpdates statusUpdates) {
+        ProcessRuns runs = statusUpdates.getRuns();
+        if (!runs.isStarted()) {
+            return Optional.empty();
+        }
+        return Optional.of(builder()
+                .jobRuns(runs)
+                .jobId(statusUpdates.getJobId())
+                .expiryDate(statusUpdates.getFirstRecord().getExpiryDate())
+                .build());
     }
 
     public String getJobId() {
