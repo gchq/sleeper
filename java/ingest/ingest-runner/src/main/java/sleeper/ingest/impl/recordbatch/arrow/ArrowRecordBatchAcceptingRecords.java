@@ -28,7 +28,6 @@ import org.apache.arrow.vector.complex.impl.UnionListWriter;
 import org.apache.arrow.vector.complex.writer.BaseWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -39,11 +38,9 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
-import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -279,11 +276,4 @@ public class ArrowRecordBatchAcceptingRecords extends ArrowRecordBatchBase<Recor
         }
     }
 
-    public void write(Iterator<Record> recordIterator)
-            throws IOException, IteratorException, InterruptedException, StateStoreException, OutOfMemoryException {
-        // Add each record from the iterator in turn
-        while (recordIterator.hasNext()) {
-            append(recordIterator.next());
-        }
-    }
 }

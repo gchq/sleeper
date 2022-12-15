@@ -37,9 +37,9 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDa
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createInitStateStore;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createStateStore;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 public class CompactSortedFilesEmptyOutputTest extends CompactSortedFilesTestBase {
 
@@ -47,7 +47,7 @@ public class CompactSortedFilesEmptyOutputTest extends CompactSortedFilesTestBas
     public void filesShouldMergeCorrectlyWhenSomeAreEmpty() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-        StateStore stateStore = createInitStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
         CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
         List<Record> data = keyAndTwoValuesSortedEvenLongs();
@@ -81,7 +81,7 @@ public class CompactSortedFilesEmptyOutputTest extends CompactSortedFilesTestBas
     public void filesShouldMergeCorrectlyWhenAllAreEmpty() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-        StateStore stateStore = createInitStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
         CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
         dataHelper.writeLeafFile(folderName + "/file1.parquet", Collections.emptyList(), null, null);
@@ -114,8 +114,7 @@ public class CompactSortedFilesEmptyOutputTest extends CompactSortedFilesTestBas
     public void filesShouldMergeAndSplitCorrectlyWhenOneChildFileIsEmpty() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-        StateStore stateStore = createStateStore(schema);
-        stateStore.initialise(new PartitionsBuilder(schema)
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
                 .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(200L))
                 .parentJoining("C", "A", "B")
                 .buildList());

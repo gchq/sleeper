@@ -41,8 +41,8 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDa
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createInitStateStore;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 public class CompactSortedFilesTest extends CompactSortedFilesTestBase {
 
@@ -50,7 +50,7 @@ public class CompactSortedFilesTest extends CompactSortedFilesTestBase {
     public void filesShouldMergeCorrectlyAndStateStoreUpdatedLongKey() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-        StateStore stateStore = createInitStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
         CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
         List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
@@ -103,7 +103,7 @@ public class CompactSortedFilesTest extends CompactSortedFilesTestBase {
     public void filesShouldMergeCorrectlyAndStateStoreUpdatedStringKey() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new StringType(), new StringType(), new LongType());
-        StateStore stateStore = createInitStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
         CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
         List<Record> data1 = keyAndTwoValuesSortedEvenStrings();
@@ -161,7 +161,7 @@ public class CompactSortedFilesTest extends CompactSortedFilesTestBase {
     public void filesShouldMergeCorrectlyAndStateStoreUpdatedByteArrayKey() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new ByteArrayType(), new ByteArrayType(), new LongType());
-        StateStore stateStore = createInitStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
         CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
         List<Record> data1 = keyAndTwoValuesSortedEvenByteArrays();

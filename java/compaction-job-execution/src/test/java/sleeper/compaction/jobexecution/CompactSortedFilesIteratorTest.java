@@ -37,8 +37,8 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDa
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.specifiedFromOdds;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createInitStateStore;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createStateStore;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 public class CompactSortedFilesIteratorTest extends CompactSortedFilesTestBase {
 
@@ -46,7 +46,7 @@ public class CompactSortedFilesIteratorTest extends CompactSortedFilesTestBase {
     public void filesShouldMergeAndApplyIteratorCorrectlyLongKey() throws Exception {
         // Given
         Schema schema = CompactSortedFilesTestUtils.createSchemaWithKeyTimestampValue();
-        StateStore stateStore = createInitStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
         CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
         List<Record> data1 = specifiedFromEvens((even, record) -> {
@@ -91,8 +91,7 @@ public class CompactSortedFilesIteratorTest extends CompactSortedFilesTestBase {
     public void filesShouldMergeAndSplitAndApplyIteratorCorrectlyLongKey() throws Exception {
         // Given
         Schema schema = CompactSortedFilesTestUtils.createSchemaWithKeyTimestampValue();
-        StateStore stateStore = createStateStore(schema);
-        stateStore.initialise(new PartitionsBuilder(schema)
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
                 .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(100L))
                 .parentJoining("C", "A", "B")
                 .buildList());

@@ -21,26 +21,26 @@ import sleeper.statestore.StateStore;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getStateStore;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 public class IngestResultTest extends IngestRecordsTestBase {
     @Test
     public void shouldReturnNumberOfRecordsFromIngestResult() throws Exception {
         // Given
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
 
         // When
         IngestResult result = ingestRecords(schema, stateStore, getRecords());
 
         // Then
-        assertThat(result.getNumberOfRecords())
+        assertThat(result.getRecordsWritten())
                 .isEqualTo(2L);
     }
 
     @Test
     public void shouldReturnFileInfoListFromIngestResult() throws Exception {
         // Given
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
 
         // When
         IngestResult result = ingestRecords(schema, stateStore, getRecords());

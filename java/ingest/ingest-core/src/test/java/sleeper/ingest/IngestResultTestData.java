@@ -25,7 +25,13 @@ public class IngestResultTestData {
     }
 
     public static IngestResult defaultFileIngestResult(String filename) {
-        return IngestResult.from(Collections.singletonList(
+        return IngestResult.allReadWereWritten(Collections.singletonList(
                 FileInfoTestData.defaultFileOnRootPartition(filename)));
+    }
+
+    public static IngestResult defaultFileIngestResultReadAndWritten(
+            String filename, long recordsRead, long recordsWritten) {
+        return IngestResult.fromReadAndWritten(recordsRead, Collections.singletonList(
+                FileInfoTestData.defaultFileOnRootPartitionWithRecords(filename, recordsWritten)));
     }
 }
