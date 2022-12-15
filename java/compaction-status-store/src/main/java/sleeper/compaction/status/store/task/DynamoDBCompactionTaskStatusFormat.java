@@ -27,6 +27,7 @@ import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
@@ -37,9 +38,6 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 
 public class DynamoDBCompactionTaskStatusFormat {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskStatusFormat.class);
-
-    private DynamoDBCompactionTaskStatusFormat() {
-    }
 
     public static final String TASK_ID = "TaskId";
     public static final String TYPE = "Type";
@@ -58,14 +56,22 @@ public class DynamoDBCompactionTaskStatusFormat {
     public static final String STARTED = "started";
     public static final String FINISHED = "finished";
 
-    public static Map<String, AttributeValue> createTaskStartedRecord(CompactionTaskStatus taskStatus, Long timeToLive) {
-        return createTaskRecord(taskStatus, STARTED, timeToLive)
+    private final int timeToLiveInSeconds;
+    private final Supplier<Instant> getTimeNow;
+
+    public DynamoDBCompactionTaskStatusFormat(int timeToLiveInSeconds, Supplier<Instant> getTimeNow) {
+        this.timeToLiveInSeconds = timeToLiveInSeconds;
+        this.getTimeNow = getTimeNow;
+    }
+
+    public Map<String, AttributeValue> createTaskStartedRecord(CompactionTaskStatus taskStatus) {
+        return createTaskRecord(taskStatus, STARTED)
                 .number(START_TIME, taskStatus.getStartTime().toEpochMilli())
                 .build();
     }
 
-    public static Map<String, AttributeValue> createTaskFinishedRecord(CompactionTaskStatus taskStatus, Long timeToLive) {
-        return createTaskRecord(taskStatus, FINISHED, timeToLive)
+    public Map<String, AttributeValue> createTaskFinishedRecord(CompactionTaskStatus taskStatus) {
+        return createTaskRecord(taskStatus, FINISHED)
                 .number(START_TIME, taskStatus.getStartTime().toEpochMilli())
                 .number(FINISH_TIME, taskStatus.getFinishedStatus().getFinishTime().toEpochMilli())
                 .number(DURATION, taskStatus.getFinishedStatus().getTotalRuntimeInSeconds())
@@ -77,14 +83,14 @@ public class DynamoDBCompactionTaskStatusFormat {
                 .build();
     }
 
-    private static DynamoDBRecordBuilder createTaskRecord(CompactionTaskStatus taskStatus, String updateType, Long timeToLive) {
-        Long timeNow = Instant.now().toEpochMilli();
+    private DynamoDBRecordBuilder createTaskRecord(CompactionTaskStatus taskStatus, String updateType) {
+        Instant timeNow = getTimeNow.get();
         return new DynamoDBRecordBuilder()
                 .string(TASK_ID, taskStatus.getTaskId())
                 .string(TYPE, taskStatus.getType().toString())
-                .number(UPDATE_TIME, timeNow)
+                .number(UPDATE_TIME, timeNow.toEpochMilli())
                 .string(UPDATE_TYPE, updateType)
-                .number(EXPIRY_DATE, timeNow + timeToLive);
+                .number(EXPIRY_DATE, timeNow.getEpochSecond() + timeToLiveInSeconds);
     }
 
     public static Stream<CompactionTaskStatus> streamTaskStatuses(List<Map<String, AttributeValue>> items) {
@@ -100,7 +106,7 @@ public class DynamoDBCompactionTaskStatusFormat {
                 CompactionTaskType type = CompactionTaskType.valueOf(getStringAttribute(item, TYPE));
                 builder.taskStarted(taskId, type,
                         getInstantAttribute(item, START_TIME),
-                        getInstantAttribute(item, EXPIRY_DATE));
+                        getInstantAttribute(item, EXPIRY_DATE, Instant::ofEpochSecond));
                 break;
             case FINISHED:
                 builder.taskFinished(taskId, CompactionTaskFinishedStatus.builder()

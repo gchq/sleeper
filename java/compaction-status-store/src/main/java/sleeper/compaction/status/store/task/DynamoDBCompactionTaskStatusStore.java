@@ -37,6 +37,7 @@ import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat.TASK_ID;
@@ -49,18 +50,24 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskStatusStore.class);
     private final AmazonDynamoDB dynamoDB;
     private final String statusTableName;
-    private final Long timeToLive;
+    private final DynamoDBCompactionTaskStatusFormat format;
 
     private DynamoDBCompactionTaskStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+        this(dynamoDB, properties, Instant::now);
+    }
+
+    public DynamoDBCompactionTaskStatusStore(
+            AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
         this.dynamoDB = dynamoDB;
         this.statusTableName = taskStatusTableName(properties.get(ID));
-        this.timeToLive = properties.getLong(UserDefinedInstanceProperty.COMPACTION_TASK_STATUS_TTL_IN_SECONDS) * 1000;
+        int timeToLiveInSeconds = properties.getInt(UserDefinedInstanceProperty.COMPACTION_TASK_STATUS_TTL_IN_SECONDS);
+        format = new DynamoDBCompactionTaskStatusFormat(timeToLiveInSeconds, getTimeNow);
     }
 
     @Override
     public void taskStarted(CompactionTaskStatus taskStatus) {
         try {
-            PutItemResult result = putItem(DynamoDBCompactionTaskStatusFormat.createTaskStartedRecord(taskStatus, timeToLive));
+            PutItemResult result = putItem(format.createTaskStartedRecord(taskStatus));
             LOGGER.debug("Put started event for task {} to table {}, capacity consumed = {}",
                     taskStatus.getTaskId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
@@ -71,7 +78,7 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
     @Override
     public void taskFinished(CompactionTaskStatus taskStatus) {
         try {
-            PutItemResult result = putItem(DynamoDBCompactionTaskStatusFormat.createTaskFinishedRecord(taskStatus, timeToLive));
+            PutItemResult result = putItem(format.createTaskFinishedRecord(taskStatus));
             LOGGER.debug("Put finished event for task {} to table {}, capacity consumed = {}",
                     taskStatus.getTaskId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {

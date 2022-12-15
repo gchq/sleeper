@@ -78,6 +78,10 @@ public class CompactionTaskStatus {
         }
     }
 
+    public Instant getExpiryDate() {
+        return expiryDate;
+    }
+
     public boolean isFinished() {
         return finishedStatus != null;
     }

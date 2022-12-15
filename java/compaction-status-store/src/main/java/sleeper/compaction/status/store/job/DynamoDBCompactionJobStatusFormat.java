@@ -63,10 +63,10 @@ public class DynamoDBCompactionJobStatusFormat {
     public static final String UPDATE_TYPE_STARTED = "started";
     public static final String UPDATE_TYPE_FINISHED = "finished";
 
-    private final long timeToLiveInSeconds;
+    private final int timeToLiveInSeconds;
     private final Supplier<Instant> getTimeNow;
 
-    public DynamoDBCompactionJobStatusFormat(long timeToLiveInSeconds, Supplier<Instant> getTimeNow) {
+    public DynamoDBCompactionJobStatusFormat(int timeToLiveInSeconds, Supplier<Instant> getTimeNow) {
         this.timeToLiveInSeconds = timeToLiveInSeconds;
         this.getTimeNow = getTimeNow;
     }
