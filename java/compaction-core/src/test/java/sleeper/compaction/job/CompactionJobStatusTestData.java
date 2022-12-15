@@ -58,7 +58,7 @@ public class CompactionJobStatusTestData {
         return CompactionJobStartedStatus.startAndUpdateTime(startTime, defaultUpdateTime(startTime));
     }
 
-    private static Instant defaultUpdateTime(Instant time) {
+    public static Instant defaultUpdateTime(Instant time) {
         return time.with(ChronoField.MILLI_OF_SECOND, 123);
     }
 

@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
@@ -44,9 +45,6 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 public class DynamoDBCompactionJobStatusFormat {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobStatusFormat.class);
-
-    private DynamoDBCompactionJobStatusFormat() {
-    }
 
     public static final String JOB_ID = "JobId";
     public static final String UPDATE_TIME = "UpdateTime";
@@ -65,8 +63,16 @@ public class DynamoDBCompactionJobStatusFormat {
     public static final String UPDATE_TYPE_STARTED = "started";
     public static final String UPDATE_TYPE_FINISHED = "finished";
 
-    public static Map<String, AttributeValue> createJobCreatedRecord(CompactionJob job, Long timeToLive) {
-        return createJobRecord(job, UPDATE_TYPE_CREATED, timeToLive)
+    private final long timeToLiveInSeconds;
+    private final Supplier<Instant> getTimeNow;
+
+    public DynamoDBCompactionJobStatusFormat(long timeToLiveInSeconds, Supplier<Instant> getTimeNow) {
+        this.timeToLiveInSeconds = timeToLiveInSeconds;
+        this.getTimeNow = getTimeNow;
+    }
+
+    public Map<String, AttributeValue> createJobCreatedRecord(CompactionJob job) {
+        return createJobRecord(job, UPDATE_TYPE_CREATED)
                 .string(PARTITION_ID, job.getPartitionId())
                 .number(INPUT_FILES_COUNT, job.getInputFiles().size())
                 .apply(builder -> {
@@ -76,15 +82,15 @@ public class DynamoDBCompactionJobStatusFormat {
                 }).build();
     }
 
-    public static Map<String, AttributeValue> createJobStartedRecord(CompactionJob job, Instant startTime, String taskId, Long timeToLive) {
-        return createJobRecord(job, UPDATE_TYPE_STARTED, timeToLive)
+    public Map<String, AttributeValue> createJobStartedRecord(CompactionJob job, Instant startTime, String taskId) {
+        return createJobRecord(job, UPDATE_TYPE_STARTED)
                 .number(START_TIME, startTime.toEpochMilli())
                 .string(TASK_ID, taskId)
                 .build();
     }
 
-    public static Map<String, AttributeValue> createJobFinishedRecord(CompactionJob job, RecordsProcessedSummary summary, String taskId, Long timeToLive) {
-        return createJobRecord(job, UPDATE_TYPE_FINISHED, timeToLive)
+    public Map<String, AttributeValue> createJobFinishedRecord(CompactionJob job, RecordsProcessedSummary summary, String taskId) {
+        return createJobRecord(job, UPDATE_TYPE_FINISHED)
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
                 .string(TASK_ID, taskId)
                 .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
@@ -93,14 +99,14 @@ public class DynamoDBCompactionJobStatusFormat {
                 .build();
     }
 
-    private static DynamoDBRecordBuilder createJobRecord(CompactionJob job, String updateType, Long timeToLive) {
-        Long timeNow = Instant.now().toEpochMilli();
+    private DynamoDBRecordBuilder createJobRecord(CompactionJob job, String updateType) {
+        Instant timeNow = getTimeNow.get();
         return new DynamoDBRecordBuilder()
                 .string(JOB_ID, job.getId())
                 .string(TABLE_NAME, job.getTableName())
-                .number(UPDATE_TIME, timeNow)
+                .number(UPDATE_TIME, timeNow.toEpochMilli())
                 .string(UPDATE_TYPE, updateType)
-                .number(EXPIRY_DATE, timeNow + timeToLive);
+                .number(EXPIRY_DATE, timeNow.getEpochSecond() + timeToLiveInSeconds);
     }
 
     public static Stream<CompactionJobStatus> streamJobStatuses(List<Map<String, AttributeValue>> items) {
@@ -111,7 +117,7 @@ public class DynamoDBCompactionJobStatusFormat {
     private static ProcessStatusUpdateRecord getStatusUpdateRecord(Map<String, AttributeValue> item) {
         return new ProcessStatusUpdateRecord(
                 getStringAttribute(item, JOB_ID),
-                getInstantAttribute(item, EXPIRY_DATE),
+                getInstantAttribute(item, EXPIRY_DATE, Instant::ofEpochSecond),
                 getStatusUpdate(item),
                 getStringAttribute(item, TASK_ID));
     }

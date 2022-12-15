@@ -56,10 +56,4 @@ public interface CompactionJobStatusStore {
         throw new UnsupportedOperationException("Instance has no compaction job status store");
     }
 
-    default void setTimeToLive(Long timeToLive) {
-    }
-
-    default Long getTimeToLive() {
-        throw new UnsupportedOperationException("Instance has no compaction job status store");
-    }
 }

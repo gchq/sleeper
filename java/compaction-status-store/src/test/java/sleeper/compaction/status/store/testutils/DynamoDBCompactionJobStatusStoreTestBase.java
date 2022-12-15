@@ -35,7 +35,9 @@ import sleeper.core.schema.Schema;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 import sleeper.statestore.FileInfoFactory;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
@@ -46,6 +48,7 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompacti
 import static sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
 import static sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils.createSchema;
 import static sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils.createTableProperties;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -73,6 +76,12 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     @After
     public void tearDown() {
         dynamoDBClient.deleteTable(jobStatusTableName);
+    }
+
+    protected CompactionJobStatusStore storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
+        instanceProperties.set(COMPACTION_JOB_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
+        return new DynamoDBCompactionJobStatusStore(dynamoDBClient, instanceProperties,
+                Arrays.stream(updateTimes).iterator()::next);
     }
 
     protected Partition singlePartition() {
@@ -124,7 +133,11 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected CompactionJobStatus getJobStatus(String jobId) {
-        return store.getJob(jobId).orElse(null);
+        return getJobStatus(store, jobId);
+    }
+
+    protected CompactionJobStatus getJobStatus(CompactionJobStatusStore store, String jobId) {
+        return store.getJob(jobId).orElseThrow(() -> new IllegalStateException("Job not found: " + jobId));
     }
 
     protected List<CompactionJobStatus> getAllJobStatuses() {

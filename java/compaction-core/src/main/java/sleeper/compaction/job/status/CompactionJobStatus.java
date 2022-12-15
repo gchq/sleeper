@@ -49,7 +49,7 @@ public class CompactionJobStatus {
         return builder().jobId(updates.getJobId())
                 .createdStatus((CompactionJobCreatedStatus) updates.getFirstRecord().getStatusUpdate())
                 .jobRuns(updates.getRuns())
-                .expiryDate(updates.getLastRecord().getExpiryDate())
+                .expiryDate(updates.getFirstRecord().getExpiryDate())
                 .build();
     }
 
