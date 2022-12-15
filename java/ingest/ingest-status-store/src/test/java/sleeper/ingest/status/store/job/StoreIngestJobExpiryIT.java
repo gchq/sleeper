@@ -63,6 +63,21 @@ public class StoreIngestJobExpiryIT extends DynamoDBIngestJobStatusStoreTestBase
                 .isEqualTo(timePlusDurationAsExpiry(startTime, timeToLive));
     }
 
+    @Test
+    public void shouldSetDifferentExpiryDateForStartedJob() {
+        // Given
+        IngestJob job = jobWithFiles("test-file");
+        Instant startTime = Instant.parse("2022-12-15T11:32:42.001Z");
+        Duration timeToLive = Duration.ofDays(1);
+
+        IngestJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(startTime));
+        store.jobStarted(DEFAULT_TASK_ID, job, startTime);
+
+        // When/Then
+        assertThat(getJobStatus(store, job.getId()).getExpiryDate())
+                .isEqualTo(timePlusDurationAsExpiry(startTime, timeToLive));
+    }
+
     private static Instant timePlusDurationAsExpiry(Instant time, Duration timeToLive) {
         return time.plus(timeToLive).with(ChronoField.MILLI_OF_SECOND, 0);
     }

@@ -33,8 +33,8 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_STATUS_TTL_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_TASK_STATUS_TTL_IN_SECONDS;
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore.taskStatusTableName;
 
 public class DynamoDBIngestTaskStatusStoreTestBase extends DynamoDBTestBase {
@@ -56,7 +56,7 @@ public class DynamoDBIngestTaskStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected IngestTaskStatusStore storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
-        instanceProperties.set(COMPACTION_TASK_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
+        instanceProperties.set(INGEST_TASK_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
         return new DynamoDBIngestTaskStatusStore(dynamoDBClient, instanceProperties,
                 Arrays.stream(updateTimes).iterator()::next);
     }

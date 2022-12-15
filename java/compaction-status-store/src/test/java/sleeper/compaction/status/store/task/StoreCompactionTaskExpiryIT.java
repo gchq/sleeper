@@ -60,6 +60,21 @@ public class StoreCompactionTaskExpiryIT extends DynamoDBCompactionTaskStatusSto
                 .isEqualTo(timePlusDurationAsExpiry(defaultTaskStartTime(), timeToLive));
     }
 
+    @Test
+    public void shouldUpdateDifferentExpiryDateForCompactionTaskStatusStarted() {
+        // Given
+        CompactionTaskStatus taskStatus = startedTaskWithDefaults();
+        Duration timeToLive = Duration.ofDays(1);
+        CompactionTaskStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
+
+        // When
+        store.taskStarted(taskStatus);
+
+        // Then
+        assertThat(store.getTask(taskStatus.getTaskId()).getExpiryDate())
+                .isEqualTo(timePlusDurationAsExpiry(defaultTaskStartTime(), timeToLive));
+    }
+
     private static Instant timePlusDurationAsExpiry(Instant time, Duration timeToLive) {
         return time.plus(timeToLive).with(ChronoField.MILLI_OF_SECOND, 0);
     }

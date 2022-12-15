@@ -92,6 +92,22 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobStatusStore
                 .isEqualTo(timePlusDurationAsExpiry(createdTime, timeToLive));
     }
 
+    @Test
+    public void shouldUpdateDifferentExpiryDateForCompactionJobStatusCreated() {
+        // Given
+        CompactionJob job = createCompactionJob();
+        Duration timeToLive = Duration.ofDays(1);
+        Instant createdTime = Instant.parse("2022-12-15T10:50:12.001Z");
+        CompactionJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(createdTime));
+
+        // When
+        store.jobCreated(job);
+
+        // Then
+        assertThat(getJobStatus(store, job.getId()).getExpiryDate())
+                .isEqualTo(timePlusDurationAsExpiry(createdTime, timeToLive));
+    }
+
     private CompactionJob createCompactionJob() {
         Partition partition = singlePartition();
         FileInfoFactory fileFactory = fileFactory(partition);
