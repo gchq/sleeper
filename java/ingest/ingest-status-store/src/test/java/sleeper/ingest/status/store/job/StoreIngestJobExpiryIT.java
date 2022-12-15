@@ -34,7 +34,7 @@ public class StoreIngestJobExpiryIT extends DynamoDBIngestJobStatusStoreTestBase
     public void shouldSetExpiryDateForStartedJob() {
         // Given
         IngestJob job = jobWithFiles("test-file");
-        Instant startTime = Instant.now();
+        Instant startTime = Instant.parse("2022-12-15T11:32:42.001Z");
         Duration timeToLive = Duration.ofDays(7);
 
         IngestJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(startTime));
@@ -49,8 +49,8 @@ public class StoreIngestJobExpiryIT extends DynamoDBIngestJobStatusStoreTestBase
     public void shouldSetExpiryDateForFinishedJob() {
         // Given
         IngestJob job = jobWithFiles("test-file");
-        Instant startTime = Instant.now();
-        Instant finishTime = startTime.plus(Duration.ofMinutes(1));
+        Instant startTime = Instant.parse("2022-12-15T11:32:42.001Z");
+        Instant finishTime = Instant.parse("2022-12-15T11:33:42.001Z");
         Duration timeToLive = Duration.ofDays(7);
 
         IngestJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
