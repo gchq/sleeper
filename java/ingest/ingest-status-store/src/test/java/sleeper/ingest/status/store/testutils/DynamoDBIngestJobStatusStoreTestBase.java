@@ -31,12 +31,14 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.ingest.status.store.testutils.IngestStatusStoreTestUtils.createInstanceProperties;
 import static sleeper.ingest.status.store.testutils.IngestStatusStoreTestUtils.createSchema;
@@ -67,7 +69,8 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
         dynamoDBClient.deleteTable(jobStatusTableName);
     }
 
-    protected IngestJobStatusStore storeSettingUpdateTimes(Instant... updateTimes) {
+    protected IngestJobStatusStore storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
+        instanceProperties.set(INGEST_JOB_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
         return new DynamoDBIngestJobStatusStore(dynamoDBClient, instanceProperties,
                 Arrays.stream(updateTimes).iterator()::next);
     }
@@ -79,7 +82,12 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected IngestJobStatus getJobStatus(String jobId) {
-        return store.getJob(jobId).orElse(null);
+        return getJobStatus(store, jobId);
+    }
+
+    protected IngestJobStatus getJobStatus(IngestJobStatusStore store, String jobId) {
+        return store.getJob(jobId)
+                .orElseThrow(() -> new IllegalStateException("Job not found: " + jobId));
     }
 
     protected List<IngestJobStatus> getAllJobStatuses() {
