@@ -32,13 +32,12 @@ import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.statestore.FileInfo;
-import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.UUID;
@@ -64,7 +63,7 @@ import static java.util.Objects.requireNonNull;
 public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     private static final Logger LOGGER = LoggerFactory.getLogger(AsyncS3PartitionFileWriter.class);
 
-    private final S3AsyncClient s3AsyncClient;
+    private final AsyncS3Uploader s3AsyncClient;
     private final Schema sleeperSchema;
     private final Partition partition;
     private final String s3BucketName;
@@ -99,7 +98,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
             Partition partition,
             ParquetConfiguration parquetConfiguration,
             String s3BucketName,
-            S3AsyncClient s3AsyncClient,
+            AsyncS3Uploader s3AsyncClient,
             String localWorkingDirectory) throws IOException {
         this.s3AsyncClient = requireNonNull(s3AsyncClient);
         this.sleeperSchema = parquetConfiguration.getSleeperSchema();
@@ -157,7 +156,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * copy of that file. The future completes once the file has been deleted and it contains the {@link
      * PutObjectResponse} which was returned as the file was uploaded.
      *
-     * @param s3AsyncClient       The client to use to perform the asynchronous upload
+     * @param uploader            The client to use to perform the asynchronous upload
      * @param localFileName       The file to upload
      * @param s3BucketName        The S3 bucket to put the file into
      * @param s3Key               The S3 key of the uploaded file
@@ -165,19 +164,13 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * @return The {@link CompletableFuture} which was returned by the {@link
      * S3AsyncClient#putObject} method.
      */
-    private static CompletableFuture<PutObjectResponse> asyncUploadLocalFileToS3ThenDeleteLocalCopy(
-            S3AsyncClient s3AsyncClient,
+    private static CompletableFuture<?> asyncUploadLocalFileToS3ThenDeleteLocalCopy(
+            AsyncS3Uploader uploader,
             String localFileName,
             String s3BucketName,
             String s3Key,
             Configuration hadoopConfiguration) {
-        File localFile = new File(localFileName);
-        CompletableFuture<PutObjectResponse> uploadFuture = s3AsyncClient.putObject(
-                PutObjectRequest.builder()
-                        .bucket(s3BucketName)
-                        .key(s3Key)
-                        .build(),
-                AsyncRequestBody.fromFile(localFile));
+        CompletableFuture<?> uploadFuture = uploader.upload(Paths.get(localFileName), s3BucketName, s3Key);
         LOGGER.debug("Started asynchronous upload of local file {} to s3://{}/{}", localFileName, s3BucketName, s3Key);
         return uploadFuture.whenComplete((msg, ex) -> {
             LOGGER.debug("Completed asynchronous upload of local file {} to s3://{}/{}", localFileName, s3BucketName, s3Key);
