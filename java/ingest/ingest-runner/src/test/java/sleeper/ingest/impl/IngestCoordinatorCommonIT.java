@@ -213,7 +213,7 @@ public class IngestCoordinatorCommonIT {
                             .buildAcceptingRecords(),
                     AsyncS3PartitionFileWriterFactory.builder()
                             .parquetConfiguration(parquetConfiguration)
-                            .s3AsyncUploader(uploader)
+                            .asyncS3Uploader(uploader)
                             .localWorkingDirectory(ingestLocalWorkingDirectory)
                             .s3BucketName(s3BucketName)
                             .build())

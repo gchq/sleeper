@@ -77,7 +77,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
                 ObjectFactory.noUserJars(), instanceProperties, localDir, taskId,
                 AWS_EXTERNAL_RESOURCE.getS3Client(), AWS_EXTERNAL_RESOURCE.getDynamoDBClient(),
                 AWS_EXTERNAL_RESOURCE.getSqsClient(), AWS_EXTERNAL_RESOURCE.getCloudWatchClient(),
-                AWS_EXTERNAL_RESOURCE.getS3AsyncClient(), AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
+                AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
     }
 
     @Test

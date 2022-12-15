@@ -31,11 +31,11 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestResult;
+import sleeper.ingest.impl.partitionfilewriter.AsyncS3Uploader;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -63,7 +63,7 @@ public class IngestJobRunner implements IngestJobHandler {
                            TablePropertiesProvider tablePropertiesProvider,
                            StateStoreProvider stateStoreProvider,
                            String localDir,
-                           S3AsyncClient s3AsyncClient,
+                           AsyncS3Uploader asyncS3Uploader,
                            Configuration hadoopConfiguration) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
@@ -75,7 +75,7 @@ public class IngestJobRunner implements IngestJobHandler {
                 .stateStoreProvider(stateStoreProvider)
                 .hadoopConfiguration(hadoopConfiguration)
                 .instanceProperties(instanceProperties)
-                .s3AsyncClient(s3AsyncClient)
+                .asyncS3Uploader(asyncS3Uploader)
                 .build();
     }
 

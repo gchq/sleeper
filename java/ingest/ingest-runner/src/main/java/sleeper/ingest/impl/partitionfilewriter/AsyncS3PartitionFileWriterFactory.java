@@ -15,10 +15,10 @@
  */
 package sleeper.ingest.impl.partitionfilewriter;
 
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.ingest.impl.ParquetConfiguration;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -30,18 +30,18 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
     private final ParquetConfiguration parquetConfiguration;
     private final String s3BucketName;
     private final String localWorkingDirectory;
-    private final AsyncS3Uploader s3AsyncClient;
+    private final AsyncS3Uploader asyncS3Uploader;
     private final boolean closeS3AsyncClient;
 
     private AsyncS3PartitionFileWriterFactory(Builder builder) {
         parquetConfiguration = Objects.requireNonNull(builder.parquetConfiguration, "parquetWriterConfiguration must not be null");
         s3BucketName = Objects.requireNonNull(builder.s3BucketName, "s3BucketName must not be null");
         localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
-        if (builder.s3AsyncClient != null) {
-            s3AsyncClient = builder.s3AsyncClient;
+        if (builder.asyncS3Uploader != null) {
+            asyncS3Uploader = builder.asyncS3Uploader;
             closeS3AsyncClient = false;
         } else {
-            s3AsyncClient = new S3AsyncClientUploader(S3AsyncClient.create());
+            asyncS3Uploader = new TransferManagerUploader(AmazonS3ClientBuilder.defaultClient());
             closeS3AsyncClient = true;
         }
     }
@@ -61,7 +61,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
                     partition,
                     parquetConfiguration,
                     s3BucketName,
-                    s3AsyncClient,
+                    asyncS3Uploader,
                     localWorkingDirectory);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -71,13 +71,13 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
     @Override
     public void close() throws Exception {
         if (closeS3AsyncClient) {
-            s3AsyncClient.close();
+            asyncS3Uploader.close();
         }
     }
 
     public static final class Builder {
         private ParquetConfiguration parquetConfiguration;
-        private AsyncS3Uploader s3AsyncClient;
+        private AsyncS3Uploader asyncS3Uploader;
         private String s3BucketName;
         private String localWorkingDirectory;
 
@@ -89,12 +89,8 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
             return this;
         }
 
-        public Builder s3AsyncClient(S3AsyncClient s3AsyncClient) {
-            return s3AsyncUploader(new S3AsyncClientUploader(s3AsyncClient));
-        }
-
-        public Builder s3AsyncUploader(AsyncS3Uploader s3AsyncClient) {
-            this.s3AsyncClient = s3AsyncClient;
+        public Builder asyncS3Uploader(AsyncS3Uploader asyncS3Uploader) {
+            this.asyncS3Uploader = asyncS3Uploader;
             return this;
         }
 

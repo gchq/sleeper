@@ -31,6 +31,7 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
+import sleeper.ingest.impl.partitionfilewriter.TransferManagerUploader;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
@@ -39,7 +40,6 @@ import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -73,7 +73,7 @@ public class ECSIngestTask {
         String taskId = UUID.randomUUID().toString();
 
         IngestTask ingestTask = createIngestTask(objectFactory, instanceProperties, localDir,
-                taskId, s3Client, dynamoDBClient, sqsClient, cloudWatchClient, S3AsyncClient.create(),
+                taskId, s3Client, dynamoDBClient, sqsClient, cloudWatchClient,
                 ingestHadoopConfiguration(instanceProperties));
         ingestTask.run();
 
@@ -96,7 +96,6 @@ public class ECSIngestTask {
                                               AmazonDynamoDB dynamoDBClient,
                                               AmazonSQS sqsClient,
                                               AmazonCloudWatch cloudWatchClient,
-                                              S3AsyncClient s3AsyncClient,
                                               Configuration hadoopConfiguration) {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, hadoopConfiguration);
@@ -108,7 +107,7 @@ public class ECSIngestTask {
                 tablePropertiesProvider,
                 stateStoreProvider,
                 localDir,
-                s3AsyncClient,
+                new TransferManagerUploader(s3Client),
                 hadoopConfiguration);
         IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(sqsClient, cloudWatchClient, instanceProperties);
         return new IngestTask(

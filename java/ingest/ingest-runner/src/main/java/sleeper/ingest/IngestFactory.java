@@ -25,6 +25,7 @@ import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
+import sleeper.ingest.impl.partitionfilewriter.AsyncS3Uploader;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
@@ -32,7 +33,6 @@ import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -50,7 +50,7 @@ public class IngestFactory {
     private final StateStoreProvider stateStoreProvider;
     private final InstanceProperties instanceProperties;
     private final Configuration hadoopConfiguration;
-    private final S3AsyncClient s3AsyncClient;
+    private final AsyncS3Uploader asyncS3Uploader;
 
     private IngestFactory(Builder builder) {
         objectFactory = Objects.requireNonNull(builder.objectFactory, "objectFactory must not be null");
@@ -62,8 +62,8 @@ public class IngestFactory {
         } else {
             hadoopConfiguration = builder.hadoopConfiguration;
         }
-        // If S3AsyncClient is not set, a default client will be created if it is needed.
-        s3AsyncClient = builder.s3AsyncClient;
+        // If no async uploader is set, a default client will be created if it is needed.
+        asyncS3Uploader = builder.asyncS3Uploader;
     }
 
     public static Builder builder() {
@@ -129,7 +129,7 @@ public class IngestFactory {
             return AsyncS3PartitionFileWriterFactory.builderWith(tableProperties)
                     .parquetConfiguration(parquetConfiguration)
                     .localWorkingDirectory(localDir)
-                    .s3AsyncClient(s3AsyncClient)
+                    .asyncS3Uploader(asyncS3Uploader)
                     .build();
         } else {
             throw new UnsupportedOperationException(String.format("File writer type %s not supported", fileWriterType));
@@ -154,7 +154,7 @@ public class IngestFactory {
         private StateStoreProvider stateStoreProvider;
         private InstanceProperties instanceProperties;
         private Configuration hadoopConfiguration;
-        private S3AsyncClient s3AsyncClient;
+        private AsyncS3Uploader asyncS3Uploader;
 
         private Builder() {
         }
@@ -203,11 +203,11 @@ public class IngestFactory {
          * <p>
          * This is not required. If it is not set, a default client will be created if it is needed.
          *
-         * @param s3AsyncClient The client to use
+         * @param asyncS3Uploader The client to use
          * @return The builder for chaining calls
          */
-        public Builder s3AsyncClient(S3AsyncClient s3AsyncClient) {
-            this.s3AsyncClient = s3AsyncClient;
+        public Builder asyncS3Uploader(AsyncS3Uploader asyncS3Uploader) {
+            this.asyncS3Uploader = asyncS3Uploader;
             return this;
         }
 

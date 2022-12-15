@@ -37,6 +37,7 @@ import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.ingest.impl.partitionfilewriter.TransferManagerUploader;
 import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
@@ -209,7 +210,7 @@ public class IngestJobRunnerIT {
                 tablePropertiesProvider,
                 stateStoreProvider,
                 localDir,
-                AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
+                new TransferManagerUploader(AWS_EXTERNAL_RESOURCE.getS3Client()),
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
         ingestJobRunner.ingest(job);
 
