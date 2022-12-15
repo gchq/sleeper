@@ -32,8 +32,6 @@ import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 import sleeper.statestore.FileInfo;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 import java.io.File;
 import java.io.IOException;
@@ -153,16 +151,15 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
 
     /**
      * Create a {@link CompletableFuture} which uploads the named file, asynchronously, to S3 and then deletes the local
-     * copy of that file. The future completes once the file has been deleted and it contains the {@link
-     * PutObjectResponse} which was returned as the file was uploaded.
+     * copy of that file. The future completes once the file has been deleted, and it contains the result of the file
+     * upload. The result will depend on the {@link AsyncS3Uploader} used.
      *
      * @param uploader            The client to use to perform the asynchronous upload
      * @param localFileName       The file to upload
      * @param s3BucketName        The S3 bucket to put the file into
      * @param s3Key               The S3 key of the uploaded file
      * @param hadoopConfiguration The Hadoop configuration to use when deleting the local file
-     * @return The {@link CompletableFuture} which was returned by the {@link
-     * S3AsyncClient#putObject} method.
+     * @return The {@link CompletableFuture} which was returned by the {@link AsyncS3Uploader#upload} method.
      */
     private static CompletableFuture<?> asyncUploadLocalFileToS3ThenDeleteLocalCopy(
             AsyncS3Uploader uploader,
