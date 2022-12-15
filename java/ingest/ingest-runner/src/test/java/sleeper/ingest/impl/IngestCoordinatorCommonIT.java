@@ -37,7 +37,10 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
+import sleeper.ingest.impl.partitionfilewriter.AsyncS3Uploader;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
+import sleeper.ingest.impl.partitionfilewriter.S3AsyncClientUploader;
+import sleeper.ingest.impl.partitionfilewriter.TransferManagerUploader;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.testutils.AwsExternalResource;
@@ -116,7 +119,18 @@ public class IngestCoordinatorCommonIT {
                                 sleeperSchema,
                                 DATA_BUCKET_NAME,
                                 sleeperIteratorClassName,
-                                workingDir
+                                workingDir,
+                                new S3AsyncClientUploader(AWS_EXTERNAL_RESOURCE.getS3AsyncClient())
+                        );
+        QuinFunction<StateStore, Schema, String, String, TemporaryFolder, IngestCoordinator<Record>> asyncArrowS3TransferManagerFn =
+                (stateStore, sleeperSchema, sleeperIteratorClassName, workingDir, temporaryFolder) ->
+                        (IngestCoordinator<Record>) createIngestCoordinatorAsyncWriteBackedByArrow(
+                                stateStore,
+                                sleeperSchema,
+                                DATA_BUCKET_NAME,
+                                sleeperIteratorClassName,
+                                workingDir,
+                                new TransferManagerUploader(AWS_EXTERNAL_RESOURCE.getS3Client())
                         );
         QuinFunction<StateStore, Schema, String, String, TemporaryFolder, IngestCoordinator<Record>> directArrayListLocalFn =
                 (stateStore, sleeperSchema, sleeperIteratorClassName, workingDir, temporaryFolder) ->
@@ -138,6 +152,7 @@ public class IngestCoordinatorCommonIT {
                         );
         return Arrays.asList(new Object[][]{
                 {asyncArrowS3Fn},
+                {asyncArrowS3TransferManagerFn},
                 {directArrowLocalFn},
                 {directArrowS3Fn},
                 {directArrayListLocalFn},
@@ -180,7 +195,8 @@ public class IngestCoordinatorCommonIT {
             Schema sleeperSchema,
             String s3BucketName,
             String sleeperIteratorClassName,
-            String ingestLocalWorkingDirectory) {
+            String ingestLocalWorkingDirectory,
+            AsyncS3Uploader uploader) {
         try {
             ParquetConfiguration parquetConfiguration = parquetConfiguration(
                     sleeperSchema, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
@@ -197,7 +213,7 @@ public class IngestCoordinatorCommonIT {
                             .buildAcceptingRecords(),
                     AsyncS3PartitionFileWriterFactory.builder()
                             .parquetConfiguration(parquetConfiguration)
-                            .s3AsyncClient(AWS_EXTERNAL_RESOURCE.getS3AsyncClient())
+                            .s3AsyncUploader(uploader)
                             .localWorkingDirectory(ingestLocalWorkingDirectory)
                             .s3BucketName(s3BucketName)
                             .build())

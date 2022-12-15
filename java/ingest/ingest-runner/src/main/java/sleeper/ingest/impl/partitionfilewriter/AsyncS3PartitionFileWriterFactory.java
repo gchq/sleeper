@@ -90,7 +90,11 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         }
 
         public Builder s3AsyncClient(S3AsyncClient s3AsyncClient) {
-            this.s3AsyncClient = new S3AsyncClientUploader(s3AsyncClient);
+            return s3AsyncUploader(new S3AsyncClientUploader(s3AsyncClient));
+        }
+
+        public Builder s3AsyncUploader(AsyncS3Uploader s3AsyncClient) {
+            this.s3AsyncClient = s3AsyncClient;
             return this;
         }
 
