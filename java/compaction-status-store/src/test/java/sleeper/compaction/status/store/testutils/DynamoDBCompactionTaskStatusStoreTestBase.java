@@ -29,10 +29,13 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.UUID;
 
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore.taskStatusTableName;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_TASK_STATUS_TTL_IN_SECONDS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase {
@@ -53,6 +56,12 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
         dynamoDBClient.deleteTable(taskStatusTableName);
     }
 
+    protected CompactionTaskStatusStore storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
+        instanceProperties.set(COMPACTION_TASK_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
+        return new DynamoDBCompactionTaskStatusStore(dynamoDBClient, instanceProperties,
+                Arrays.stream(updateTimes).iterator()::next);
+    }
+
     private static Instant defaultJobStartTime() {
         return Instant.parse("2022-09-22T14:00:04.000Z");
     }
@@ -61,11 +70,11 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
         return Instant.parse("2022-09-22T14:00:14.000Z");
     }
 
-    private static Instant defaultTaskStartTime() {
+    protected static Instant defaultTaskStartTime() {
         return Instant.parse("2022-09-22T12:30:00.000Z");
     }
 
-    private static Instant defaultTaskFinishTime() {
+    protected static Instant defaultTaskFinishTime() {
         return Instant.parse("2022-09-22T16:30:00.000Z");
     }
 
@@ -95,14 +104,14 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
         return startedTaskWithDefaultsBuilder().finished(
                 CompactionTaskFinishedStatus.builder()
                         .addJobSummary(defaultJobSummary()),
-                defaultTaskFinishTime().toEpochMilli()).build();
+                defaultTaskFinishTime()).build();
     }
 
     protected static CompactionTaskStatus finishedTaskWithDefaultsAndDurationInSecondsNotAWholeNumber() {
         return startedTaskWithDefaultsBuilder().finished(
                 CompactionTaskFinishedStatus.builder()
                         .addJobSummary(defaultJobSummary()),
-                taskFinishTimeWithDurationInSecondsNotAWholeNumber().toEpochMilli()).build();
+                taskFinishTimeWithDurationInSecondsNotAWholeNumber()).build();
     }
 
     protected static CompactionTaskStatus taskWithStartTime(Instant startTime) {

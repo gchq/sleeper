@@ -20,12 +20,10 @@ import org.junit.Test;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
-import sleeper.core.record.process.status.TestProcessStatusUpdateRecords;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
@@ -36,6 +34,8 @@ import static sleeper.ingest.job.IngestJobTestData.createJobInDefaultTable;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.defaultUpdateTime;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatusListFrom;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.singleJobStatusFrom;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
 
 public class IngestJobStatusTest {
@@ -73,7 +73,7 @@ public class IngestJobStatusTest {
     }
 
     @Test
-    public void shouldSetExpiryDateFromLastRecord() {
+    public void shouldSetExpiryDateFromFirstRecord() {
         IngestJob job = createJobInDefaultTable("test-job", "test.parquet", "test2.parquet");
         Instant startTime = Instant.parse("2022-12-14T15:28:42.001Z");
         Instant startExpiryTime = Instant.parse("2022-12-21T15:28:42.001Z");
@@ -87,14 +87,19 @@ public class IngestJobStatusTest {
                 forJob(job.getId(), withExpiry(finishExpiryTime,
                         ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary)))));
 
-        assertThat(status.getExpiryDate()).isEqualTo(finishExpiryTime);
+        assertThat(status.getExpiryDate()).isEqualTo(startExpiryTime);
     }
 
-    private IngestJobStatus singleJobStatusFrom(TestProcessStatusUpdateRecords records) {
-        List<IngestJobStatus> jobs = IngestJobStatus.streamFrom(records.stream()).collect(Collectors.toList());
-        if (jobs.size() != 1) {
-            throw new IllegalStateException("Expected single job, found " + jobs.size());
-        }
-        return jobs.get(0);
+    @Test
+    public void shouldIgnoreJobWithoutStartedUpdateAsItMayHaveExpired() {
+        IngestJob job = createJobInDefaultTable("test-job", "test.parquet", "test2.parquet");
+        Instant startTime = Instant.parse("2022-12-14T15:28:42.001Z");
+        Instant finishTime = Instant.parse("2022-12-14T15:29:42.001Z");
+        RecordsProcessedSummary summary = summary(startTime, finishTime, 200, 100);
+
+        List<IngestJobStatus> statuses = jobStatusListFrom(records().fromUpdates(
+                forJob(job.getId(), ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary))));
+
+        assertThat(statuses).isEmpty();
     }
 }

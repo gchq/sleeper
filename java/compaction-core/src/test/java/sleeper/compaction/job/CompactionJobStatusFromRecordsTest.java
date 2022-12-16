@@ -35,7 +35,7 @@ import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.finishedStatus;
 
-public class CompactionJobStatusesBuilderTest {
+public class CompactionJobStatusFromRecordsTest {
 
     @Test
     public void shouldBuildCompactionJobStatusFromIndividualUpdates() {
@@ -68,5 +68,19 @@ public class CompactionJobStatusesBuilderTest {
                 CompactionJobStatus.builder().jobId("job1").createdStatus(created1)
                         .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID, started1, finished1))
                         .expiryDate(DEFAULT_EXPIRY).build());
+    }
+
+    @Test
+    public void shouldIgnoreJobWithNoCreatedUpdate() {
+        // Given
+        CompactionJobStartedStatus started = startedCompactionStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
+        ProcessFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 200L, 100L);
+
+        // When
+        List<CompactionJobStatus> statuses = jobStatusListFromUpdates(
+                forJob("test-job", started, finished));
+
+        // Then
+        assertThat(statuses).isEmpty();
     }
 }

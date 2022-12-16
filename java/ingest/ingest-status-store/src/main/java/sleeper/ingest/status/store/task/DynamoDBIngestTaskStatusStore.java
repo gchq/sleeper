@@ -38,6 +38,7 @@ import sleeper.ingest.task.IngestTaskStatusStore;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -50,12 +51,18 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestTaskStatusStore.class);
     private final AmazonDynamoDB dynamoDB;
     private final String statusTableName;
-    private final long timeToLive;
+    private final DynamoDBIngestTaskStatusFormat format;
 
     private DynamoDBIngestTaskStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+        this(dynamoDB, properties, Instant::now);
+    }
+
+    public DynamoDBIngestTaskStatusStore(
+            AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
         this.dynamoDB = dynamoDB;
         this.statusTableName = taskStatusTableName(properties.get(ID));
-        this.timeToLive = properties.getLong(UserDefinedInstanceProperty.INGEST_TASK_STATUS_TTL_IN_SECONDS) * 1000;
+        int timeToLiveInSeconds = properties.getInt(UserDefinedInstanceProperty.INGEST_TASK_STATUS_TTL_IN_SECONDS);
+        format = new DynamoDBIngestTaskStatusFormat(timeToLiveInSeconds, getTimeNow);
     }
 
     public static IngestTaskStatusStore from(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
@@ -73,7 +80,7 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
     @Override
     public void taskStarted(IngestTaskStatus taskStatus) {
         try {
-            PutItemResult result = putItem(DynamoDBIngestTaskStatusFormat.createTaskStartedRecord(taskStatus, timeToLive));
+            PutItemResult result = putItem(format.createTaskStartedRecord(taskStatus));
             LOGGER.debug("Put started event for task {} to table {}, capacity consumed = {}",
                     taskStatus.getTaskId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
@@ -84,7 +91,7 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
     @Override
     public void taskFinished(IngestTaskStatus taskStatus) {
         try {
-            PutItemResult result = putItem(DynamoDBIngestTaskStatusFormat.createTaskFinishedRecord(taskStatus, timeToLive));
+            PutItemResult result = putItem(format.createTaskFinishedRecord(taskStatus));
             LOGGER.debug("Put finished event for task {} to table {}, capacity consumed = {}",
                     taskStatus.getTaskId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
