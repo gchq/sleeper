@@ -19,11 +19,14 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
+import sleeper.core.record.process.status.TestProcessStatusUpdateRecords;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
 import java.time.temporal.ChronoField;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class IngestJobStatusTestData {
 
@@ -47,17 +50,29 @@ public class IngestJobStatusTestData {
 
     public static ProcessRun startedIngestRun(IngestJob job, String taskId, Instant startTime) {
         return ProcessRun.started(taskId,
-                IngestJobStartedStatus.updateAndStartTime(job, defaultUpdateTime(startTime), startTime));
+                IngestJobStartedStatus.startAndUpdateTime(job, startTime, defaultUpdateTime(startTime)));
     }
 
     public static ProcessRun finishedIngestRun(
             IngestJob job, String taskId, RecordsProcessedSummary summary) {
         return ProcessRun.finished(taskId,
-                IngestJobStartedStatus.updateAndStartTime(job, defaultUpdateTime(summary.getStartTime()), summary.getStartTime()),
+                IngestJobStartedStatus.startAndUpdateTime(job, summary.getStartTime(), defaultUpdateTime(summary.getStartTime())),
                 ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary));
     }
 
     public static Instant defaultUpdateTime(Instant startTime) {
         return startTime.with(ChronoField.MILLI_OF_SECOND, 123);
+    }
+
+    public static List<IngestJobStatus> jobStatusListFrom(TestProcessStatusUpdateRecords records) {
+        return IngestJobStatus.streamFrom(records.stream()).collect(Collectors.toList());
+    }
+
+    public static IngestJobStatus singleJobStatusFrom(TestProcessStatusUpdateRecords records) {
+        List<IngestJobStatus> jobs = jobStatusListFrom(records);
+        if (jobs.size() != 1) {
+            throw new IllegalStateException("Expected single job, found " + jobs.size());
+        }
+        return jobs.get(0);
     }
 }

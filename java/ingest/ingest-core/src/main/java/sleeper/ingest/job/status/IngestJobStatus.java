@@ -22,9 +22,9 @@ import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 public class IngestJobStatus {
@@ -42,16 +42,23 @@ public class IngestJobStatus {
         return new Builder();
     }
 
-    public static IngestJobStatus from(JobStatusUpdates statusUpdates) {
-        return builder()
-                .jobRuns(statusUpdates.getRuns())
-                .jobId(statusUpdates.getJobId())
-                .build();
-    }
-
     public static Stream<IngestJobStatus> streamFrom(Stream<ProcessStatusUpdateRecord> records) {
         return JobStatusUpdates.streamFrom(records)
-                .map(IngestJobStatus::from);
+                .map(IngestJobStatus::from)
+                .filter(Optional::isPresent)
+                .map(Optional::get);
+    }
+
+    private static Optional<IngestJobStatus> from(JobStatusUpdates statusUpdates) {
+        ProcessRuns runs = statusUpdates.getRuns();
+        if (!runs.isStarted()) {
+            return Optional.empty();
+        }
+        return Optional.of(builder()
+                .jobRuns(runs)
+                .jobId(statusUpdates.getJobId())
+                .expiryDate(statusUpdates.getFirstRecord().getExpiryDate())
+                .build());
     }
 
     public String getJobId() {
@@ -79,6 +86,11 @@ public class IngestJobStatus {
 
     public boolean isFinished() {
         return jobRuns.isFinished();
+    }
+
+    public boolean isInPeriod(Instant startTime, Instant endTime) {
+        return startTime.isBefore(jobRuns.lastTime().orElse(endTime))
+                && endTime.isAfter(jobRuns.firstTime().orElse(startTime));
     }
 
     @Override
@@ -119,11 +131,6 @@ public class IngestJobStatus {
 
         public Builder jobId(String jobId) {
             this.jobId = jobId;
-            return this;
-        }
-
-        public Builder jobRun(ProcessRun jobRun) {
-            this.jobRuns = ProcessRuns.latestFirst(Collections.singletonList(jobRun));
             return this;
         }
 

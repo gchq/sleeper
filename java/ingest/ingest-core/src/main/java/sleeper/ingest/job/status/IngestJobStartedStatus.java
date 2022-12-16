@@ -33,8 +33,12 @@ public class IngestJobStartedStatus implements ProcessRunStartedUpdate {
         this.startTime = Objects.requireNonNull(startTime, "startTime may not be null");
     }
 
-    public static IngestJobStartedStatus updateAndStartTime(IngestJob job, Instant updateTime, Instant startTime) {
+    public static IngestJobStartedStatus startAndUpdateTime(IngestJob job, Instant startTime, Instant updateTime) {
         return new IngestJobStartedStatus(job.getFiles().size(), updateTime, startTime);
+    }
+
+    public static IngestJobStartedStatus inputFileCountStartAndUpdateTime(int inputFileCount, Instant startTime, Instant updateTime) {
+        return new IngestJobStartedStatus(inputFileCount, updateTime, startTime);
     }
 
     public int getInputFileCount() {
@@ -51,7 +55,6 @@ public class IngestJobStartedStatus implements ProcessRunStartedUpdate {
         return startTime;
     }
 
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -61,19 +64,20 @@ public class IngestJobStartedStatus implements ProcessRunStartedUpdate {
             return false;
         }
         IngestJobStartedStatus that = (IngestJobStartedStatus) o;
-        return updateTime.equals(that.updateTime) && startTime.equals(that.startTime);
+        return inputFileCount == that.inputFileCount && startTime.equals(that.startTime) && updateTime.equals(that.updateTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, startTime);
+        return Objects.hash(inputFileCount, startTime, updateTime);
     }
 
     @Override
     public String toString() {
         return "IngestJobStartedStatus{" +
-                "updateTime=" + updateTime +
+                "inputFileCount=" + inputFileCount +
                 ", startTime=" + startTime +
+                ", updateTime=" + updateTime +
                 '}';
     }
 }

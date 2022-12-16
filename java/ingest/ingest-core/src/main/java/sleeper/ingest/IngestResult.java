@@ -25,25 +25,30 @@ import java.util.Objects;
 
 public class IngestResult {
     private final List<FileInfo> fileInfoList;
-    private final long numberOfRecords;
+    private final long recordsRead;
+    private final long recordsWritten;
 
-    private IngestResult(List<FileInfo> fileInfoList) {
+    private IngestResult(List<FileInfo> fileInfoList, long recordsRead, long recordsWritten) {
         this.fileInfoList = fileInfoList;
-        this.numberOfRecords = fileInfoList.stream()
-                .mapToLong(FileInfo::getNumberOfRecords)
-                .sum();
+        this.recordsRead = recordsRead;
+        this.recordsWritten = recordsWritten;
     }
 
-    public static IngestResult from(List<FileInfo> fileInfoList) {
-        return new IngestResult(fileInfoList);
+    public static IngestResult allReadWereWritten(List<FileInfo> fileInfoList) {
+        long recordsWritten = recordsWritten(fileInfoList);
+        return new IngestResult(fileInfoList, recordsWritten, recordsWritten);
+    }
+
+    public static IngestResult fromReadAndWritten(long recordsRead, List<FileInfo> fileInfoList) {
+        return new IngestResult(fileInfoList, recordsRead, recordsWritten(fileInfoList));
     }
 
     public static IngestResult noFiles() {
-        return from(Collections.emptyList());
+        return new IngestResult(Collections.emptyList(), 0, 0);
     }
 
-    public long getNumberOfRecords() {
-        return numberOfRecords;
+    public long getRecordsWritten() {
+        return recordsWritten;
     }
 
     public List<FileInfo> getFileInfoList() {
@@ -51,7 +56,7 @@ public class IngestResult {
     }
 
     public RecordsProcessed asRecordsProcessed() {
-        return new RecordsProcessed(numberOfRecords, numberOfRecords);
+        return new RecordsProcessed(recordsRead, recordsWritten);
     }
 
     @Override
@@ -74,7 +79,14 @@ public class IngestResult {
     @Override
     public String toString() {
         return "IngestResult{" +
-                "fileInfoList=" + fileInfoList +
+                "recordsWritten=" + recordsWritten +
+                ",fileInfoList=" + fileInfoList +
                 '}';
+    }
+
+    private static long recordsWritten(List<FileInfo> fileInfoList) {
+        return fileInfoList.stream()
+                .mapToLong(FileInfo::getNumberOfRecords)
+                .sum();
     }
 }

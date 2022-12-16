@@ -21,18 +21,20 @@ import sleeper.core.schema.Schema;
 import sleeper.statestore.PartitionStore;
 import sleeper.statestore.StateStoreException;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class FixedPartitionStore implements PartitionStore {
 
-    private final Schema schema;
-    private final List<Partition> partitions = new ArrayList<>();
+    private final List<Partition> partitions;
 
     public FixedPartitionStore(Schema schema) {
-        this.schema = schema;
+        this(new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct());
+    }
+
+    public FixedPartitionStore(List<Partition> partitions) {
+        this.partitions = partitions;
     }
 
     @Override
@@ -49,14 +51,15 @@ public class FixedPartitionStore implements PartitionStore {
 
     @Override
     public void initialise() {
-        initialise(new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct());
+        if (partitions.size() != 1) {
+            throw new UnsupportedOperationException(
+                    "Called initialise with no parameters when state store fixed with more than one partition");
+        }
     }
 
     @Override
     public void initialise(List<Partition> partitions) {
-        if (this.partitions.isEmpty()) {
-            this.partitions.addAll(partitions);
-        } else {
+        if (!this.partitions.equals(partitions)) {
             throw new UnsupportedOperationException("Cannot reinitialise partitions with FixedPartitionStore");
         }
     }
