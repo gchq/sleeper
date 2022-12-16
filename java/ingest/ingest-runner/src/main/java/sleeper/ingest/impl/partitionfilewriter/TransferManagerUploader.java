@@ -27,6 +27,8 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 
+import static com.amazonaws.services.s3.internal.Constants.MB;
+
 public class TransferManagerUploader implements AsyncS3Uploader {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TransferManagerUploader.class);
@@ -41,6 +43,8 @@ public class TransferManagerUploader implements AsyncS3Uploader {
     public CompletableFuture<?> upload(Path localFile, String s3BucketName, String s3Key) {
         TransferManager transfer = TransferManagerBuilder.standard()
                 .withS3Client(s3)
+                .withMinimumUploadPartSize(128L * MB)
+                .withMultipartUploadThreshold(256L * MB)
                 .build();
         Upload upload = transfer.upload(s3BucketName, s3Key, localFile.toFile());
         CompletableFuture<UploadResult> future = new CompletableFuture<>();
