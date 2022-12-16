@@ -33,20 +33,19 @@ public class TransferManagerUploader implements AsyncS3Uploader {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TransferManagerUploader.class);
 
-    private final AmazonS3 s3;
+    private final TransferManager transferManager;
 
     public TransferManagerUploader(AmazonS3 s3) {
-        this.s3 = s3;
-    }
-
-    @Override
-    public CompletableFuture<?> upload(Path localFile, String s3BucketName, String s3Key) {
-        TransferManager transfer = TransferManagerBuilder.standard()
+        transferManager = TransferManagerBuilder.standard()
                 .withS3Client(s3)
                 .withMinimumUploadPartSize(128L * MB)
                 .withMultipartUploadThreshold(256L * MB)
                 .build();
-        Upload upload = transfer.upload(s3BucketName, s3Key, localFile.toFile());
+    }
+
+    @Override
+    public CompletableFuture<?> upload(Path localFile, String s3BucketName, String s3Key) {
+        Upload upload = transferManager.upload(s3BucketName, s3Key, localFile.toFile());
         CompletableFuture<UploadResult> future = new CompletableFuture<>();
         upload.addProgressListener((ProgressEvent progressEvent) ->
                 reportCompletion(progressEvent, localFile, upload, future));
@@ -79,6 +78,6 @@ public class TransferManagerUploader implements AsyncS3Uploader {
 
     @Override
     public void close() {
-        s3.shutdown();
+        transferManager.shutdownNow();
     }
 }
