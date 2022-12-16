@@ -47,13 +47,13 @@ public class IngestJobStatusTestData {
 
     public static ProcessRun startedIngestRun(IngestJob job, String taskId, Instant startTime) {
         return ProcessRun.started(taskId,
-                IngestJobStartedStatus.updateAndStartTime(job, defaultUpdateTime(startTime), startTime));
+                IngestJobStartedStatus.startAndUpdateTime(job, startTime, defaultUpdateTime(startTime)));
     }
 
     public static ProcessRun finishedIngestRun(
             IngestJob job, String taskId, RecordsProcessedSummary summary) {
         return ProcessRun.finished(taskId,
-                IngestJobStartedStatus.updateAndStartTime(job, defaultUpdateTime(summary.getStartTime()), summary.getStartTime()),
+                IngestJobStartedStatus.startAndUpdateTime(job, summary.getStartTime(), defaultUpdateTime(summary.getStartTime())),
                 ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary));
     }
 

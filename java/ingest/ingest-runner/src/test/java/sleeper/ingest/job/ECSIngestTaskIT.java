@@ -24,6 +24,7 @@ import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
 import sleeper.ingest.task.IngestTask;
 import sleeper.ingest.testutils.RecordGenerator;
@@ -54,6 +55,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
         DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
+        DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
         IngestTask runner = createTaskRunner(instanceProperties, localDir, "test-task");
         runner.run();
 

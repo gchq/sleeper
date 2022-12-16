@@ -80,8 +80,19 @@ public class ProcessRuns {
         return getLatestRun().map(ProcessRun::getLatestUpdateTime);
     }
 
+    public Optional<Instant> firstTime() {
+        return getFirstRun().map(ProcessRun::getStartUpdateTime);
+    }
+
     public Optional<ProcessRun> getLatestRun() {
         return latestFirst.stream().findFirst();
+    }
+
+    public Optional<ProcessRun> getFirstRun() {
+        if (latestFirst.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(latestFirst.get(latestFirst.size() - 1));
     }
 
     public List<ProcessRun> getRunList() {
