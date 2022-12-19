@@ -64,10 +64,12 @@ public class IngestTaskStatusReportTest {
     @Test
     public void shouldReportMultipleJobRunsOnIngestTasks() throws Exception {
         // Given
-        IngestTaskStatus finished1 = finishedTaskWithFourRuns("A", "2022-10-06T12:20:00.001Z",
-                "2022-10-06T12:20:40.001Z", 800L, 400L);
-        IngestTaskStatus finished2 = finishedTaskWithFourRuns("B", "2022-10-06T12:22:00.001Z",
-                "2022-10-06T12:22:40.001Z", 1600L, 800L);
+        IngestTaskStatus finished1 = finishedTaskWithFourRuns("A",
+                "2022-10-06T12:20:00.001Z", "2022-10-06T12:20:40.001Z",
+                800L, 400L);
+        IngestTaskStatus finished2 = finishedTaskWithFourRuns("B",
+                "2022-10-06T12:22:00.001Z", "2022-10-06T12:22:40.001Z",
+                1600L, 800L);
         when(store.getAllTasks()).thenReturn(Arrays.asList(finished2, finished1));
 
         // When / Then

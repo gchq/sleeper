@@ -22,7 +22,10 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.ingest.task.IngestTaskFinishedStatus;
 import sleeper.ingest.task.IngestTaskStatus;
 
+import java.time.Duration;
 import java.time.Instant;
+
+import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 
 public class IngestTaskStatusReportTestHelper {
     private IngestTaskStatusReportTestHelper() {
@@ -48,8 +51,8 @@ public class IngestTaskStatusReportTestHelper {
                                                             String finishTime, long linesRead, long linesWritten) {
         return IngestTaskStatus.builder()
                 .startTime(Instant.parse(startTime))
-                .finished(Instant.parse(finishTime), taskFinishedStatusWithFourRuns(startTime, finishTime, linesRead, linesWritten)
-                )
+                .finished(Instant.parse(finishTime),
+                        taskFinishedStatusWithFourRuns(startTime, finishTime, linesRead, linesWritten))
                 .taskId(taskId).build();
     }
 
@@ -57,28 +60,28 @@ public class IngestTaskStatusReportTestHelper {
                                                                 String finishTime, long linesRead, long linesWritten) {
         return IngestTaskStatus.builder()
                 .startTime(Instant.parse(startTime))
-                .finished(Instant.parse(finishTime), taskFinishedStatus(startTime, finishTime, linesRead, linesWritten)
-                )
+                .finished(Instant.parse(finishTime),
+                        taskFinishedStatus(startTime, finishTime, linesRead, linesWritten))
                 .taskId(taskId);
     }
 
-    private static IngestTaskFinishedStatus.Builder taskFinishedStatus(
-            String startTime, String finishTime, long linesRead, long linesWritten) {
-        return taskFinishedStatusBuilder(startTime, finishTime, linesRead, linesWritten)
-                .finish(Instant.parse(startTime), Instant.parse(finishTime));
-    }
-
     private static IngestTaskFinishedStatus.Builder taskFinishedStatusWithFourRuns(
-            String startTime, String finishTime, long linesRead, long linesWritten) {
+            String startTimeStr, String finishTimeStr, long linesRead, long linesWritten) {
+        Instant startTime = Instant.parse(startTimeStr);
+        Instant finishTime = Instant.parse(finishTimeStr);
+        Duration duration = Duration.between(startTime, finishTime);
+        Duration quarterDuration = duration.dividedBy(4);
+        Instant startTime2 = startTime.plus(quarterDuration);
+        Instant startTime3 = startTime2.plus(quarterDuration);
+        Instant startTime4 = startTime3.plus(quarterDuration);
         return IngestTaskFinishedStatus.builder()
-                .addJobSummary(createSummary(startTime, finishTime, linesRead / 4, linesWritten / 4))
-                .addJobSummary(createSummary(startTime, finishTime, linesRead / 4, linesWritten / 4))
-                .addJobSummary(createSummary(startTime, finishTime, linesRead / 4, linesWritten / 4))
-                .addJobSummary(createSummary(startTime, finishTime, linesRead / 4, linesWritten / 4))
-                .finish(Instant.parse(startTime), Instant.parse(finishTime));
+                .addJobSummary(summary(startTime, quarterDuration, linesRead / 4, linesWritten / 4))
+                .addJobSummary(summary(startTime2, quarterDuration, linesRead / 4, linesWritten / 4))
+                .addJobSummary(summary(startTime3, quarterDuration, linesRead / 4, linesWritten / 4))
+                .addJobSummary(summary(startTime4, finishTime, linesRead / 4, linesWritten / 4));
     }
 
-    private static IngestTaskFinishedStatus.Builder taskFinishedStatusBuilder(
+    private static IngestTaskFinishedStatus.Builder taskFinishedStatus(
             String startTime, String finishTime, long linesRead, long linesWritten) {
         return IngestTaskFinishedStatus.builder()
                 .addJobSummary(createSummary(startTime, finishTime, linesRead, linesWritten));
