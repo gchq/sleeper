@@ -44,6 +44,6 @@ public class IngestRecords {
     }
 
     public IngestResult close() throws StateStoreException, IteratorException, IOException {
-        return IngestResult.from(ingestCoordinator.closeReturningFileInfoList());
+        return ingestCoordinator.closeReturningResult();
     }
 }

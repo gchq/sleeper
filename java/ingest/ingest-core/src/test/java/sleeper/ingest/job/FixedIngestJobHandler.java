@@ -18,6 +18,8 @@ package sleeper.ingest.job;
 import sleeper.ingest.IngestResult;
 import sleeper.statestore.FileInfoTestData;
 
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.stream.Collectors;
 
 public class FixedIngestJobHandler {
@@ -26,8 +28,13 @@ public class FixedIngestJobHandler {
     }
 
     public static IngestJobHandler makingDefaultFiles() {
-        return job -> IngestResult.from(job.getFiles().stream()
+        return job -> IngestResult.allReadWereWritten(job.getFiles().stream()
                 .map(FileInfoTestData::defaultFileOnRootPartition)
                 .collect(Collectors.toList()));
+    }
+
+    public static IngestJobHandler withResults(IngestResult... results) {
+        Iterator<IngestResult> iterator = Arrays.asList(results).iterator();
+        return job -> iterator.next();
     }
 }
