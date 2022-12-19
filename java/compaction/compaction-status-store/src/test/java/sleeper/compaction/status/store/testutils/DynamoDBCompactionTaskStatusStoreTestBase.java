@@ -102,16 +102,16 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
 
     protected static CompactionTaskStatus finishedTaskWithDefaults() {
         return startedTaskWithDefaultsBuilder().finished(
-                CompactionTaskFinishedStatus.builder()
-                        .addJobSummary(defaultJobSummary()),
-                defaultTaskFinishTime()).build();
+                defaultTaskFinishTime(), CompactionTaskFinishedStatus.builder()
+                        .addJobSummary(defaultJobSummary())
+        ).build();
     }
 
     protected static CompactionTaskStatus finishedTaskWithDefaultsAndDurationInSecondsNotAWholeNumber() {
         return startedTaskWithDefaultsBuilder().finished(
-                CompactionTaskFinishedStatus.builder()
-                        .addJobSummary(defaultJobSummary()),
-                taskFinishTimeWithDurationInSecondsNotAWholeNumber()).build();
+                taskFinishTimeWithDurationInSecondsNotAWholeNumber(), CompactionTaskFinishedStatus.builder()
+                        .addJobSummary(defaultJobSummary())
+        ).build();
     }
 
     protected static CompactionTaskStatus taskWithStartTime(Instant startTime) {
@@ -137,11 +137,11 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
     private static CompactionTaskStatus buildWithStartAndFinishTime(
             CompactionTaskStatus.Builder builder, Instant startTime, Instant finishTime) {
         return builder.startTime(startTime)
-                .finished(CompactionTaskFinishedStatus.builder()
+                .finished(finishTime, CompactionTaskFinishedStatus.builder()
                         .addJobSummary(new RecordsProcessedSummary(
                                 new RecordsProcessed(200, 100),
                                 startTime, finishTime
-                        )), finishTime)
+                        )))
                 .build();
     }
 

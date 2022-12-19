@@ -50,7 +50,8 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
 
     private ArrowRecordBatchFactory(
             Builder builder,
-            Function<ArrowRecordBatchFactory<?>, RecordBatch<INCOMINGDATATYPE>> createBatchFn) {
+            Function<ArrowRecordBatchFactory<?>, RecordBatch<INCOMINGDATATYPE>> createBatchFn,
+            String createBatchFnName) {
         this.schema = Objects.requireNonNull(builder.schema, "schema must not be null");
         localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
         if (builder.workingBufferAllocatorBytes < 1) {
@@ -78,13 +79,17 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
             this.closeBufferAllocator = false;
             this.bufferAllocator = builder.bufferAllocator;
         }
-        LOGGER.info("Created ArrowRecordBatchFactory with:\n"
-                + "\tschema of {}\n\tlocalWorkingDirectory of {}\n\tworkingBufferAllocatorBytes of {}\n"
-                + "\tmaxBatchBufferAllocatorBytes of {}\n\tmaxNoOfBytesToWriteLocally of {}\n"
-                + "\tmaxNoOfRecordsToWriteToArrowFileAtOnce of {}\n\tcreateBatchFn of {}",
-                this.schema.toString(), this.localWorkingDirectory, this.workingBufferAllocatorBytes,
+        LOGGER.info("Created ArrowRecordBatchFactory with:\n" +
+                        "\tschema of {}\n" +
+                        "\tlocalWorkingDirectory of {}\n" +
+                        "\tworkingBufferAllocatorBytes of {}\n" +
+                        "\tmaxBatchBufferAllocatorBytes of {}\n" +
+                        "\tmaxNoOfBytesToWriteLocally of {}\n" +
+                        "\tmaxNoOfRecordsToWriteToArrowFileAtOnce of {}\n" +
+                        "\tcreateBatchFn of {}",
+                this.schema, this.localWorkingDirectory, this.workingBufferAllocatorBytes,
                 this.maxBatchBufferAllocatorBytes, this.maxNoOfBytesToWriteLocally,
-                this.maxNoOfRecordsToWriteToArrowFileAtOnce, this.createBatchFn.toString());
+                this.maxNoOfRecordsToWriteToArrowFileAtOnce, createBatchFnName);
     }
 
     public static Builder builder() {
@@ -183,7 +188,8 @@ public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFac
 
         public ArrowRecordBatchFactory<Record> buildAcceptingRecords() {
             return new ArrowRecordBatchFactory<>(this,
-                    ArrowRecordBatchFactory::createRecordBatchAcceptingRecords);
+                    ArrowRecordBatchFactory::createRecordBatchAcceptingRecords,
+                    "createRecordBatchAcceptingRecords");
         }
     }
 }

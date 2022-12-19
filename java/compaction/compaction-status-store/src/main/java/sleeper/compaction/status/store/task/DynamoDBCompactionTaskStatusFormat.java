@@ -24,6 +24,7 @@ import sleeper.compaction.task.CompactionTaskStatusesBuilder;
 import sleeper.compaction.task.CompactionTaskType;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +46,7 @@ public class DynamoDBCompactionTaskStatusFormat {
     public static final String START_TIME = "StartTime";
     public static final String UPDATE_TIME = "UpdateTime";
     public static final String FINISH_TIME = "FinishTime";
-    public static final String DURATION = "Duration";
+    public static final String MILLIS_SPENT_ON_JOBS = "MillisecondsOnJobs";
     public static final String NUMBER_OF_JOBS = "NumberOfJobs";
     public static final String LINES_READ = "LinesRead";
     public static final String LINES_WRITTEN = "LinesWritten";
@@ -74,7 +75,7 @@ public class DynamoDBCompactionTaskStatusFormat {
         return createTaskRecord(taskStatus, FINISHED)
                 .number(START_TIME, taskStatus.getStartTime().toEpochMilli())
                 .number(FINISH_TIME, taskStatus.getFinishedStatus().getFinishTime().toEpochMilli())
-                .number(DURATION, taskStatus.getFinishedStatus().getTotalRuntimeInSeconds())
+                .number(MILLIS_SPENT_ON_JOBS, taskStatus.getFinishedStatus().getTimeSpentOnJobs().toMillis())
                 .number(NUMBER_OF_JOBS, taskStatus.getFinishedStatus().getTotalJobRuns())
                 .number(LINES_READ, taskStatus.getFinishedStatus().getTotalRecordsRead())
                 .number(LINES_WRITTEN, taskStatus.getFinishedStatus().getTotalRecordsWritten())
@@ -111,7 +112,7 @@ public class DynamoDBCompactionTaskStatusFormat {
             case FINISHED:
                 builder.taskFinished(taskId, CompactionTaskFinishedStatus.builder()
                         .finishTime(getInstantAttribute(item, FINISH_TIME))
-                        .totalRuntimeInSeconds(Double.parseDouble(getNumberAttribute(item, DURATION)))
+                        .timeSpentOnJobs(Duration.ofMillis(getLongAttribute(item, MILLIS_SPENT_ON_JOBS, 0)))
                         .totalJobRuns(getIntAttribute(item, NUMBER_OF_JOBS, 0))
                         .totalRecordsRead(getLongAttribute(item, LINES_READ, 0))
                         .totalRecordsWritten(getLongAttribute(item, LINES_WRITTEN, 0))

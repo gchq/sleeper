@@ -17,20 +17,14 @@
 package sleeper.status.report.ingest.task;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializer;
 import sleeper.ingest.task.IngestTaskStatus;
+import sleeper.status.report.job.GsonConfig;
 
 import java.io.PrintStream;
-import java.time.Instant;
 import java.util.List;
 
 public class JsonIngestTaskStatusReporter implements IngestTaskStatusReporter {
-    private final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues()
-            .registerTypeAdapter(Instant.class, instantJsonSerializer())
-            .setPrettyPrinting()
-            .create();
+    private final Gson gson = GsonConfig.standardBuilder().create();
     private final PrintStream out;
 
     public JsonIngestTaskStatusReporter(PrintStream out) {
@@ -42,7 +36,4 @@ public class JsonIngestTaskStatusReporter implements IngestTaskStatusReporter {
         out.println(gson.toJson(tasks));
     }
 
-    private static JsonSerializer<Instant> instantJsonSerializer() {
-        return (instant, type, context) -> new JsonPrimitive(instant.toString());
-    }
 }

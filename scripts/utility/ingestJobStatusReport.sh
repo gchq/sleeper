@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright 2022 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,4 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-java -cp /ingest.jar sleeper.ingest.job.ECSIngestTask "$@"
+set -e
+
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
+
+java -cp ${SCRIPTS_DIR}/jars/clients-*-utility.jar sleeper.status.report.IngestJobStatusReport "$@"

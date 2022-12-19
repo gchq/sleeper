@@ -17,23 +17,20 @@
 package sleeper.status.report.compaction.job;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.status.report.job.GsonConfig;
 import sleeper.status.report.job.query.JobQuery;
 
 import java.io.PrintStream;
-import java.time.Instant;
 import java.util.List;
 
 public class JsonCompactionJobStatusReporter implements CompactionJobStatusReporter {
-    private final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues()
-            .registerTypeAdapter(Instant.class, instantJsonSerializer())
+    private final Gson gson = GsonConfig.standardBuilder()
             .registerTypeAdapter(CompactionJobStatus.class, compactionJobStatusJsonSerializer())
-            .setPrettyPrinting()
             .create();
     private final PrintStream out;
 
@@ -50,22 +47,18 @@ public class JsonCompactionJobStatusReporter implements CompactionJobStatusRepor
         out.println(gson.toJson(statusList));
     }
 
-    private static JsonSerializer<Instant> instantJsonSerializer() {
-        return (instant, type, context) -> new JsonPrimitive(instant.toString());
+    private static JsonSerializer<CompactionJobStatus> compactionJobStatusJsonSerializer() {
+        return (jobStatus, type, context) -> createCompactionJobJson(jobStatus, context);
     }
 
-    private JsonSerializer<CompactionJobStatus> compactionJobStatusJsonSerializer() {
-        return (jobStatus, type, context) -> createCompactionJobJson(jobStatus);
-    }
-
-    private JsonElement createCompactionJobJson(CompactionJobStatus jobStatus) {
+    private static JsonElement createCompactionJobJson(CompactionJobStatus jobStatus, JsonSerializationContext context) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("jobId", jobStatus.getJobId());
-        jsonObject.add("jobRunList", gson.toJsonTree(jobStatus.getJobRuns()));
+        jsonObject.add("jobRunList", context.serialize(jobStatus.getJobRuns()));
         JsonObject createdStatus = new JsonObject();
         createdStatus.addProperty("updateTime", jobStatus.getCreateUpdateTime().toString());
         createdStatus.addProperty("partitionId", jobStatus.getPartitionId());
-        createdStatus.add("childPartitionIds", gson.toJsonTree(jobStatus.getChildPartitionIds()));
+        createdStatus.add("childPartitionIds", context.serialize(jobStatus.getChildPartitionIds()));
         createdStatus.addProperty("inputFilesCount", jobStatus.getInputFilesCount());
         jsonObject.add("createdStatus", createdStatus);
         return jsonObject;

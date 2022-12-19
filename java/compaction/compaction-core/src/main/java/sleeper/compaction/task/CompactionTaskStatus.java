@@ -19,6 +19,7 @@ package sleeper.compaction.task;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 
@@ -65,6 +66,14 @@ public class CompactionTaskStatus {
     public Instant getFinishTime() {
         if (isFinished()) {
             return finishedStatus.getFinishTime();
+        } else {
+            return null;
+        }
+    }
+
+    public Duration getDuration() {
+        if (isFinished()) {
+            return Duration.between(startTime, finishedStatus.getFinishTime());
         } else {
             return null;
         }
@@ -188,13 +197,9 @@ public class CompactionTaskStatus {
             return this;
         }
 
-        public Builder finished(CompactionTaskFinishedStatus.Builder taskFinishedBuilder, long finishTime) {
-            return finished(taskFinishedBuilder, Instant.ofEpochMilli(finishTime));
-        }
-
-        public Builder finished(CompactionTaskFinishedStatus.Builder taskFinishedBuilder, Instant finishTime) {
+        public Builder finished(Instant finishTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) {
             return finishedStatus(taskFinishedBuilder
-                    .finish(startTime, finishTime)
+                    .finish(finishTime)
                     .build());
         }
 
