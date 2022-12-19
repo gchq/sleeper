@@ -119,11 +119,11 @@ public class CompactionTaskStatusInPeriodTest {
 
     private static CompactionTaskStatus taskWithStartAndFinishTime(Instant startTime, Instant finishTime) {
         return taskBuilder(startTime)
-                .finished(CompactionTaskFinishedStatus.builder()
+                .finished(finishTime, CompactionTaskFinishedStatus.builder()
                         .addJobSummary(new RecordsProcessedSummary(
                                 new RecordsProcessed(200, 100),
                                 startTime, finishTime
-                        )), finishTime)
+                        )))
                 .build();
     }
 

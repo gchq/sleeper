@@ -175,7 +175,7 @@ public class CompactSortedFilesRunner {
         double runTimeInSeconds = (finishTime.toEpochMilli() - startTime.toEpochMilli()) / 1000.0;
         LOGGER.info("CompactSortedFilesRunner total run time = {}", runTimeInSeconds);
 
-        CompactionTaskStatus taskFinished = taskStatusBuilder.finished(taskFinishedBuilder, finishTime).build();
+        CompactionTaskStatus taskFinished = taskStatusBuilder.finished(finishTime, taskFinishedBuilder).build();
         taskStatusStore.taskFinished(taskFinished);
     }
 

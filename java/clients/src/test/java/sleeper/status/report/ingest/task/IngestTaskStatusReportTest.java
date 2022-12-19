@@ -22,6 +22,8 @@ import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.status.report.IngestTaskStatusReport;
 
 import java.io.PrintStream;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.function.Function;
 
@@ -29,8 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.ClientTestUtils.example;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.status.report.ingest.task.IngestTaskStatusReportTestHelper.finishedTask;
-import static sleeper.status.report.ingest.task.IngestTaskStatusReportTestHelper.finishedTaskWithFourRuns;
 import static sleeper.status.report.ingest.task.IngestTaskStatusReportTestHelper.startedTask;
 
 public class IngestTaskStatusReportTest {
@@ -64,10 +66,18 @@ public class IngestTaskStatusReportTest {
     @Test
     public void shouldReportMultipleJobRunsOnIngestTasks() throws Exception {
         // Given
-        IngestTaskStatus finished1 = finishedTaskWithFourRuns("A", "2022-10-06T12:20:00.001Z",
-                "2022-10-06T12:20:40.001Z", 800L, 400L);
-        IngestTaskStatus finished2 = finishedTaskWithFourRuns("B", "2022-10-06T12:22:00.001Z",
-                "2022-10-06T12:22:40.001Z", 1600L, 800L);
+        IngestTaskStatus finished1 = finishedTask("A",
+                "2022-10-06T12:20:00.001Z", "2022-10-06T12:20:50.001Z",
+                summary(Instant.parse("2022-10-06T12:20:01.001Z"), Duration.ofSeconds(10), 200, 100),
+                summary(Instant.parse("2022-10-06T12:20:12.001Z"), Duration.ofSeconds(10), 200, 100),
+                summary(Instant.parse("2022-10-06T12:20:23.001Z"), Duration.ofSeconds(10), 200, 100),
+                summary(Instant.parse("2022-10-06T12:20:34.001Z"), Duration.ofSeconds(10), 200, 100));
+        IngestTaskStatus finished2 = finishedTask("B",
+                "2022-10-06T12:22:00.001Z", "2022-10-06T12:22:50.001Z",
+                summary(Instant.parse("2022-10-06T12:22:01.001Z"), Duration.ofSeconds(10), 400, 200),
+                summary(Instant.parse("2022-10-06T12:22:12.001Z"), Duration.ofSeconds(10), 400, 200),
+                summary(Instant.parse("2022-10-06T12:22:23.001Z"), Duration.ofSeconds(10), 400, 200),
+                summary(Instant.parse("2022-10-06T12:22:34.001Z"), Duration.ofSeconds(10), 400, 200));
         when(store.getAllTasks()).thenReturn(Arrays.asList(finished2, finished1));
 
         // When / Then

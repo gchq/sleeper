@@ -23,6 +23,7 @@ import sleeper.ingest.task.IngestTaskFinishedStatus;
 import sleeper.ingest.task.IngestTaskStatus;
 
 import java.time.Instant;
+import java.util.stream.Stream;
 
 public class IngestTaskStatusReportTestHelper {
     private IngestTaskStatusReportTestHelper() {
@@ -44,41 +45,22 @@ public class IngestTaskStatusReportTestHelper {
         return finishedTaskBuilder(taskId, startTime, finishTime, linesRead, linesWritten).build();
     }
 
-    public static IngestTaskStatus finishedTaskWithFourRuns(String taskId, String startTime,
-                                                            String finishTime, long linesRead, long linesWritten) {
-        return IngestTaskStatus.builder()
-                .startTime(Instant.parse(startTime))
-                .finished(taskFinishedStatusWithFourRuns(startTime, finishTime, linesRead, linesWritten),
-                        Instant.parse(finishTime))
-                .taskId(taskId).build();
+    public static IngestTaskStatus finishedTask(String taskId, String startTime, String finishTime,
+                                                RecordsProcessedSummary... summaries) {
+        return startedTaskBuilder(taskId, startTime)
+                .finished(Instant.parse(finishTime),
+                        IngestTaskFinishedStatus.builder().jobSummaries(Stream.of(summaries)))
+                .build();
     }
 
     private static IngestTaskStatus.Builder finishedTaskBuilder(String taskId, String startTime,
                                                                 String finishTime, long linesRead, long linesWritten) {
-        return IngestTaskStatus.builder()
-                .startTime(Instant.parse(startTime))
-                .finished(taskFinishedStatus(startTime, finishTime, linesRead, linesWritten),
-                        Instant.parse(finishTime))
-                .taskId(taskId);
+        return startedTaskBuilder(taskId, startTime)
+                .finished(Instant.parse(finishTime),
+                        taskFinishedStatus(startTime, finishTime, linesRead, linesWritten));
     }
 
     private static IngestTaskFinishedStatus.Builder taskFinishedStatus(
-            String startTime, String finishTime, long linesRead, long linesWritten) {
-        return taskFinishedStatusBuilder(startTime, finishTime, linesRead, linesWritten)
-                .finish(Instant.parse(startTime), Instant.parse(finishTime));
-    }
-
-    private static IngestTaskFinishedStatus.Builder taskFinishedStatusWithFourRuns(
-            String startTime, String finishTime, long linesRead, long linesWritten) {
-        return IngestTaskFinishedStatus.builder()
-                .addJobSummary(createSummary(startTime, finishTime, linesRead / 4, linesWritten / 4))
-                .addJobSummary(createSummary(startTime, finishTime, linesRead / 4, linesWritten / 4))
-                .addJobSummary(createSummary(startTime, finishTime, linesRead / 4, linesWritten / 4))
-                .addJobSummary(createSummary(startTime, finishTime, linesRead / 4, linesWritten / 4))
-                .finish(Instant.parse(startTime), Instant.parse(finishTime));
-    }
-
-    private static IngestTaskFinishedStatus.Builder taskFinishedStatusBuilder(
             String startTime, String finishTime, long linesRead, long linesWritten) {
         return IngestTaskFinishedStatus.builder()
                 .addJobSummary(createSummary(startTime, finishTime, linesRead, linesWritten));
