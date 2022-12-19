@@ -19,6 +19,7 @@ package sleeper.ingest.task;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 
@@ -59,6 +60,14 @@ public class IngestTaskStatus {
     public Instant getFinishTime() {
         if (isFinished()) {
             return finishedStatus.getFinishTime();
+        } else {
+            return null;
+        }
+    }
+
+    public Duration getDuration() {
+        if (isFinished()) {
+            return Duration.between(startTime, finishedStatus.getFinishTime());
         } else {
             return null;
         }
@@ -181,7 +190,7 @@ public class IngestTaskStatus {
 
         public Builder finished(Instant finishTime, IngestTaskFinishedStatus.Builder taskFinishedBuilder) {
             return finishedStatus(taskFinishedBuilder
-                    .finish(startTime, finishTime)
+                    .finish(finishTime)
                     .build());
         }
 

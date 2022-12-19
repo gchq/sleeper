@@ -26,6 +26,9 @@ import sleeper.status.report.table.TableWriterFactory;
 import java.io.PrintStream;
 import java.util.List;
 
+import static sleeper.status.report.job.StandardProcessRunReporter.formatDecimal;
+import static sleeper.status.report.job.StandardProcessRunReporter.getOrNull;
+
 public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporter {
 
     private static final TableWriterFactory.Builder TABLE_FACTORY_BUILDER = TableWriterFactory.builder();
@@ -36,6 +39,7 @@ public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporte
     private static final TableField FINISH_TIME = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.FINISH_TIME);
     private static final TableField DURATION = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.DURATION);
     private static final TableField JOB_RUNS = TABLE_FACTORY_BUILDER.addNumericField("JOB_RUNS");
+    private static final TableField SECONDS_ON_JOBS = TABLE_FACTORY_BUILDER.addNumericField("SECONDS_ON_JOBS");
     private static final TableField LINES_READ = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.LINES_READ);
     private static final TableField LINES_WRITTEN = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.LINES_WRITTEN);
     private static final TableField READ_RATE = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.READ_RATE);
@@ -64,7 +68,7 @@ public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporte
 
         TABLE_FACTORY.tableBuilder()
                 .showFields(query != IngestTaskQuery.UNFINISHED,
-                        FINISH_TIME, DURATION, JOB_RUNS, LINES_READ, LINES_WRITTEN, READ_RATE, WRITE_RATE)
+                        FINISH_TIME, DURATION, JOB_RUNS, SECONDS_ON_JOBS, LINES_READ, LINES_WRITTEN, READ_RATE, WRITE_RATE)
                 .itemsAndWriter(tasks, this::writeRow)
                 .build().write(out);
     }
@@ -94,7 +98,9 @@ public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporte
 
     private void writeRow(IngestTaskStatus task, TableRow.Builder builder) {
         builder.value(STATE, task.isFinished() ? "FINISHED" : "RUNNING")
-                .value(JOB_RUNS, task.getJobRunsOrNull());
+                .value(JOB_RUNS, task.getJobRunsOrNull())
+                .value(SECONDS_ON_JOBS, getOrNull(task.getFinishedStatus(),
+                        status -> formatDecimal(status.getSecondsSpentOnJobs())));
         processRunReporter.writeRunFields(task.asProcessRun(), builder);
     }
 }

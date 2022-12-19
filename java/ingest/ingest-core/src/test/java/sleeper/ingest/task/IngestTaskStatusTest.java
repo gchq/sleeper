@@ -17,19 +17,19 @@
 package sleeper.ingest.task;
 
 import org.junit.Test;
-import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 
 public class IngestTaskStatusTest {
 
     @Test
-    public void shouldCreateCompactionTaskStatus() {
+    public void shouldCreateTaskStatus() {
         // Given
         Instant taskStartedTime = Instant.parse("2022-09-22T12:00:14.000Z");
 
@@ -37,69 +37,46 @@ public class IngestTaskStatusTest {
         IngestTaskStatus status = startedStatusBuilder(taskStartedTime).build();
 
         // Then
-        assertThat(status).extracting("startTime")
-                .isEqualTo(taskStartedTime);
+        assertThat(status).extracting("finishedStatus").isNull();
+        assertThat(status.asProcessRun()).extracting("taskId", "startTime", "finishTime", "finishedSummary")
+                .containsExactly("test-task-id", taskStartedTime, null, null);
     }
 
     @Test
-    public void shouldCreateCompactionTaskStatusFromFinishedStandardJobList() {
+    public void shouldCreateTaskStatusFromFinishedJobList() {
         // Given
-        Instant taskStartedTime = Instant.parse("2022-09-22T12:00:14.000Z");
-        Instant jobFinishTime3 = Instant.parse("2022-09-22T16:00:14.000Z");
+        Instant taskStartedTime = Instant.parse("2022-09-22T12:00:00Z");
+        Instant jobStartedTime1 = Instant.parse("2022-09-22T12:00:05Z");
+        Instant jobStartedTime2 = Instant.parse("2022-09-22T12:00:20Z");
+        Instant jobStartedTime3 = Instant.parse("2022-09-22T12:00:35Z");
+        Instant taskFinishedTime = Instant.parse("2022-09-22T12:00:50Z");
+
+        RecordsProcessedSummary summary1 = summary(jobStartedTime1, Duration.ofSeconds(10), 1000L, 500L);
+        RecordsProcessedSummary summary2 = summary(jobStartedTime2, Duration.ofSeconds(10), 1000L, 500L);
+        RecordsProcessedSummary summary3 = summary(jobStartedTime3, Duration.ofSeconds(10), 1000L, 500L);
 
         // When
-        IngestTaskStatus.Builder taskStatusBuilder = startedStatusBuilder(taskStartedTime);
-        IngestTaskFinishedStatus.Builder taskFinishedBuilder = IngestTaskFinishedStatus.builder();
-        createJobSummaries().forEach(taskFinishedBuilder::addJobSummary);
-        taskStatusBuilder.finished(jobFinishTime3, taskFinishedBuilder);
+        IngestTaskStatus status = startedStatusBuilder(taskStartedTime)
+                .finished(taskFinishedTime, finishedStatusBuilder(summary1, summary2, summary3))
+                .build();
 
         // Then
-        assertThat(taskStatusBuilder.build()).extracting("startTime", "finishedStatus.finishTime",
-                        "finishedStatus.totalJobRuns", "finishedStatus.totalRuntimeInSeconds", "finishedStatus.totalRecordsRead",
-                        "finishedStatus.totalRecordsWritten", "finishedStatus.recordsReadPerSecond", "finishedStatus.recordsWrittenPerSecond")
-                .containsExactly(taskStartedTime, jobFinishTime3, 3, 14400.0, 14400L, 7200L, 1.0, 0.5);
-    }
-
-    @Test
-    public void shouldCreateCompactionTaskStatusFromFinishedSplittingJobList() {
-        // Given
-        Instant taskStartedTime = Instant.parse("2022-09-22T12:00:14.000Z");
-        Instant jobFinishTime3 = Instant.parse("2022-09-22T16:00:14.000Z");
-
-        // When
-        IngestTaskStatus.Builder taskStatusBuilder = startedStatusBuilder(taskStartedTime);
-        IngestTaskFinishedStatus.Builder taskFinishedBuilder = IngestTaskFinishedStatus.builder();
-        createJobSummaries().forEach(taskFinishedBuilder::addJobSummary);
-        taskStatusBuilder.finished(jobFinishTime3, taskFinishedBuilder);
-
-        // Then
-        assertThat(taskStatusBuilder.build()).extracting("startTime", "finishedStatus.finishTime",
-                        "finishedStatus.totalJobRuns", "finishedStatus.totalRuntimeInSeconds", "finishedStatus.totalRecordsRead",
-                        "finishedStatus.totalRecordsWritten", "finishedStatus.recordsReadPerSecond", "finishedStatus.recordsWrittenPerSecond")
-                .containsExactly(taskStartedTime, jobFinishTime3, 3, 14400.0, 14400L, 7200L, 1.0, 0.5);
+        assertThat(status).extracting("finishedStatus.totalJobRuns", "finishedStatus.timeSpentOnJobs")
+                .containsExactly(3, Duration.ofSeconds(30));
+        assertThat(status.asProcessRun()).extracting("taskId",
+                        "startTime", "finishTime", "finishedSummary.duration",
+                        "finishedSummary.linesRead", "finishedSummary.linesWritten",
+                        "finishedSummary.recordsReadPerSecond", "finishedSummary.recordsWrittenPerSecond")
+                .containsExactly("test-task-id",
+                        taskStartedTime, taskFinishedTime, Duration.ofSeconds(50),
+                        3000L, 1500L, 100.0, 50.0);
     }
 
     private static IngestTaskStatus.Builder startedStatusBuilder(Instant startTime) {
         return IngestTaskStatus.builder().taskId("test-task-id").startTime(startTime);
     }
 
-    private static List<RecordsProcessedSummary> createJobSummaries() {
-        Instant jobStartedUpdateTime1 = Instant.parse("2022-09-22T14:00:04.000Z");
-        Instant jobFinishTime1 = Instant.parse("2022-09-22T14:00:14.000Z");
-
-        Instant jobStartedUpdateTime2 = Instant.parse("2022-09-22T15:00:04.000Z");
-        Instant jobFinishTime2 = Instant.parse("2022-09-22T15:00:14.000Z");
-
-        Instant jobStartedUpdateTime3 = Instant.parse("2022-09-22T16:00:04.000Z");
-        Instant jobFinishTime3 = Instant.parse("2022-09-22T16:00:14.000Z");
-
-        RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
-                new RecordsProcessed(4800L, 2400L), jobStartedUpdateTime1, jobFinishTime1);
-        RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
-                new RecordsProcessed(4800L, 2400L), jobStartedUpdateTime2, jobFinishTime2);
-        RecordsProcessedSummary summary3 = new RecordsProcessedSummary(
-                new RecordsProcessed(4800L, 2400L), jobStartedUpdateTime3, jobFinishTime3);
-
-        return Arrays.asList(summary1, summary2, summary3);
+    private static IngestTaskFinishedStatus.Builder finishedStatusBuilder(RecordsProcessedSummary... jobSummaries) {
+        return IngestTaskFinishedStatus.builder().jobSummaries(Stream.of(jobSummaries));
     }
 }
