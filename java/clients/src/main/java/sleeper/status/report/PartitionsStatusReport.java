@@ -39,7 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.splitter.FindPartitionsToSplit.getRelevantFileInfos;
+import static sleeper.splitter.FindPartitionsToSplit.getFilesInPartition;
 import static sleeper.splitter.FindPartitionsToSplit.partitionNeedsSplitting;
 
 /**
@@ -72,7 +72,7 @@ public class PartitionsStatusReport {
         List<FileInfo> allFiles = store.getActiveFiles();
         return (int) allPartitions.stream().filter(Partition::isLeafPartition)
                 .filter(partition -> partitionNeedsSplitting(tableProperties, partition,
-                        getRelevantFileInfos(partition, allFiles))).count();
+                        getFilesInPartition(partition, allFiles))).count();
     }
 
     public Map<String, Long> getPartitionMapToNumberOfRecords() throws StateStoreException {

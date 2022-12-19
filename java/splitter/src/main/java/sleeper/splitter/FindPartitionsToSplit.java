@@ -79,11 +79,10 @@ public class FindPartitionsToSplit {
         }
     }
 
-    private void splitPartitionIfNecessary(Partition partition, List<FileInfo> fileInfos) throws IOException {
-        // Find files in this partition
-        List<FileInfo> relevantFiles = getRelevantFileInfos(partition, fileInfos);
+    private void splitPartitionIfNecessary(Partition partition, List<FileInfo> activeFileInfos) throws IOException {
+        List<FileInfo> relevantFiles = getFilesInPartition(partition, activeFileInfos);
         if (partitionNeedsSplitting(tablePropertiesProvider.getTableProperties(tableName), partition, relevantFiles)) {
-            LOGGER.info("Partition {} needs splitting as (split threshold is {})", partition.getId(), splitThreshold);
+            LOGGER.info("Partition {} needs splitting as split threshold is {}", partition.getId(), splitThreshold);
             // If there are more than PartitionSplittingMaxFilesInJob files then pick the largest ones.
             List<String> filesForJob = new ArrayList<>();
             if (relevantFiles.size() < maxFilesInJob) {
@@ -108,15 +107,14 @@ public class FindPartitionsToSplit {
     }
 
     public static boolean partitionNeedsSplitting(TableProperties properties, Partition partition, List<FileInfo> relevantFiles) {
-        // Calculate number of records in partition
         long numberOfRecordsInPartition = relevantFiles.stream().map(FileInfo::getNumberOfRecords).mapToLong(Long::longValue).sum();
         LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), properties.get(TABLE_NAME), numberOfRecordsInPartition);
         return numberOfRecordsInPartition >= properties.getLong(PARTITION_SPLIT_THRESHOLD);
     }
 
-    public static List<FileInfo> getRelevantFileInfos(Partition partition, List<FileInfo> fileInfos) {
+    public static List<FileInfo> getFilesInPartition(Partition partition, List<FileInfo> activeFileInfos) {
         List<FileInfo> relevantFiles = new ArrayList<>();
-        for (FileInfo fileInfo : fileInfos) {
+        for (FileInfo fileInfo : activeFileInfos) {
             if (fileInfo.getPartitionId().equals(partition.getId())) {
                 relevantFiles.add(fileInfo);
             }
