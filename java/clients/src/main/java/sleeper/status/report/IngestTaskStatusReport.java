@@ -15,10 +15,19 @@
  */
 package sleeper.status.report;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import sleeper.ClientUtils;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.status.report.ingest.task.IngestTaskQuery;
 import sleeper.status.report.ingest.task.IngestTaskStatusReportArguments;
 import sleeper.status.report.ingest.task.IngestTaskStatusReporter;
+
+import java.io.IOException;
 
 public class IngestTaskStatusReport {
     private final IngestTaskStatusStore statusStore;
@@ -39,7 +48,7 @@ public class IngestTaskStatusReport {
         reporter.report(query, query.run(statusStore));
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         IngestTaskStatusReportArguments arguments;
         try {
             arguments = IngestTaskStatusReportArguments.fromArgs(args);
@@ -50,7 +59,11 @@ public class IngestTaskStatusReport {
             return;
         }
 
-        IngestTaskStatusStore statusStore = IngestTaskStatusStore.none();
+        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
+        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, arguments.getInstanceId());
+
+        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        IngestTaskStatusStore statusStore = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, instanceProperties);
         new IngestTaskStatusReport(statusStore, arguments.getReporter(), arguments.getQuery()).run();
     }
 }
