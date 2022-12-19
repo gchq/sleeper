@@ -22,6 +22,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 public class IngestTaskFinishedStatus {
     private final Instant finishTime;
@@ -167,6 +168,11 @@ public class IngestTaskFinishedStatus {
 
         public Builder addJobSummary(RecordsProcessedSummary jobSummary) {
             rateBuilder.summary(jobSummary);
+            return this;
+        }
+
+        public Builder jobSummaries(Stream<RecordsProcessedSummary> jobSummaries) {
+            rateBuilder.summaries(jobSummaries);
             return this;
         }
 

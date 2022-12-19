@@ -43,7 +43,7 @@ public class IngestTaskStatusTestData {
     }
 
     public static IngestTaskStatus finishedNoJobs(IngestTaskStatus.Builder builder, Instant finishTime) {
-        return builder.finished(IngestTaskFinishedStatus.builder(), finishTime).build();
+        return builder.finished(finishTime, IngestTaskFinishedStatus.builder()).build();
     }
 
     public static IngestTaskStatus finishedOneJobNoFiles(String taskId, Instant startTaskTime, Instant finishTaskTime,
@@ -62,10 +62,10 @@ public class IngestTaskStatusTestData {
                                                   Instant startJobTime, Instant finishJobTime,
                                                   long linesRead, long linesWritten) {
         return IngestTaskStatus.builder().taskId(taskId).startTime(startTaskTime)
-                .finished(finishTaskTime, Stream.of(
+                .finished(finishTaskTime, IngestTaskFinishedStatus.builder().jobSummaries(Stream.of(
                         new RecordsProcessedSummary(
                                 new RecordsProcessed(linesRead, linesWritten),
-                                startJobTime, finishJobTime)))
+                                startJobTime, finishJobTime))))
                 .build();
     }
 
@@ -84,7 +84,7 @@ public class IngestTaskStatusTestData {
     private static IngestTaskStatus finishedMultipleJobs(String taskId, Instant startTaskTime, Instant finishTaskTime,
                                                          Stream<RecordsProcessedSummary> summaries) {
         return IngestTaskStatus.builder().taskId(taskId).startTime(startTaskTime)
-                .finished(finishTaskTime, summaries)
+                .finished(finishTaskTime, IngestTaskFinishedStatus.builder().jobSummaries(summaries))
                 .build();
     }
 

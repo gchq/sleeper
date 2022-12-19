@@ -48,8 +48,8 @@ public class IngestTaskStatusReportTestHelper {
                                                             String finishTime, long linesRead, long linesWritten) {
         return IngestTaskStatus.builder()
                 .startTime(Instant.parse(startTime))
-                .finished(taskFinishedStatusWithFourRuns(startTime, finishTime, linesRead, linesWritten),
-                        Instant.parse(finishTime))
+                .finished(Instant.parse(finishTime), taskFinishedStatusWithFourRuns(startTime, finishTime, linesRead, linesWritten)
+                )
                 .taskId(taskId).build();
     }
 
@@ -57,8 +57,8 @@ public class IngestTaskStatusReportTestHelper {
                                                                 String finishTime, long linesRead, long linesWritten) {
         return IngestTaskStatus.builder()
                 .startTime(Instant.parse(startTime))
-                .finished(taskFinishedStatus(startTime, finishTime, linesRead, linesWritten),
-                        Instant.parse(finishTime))
+                .finished(Instant.parse(finishTime), taskFinishedStatus(startTime, finishTime, linesRead, linesWritten)
+                )
                 .taskId(taskId);
     }
 

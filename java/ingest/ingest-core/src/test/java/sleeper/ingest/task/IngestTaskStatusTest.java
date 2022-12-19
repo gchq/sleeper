@@ -51,7 +51,7 @@ public class IngestTaskStatusTest {
         IngestTaskStatus.Builder taskStatusBuilder = startedStatusBuilder(taskStartedTime);
         IngestTaskFinishedStatus.Builder taskFinishedBuilder = IngestTaskFinishedStatus.builder();
         createJobSummaries().forEach(taskFinishedBuilder::addJobSummary);
-        taskStatusBuilder.finished(taskFinishedBuilder, jobFinishTime3.toEpochMilli());
+        taskStatusBuilder.finished(jobFinishTime3, taskFinishedBuilder);
 
         // Then
         assertThat(taskStatusBuilder.build()).extracting("startTime", "finishedStatus.finishTime",
@@ -70,7 +70,7 @@ public class IngestTaskStatusTest {
         IngestTaskStatus.Builder taskStatusBuilder = startedStatusBuilder(taskStartedTime);
         IngestTaskFinishedStatus.Builder taskFinishedBuilder = IngestTaskFinishedStatus.builder();
         createJobSummaries().forEach(taskFinishedBuilder::addJobSummary);
-        taskStatusBuilder.finished(taskFinishedBuilder, jobFinishTime3.toEpochMilli());
+        taskStatusBuilder.finished(jobFinishTime3, taskFinishedBuilder);
 
         // Then
         assertThat(taskStatusBuilder.build()).extracting("startTime", "finishedStatus.finishTime",
