@@ -65,6 +65,10 @@ public class PartitionStatus {
         return partition;
     }
 
+    public int getNumberOfFiles() {
+        return filesInPartition.size();
+    }
+
     public long getNumberOfRecords() {
         return filesInPartition.stream().mapToLong(FileInfo::getNumberOfRecords).sum();
     }

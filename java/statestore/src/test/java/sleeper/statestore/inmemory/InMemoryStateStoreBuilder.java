@@ -49,6 +49,10 @@ public class InMemoryStateStoreBuilder {
                 .map(partition -> partitionSingleFile(partition, records)));
     }
 
+    public InMemoryStateStoreBuilder partitionFileWithRecords(String partitionId, String filename, long records) {
+        return addFile(partitionFile(tree.getPartition(partitionId), filename, records));
+    }
+
     public StateStore buildStateStore() {
         return store;
     }
@@ -68,10 +72,14 @@ public class InMemoryStateStoreBuilder {
     }
 
     private static FileInfo partitionSingleFile(Partition partition, long records) {
+        return partitionFile(partition, partition.getId() + ".parquet", records);
+    }
+
+    private static FileInfo partitionFile(Partition partition, String filename, long records) {
         return FileInfo.builder()
                 .rowKeyTypes(partition.getRowKeyTypes())
                 .minRowKey(minRowKey(partition)).maxRowKey(maxRowKey(partition))
-                .filename(partition.getId() + ".parquet").partitionId(partition.getId())
+                .filename(filename).partitionId(partition.getId())
                 .numberOfRecords(records).fileStatus(FileInfo.FileStatus.ACTIVE)
                 .lastStateStoreUpdateTime(Instant.parse("2022-12-08T11:03:00.001Z"))
                 .build();

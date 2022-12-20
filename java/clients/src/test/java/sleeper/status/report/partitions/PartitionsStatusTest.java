@@ -20,7 +20,6 @@ import org.junit.Test;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.statestore.inmemory.InMemoryStateStoreBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -36,8 +35,10 @@ public class PartitionsStatusTest {
     @Test
     public void shouldCountRecordsInPartitions() throws StateStoreException {
         // Given
-        StateStore store = InMemoryStateStoreBuilder.from(createRootPartitionWithTwoChildren())
-                .singleFileInEachLeafPartitionWithRecords(5)
+        StateStore store = createRootPartitionWithTwoChildren()
+                .partitionFileWithRecords("A", "file-a1.parquet", 5)
+                .partitionFileWithRecords("A", "file-a2.parquet", 10)
+                .partitionFileWithRecords("B", "file-b.parquet", 5)
                 .buildStateStore();
 
         // When
@@ -45,14 +46,14 @@ public class PartitionsStatusTest {
 
         // Then
         assertThat(status.getPartitions())
-                .extracting("partition.id", "numberOfRecords")
-                .containsExactlyInAnyOrder(tuple("parent", 0L), tuple("A", 5L), tuple("B", 5L));
+                .extracting("partition.id", "numberOfFiles", "numberOfRecords")
+                .containsExactlyInAnyOrder(tuple("parent", 0, 0L), tuple("A", 2, 15L), tuple("B", 1, 5L));
     }
 
     @Test
     public void shouldCountLeafPartitions() throws StateStoreException {
         // Given
-        StateStore store = InMemoryStateStoreBuilder.from(createRootPartitionWithTwoChildren()).buildStateStore();
+        StateStore store = createRootPartitionWithTwoChildren().buildStateStore();
 
         // When
         PartitionsStatus status = PartitionsStatus.from(tableProperties, store);

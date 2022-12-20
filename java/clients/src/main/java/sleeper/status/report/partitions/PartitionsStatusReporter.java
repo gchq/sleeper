@@ -33,6 +33,7 @@ public class PartitionsStatusReporter {
     private static final TableWriterFactory.Builder BUILDER = TableWriterFactory.builder();
     private static final TableField ID = BUILDER.addField("ID");
     private static final TableField PARENT = BUILDER.addField("PARENT");
+    private static final TableField FILES = BUILDER.addNumericField("FILES");
     private static final TableField RECORDS = BUILDER.addNumericField("RECORDS");
     private static final TableField LEAF = BUILDER.addField("LEAF");
     private static final TableField NEEDS_SPLITTING = BUILDER.addField("NEEDS_SPLITTING");
@@ -62,6 +63,7 @@ public class PartitionsStatusReporter {
         Partition partition = status.getPartition();
         builder.value(ID, partition.getId())
                 .value(PARENT, partition.getParentPartitionId())
+                .value(FILES, status.getNumberOfFiles())
                 .value(RECORDS, status.getNumberOfRecords())
                 .value(LEAF, partition.isLeafPartition() ? "yes" : "no")
                 .value(NEEDS_SPLITTING, needsSplittingString(status))

@@ -43,12 +43,6 @@ public class PartitionStatusReportTestHelper {
     private PartitionStatusReportTestHelper() {
     }
 
-    public static PartitionsBuilder createRootPartitionWithTwoChildren() {
-        return createPartitionsBuilder()
-                .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList("aaa"))
-                .parentJoining("parent", "A", "B");
-    }
-
     public static StateStore createRootPartitionWithNoChildren() {
         return InMemoryStateStoreBuilder.from(createPartitionsBuilder().singlePartition("root"))
                 .singleFileInEachLeafPartitionWithRecords(5)
@@ -56,15 +50,21 @@ public class PartitionStatusReportTestHelper {
     }
 
     public static StateStore createRootPartitionWithTwoChildrenBelowSplitThreshold() {
-        return InMemoryStateStoreBuilder.from(createRootPartitionWithTwoChildren())
+        return createRootPartitionWithTwoChildren()
                 .singleFileInEachLeafPartitionWithRecords(5)
                 .buildStateStore();
     }
 
     public static StateStore createRootPartitionWithTwoChildrenAboveSplitThreshold() {
-        return InMemoryStateStoreBuilder.from(createRootPartitionWithTwoChildren())
+        return createRootPartitionWithTwoChildren()
                 .singleFileInEachLeafPartitionWithRecords(100)
                 .buildStateStore();
+    }
+
+    public static InMemoryStateStoreBuilder createRootPartitionWithTwoChildren() {
+        return InMemoryStateStoreBuilder.from(createPartitionsBuilder()
+                .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList("aaa"))
+                .parentJoining("parent", "A", "B"));
     }
 
     public static StateStore createRootPartitionWithTwoChildrenSplitOnByteArray() {
