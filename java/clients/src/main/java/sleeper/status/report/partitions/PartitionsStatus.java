@@ -48,7 +48,7 @@ public class PartitionsStatus {
         }
         PartitionTree tree = new PartitionTree(tableProperties.getSchema(), partitions);
         List<FileInfo> activeFiles = store.getActiveFiles();
-        List<PartitionStatus> statuses = store.getAllPartitions().stream()
+        List<PartitionStatus> statuses = partitions.stream()
                 .map(partition -> PartitionStatus.from(tableProperties, tree, partition, activeFiles))
                 .collect(Collectors.toList());
         int numLeafPartitions = (int) partitions.stream().filter(Partition::isLeafPartition).count();
