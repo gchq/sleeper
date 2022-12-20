@@ -18,7 +18,6 @@ package sleeper.splitter;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfo;
@@ -31,7 +30,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
  * This finds partitions that need splitting. It does this by querying the
@@ -81,7 +79,9 @@ public class FindPartitionsToSplit {
 
     private void splitPartitionIfNecessary(Partition partition, List<FileInfo> activeFileInfos) throws IOException {
         List<FileInfo> relevantFiles = getFilesInPartition(partition, activeFileInfos);
-        if (partitionNeedsSplitting(tablePropertiesProvider.getTableProperties(tableName), partition, relevantFiles)) {
+        PartitionSplitCheck check = PartitionSplitCheck.fromFilesInPartition(splitThreshold, relevantFiles);
+        LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), tableName, check.getNumberOfRecordsInPartition());
+        if (check.isNeedsSplitting()) {
             LOGGER.info("Partition {} needs splitting (split threshold is {})", partition.getId(), splitThreshold);
             // If there are more than PartitionSplittingMaxFilesInJob files then pick the largest ones.
             List<String> filesForJob = new ArrayList<>();
@@ -104,12 +104,6 @@ public class FindPartitionsToSplit {
         } else {
             LOGGER.info("Partition {} does not need splitting (split threshold is {})", partition.getId(), splitThreshold);
         }
-    }
-
-    public static boolean partitionNeedsSplitting(TableProperties properties, Partition partition, List<FileInfo> relevantFiles) {
-        long numberOfRecordsInPartition = relevantFiles.stream().map(FileInfo::getNumberOfRecords).mapToLong(Long::longValue).sum();
-        LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), properties.get(TABLE_NAME), numberOfRecordsInPartition);
-        return numberOfRecordsInPartition >= properties.getLong(PARTITION_SPLIT_THRESHOLD);
     }
 
     public static List<FileInfo> getFilesInPartition(Partition partition, List<FileInfo> activeFileInfos) {

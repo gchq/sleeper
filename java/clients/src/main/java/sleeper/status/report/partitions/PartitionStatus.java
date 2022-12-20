@@ -21,6 +21,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.range.Range;
 import sleeper.core.schema.Field;
 import sleeper.splitter.FindPartitionsToSplit;
+import sleeper.splitter.PartitionSplitCheck;
 import sleeper.statestore.FileInfo;
 
 import java.util.List;
@@ -46,7 +47,7 @@ public class PartitionStatus {
     static PartitionStatus from(
             TableProperties tableProperties, PartitionTree tree, Partition partition, List<FileInfo> activeFiles) {
         List<FileInfo> filesInPartition = FindPartitionsToSplit.getFilesInPartition(partition, activeFiles);
-        boolean needsSplitting = FindPartitionsToSplit.partitionNeedsSplitting(tableProperties, partition, filesInPartition);
+        boolean needsSplitting = PartitionSplitCheck.fromFilesInPartition(tableProperties, filesInPartition).isNeedsSplitting();
         return builder().partition(partition)
                 .filesInPartition(filesInPartition)
                 .needsSplitting(needsSplitting)
