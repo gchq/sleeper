@@ -73,31 +73,37 @@ public class PartitionsStatus {
     private static void forEachLeavesFirst(
             PartitionTree tree, List<Partition> leaves, Set<String> visitedIds, Consumer<Partition> operation) {
 
-        leaves.sort(Comparator.comparing(Partition::getId));
+        if (leaves.isEmpty()) {
+            return;
+        }
+        leaves.sort(Comparator.comparing(partition -> getOrderByString(partition, tree)));
         leaves.forEach(operation);
 
-        List<Partition> nextLeaves = new ArrayList<>();
-        for (Partition partition : leaves) {
-            visitParent(partition, tree, visitedIds, nextLeaves);
-        }
-        if (!nextLeaves.isEmpty()) {
-            forEachLeavesFirst(tree, nextLeaves, visitedIds, operation);
-        }
+        Set<String> nextIds = leaves.stream()
+                .map(Partition::getParentPartitionId)
+                .filter(parentId -> isNextLeaf(parentId, tree, visitedIds))
+                .collect(Collectors.toSet());
+        visitedIds.addAll(nextIds);
+        List<Partition> nextLeaves = nextIds.stream().map(tree::getPartition).collect(Collectors.toList());
+        forEachLeavesFirst(tree, nextLeaves, visitedIds, operation);
     }
 
-    private static void visitParent(
-            Partition partition, PartitionTree tree, Set<String> visitedIds, List<Partition> nextLeaves) {
-
+    private static String getOrderByString(Partition partition, PartitionTree tree) {
         String parentId = partition.getParentPartitionId();
-        if (parentId == null || visitedIds.contains(parentId)) {
-            return;
+        if (parentId == null) {
+            return partition.getId();
         }
         Partition parent = tree.getPartition(parentId);
-        if (!visitedIds.containsAll(parent.getChildPartitionIds())) {
-            return;
+        int childIndex = parent.getChildPartitionIds().indexOf(partition.getId());
+        return parentId + "." + childIndex + "." + partition.getId();
+    }
+
+    private static boolean isNextLeaf(String partitionId, PartitionTree tree, Set<String> visitedIds) {
+        if (partitionId == null) {
+            return false;
         }
-        nextLeaves.add(parent);
-        visitedIds.add(parentId);
+        Partition partition = tree.getPartition(partitionId);
+        return visitedIds.containsAll(partition.getChildPartitionIds());
     }
 
     public int getNumPartitions() {
