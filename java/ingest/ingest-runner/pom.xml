@@ -53,8 +53,11 @@
         <!-- AWS version 2 dependencies -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
-            <artifactId>s3</artifactId>
-            <version>${aws-java-sdk-v2.version}</version>
+            <artifactId>s3-transfer-manager</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk.crt</groupId>
+            <artifactId>aws-crt</artifactId>
         </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
