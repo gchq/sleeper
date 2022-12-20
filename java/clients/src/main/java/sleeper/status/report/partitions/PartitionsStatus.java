@@ -46,13 +46,17 @@ public class PartitionsStatus {
         if (partitions.isEmpty()) {
             return new PartitionsStatus(Collections.emptyList(), 0, splitThreshold);
         }
-        PartitionTree tree = new PartitionTree(tableProperties.getSchema(), partitions);
-        List<FileInfo> activeFiles = store.getActiveFiles();
-        List<PartitionStatus> statuses = partitions.stream()
-                .map(partition -> PartitionStatus.from(tableProperties, tree, partition, activeFiles))
-                .collect(Collectors.toList());
+        List<PartitionStatus> statuses = statusesFrom(tableProperties, partitions, store.getActiveFiles());
         int numLeafPartitions = (int) partitions.stream().filter(Partition::isLeafPartition).count();
         return new PartitionsStatus(statuses, numLeafPartitions, splitThreshold);
+    }
+
+    private static List<PartitionStatus> statusesFrom(
+            TableProperties tableProperties, List<Partition> partitions, List<FileInfo> activeFiles) {
+        PartitionTree tree = new PartitionTree(tableProperties.getSchema(), partitions);
+        return partitions.stream()
+                .map(partition -> PartitionStatus.from(tableProperties, tree, partition, activeFiles))
+                .collect(Collectors.toList());
     }
 
     public int getNumPartitions() {
