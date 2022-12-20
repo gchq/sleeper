@@ -25,6 +25,7 @@ import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -33,11 +34,13 @@ import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStor
 public class InMemoryStateStoreBuilder {
 
     private final PartitionTree tree;
+    private final List<Partition> partitions;
     private final StateStore store;
 
     private InMemoryStateStoreBuilder(PartitionsBuilder partitionsBuilder) {
         tree = partitionsBuilder.buildTree();
-        store = inMemoryStateStoreWithFixedPartitions(partitionsBuilder.buildList());
+        partitions = partitionsBuilder.buildList();
+        store = inMemoryStateStoreWithFixedPartitions(partitions);
     }
 
     public static InMemoryStateStoreBuilder from(PartitionsBuilder partitionsBuilder) {
@@ -45,7 +48,7 @@ public class InMemoryStateStoreBuilder {
     }
 
     public InMemoryStateStoreBuilder singleFileInEachLeafPartitionWithRecords(long records) {
-        return addFiles(tree.getLeafPartitions().stream()
+        return addFiles(partitions.stream().filter(Partition::isLeafPartition)
                 .map(partition -> partitionSingleFile(partition, records)));
     }
 

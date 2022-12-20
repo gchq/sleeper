@@ -22,8 +22,12 @@ import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
@@ -54,9 +58,46 @@ public class PartitionsStatus {
     private static List<PartitionStatus> statusesFrom(
             TableProperties tableProperties, List<Partition> partitions, List<FileInfo> activeFiles) {
         PartitionTree tree = new PartitionTree(tableProperties.getSchema(), partitions);
-        return partitions.stream()
-                .map(partition -> PartitionStatus.from(tableProperties, tree, partition, activeFiles))
-                .collect(Collectors.toList());
+        List<Partition> leaves = partitions.stream().filter(Partition::isLeafPartition).collect(Collectors.toList());
+        List<PartitionStatus> statuses = new ArrayList<>();
+        forEachLeavesFirst(tree, leaves, partition -> statuses.add(
+                PartitionStatus.from(tableProperties, tree, partition, activeFiles)));
+        return statuses;
+    }
+
+    private static void forEachLeavesFirst(PartitionTree tree, List<Partition> leaves, Consumer<Partition> operation) {
+        Set<String> ids = leaves.stream().map(Partition::getId).collect(Collectors.toSet());
+        forEachLeavesFirst(tree, leaves, ids, operation);
+    }
+
+    private static void forEachLeavesFirst(
+            PartitionTree tree, List<Partition> leaves, Set<String> visitedIds, Consumer<Partition> operation) {
+
+        leaves.sort(Comparator.comparing(Partition::getId));
+        leaves.forEach(operation);
+
+        List<Partition> nextLeaves = new ArrayList<>();
+        for (Partition partition : leaves) {
+            visitParent(partition, tree, visitedIds, nextLeaves);
+        }
+        if (!nextLeaves.isEmpty()) {
+            forEachLeavesFirst(tree, nextLeaves, visitedIds, operation);
+        }
+    }
+
+    private static void visitParent(
+            Partition partition, PartitionTree tree, Set<String> visitedIds, List<Partition> nextLeaves) {
+
+        String parentId = partition.getParentPartitionId();
+        if (parentId == null || visitedIds.contains(parentId)) {
+            return;
+        }
+        Partition parent = tree.getPartition(parentId);
+        if (!visitedIds.containsAll(parent.getChildPartitionIds())) {
+            return;
+        }
+        nextLeaves.add(parent);
+        visitedIds.add(parentId);
     }
 
     public int getNumPartitions() {
