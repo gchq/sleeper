@@ -16,9 +16,30 @@
 
 package sleeper.status.report.partitions;
 
+import sleeper.core.partition.Partition;
+import sleeper.core.schema.Field;
+import sleeper.status.report.table.TableField;
+import sleeper.status.report.table.TableRow;
+import sleeper.status.report.table.TableWriterFactory;
+
 import java.io.PrintStream;
 
+import static sleeper.status.report.job.StandardProcessRunReporter.getOrNull;
+
 public class PartitionsStatusReporter {
+
+    private static final int SPLIT_VALUE_MAX_LENGTH = 30;
+
+    private static final TableWriterFactory.Builder BUILDER = TableWriterFactory.builder();
+    private static final TableField ID = BUILDER.addField("ID");
+    private static final TableField PARENT = BUILDER.addField("PARENT");
+    private static final TableField RECORDS = BUILDER.addNumericField("RECORDS");
+    private static final TableField LEAF = BUILDER.addField("LEAF");
+    private static final TableField NEEDS_SPLITTING = BUILDER.addField("NEEDS_SPLITTING");
+    private static final TableField SPLIT_FIELD = BUILDER.addField("SPLIT_FIELD");
+    private static final TableField SPLIT_VALUE = BUILDER.addField("SPLIT_VALUE");
+    private static final TableWriterFactory TABLE_FACTORY = BUILDER.build();
+
     private final PrintStream out;
 
     public PartitionsStatusReporter(PrintStream out) {
@@ -31,12 +52,43 @@ public class PartitionsStatusReporter {
         out.println("--------------------------");
         out.println("There are " + status.getNumPartitions() + " partitions (" + status.getNumLeafPartitions() + " leaf partitions)");
         out.println("There are " + status.getNumSplittingPartitions() + " leaf partitions that need splitting");
-        status.getPartitions().forEach(partition -> {
-            out.println(partition.getPartition());
-            if (partition.isLeafPartition()) {
-                out.println(" - Number of records: " + partition.getNumberOfRecords());
-            }
-        });
-        out.println("--------------------------");
+        out.println("Split threshold is " + status.getSplitThreshold() + " records");
+        TABLE_FACTORY.tableBuilder()
+                .itemsAndWriter(status.getPartitions(), PartitionsStatusReporter::writeRow)
+                .build().write(out);
+    }
+
+    private static void writeRow(PartitionStatus status, TableRow.Builder builder) {
+        Partition partition = status.getPartition();
+        builder.value(ID, partition.getId())
+                .value(PARENT, partition.getParentPartitionId())
+                .value(RECORDS, status.getNumberOfRecords())
+                .value(LEAF, partition.isLeafPartition() ? "yes" : "no")
+                .value(NEEDS_SPLITTING, needsSplittingString(status))
+                .value(SPLIT_FIELD, getOrNull(status.getSplitField(), Field::getName))
+                .value(SPLIT_VALUE, splitValueString(status));
+    }
+
+    private static String needsSplittingString(PartitionStatus status) {
+        if (!status.isLeafPartition()) {
+            return null;
+        }
+        return status.isNeedsSplitting() ? "yes" : "no";
+    }
+
+    private static String splitValueString(PartitionStatus status) {
+        Object value = status.getSplitValue();
+        if (value instanceof byte[]) {
+            return "[raw bytes]";
+        }
+        if (value == null) {
+            return null;
+        }
+        String string = value.toString();
+        if (string.length() < SPLIT_VALUE_MAX_LENGTH) {
+            return string;
+        }
+        int partSize = SPLIT_VALUE_MAX_LENGTH / 2;
+        return string.substring(0, partSize) + "..." + string.substring(string.length() - partSize);
     }
 }

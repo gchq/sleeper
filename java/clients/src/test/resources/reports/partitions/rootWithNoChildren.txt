@@ -3,6 +3,8 @@ Partitions Status Report:
 --------------------------
 There are 1 partitions (1 leaf partitions)
 There are 0 leaf partitions that need splitting
-Partition{rowKeyTypes=[StringType{}], region=Region{rowKeyFieldNameToRange={key=Range{field=Field{name=key, type=StringType{}}, min=, minInclusive=true, max=null, maxInclusive=false}}}, id='root', leafPartition=true, parentPartitionId='null', childPartitionIds=[], dimension=-1}
- - Number of records: 5
---------------------------
+Split threshold is 10 records
+--------------------------------------------------------------------------------
+| ID   | PARENT | RECORDS | LEAF | NEEDS_SPLITTING | SPLIT_FIELD | SPLIT_VALUE |
+| root |        |       5 | yes  | no              |             |             |
+--------------------------------------------------------------------------------

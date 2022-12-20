@@ -17,6 +17,9 @@ package sleeper.status.report.partitions;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.range.Range;
+import sleeper.core.schema.Field;
 import sleeper.splitter.FindPartitionsToSplit;
 import sleeper.statestore.FileInfo;
 
@@ -27,22 +30,27 @@ public class PartitionStatus {
     private final Partition partition;
     private final List<FileInfo> filesInPartition;
     private final boolean needsSplitting;
+    private final Field splitField;
+    private final Object splitValue;
 
-    private PartitionStatus(Partition partition, List<FileInfo> filesInPartition, boolean needsSplitting) {
-        this.partition = partition;
-        this.filesInPartition = filesInPartition;
-        this.needsSplitting = needsSplitting;
+    private PartitionStatus(Builder builder) {
+        partition = builder.partition;
+        filesInPartition = builder.filesInPartition;
+        needsSplitting = builder.needsSplitting;
+        splitField = builder.splitField;
+        splitValue = builder.splitValue;
     }
 
-    public static PartitionStatus from(
-            TableProperties tableProperties, Partition partition, List<FileInfo> activeFiles) {
+    static PartitionStatus from(
+            TableProperties tableProperties, PartitionTree tree, Partition partition, List<FileInfo> activeFiles) {
         List<FileInfo> filesInPartition = FindPartitionsToSplit.getFilesInPartition(partition, activeFiles);
-        if (partition.isLeafPartition()) {
-            return new PartitionStatus(partition, filesInPartition,
-                    FindPartitionsToSplit.partitionNeedsSplitting(tableProperties, partition, filesInPartition));
-        } else {
-            return new PartitionStatus(partition, filesInPartition, false);
-        }
+        boolean needsSplitting = FindPartitionsToSplit.partitionNeedsSplitting(tableProperties, partition, filesInPartition);
+        return builder().partition(partition)
+                .filesInPartition(filesInPartition)
+                .needsSplitting(needsSplitting)
+                .splitField(splitField(partition))
+                .splitValue(splitValue(partition, tree))
+                .build();
     }
 
     public boolean isNeedsSplitting() {
@@ -59,5 +67,76 @@ public class PartitionStatus {
 
     public long getNumberOfRecords() {
         return filesInPartition.stream().mapToLong(FileInfo::getNumberOfRecords).sum();
+    }
+
+    public Field getSplitField() {
+        return splitField;
+    }
+
+    public Object getSplitValue() {
+        return splitValue;
+    }
+
+    private static Builder builder() {
+        return new Builder();
+    }
+
+    private static Field splitField(Partition partition) {
+        if (partition.isLeafPartition()) {
+            return null;
+        }
+        return dimensionRange(partition, partition.getDimension()).getField();
+    }
+
+    private static Object splitValue(Partition partition, PartitionTree tree) {
+        if (partition.isLeafPartition()) {
+            return null;
+        }
+        Partition left = tree.getPartition(partition.getChildPartitionIds().get(0));
+        return dimensionRange(left, partition.getDimension()).getMax();
+    }
+
+    private static Range dimensionRange(Partition partition, int dimension) {
+        return partition.getRegion().getRanges().get(dimension);
+    }
+
+    public static final class Builder {
+        private Partition partition;
+        private List<FileInfo> filesInPartition;
+        private boolean needsSplitting;
+        private Field splitField;
+        private Object splitValue;
+
+        private Builder() {
+        }
+
+        public Builder partition(Partition partition) {
+            this.partition = partition;
+            return this;
+        }
+
+        public Builder filesInPartition(List<FileInfo> filesInPartition) {
+            this.filesInPartition = filesInPartition;
+            return this;
+        }
+
+        public Builder needsSplitting(boolean needsSplitting) {
+            this.needsSplitting = needsSplitting;
+            return this;
+        }
+
+        public Builder splitField(Field splitField) {
+            this.splitField = splitField;
+            return this;
+        }
+
+        public Builder splitValue(Object splitValue) {
+            this.splitValue = splitValue;
+            return this;
+        }
+
+        public PartitionStatus build() {
+            return new PartitionStatus(this);
+        }
     }
 }

@@ -27,6 +27,8 @@ import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStor
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithNoChildren;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildrenAboveSplitThreshold;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildrenBelowSplitThreshold;
+import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildrenSplitOnByteArray;
+import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildrenSplitOnLongString;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.getStandardReport;
 
 public class PartitionsStatusReportTest {
@@ -68,5 +70,25 @@ public class PartitionsStatusReportTest {
         // When
         assertThat(getStandardReport(store)).hasToString(
                 example("reports/partitions/rootWithTwoChildrenBothNeedSplitting.txt"));
+    }
+
+    @Test
+    public void shouldReportRootPartitionSplitOnByteArray() throws Exception {
+        // Given
+        StateStore store = createRootPartitionWithTwoChildrenSplitOnByteArray();
+
+        // When
+        assertThat(getStandardReport(store)).hasToString(
+                example("reports/partitions/rootWithTwoChildrenSplitOnByteArray.txt"));
+    }
+
+    @Test
+    public void shouldReportRootPartitionSplitOnLongStringHidingMiddle() throws Exception {
+        // Given
+        StateStore store = createRootPartitionWithTwoChildrenSplitOnLongString();
+
+        // When
+        assertThat(getStandardReport(store)).hasToString(
+                example("reports/partitions/rootWithTwoChildrenSplitOnLongString.txt"));
     }
 }

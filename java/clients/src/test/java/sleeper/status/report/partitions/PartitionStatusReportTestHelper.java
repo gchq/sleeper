@@ -22,6 +22,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
@@ -35,8 +36,9 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class PartitionStatusReportTestHelper {
     private static final Long TEST_THRESHOLD = 10L;
-    private static final Field DEFAULT_KEY = new Field("key", new StringType());
-    private static final Schema DEFAULT_SCHEMA = Schema.builder().rowKeyFields(DEFAULT_KEY).build();
+    private static final Schema DEFAULT_SCHEMA = Schema.builder()
+            .rowKeyFields(new Field("key", new StringType()))
+            .build();
 
     private PartitionStatusReportTestHelper() {
     }
@@ -62,6 +64,26 @@ public class PartitionStatusReportTestHelper {
     public static StateStore createRootPartitionWithTwoChildrenAboveSplitThreshold() {
         return InMemoryStateStoreBuilder.from(createRootPartitionWithTwoChildren())
                 .singleFileInEachLeafPartitionWithRecords(100)
+                .buildStateStore();
+    }
+
+    public static StateStore createRootPartitionWithTwoChildrenSplitOnByteArray() {
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new ByteArrayType()))
+                .build();
+        return InMemoryStateStoreBuilder.from(new PartitionsBuilder(schema)
+                        .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(new byte[42]))
+                        .parentJoining("parent", "A", "B"))
+                .singleFileInEachLeafPartitionWithRecords(5)
+                .buildStateStore();
+    }
+
+    public static StateStore createRootPartitionWithTwoChildrenSplitOnLongString() {
+        return InMemoryStateStoreBuilder.from(createPartitionsBuilder()
+                        .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(
+                                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                        .parentJoining("parent", "A", "B"))
+                .singleFileInEachLeafPartitionWithRecords(5)
                 .buildStateStore();
     }
 
