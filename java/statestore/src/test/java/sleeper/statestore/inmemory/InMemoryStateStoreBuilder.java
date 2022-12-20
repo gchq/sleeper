@@ -13,43 +13,61 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestore;
+package sleeper.statestore.inmemory;
 
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.range.Range;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.StringType;
+import sleeper.statestore.FileInfo;
+import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
 
 import java.time.Instant;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-public class FileInfoTestData {
-    private FileInfoTestData() {
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+
+public class InMemoryStateStoreBuilder {
+
+    private final PartitionTree tree;
+    private final StateStore store;
+
+    private InMemoryStateStoreBuilder(PartitionsBuilder partitionsBuilder) {
+        tree = partitionsBuilder.buildTree();
+        store = inMemoryStateStoreWithFixedPartitions(partitionsBuilder.buildList());
     }
 
-    public static final long DEFAULT_NUMBER_OF_RECORDS = 100L;
-
-    private static final Schema DEFAULT_SCHEMA = Schema.builder()
-            .rowKeyFields(new Field("key", new StringType()))
-            .build();
-
-    public static FileInfo defaultFileOnRootPartition(String filename) {
-        return defaultFileOnRootPartitionWithRecords(filename, DEFAULT_NUMBER_OF_RECORDS);
+    public static InMemoryStateStoreBuilder from(PartitionsBuilder partitionsBuilder) {
+        return new InMemoryStateStoreBuilder(partitionsBuilder);
     }
 
-    public static FileInfo defaultFileOnRootPartitionWithRecords(String filename, long records) {
-        return FileInfo.builder()
-                .rowKeyTypes(DEFAULT_SCHEMA.getRowKeyTypes())
-                .minRowKey(Key.create("")).maxRowKey(null)
-                .filename(filename).partitionId("root")
-                .numberOfRecords(records).fileStatus(FileInfo.FileStatus.ACTIVE)
-                .lastStateStoreUpdateTime(Instant.parse("2022-12-08T11:03:00.001Z"))
-                .build();
+    public InMemoryStateStoreBuilder singleFileInEachLeafPartitionWithRecords(long records) {
+        return addFiles(tree.getLeafPartitions().stream()
+                .map(partition -> partitionSingleFile(partition, records)));
     }
 
-    public static FileInfo defaultPartitionSingleFileWithRecords(Partition partition, long records) {
+    public StateStore buildStateStore() {
+        return store;
+    }
+
+    private InMemoryStateStoreBuilder addFiles(Stream<FileInfo> addFiles) {
+        addFiles.forEach(this::addFile);
+        return this;
+    }
+
+    private InMemoryStateStoreBuilder addFile(FileInfo file) {
+        try {
+            store.addFile(file);
+        } catch (StateStoreException e) {
+            throw new IllegalStateException("Failed adding file to state store", e);
+        }
+        return this;
+    }
+
+    private static FileInfo partitionSingleFile(Partition partition, long records) {
         return FileInfo.builder()
                 .rowKeyTypes(partition.getRowKeyTypes())
                 .minRowKey(minRowKey(partition)).maxRowKey(maxRowKey(partition))

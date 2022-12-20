@@ -100,6 +100,12 @@ public class PartitionTree {
         return Collections.unmodifiableList(new ArrayList<>(idToPartition.values()));
     }
 
+    public List<Partition> getLeafPartitions() {
+        return Collections.unmodifiableList(idToPartition.values().stream()
+                .filter(Partition::isLeafPartition)
+                .collect(Collectors.toList()));
+    }
+
     public Partition getLeafPartition(Key key) {
         // Sanity check key is of the correct length
         if (key.size() != schema.getRowKeyFields().size()) {

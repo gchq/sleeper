@@ -17,67 +17,56 @@
 package sleeper.status.report.partitions;
 
 import org.junit.Test;
-import sleeper.core.partition.Partition;
+import sleeper.statestore.StateStore;
 
-import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ClientTestUtils.example;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithNoChildren;
-import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildren;
+import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildrenAboveSplitThreshold;
+import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildrenBelowSplitThreshold;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.getStandardReport;
-import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.setNumberOfRecordsForPartitionsNonSplitting;
-import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.setNumberOfRecordsForPartitionsSplitting;
 
 public class PartitionsStatusReportTest {
     @Test
-    public void shouldReportNoPartitions() throws IOException {
+    public void shouldReportNoPartitions() throws Exception {
         // Given
-        List<Partition> partitions = Collections.emptyList();
-        Map<String, Long> recordsPerPartition = setNumberOfRecordsForPartitionsNonSplitting(partitions);
-        int splittingPartitionCount = 0;
+        StateStore store = inMemoryStateStoreWithFixedPartitions(Collections.emptyList());
 
         // When
-        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, recordsPerPartition, splittingPartitionCount)).hasToString(
+        assertThat(getStandardReport(store)).hasToString(
                 example("reports/partitions/noPartitions.txt"));
     }
 
     @Test
-    public void shouldReportRootPartitionWithNoChildren() throws IOException {
+    public void shouldReportRootPartitionWithNoChildren() throws Exception {
         // Given
-        List<Partition> partitions = createRootPartitionWithNoChildren();
-        Map<String, Long> recordsPerPartition = setNumberOfRecordsForPartitionsNonSplitting(partitions);
-        int splittingPartitionCount = 0;
+        StateStore store = createRootPartitionWithNoChildren();
 
         // When
-        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, recordsPerPartition, splittingPartitionCount)).hasToString(
+        assertThat(getStandardReport(store)).isEqualTo(
                 example("reports/partitions/rootWithNoChildren.txt"));
     }
 
     @Test
-    public void shouldReportRootPartitionWithTwoChildren() throws IOException {
+    public void shouldReportRootPartitionWithTwoChildren() throws Exception {
         // Given
-        List<Partition> partitions = createRootPartitionWithTwoChildren();
-        Map<String, Long> recordsPerPartition = setNumberOfRecordsForPartitionsNonSplitting(partitions);
-        int splittingPartitionCount = 0;
+        StateStore store = createRootPartitionWithTwoChildrenBelowSplitThreshold();
 
         // When
-        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, recordsPerPartition, splittingPartitionCount)).hasToString(
+        assertThat(getStandardReport(store)).hasToString(
                 example("reports/partitions/rootWithTwoChildren.txt"));
     }
 
     @Test
-    public void shouldReportRootPartitionWithTwoChildrenBothNeedSplitting() throws IOException {
+    public void shouldReportRootPartitionWithTwoChildrenBothNeedSplitting() throws Exception {
         // Given
-        List<Partition> partitions = createRootPartitionWithTwoChildren();
-        Map<String, Long> recordsPerPartition = setNumberOfRecordsForPartitionsSplitting(partitions);
-        int splittingPartitionCount = 2;
+        StateStore store = createRootPartitionWithTwoChildrenAboveSplitThreshold();
 
         // When
-        assertThat(getStandardReport(PartitionsQuery.ALL, partitions, recordsPerPartition, splittingPartitionCount)).hasToString(
+        assertThat(getStandardReport(store)).hasToString(
                 example("reports/partitions/rootWithTwoChildrenBothNeedSplitting.txt"));
     }
 }

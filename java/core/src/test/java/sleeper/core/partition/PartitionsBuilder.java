@@ -19,6 +19,7 @@ import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,10 @@ public class PartitionsBuilder {
     public PartitionsBuilder(Schema schema) {
         this.schema = schema;
         factory = new PartitionFactory(schema);
+    }
+
+    public PartitionsBuilder singlePartition(String id) {
+        return leavesWithSplits(Collections.singletonList(id), Collections.emptyList());
     }
 
     public PartitionsBuilder leavesWithSplits(List<String> ids, List<Object> splits) {

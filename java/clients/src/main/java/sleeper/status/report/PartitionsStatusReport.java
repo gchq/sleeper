@@ -24,23 +24,14 @@ import sleeper.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.partition.Partition;
-import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.status.report.partitions.PartitionsQuery;
+import sleeper.status.report.partitions.PartitionsStatus;
 import sleeper.status.report.partitions.PartitionsStatusReportArguments;
 import sleeper.status.report.partitions.PartitionsStatusReporter;
-import sleeper.status.report.partitions.StandardPartitionsStatusReporter;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static sleeper.splitter.FindPartitionsToSplit.getFilesInPartition;
-import static sleeper.splitter.FindPartitionsToSplit.partitionNeedsSplitting;
 
 /**
  * A utility class to report information about the partitions in the system and
@@ -48,44 +39,17 @@ import static sleeper.splitter.FindPartitionsToSplit.partitionNeedsSplitting;
  */
 public class PartitionsStatusReport {
     private final StateStore store;
-    private final PartitionsStatusReporter reporter;
-    private final PartitionsQuery query;
     private final TableProperties tableProperties;
+    private final PartitionsStatusReporter reporter;
 
-    public PartitionsStatusReport(StateStore store, TableProperties tableProperties) {
-        this(store, tableProperties, new StandardPartitionsStatusReporter(System.out), PartitionsQuery.ALL);
-    }
-
-    public PartitionsStatusReport(StateStore store, TableProperties tableProperties, PartitionsStatusReporter reporter, PartitionsQuery query) {
+    public PartitionsStatusReport(StateStore store, TableProperties tableProperties, PartitionsStatusReporter reporter) {
         this.store = store;
-        this.reporter = reporter;
-        this.query = query;
         this.tableProperties = tableProperties;
+        this.reporter = reporter;
     }
 
     public void run() throws StateStoreException {
-        reporter.report(query, query.run(store), getPartitionMapToNumberOfRecords(), getSplittingPartitionCount());
-    }
-
-    public int getSplittingPartitionCount() throws StateStoreException {
-        List<Partition> allPartitions = query.run(store);
-        List<FileInfo> allFiles = store.getActiveFiles();
-        return (int) allPartitions.stream().filter(Partition::isLeafPartition)
-                .filter(partition -> partitionNeedsSplitting(tableProperties, partition,
-                        getFilesInPartition(partition, allFiles))).count();
-    }
-
-    public Map<String, Long> getPartitionMapToNumberOfRecords() throws StateStoreException {
-        List<FileInfo> files = store.getActiveFiles();
-        Map<String, Long> partitionToFiles = new HashMap<>();
-        for (FileInfo fileInfo : files) {
-            String partition = fileInfo.getPartitionId();
-            if (!partitionToFiles.containsKey(partition)) {
-                partitionToFiles.put(partition, 0L);
-            }
-            partitionToFiles.put(partition, (partitionToFiles.get(partition)) + fileInfo.getNumberOfRecords());
-        }
-        return partitionToFiles;
+        reporter.report(PartitionsStatus.from(tableProperties, store));
     }
 
     public static void main(String[] args) throws IOException, StateStoreException {
@@ -108,7 +72,7 @@ public class PartitionsStatusReport {
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
         StateStore stateStore = stateStoreProvider.getStateStore(arguments.getTableName(), tablePropertiesProvider);
 
-        PartitionsStatusReport statusReport = new PartitionsStatusReport(stateStore, tableProperties, arguments.getReporter(), arguments.getQuery());
+        PartitionsStatusReport statusReport = new PartitionsStatusReport(stateStore, tableProperties, arguments.getReporter());
         statusReport.run();
 
         amazonS3.shutdown();

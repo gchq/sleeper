@@ -82,7 +82,7 @@ public class FindPartitionsToSplit {
     private void splitPartitionIfNecessary(Partition partition, List<FileInfo> activeFileInfos) throws IOException {
         List<FileInfo> relevantFiles = getFilesInPartition(partition, activeFileInfos);
         if (partitionNeedsSplitting(tablePropertiesProvider.getTableProperties(tableName), partition, relevantFiles)) {
-            LOGGER.info("Partition {} needs splitting as split threshold is {}", partition.getId(), splitThreshold);
+            LOGGER.info("Partition {} needs splitting (split threshold is {})", partition.getId(), splitThreshold);
             // If there are more than PartitionSplittingMaxFilesInJob files then pick the largest ones.
             List<String> filesForJob = new ArrayList<>();
             if (relevantFiles.size() < maxFilesInJob) {

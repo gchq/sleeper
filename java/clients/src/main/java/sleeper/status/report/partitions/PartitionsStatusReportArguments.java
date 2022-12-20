@@ -18,39 +18,29 @@ package sleeper.status.report.partitions;
 
 import java.io.PrintStream;
 
-import static sleeper.ClientUtils.optionalArgument;
-
 public class PartitionsStatusReportArguments {
     private final String instanceId;
     private final String tableName;
     private final PartitionsStatusReporter reporter;
-    private final PartitionsQuery query;
 
     private PartitionsStatusReportArguments(String instanceId,
                                             String tableName,
-                                            PartitionsStatusReporter reporter,
-                                            PartitionsQuery query) {
+                                            PartitionsStatusReporter reporter) {
         this.instanceId = instanceId;
         this.tableName = tableName;
         this.reporter = reporter;
-        this.query = query;
     }
 
     public static void printUsage(PrintStream out) {
-        out.println("Usage: <instance id> <table name> <report_type_standard_or_json> <optional_query_type>\n" +
-                "Query types are:\n" +
-                " -a (Return all partitions)\n");
+        out.println("Usage: <instance id> <table name>");
     }
 
     public static PartitionsStatusReportArguments fromArgs(String... args) {
-        if (args.length < 1 || args.length > 3) {
+        if (args.length != 2) {
             throw new IllegalArgumentException("Wrong number of arguments");
         }
-        PartitionsStatusReporter reporter = new StandardPartitionsStatusReporter(System.out);
-        PartitionsQuery query = optionalArgument(args, 2)
-                .map(PartitionsQuery::from)
-                .orElse(PartitionsQuery.ALL);
-        return new PartitionsStatusReportArguments(args[0], args[1], reporter, query);
+        PartitionsStatusReporter reporter = new PartitionsStatusReporter(System.out);
+        return new PartitionsStatusReportArguments(args[0], args[1], reporter);
     }
 
     public String getInstanceId() {
@@ -63,9 +53,5 @@ public class PartitionsStatusReportArguments {
 
     public PartitionsStatusReporter getReporter() {
         return reporter;
-    }
-
-    public PartitionsQuery getQuery() {
-        return query;
     }
 }

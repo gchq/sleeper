@@ -19,94 +19,61 @@ package sleeper.status.report.partitions;
 import sleeper.ToStringPrintStream;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionFactory;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.statestore.FileInfo;
+import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
+import sleeper.statestore.inmemory.InMemoryStateStoreBuilder;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class PartitionStatusReportTestHelper {
     private static final Long TEST_THRESHOLD = 10L;
+    private static final Field DEFAULT_KEY = new Field("key", new StringType());
+    private static final Schema DEFAULT_SCHEMA = Schema.builder().rowKeyFields(DEFAULT_KEY).build();
 
     private PartitionStatusReportTestHelper() {
     }
 
-    public static List<Partition> createRootPartitionWithTwoChildren() {
-        PartitionFactory partitionFactory = createPartitionFactory();
-        Partition a = partitionFactory.partition("A", "", "aaa");
-        Partition b = partitionFactory.partition("B", "aaa", null);
-        Partition parent = partitionFactory.parentJoining("parent", a, b);
-        return Arrays.asList(parent, a, b);
+    public static PartitionsBuilder createRootPartitionWithTwoChildren() {
+        return createPartitionsBuilder()
+                .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList("aaa"))
+                .parentJoining("parent", "A", "B");
     }
 
-    public static List<Partition> createRootPartitionWithNoChildren() {
-        PartitionFactory partitionFactory = createPartitionFactory();
-        Partition root = partitionFactory.partition("root", "", null);
-        return Collections.singletonList(root);
+    public static StateStore createRootPartitionWithNoChildren() {
+        return InMemoryStateStoreBuilder.from(createPartitionsBuilder().singlePartition("root"))
+                .singleFileInEachLeafPartitionWithRecords(5)
+                .buildStateStore();
     }
 
-    public static PartitionFactory createPartitionFactory() {
-        Field key = new Field("key", new StringType());
-        Schema schema = Schema.builder().rowKeyFields(key).build();
-        return new PartitionFactory(schema);
+    public static StateStore createRootPartitionWithTwoChildrenBelowSplitThreshold() {
+        return InMemoryStateStoreBuilder.from(createRootPartitionWithTwoChildren())
+                .singleFileInEachLeafPartitionWithRecords(5)
+                .buildStateStore();
     }
 
-    public static Map<String, Long> setNumberOfRecordsForPartitionsNonSplitting(List<Partition> partitions) {
-        return setNumberOfRecordsForPartitions(partitions, 10L);
+    public static StateStore createRootPartitionWithTwoChildrenAboveSplitThreshold() {
+        return InMemoryStateStoreBuilder.from(createRootPartitionWithTwoChildren())
+                .singleFileInEachLeafPartitionWithRecords(100)
+                .buildStateStore();
     }
 
-    public static Map<String, Long> setNumberOfRecordsForPartitionsSplitting(List<Partition> partitions) {
-        return setNumberOfRecordsForPartitions(partitions, 10000L);
+    public static PartitionsBuilder createPartitionsBuilder() {
+        return new PartitionsBuilder(DEFAULT_SCHEMA);
     }
 
-    public static Map<String, Long> setNumberOfRecordsForPartitions(List<Partition> partitions, Long records) {
-        Map<String, Long> recordsToPartition = new HashMap<>();
-        partitions.stream()
-                .filter(Partition::isLeafPartition)
-                .forEach(partition -> recordsToPartition.put(partition.getId(), records));
-        return recordsToPartition;
-    }
-
-    public static String getStandardReport(PartitionsQuery queryType, List<Partition> partitionList,
-                                           Map<String, Long> recordsPerPartitions, int splittingPartitionCount) {
+    public static String getStandardReport(StateStore stateStore) throws StateStoreException {
         ToStringPrintStream output = new ToStringPrintStream();
-        StandardPartitionsStatusReporter reporter = new StandardPartitionsStatusReporter(output.getPrintStream());
-        reporter.report(queryType, partitionList, recordsPerPartitions, splittingPartitionCount);
+        PartitionsStatusReporter reporter = new PartitionsStatusReporter(output.getPrintStream());
+        reporter.report(PartitionsStatus.from(createTableProperties(), stateStore));
         return output.toString();
-    }
-
-    public static List<FileInfo> createFileInfosNonSplitting(List<Partition> partitions) {
-        return createFileInfos(partitions, 5L);
-    }
-
-    public static List<FileInfo> createFileInfosSplitting(List<Partition> partitions) {
-        return createFileInfos(partitions, 100L);
-    }
-
-    public static List<FileInfo> createFileInfos(List<Partition> partitions, Long records) {
-        List<FileInfo> fileInfos = new ArrayList<>();
-        partitions.forEach(partition -> {
-            if (partition.isLeafPartition()) {
-                fileInfos.add(FileInfo.builder()
-                        .numberOfRecords(records)
-                        .filename("test" + partition.getId() + ".parquet")
-                        .partitionId(partition.getId())
-                        .jobId("test-job")
-                        .build());
-            }
-        });
-        return fileInfos;
     }
 
     public static TableProperties createTableProperties() {

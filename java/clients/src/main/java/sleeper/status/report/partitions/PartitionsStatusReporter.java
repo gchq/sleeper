@@ -16,20 +16,27 @@
 
 package sleeper.status.report.partitions;
 
-import sleeper.core.partition.Partition;
-
 import java.io.PrintStream;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
-public interface PartitionsStatusReporter {
-    void report(PartitionsQuery query, List<Partition> partitions, Map<String, Long> recordsPerPartitions, int splittingPartitionCount);
+public class PartitionsStatusReporter {
+    private final PrintStream out;
 
-    static PartitionsStatusReporter from(String type, PrintStream out) {
-        if ("standard".equals(type.toLowerCase(Locale.ROOT))) {
-            return new StandardPartitionsStatusReporter(out);
-        }
-        throw new IllegalArgumentException("Unrecognised reporter type: " + type);
+    public PartitionsStatusReporter(PrintStream out) {
+        this.out = out;
+    }
+
+    public void report(PartitionsStatus status) {
+        out.println();
+        out.println("Partitions Status Report:");
+        out.println("--------------------------");
+        out.println("There are " + status.getNumPartitions() + " partitions (" + status.getNumLeafPartitions() + " leaf partitions)");
+        out.println("There are " + status.getNumSplittingPartitions() + " leaf partitions that need splitting");
+        status.getPartitions().forEach(partition -> {
+            out.println(partition.getPartition());
+            if (partition.isLeafPartition()) {
+                out.println(" - Number of records: " + partition.getNumberOfRecords());
+            }
+        });
+        out.println("--------------------------");
     }
 }
