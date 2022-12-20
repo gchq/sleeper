@@ -32,6 +32,7 @@ public class PartitionStatus {
     private final boolean needsSplitting;
     private final Field splitField;
     private final Object splitValue;
+    private final Integer indexInParent;
 
     private PartitionStatus(Builder builder) {
         partition = builder.partition;
@@ -39,6 +40,7 @@ public class PartitionStatus {
         needsSplitting = builder.needsSplitting;
         splitField = builder.splitField;
         splitValue = builder.splitValue;
+        indexInParent = builder.indexInParent;
     }
 
     static PartitionStatus from(
@@ -50,6 +52,7 @@ public class PartitionStatus {
                 .needsSplitting(needsSplitting)
                 .splitField(splitField(partition))
                 .splitValue(splitValue(partition, tree))
+                .indexInParent(indexInParent(partition, tree))
                 .build();
     }
 
@@ -81,6 +84,10 @@ public class PartitionStatus {
         return splitValue;
     }
 
+    public Integer getIndexInParent() {
+        return indexInParent;
+    }
+
     private static Builder builder() {
         return new Builder();
     }
@@ -104,12 +111,22 @@ public class PartitionStatus {
         return partition.getRegion().getRanges().get(dimension);
     }
 
+    private static Integer indexInParent(Partition partition, PartitionTree tree) {
+        String parentId = partition.getParentPartitionId();
+        if (parentId == null) {
+            return null;
+        }
+        Partition parent = tree.getPartition(parentId);
+        return parent.getChildPartitionIds().indexOf(partition.getId());
+    }
+
     public static final class Builder {
         private Partition partition;
         private List<FileInfo> filesInPartition;
         private boolean needsSplitting;
         private Field splitField;
         private Object splitValue;
+        private Integer indexInParent;
 
         private Builder() {
         }
@@ -136,6 +153,11 @@ public class PartitionStatus {
 
         public Builder splitValue(Object splitValue) {
             this.splitValue = splitValue;
+            return this;
+        }
+
+        public Builder indexInParent(Integer indexInParent) {
+            this.indexInParent = indexInParent;
             return this;
         }
 

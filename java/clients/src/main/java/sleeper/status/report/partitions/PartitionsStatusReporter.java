@@ -33,6 +33,7 @@ public class PartitionsStatusReporter {
     private static final TableWriterFactory.Builder BUILDER = TableWriterFactory.builder();
     private static final TableField ID = BUILDER.addField("ID");
     private static final TableField PARENT = BUILDER.addField("PARENT");
+    private static final TableField PARENT_SIDE = BUILDER.addField("PARENT_SIDE");
     private static final TableField FILES = BUILDER.addNumericField("FILES");
     private static final TableField RECORDS = BUILDER.addNumericField("RECORDS");
     private static final TableField LEAF = BUILDER.addField("LEAF");
@@ -63,6 +64,7 @@ public class PartitionsStatusReporter {
         Partition partition = status.getPartition();
         builder.value(ID, partition.getId())
                 .value(PARENT, partition.getParentPartitionId())
+                .value(PARENT_SIDE, parentSideString(status))
                 .value(FILES, status.getNumberOfFiles())
                 .value(RECORDS, status.getNumberOfRecords())
                 .value(LEAF, partition.isLeafPartition() ? "yes" : "no")
@@ -92,5 +94,18 @@ public class PartitionsStatusReporter {
         }
         int partSize = SPLIT_VALUE_MAX_LENGTH / 2;
         return string.substring(0, partSize) + "..." + string.substring(string.length() - partSize);
+    }
+
+    private static String parentSideString(PartitionStatus status) {
+        Integer index = status.getIndexInParent();
+        if (index == null) {
+            return null;
+        } else if (index == 0) {
+            return "min";
+        } else if (index == 1) {
+            return "max";
+        } else {
+            return "" + index;
+        }
     }
 }
