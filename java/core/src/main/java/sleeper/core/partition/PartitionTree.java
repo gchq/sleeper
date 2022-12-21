@@ -165,13 +165,16 @@ public class PartitionTree {
     }
 
     private List<Partition> getLeavesInTreeOrder() {
-        return leavesInTreeOrderUnder(getRootPartition()).collect(Collectors.toList());
+        // Establish ordering of the leaves with a depth-first traversal.
+        return leavesInTreeOrderUnder(getRootPartition())
+                .collect(Collectors.toList());
     }
 
     private Stream<Partition> leavesInTreeOrderUnder(Partition partition) {
         if (partition.isLeafPartition()) {
             return Stream.of(partition);
         }
+        // Always follow left/min side first. Child partition IDs should be left/min then right/max.
         return partition.getChildPartitionIds().stream()
                 .map(this::getPartition)
                 .flatMap(this::leavesInTreeOrderUnder);
