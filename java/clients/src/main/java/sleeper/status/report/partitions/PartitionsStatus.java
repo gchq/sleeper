@@ -31,12 +31,10 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPL
 public class PartitionsStatus {
 
     private final List<PartitionStatus> partitions;
-    private final int numLeafPartitions;
     private final long splitThreshold;
 
-    public PartitionsStatus(List<PartitionStatus> partitions, int numLeafPartitions, long splitThreshold) {
+    public PartitionsStatus(List<PartitionStatus> partitions, long splitThreshold) {
         this.partitions = partitions;
-        this.numLeafPartitions = numLeafPartitions;
         this.splitThreshold = splitThreshold;
     }
 
@@ -44,11 +42,10 @@ public class PartitionsStatus {
         List<Partition> partitions = store.getAllPartitions();
         long splitThreshold = tableProperties.getLong(PARTITION_SPLIT_THRESHOLD);
         if (partitions.isEmpty()) {
-            return new PartitionsStatus(Collections.emptyList(), 0, splitThreshold);
+            return new PartitionsStatus(Collections.emptyList(), splitThreshold);
         }
         List<PartitionStatus> statuses = statusesFrom(tableProperties, partitions, store.getActiveFiles());
-        int numLeafPartitions = (int) partitions.stream().filter(Partition::isLeafPartition).count();
-        return new PartitionsStatus(statuses, numLeafPartitions, splitThreshold);
+        return new PartitionsStatus(statuses, splitThreshold);
     }
 
     private static List<PartitionStatus> statusesFrom(
@@ -64,8 +61,8 @@ public class PartitionsStatus {
         return partitions.size();
     }
 
-    public int getNumLeafPartitions() {
-        return numLeafPartitions;
+    public long getNumLeafPartitions() {
+        return partitions.stream().filter(PartitionStatus::isLeafPartition).count();
     }
 
     public long getNumSplittingPartitions() {
