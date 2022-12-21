@@ -25,12 +25,19 @@ INSTANCE_ID=$1
 TABLE_NAME="system-test"
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(dirname "$THIS_DIR")
+VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
 "$SCRIPTS_DIR/test/deploy.sh" "$@"
 END_DEPLOY_TIME=$(record_time)
+
+echo "-------------------------------------------------------------------------------"
+echo "Pausing System"
+echo "-------------------------------------------------------------------------------"
+
+java -cp "${SCRIPTS_DIR}/jars/clients-$VERSION-utility.jar" sleeper.status.update.PauseSystem "${INSTANCE_ID}"
 
 echo "-------------------------------------------------------------------------------"
 echo "Writing Random Data"
@@ -40,9 +47,9 @@ sleeper.systemtest.ingest.RunWriteRandomDataTaskOnECS "${INSTANCE_ID}" "${TABLE_
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
-echo "Finished deploying test"
+echo "Finished deploying paused test"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
 echo "Deploy finished at $(recorded_time_str "$END_DEPLOY_TIME"), took $(elapsed_time_str "$START_TIME" "$END_DEPLOY_TIME")"
 echo "Starting of tasks to write random data finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_DEPLOY_TIME" "$FINISH_TIME")"
-echo "Overall, deploying test took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
+echo "Overall, deploying paused test took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
