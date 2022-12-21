@@ -66,7 +66,7 @@ public class PartitionsStatus {
 
     private static Stream<Partition> traverseLeavesFirst(PartitionTree tree) {
         List<Partition> leaves = getLeavesInTreeOrder(tree);
-        return traverseLeavesFirst(tree, leaves, new HashSet<>());
+        return traverseLeavesFirst(tree, leaves, new HashSet<>(), Stream.empty());
     }
 
     private static List<Partition> getLeavesInTreeOrder(PartitionTree tree) {
@@ -83,11 +83,7 @@ public class PartitionsStatus {
     }
 
     private static Stream<Partition> traverseLeavesFirst(
-            PartitionTree tree, List<Partition> leaves, Set<String> prunedIds) {
-
-        if (leaves.isEmpty()) {
-            return Stream.empty();
-        }
+            PartitionTree tree, List<Partition> leaves, Set<String> prunedIds, Stream<Partition> partialTraversal) {
 
         // Prune the current leaves from the tree.
         // Tracking the pruned partitions creates a logical tree without needing to update the actual tree.
@@ -95,14 +91,23 @@ public class PartitionsStatus {
 
         // Find the partitions that are the new leaves of the tree after the previous ones were pruned.
         // Ensure the ordering is preserved, as the leaves were given in the correct order.
-        List<Partition> nextLeaves = leaves.stream()
-                .map(Partition::getParentPartitionId).filter(Objects::nonNull)
-                .distinct().map(tree::getPartition)
+        List<Partition> nextLeaves = distinctParentsOf(leaves, tree)
                 .filter(parent -> prunedIds.containsAll(parent.getChildPartitionIds()))
                 .collect(Collectors.toList());
 
-        return Stream.concat(leaves.stream(),
-                traverseLeavesFirst(tree, nextLeaves, prunedIds));
+        // Build traversal stream before recursive call, so it's tail-recursive
+        Stream<Partition> traversal = Stream.concat(partialTraversal, leaves.stream());
+        if (nextLeaves.isEmpty()) {
+            return traversal;
+        } else {
+            return traverseLeavesFirst(tree, nextLeaves, prunedIds, traversal);
+        }
+    }
+
+    private static Stream<Partition> distinctParentsOf(List<Partition> partitions, PartitionTree tree) {
+        return partitions.stream()
+                .map(Partition::getParentPartitionId).filter(Objects::nonNull)
+                .distinct().map(tree::getPartition);
     }
 
     public int getNumPartitions() {
