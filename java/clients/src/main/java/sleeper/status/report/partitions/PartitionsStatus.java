@@ -22,13 +22,11 @@ import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -59,16 +57,16 @@ public class PartitionsStatus {
 
     private static List<PartitionStatus> statusesFrom(
             TableProperties tableProperties, List<Partition> partitions, List<FileInfo> activeFiles) {
+
         PartitionTree tree = new PartitionTree(tableProperties.getSchema(), partitions);
-        List<PartitionStatus> statuses = new ArrayList<>();
-        forEachLeavesFirst(tree, partition -> statuses.add(
-                PartitionStatus.from(tableProperties, tree, partition, activeFiles)));
-        return statuses;
+        return traverseLeavesFirst(tree)
+                .map(partition -> PartitionStatus.from(tableProperties, tree, partition, activeFiles))
+                .collect(Collectors.toList());
     }
 
-    private static void forEachLeavesFirst(PartitionTree tree, Consumer<Partition> operation) {
+    private static Stream<Partition> traverseLeavesFirst(PartitionTree tree) {
         List<Partition> leaves = getLeavesInTreeOrder(tree);
-        forEachLeavesFirst(tree, leaves, new HashSet<>(), operation);
+        return traverseLeavesFirst(tree, leaves, new HashSet<>());
     }
 
     private static List<Partition> getLeavesInTreeOrder(PartitionTree tree) {
@@ -84,13 +82,12 @@ public class PartitionsStatus {
                 .flatMap(child -> leavesInTreeOrderUnder(child, tree));
     }
 
-    private static void forEachLeavesFirst(
-            PartitionTree tree, List<Partition> leaves, Set<String> prunedIds, Consumer<Partition> operation) {
+    private static Stream<Partition> traverseLeavesFirst(
+            PartitionTree tree, List<Partition> leaves, Set<String> prunedIds) {
 
         if (leaves.isEmpty()) {
-            return;
+            return Stream.empty();
         }
-        leaves.forEach(operation);
 
         // Prune the current leaves from the tree.
         // Tracking the pruned partitions creates a logical tree without needing to update the actual tree.
@@ -103,7 +100,9 @@ public class PartitionsStatus {
                 .distinct().map(tree::getPartition)
                 .filter(parent -> prunedIds.containsAll(parent.getChildPartitionIds()))
                 .collect(Collectors.toList());
-        forEachLeavesFirst(tree, nextLeaves, prunedIds, operation);
+
+        return Stream.concat(leaves.stream(),
+                traverseLeavesFirst(tree, nextLeaves, prunedIds));
     }
 
     public int getNumPartitions() {
