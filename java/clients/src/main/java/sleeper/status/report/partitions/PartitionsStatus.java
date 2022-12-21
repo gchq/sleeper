@@ -24,11 +24,13 @@ import sleeper.statestore.StateStoreException;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 
@@ -58,52 +60,50 @@ public class PartitionsStatus {
     private static List<PartitionStatus> statusesFrom(
             TableProperties tableProperties, List<Partition> partitions, List<FileInfo> activeFiles) {
         PartitionTree tree = new PartitionTree(tableProperties.getSchema(), partitions);
-        List<Partition> leaves = partitions.stream().filter(Partition::isLeafPartition).collect(Collectors.toList());
         List<PartitionStatus> statuses = new ArrayList<>();
-        forEachLeavesFirst(tree, leaves, partition -> statuses.add(
+        forEachLeavesFirst(tree, partition -> statuses.add(
                 PartitionStatus.from(tableProperties, tree, partition, activeFiles)));
         return statuses;
     }
 
-    private static void forEachLeavesFirst(PartitionTree tree, List<Partition> leaves, Consumer<Partition> operation) {
-        Set<String> ids = leaves.stream().map(Partition::getId).collect(Collectors.toSet());
-        forEachLeavesFirst(tree, leaves, ids, operation);
+    private static void forEachLeavesFirst(PartitionTree tree, Consumer<Partition> operation) {
+        List<Partition> leaves = getLeavesInTreeOrder(tree);
+        forEachLeavesFirst(tree, leaves, new HashSet<>(), operation);
+    }
+
+    private static List<Partition> getLeavesInTreeOrder(PartitionTree tree) {
+        return leavesInTreeOrderUnder(tree.getRootPartition(), tree).collect(Collectors.toList());
+    }
+
+    private static Stream<Partition> leavesInTreeOrderUnder(Partition partition, PartitionTree tree) {
+        if (partition.isLeafPartition()) {
+            return Stream.of(partition);
+        }
+        return partition.getChildPartitionIds().stream()
+                .map(tree::getPartition)
+                .flatMap(child -> leavesInTreeOrderUnder(child, tree));
     }
 
     private static void forEachLeavesFirst(
-            PartitionTree tree, List<Partition> leaves, Set<String> visitedIds, Consumer<Partition> operation) {
+            PartitionTree tree, List<Partition> leaves, Set<String> prunedIds, Consumer<Partition> operation) {
 
         if (leaves.isEmpty()) {
             return;
         }
-        leaves.sort(Comparator.comparing(partition -> getOrderByString(partition, tree)));
         leaves.forEach(operation);
 
-        Set<String> nextIds = leaves.stream()
-                .map(Partition::getParentPartitionId)
-                .filter(parentId -> isNextLeaf(parentId, tree, visitedIds))
-                .collect(Collectors.toSet());
-        visitedIds.addAll(nextIds);
-        List<Partition> nextLeaves = nextIds.stream().map(tree::getPartition).collect(Collectors.toList());
-        forEachLeavesFirst(tree, nextLeaves, visitedIds, operation);
-    }
+        // Prune the current leaves from the tree.
+        // Tracking the pruned partitions creates a logical tree without needing to update the actual tree.
+        leaves.stream().map(Partition::getId).forEach(prunedIds::add);
 
-    private static String getOrderByString(Partition partition, PartitionTree tree) {
-        String parentId = partition.getParentPartitionId();
-        if (parentId == null) {
-            return partition.getId();
-        }
-        Partition parent = tree.getPartition(parentId);
-        int childIndex = parent.getChildPartitionIds().indexOf(partition.getId());
-        return parentId + "." + childIndex + "." + partition.getId();
-    }
-
-    private static boolean isNextLeaf(String partitionId, PartitionTree tree, Set<String> visitedIds) {
-        if (partitionId == null) {
-            return false;
-        }
-        Partition partition = tree.getPartition(partitionId);
-        return visitedIds.containsAll(partition.getChildPartitionIds());
+        // Find the partitions that are the new leaves of the tree after the previous ones were pruned.
+        // Ensure the ordering is preserved, as the leaves were given in the correct order.
+        List<Partition> nextLeaves = leaves.stream()
+                .map(Partition::getParentPartitionId).filter(Objects::nonNull)
+                .distinct().map(tree::getPartition)
+                .filter(parent -> prunedIds.containsAll(parent.getChildPartitionIds()))
+                .collect(Collectors.toList());
+        forEachLeavesFirst(tree, nextLeaves, prunedIds, operation);
     }
 
     public int getNumPartitions() {

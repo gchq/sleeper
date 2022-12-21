@@ -18,18 +18,11 @@ package sleeper.status.report.partitions;
 
 import org.junit.Test;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.partition.PartitionTree;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
-import java.util.Arrays;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
-import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
-import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createPartitionsBuilder;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildren;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildrenAboveSplitThreshold;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildrenBelowSplitThreshold;
@@ -91,25 +84,5 @@ public class PartitionsStatusTest {
 
         // Then
         assertThat(status.getNumSplittingPartitions()).isEqualTo(2);
-    }
-
-    @Test
-    public void shouldOrderPartitionsByTreeLeavesFirst() throws StateStoreException {
-        // Given
-        PartitionTree partitions = createPartitionsBuilder()
-                .leavesWithSplits(Arrays.asList("A", "B", "C"), Arrays.asList("aaa", "bbb"))
-                .parentJoining("D", "A", "B")
-                .parentJoining("root", "D", "C")
-                .buildTree();
-        StateStore store = inMemoryStateStoreWithFixedPartitions(
-                Stream.of("D", "C", "B", "root", "A")
-                        .map(partitions::getPartition).collect(Collectors.toList()));
-
-        // When
-        PartitionsStatus status = PartitionsStatus.from(tableProperties, store);
-
-        // Then
-        assertThat(status.getPartitions()).extracting("partition.id")
-                .containsExactly("A", "B", "C", "D", "root");
     }
 }
