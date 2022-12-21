@@ -22,55 +22,60 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.range.Range;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
-public class InMemoryStateStoreBuilder {
+public class StateStoreTestBuilder {
 
     private final PartitionTree tree;
     private final List<Partition> partitions;
-    private final StateStore store;
+    private final List<FileInfo> files = new ArrayList<>();
 
-    private InMemoryStateStoreBuilder(PartitionsBuilder partitionsBuilder) {
+    private StateStoreTestBuilder(PartitionsBuilder partitionsBuilder) {
         tree = partitionsBuilder.buildTree();
         partitions = partitionsBuilder.buildList();
-        store = inMemoryStateStoreWithFixedPartitions(partitions);
     }
 
-    public static InMemoryStateStoreBuilder from(PartitionsBuilder partitionsBuilder) {
-        return new InMemoryStateStoreBuilder(partitionsBuilder);
+    public static StateStoreTestBuilder from(PartitionsBuilder partitionsBuilder) {
+        return new StateStoreTestBuilder(partitionsBuilder);
     }
 
-    public InMemoryStateStoreBuilder singleFileInEachLeafPartitionWithRecords(long records) {
+    public StateStoreTestBuilder singleFileInEachLeafPartitionWithRecords(long records) {
         return addFiles(partitions.stream().filter(Partition::isLeafPartition)
                 .map(partition -> partitionSingleFile(partition, records)));
     }
 
-    public InMemoryStateStoreBuilder partitionFileWithRecords(String partitionId, String filename, long records) {
+    public StateStoreTestBuilder partitionFileWithRecords(String partitionId, String filename, long records) {
         return addFile(partitionFile(tree.getPartition(partitionId), filename, records));
     }
 
     public StateStore buildStateStore() {
+        return setupStateStore(inMemoryStateStoreWithFixedPartitions(partitions));
+    }
+
+    public StateStore setupStateStore(StateStore store) {
+        try {
+            store.initialise(partitions);
+            store.addFiles(files);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed setting up state store", e);
+        }
         return store;
     }
 
-    private InMemoryStateStoreBuilder addFiles(Stream<FileInfo> addFiles) {
-        addFiles.forEach(this::addFile);
+    private StateStoreTestBuilder addFiles(Stream<FileInfo> addFiles) {
+        addFiles.forEach(files::add);
         return this;
     }
 
-    private InMemoryStateStoreBuilder addFile(FileInfo file) {
-        try {
-            store.addFile(file);
-        } catch (StateStoreException e) {
-            throw new IllegalStateException("Failed adding file to state store", e);
-        }
+    private StateStoreTestBuilder addFile(FileInfo file) {
+        files.add(file);
         return this;
     }
 

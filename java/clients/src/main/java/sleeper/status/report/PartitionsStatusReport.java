@@ -19,14 +19,9 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.hadoop.conf.Configuration;
-import sleeper.ClientUtils;
-import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.statestore.StateStoreProvider;
 import sleeper.status.report.partitions.PartitionsStatus;
 import sleeper.status.report.partitions.PartitionsStatusReportArguments;
 import sleeper.status.report.partitions.PartitionsStatusReporter;
@@ -56,7 +51,7 @@ public class PartitionsStatusReport {
         PartitionsStatusReportArguments arguments;
         try {
             arguments = PartitionsStatusReportArguments.fromArgs(args);
-        } catch (IllegalArgumentException e) {
+        } catch (RuntimeException e) {
             System.err.println(e.getMessage());
             PartitionsStatusReportArguments.printUsage(System.err);
             System.exit(1);
@@ -64,17 +59,8 @@ public class PartitionsStatusReport {
         }
 
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, arguments.getInstanceId());
-
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(amazonS3, instanceProperties);
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(arguments.getTableName());
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
-        StateStore stateStore = stateStoreProvider.getStateStore(arguments.getTableName(), tablePropertiesProvider);
-
-        PartitionsStatusReport statusReport = new PartitionsStatusReport(stateStore, tableProperties, arguments.getReporter());
-        statusReport.run();
-
+        arguments.runReport(amazonS3, dynamoDBClient, System.out);
         amazonS3.shutdown();
         dynamoDBClient.shutdown();
     }

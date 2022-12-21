@@ -72,7 +72,7 @@ public class PartitionsStatusTest {
     @Test
     public void shouldFindNoSplittingPartitionsWhenThresholdNotExceeded() throws StateStoreException {
         // Given
-        StateStore store = createRootPartitionWithTwoChildrenBelowSplitThreshold();
+        StateStore store = createRootPartitionWithTwoChildrenBelowSplitThreshold().buildStateStore();
 
         // When
         PartitionsStatus status = PartitionsStatus.from(tableProperties, store);
@@ -84,7 +84,7 @@ public class PartitionsStatusTest {
     @Test
     public void shouldFindSplittingPartitionsWhenThresholdExceeded() throws StateStoreException {
         // Given
-        StateStore store = createRootPartitionWithTwoChildrenAboveSplitThreshold();
+        StateStore store = createRootPartitionWithTwoChildrenAboveSplitThreshold().buildStateStore();
 
         // When
         PartitionsStatus status = PartitionsStatus.from(tableProperties, store);

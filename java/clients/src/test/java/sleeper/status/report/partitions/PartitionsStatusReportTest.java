@@ -45,7 +45,7 @@ public class PartitionsStatusReportTest {
     @Test
     public void shouldReportRootPartitionWithNoChildren() throws Exception {
         // Given
-        StateStore store = createRootPartitionWithNoChildren();
+        StateStore store = createRootPartitionWithNoChildren().buildStateStore();
 
         // When
         assertThat(getStandardReport(store)).isEqualTo(
@@ -55,7 +55,7 @@ public class PartitionsStatusReportTest {
     @Test
     public void shouldReportRootPartitionWithTwoChildren() throws Exception {
         // Given
-        StateStore store = createRootPartitionWithTwoChildrenBelowSplitThreshold();
+        StateStore store = createRootPartitionWithTwoChildrenBelowSplitThreshold().buildStateStore();
 
         // When
         assertThat(getStandardReport(store)).hasToString(
@@ -65,7 +65,7 @@ public class PartitionsStatusReportTest {
     @Test
     public void shouldReportRootPartitionWithTwoChildrenBothNeedSplitting() throws Exception {
         // Given
-        StateStore store = createRootPartitionWithTwoChildrenAboveSplitThreshold();
+        StateStore store = createRootPartitionWithTwoChildrenAboveSplitThreshold().buildStateStore();
 
         // When
         assertThat(getStandardReport(store)).hasToString(
@@ -75,7 +75,7 @@ public class PartitionsStatusReportTest {
     @Test
     public void shouldReportRootPartitionSplitOnByteArray() throws Exception {
         // Given
-        StateStore store = createRootPartitionWithTwoChildrenSplitOnByteArray();
+        StateStore store = createRootPartitionWithTwoChildrenSplitOnByteArray().buildStateStore();
 
         // When
         assertThat(getStandardReport(store)).hasToString(
@@ -85,7 +85,7 @@ public class PartitionsStatusReportTest {
     @Test
     public void shouldReportRootPartitionSplitOnLongStringHidingMiddle() throws Exception {
         // Given
-        StateStore store = createRootPartitionWithTwoChildrenSplitOnLongString();
+        StateStore store = createRootPartitionWithTwoChildrenSplitOnLongString().buildStateStore();
 
         // When
         assertThat(getStandardReport(store)).hasToString(

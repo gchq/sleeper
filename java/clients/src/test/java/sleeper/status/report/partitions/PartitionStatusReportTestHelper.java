@@ -26,7 +26,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.statestore.inmemory.InMemoryStateStoreBuilder;
+import sleeper.statestore.inmemory.StateStoreTestBuilder;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -43,48 +43,43 @@ public class PartitionStatusReportTestHelper {
     private PartitionStatusReportTestHelper() {
     }
 
-    public static StateStore createRootPartitionWithNoChildren() {
-        return InMemoryStateStoreBuilder.from(createPartitionsBuilder().singlePartition("root"))
-                .singleFileInEachLeafPartitionWithRecords(5)
-                .buildStateStore();
+    public static StateStoreTestBuilder createRootPartitionWithNoChildren() {
+        return StateStoreTestBuilder.from(createPartitionsBuilder().singlePartition("root"))
+                .singleFileInEachLeafPartitionWithRecords(5);
     }
 
-    public static StateStore createRootPartitionWithTwoChildrenBelowSplitThreshold() {
+    public static StateStoreTestBuilder createRootPartitionWithTwoChildrenBelowSplitThreshold() {
         return createRootPartitionWithTwoChildren()
-                .singleFileInEachLeafPartitionWithRecords(5)
-                .buildStateStore();
+                .singleFileInEachLeafPartitionWithRecords(5);
     }
 
-    public static StateStore createRootPartitionWithTwoChildrenAboveSplitThreshold() {
+    public static StateStoreTestBuilder createRootPartitionWithTwoChildrenAboveSplitThreshold() {
         return createRootPartitionWithTwoChildren()
-                .singleFileInEachLeafPartitionWithRecords(100)
-                .buildStateStore();
+                .singleFileInEachLeafPartitionWithRecords(100);
     }
 
-    public static InMemoryStateStoreBuilder createRootPartitionWithTwoChildren() {
-        return InMemoryStateStoreBuilder.from(createPartitionsBuilder()
+    public static StateStoreTestBuilder createRootPartitionWithTwoChildren() {
+        return StateStoreTestBuilder.from(createPartitionsBuilder()
                 .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList("aaa"))
                 .parentJoining("parent", "A", "B"));
     }
 
-    public static StateStore createRootPartitionWithTwoChildrenSplitOnByteArray() {
+    public static StateStoreTestBuilder createRootPartitionWithTwoChildrenSplitOnByteArray() {
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new ByteArrayType()))
                 .build();
-        return InMemoryStateStoreBuilder.from(new PartitionsBuilder(schema)
+        return StateStoreTestBuilder.from(new PartitionsBuilder(schema)
                         .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(new byte[42]))
                         .parentJoining("parent", "A", "B"))
-                .singleFileInEachLeafPartitionWithRecords(5)
-                .buildStateStore();
+                .singleFileInEachLeafPartitionWithRecords(5);
     }
 
-    public static StateStore createRootPartitionWithTwoChildrenSplitOnLongString() {
-        return InMemoryStateStoreBuilder.from(createPartitionsBuilder()
+    public static StateStoreTestBuilder createRootPartitionWithTwoChildrenSplitOnLongString() {
+        return StateStoreTestBuilder.from(createPartitionsBuilder()
                         .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(
                                 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"))
                         .parentJoining("parent", "A", "B"))
-                .singleFileInEachLeafPartitionWithRecords(5)
-                .buildStateStore();
+                .singleFileInEachLeafPartitionWithRecords(5);
     }
 
     public static PartitionsBuilder createPartitionsBuilder() {
@@ -102,7 +97,11 @@ public class PartitionStatusReportTestHelper {
         InstanceProperties instanceProperties = new InstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, "test-table");
-        tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, TEST_THRESHOLD);
+        setTestSplitThreshold(tableProperties);
         return tableProperties;
+    }
+
+    public static void setTestSplitThreshold(TableProperties tableProperties) {
+        tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, TEST_THRESHOLD);
     }
 }

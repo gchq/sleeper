@@ -16,16 +16,30 @@
 
 package sleeper.status.report.partitions;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.s3.AmazonS3;
+import org.apache.hadoop.conf.Configuration;
+import sleeper.ClientUtils;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
+import sleeper.status.report.PartitionsStatusReport;
+
+import java.io.IOException;
 import java.io.PrintStream;
+import java.util.function.Function;
 
 public class PartitionsStatusReportArguments {
     private final String instanceId;
     private final String tableName;
-    private final PartitionsStatusReporter reporter;
+    private final Function<PrintStream, PartitionsStatusReporter> reporter;
 
     private PartitionsStatusReportArguments(String instanceId,
                                             String tableName,
-                                            PartitionsStatusReporter reporter) {
+                                            Function<PrintStream, PartitionsStatusReporter> reporter) {
         this.instanceId = instanceId;
         this.tableName = tableName;
         this.reporter = reporter;
@@ -39,19 +53,16 @@ public class PartitionsStatusReportArguments {
         if (args.length != 2) {
             throw new IllegalArgumentException("Wrong number of arguments");
         }
-        PartitionsStatusReporter reporter = new PartitionsStatusReporter(System.out);
-        return new PartitionsStatusReportArguments(args[0], args[1], reporter);
+        return new PartitionsStatusReportArguments(args[0], args[1], PartitionsStatusReporter::new);
     }
 
-    public String getInstanceId() {
-        return instanceId;
-    }
+    public void runReport(AmazonS3 amazonS3, AmazonDynamoDB dynamoDBClient, PrintStream out) throws IOException, StateStoreException {
+        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(amazonS3, instanceProperties);
+        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
-    public String getTableName() {
-        return tableName;
-    }
-
-    public PartitionsStatusReporter getReporter() {
-        return reporter;
+        new PartitionsStatusReport(stateStore, tableProperties, reporter.apply(out)).run();
     }
 }
