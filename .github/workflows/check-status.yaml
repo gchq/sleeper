@@ -21,6 +21,14 @@ jobs:
       - name: Resolve dependencies
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=.m2/repository
         working-directory: ./java
+      - name: Validate chunk build configuration
+        working-directory: ./java/build
+        run: |
+          CHUNKS_YAML=${{ github.workspace }}/.github/config/chunks.yaml
+          MAVEN_PROJECT=${{ github.workspace }}/java
+          mvn exec:java -q -e -Dexec.mainClass=sleeper.build.chunks.ValidateProjectChunks \
+            -Dmaven.repo.local=../.m2/repository \
+            -Dexec.args="$CHUNKS_YAML $MAVEN_PROJECT"
       - name: Check rate limits
         id: rate-limit
         working-directory: ./java/build
@@ -37,7 +45,6 @@ jobs:
           echo "head.branch=${{ github.ref_name }}" >> github.properties
           echo "head.sha=${{ github.sha }}" >> github.properties
           CHUNKS_YAML=${{ github.workspace }}/.github/config/chunks.yaml
-          MAVEN_PROJECT=${{ github.workspace }}/java
           mvn exec:java -q -e -Dexec.mainClass=sleeper.build.status.CheckGitHubStatusMain \
             -Dmaven.repo.local=../.m2/repository \
-            -Dexec.args="github.properties $CHUNKS_YAML $MAVEN_PROJECT"
+            -Dexec.args="github.properties $CHUNKS_YAML"
