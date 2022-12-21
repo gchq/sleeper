@@ -27,6 +27,9 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 
 public class DynamoDBStateStoreTestHelper {
 
+    private DynamoDBStateStoreTestHelper() {
+    }
+
     public static TableProperties createTestTable(
             InstanceProperties instanceProperties, Schema schema, AmazonS3 s3, AmazonDynamoDB dynamoDB,
             Consumer<TableProperties> tableConfig) {
