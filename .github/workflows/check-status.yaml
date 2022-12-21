@@ -26,14 +26,14 @@ jobs:
         run: |
           CHUNKS_YAML=${{ github.workspace }}/.github/config/chunks.yaml
           MAVEN_PROJECT=${{ github.workspace }}/java
-          mvn exec:java -q -e -Dexec.mainClass=sleeper.build.chunks.ValidateProjectChunks \
+          mvn compile exec:java -q -e -Dexec.mainClass=sleeper.build.chunks.ValidateProjectChunks \
             -Dmaven.repo.local=../.m2/repository \
             -Dexec.args="$CHUNKS_YAML $MAVEN_PROJECT"
       - name: Check rate limits
         id: rate-limit
         working-directory: ./java/build
         run: |
-          echo "remaining=$(mvn compile exec:java -q -Dexec.mainClass=sleeper.build.ratelimit.GetRemainingRateLimit \
+          echo "remaining=$(mvn exec:java -q -Dexec.mainClass=sleeper.build.ratelimit.GetRemainingRateLimit \
             -Dexec.args=${{ secrets.GITHUB_TOKEN }} -Dmaven.repo.local=../.m2/repository)" \
             >> $GITHUB_OUTPUT
       - name: Query chunk status from GitHub API
