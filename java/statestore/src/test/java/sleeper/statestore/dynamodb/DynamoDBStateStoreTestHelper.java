@@ -21,14 +21,17 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 
+import java.util.function.Consumer;
+
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 
 public class DynamoDBStateStoreTestHelper {
 
     public static TableProperties createTestTable(
-            InstanceProperties instanceProperties, Schema schema, AmazonS3 s3, AmazonDynamoDB dynamoDB) {
+            InstanceProperties instanceProperties, Schema schema, AmazonS3 s3, AmazonDynamoDB dynamoDB,
+            Consumer<TableProperties> tableConfig) {
 
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema, s3);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema, s3, tableConfig);
         try {
             new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDB).create();
         } catch (Exception e) {

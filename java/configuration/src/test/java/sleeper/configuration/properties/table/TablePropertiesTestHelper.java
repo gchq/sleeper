@@ -20,6 +20,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.schema.Schema;
 
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
@@ -32,8 +33,10 @@ public class TablePropertiesTestHelper {
     private TablePropertiesTestHelper() {
     }
 
-    public static TableProperties createTestTableProperties(InstanceProperties instanceProperties, Schema schema, AmazonS3 s3) {
+    public static TableProperties createTestTableProperties(
+            InstanceProperties instanceProperties, Schema schema, AmazonS3 s3, Consumer<TableProperties> tableConfig) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableConfig.accept(tableProperties);
         try {
             s3.createBucket(tableProperties.get(DATA_BUCKET));
             tableProperties.saveToS3(s3);

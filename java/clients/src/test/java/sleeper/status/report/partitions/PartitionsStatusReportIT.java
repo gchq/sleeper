@@ -41,7 +41,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStoreTestHelper.createTestTable;
 import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildrenAboveSplitThreshold;
-import static sleeper.status.report.partitions.PartitionStatusReportTestHelper.setTestSplitThreshold;
 
 public class PartitionsStatusReportIT {
 
@@ -54,13 +53,13 @@ public class PartitionsStatusReportIT {
     private final AmazonDynamoDB dynamoDB = createDynamoClient();
     private final InstanceProperties instanceProperties = createTestInstanceProperties(s3);
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-    private final TableProperties tableProperties = createTestTable(instanceProperties, schema, s3, dynamoDB);
+    private final TableProperties tableProperties = createTestTable(
+            instanceProperties, schema, s3, dynamoDB,
+            PartitionStatusReportTestHelper::setTestSplitThreshold);
 
     @Test
     public void shouldGetReport() throws Exception {
         // Given
-        setTestSplitThreshold(tableProperties);
-        tableProperties.saveToS3(s3);
         createRootPartitionWithTwoChildrenAboveSplitThreshold().setupStateStore(stateStore());
 
         // When
