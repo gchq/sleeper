@@ -17,7 +17,6 @@ package sleeper.build.status;
 
 import org.junit.Test;
 import sleeper.build.chunks.ProjectChunks;
-import sleeper.build.chunks.ProjectConfiguration;
 import sleeper.build.chunks.TestChunks;
 import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubWorkflowRun;
@@ -33,8 +32,8 @@ public class CheckGitHubStatusSingleWorkflowTest {
     private static final String WORKFLOW = "test-workflow.yaml";
     private final InMemoryGitHubWorkflowRuns workflowRuns = new InMemoryGitHubWorkflowRuns(BRANCH, WORKFLOW);
 
-    private ProjectConfiguration.Builder configurationBuilder() {
-        return ProjectConfiguration.builder()
+    private CheckGitHubStatusConfig.Builder configurationBuilder() {
+        return CheckGitHubStatusConfig.builder()
                 .token("test-token").head(BRANCH)
                 .chunks(CHUNKS);
     }
