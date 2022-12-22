@@ -25,7 +25,13 @@ INSTANCE_ID=$1
 TABLE_NAME="system-test"
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(dirname "$THIS_DIR")
-WRITE_DATA_OUTPUT_FILE="$SCRIPTS_DIR/generated/writeDataOutput.json"
+JARS_DIR="$SCRIPTS_DIR/jars"
+TEMPLATE_DIR="$SCRIPTS_DIR/templates"
+GENERATED_DIR="$SCRIPTS_DIR/generated"
+
+VERSION=$(cat "$TEMPLATE_DIR/version.txt")
+SYSTEM_TEST_JAR="${JARS_DIR}/system-test-${VERSION}-utility.jar"
+WRITE_DATA_OUTPUT_FILE="$GENERATED_DIR/writeDataOutput.json"
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)

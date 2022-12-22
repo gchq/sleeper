@@ -25,8 +25,14 @@ INSTANCE_ID=$1
 TABLE_NAME="system-test"
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(dirname "$THIS_DIR")
-VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
-WRITE_DATA_OUTPUT_FILE="$SCRIPTS_DIR/generated/writeDataOutput.json"
+JARS_DIR="$SCRIPTS_DIR/jars"
+TEMPLATE_DIR="$SCRIPTS_DIR/templates"
+GENERATED_DIR="$SCRIPTS_DIR/generated"
+
+VERSION=$(cat "$TEMPLATE_DIR/version.txt")
+CLIENTS_JAR="${JARS_DIR}/clients-${VERSION}-utility.jar"
+SYSTEM_TEST_JAR="${JARS_DIR}/system-test-${VERSION}-utility.jar"
+WRITE_DATA_OUTPUT_FILE="$GENERATED_DIR/writeDataOutput.json"
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
@@ -38,7 +44,7 @@ echo "--------------------------------------------------------------------------
 echo "Pausing System"
 echo "-------------------------------------------------------------------------------"
 
-java -cp "${SCRIPTS_DIR}/jars/clients-$VERSION-utility.jar" sleeper.status.update.PauseSystem "${INSTANCE_ID}"
+java -cp "${CLIENTS_JAR}" sleeper.status.update.PauseSystem "${INSTANCE_ID}"
 
 echo "-------------------------------------------------------------------------------"
 echo "Writing Random Data"
