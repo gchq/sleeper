@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import static sleeper.ClientUtils.optionalArgument;
+import static sleeper.util.ClientUtils.optionalArgument;
 
 public class IngestJobStatusReportArguments {
     private static final String DEFAULT_REPORTER = "STANDARD";
