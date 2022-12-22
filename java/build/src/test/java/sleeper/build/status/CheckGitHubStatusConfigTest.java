@@ -13,24 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.chunks;
+package sleeper.build.status;
 
 import org.junit.Test;
+import sleeper.build.chunks.ProjectChunk;
 import sleeper.build.github.TestGitHubHead;
+import sleeper.build.testutil.TestProjectStructure;
 
 import java.io.IOException;
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ProjectConfigurationTest {
+public class CheckGitHubStatusConfigTest {
 
     @Test
     public void shouldLoadFromYamlAndGitHubProperties() throws IOException {
-        ProjectConfiguration configuration = TestProjectStructure.example().loadProjectConfiguration();
+        CheckGitHubStatusConfig configuration = TestProjectStructure.loadExampleGitHubStatusConfiguration();
 
         assertThat(configuration).isEqualTo(
-                ProjectConfiguration.builder()
+                CheckGitHubStatusConfig.builder()
                         .token("test-token")
                         .head(TestGitHubHead.example())
                         .chunks(Arrays.asList(

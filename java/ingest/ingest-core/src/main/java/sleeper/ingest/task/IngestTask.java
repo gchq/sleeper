@@ -72,8 +72,7 @@ public class IngestTask {
             jobSource.consumeJobs(job -> runJob(job, taskFinishedStatusBuilder));
         } finally {
             Instant finishTaskTime = getTimeNow.get();
-            taskStatusBuilder.finishedStatus(taskFinishedStatusBuilder
-                    .finish(startTaskTime, finishTaskTime).build());
+            taskStatusBuilder.finished(finishTaskTime, taskFinishedStatusBuilder);
             taskStatusStore.taskFinished(taskStatusBuilder.build());
             LOGGER.info("IngestTask finished at = {}", finishTaskTime);
         }

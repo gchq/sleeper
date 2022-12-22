@@ -36,8 +36,7 @@ public class CompactionTaskStatusesBuilderTest {
                         new RecordsProcessed(300L, 200L),
                         Instant.parse("2022-10-12T15:45:01.001Z"),
                         Instant.parse("2022-10-12T15:46:01.001Z")))
-                .finish(startTime,
-                        Instant.parse("2022-10-12T15:46:02.001Z"))
+                .finish(Instant.parse("2022-10-12T15:46:02.001Z"))
                 .build();
         Instant expiryDate = Instant.parse("2022-11-12T15:45:00.001Z");
 
@@ -91,14 +90,12 @@ public class CompactionTaskStatusesBuilderTest {
     public void shouldIgnoreStatusIfStartedUpdateIsOmittedAsItMayHaveExpired() {
         // Given
         String taskId = "test-task";
-        Instant startTime = Instant.parse("2022-10-12T15:45:00.001Z");
         CompactionTaskFinishedStatus finishedStatus = CompactionTaskFinishedStatus.builder()
                 .addJobSummary(new RecordsProcessedSummary(
                         new RecordsProcessed(300L, 200L),
                         Instant.parse("2022-10-12T15:45:01.001Z"),
                         Instant.parse("2022-10-12T15:46:01.001Z")))
-                .finish(startTime,
-                        Instant.parse("2022-10-12T15:46:02.001Z"))
+                .finish(Instant.parse("2022-10-12T15:46:02.001Z"))
                 .build();
 
         // When

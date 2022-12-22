@@ -119,11 +119,11 @@ public class IngestTaskStatusInPeriodTest {
 
     private static IngestTaskStatus taskWithStartAndFinishTime(Instant startTime, Instant finishTime) {
         return taskBuilder(startTime)
-                .finished(IngestTaskFinishedStatus.builder()
+                .finished(finishTime, IngestTaskFinishedStatus.builder()
                         .addJobSummary(new RecordsProcessedSummary(
                                 new RecordsProcessed(200, 100),
                                 startTime, finishTime
-                        )), finishTime)
+                        )))
                 .build();
     }
 

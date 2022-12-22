@@ -13,8 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.chunks;
+package sleeper.build.testutil;
 
+import sleeper.build.chunks.ProjectStructure;
+import sleeper.build.status.CheckGitHubStatusConfig;
+
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -23,13 +27,19 @@ public class TestProjectStructure {
     private TestProjectStructure() {
     }
 
+    private static final Path BASE_PATH = Paths.get("src/test/resources/examples");
+
     public static ProjectStructure example() {
-        Path basePath = Paths.get("src/test/resources/examples");
         return ProjectStructure.builder()
-                .chunksYamlPath(basePath.resolve("config/chunks.yaml"))
-                .gitHubPropertiesPath(basePath.resolve("config/github.properties"))
-                .mavenProjectPath(basePath.resolve("maven"))
-                .workflowsPath(basePath.resolve("github-actions"))
+                .chunksYamlPath(BASE_PATH.resolve("config/chunks.yaml"))
+                .mavenProjectPath(BASE_PATH.resolve("maven"))
+                .workflowsPath(BASE_PATH.resolve("github-actions"))
                 .build();
+    }
+
+    public static CheckGitHubStatusConfig loadExampleGitHubStatusConfiguration() throws IOException {
+        return CheckGitHubStatusConfig.fromGitHubAndChunks(
+                BASE_PATH.resolve("config/github.properties"),
+                BASE_PATH.resolve("config/chunks.yaml"));
     }
 }

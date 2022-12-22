@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.build.chunks.ProjectChunk;
 import sleeper.build.chunks.ProjectChunks;
-import sleeper.build.chunks.ProjectConfiguration;
 import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubWorkflowRun;
 import sleeper.build.github.GitHubWorkflowRuns;
@@ -40,7 +39,7 @@ public class CheckGitHubStatus {
     private final long maxRetries;
     private final GitHubWorkflowRuns runs;
 
-    public CheckGitHubStatus(ProjectConfiguration configuration, GitHubWorkflowRuns runs) {
+    public CheckGitHubStatus(CheckGitHubStatusConfig configuration, GitHubWorkflowRuns runs) {
         this.head = configuration.getHead();
         this.chunks = configuration.getChunks();
         this.retrySeconds = configuration.getRetrySeconds();

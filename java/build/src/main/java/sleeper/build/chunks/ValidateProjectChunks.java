@@ -13,31 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.status;
-
-import sleeper.build.github.api.GitHubWorkflowRunsImpl;
+package sleeper.build.chunks;
 
 import java.io.IOException;
 import java.nio.file.Paths;
 
-public class CheckGitHubStatusMain {
+public class ValidateProjectChunks {
 
-    private CheckGitHubStatusMain() {
+    private ValidateProjectChunks() {
     }
 
     public static void main(String[] args) throws IOException {
         if (args.length != 2) {
-            System.out.println("Usage: <github.properties path> <chunks.yaml path>");
+            System.out.println("Usage: <chunks.yaml path> <Maven project base path>");
             System.exit(1);
             return;
         }
-        CheckGitHubStatusConfig configuration = CheckGitHubStatusConfig.fromGitHubAndChunks(Paths.get(args[0]), Paths.get(args[1]));
-        try (GitHubWorkflowRunsImpl gitHub = configuration.gitHubWorkflowRuns()) {
-            ChunkStatuses status = configuration.checkStatus(gitHub);
-            status.report(System.out);
-            if (status.isFailCheck()) {
-                System.exit(1);
-            }
+        ProjectStructure project = ProjectStructure.builder()
+                .chunksYamlPath(Paths.get(args[0]))
+                .mavenProjectPath(Paths.get(args[1]))
+                .build();
+        ProjectChunks chunks = project.loadChunks();
+        try {
+            chunks.validate(project, System.err);
+        } catch (IllegalStateException e) {
+            System.exit(1);
         }
     }
 }

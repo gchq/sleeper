@@ -22,6 +22,8 @@ import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.status.report.CompactionTaskStatusReport;
 
 import java.io.PrintStream;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.function.Function;
@@ -30,10 +32,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.ClientTestUtils.example;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedSplittingTask;
-import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedSplittingTaskWithFourRuns;
 import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedTask;
-import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.finishedTaskWithFourRuns;
 import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedSplittingTask;
 import static sleeper.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
 
@@ -90,10 +91,18 @@ public class CompactionTaskStatusReportTest {
     @Test
     public void shouldReportMultipleJobRunsOnCompactionTasks() throws Exception {
         // Given
-        CompactionTaskStatus finishedTask = finishedTaskWithFourRuns("A", "2022-10-06T12:20:00.001Z",
-                "2022-10-06T12:20:40.001Z", 800L, 400L);
-        CompactionTaskStatus finishedSplittingTask = finishedSplittingTaskWithFourRuns("B", "2022-10-06T12:24:00.001Z",
-                "2022-10-06T12:24:40.001Z", 1600L, 800L);
+        CompactionTaskStatus finishedTask = finishedTask("A",
+                "2022-10-06T12:20:00.001Z", "2022-10-06T12:20:50.001Z",
+                summary(Instant.parse("2022-10-06T12:20:01.001Z"), Duration.ofSeconds(10), 200, 100),
+                summary(Instant.parse("2022-10-06T12:20:12.001Z"), Duration.ofSeconds(10), 200, 100),
+                summary(Instant.parse("2022-10-06T12:20:23.001Z"), Duration.ofSeconds(10), 200, 100),
+                summary(Instant.parse("2022-10-06T12:20:34.001Z"), Duration.ofSeconds(10), 200, 100));
+        CompactionTaskStatus finishedSplittingTask = finishedSplittingTask("B",
+                "2022-10-06T12:24:00.001Z", "2022-10-06T12:24:50.001Z",
+                summary(Instant.parse("2022-10-06T12:24:01.001Z"), Duration.ofSeconds(10), 400, 200),
+                summary(Instant.parse("2022-10-06T12:24:12.001Z"), Duration.ofSeconds(10), 400, 200),
+                summary(Instant.parse("2022-10-06T12:24:23.001Z"), Duration.ofSeconds(10), 400, 200),
+                summary(Instant.parse("2022-10-06T12:24:34.001Z"), Duration.ofSeconds(10), 400, 200));
         when(store.getAllTasks()).thenReturn(Arrays.asList(finishedSplittingTask, finishedTask));
 
         // When / Then

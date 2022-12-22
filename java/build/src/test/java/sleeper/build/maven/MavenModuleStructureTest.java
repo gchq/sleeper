@@ -16,7 +16,7 @@
 package sleeper.build.maven;
 
 import org.junit.Test;
-import sleeper.build.chunks.TestProjectStructure;
+import sleeper.build.testutil.TestProjectStructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

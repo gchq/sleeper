@@ -17,7 +17,7 @@ package sleeper.build.github.actions;
 
 import org.junit.Test;
 import sleeper.build.chunks.TestChunks;
-import sleeper.build.chunks.TestProjectStructure;
+import sleeper.build.testutil.TestProjectStructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.build.github.actions.TestGitHubActionsChunkWorkflows.workflow;

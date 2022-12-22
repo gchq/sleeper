@@ -26,7 +26,7 @@ public class AverageRecordRate {
     private final int runCount;
     private final long recordsRead;
     private final long recordsWritten;
-    private final double totalDurationInSeconds;
+    private final Duration totalDuration;
     private final double recordsReadPerSecond;
     private final double recordsWrittenPerSecond;
     private final double averageJobRecordsReadPerSecond;
@@ -37,12 +37,13 @@ public class AverageRecordRate {
         recordsRead = builder.recordsRead;
         recordsWritten = builder.recordsWritten;
         if (builder.startTime == null || builder.finishTime == null) {
-            totalDurationInSeconds = builder.totalRunDurationInSeconds;
+            totalDuration = builder.totalRunDuration;
         } else {
-            totalDurationInSeconds = Duration.between(builder.startTime, builder.finishTime).getSeconds();
+            totalDuration = Duration.between(builder.startTime, builder.finishTime);
         }
-        recordsReadPerSecond = recordsRead / totalDurationInSeconds;
-        recordsWrittenPerSecond = recordsWritten / totalDurationInSeconds;
+        double totalSeconds = totalDuration.toMillis() / 1000.0;
+        recordsReadPerSecond = recordsRead / totalSeconds;
+        recordsWrittenPerSecond = recordsWritten / totalSeconds;
         averageJobRecordsReadPerSecond = builder.totalRecordsReadPerSecond / runCount;
         averageJobRecordsWrittenPerSecond = builder.totalRecordsWrittenPerSecond / runCount;
     }
@@ -69,8 +70,8 @@ public class AverageRecordRate {
         return recordsWritten;
     }
 
-    public double getTotalDurationInSeconds() {
-        return totalDurationInSeconds;
+    public Duration getTotalDuration() {
+        return totalDuration;
     }
 
     public double getRecordsReadPerSecond() {
@@ -95,7 +96,7 @@ public class AverageRecordRate {
         private int runCount;
         private long recordsRead;
         private long recordsWritten;
-        private double totalRunDurationInSeconds;
+        private Duration totalRunDuration = Duration.ZERO;
         private double totalRecordsReadPerSecond;
         private double totalRecordsWrittenPerSecond;
 
@@ -111,7 +112,7 @@ public class AverageRecordRate {
             runCount++;
             recordsRead += summary.getLinesRead();
             recordsWritten += summary.getLinesWritten();
-            totalRunDurationInSeconds += summary.getDurationInSeconds();
+            totalRunDuration = totalRunDuration.plus(summary.getTimeInProcess());
             totalRecordsReadPerSecond += summary.getRecordsReadPerSecond();
             totalRecordsWrittenPerSecond += summary.getRecordsWrittenPerSecond();
             return this;
