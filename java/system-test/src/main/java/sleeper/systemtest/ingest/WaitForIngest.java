@@ -15,17 +15,25 @@
  */
 package sleeper.systemtest.ingest;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.ecs.model.DescribeTasksRequest;
 import com.amazonaws.services.ecs.model.DescribeTasksResult;
 import com.amazonaws.services.ecs.model.Failure;
 import com.amazonaws.services.ecs.model.Task;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
+import sleeper.ingest.task.IngestTaskStatusStore;
+import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -45,16 +53,25 @@ public class WaitForIngest {
     private final AmazonECS ecsClient;
     private final List<Task> generateDataTasks;
     private final StatusFormat statusFormat;
+    private final IngestTaskStatusStore ingestTaskStatusStore;
     private long polls;
 
-    public WaitForIngest(AmazonECS ecsClient, List<Task> generateDataTasks, StatusFormat statusFormat) {
+    public WaitForIngest(
+            AmazonECS ecsClient,
+            List<Task> generateDataTasks,
+            StatusFormat statusFormat,
+            IngestTaskStatusStore ingestTaskStatusStore) {
         this.ecsClient = ecsClient;
         this.generateDataTasks = generateDataTasks;
         this.statusFormat = statusFormat;
+        this.ingestTaskStatusStore = ingestTaskStatusStore;
     }
 
     public void pollUntilFinished() throws InterruptedException {
         pollUntil(this::isGenerateDataTasksFinished);
+        Instant generateDataStartTime = getGenerateDataStartTime();
+        pollUntil(() -> !ingestTaskStatusStore.getTasksInTimePeriod(generateDataStartTime, Instant.now()).isEmpty());
+        pollUntil(() -> ingestTaskStatusStore.getTasksInProgress().isEmpty());
     }
 
     private void pollUntil(BooleanSupplier checkFinished) throws InterruptedException {
@@ -62,6 +79,13 @@ public class WaitForIngest {
             Thread.sleep(POLL_INTERVAL_MILLIS);
             polls++;
         }
+    }
+
+    private Instant getGenerateDataStartTime() {
+        return generateDataTasks.stream()
+                .map(task -> task.getStartedAt().toInstant())
+                .sorted().findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Found no generate data task start time"));
     }
 
     private boolean isGenerateDataTasksFinished() {
@@ -89,21 +113,32 @@ public class WaitForIngest {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 3 || args.length > 4) {
-            System.out.println("Usage: <instance id> <table name> <generate data tasks file> <optional status format>");
+        if (args.length < 2 || args.length > 3) {
+            System.out.println("Usage: <instance id> <generate data tasks file> <optional status format>");
             System.out.println("Status format can be status or full, defaults to status.");
             return;
         }
 
-        List<Task> generateDataTasks = TasksJson.readTasksFromFile(Paths.get(args[2]));
-        AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
-        String formatStr = optionalArgument(args, 3)
+        String instanceId = args[0];
+        List<Task> generateDataTasks = TasksJson.readTasksFromFile(Paths.get(args[1]));
+        String statusFormatStr = optionalArgument(args, 2)
                 .map(arg -> arg.toLowerCase(Locale.ROOT))
                 .orElse("status");
-        StatusFormat format = statusFormat(formatStr);
-        WaitForIngest wait = new WaitForIngest(ecsClient, generateDataTasks, format);
+        StatusFormat statusFormat = statusFormat(statusFormatStr);
+
+        AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+
+        SystemTestProperties systemTestProperties = new SystemTestProperties();
+        systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
+        IngestTaskStatusStore ingestTaskStatusStore = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, systemTestProperties);
+
+        WaitForIngest wait = new WaitForIngest(ecsClient, generateDataTasks, statusFormat, ingestTaskStatusStore);
         wait.pollUntilFinished();
         ecsClient.shutdown();
+        s3Client.shutdown();
+        dynamoDBClient.shutdown();
     }
 
     public static StatusFormat statusFormat(String format) {
