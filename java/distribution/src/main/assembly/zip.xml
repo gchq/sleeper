@@ -74,11 +74,11 @@
         </fileSet>
         <!-- GPU source code -->
         <fileSet>
-            <directory>${project.basedir}/../compaction-job-execution/src</directory>
+            <directory>${project.basedir}/../compaction/compaction-job-execution/src</directory>
             <outputDirectory>scripts/docker/compaction-job-execution/src</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../compaction-job-execution/cmake</directory>
+            <directory>${project.basedir}/../compaction/compaction-job-execution/cmake</directory>
             <outputDirectory>scripts/docker/compaction-job-execution/cmake</outputDirectory>
         </fileSet>
     </fileSets>

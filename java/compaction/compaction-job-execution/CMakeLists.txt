@@ -41,6 +41,25 @@ include(cmake/Cache.cmake)
 include(cmake/CompilerWarnings.cmake)
 set_project_warnings(project_warnings)
 
+# sanitizer options if supported by compiler
+include(cmake/Sanitizers.cmake)
+enable_sanitizers(project_options)
+
+# allow for static analysis options
+include(cmake/StaticAnalyzers.cmake)
+
+option(ENABLE_PCH "Enable precompiled headers" OFF)
+if(ENABLE_PCH)
+    target_precompile_headers(
+        project_options
+        INTERFACE
+        <vector>
+        <string>
+        <iostream>
+        <memory>
+        <utility>)
+endif()
+
 # Find some libraries
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(Arrow REQUIRED)
@@ -52,7 +71,7 @@ find_package(gmp REQUIRED)
 
 add_library(histogram STATIC src/main/c/src/histo.cpp src/main/c/include/histo.hpp)
 target_include_directories(histogram PUBLIC src/main/c/include)
-target_link_libraries(histogram PRIVATE gmp::gmp)
+target_link_libraries(histogram PRIVATE gmp::gmp project_warnings project_options)
 
 find_package(
     AWSSDK CONFIG
@@ -64,7 +83,7 @@ add_library(s3_utils STATIC src/main/c/src/s3_utils.cpp src/main/c/include/s3_ut
                             src/main/c/src/temp_file.cpp src/main/c/include/temp_file.hpp)
 target_include_directories(s3_utils PUBLIC src/main/c/include)
 target_include_directories(s3_utils INTERFACE ${AWSSDK_INCLUDE_DIRS})
-target_link_libraries(s3_utils PRIVATE ${AWSSDK_LIBRARIES})
+target_link_libraries(s3_utils PRIVATE ${AWSSDK_LIBRARIES} project_warnings project_options)
 
 # Build the filters library
 add_library(
@@ -75,7 +94,7 @@ add_library(
 target_include_directories(filters PUBLIC src/main/c/include)
 target_compile_options(filters PRIVATE --expt-relaxed-constexpr --expt-extended-lambda -Xfatbin
                                        -compress-all -Xcompiler -pthread)
-target_link_libraries(filters PRIVATE cudf::cudf)
+target_link_libraries(filters PRIVATE cudf::cudf project_warnings project_options)
 
 add_executable(
     cukeydist
@@ -91,3 +110,4 @@ add_executable(
     src/main/c/include/s3_waiting_source.hpp
     src/main/c/include/s3_writer.hpp)
 target_link_libraries(cukeydist PUBLIC cudf::cudf filters parquet_shared histogram s3_utils)
+target_link_libraries(cukeydist PRIVATE project_warnings project_options)
