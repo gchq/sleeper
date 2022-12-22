@@ -68,14 +68,17 @@ public class WaitForIngest {
     }
 
     public void pollUntilFinished() throws InterruptedException {
-        pollUntil(this::isGenerateDataTasksFinished);
+        pollUntil("generate data tasks finished", this::isGenerateDataTasksFinished);
         Instant generateDataStartTime = getGenerateDataStartTime();
-        pollUntil(() -> !ingestTaskStatusStore.getTasksInTimePeriod(generateDataStartTime, Instant.now()).isEmpty());
-        pollUntil(() -> ingestTaskStatusStore.getTasksInProgress().isEmpty());
+        pollUntil("ingest tasks started", () -> !ingestTaskStatusStore.getTasksInTimePeriod(generateDataStartTime, Instant.now()).isEmpty());
+        pollUntil("ingest tasks finished", () -> ingestTaskStatusStore.getTasksInProgress().isEmpty());
     }
 
-    private void pollUntil(BooleanSupplier checkFinished) throws InterruptedException {
-        while (polls < MAX_POLLS && !checkFinished.getAsBoolean()) {
+    private void pollUntil(String description, BooleanSupplier checkFinished) throws InterruptedException {
+        while (!checkFinished.getAsBoolean()) {
+            if (polls >= MAX_POLLS) {
+                throw new TimedOutException("Timed out waiting until " + description);
+            }
             Thread.sleep(POLL_INTERVAL_MILLIS);
             polls++;
         }
@@ -153,5 +156,11 @@ public class WaitForIngest {
 
     interface StatusFormat {
         Object statusOutput(List<Task> tasks);
+    }
+
+    private static class TimedOutException extends RuntimeException {
+        private TimedOutException(String message) {
+            super(message);
+        }
     }
 }
