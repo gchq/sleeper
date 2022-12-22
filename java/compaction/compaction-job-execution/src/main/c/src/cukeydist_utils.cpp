@@ -113,7 +113,6 @@ std::unique_ptr<cudf::io::parquet_chunked_writer> createWriter(
     cudf::io::table_input_metadata const& tim,
     AwsLibrary* library,
     std::shared_ptr<S3Sink>& currentSink) {
-    
     std::string newFile = options.outputFiles.at(outputCounter++);
     cudf::io::sink_info destination{};
     if (isS3Path(newFile)) {

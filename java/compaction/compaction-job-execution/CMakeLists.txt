@@ -5,15 +5,8 @@ if(${CMAKE_VERSION} VERSION_LESS 3.12)
     cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 endif()
 
-# Do this before project() to skip the compiler config process
-if("${CMAKE_BINARY_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
-    message(
-        FATAL_ERROR
-            "In-source builds are disabled.
-    Please create a subfolder and use `cmake ..` inside it.
-    NOTE: cmake will now create CMakeCache.txt and CMakeFiles/*.
-          You must delete them, or cmake will refuse to work.")
-endif()
+include(cmake/StandardProjectSettings.cmake)
+include(cmake/PreventInSourceBuilds.cmake)
 
 project(
     Compaction
@@ -34,8 +27,19 @@ set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 # Set CUDA architecture for Tesla T4
 set(CMAKE_CUDA_ARCHITECTURES 75)
 
-# We should probably set this based on each target or whether it is Release or Debug instead.
-add_compile_options(-O3 -march=native)
+# Link this 'library' to set the c++ standard / compile-time options requested
+add_library(project_options INTERFACE)
+target_compile_features(project_options INTERFACE cxx_std_17)
+
+# Link this 'library' to use the warnings specified in CompilerWarnings.cmake
+add_library(project_warnings INTERFACE)
+
+# enable cache system
+include(cmake/Cache.cmake)
+
+# standard compiler warnings
+include(cmake/CompilerWarnings.cmake)
+set_project_warnings(project_warnings)
 
 # Find some libraries
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
