@@ -85,7 +85,7 @@ public class WaitForGenerateData {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 2 || args.length > 3) {
+        if (args.length < 1 || args.length > 2) {
             System.out.println("Usage: <generate data tasks file> <optional status format>");
             System.out.println("Status format can be status or full, defaults to status.");
             return;

@@ -36,6 +36,14 @@ java -cp "${SYSTEM_TEST_JAR}" \
 sleeper.systemtest.ingest.WaitForGenerateData "${WRITE_DATA_OUTPUT_FILE}"
 
 echo "-------------------------------------------------------------------------------"
+echo "Triggering ingest"
+echo "-------------------------------------------------------------------------------"
+java -cp "${SYSTEM_TEST_JAR}" \
+sleeper.systemtest.ingest.TriggerIngestFromQueue "${INSTANCE_ID}"
+
+# TODO: wait for ingest queue to empty
+
+echo "-------------------------------------------------------------------------------"
 echo "Waiting for ingest tasks"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \

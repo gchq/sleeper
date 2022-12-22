@@ -54,9 +54,8 @@ public class WaitForIngestTasks {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 2 || args.length > 3) {
+        if (args.length != 1) {
             System.out.println("Usage: <instance id>");
-            System.out.println("Status format can be status or full, defaults to status.");
             return;
         }
 
