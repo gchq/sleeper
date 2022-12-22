@@ -25,6 +25,7 @@ INSTANCE_ID=$1
 TABLE_NAME="system-test"
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(dirname "$THIS_DIR")
+WRITE_DATA_OUTPUT_FILE="$SCRIPTS_DIR/generated/writeDataOutput.json"
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
@@ -36,7 +37,7 @@ echo "--------------------------------------------------------------------------
 echo "Writing Random Data"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.ingest.RunWriteRandomDataTaskOnECS "${INSTANCE_ID}" "${TABLE_NAME}"
+sleeper.systemtest.ingest.RunWriteRandomDataTaskOnECS "${INSTANCE_ID}" "${TABLE_NAME}" "${WRITE_DATA_OUTPUT_FILE}"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
