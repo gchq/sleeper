@@ -69,8 +69,8 @@ public class WaitForIngest {
 
     public void pollUntilFinished() throws InterruptedException {
         pollUntil("generate data tasks finished", this::isGenerateDataTasksFinished);
-        Instant generateDataStartTime = getGenerateDataStartTime();
-        pollUntil("ingest tasks started", () -> !ingestTaskStatusStore.getTasksInTimePeriod(generateDataStartTime, Instant.now()).isEmpty());
+        Instant generateDataCreatedTime = getGenerateDataCreatedTime();
+        pollUntil("ingest tasks started", () -> !ingestTaskStatusStore.getTasksInTimePeriod(generateDataCreatedTime, Instant.now()).isEmpty());
         pollUntil("ingest tasks finished", () -> ingestTaskStatusStore.getTasksInProgress().isEmpty());
     }
 
@@ -84,9 +84,9 @@ public class WaitForIngest {
         }
     }
 
-    private Instant getGenerateDataStartTime() {
+    private Instant getGenerateDataCreatedTime() {
         return generateDataTasks.stream()
-                .map(task -> task.getStartedAt().toInstant())
+                .map(task -> task.getCreatedAt().toInstant())
                 .sorted().findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Found no generate data task start time"));
     }
