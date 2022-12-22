@@ -23,6 +23,7 @@
 #include <parquet/types.h>
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <csignal>
 #include <cudf/copying.hpp>
@@ -33,7 +34,7 @@
 #include <cudf/merge.hpp>
 #include <cudf/sorting.hpp>
 #include <cudf/table/table.hpp>
-#include <cudf/types.hpp>  //cudf size_type
+#include <cudf/types.hpp> //cudf size_type
 #include <cudf/utilities/bit.hpp>
 #include <cudf/utilities/error.hpp>
 #include <exception>
@@ -66,19 +67,19 @@
 
 template <typename T>
 std::pair<MergeResult, std::unique_ptr<cudf::table>>
-load_sort(cudf::io::source_info const& si,
-          std::vector<std::vector<cudf::size_type>> const& row_groups,
-          T const& low, T const& high,
+load_sort(cudf::io::source_info const &si,
+          std::vector<std::vector<cudf::size_type>> const &row_groups, T const &low, T const &high,
           cudf::size_type sort_col) {
     try {
         auto builder = cudf::io::parquet_reader_options::builder(si).row_groups(row_groups);
         auto opts = builder.build();
         auto table_with_metadata = cudf::io::read_parquet(opts);
-        std::unique_ptr<cudf::table> filtered = filter_table_by_range(table_with_metadata.tbl->view(),
-                                                                      table_with_metadata.tbl->view().column(sort_col),
-                                                                      low, high);
+        std::unique_ptr<cudf::table> filtered =
+            filter_table_by_range(table_with_metadata.tbl->view(),
+                                  table_with_metadata.tbl->view().column(sort_col), low, high);
         // fail if the column is not already sorted
-        if (!cudf::is_sorted(filtered->view().select({sort_col}), {cudf::order::ASCENDING}, {cudf::null_order::BEFORE})) {
+        if (!cudf::is_sorted(filtered->view().select({sort_col}), {cudf::order::ASCENDING},
+                             {cudf::null_order::BEFORE})) {
             std::cerr << "File is not in sorted order!\n";
             std::abort();
         }
@@ -89,7 +90,7 @@ load_sort(cudf::io::source_info const& si,
         // this should be replaced with a straight merge
         // auto sorted = cudf::sort_by_key(filtered->view(), filtered->view().select({sort_col}));
         return {MergeResult::Success, std::move(filtered)};
-    } catch (std::bad_alloc const& e) {
+    } catch (std::bad_alloc const &e) {
         std::cerr << "Caught error " << e.what() << std::endl;
         return {MergeResult::AllocFail, nullptr};
     }
@@ -99,11 +100,10 @@ load_sort(cudf::io::source_info const& si,
 static inline bool usesS3Input = false;
 
 template <typename T>
-tab_mem_t
-table_for_range_low_mem(std::vector<fileinfo_t> const& sources, cudf::size_type const sort_col,
-                        T const& low, T const& high,
-                        std::vector<EdgePair_vec<T>> const& filestats,
-                        std::shared_ptr<std::atomic_size_t> downloadedAmount) {
+tab_mem_t table_for_range_low_mem(std::vector<fileinfo_t> const &sources,
+                                  cudf::size_type const sort_col, T const &low, T const &high,
+                                  std::vector<EdgePair_vec<T>> const &filestats,
+                                  std::shared_ptr<std::atomic_size_t> downloadedAmount) {
     freeMemory("build tables start");
     ::size_t memUsed = 0;
     std::vector<std::unique_ptr<cudf::table>> sortedTables;
@@ -112,9 +112,9 @@ table_for_range_low_mem(std::vector<fileinfo_t> const& sources, cudf::size_type 
     std::vector<std::vector<cudf::size_type>> row_groups;
 
     for (::size_t j = 0; j < sources.size(); j++) {
-        fileinfo_t const& source = sources[j];
-        EdgePair_vec<T> const& stats = filestats[source.stIndex];
-        EdgePair<T> const& s = stats[static_cast<::size_t>(source.rgidx)];
+        fileinfo_t const &source = sources[j];
+        EdgePair_vec<T> const &stats = filestats[source.stIndex];
+        EdgePair<T> const &s = stats[static_cast<::size_t>(source.rgidx)];
 
         if (low <= s.second && high >= s.first) {
             // first one
@@ -141,11 +141,13 @@ table_for_range_low_mem(std::vector<fileinfo_t> const& sources, cudf::size_type 
         std::cerr << "Load..." << std::flush;
         // process each file separately
         for (::size_t idx = 0; idx < input_files.size(); ++idx) {
-            std::unique_ptr<cudf::io::datasource> fileSource = cudf::io::datasource::create(input_files[idx]);
+            std::unique_ptr<cudf::io::datasource> fileSource =
+                cudf::io::datasource::create(input_files[idx]);
             std::unique_ptr<S3WaitingSource> waitingSource{};
             std::unique_ptr<cudf::io::source_info> si{};
             if (usesS3Input) {
-                waitingSource = std::make_unique<S3WaitingSource>(std::move(fileSource), downloadedAmount);
+                waitingSource =
+                    std::make_unique<S3WaitingSource>(std::move(fileSource), downloadedAmount);
                 si = std::make_unique<cudf::io::source_info>(waitingSource.get());
             } else {
                 si = std::make_unique<cudf::io::source_info>(input_files[idx]);
@@ -177,13 +179,13 @@ table_for_range_low_mem(std::vector<fileinfo_t> const& sources, cudf::size_type 
 }
 
 template <typename T>
-row_mem_t<T> write_range_low_mem(std::vector<fileinfo_t> const& sources, cudf::size_type const sort_col,
-                                 T const& low, T const& high,
-                                 std::vector<EdgePair_vec<T>> const& filestats,
+row_mem_t<T> write_range_low_mem(std::vector<fileinfo_t> const &sources,
+                                 cudf::size_type const sort_col, T const &low, T const &high,
+                                 std::vector<EdgePair_vec<T>> const &filestats,
                                  std::shared_ptr<std::atomic_size_t> downloadedAmount,
-                                 std::unique_ptr<cudf::io::parquet_chunked_writer>& writer) {
-    tab_mem_t tableMem = table_for_range_low_mem(sources, sort_col, low, high,
-                                                 filestats, downloadedAmount);
+                                 std::unique_ptr<cudf::io::parquet_chunked_writer> &writer) {
+    tab_mem_t tableMem =
+        table_for_range_low_mem(sources, sort_col, low, high, filestats, downloadedAmount);
     if (tableMem.first.get() == nullptr) {
         return {0, 0, T{}, T{}};
     }
@@ -194,15 +196,17 @@ row_mem_t<T> write_range_low_mem(std::vector<fileinfo_t> const& sources, cudf::s
     std::vector<T> firstLast = getFirstLast<T>(tableMem.first->get_column(0).view());
 
     freeMemory("write tables done");
-    return {static_cast<size_t>(tableMem.first->num_rows()), tableMem.second, firstLast[0], firstLast[1]};
+    return {static_cast<size_t>(tableMem.first->num_rows()), tableMem.second, firstLast[0],
+            firstLast[1]};
 }
 
 template <typename T>
-::size_t checkForOutputSplit(std::vector<EdgePair<T>> const& ranges, ::size_t const endIndex, std::vector<T> const& outputSplits) {
+::size_t checkForOutputSplit(std::vector<EdgePair<T>> const &ranges, ::size_t const endIndex,
+                             std::vector<T> const &outputSplits) {
     // check to see if there is a output split point somewhere in this range
     if (!outputSplits.empty()) {
         for (::size_t idx = 0; idx < endIndex; ++idx) {
-            EdgePair<T> const& edge = ranges[idx];
+            EdgePair<T> const &edge = ranges[idx];
             if (std::binary_search(outputSplits.cbegin(), outputSplits.cend(), edge.second)) {
                 return idx;
             }
@@ -212,52 +216,63 @@ template <typename T>
 }
 
 template <typename T, typename ParquetStatsType = typename parquet_type_map::convert<T>>
-void doReadRowGroupStats(std::vector<cudf::size_type> const& sortCols, std::shared_ptr<parquet::FileMetaData> const fmeta, std::vector<EdgePair_vec<T>>& fileStats, std::vector<fileinfo_t>& sources,
-                         Edge_vec<T>& rowGroupParts, std::string const& file, ::size_t const fileIndex) {
+void doReadRowGroupStats(std::vector<cudf::size_type> const &sortCols,
+                         std::shared_ptr<parquet::FileMetaData> const fmeta,
+                         std::vector<EdgePair_vec<T>> &fileStats, std::vector<fileinfo_t> &sources,
+                         Edge_vec<T> &rowGroupParts, std::string const &file,
+                         ::size_t const fileIndex) {
     Edge_vec<T> fileGroupParts{};
     EdgePair_vec<T> rgstats;
     for (int c = 0; c < fmeta->num_row_groups(); c++) {
         auto rgmeta = fmeta->RowGroup(c);
-        auto stats = std::static_pointer_cast<ParquetStatsType>(rgmeta->ColumnChunk(sortCols[0])->statistics());
+        auto stats = std::static_pointer_cast<ParquetStatsType>(
+            rgmeta->ColumnChunk(sortCols[0])->statistics());
         T min, max;
         if constexpr (std::is_integral_v<T>) {
             min = stats->min();
             max = stats->max();
-        } else {  // string type
-            min = {reinterpret_cast<const char*>(stats->min().ptr), stats->min().len};
-            max = {reinterpret_cast<const char*>(stats->max().ptr), stats->max().len};
+        } else { // string type
+            min = {reinterpret_cast<const char *>(stats->min().ptr), stats->min().len};
+            max = {reinterpret_cast<const char *>(stats->max().ptr), stats->max().len};
         }
         rgstats.emplace_back(min, max);
         // add the current row group to the list of group partitions
-        if (c == 0) {  // special case for first entry.
+        if (c == 0) { // special case for first entry.
             fileGroupParts.push_back({min, 0});
         }
         fileGroupParts.push_back({max, static_cast<::size_t>(rgmeta->total_byte_size())});
         sources.push_back({file, fileIndex, c});
     }
     std::cerr << file << " bytes " << totalEdges(fileGroupParts.cbegin(), fileGroupParts.cend())
-              << " row groups " << fmeta->num_row_groups() << " rows " << fmeta->num_rows() << std::endl;
+              << " row groups " << fmeta->num_row_groups() << " rows " << fmeta->num_rows()
+              << std::endl;
 
     rowGroupParts = mergeCombine(rowGroupParts, fileGroupParts);
     fileStats.push_back(std::move(rgstats));
 }
 
-void readRowGroupStats(std::vector<cudf::size_type> const& sortCols, std::shared_ptr<parquet::FileMetaData> const fmeta,
-                       SupportedTypes::EdgePair_vec2_variant& fileStatsVariant,
-                       std::vector<fileinfo_t>& sources, SupportedTypes::Edge_vec_variant& rowGroupParts,
-                       std::string const& file, ::size_t const fileIndex) {
-    std::visit([&](auto&& arg) {
-        using ArgType = std::decay_t<decltype(arg)>;          // determine underlying type of variant -> Edge_vec<T>
-        using BaseType = typename ArgType::value_type::type;  // get the underlying type of T in the above line
-        doReadRowGroupStats(sortCols, fmeta, std::get<std::vector<EdgePair_vec<BaseType>>>(fileStatsVariant),
-                            sources, arg, file, fileIndex);
-    },
-               rowGroupParts);
+void readRowGroupStats(std::vector<cudf::size_type> const &sortCols,
+                       std::shared_ptr<parquet::FileMetaData> const fmeta,
+                       SupportedTypes::EdgePair_vec2_variant &fileStatsVariant,
+                       std::vector<fileinfo_t> &sources,
+                       SupportedTypes::Edge_vec_variant &rowGroupParts, std::string const &file,
+                       ::size_t const fileIndex) {
+    std::visit(
+        [&](auto &&arg) {
+            using ArgType =
+                std::decay_t<decltype(arg)>; // determine underlying type of variant -> Edge_vec<T>
+            using BaseType = typename ArgType::value_type::type; // get the underlying type of T in
+                                                                 // the above line
+            doReadRowGroupStats(sortCols, fmeta,
+                                std::get<std::vector<EdgePair_vec<BaseType>>>(fileStatsVariant),
+                                sources, arg, file, fileIndex);
+        },
+        rowGroupParts);
 }
 
 template <typename T>
-void updateOutputData(CommandLineOutput& returnData, T const& min,
-                      T const& max, ::size_t const count) {
+void updateOutputData(CommandLineOutput &returnData, T const &min, T const &max,
+                      ::size_t const count) {
     if constexpr (std::is_integral_v<T>) {
         returnData.minKeys.push_back(std::to_string(min));
         returnData.maxKeys.push_back(std::to_string(max));
@@ -269,16 +284,20 @@ void updateOutputData(CommandLineOutput& returnData, T const& min,
 }
 
 template <typename T>
-CommandLineOutput doCompactFiles(Edge_vec<T> const& rowGroupParts, CommandLineInput const& opts, std::vector<fileinfo_t> const& sources, std::vector<EdgePair_vec<T>> const& fileStats,
-                                 std::shared_ptr<AwsLibrary> awsPtr, cudf::io::table_input_metadata const& tim, std::shared_ptr<S3Sink>& currentSink, std::shared_ptr<std::atomic_size_t> downloadedAmount) {
+CommandLineOutput
+doCompactFiles(Edge_vec<T> const &rowGroupParts, CommandLineInput const &opts,
+               std::vector<fileinfo_t> const &sources,
+               std::vector<EdgePair_vec<T>> const &fileStats, std::shared_ptr<AwsLibrary> awsPtr,
+               cudf::io::table_input_metadata const &tim, std::shared_ptr<S3Sink> &currentSink,
+               std::shared_ptr<std::atomic_size_t> downloadedAmount) {
     CommandLineOutput returnData{};
     // want to work from total available memory, not total device memory
     ::size_t totalMem = getFreeMem();
     // Create list of partitions based on the merged histograms of all input files.
     // Make each partition small based on row group size. We will then start merging
     // multiple partitions at once, based on available memory
-    ::size_t partSize = (totalMem / 2) * 0.001;
-    auto ranges = makePartitions(rowGroupParts, partSize);
+    ::size_t partSize = static_cast<::size_t>((static_cast<double>(totalMem) / 2) * 0.001);
+    std::vector<EdgePair<T>> ranges = makePartitions(rowGroupParts, partSize);
     std::vector<T> outputSplits = convertVector<T>(opts.splitPoints);
     insertToEdgeList(ranges, outputSplits);
     T const globMin = ranges.front().first;
@@ -286,14 +305,16 @@ CommandLineOutput doCompactFiles(Edge_vec<T> const& rowGroupParts, CommandLineIn
 
     std::cerr << "Partition size " << partSize << std::endl;
     std::cerr << "Global minimum " << globMin << " maximum " << globMax << std::endl;
-    // increment last character of last range to make sure it is exclusive when we perform the merge (or increment if integral)
+    // increment last character of last range to make sure it is exclusive when we perform the merge
+    // (or increment if integral)
     if constexpr (std::is_integral_v<T>) {
         ranges.back().second++;
     } else {
         ranges.back().second.back()++;
     }
 
-    std::unique_ptr<cudf::io::parquet_chunked_writer> writer = createWriter(opts, tim, (awsPtr) ? awsPtr.get() : nullptr, currentSink);
+    std::unique_ptr<cudf::io::parquet_chunked_writer> writer =
+        createWriter(opts, tim, (awsPtr) ? awsPtr.get() : nullptr, currentSink);
 
     // Memory limit control
     // ====================
@@ -311,7 +332,7 @@ CommandLineOutput doCompactFiles(Edge_vec<T> const& rowGroupParts, CommandLineIn
     std::optional<T> outPartMin;
     T outPartMax;
     while (!ranges.empty()) {
-        EdgePair<T>& curr = ranges.front();
+        EdgePair<T> &curr = ranges.front();
         // find ending point based on how many ranges in this partition
         ::size_t endIndex = std::min(rangesPerPart, ranges.size()) - 1;
         // now check to see if this range includes an output split point
@@ -319,23 +340,29 @@ CommandLineOutput doCompactFiles(Edge_vec<T> const& rowGroupParts, CommandLineIn
         // update ranges in case the index changed
         rangesPerPart = endIndex + 1;
         std::cerr << "RangesPerPart " << rangesPerPart << " index 0-" << endIndex << "\n";
-        EdgePair<T>& endRange = ranges[endIndex];
-        bool newOutputNeeded = (!outputSplits.empty() && std::binary_search(outputSplits.cbegin(), outputSplits.cend(), endRange.second));
+        EdgePair<T> &endRange = ranges[endIndex];
+        bool newOutputNeeded =
+            (!outputSplits.empty() &&
+             std::binary_search(outputSplits.cbegin(), outputSplits.cend(), endRange.second));
         std::cerr << "Attempt range [ " << curr.first << ", " << endRange.second << " )\n";
 
         ::size_t nextRangesPerPart = 0;
         try {
-            auto [partCount, memUsed, r0Min, r0Max] = write_range_low_mem(sources, opts.sortIndexes[0], curr.first, endRange.second, fileStats, downloadedAmount, writer);
+            auto [partCount, memUsed, r0Min, r0Max] =
+                write_range_low_mem(sources, opts.sortIndexes[0], curr.first, endRange.second,
+                                    fileStats, downloadedAmount, writer);
 
             // capture first element?
             if (!outPartMin) {
                 outPartMin = r0Min;
             }
-            outPartMax = r0Max;  // always update the last element
+            outPartMax = r0Max; // always update the last element
 
             count += partCount;
             // remove the parts we've just done
-            ranges.erase(ranges.begin(), ranges.begin() + endIndex + 1);
+            ranges.erase(ranges.begin(),
+                         ranges.begin() + static_cast<typename decltype(ranges)::difference_type>(endIndex) +
+                             1);
 
             // how many parts next time?
             ::size_t avgPartSize = (memUsed / (endIndex + 1)) * 2;
@@ -363,11 +390,12 @@ CommandLineOutput doCompactFiles(Edge_vec<T> const& rowGroupParts, CommandLineIn
                 outPartMin.reset();
                 count = 0;
             }
-        } catch (std::exception& excpt) {
+        } catch (std::exception &excpt) {
             std::cerr << excpt.what() << std::endl;
             // are we on positive gradient?
             if (rangesPerPart > previousRangesPerPart) {
-                maxSafeRangesPerPart = rangesPerPart * 0.90;
+                maxSafeRangesPerPart =
+                    static_cast<::size_t>(static_cast<double>(rangesPerPart) * 0.90);
                 std::cerr << " set safe limit on range size to " << maxSafeRangesPerPart;
             }
             nextRangesPerPart = rangesPerPart >> 1;
@@ -382,24 +410,35 @@ CommandLineOutput doCompactFiles(Edge_vec<T> const& rowGroupParts, CommandLineIn
     return returnData;
 }
 
-CommandLineOutput compactFiles(SupportedTypes::Edge_vec_variant const& rowGroupParts, CommandLineInput const& opts,
-                               std::vector<fileinfo_t> const& sources, SupportedTypes::EdgePair_vec2_variant const& fileStats,
-                               std::shared_ptr<AwsLibrary> awsPtr, cudf::io::table_input_metadata const& tim,
-                               std::shared_ptr<S3Sink>& currentSink, std::shared_ptr<std::atomic_size_t> downloadedAmount) {
-    return std::visit([&](auto&& arg) -> CommandLineOutput {
-        using ArgType = std::decay_t<decltype(arg)>;          // determine underlying type of variant -> Edge_vec<T>
-        using BaseType = typename ArgType::value_type::type;  // get the underlying type of T in the above line
-        return doCompactFiles(arg, opts, sources, std::get<std::vector<EdgePair_vec<BaseType>>>(fileStats), awsPtr, tim, currentSink, downloadedAmount);
-    },
-                      rowGroupParts);
+CommandLineOutput compactFiles(SupportedTypes::Edge_vec_variant const &rowGroupParts,
+                               CommandLineInput const &opts, std::vector<fileinfo_t> const &sources,
+                               SupportedTypes::EdgePair_vec2_variant const &fileStats,
+                               std::shared_ptr<AwsLibrary> awsPtr,
+                               cudf::io::table_input_metadata const &tim,
+                               std::shared_ptr<S3Sink> &currentSink,
+                               std::shared_ptr<std::atomic_size_t> downloadedAmount) {
+    return std::visit(
+        [&](auto &&arg) -> CommandLineOutput {
+            using ArgType =
+                std::decay_t<decltype(arg)>; // determine underlying type of variant -> Edge_vec<T>
+            using BaseType = typename ArgType::value_type::type; // get the underlying type of T in
+                                                                 // the above line
+            return doCompactFiles(arg, opts, sources,
+                                  std::get<std::vector<EdgePair_vec<BaseType>>>(fileStats), awsPtr,
+                                  tim, currentSink, downloadedAmount);
+        },
+        rowGroupParts);
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     if (argc < 3) {
-        std::cerr << "usage: " << argv[0] << " [output file] [parts_file] [input file ...]\n"
-                                             "If S3 URIs are given, then the input file can be a prefix where all objects in that prefix will be\n"
-                                             "downloaded.\n"
-                                             "If the output file is \"-\" then read and write MessagePack from second argument file.\n";
+        std::cerr << "usage: " << argv[0]
+                  << " [output file] [parts_file] [input file ...]\n"
+                     "If S3 URIs are given, then the input file can be a prefix where all objects "
+                     "in that prefix will be\n"
+                     "downloaded.\n"
+                     "If the output file is \"-\" then read and write MessagePack from second "
+                     "argument file.\n";
         return 1;
     }
 
@@ -422,15 +461,16 @@ int main(int argc, char* argv[]) {
 
     CommandLineInput opts{};
     if (argv[1] == std::string("-")) {
-        // the iterator approach is safe since we are reading chars and writing to a uint8_t data buffer
-        // and implicit well defined conversions exist.
+        // the iterator approach is safe since we are reading chars and writing to a uint8_t data
+        // buffer and implicit well defined conversions exist.
 
         if (!std::filesystem::exists(argv[2])) {
             std::cerr << "File " << argv[2] << " doesn't exist.\n";
             return 1;
         }
         std::ifstream partFile{argv[2]};
-        std::vector<std::uint8_t> inputMsg{std::istream_iterator<char>{partFile}, std::istream_iterator<char>{}};
+        std::vector<std::uint8_t> inputMsg{std::istream_iterator<char>{partFile},
+                                           std::istream_iterator<char>{}};
         opts = msgpack::unpack<CommandLineInput>(inputMsg);
     } else {
         opts.outputFiles = {argv[1]};
@@ -440,7 +480,9 @@ int main(int argc, char* argv[]) {
     }
 
     if (opts.outputFiles.size() != opts.splitPoints.size() + 1) {
-        std::cerr << opts.splitPoints.size() << " splits need " << opts.splitPoints.size() + 1 << " output files specified, only " << opts.outputFiles.size() << " were given.\n";
+        std::cerr << opts.splitPoints.size() << " splits need " << opts.splitPoints.size() + 1
+                  << " output files specified, only " << opts.outputFiles.size()
+                  << " were given.\n";
         return 1;
     }
     if (opts.inputFiles.empty()) {
@@ -451,7 +493,8 @@ int main(int argc, char* argv[]) {
         usesS3Input = true;
         // create list of local files that are being downloaded from S3 and start
         // them downloading in the background
-        std::tie(opts.inputFiles, downloadedAmount) = initialiseFromS3(*awsPtr, PARQUET_EXTENSION, BATCH_SIZE, DEFAULT_FOOTER_SIZE, opts.inputFiles);
+        std::tie(opts.inputFiles, downloadedAmount) = initialiseFromS3(
+            *awsPtr, PARQUET_EXTENSION, BATCH_SIZE, DEFAULT_FOOTER_SIZE, opts.inputFiles);
     } else {
         // start background thread to prefetch all the files from memory
         auto thread = std::thread{start_prefetchers, std::cref(opts.inputFiles)};
@@ -468,15 +511,15 @@ int main(int argc, char* argv[]) {
     cudf::io::table_input_metadata tim;
 
     for (::size_t i = 0; i < opts.inputFiles.size(); ++i) {
-        std::string const& file = opts.inputFiles[i];
+        std::string const &file = opts.inputFiles[i];
         auto filef = ::arrow::io::ReadableFile::Open(file);
         std::shared_ptr<parquet::FileMetaData> fmeta = parquet::ReadMetaData(*filef);
-        totalRows += fmeta->num_rows();
-        if (i == 0) {  // get schema from first file/*  */
+        totalRows += static_cast<::size_t>(fmeta->num_rows());
+        if (i == 0) { // get schema from first file/*  */
             ::size_t variantIndex = findVariantIndex(fmeta, opts);
             filestats = populateVariant<SupportedTypes::EdgePair_vec2_variant>(variantIndex);
             rowGroupParts = populateVariant<SupportedTypes::Edge_vec_variant>(variantIndex);
-            const parquet::SchemaDescriptor* schema = fmeta->schema();
+            const parquet::SchemaDescriptor *schema = fmeta->schema();
             for (int c = 0; c < schema->num_columns(); c++) {
                 bool nullable = schema->Column(c)->max_definition_level() > 0;
                 std::string name = schema->Column(c)->name();
@@ -487,17 +530,21 @@ int main(int argc, char* argv[]) {
         }
         readRowGroupStats(opts.sortIndexes, fmeta, filestats, sources, rowGroupParts, file, i);
     }
-    std::visit([&](auto&& arg) {
-        std::cerr << "Total bytes in " << opts.inputFiles.size() << " files " << totalEdges(arg.cbegin(), arg.cend())
-                  << " rows " << totalRows << std::endl;
-    },
-               rowGroupParts);
+    std::visit(
+        [&](auto &&arg) {
+            std::cerr << "Total bytes in " << opts.inputFiles.size() << " files "
+                      << totalEdges(arg.cbegin(), arg.cend()) << " rows " << totalRows << std::endl;
+        },
+        rowGroupParts);
 
     double tstart = timestamp();
-    CommandLineOutput resultData = compactFiles(rowGroupParts, opts, sources, filestats, awsPtr, tim, currentSink, downloadedAmount);
+    CommandLineOutput resultData = compactFiles(rowGroupParts, opts, sources, filestats, awsPtr,
+                                                tim, currentSink, downloadedAmount);
     double tend = timestamp();
 
-    std::cerr << "total num rows written " << std::accumulate(resultData.rowsWritten.cbegin(), resultData.rowsWritten.cend(), 0) << std::endl;
+    std::cerr << "total num rows written "
+              << std::accumulate(resultData.rowsWritten.cbegin(), resultData.rowsWritten.cend(), 0)
+              << std::endl;
     std::cerr << "total time " << (tend - tstart) << " seconds" << std::endl;
 
     // write out message pack data

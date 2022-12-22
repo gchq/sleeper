@@ -39,7 +39,7 @@ std::basic_string<CharT2, Traits2, Allocator2> const & b)
 {
     return std::equal(a.begin(), a.end(),
                       b.begin(), b.end(),
-                      [](unsigned char a, unsigned char b) {
-                          return std::tolower(a) == std::tolower(b);
+                      [](unsigned char c1, unsigned char c2) {
+                          return std::tolower(c1) == std::tolower(c2);
                       });
 }

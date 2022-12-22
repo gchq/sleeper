@@ -23,7 +23,7 @@
 #include <memory>
 #include <string>
 
-struct S3WaitingSource : public cudf::io::datasource {
+struct S3WaitingSource final : public cudf::io::datasource {
    private:
     std::unique_ptr<cudf::io::datasource> source;
     std::shared_ptr<std::atomic_size_t> downloadedAmount;

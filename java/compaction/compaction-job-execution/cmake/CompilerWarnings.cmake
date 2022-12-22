@@ -3,6 +3,7 @@
 # https://github.com/lefticus/cppbestpractices/blob/master/02-Use_the_Tools_Available.md
 
 function(set_project_warnings project_name)
+  option(ENABLE_EXTRA_WARNINGS "Enable extra compiler warnings" OFF)
   option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors" TRUE)
 
   set(MSVC_WARNINGS
@@ -63,7 +64,6 @@ function(set_project_warnings project_name)
       -Warray-bounds=2
       -Wpedantic
       -Wmissing-include-dirs
-      -Wpadded
       -Wtrampolines
       -Wsync-nand
       -Wundef
@@ -82,20 +82,18 @@ function(set_project_warnings project_name)
       -Wmissing-format-attribute
       -Wformat-overflow=2
       -Wformat-truncation=2
-      -Winline
       -Winvalid-pch
       -Wpacked
       -Wstack-protector
       -Wswitch-default
       -Wswitch-enum
-      -Wstrict-overflow=5
+      -Wstrict-overflow=2
       -Wstrict-aliasing=3
       -Wunused
       -Wuninitialized
       -Wnormalized=nfc
       -Wvarargs
       -Wuseless-cast
-      -Wabi-tag
       -Wnoexcept
       -Wsign-promo
       -Weffc++
@@ -127,19 +125,20 @@ function(set_project_warnings project_name)
       -Wunused-macros
       -Wdate-time
       -Wvector-operation-performance
-      -Wvla'
+      -Wvla
   )
 
-  if(MSVC)
-    set(PROJECT_WARNINGS ${MSVC_WARNINGS})
-  elseif(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
-    set(PROJECT_WARNINGS ${CLANG_WARNINGS})
-  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(PROJECT_WARNINGS ${GCC_WARNINGS})
-  else()
-    message(AUTHOR_WARNING "No compiler warnings set for '${CMAKE_CXX_COMPILER_ID}' compiler.")
+  if (ENABLE_EXTRA_WARNINGS)
+    if(MSVC)
+      set(PROJECT_WARNINGS ${MSVC_WARNINGS})
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
+      set(PROJECT_WARNINGS ${CLANG_WARNINGS})
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+      set(PROJECT_WARNINGS ${GCC_WARNINGS})
+    else()
+      message(AUTHOR_WARNING "No compiler warnings set for '${CMAKE_CXX_COMPILER_ID}' compiler.")
+    endif()
   endif()
-
   target_compile_options(${project_name} INTERFACE ${PROJECT_WARNINGS})
 
 endfunction()

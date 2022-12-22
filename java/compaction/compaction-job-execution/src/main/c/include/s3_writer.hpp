@@ -30,7 +30,7 @@
 
 inline constexpr ::size_t DEFAULT_UPLOAD_SIZE = 300 * 1'048'576;
 
-struct S3Sink : public cudf::io::data_sink {
+struct S3Sink final : public cudf::io::data_sink {
    private:
     Aws::S3::S3Client* client;
     Aws::String bucket;
@@ -54,7 +54,8 @@ struct S3Sink : public cudf::io::data_sink {
     [[nodiscard]] static std::ofstream makeOutputFile(std::filesystem::path const & p);
    public:
     S3Sink(Aws::S3::S3Client& s3client, std::string const & s3path, ::size_t const uploadPartSize = DEFAULT_UPLOAD_SIZE);
-    
+    S3Sink(S3Sink const &) noexcept = default;
+    S3Sink & operator=(S3Sink const &) noexcept = default;
     ~S3Sink() noexcept(true) override;
 
     void host_write(void const* data, ::size_t size) override;

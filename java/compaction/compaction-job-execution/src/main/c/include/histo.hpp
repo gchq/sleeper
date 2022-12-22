@@ -87,7 +87,7 @@ std::decay_t<T> enbase(mpz_t const input) {
         throw std::invalid_argument("value too big to fit in given type");
     }
     std::decay_t<T> result = 0;
-    mpz_export(&result, 0, -1, sizeof(result), 0, 0, input);
+    mpz_export(&result, nullptr, -1, sizeof(result), 0, 0, input);
     return result;
 }
 

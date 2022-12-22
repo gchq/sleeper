@@ -94,7 +94,7 @@ add_library(
 target_include_directories(filters PUBLIC src/main/c/include)
 target_compile_options(filters PRIVATE --expt-relaxed-constexpr --expt-extended-lambda -Xfatbin
                                        -compress-all -Xcompiler -pthread)
-target_link_libraries(filters PRIVATE cudf::cudf project_warnings project_options)
+target_link_libraries(filters PRIVATE cudf::cudf project_options)
 
 add_executable(
     cukeydist

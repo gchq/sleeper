@@ -30,11 +30,11 @@ RUN ["/opt/conda/condabin/mamba", "install", "-y", "-c", "nvidia", "-c", "conda-
 FROM base AS compiler
 ARG TARGETARCH
 USER root
-RUN ["apt-get", "install", "-y", "gcc", "g++", "make"]
+RUN ["apt-get", "install", "-y", "gcc", "g++", "make", "clang", "clang-tidy", "clang-format"]
 USER worker
 WORKDIR /home/worker
 # Install CUDA and compiler and cmake (if upgrading to CUDA 12, add cuda-cudart-static as a dependency!)
-RUN ["/opt/conda/condabin/mamba", "install", "-y", "-c", "nvidia", "-c", "conda-forge", "cmake", "cuda-nvcc=11.5", "cuda-cudart-dev=11.5", "libopenssl-static", "pkg-config"]
+RUN ["/opt/conda/condabin/mamba", "install", "-y", "-c", "nvidia", "-c", "conda-forge", "cmake", "cmakelang", "cuda-nvcc=11.5", "cuda-cudart-dev=11.5", "libopenssl-static", "pkg-config"]
 
 # Copy and build the code
 FROM compiler AS builder

@@ -20,7 +20,7 @@
 
 #include <atomic>
 #include <condition_variable>
-#include <cstdint>  //uintmax_t, size_t
+#include <cstdint> //uintmax_t, size_t
 #include <filesystem>
 #include <memory>
 #include <mutex>
@@ -29,9 +29,7 @@
 #include <vector>
 
 // enum for the state of each downloader thread
-enum class State { RUNNING,
-                   PAUSED,
-                   COMPLETED };
+enum class State { RUNNING, PAUSED, COMPLETED };
 
 using s3meta = std::pair<Aws::String, ::uintmax_t>;
 
@@ -43,15 +41,13 @@ using file_range = std::pair<::uintmax_t, ::uintmax_t>;
 
 // RAII type for creating connection to AWS
 class AwsLibrary {
-   public:
-    AwsLibrary() noexcept {
+  public:
+    AwsLibrary() noexcept : options{}, s3client{} {
         options.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Warn;
-        options.httpOptions.installSigPipeHandler = true; //silence SIGPIPE from killing program
+        options.httpOptions.installSigPipeHandler = true; // silence SIGPIPE from killing program
         Aws::InitAPI(options);
     }
-    ~AwsLibrary() noexcept {
-        Aws::ShutdownAPI(options);
-    }
+    ~AwsLibrary() noexcept { Aws::ShutdownAPI(options); }
 
     // type is not copyable or moveable
     AwsLibrary(AwsLibrary const &) = delete;
@@ -66,7 +62,7 @@ class AwsLibrary {
         return *s3client;
     }
 
-   private:
+  private:
     Aws::SDKOptions options;
     std::unique_ptr<Aws::S3::S3Client> s3client;
 };
@@ -74,19 +70,21 @@ class AwsLibrary {
 Aws::Vector<s3meta> getS3MetaData(Aws::S3::S3Client &client, Aws::String const &bucket,
                                   Aws::String const &prefix, std::string const &extension = "");
 
-std::pair<std::vector<std::string>, std::shared_ptr<std::atomic_size_t>> initialiseFromS3(
-    AwsLibrary &library, std::string const &extension, ::size_t chunkSize,
-    ::size_t footerSize, std::vector<std::string> inputFiles);
+std::pair<std::vector<std::string>, std::shared_ptr<std::atomic_size_t>>
+initialiseFromS3(AwsLibrary &library, std::string const &extension, ::size_t chunkSize,
+                 ::size_t footerSize, std::vector<std::string> inputFiles);
 
-void download(Aws::S3::S3Client &client, Aws::String const bucket, Aws::String const key, file_range const range,
-              ::uintmax_t const fSize, std::filesystem::path const destFile, atomic_state_p state,
-              std::atomic_size_t &nextChunk,
-              std::mutex &monitor, std::condition_variable &waiter);
+void download(Aws::S3::S3Client &client, Aws::String const bucket, Aws::String const key,
+              file_range const range, ::uintmax_t const fSize, std::filesystem::path const destFile,
+              atomic_state_p state, std::atomic_size_t &nextChunk, std::mutex &monitor,
+              std::condition_variable &waiter);
 
-void parallelDownload(Aws::S3::S3Client &client, ::size_t const chunkSize, Aws::String const bucket,
-                      std::shared_ptr<std::vector<s3meta>> keys, std::shared_ptr<std::vector<Aws::String>> localDests,
-                      file_range const range, std::shared_ptr<std::atomic_size_t> downloadedAmount = std::make_shared<std::atomic_size_t>());
+void parallelDownload(
+    Aws::S3::S3Client &client, ::size_t const chunkSize, Aws::String const bucket,
+    std::shared_ptr<std::vector<s3meta>> keys, std::shared_ptr<std::vector<Aws::String>> localDests,
+    file_range const range,
+    std::shared_ptr<std::atomic_size_t> downloadedAmount = std::make_shared<std::atomic_size_t>());
 
-Aws::String getBucket(std::string const & s3path) noexcept;
+Aws::String getBucket(std::string const &s3path) noexcept;
 
-Aws::String getKey(std::string const & s3path) noexcept;
+Aws::String getKey(std::string const &s3path) noexcept;

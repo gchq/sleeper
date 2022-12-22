@@ -41,7 +41,7 @@ static std::string randomString(::size_t len) {
 
     std::string baseStr(len, '\0');
     for(auto& s: baseStr) {
-        s = distribution(generator);
+        s = static_cast<char>(distribution(generator)); //we know this integer will be in range
     }
     return baseStr;
 }
@@ -68,7 +68,10 @@ static bool registerDeletion() noexcept {
 fs::path generateLocalFileName() {
     //global list
     static std::mutex tempListMutex{};
-    static bool const regFlag=registerDeletion(); //guarantee only one thread calls this
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+    static bool const regFlag = registerDeletion(); //guarantee only one thread calls this
+#pragma GCC diagnostic pop
     fs::path tempFile=tempPath();
     tempFile /= randomString(TEMP_LEN);
     {

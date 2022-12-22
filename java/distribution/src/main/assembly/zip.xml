@@ -114,7 +114,7 @@
         </file>
         <!-- CMake build file for GPU support -->
         <file>
-            <source>${project.basedir}/../compaction-job-execution/CMakeLists.txt</source>
+            <source>${project.basedir}/../compaction/compaction-job-execution/CMakeLists.txt</source>
             <outputDirectory>scripts/docker/compaction-job-execution/</outputDirectory>
             <destName>CMakeLists.txt</destName>
         </file>

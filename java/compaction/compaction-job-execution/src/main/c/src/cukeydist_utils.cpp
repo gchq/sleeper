@@ -48,35 +48,35 @@ double timestamp() {
     return static_cast<double>(tv.tv_sec) + 0.000001 * static_cast<double>(tv.tv_usec);
 }
 
-bool isS3Path(std::string const& path) noexcept {
+bool isS3Path(std::string const &path) noexcept {
     return startsWith(path, S3_URI_PREFIX) || startsWith(path, S3A_URI_PREFIX);
 }
 
 ::size_t getFreeMem(rmm::cuda_stream_view const stream,
-                    rmm::mr::device_memory_resource* const mem) {
+                    rmm::mr::device_memory_resource *const mem) {
     return mem->get_mem_info(stream).first;
 }
 
-void freeMemory(std::string const& prefix,
-                rmm::cuda_stream_view const stream,
-                rmm::mr::device_memory_resource* const mem) {
+void freeMemory(std::string const &prefix, rmm::cuda_stream_view const stream,
+                rmm::mr::device_memory_resource *const mem) {
     std::cerr << "Free memory: " << prefix << " " << getFreeMem(stream, mem) << std::endl;
 }
 
-void prefetch(std::string const& file, off_t const offset, ::size_t const length) {
-    // std::cerr << "Background prefetch " << file << " from " << offset << " size " << length << std::endl;
+void prefetch(std::string const &file, off_t const offset, ::size_t const length) {
+    // std::cerr << "Background prefetch " << file << " from " << offset << " size " << length <<
+    // std::endl;
     int fd = open(file.c_str(), O_RDONLY);
     mmap(nullptr, length, PROT_READ, MAP_PRIVATE | MAP_POPULATE, fd, offset);
     close(fd);
 }
 
-void start_prefetchers(std::vector<std::string> const& filePaths) {
+void start_prefetchers(std::vector<std::string> const &filePaths) {
     std::vector<::uintmax_t> sizes{};
-    for (auto const& file : filePaths) {
+    for (auto const &file : filePaths) {
         ::uintmax_t fileSize = std::filesystem::file_size(file);
         sizes.emplace_back(fileSize);
     }
-    if (sizes.empty()) {  // nothing to do!
+    if (sizes.empty()) { // nothing to do!
         return;
     }
     ::uintmax_t maxSize = *std::max_element(sizes.cbegin(), sizes.cend());
@@ -89,13 +89,13 @@ void start_prefetchers(std::vector<std::string> const& filePaths) {
             }
         }
         // wait for all threads to terminate
-        for (auto& t : threadList) {
+        for (auto &t : threadList) {
             t.join();
         }
     }
 }
 
-static cudf::io::compression_type convertCompressionType(std::string const& compression) {
+static cudf::io::compression_type convertCompressionType(std::string const &compression) {
     if (iequals(compression, SNAPPY)) {
         return cudf::io::compression_type::SNAPPY;
     } else if (iequals(compression, ZSTD)) {
@@ -108,11 +108,9 @@ static cudf::io::compression_type convertCompressionType(std::string const& comp
 }
 
 static ::size_t outputCounter = 0;
-std::unique_ptr<cudf::io::parquet_chunked_writer> createWriter(
-    CommandLineInput const& options,
-    cudf::io::table_input_metadata const& tim,
-    AwsLibrary* library,
-    std::shared_ptr<S3Sink>& currentSink) {
+std::unique_ptr<cudf::io::parquet_chunked_writer>
+createWriter(CommandLineInput const &options, cudf::io::table_input_metadata const &tim,
+             AwsLibrary *library, std::shared_ptr<S3Sink> &currentSink) {
     std::string newFile = options.outputFiles.at(outputCounter++);
     cudf::io::sink_info destination{};
     if (isS3Path(newFile)) {
@@ -126,12 +124,13 @@ std::unique_ptr<cudf::io::parquet_chunked_writer> createWriter(
     wopts.metadata(&tim)
         .compression(convertCompressionType(options.codec))
         .row_group_size_bytes(options.rowGroupBytes)
-        .row_group_size_rows(options.rowGroupRows)
+        .row_group_size_rows(static_cast<cudf::size_type>(options.rowGroupRows))
         .max_page_size_bytes(options.pageBytes);
     return std::make_unique<cudf::io::parquet_chunked_writer>(wopts.build());
 }
 
-::size_t findVariantIndex(std::shared_ptr<parquet::FileMetaData> const metadata, CommandLineInput const& opts) {
+::size_t findVariantIndex(std::shared_ptr<parquet::FileMetaData> const metadata,
+                          CommandLineInput const &opts) {
     auto colType = metadata->schema()->Column(opts.sortIndexes[0])->physical_type();
     if (colType == parquet::Type::type::BYTE_ARRAY) {
         return 0;

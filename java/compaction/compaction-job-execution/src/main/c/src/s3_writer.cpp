@@ -22,7 +22,7 @@
 #include <aws/s3/model/CreateMultipartUploadRequest.h>
 #include <aws/s3/model/UploadPartRequest.h>
 
-#include <algorithm>  //sort
+#include <algorithm> //sort
 #include <cstddef>
 #include <cudf/utilities/error.hpp>
 #include <filesystem>
@@ -37,22 +37,15 @@
 #include "temp_file.hpp"
 
 namespace s3m = Aws::S3::Model;
-namespace fs=std::filesystem;
+namespace fs = std::filesystem;
 
-
-S3Sink::S3Sink(Aws::S3::S3Client& client, std::string const & s3path, ::size_t const uploadPartSize) : client(&client),
-                                                                                                    bucket(getBucket(s3path)),
-                                                                                                    key(getKey(s3path)),
-                                                                                                    uploadId(),
-                                                                                                    completedParts(),
-                                                                                                    uploadingThreads(),
-                                                                                                    uploadSize(uploadPartSize),
-                                                                                                    bytesWritten(0),
-                                                                                                    currentPartNo(1),
-                                                                                                    fileBytesWritten(0),
-                                                                                                    currentFileName(generateLocalFileName()),
-                                                                                                    output(makeOutputFile(currentFileName)) {
-}
+S3Sink::S3Sink(Aws::S3::S3Client &_client, std::string const &s3path,
+               ::size_t const uploadPartSize) :
+    client(&_client),
+    bucket(getBucket(s3path)), key(getKey(s3path)), uploadId(), completedParts(),
+    uploadingThreads(), uploadSize(uploadPartSize), bytesWritten(0), currentPartNo(1),
+    fileBytesWritten(0), currentFileName(generateLocalFileName()),
+    output(makeOutputFile(currentFileName)) {}
 
 S3Sink::~S3Sink() noexcept {
     std::cerr << "Running destructor for S3Sink\n";
@@ -63,33 +56,30 @@ S3Sink::~S3Sink() noexcept {
     }
 }
 
-
-[[nodiscard]] std::ofstream S3Sink::makeOutputFile(fs::path const & p) {
+[[nodiscard]] std::ofstream S3Sink::makeOutputFile(fs::path const &p) {
     std::cerr << "Making new temp output file " << p << std::endl;
     return std::ofstream(p, std::ios::binary | std::ios::out);
 }
 
-[[nodiscard]] bool S3Sink::supports_device_write() const {
-    return false;
-}
+[[nodiscard]] bool S3Sink::supports_device_write() const { return false; }
 
-[[nodiscard]] bool S3Sink::is_device_write_preferred(::size_t size) const {
+[[nodiscard]] bool S3Sink::is_device_write_preferred(::size_t) const {
     return supports_device_write();
 }
 
-void S3Sink::device_write(void const* gpu_data, ::size_t size, rmm::cuda_stream_view stream) {
+[[noreturn]] void S3Sink::device_write(void const *, ::size_t, rmm::cuda_stream_view) {
     CUDF_FAIL("Device writing not supported.");
 }
 
-std::future<void>
-S3Sink::device_write_async(void const* gpu_data, ::size_t size, rmm::cuda_stream_view stream) {
+[[noreturn]] std::future<void> S3Sink::device_write_async(void const *, ::size_t,
+                                                          rmm::cuda_stream_view) {
     CUDF_FAIL("Device writing not supported.");
 }
 
-void S3Sink::host_write(void const* data, ::size_t size) {
-    output.write(static_cast<char const*>(data), size);
+void S3Sink::host_write(void const *data, ::size_t size) {
+    output.write(static_cast<char const *>(data), static_cast<std::streamsize>(size));
     if (!output) {
-        std::cerr<< "An error has occurred writing to " << currentPartNo << std::endl;
+        std::cerr << "An error has occurred writing to " << currentPartNo << std::endl;
         std::abort();
     }
     bytesWritten += size;
@@ -105,8 +95,8 @@ void S3Sink::checkUpload() {
         // reset the output file
         currentFileName = generateLocalFileName();
         output.close();
-        output=makeOutputFile(currentFileName);
-        // upload the current one 
+        output = makeOutputFile(currentFileName);
+        // upload the current one
         uploadPart(oldPath);
         currentPartNo++;
         fileBytesWritten = 0;
@@ -117,46 +107,48 @@ void S3Sink::checkMUPInitialised() {
     // make request
     if (uploadId.empty()) {
         s3m::CreateMultipartUploadRequest req{};
-        req.WithBucket(bucket)
-            .WithKey(key);
+        req.WithBucket(bucket).WithKey(key);
         auto outcome = client->CreateMultipartUpload(req);
         std::cerr << "Starting multipart upload to s3://" << bucket << "/" << key << std::flush;
         if (!outcome.IsSuccess()) {
-            std::cerr << "Failed: " << outcome.GetError().GetExceptionName() << ": " << outcome.GetError().GetMessage() << std::endl;
+            std::cerr << "Failed: " << outcome.GetError().GetExceptionName() << ": "
+                      << outcome.GetError().GetMessage() << std::endl;
         }
         std::cerr << " done\n";
         uploadId = outcome.GetResult().GetUploadId();
     }
 }
 
-void S3Sink::uploadPart(fs::path const& fileName) {
+void S3Sink::uploadPart(fs::path const &fileName) {
     static std::mutex completedMutex{};
     // check to see if the Multipart upload has already been started.
     checkMUPInitialised();
-    //lambda for uploading
-    auto uploadLambda = [&](fs::path const fileName, ::size_t const partNo, ::size_t const bytesWritten) {
+    // lambda for uploading
+    auto uploadLambda = [&](fs::path const uploadfileName, ::size_t const partNo,
+                            ::size_t const bytesWrittenUpload) {
         // create upload part
         s3m::UploadPartRequest req{};
-        req.WithBucket(bucket)
-            .WithKey(key)
-            .WithUploadId(uploadId)
-            .WithPartNumber(partNo);
-        req.SetBody(Aws::MakeShared<Aws::FStream>("iostream", fileName, std::ios::in | std::ios::binary));
+        req.WithBucket(bucket).WithKey(key).WithUploadId(uploadId).WithPartNumber(
+            static_cast<int>(partNo));
+        req.SetBody(Aws::MakeShared<Aws::FStream>("iostream", uploadfileName,
+                                                  std::ios::in | std::ios::binary));
         // do the upload
-        std::cerr << "Start upload of part " << fileName << " part " << partNo << " of " << bytesWritten << " bytes\n";
+        std::cerr << "Start upload of part " << uploadfileName << " part " << partNo << " of "
+                  << bytesWrittenUpload << " bytes\n";
         auto outcome = client->UploadPart(req);
         if (!outcome.IsSuccess()) {
-            std::cerr << "Failed: " << outcome.GetError().GetExceptionName() << ": " << outcome.GetError().GetMessage() << std::endl;
+            std::cerr << "Failed: " << outcome.GetError().GetExceptionName() << ": "
+                      << outcome.GetError().GetMessage() << std::endl;
         }
-        std::cerr << "Finished S3 upload of part " << partNo << " file " << fileName << "\n";
-        //synchronise the update to completed parts
+        std::cerr << "Finished S3 upload of part " << partNo << " file " << uploadfileName << "\n";
+        // synchronise the update to completed parts
         std::lock_guard lock{completedMutex};
         // note the ETag for this part
         completedParts.push_back(s3m::CompletedPart()
                                      .WithETag(outcome.GetResult().GetETag())
-                                     .WithPartNumber(partNo));
+                                     .WithPartNumber(static_cast<int>(partNo)));
     };
-    //start an uploading thread
+    // start an uploading thread
     uploadingThreads.emplace_back(uploadLambda, fileName, currentPartNo, fileBytesWritten);
 }
 
@@ -170,32 +162,27 @@ void S3Sink::finish() {
     if (fileBytesWritten > 0) {
         uploadPart(currentFileName);
     }
-    std::cerr<<"Joining "<<uploadingThreads.size()<< " uploading threads...\n";
-    for(auto & th:uploadingThreads) {
+    std::cerr << "Joining " << uploadingThreads.size() << " uploading threads...\n";
+    for (auto &th : uploadingThreads) {
         th.join();
     }
     // the list of completed parts must be in part number order so sort it
-    std::sort(completedParts.begin(), completedParts.end(), [&](auto const& p1, auto const& p2) {
+    std::sort(completedParts.begin(), completedParts.end(), [&](auto const &p1, auto const &p2) {
         return p1.GetPartNumber() < p2.GetPartNumber();
     });
     // make completion request
     std::cerr << "Completing multipart upload\n";
     s3m::CompleteMultipartUploadRequest req{};
-    req.WithBucket(bucket)
-        .WithKey(key)
-        .WithUploadId(uploadId)
-        .WithMultipartUpload(s3m::CompletedMultipartUpload{}.WithParts(completedParts));
+    req.WithBucket(bucket).WithKey(key).WithUploadId(uploadId).WithMultipartUpload(
+        s3m::CompletedMultipartUpload{}.WithParts(completedParts));
     auto outcome = client->CompleteMultipartUpload(req);
     if (!outcome.IsSuccess()) {
-        std::cerr << "Failed: " << outcome.GetError().GetExceptionName() << ": " << outcome.GetError().GetMessage() << std::endl;
+        std::cerr << "Failed: " << outcome.GetError().GetExceptionName() << ": "
+                  << outcome.GetError().GetMessage() << std::endl;
     }
     std::cerr << "Successfully uploaded to s3://" << bucket << "/" << key << std::endl;
 }
 
-void S3Sink::flush() {
-    output.flush();
-}
+void S3Sink::flush() { output.flush(); }
 
-::size_t S3Sink::bytes_written() {
-    return bytesWritten;
-}
+::size_t S3Sink::bytes_written() { return bytesWritten; }

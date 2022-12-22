@@ -15,6 +15,9 @@
 #include <utility>
 #include <vector>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Woverloaded-virtual" //these trigger here unnecessarily
+
 template <typename T>
 struct ScalarVisit : public arrow::ScalarVisitor {
     ScalarVisit(std::vector<T>& ref) : items(ref) {}
@@ -31,7 +34,7 @@ struct ScalarVisit : public arrow::ScalarVisitor {
                            std::is_integral_v<T>,
                        arrow::Status>
     Visit(V const& scalar) {
-        items.push_back(scalar.value);
+        items.push_back(static_cast<T>(scalar.value));
         return arrow::Status::OK();
     }
 
@@ -44,6 +47,8 @@ struct ScalarVisit : public arrow::ScalarVisitor {
         return arrow::Status::OK();
     }
 };
+
+#pragma GCC diagnostic pop
 
 template <typename T>
 std::vector<T> getFirstLast(cudf::column_view const& firstColumn) {

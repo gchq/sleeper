@@ -105,7 +105,7 @@ static void downloadFilePart(Aws::S3::S3Client &client,
         .WithRange(byteRangeCopy)
         .SetDataReceivedEventHandler(
             [&](auto, auto, long long amount) {
-                bytesTransferred += amount;
+                bytesTransferred += static_cast<::size_t>(amount);
                 // should we sleep?
                 if (bytesTransferred >= *nextChunk) {
                     // we should sleep
@@ -121,7 +121,7 @@ static void downloadFilePart(Aws::S3::S3Client &client,
         // this file is destructed by the S3 API once request is finished.
         Aws::FStream *filePointer = Aws::New<Aws::FStream>("S3Object", destFile,
                                                            std::ios::in | std::ios::out | std::ios::binary);
-        filePointer->seekp(range.first, std::ios::beg);
+        filePointer->seekp(static_cast<Aws::FStream::off_type>(range.first), std::ios::beg);
         return filePointer;
     });
 

@@ -5,6 +5,18 @@
 #ifndef CPPACK_PACKER_HPP
 #define CPPACK_PACKER_HPP
 
+// Modified to ignore some warnings
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wfloat-conversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wdouble-promotion"
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#pragma GCC diagnostic ignored "-Wuseless-cast"
+#pragma GCC diagnostic ignored "-Weffc++"
+#pragma GCC diagnostic ignored "-Winline"
+
 #include <vector>
 #include <set>
 #include <list>
@@ -1054,5 +1066,7 @@ UnpackableObject unpack(const std::vector<uint8_t> &data) {
   return unpack<UnpackableObject>(data.data(), data.size(), ec);
 }
 }
+
+#pragma GCC diagnostic pop
 
 #endif //CPPACK_PACKER_HPP
