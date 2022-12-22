@@ -35,13 +35,17 @@ echo "--------------------------------------------------------------------------
 java -cp "${SYSTEM_TEST_JAR}" \
 sleeper.systemtest.ingest.WaitForGenerateData "${WRITE_DATA_OUTPUT_FILE}"
 
+END_GENERATE_DATA_TIME=$(record_time)
+echo "Generating data finished at $(recorded_time_str "$END_GENERATE_DATA_TIME"), took $(elapsed_time_str "$START_TIME" "$END_GENERATE_DATA_TIME")"
+
 echo "-------------------------------------------------------------------------------"
 echo "Triggering ingest"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
 sleeper.systemtest.ingest.TriggerIngestFromQueue "${INSTANCE_ID}"
 
-# TODO: wait for ingest queue to empty
+END_TRIGGER_INGEST_TIME=$(record_time)
+echo "Triggering ingest finished at $(recorded_time_str "$END_TRIGGER_INGEST_TIME"), took $(elapsed_time_str "$END_GENERATE_DATA_TIME" "$END_TRIGGER_INGEST_TIME")"
 
 echo "-------------------------------------------------------------------------------"
 echo "Waiting for ingest tasks"
@@ -54,5 +58,7 @@ echo "--------------------------------------------------------------------------
 echo "Finished waiting for ingest"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
-echo "Finished at $(recorded_time_str "$FINISH_TIME")"
+echo "Generating data finished at $(recorded_time_str "$END_GENERATE_DATA_TIME"), took $(elapsed_time_str "$START_TIME" "$END_GENERATE_DATA_TIME")"
+echo "Triggering ingest finished at $(recorded_time_str "$END_TRIGGER_INGEST_TIME"), took $(elapsed_time_str "$END_GENERATE_DATA_TIME" "$END_TRIGGER_INGEST_TIME")"
+echo "Ingest tasks finished at $(recorded_time_str "$FINISH_TIME")"
 echo "Overall, waited for $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
