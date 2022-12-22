@@ -29,23 +29,49 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.util.ClientUtils.optionalArgument;
 
-public class WaitForTasks {
-    private static final Logger LOGGER = LoggerFactory.getLogger(WaitForTasks.class);
+public class WaitForIngest {
+    private static final Logger LOGGER = LoggerFactory.getLogger(WaitForIngest.class);
+    private static final Set<String> FINISHED_STATUSES = Stream.of("STOPPED", "DELETED").collect(Collectors.toSet());
+    private static final long POLL_INTERVAL_MILLIS = 30000;
+    private static final long MAX_POLLS = 30;
 
     private final AmazonECS ecsClient;
-    private final List<Task> tasks;
+    private final List<Task> generateDataTasks;
+    private final StatusFormat statusFormat;
+    private long polls;
 
-    public WaitForTasks(AmazonECS ecsClient, List<Task> tasks) {
+    public WaitForIngest(AmazonECS ecsClient, List<Task> generateDataTasks, StatusFormat statusFormat) {
         this.ecsClient = ecsClient;
-        this.tasks = tasks;
+        this.generateDataTasks = generateDataTasks;
+        this.statusFormat = statusFormat;
     }
 
-    private List<Task> describeTasks() {
-        Map<String, List<Task>> tasksByCluster = tasks.stream()
+    public void pollUntilFinished() throws InterruptedException {
+        pollUntil(this::isGenerateDataTasksFinished);
+    }
+
+    private void pollUntil(BooleanSupplier checkFinished) throws InterruptedException {
+        while (polls < MAX_POLLS && !checkFinished.getAsBoolean()) {
+            Thread.sleep(POLL_INTERVAL_MILLIS);
+            polls++;
+        }
+    }
+
+    private boolean isGenerateDataTasksFinished() {
+        List<Task> tasks = describeGenerateDataTasks();
+        LOGGER.info("Task statuses: {}", statusFormat.statusOutput(tasks));
+        return tasks.stream().allMatch(task -> FINISHED_STATUSES.contains(task.getLastStatus()));
+    }
+
+    private List<Task> describeGenerateDataTasks() {
+        Map<String, List<Task>> tasksByCluster = generateDataTasks.stream()
                 .collect(Collectors.groupingBy(Task::getClusterArn));
         return tasksByCluster.entrySet().stream()
                 .flatMap(entry -> describeTasks(entry.getKey(), entry.getValue()).stream())
@@ -62,21 +88,21 @@ public class WaitForTasks {
         return result.getTasks();
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length < 3 || args.length > 4) {
-            System.out.println("Usage: <instance id> <table name> <tasks file> <optional status format>");
+            System.out.println("Usage: <instance id> <table name> <generate data tasks file> <optional status format>");
             System.out.println("Status format can be status or full, defaults to status.");
             return;
         }
 
-        List<Task> tasks = TasksJson.readTasksFromFile(Paths.get(args[2]));
+        List<Task> generateDataTasks = TasksJson.readTasksFromFile(Paths.get(args[2]));
         AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
         String formatStr = optionalArgument(args, 3)
                 .map(arg -> arg.toLowerCase(Locale.ROOT))
                 .orElse("status");
         StatusFormat format = statusFormat(formatStr);
-        WaitForTasks wait = new WaitForTasks(ecsClient, tasks);
-        LOGGER.info("Task statuses: {}", format.statusOutput(wait.describeTasks()));
+        WaitForIngest wait = new WaitForIngest(ecsClient, generateDataTasks, format);
+        wait.pollUntilFinished();
         ecsClient.shutdown();
     }
 
