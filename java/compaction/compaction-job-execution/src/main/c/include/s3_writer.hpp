@@ -64,9 +64,9 @@ struct S3Sink final : public cudf::io::data_sink {
 
     [[nodiscard]] bool is_device_write_preferred(::size_t size) const override;
 
-    void device_write(void const* gpu_data, ::size_t size, rmm::cuda_stream_view stream) override;
+    [[noreturn]] void device_write(void const* gpu_data, ::size_t size, rmm::cuda_stream_view stream) override;
 
-    std::future<void>
+    [[noreturn]] std::future<void>
     device_write_async(void const* gpu_data, ::size_t size, rmm::cuda_stream_view stream) override;
 
     void flush() override;

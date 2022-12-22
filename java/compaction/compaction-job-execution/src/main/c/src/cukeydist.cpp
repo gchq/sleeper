@@ -330,7 +330,7 @@ doCompactFiles(Edge_vec<T> const &rowGroupParts, CommandLineInput const &opts,
     ::size_t rangesPerPart = 1;
     // the first and last elements of column 0 in current output file
     std::optional<T> outPartMin;
-    T outPartMax;
+    T outPartMax{};
     while (!ranges.empty()) {
         EdgePair<T> &curr = ranges.front();
         // find ending point based on how many ranges in this partition
