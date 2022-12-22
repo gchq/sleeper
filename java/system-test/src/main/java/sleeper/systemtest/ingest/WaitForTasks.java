@@ -57,7 +57,7 @@ public class WaitForTasks {
                 .withTasks(tasks.stream().map(Task::getTaskArn).collect(Collectors.toList())));
         List<Failure> failures = result.getFailures();
         if (!failures.isEmpty()) {
-            throw new ECSFailureException("Failures describing tasks for cluster " + cluster + ": " + failures);
+            LOGGER.warn("Failures describing tasks for cluster {}: {}", cluster, failures);
         }
         return result.getTasks();
     }
@@ -71,22 +71,26 @@ public class WaitForTasks {
 
         List<Task> tasks = TasksJson.readTasksFromFile(Paths.get(args[2]));
         AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
-        WaitForTasks wait = new WaitForTasks(ecsClient, tasks);
-        String format = optionalArgument(args, 3)
+        String formatStr = optionalArgument(args, 3)
                 .map(arg -> arg.toLowerCase(Locale.ROOT))
                 .orElse("status");
-        LOGGER.info("Task statuses: {}", statuses(wait.describeTasks(), format));
+        StatusFormat format = statusFormat(formatStr);
+        WaitForTasks wait = new WaitForTasks(ecsClient, tasks);
+        LOGGER.info("Task statuses: {}", format.statusOutput(wait.describeTasks()));
         ecsClient.shutdown();
     }
 
-    private static Object statuses(List<Task> tasks, String format) {
+    public static StatusFormat statusFormat(String format) {
         switch (format) {
             case "full":
-                return new TasksJson(tasks);
+                return TasksJson::new;
             case "status":
             default:
-                return tasks.stream().map(TaskStatusJson::new).collect(Collectors.toList());
+                return tasks -> tasks.stream().map(TaskStatusJson::new).collect(Collectors.toList());
         }
+    }
 
+    interface StatusFormat {
+        Object statusOutput(List<Task> tasks);
     }
 }
