@@ -35,7 +35,7 @@ echo "--------------------------------------------------------------------------
 echo "Waiting for tasks to generate data"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.ingest.WaitForIngest "${INSTANCE_ID}" "${TABLE_NAME}" "${WRITE_DATA_OUTPUT_FILE}"
+sleeper.systemtest.ingest.WaitForIngest "${INSTANCE_ID}" "${WRITE_DATA_OUTPUT_FILE}"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
