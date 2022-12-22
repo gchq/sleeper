@@ -91,8 +91,8 @@ public class WaitForGenerateData {
             return;
         }
 
-        List<Task> generateDataTasks = TasksJson.readTasksFromFile(Paths.get(args[1]));
-        String statusFormatStr = optionalArgument(args, 2)
+        List<Task> generateDataTasks = TasksJson.readTasksFromFile(Paths.get(args[0]));
+        String statusFormatStr = optionalArgument(args, 1)
                 .map(arg -> arg.toLowerCase(Locale.ROOT))
                 .orElse("status");
         ECSTaskStatusFormat ecsTaskFormat = ecsTaskStatusFormat(statusFormatStr);
