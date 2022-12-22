@@ -15,85 +15,54 @@
  */
 package sleeper.systemtest.ingest;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.ecs.model.DescribeTasksRequest;
 import com.amazonaws.services.ecs.model.DescribeTasksResult;
 import com.amazonaws.services.ecs.model.Failure;
 import com.amazonaws.services.ecs.model.Task;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
-import sleeper.ingest.task.IngestTaskStatusStore;
-import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.util.PollWithRetries;
 
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.util.ClientUtils.optionalArgument;
 
-public class WaitForIngest {
-    private static final Logger LOGGER = LoggerFactory.getLogger(WaitForIngest.class);
+public class WaitForGenerateData {
+    private static final Logger LOGGER = LoggerFactory.getLogger(WaitForGenerateData.class);
     private static final Set<String> FINISHED_STATUSES = Stream.of("STOPPED", "DELETED").collect(Collectors.toSet());
     private static final long POLL_INTERVAL_MILLIS = 30000;
-    private static final long MAX_POLLS = 30;
+    private static final int MAX_POLLS = 30;
 
     private final AmazonECS ecsClient;
     private final List<Task> generateDataTasks;
-    private final StatusFormat statusFormat;
-    private final IngestTaskStatusStore ingestTaskStatusStore;
-    private long polls;
+    private final ECSTaskStatusFormat ecsStatusFormat;
+    private final PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
 
-    public WaitForIngest(
+    public WaitForGenerateData(
             AmazonECS ecsClient,
             List<Task> generateDataTasks,
-            StatusFormat statusFormat,
-            IngestTaskStatusStore ingestTaskStatusStore) {
+            ECSTaskStatusFormat ecsStatusFormat) {
         this.ecsClient = ecsClient;
         this.generateDataTasks = generateDataTasks;
-        this.statusFormat = statusFormat;
-        this.ingestTaskStatusStore = ingestTaskStatusStore;
+        this.ecsStatusFormat = ecsStatusFormat;
     }
 
     public void pollUntilFinished() throws InterruptedException {
-        pollUntil("generate data tasks finished", this::isGenerateDataTasksFinished);
-        Instant generateDataCreatedTime = getGenerateDataCreatedTime();
-        pollUntil("ingest tasks started", () -> !ingestTaskStatusStore.getTasksInTimePeriod(generateDataCreatedTime, Instant.now()).isEmpty());
-        pollUntil("ingest tasks finished", () -> ingestTaskStatusStore.getTasksInProgress().isEmpty());
-    }
-
-    private void pollUntil(String description, BooleanSupplier checkFinished) throws InterruptedException {
-        while (!checkFinished.getAsBoolean()) {
-            if (polls >= MAX_POLLS) {
-                throw new TimedOutException("Timed out waiting until " + description);
-            }
-            Thread.sleep(POLL_INTERVAL_MILLIS);
-            polls++;
-        }
-    }
-
-    private Instant getGenerateDataCreatedTime() {
-        return generateDataTasks.stream()
-                .map(task -> task.getCreatedAt().toInstant())
-                .sorted().findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Found no generate data task start time"));
+        poll.pollUntil("generate data tasks finished", this::isGenerateDataTasksFinished);
     }
 
     private boolean isGenerateDataTasksFinished() {
         List<Task> tasks = describeGenerateDataTasks();
-        LOGGER.info("Task statuses: {}", statusFormat.statusOutput(tasks));
+        LOGGER.info("Generate data task statuses: {}", ecsStatusFormat.statusOutput(tasks));
         return tasks.stream().allMatch(task -> FINISHED_STATUSES.contains(task.getLastStatus()));
     }
 
@@ -117,34 +86,25 @@ public class WaitForIngest {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length < 2 || args.length > 3) {
-            System.out.println("Usage: <instance id> <generate data tasks file> <optional status format>");
+            System.out.println("Usage: <generate data tasks file> <optional status format>");
             System.out.println("Status format can be status or full, defaults to status.");
             return;
         }
 
-        String instanceId = args[0];
         List<Task> generateDataTasks = TasksJson.readTasksFromFile(Paths.get(args[1]));
         String statusFormatStr = optionalArgument(args, 2)
                 .map(arg -> arg.toLowerCase(Locale.ROOT))
                 .orElse("status");
-        StatusFormat statusFormat = statusFormat(statusFormatStr);
+        ECSTaskStatusFormat ecsTaskFormat = ecsTaskStatusFormat(statusFormatStr);
 
         AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
 
-        SystemTestProperties systemTestProperties = new SystemTestProperties();
-        systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        IngestTaskStatusStore ingestTaskStatusStore = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, systemTestProperties);
-
-        WaitForIngest wait = new WaitForIngest(ecsClient, generateDataTasks, statusFormat, ingestTaskStatusStore);
+        WaitForGenerateData wait = new WaitForGenerateData(ecsClient, generateDataTasks, ecsTaskFormat);
         wait.pollUntilFinished();
         ecsClient.shutdown();
-        s3Client.shutdown();
-        dynamoDBClient.shutdown();
     }
 
-    public static StatusFormat statusFormat(String format) {
+    public static ECSTaskStatusFormat ecsTaskStatusFormat(String format) {
         switch (format) {
             case "full":
                 return TasksJson::new;
@@ -154,13 +114,7 @@ public class WaitForIngest {
         }
     }
 
-    interface StatusFormat {
+    interface ECSTaskStatusFormat {
         Object statusOutput(List<Task> tasks);
-    }
-
-    private static class TimedOutException extends RuntimeException {
-        private TimedOutException(String message) {
-            super(message);
-        }
     }
 }

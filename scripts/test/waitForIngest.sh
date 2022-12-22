@@ -25,8 +25,6 @@ WRITE_DATA_OUTPUT_FILE="$GENERATED_DIR/writeDataOutput.json"
 
 INSTANCE_PROPERTIES=${GENERATED_DIR}/instance.properties
 INSTANCE_ID=$(grep -F sleeper.id "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
-TABLE_PROPERTIES=${GENERATED_DIR}/table.properties
-TABLE_NAME=$(grep -F sleeper.table.name "${TABLE_PROPERTIES}" | cut -d'=' -f2)
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
@@ -35,7 +33,13 @@ echo "--------------------------------------------------------------------------
 echo "Waiting for tasks to generate data"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.ingest.WaitForIngest "${INSTANCE_ID}" "${WRITE_DATA_OUTPUT_FILE}"
+sleeper.systemtest.ingest.WaitForGenerateData "${WRITE_DATA_OUTPUT_FILE}"
+
+echo "-------------------------------------------------------------------------------"
+echo "Waiting for ingest tasks"
+echo "-------------------------------------------------------------------------------"
+java -cp "${SYSTEM_TEST_JAR}" \
+sleeper.systemtest.ingest.WaitForIngestTasks "${INSTANCE_ID}"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
