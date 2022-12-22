@@ -24,21 +24,27 @@ public class RecordsProcessedSummary {
     private final RecordsProcessed recordsProcessed;
     private final Instant startTime;
     private final Instant finishTime;
-    private final double durationInSeconds;
+    private final Duration duration;
+    private final Duration timeInProcess;
     private final double recordsReadPerSecond;
     private final double recordsWrittenPerSecond;
 
     public RecordsProcessedSummary(RecordsProcessed recordsProcessed, Instant startTime, Duration duration) {
-        this(recordsProcessed, startTime, startTime.plus(duration));
+        this(recordsProcessed, startTime, startTime.plus(duration), duration);
     }
 
     public RecordsProcessedSummary(RecordsProcessed recordsProcessed, Instant startTime, Instant finishTime) {
+        this(recordsProcessed, startTime, finishTime, Duration.between(startTime, finishTime));
+    }
+
+    public RecordsProcessedSummary(RecordsProcessed recordsProcessed, Instant startTime, Instant finishTime, Duration timeInProcess) {
         this.recordsProcessed = Objects.requireNonNull(recordsProcessed, "recordsProcessed must not be null");
         this.startTime = Objects.requireNonNull(startTime, "startTime must not be null");
         this.finishTime = Objects.requireNonNull(finishTime, "finishTime must not be null");
-        this.durationInSeconds = Duration.between(startTime, finishTime).toMillis() / 1000.0;
-        this.recordsReadPerSecond = recordsProcessed.getLinesRead() / this.durationInSeconds;
-        this.recordsWrittenPerSecond = recordsProcessed.getLinesWritten() / this.durationInSeconds;
+        this.timeInProcess = Objects.requireNonNull(timeInProcess, "timeInProcess must not be null");
+        this.duration = Duration.between(startTime, finishTime);
+        this.recordsReadPerSecond = recordsProcessed.getLinesRead() / (this.timeInProcess.toMillis() / 1000.0);
+        this.recordsWrittenPerSecond = recordsProcessed.getLinesWritten() / (this.timeInProcess.toMillis() / 1000.0);
     }
 
     public long getLinesRead() {
@@ -47,6 +53,10 @@ public class RecordsProcessedSummary {
 
     public long getLinesWritten() {
         return recordsProcessed.getLinesWritten();
+    }
+
+    public RecordsProcessed getRecordsProcessed() {
+        return recordsProcessed;
     }
 
     public Instant getStartTime() {
@@ -58,7 +68,15 @@ public class RecordsProcessedSummary {
     }
 
     public double getDurationInSeconds() {
-        return durationInSeconds;
+        return duration.toMillis() / 1000.0;
+    }
+
+    public Duration getDuration() {
+        return duration;
+    }
+
+    public Duration getTimeInProcess() {
+        return timeInProcess;
     }
 
     public double getRecordsReadPerSecond() {
@@ -79,12 +97,13 @@ public class RecordsProcessedSummary {
         }
         RecordsProcessedSummary that = (RecordsProcessedSummary) o;
         return recordsProcessed.equals(that.recordsProcessed) &&
-                startTime.equals(that.startTime) && finishTime.equals(that.finishTime);
+                startTime.equals(that.startTime) && finishTime.equals(that.finishTime) &&
+                timeInProcess.equals(that.timeInProcess);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(recordsProcessed, startTime, finishTime);
+        return Objects.hash(recordsProcessed, startTime, finishTime, timeInProcess);
     }
 
     @Override
@@ -93,7 +112,8 @@ public class RecordsProcessedSummary {
                 "recordsProcessed=" + recordsProcessed +
                 ", startTime=" + startTime +
                 ", finishTime=" + finishTime +
-                ", durationInSeconds=" + durationInSeconds +
+                ", duration=" + duration +
+                ", timeInProcess=" + timeInProcess +
                 ", recordsReadPerSecond=" + recordsReadPerSecond +
                 ", recordsWrittenPerSecond=" + recordsWrittenPerSecond +
                 '}';

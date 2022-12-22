@@ -16,13 +16,6 @@
 
 package sleeper.status.report;
 
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
-import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStartedStatus;
-
-import java.time.Instant;
 import java.util.List;
 import java.util.function.Function;
 
@@ -38,16 +31,6 @@ public class StatusReporterTestHelper {
 
     public static String task(int number) {
         return exampleUUID("task", number);
-    }
-
-    public static ProcessRun jobRunStartedInTask(int taskNumber, String startTimeNoMillis) {
-        return ProcessRun.started(task(taskNumber), defaultStartedStatus(startTimeNoMillis));
-    }
-
-    public static ProcessRun jobRunFinishedInTask(int taskNumber, String startTimeNoMillis, String finishTimeNoMillis) {
-        return ProcessRun.finished(task(taskNumber),
-                defaultStartedStatus(startTimeNoMillis),
-                defaultFinishedStatus(startTimeNoMillis, finishTimeNoMillis));
     }
 
     public static String replaceStandardJobIds(List<String> jobIds, String example) {
@@ -67,18 +50,4 @@ public class StatusReporterTestHelper {
         return replaced;
     }
 
-    public static ProcessStartedStatus defaultStartedStatus(String startTimeNoMillis) {
-        return ProcessStartedStatus.updateAndStartTime(
-                Instant.parse(startTimeNoMillis + ".123Z"),
-                Instant.parse(startTimeNoMillis + ".001Z"));
-    }
-
-    public static ProcessFinishedStatus defaultFinishedStatus(String startTimeNoMillis, String finishTimeNoMillis) {
-        return ProcessFinishedStatus.updateTimeAndSummary(
-                Instant.parse(finishTimeNoMillis + ".123Z"),
-                new RecordsProcessedSummary(
-                        new RecordsProcessed(300L, 200L),
-                        Instant.parse(startTimeNoMillis + ".001Z"),
-                        Instant.parse(finishTimeNoMillis + ".001Z")));
-    }
 }

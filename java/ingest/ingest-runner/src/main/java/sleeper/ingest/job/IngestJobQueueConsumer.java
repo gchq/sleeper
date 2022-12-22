@@ -120,13 +120,13 @@ public class IngestJobQueueConsumer implements IngestJobSource {
                 .withNamespace(metricsNamespace)
                 .withMetricData(new MetricDatum()
                         .withMetricName("StandardIngestRecordsWritten")
-                        .withValue((double) result.getNumberOfRecords())
+                        .withValue((double) result.getRecordsWritten())
                         .withUnit(StandardUnit.Count)
                         .withDimensions(
                                 new Dimension().withName("instanceId").withValue(instanceId),
                                 new Dimension().withName("tableName").withValue(job.getTableName())
                         )));
 
-        return result.getNumberOfRecords();
+        return result.getRecordsWritten();
     }
 }

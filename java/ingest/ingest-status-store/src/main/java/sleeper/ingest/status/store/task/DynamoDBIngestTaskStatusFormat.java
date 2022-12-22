@@ -24,9 +24,11 @@ import sleeper.ingest.task.IngestTaskFinishedStatus;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusesBuilder;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
@@ -38,15 +40,12 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 public class DynamoDBIngestTaskStatusFormat {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestTaskStatusFormat.class);
 
-    private DynamoDBIngestTaskStatusFormat() {
-    }
-
     public static final String TASK_ID = "TaskId";
     public static final String UPDATE_TYPE = "UpdateType";
     public static final String START_TIME = "StartTime";
     public static final String UPDATE_TIME = "UpdateTime";
     public static final String FINISH_TIME = "FinishTime";
-    public static final String DURATION = "Duration";
+    public static final String MILLIS_SPENT_ON_JOBS = "MillisecondsOnJobs";
     public static final String NUMBER_OF_JOBS = "NumberOfJobs";
     public static final String LINES_READ = "LinesRead";
     public static final String LINES_WRITTEN = "LinesWritten";
@@ -57,17 +56,25 @@ public class DynamoDBIngestTaskStatusFormat {
     public static final String STARTED = "started";
     public static final String FINISHED = "finished";
 
-    public static Map<String, AttributeValue> createTaskStartedRecord(IngestTaskStatus taskStatus, Long timeToLive) {
-        return createTaskRecord(taskStatus, STARTED, timeToLive)
+    private final int timeToLiveInSeconds;
+    private final Supplier<Instant> getTimeNow;
+
+    public DynamoDBIngestTaskStatusFormat(int timeToLiveInSeconds, Supplier<Instant> getTimeNow) {
+        this.timeToLiveInSeconds = timeToLiveInSeconds;
+        this.getTimeNow = getTimeNow;
+    }
+
+    public Map<String, AttributeValue> createTaskStartedRecord(IngestTaskStatus taskStatus) {
+        return createTaskRecord(taskStatus, STARTED)
                 .number(START_TIME, taskStatus.getStartTime().toEpochMilli())
                 .build();
     }
 
-    public static Map<String, AttributeValue> createTaskFinishedRecord(IngestTaskStatus taskStatus, Long timeToLive) {
-        return createTaskRecord(taskStatus, FINISHED, timeToLive)
+    public Map<String, AttributeValue> createTaskFinishedRecord(IngestTaskStatus taskStatus) {
+        return createTaskRecord(taskStatus, FINISHED)
                 .number(START_TIME, taskStatus.getStartTime().toEpochMilli())
                 .number(FINISH_TIME, taskStatus.getFinishedStatus().getFinishTime().toEpochMilli())
-                .number(DURATION, taskStatus.getFinishedStatus().getTotalRuntimeInSeconds())
+                .number(MILLIS_SPENT_ON_JOBS, taskStatus.getFinishedStatus().getTimeSpentOnJobs().toMillis())
                 .number(NUMBER_OF_JOBS, taskStatus.getFinishedStatus().getTotalJobRuns())
                 .number(LINES_READ, taskStatus.getFinishedStatus().getTotalRecordsRead())
                 .number(LINES_WRITTEN, taskStatus.getFinishedStatus().getTotalRecordsWritten())
@@ -76,13 +83,13 @@ public class DynamoDBIngestTaskStatusFormat {
                 .build();
     }
 
-    private static DynamoDBRecordBuilder createTaskRecord(IngestTaskStatus taskStatus, String updateType, Long timeToLive) {
-        Long timeNow = Instant.now().toEpochMilli();
+    private DynamoDBRecordBuilder createTaskRecord(IngestTaskStatus taskStatus, String updateType) {
+        Instant timeNow = getTimeNow.get();
         return new DynamoDBRecordBuilder()
                 .string(TASK_ID, taskStatus.getTaskId())
-                .number(UPDATE_TIME, timeNow)
+                .number(UPDATE_TIME, timeNow.toEpochMilli())
                 .string(UPDATE_TYPE, updateType)
-                .number(EXPIRY_DATE, timeNow + timeToLive);
+                .number(EXPIRY_DATE, timeNow.getEpochSecond() + timeToLiveInSeconds);
     }
 
     public static Stream<IngestTaskStatus> streamTaskStatuses(List<Map<String, AttributeValue>> items) {
@@ -97,12 +104,12 @@ public class DynamoDBIngestTaskStatusFormat {
             case STARTED:
                 builder.taskStarted(taskId,
                         getInstantAttribute(item, START_TIME),
-                        getInstantAttribute(item, EXPIRY_DATE));
+                        getInstantAttribute(item, EXPIRY_DATE, Instant::ofEpochSecond));
                 break;
             case FINISHED:
                 builder.taskFinished(taskId, IngestTaskFinishedStatus.builder()
                         .finishTime(getInstantAttribute(item, FINISH_TIME))
-                        .totalRuntimeInSeconds(Double.parseDouble(getNumberAttribute(item, DURATION)))
+                        .timeSpentOnJobs(Duration.ofMillis(getLongAttribute(item, MILLIS_SPENT_ON_JOBS, 0)))
                         .totalJobRuns(getIntAttribute(item, NUMBER_OF_JOBS, 0))
                         .totalRecordsRead(getLongAttribute(item, LINES_READ, 0))
                         .totalRecordsWritten(getLongAttribute(item, LINES_WRITTEN, 0))

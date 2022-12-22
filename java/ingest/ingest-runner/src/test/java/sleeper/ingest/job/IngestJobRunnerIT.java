@@ -42,12 +42,9 @@ import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.io.parquet.record.ParquetRecordWriter;
 import sleeper.io.parquet.record.SchemaConverter;
-import sleeper.statestore.DelegatingStateStore;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.statestore.inmemory.FixedPartitionStore;
-import sleeper.statestore.inmemory.InMemoryFileInfoStore;
 
 import java.io.IOException;
 import java.net.URI;
@@ -71,6 +68,8 @@ import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 @RunWith(Parameterized.class)
 public class IngestJobRunnerIT {
@@ -200,9 +199,8 @@ public class IngestJobRunnerIT {
         InstanceProperties instanceProperties = getInstanceProperties();
         TableProperties tableProperties = createTable(sleeperSchema);
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
-        StateStore stateStore = new DelegatingStateStore(new InMemoryFileInfoStore(), new FixedPartitionStore(sleeperSchema));
+        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(sleeperSchema);
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tablePropertiesProvider.getTableProperties(TEST_TABLE_NAME), stateStore);
-        stateStore.initialise();
 
         // Run the job consumer
         IngestJobRunner ingestJobRunner = new IngestJobRunner(
@@ -236,9 +234,7 @@ public class IngestJobRunnerIT {
                 .flatMap(List::stream)
                 .sorted(new RecordComparator(recordListAndSchema.sleeperSchema))
                 .collect(Collectors.toList());
-        IngestJob ingestJob = IngestJob.builder()
-                .tableName(TEST_TABLE_NAME).id("id").files(files)
-                .build();
+        IngestJob ingestJob = createJobWithTableAndFiles("id", TEST_TABLE_NAME, files);
         consumeAndVerify(recordListAndSchema.sleeperSchema, ingestJob, doubledRecords, 1);
     }
 

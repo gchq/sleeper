@@ -24,6 +24,7 @@ import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
 import sleeper.ingest.task.IngestTask;
 import sleeper.ingest.testutils.RecordGenerator;
@@ -40,6 +41,7 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
 
 public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
 
@@ -53,6 +55,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
         DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
+        DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
         IngestTask runner = createTaskRunner(instanceProperties, localDir, "test-task");
         runner.run();
 
@@ -87,9 +90,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
                 .flatMap(List::stream)
                 .sorted(new RecordComparator(recordListAndSchema.sleeperSchema))
                 .collect(Collectors.toList());
-        IngestJob ingestJob = IngestJob.builder()
-                .tableName(TEST_TABLE_NAME).id("id").files(files)
-                .build();
+        IngestJob ingestJob = createJobWithTableAndFiles("id", TEST_TABLE_NAME, files);
         AWS_EXTERNAL_RESOURCE.getSqsClient()
                 .sendMessage(getInstanceProperties().get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(ingestJob));
         consumeAndVerify(recordListAndSchema.sleeperSchema, doubledRecords, 1);

@@ -15,8 +15,6 @@
  */
 package sleeper.build.status;
 
-import sleeper.build.chunks.ProjectConfiguration;
-import sleeper.build.chunks.ProjectStructure;
 import sleeper.build.github.api.GitHubWorkflowRunsImpl;
 
 import java.io.IOException;
@@ -28,23 +26,12 @@ public class CheckGitHubStatusMain {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 3) {
-            System.out.println("Usage: <github.properties path> <chunks.yaml path> <Maven project base path>");
+        if (args.length != 2) {
+            System.out.println("Usage: <github.properties path> <chunks.yaml path>");
             System.exit(1);
             return;
         }
-        ProjectStructure structure = ProjectStructure.builder()
-                .gitHubPropertiesPath(Paths.get(args[0]))
-                .chunksYamlPath(Paths.get(args[1]))
-                .mavenProjectPath(Paths.get(args[2]))
-                .build();
-        ProjectConfiguration configuration = structure.loadProjectConfiguration();
-        try {
-            configuration.validate(structure, System.err);
-        } catch (IllegalStateException e) {
-            System.exit(1);
-            return;
-        }
+        CheckGitHubStatusConfig configuration = CheckGitHubStatusConfig.fromGitHubAndChunks(Paths.get(args[0]), Paths.get(args[1]));
         try (GitHubWorkflowRunsImpl gitHub = configuration.gitHubWorkflowRuns()) {
             ChunkStatuses status = configuration.checkStatus(gitHub);
             status.report(System.out);

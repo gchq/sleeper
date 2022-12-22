@@ -17,23 +17,20 @@
 package sleeper.status.report.ingest.job;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.status.report.job.GsonConfig;
 import sleeper.status.report.job.query.JobQuery;
 
 import java.io.PrintStream;
-import java.time.Instant;
 import java.util.List;
 
 public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
-    private final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues()
-            .registerTypeAdapter(Instant.class, instantJsonSerializer())
+    private final Gson gson = GsonConfig.standardBuilder()
             .registerTypeAdapter(IngestJobStatus.class, ingestJobStatusJsonSerializer())
-            .setPrettyPrinting()
             .create();
     private final PrintStream out;
 
@@ -57,19 +54,14 @@ public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
         return jsonObject;
     }
 
-    private static JsonSerializer<Instant> instantJsonSerializer() {
-        return (instant, type, context) -> new JsonPrimitive(instant.toString());
+    private static JsonSerializer<IngestJobStatus> ingestJobStatusJsonSerializer() {
+        return (jobStatus, type, context) -> createIngestJobJson(jobStatus, context);
     }
 
-    private JsonSerializer<IngestJobStatus> ingestJobStatusJsonSerializer() {
-        return (jobStatus, type, context) -> createIngestJobJson(jobStatus);
-    }
-
-    private JsonElement createIngestJobJson(IngestJobStatus jobStatus) {
+    private static JsonElement createIngestJobJson(IngestJobStatus jobStatus, JsonSerializationContext context) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("jobId", jobStatus.getJobId());
-        jsonObject.add("jobRunList", gson.toJsonTree(jobStatus.getJobRuns()));
-        jsonObject.addProperty("inputFilesCount", jobStatus.getInputFilesCount());
+        jsonObject.add("jobRunList", context.serialize(jobStatus.getJobRuns()));
         return jsonObject;
     }
 }

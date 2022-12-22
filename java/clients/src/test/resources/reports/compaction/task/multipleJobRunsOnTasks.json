@@ -4,9 +4,9 @@
     "type": "SPLITTING",
     "startTime": "2022-10-06T12:24:00.001Z",
     "finishedStatus": {
-      "finishTime": "2022-10-06T12:24:40.001Z",
+      "finishTime": "2022-10-06T12:24:50.001Z",
       "totalJobRuns": 4,
-      "totalRuntimeInSeconds": 40.0,
+      "timeSpentOnJobs": 40.0,
       "totalRecordsRead": 1600,
       "totalRecordsWritten": 800,
       "recordsReadPerSecond": 40.0,
@@ -18,9 +18,9 @@
     "type": "COMPACTION",
     "startTime": "2022-10-06T12:20:00.001Z",
     "finishedStatus": {
-      "finishTime": "2022-10-06T12:20:40.001Z",
+      "finishTime": "2022-10-06T12:20:50.001Z",
       "totalJobRuns": 4,
-      "totalRuntimeInSeconds": 40.0,
+      "timeSpentOnJobs": 40.0,
       "totalRecordsRead": 800,
       "totalRecordsWritten": 400,
       "recordsReadPerSecond": 20.0,

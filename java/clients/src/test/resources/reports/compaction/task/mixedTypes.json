@@ -6,7 +6,7 @@
     "finishedStatus": {
       "finishTime": "2022-10-06T12:24:30.001Z",
       "totalJobRuns": 1,
-      "totalRuntimeInSeconds": 30.0,
+      "timeSpentOnJobs": 30.0,
       "totalRecordsRead": 400,
       "totalRecordsWritten": 200,
       "recordsReadPerSecond": 13.333333333333334,
@@ -25,7 +25,7 @@
     "finishedStatus": {
       "finishTime": "2022-10-06T12:20:30.001Z",
       "totalJobRuns": 1,
-      "totalRuntimeInSeconds": 30.0,
+      "timeSpentOnJobs": 30.0,
       "totalRecordsRead": 200,
       "totalRecordsWritten": 100,
       "recordsReadPerSecond": 6.666666666666667,

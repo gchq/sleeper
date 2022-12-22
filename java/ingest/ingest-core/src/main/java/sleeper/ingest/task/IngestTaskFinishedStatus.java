@@ -19,15 +19,16 @@ package sleeper.ingest.task;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.ingest.IngestResult;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 public class IngestTaskFinishedStatus {
     private final Instant finishTime;
     private final int totalJobRuns;
-    private final double totalRuntimeInSeconds;
+    private final Duration timeSpentOnJobs;
     private final long totalRecordsRead;
     private final long totalRecordsWritten;
     private final double recordsReadPerSecond;
@@ -36,7 +37,7 @@ public class IngestTaskFinishedStatus {
     private IngestTaskFinishedStatus(Builder builder) {
         finishTime = Objects.requireNonNull(builder.finishTime, "finishTime must not be null");
         totalJobRuns = builder.totalJobRuns;
-        totalRuntimeInSeconds = builder.totalRuntimeInSeconds;
+        timeSpentOnJobs = Objects.requireNonNull(builder.timeSpentOnJobs, "timeSpentOnJobs must not be null");
         totalRecordsRead = builder.totalRecordsRead;
         totalRecordsWritten = builder.totalRecordsWritten;
         recordsReadPerSecond = builder.recordsReadPerSecond;
@@ -55,8 +56,12 @@ public class IngestTaskFinishedStatus {
         return totalJobRuns;
     }
 
-    public double getTotalRuntimeInSeconds() {
-        return totalRuntimeInSeconds;
+    public Duration getTimeSpentOnJobs() {
+        return timeSpentOnJobs;
+    }
+
+    public double getSecondsSpentOnJobs() {
+        return timeSpentOnJobs.toMillis() / 1000.0;
     }
 
     public long getTotalRecordsRead() {
@@ -78,7 +83,7 @@ public class IngestTaskFinishedStatus {
     public RecordsProcessedSummary asSummary(Instant startTime) {
         return new RecordsProcessedSummary(
                 new RecordsProcessed(totalRecordsRead, totalRecordsWritten),
-                startTime, finishTime);
+                startTime, finishTime, timeSpentOnJobs);
     }
 
     @Override
@@ -90,7 +95,7 @@ public class IngestTaskFinishedStatus {
             return false;
         }
         IngestTaskFinishedStatus that = (IngestTaskFinishedStatus) o;
-        return Double.compare(that.totalRuntimeInSeconds, totalRuntimeInSeconds) == 0
+        return timeSpentOnJobs.equals(that.timeSpentOnJobs)
                 && Double.compare(that.totalRecordsRead, totalRecordsRead) == 0
                 && Double.compare(that.totalRecordsWritten, totalRecordsWritten) == 0
                 && Double.compare(that.recordsReadPerSecond, recordsReadPerSecond) == 0
@@ -101,7 +106,7 @@ public class IngestTaskFinishedStatus {
 
     @Override
     public int hashCode() {
-        return Objects.hash(finishTime, totalJobRuns, totalRuntimeInSeconds,
+        return Objects.hash(finishTime, totalJobRuns, timeSpentOnJobs,
                 totalRecordsRead, totalRecordsWritten, recordsReadPerSecond, recordsWrittenPerSecond);
     }
 
@@ -110,7 +115,7 @@ public class IngestTaskFinishedStatus {
         return "IngestTaskFinishedStatus{" +
                 "finishTime=" + finishTime +
                 ", totalJobs=" + totalJobRuns +
-                ", totalRuntimeInSeconds=" + totalRuntimeInSeconds +
+                ", timeSpentOnJobs=" + timeSpentOnJobs +
                 ", totalRecordsRead=" + totalRecordsRead +
                 ", totalRecordsWritten=" + totalRecordsWritten +
                 ", recordsReadPerSecond=" + recordsReadPerSecond +
@@ -121,7 +126,7 @@ public class IngestTaskFinishedStatus {
     public static final class Builder {
         private Instant finishTime;
         private int totalJobRuns;
-        private double totalRuntimeInSeconds;
+        private Duration timeSpentOnJobs;
         private long totalRecordsRead;
         private long totalRecordsWritten;
         private double recordsReadPerSecond;
@@ -141,8 +146,8 @@ public class IngestTaskFinishedStatus {
             return this;
         }
 
-        public Builder totalRuntimeInSeconds(double totalRuntimeInSeconds) {
-            this.totalRuntimeInSeconds = totalRuntimeInSeconds;
+        public Builder timeSpentOnJobs(Duration timeSpentOnJobs) {
+            this.timeSpentOnJobs = timeSpentOnJobs;
             return this;
         }
 
@@ -166,24 +171,22 @@ public class IngestTaskFinishedStatus {
             return this;
         }
 
-        public Builder addIngestResult(IngestResult result, Instant startTime, Instant finishTime) {
-            return addJobSummary(
-                    new RecordsProcessedSummary(
-                            new RecordsProcessed(result.getNumberOfRecords(), result.getNumberOfRecords()),
-                            startTime, finishTime));
-        }
-
         public Builder addJobSummary(RecordsProcessedSummary jobSummary) {
             rateBuilder.summary(jobSummary);
             return this;
         }
 
-        public Builder finish(Instant startTime, Instant finishTime) {
-            AverageRecordRate rate = rateBuilder.startTime(startTime).finishTime(finishTime).build();
+        public Builder jobSummaries(Stream<RecordsProcessedSummary> jobSummaries) {
+            rateBuilder.summaries(jobSummaries);
+            return this;
+        }
+
+        Builder finish(Instant finishTime) {
+            AverageRecordRate rate = rateBuilder.build();
             totalJobRuns = rate.getRunCount();
             totalRecordsRead = rate.getRecordsRead();
             totalRecordsWritten = rate.getRecordsWritten();
-            totalRuntimeInSeconds = rate.getTotalDurationInSeconds();
+            timeSpentOnJobs = rate.getTotalDuration();
             recordsReadPerSecond = rate.getRecordsReadPerSecond();
             recordsWrittenPerSecond = rate.getRecordsWrittenPerSecond();
             this.finishTime = finishTime;

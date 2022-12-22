@@ -16,14 +16,12 @@
 
 package sleeper.ingest.task;
 
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStartedStatus;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 public class IngestTaskStatus {
     private final String taskId;
@@ -67,6 +65,18 @@ public class IngestTaskStatus {
         }
     }
 
+    public Duration getDuration() {
+        if (isFinished()) {
+            return Duration.between(startTime, finishedStatus.getFinishTime());
+        } else {
+            return null;
+        }
+    }
+
+    public Instant getExpiryDate() {
+        return expiryDate;
+    }
+
     private Instant getLastTime() {
         if (isFinished()) {
             return finishedStatus.getFinishTime();
@@ -97,7 +107,7 @@ public class IngestTaskStatus {
 
     public ProcessRun asProcessRun() {
         return ProcessRun.builder().taskId(taskId)
-                .startedStatus(ProcessStartedStatus.updateAndStartTime(getStartTime(), getStartTime()))
+                .startedStatus(IngestTaskStartedStatus.startTime(getStartTime()))
                 .finishedStatus(asProcessFinishedStatus())
                 .build();
     }
@@ -178,20 +188,10 @@ public class IngestTaskStatus {
             return this;
         }
 
-        public Builder finished(IngestTaskFinishedStatus.Builder taskFinishedBuilder, long finishTime) {
-            return finished(taskFinishedBuilder, Instant.ofEpochMilli(finishTime));
-        }
-
-        public Builder finished(IngestTaskFinishedStatus.Builder taskFinishedBuilder, Instant finishTime) {
+        public Builder finished(Instant finishTime, IngestTaskFinishedStatus.Builder taskFinishedBuilder) {
             return finishedStatus(taskFinishedBuilder
-                    .finish(startTime, finishTime)
+                    .finish(finishTime)
                     .build());
-        }
-
-        public Builder finished(Instant finishTime, Stream<RecordsProcessedSummary> jobSummaries) {
-            IngestTaskFinishedStatus.Builder builder = IngestTaskFinishedStatus.builder();
-            jobSummaries.forEach(builder::addJobSummary);
-            return finishedStatus(builder.finish(startTime, finishTime).build());
         }
 
         public String getTaskId() {

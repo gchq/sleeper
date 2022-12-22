@@ -43,8 +43,6 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 
 /**
  * An IngestJobRunner takes ingest jobs and runs them.
@@ -52,7 +50,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_R
 public class IngestJobRunner implements IngestJobHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobRunner.class);
 
-    private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final String fs;
     private final Configuration hadoopConfiguration;
@@ -65,7 +62,6 @@ public class IngestJobRunner implements IngestJobHandler {
                            String localDir,
                            S3AsyncClient s3AsyncClient,
                            Configuration hadoopConfiguration) {
-        this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.fs = instanceProperties.get(FILE_SYSTEM);
         this.hadoopConfiguration = hadoopConfiguration;
@@ -88,8 +84,6 @@ public class IngestJobRunner implements IngestJobHandler {
         List<Path> paths = IngestJobUtils.getPaths(job.getFiles(), hadoopConfiguration, fs);
         LOGGER.info("There are {} files to ingest", paths.size());
         LOGGER.debug("Files to ingest are: {}", paths);
-        LOGGER.info("Max number of records to read into memory is {}", instanceProperties.getLong(MAX_IN_MEMORY_BATCH_SIZE));
-        LOGGER.info("Max number of records to write to local disk is {}", instanceProperties.getLong(MAX_RECORDS_TO_WRITE_LOCALLY));
 
         // Create supplier of iterator of records from each file (using a supplier avoids having multiple files open
         // at the same time)
@@ -117,7 +111,7 @@ public class IngestJobRunner implements IngestJobHandler {
 
         // Run the ingest
         IngestResult result = ingestFactory.ingestFromRecordIteratorAndClose(tableProperties, concatenatingIterator);
-        LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getNumberOfRecords(), paths);
+        LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getRecordsWritten(), paths);
         return result;
     }
 }
