@@ -19,14 +19,16 @@ import com.amazonaws.services.ecs.model.RunTaskResult;
 import com.amazonaws.services.ecs.model.Task;
 import org.junit.Test;
 
+import java.io.StringReader;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public class RunTaskResultsJsonTest {
+public class TasksJsonTest {
 
     @Test
     public void shouldOutputJson() {
@@ -37,10 +39,21 @@ public class RunTaskResultsJsonTest {
                         .withCreatedAt(Date.from(Instant.parse("2022-12-22T10:08:01Z")))));
 
         // When
-        String json = RunTaskResultsJson.from(results);
+        String json = TasksJson.from(results);
 
         // Then
         assertThatJson(json).isEqualTo("{\"tasks\":[" +
                 "{\"taskArn\":\"some-task\",\"clusterArn\":\"some-cluster\",\"createdAt\":\"2022-12-22T10:08:01Z\"}]}");
+    }
+
+    @Test
+    public void shouldReadJson() {
+        List<Task> results = TasksJson.readTasks(new StringReader("{\"tasks\":[" +
+                "{\"taskArn\":\"some-task\",\"clusterArn\":\"some-cluster\",\"createdAt\":\"2022-12-22T10:08:01Z\"}]}"));
+
+        assertThat(results).usingRecursiveFieldByFieldElementComparator()
+                .containsExactly(new Task()
+                        .withTaskArn("some-task").withClusterArn("some-cluster")
+                        .withCreatedAt(Date.from(Instant.parse("2022-12-22T10:08:01Z"))));
     }
 }

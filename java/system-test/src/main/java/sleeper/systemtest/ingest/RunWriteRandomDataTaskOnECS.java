@@ -125,7 +125,7 @@ public class RunWriteRandomDataTaskOnECS {
         RunWriteRandomDataTaskOnECS runWriteRandomDataTaskOnECS = new RunWriteRandomDataTaskOnECS(systemTestProperties, tableProperties, ecsClient);
         List<RunTaskResult> results = runWriteRandomDataTaskOnECS.run();
         if (args.length > 2) {
-            RunTaskResultsJson.writeToFile(results, Paths.get(args[2]));
+            TasksJson.writeToFile(results, Paths.get(args[2]));
         }
 
         s3Client.shutdown();

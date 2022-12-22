@@ -22,13 +22,14 @@ import com.google.gson.JsonSerializer;
 import sleeper.util.GsonConfig;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class RunTaskResultsJson {
+public class TasksJson {
 
     private static final Gson GSON = GsonConfig.standardBuilder()
             .registerTypeAdapter(Date.class, dateSerializer())
@@ -36,12 +37,22 @@ public class RunTaskResultsJson {
 
     private final List<Task> tasks;
 
-    private RunTaskResultsJson(List<Task> tasks) {
+    public TasksJson(List<Task> tasks) {
         this.tasks = tasks;
+    }
+
+    public String toString() {
+        return GSON.toJson(tasks);
     }
 
     public static void writeToFile(List<RunTaskResult> results, Path path) throws IOException {
         Files.write(path, from(results).getBytes());
+    }
+
+    public static List<Task> readTasksFromFile(Path path) throws IOException {
+        try (Reader reader = Files.newBufferedReader(path)) {
+            return readTasks(reader);
+        }
     }
 
     public static String from(List<RunTaskResult> results) {
@@ -50,8 +61,12 @@ public class RunTaskResultsJson {
                 .collect(Collectors.toList()));
     }
 
+    public static List<Task> readTasks(Reader json) {
+        return GSON.fromJson(json, TasksJson.class).tasks;
+    }
+
     private static String fromTaskJson(List<Task> tasks) {
-        return GSON.toJson(new RunTaskResultsJson(tasks));
+        return GSON.toJson(new TasksJson(tasks));
     }
 
     private static JsonSerializer<Date> dateSerializer() {
