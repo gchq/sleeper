@@ -19,6 +19,8 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
@@ -49,15 +51,19 @@ public class SplitPartitionsUntilNoMoreSplits {
 
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
 
         SystemTestProperties systemTestProperties = new SystemTestProperties();
         systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
         CompactionJobStatusStore store = DynamoDBCompactionJobStatusStore.from(dynamoDBClient, systemTestProperties);
-        WaitForCompactionJobs wait = new WaitForCompactionJobs(store, tableName);
+
+        WaitForPartitionSplitting waitForSplitting = new WaitForPartitionSplitting(sqsClient, systemTestProperties);
+        WaitForCompactionJobs waitForCompaction = new WaitForCompactionJobs(store, tableName);
 
         while (true) {
             LOGGER.info("Splitting partitions");
             InvokeLambda.forInstance(instanceId, PARTITION_SPLITTING_LAMBDA_FUNCTION);
+            waitForSplitting.pollUntilFinished();
             LOGGER.info("Creating splitting compaction jobs");
             InvokeLambda.forInstance(instanceId, COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
             if (store.getUnfinishedJobs(tableName).isEmpty()) {
@@ -66,7 +72,7 @@ public class SplitPartitionsUntilNoMoreSplits {
             }
             LOGGER.info("Creating splitting compaction tasks");
             InvokeLambda.forInstance(instanceId, SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
-            wait.pollUntilFinished();
+            waitForCompaction.pollUntilFinished();
         }
     }
 }
