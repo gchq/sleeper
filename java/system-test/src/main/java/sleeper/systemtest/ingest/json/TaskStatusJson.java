@@ -21,6 +21,7 @@ import com.google.gson.Gson;
 import sleeper.util.GsonConfig;
 
 import java.time.Instant;
+import java.util.Date;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -47,12 +48,20 @@ public class TaskStatusJson {
         lastStatus = task.getLastStatus();
         containersLastStatus = task.getContainers().stream()
                 .collect(Collectors.toMap(Container::getName, Container::getLastStatus));
-        createdAt = task.getCreatedAt().toInstant();
-        startedAt = task.getStartedAt().toInstant();
-        stoppingAt = task.getStoppingAt().toInstant();
-        stoppedAt = task.getStoppedAt().toInstant();
+        createdAt = instantOrNull(task.getCreatedAt());
+        startedAt = instantOrNull(task.getStartedAt());
+        stoppingAt = instantOrNull(task.getStoppingAt());
+        stoppedAt = instantOrNull(task.getStoppedAt());
         stopCode = task.getStopCode();
         stoppedReason = task.getStoppedReason();
+    }
+
+    private static Instant instantOrNull(Date date) {
+        if (date == null) {
+            return null;
+        } else {
+            return date.toInstant();
+        }
     }
 
     public String toString() {
