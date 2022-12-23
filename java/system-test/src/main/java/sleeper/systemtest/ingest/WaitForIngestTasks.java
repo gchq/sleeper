@@ -34,6 +34,7 @@ import sleeper.systemtest.util.PollWithRetries;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
@@ -73,7 +74,7 @@ public class WaitForIngestTasks {
 
     private boolean isIngestTasksFinished() {
         List<IngestTaskStatus> tasks = statusStore.getTasksInProgress();
-        LOGGER.info("Ingest task statuses: {}", tasks);
+        LOGGER.info("Ingest task statuses: {}", tasks.stream().map(IngestTaskStatusJson::new).collect(Collectors.toList()));
         return tasks.isEmpty();
     }
 
