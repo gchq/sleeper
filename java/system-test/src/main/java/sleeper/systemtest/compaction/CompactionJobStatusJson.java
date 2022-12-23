@@ -20,6 +20,7 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.util.GsonConfig;
 
+import java.time.Duration;
 import java.time.Instant;
 
 public class CompactionJobStatusJson {
@@ -29,11 +30,17 @@ public class CompactionJobStatusJson {
     private final String jobId;
     private final Instant createTime;
     private final Instant lastStartTime;
+    private final Duration durationSoFar;
 
     public CompactionJobStatusJson(CompactionJobStatus status) {
         jobId = status.getJobId();
         createTime = status.getCreateUpdateTime();
         lastStartTime = status.getLatestRun().map(ProcessRun::getStartTime).orElse(null);
+        if (lastStartTime != null) {
+            durationSoFar = Duration.between(lastStartTime, Instant.now());
+        } else {
+            durationSoFar = null;
+        }
     }
 
     public String toString() {
@@ -51,5 +58,9 @@ public class CompactionJobStatusJson {
 
     public Instant getLastStartTime() {
         return lastStartTime;
+    }
+
+    public Duration getDurationSoFar() {
+        return durationSoFar;
     }
 }
