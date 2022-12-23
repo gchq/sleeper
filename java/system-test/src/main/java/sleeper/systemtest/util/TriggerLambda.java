@@ -37,7 +37,7 @@ public class TriggerLambda {
         s3Client.shutdown();
 
         try (LambdaClient lambda = LambdaClient.create()) {
-            lambda.invoke(builder -> builder
+            lambda.invoke(invoke -> invoke
                     .functionName(systemTestProperties.get(lambdaFunctionProperty))
                     .payload(SdkBytes.fromUtf8String("{}")));
         }

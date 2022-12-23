@@ -30,12 +30,10 @@ import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.systemtest.SystemTestProperties;
-import sleeper.systemtest.ingest.json.IngestTaskStatusJson;
 import sleeper.systemtest.util.PollWithRetries;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
@@ -46,16 +44,16 @@ public class WaitForIngestTasks {
 
     private final SystemTestProperties systemTestProperties;
     private final AmazonSQS sqsClient;
-    private final IngestTaskStatusStore statusStore;
+    private final IngestTaskStatusStore taskStatusStore;
     private final PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
 
     public WaitForIngestTasks(
             SystemTestProperties systemTestProperties,
             AmazonSQS sqsClient,
-            IngestTaskStatusStore statusStore) {
+            IngestTaskStatusStore taskStatusStore) {
         this.systemTestProperties = systemTestProperties;
         this.sqsClient = sqsClient;
-        this.statusStore = statusStore;
+        this.taskStatusStore = taskStatusStore;
     }
 
     public void pollUntilFinished() throws InterruptedException {
@@ -74,8 +72,8 @@ public class WaitForIngestTasks {
     }
 
     private boolean isIngestTasksFinished() {
-        List<IngestTaskStatus> tasks = statusStore.getTasksInProgress();
-        LOGGER.info("Ingest task statuses: {}", tasks.stream().map(IngestTaskStatusJson::new).collect(Collectors.toList()));
+        List<IngestTaskStatus> tasks = taskStatusStore.getTasksInProgress();
+        LOGGER.info("{} ingest tasks still running", tasks.size());
         return tasks.isEmpty();
     }
 
@@ -93,9 +91,9 @@ public class WaitForIngestTasks {
 
         SystemTestProperties systemTestProperties = new SystemTestProperties();
         systemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        IngestTaskStatusStore ingestTaskStatusStore = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, systemTestProperties);
+        IngestTaskStatusStore taskStatusStore = DynamoDBIngestTaskStatusStore.from(dynamoDBClient, systemTestProperties);
 
-        WaitForIngestTasks wait = new WaitForIngestTasks(systemTestProperties, sqsClient, ingestTaskStatusStore);
+        WaitForIngestTasks wait = new WaitForIngestTasks(systemTestProperties, sqsClient, taskStatusStore);
         wait.pollUntilFinished();
         s3Client.shutdown();
         dynamoDBClient.shutdown();
