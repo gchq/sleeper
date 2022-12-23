@@ -29,9 +29,6 @@ INSTANCE_ID=$(grep -F sleeper.id "${INSTANCE_PROPERTIES}" | cut -d'=' -f2)
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$SCRIPTS_DIR/test/waitForIngest.sh"
-END_WAIT_FOR_INGEST_TIME=$(record_time)
-
 echo "-------------------------------------------------------------------------------"
 echo "Splitting partitions"
 echo "-------------------------------------------------------------------------------"
@@ -43,6 +40,4 @@ echo "--------------------------------------------------------------------------
 echo "Finished splitting test"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
-echo "Waiting for ingest finished at $(recorded_time_str "$END_WAIT_FOR_INGEST_TIME"), took $(elapsed_time_str "$START_TIME" "$END_WAIT_FOR_INGEST_TIME")"
-echo "Splitting finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_WAIT_FOR_INGEST_TIME" "$FINISH_TIME")"
-echo "Overall, took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
+echo "Finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
