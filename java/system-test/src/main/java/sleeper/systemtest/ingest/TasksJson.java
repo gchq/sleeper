@@ -23,6 +23,7 @@ import sleeper.util.GsonConfig;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
@@ -46,7 +47,7 @@ public class TasksJson {
     }
 
     public static void writeToFile(List<RunTaskResult> results, Path path) throws IOException {
-        Files.write(path, from(results).getBytes());
+        Files.write(path, from(results).getBytes(StandardCharsets.UTF_8));
     }
 
     public static List<Task> readTasksFromFile(Path path) throws IOException {
@@ -62,7 +63,7 @@ public class TasksJson {
     }
 
     public static List<Task> readTasks(Reader json) {
-        return GSON.fromJson(json, TasksJson.class).tasks;
+        return GSON.fromJson(json, TasksJson.class).getTasks();
     }
 
     private static String fromTaskJson(List<Task> tasks) {
@@ -71,5 +72,9 @@ public class TasksJson {
 
     private static JsonSerializer<Date> dateSerializer() {
         return (date, type, context) -> context.serialize(date.toInstant());
+    }
+
+    public List<Task> getTasks() {
+        return tasks;
     }
 }

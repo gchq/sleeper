@@ -59,4 +59,48 @@ public class TaskStatusJson {
         return GSON.toJson(this);
     }
 
+    // These getters are just to convince Spotbugs these fields are used
+    public String getTaskArn() {
+        return taskArn;
+    }
+
+    public String getClusterArn() {
+        return clusterArn;
+    }
+
+    public String getDesiredStatus() {
+        return desiredStatus;
+    }
+
+    public String getLastStatus() {
+        return lastStatus;
+    }
+
+    public Map<String, String> getContainersLastStatus() {
+        return containersLastStatus;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getStartedAt() {
+        return startedAt;
+    }
+
+    public Instant getStoppingAt() {
+        return stoppingAt;
+    }
+
+    public Instant getStoppedAt() {
+        return stoppedAt;
+    }
+
+    public String getStopCode() {
+        return stopCode;
+    }
+
+    public String getStoppedReason() {
+        return stoppedReason;
+    }
 }
