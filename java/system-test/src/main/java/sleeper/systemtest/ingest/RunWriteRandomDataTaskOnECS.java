@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.ingest.json.TasksJson;
 
 import java.io.IOException;
 import java.nio.file.Paths;

@@ -15,6 +15,8 @@
  */
 package sleeper.systemtest.ingest;
 
+import sleeper.systemtest.util.TriggerLambda;
+
 import java.io.IOException;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;

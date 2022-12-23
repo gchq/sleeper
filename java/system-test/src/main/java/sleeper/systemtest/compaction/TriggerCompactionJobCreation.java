@@ -13,15 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.ingest;
+package sleeper.systemtest.compaction;
+
+import sleeper.systemtest.util.TriggerLambda;
 
 import java.io.IOException;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 
-public class TriggerCompactionTaskCreation {
+public class TriggerCompactionJobCreation {
 
-    private TriggerCompactionTaskCreation() {
+    private TriggerCompactionJobCreation() {
     }
 
     public static void main(String[] args) throws IOException {
@@ -30,6 +32,6 @@ public class TriggerCompactionTaskCreation {
             return;
         }
 
-        TriggerLambda.forInstance(args[0], COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
+        TriggerLambda.forInstance(args[0], COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
     }
 }

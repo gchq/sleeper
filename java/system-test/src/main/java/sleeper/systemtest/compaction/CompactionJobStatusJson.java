@@ -13,24 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.ingest;
+package sleeper.systemtest.compaction;
 
 import com.google.gson.Gson;
-import sleeper.ingest.task.IngestTaskStatus;
+import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.core.record.process.status.ProcessRun;
 import sleeper.util.GsonConfig;
 
 import java.time.Instant;
 
-public class IngestTaskStatusJson {
+public class CompactionJobStatusJson {
 
     private static final Gson GSON = GsonConfig.standardBuilder().create();
 
-    private final String taskId;
-    private final Instant startTime;
+    private final String jobId;
+    private final Instant createTime;
+    private final Instant lastStartTime;
 
-    public IngestTaskStatusJson(IngestTaskStatus status) {
-        taskId = status.getTaskId();
-        startTime = status.getStartTime();
+    public CompactionJobStatusJson(CompactionJobStatus status) {
+        jobId = status.getJobId();
+        createTime = status.getCreateUpdateTime();
+        lastStartTime = status.getLatestRun().map(ProcessRun::getStartTime).orElse(null);
     }
 
     public String toString() {
@@ -38,11 +41,15 @@ public class IngestTaskStatusJson {
     }
 
     // These getters are just to convince Spotbugs these fields are used
-    public String getTaskId() {
-        return taskId;
+    public String getJobId() {
+        return jobId;
     }
 
-    public Instant getStartTime() {
-        return startTime;
+    public Instant getCreateTime() {
+        return createTime;
+    }
+
+    public Instant getLastStartTime() {
+        return lastStartTime;
     }
 }

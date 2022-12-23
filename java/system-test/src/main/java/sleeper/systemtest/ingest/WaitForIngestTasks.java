@@ -30,6 +30,7 @@ import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.ingest.json.IngestTaskStatusJson;
 import sleeper.systemtest.util.PollWithRetries;
 
 import java.io.IOException;

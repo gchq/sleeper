@@ -127,6 +127,10 @@ public class CompactionJobStatus {
         return jobRuns.getRunList();
     }
 
+    public Optional<ProcessRun> getLatestRun() {
+        return jobRuns.getLatestRun();
+    }
+
     public static final class Builder {
         private String jobId;
         private CompactionJobCreatedStatus createdStatus;
