@@ -33,36 +33,16 @@ START_TIME=$(record_time)
 END_WAIT_FOR_INGEST_TIME=$(record_time)
 
 echo "-------------------------------------------------------------------------------"
-echo "Triggering compaction job creation"
+echo "Splitting partitions"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.compaction.TriggerCompactionJobCreation "$INSTANCE_ID"
-
-END_TRIGGER_COMPACTION_JOBS_TIME=$(record_time)
-echo "Triggering compaction jobs finished at $(recorded_time_str "$END_TRIGGER_COMPACTION_JOBS_TIME"), took $(elapsed_time_str "$END_WAIT_FOR_INGEST_TIME" "$END_TRIGGER_COMPACTION_JOBS_TIME")"
-
-echo "-------------------------------------------------------------------------------"
-echo "Triggering compaction task creation"
-echo "-------------------------------------------------------------------------------"
-java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.compaction.TriggerCompactionTaskCreation "$INSTANCE_ID"
-
-END_TRIGGER_COMPACTION_TASKS_TIME=$(record_time)
-echo "Triggering compaction tasks finished at $(recorded_time_str "$END_TRIGGER_COMPACTION_TASKS_TIME"), took $(elapsed_time_str "$END_TRIGGER_COMPACTION_JOBS_TIME" "$END_TRIGGER_COMPACTION_TASKS_TIME")"
-
-echo "-------------------------------------------------------------------------------"
-echo "Waiting for compaction jobs"
-echo "-------------------------------------------------------------------------------"
-java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.compaction.WaitForCompactionJobs "$INSTANCE_ID" "$TABLE_NAME"
+sleeper.systemtest.compaction.SplitPartitionsUntilNoMoreSplits "$INSTANCE_ID" "$TABLE_NAME"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
-echo "Finished compaction test"
+echo "Finished splitting test"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
 echo "Waiting for ingest finished at $(recorded_time_str "$END_WAIT_FOR_INGEST_TIME"), took $(elapsed_time_str "$START_TIME" "$END_WAIT_FOR_INGEST_TIME")"
-echo "Triggering compaction jobs finished at $(recorded_time_str "$END_TRIGGER_COMPACTION_JOBS_TIME"), took $(elapsed_time_str "$END_WAIT_FOR_INGEST_TIME" "$END_TRIGGER_COMPACTION_JOBS_TIME")"
-echo "Triggering compaction tasks finished at $(recorded_time_str "$END_TRIGGER_COMPACTION_TASKS_TIME"), took $(elapsed_time_str "$END_TRIGGER_COMPACTION_JOBS_TIME" "$END_TRIGGER_COMPACTION_TASKS_TIME")"
-echo "Compaction finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_TRIGGER_COMPACTION_TASKS_TIME" "$FINISH_TIME")"
+echo "Splitting finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_WAIT_FOR_INGEST_TIME" "$FINISH_TIME")"
 echo "Overall, took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
