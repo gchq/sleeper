@@ -15,6 +15,7 @@
  */
 package sleeper.build.chunks;
 
+import com.google.common.collect.ImmutableMap;
 import sleeper.build.testutil.TestResources;
 
 import java.io.IOException;
@@ -51,6 +52,9 @@ public class TestChunks {
         return ProjectChunk.chunk("ingest").name("Ingest")
                 .workflow("chunk-ingest.yaml")
                 .modulesArray("ingest")
+                .workflowOnlyProperties(ImmutableMap.of(
+                        "workflowOnlyString", "test-root-string",
+                        "otherWorkflowOnlyData", "{\"testString\":\"test-string\",\"testList\":[\"a\",\"b\"]}"))
                 .build();
     }
 
