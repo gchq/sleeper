@@ -31,13 +31,12 @@ import sleeper.systemtest.util.InvokeLambda;
 import java.io.IOException;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 
-public class SplitPartitionsUntilNoMoreSplits {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SplitPartitionsUntilNoMoreSplits.class);
+public class WaitForCurrentSplitAddingMissingJobs {
+    private static final Logger LOGGER = LoggerFactory.getLogger(WaitForCurrentSplitAddingMissingJobs.class);
 
-    private SplitPartitionsUntilNoMoreSplits() {
+    private WaitForCurrentSplitAddingMissingJobs() {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -60,20 +59,16 @@ public class SplitPartitionsUntilNoMoreSplits {
         WaitForPartitionSplitting waitForSplitting = new WaitForPartitionSplitting(sqsClient, systemTestProperties);
         WaitForCompactionJobs waitForCompaction = new WaitForCompactionJobs(store, tableName);
 
-        while (true) {
-            LOGGER.info("Splitting partitions");
-            InvokeLambda.forInstance(instanceId, PARTITION_SPLITTING_LAMBDA_FUNCTION);
-            LOGGER.info("Waiting for partition splits");
-            waitForSplitting.pollUntilFinished();
-            LOGGER.info("Creating compaction jobs");
-            InvokeLambda.forInstance(instanceId, COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
-            if (store.getUnfinishedJobs(tableName).isEmpty()) {
-                LOGGER.info("Created no more jobs, splitting complete");
-                break;
-            }
-            LOGGER.info("Creating splitting compaction tasks");
-            InvokeLambda.forInstance(instanceId, SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
-            waitForCompaction.pollUntilFinished();
+        LOGGER.info("Waiting for partition splits");
+        waitForSplitting.pollUntilFinished();
+        LOGGER.info("Creating compaction jobs");
+        InvokeLambda.forInstance(instanceId, COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
+        if (store.getUnfinishedJobs(tableName).isEmpty()) {
+            LOGGER.info("Created no more jobs, splitting complete");
+            return;
         }
+        LOGGER.info("Creating splitting compaction tasks");
+        InvokeLambda.forInstance(instanceId, SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
+        waitForCompaction.pollUntilFinished();
     }
 }
