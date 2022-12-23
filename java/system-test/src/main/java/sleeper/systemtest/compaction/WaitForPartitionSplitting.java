@@ -28,8 +28,8 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PAR
 
 public class WaitForPartitionSplitting {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForPartitionSplitting.class);
-    private static final long POLL_INTERVAL_MILLIS = 30000;
-    private static final int MAX_POLLS = 30;
+    private static final long POLL_INTERVAL_MILLIS = 5000;
+    private static final int MAX_POLLS = 12;
 
     private final AmazonSQS sqsClient;
     private final InstanceProperties instanceProperties;
