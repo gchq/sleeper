@@ -20,6 +20,8 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class GetChunkConfig {
 
@@ -43,8 +45,12 @@ public class GetChunkConfig {
     }
 
     private static String gitHubActionsOutputs(ProjectChunk chunk) {
-        return String.format("chunkName=%s%nmoduleList=%s",
-                chunk.getName(), chunk.getMavenProjectList());
+        return Stream.concat(
+                        Stream.of("chunkName=" + chunk.getName(),
+                                "moduleList=" + chunk.getMavenProjectList()),
+                        chunk.getWorkflowOutputs().entrySet().stream()
+                                .map(entry -> entry.getKey() + "=" + entry.getValue()))
+                .collect(Collectors.joining("\n"));
     }
 
     private enum Property {

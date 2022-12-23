@@ -40,4 +40,13 @@ public class GetChunkConfigTest {
                 .isEqualTo("chunkName=Common\n" +
                         "moduleList=core,configuration");
     }
+
+    @Test
+    public void shouldGetGitHubActionsOutputWithWorkflowOnlyProperties() {
+        assertThat(GetChunkConfig.get(CHUNKS.getById("ingest"), "github_actions_outputs"))
+                .isEqualTo("chunkName=Ingest\n" +
+                        "moduleList=ingest\n" +
+                        "workflowOnlyString=test-root-string\n" +
+                        "otherWorkflowOnlyData={\"testString\":\"test-string\",\"testList\":[\"a\",\"b\"]}");
+    }
 }
