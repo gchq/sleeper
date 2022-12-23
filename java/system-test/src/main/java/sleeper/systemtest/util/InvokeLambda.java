@@ -24,9 +24,9 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import java.io.IOException;
 
-public class TriggerLambda {
+public class InvokeLambda {
 
-    private TriggerLambda() {
+    private InvokeLambda() {
     }
 
     public static void forInstance(String instanceId, InstanceProperty lambdaFunctionProperty) throws IOException {

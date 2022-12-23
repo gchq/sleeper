@@ -30,22 +30,22 @@ source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
 echo "-------------------------------------------------------------------------------"
-echo "Triggering compaction job creation"
+echo "Invoking compaction job creation"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.compaction.TriggerCompactionJobCreation "$INSTANCE_ID"
+sleeper.systemtest.compaction.InvokeCompactionJobCreation "$INSTANCE_ID"
 
-END_TRIGGER_COMPACTION_JOBS_TIME=$(record_time)
-echo "Triggering compaction jobs finished at $(recorded_time_str "$END_TRIGGER_COMPACTION_JOBS_TIME"), took $(elapsed_time_str "$START_TIME" "$END_TRIGGER_COMPACTION_JOBS_TIME")"
+END_CREATE_COMPACTION_JOBS_TIME=$(record_time)
+echo "Creating compaction jobs finished at $(recorded_time_str "$END_CREATE_COMPACTION_JOBS_TIME"), took $(elapsed_time_str "$START_TIME" "$END_CREATE_COMPACTION_JOBS_TIME")"
 
 echo "-------------------------------------------------------------------------------"
-echo "Triggering compaction task creation"
+echo "Invoking compaction task creation"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.compaction.TriggerCompactionTaskCreation "$INSTANCE_ID"
+sleeper.systemtest.compaction.InvokeCompactionTaskCreation "$INSTANCE_ID"
 
-END_TRIGGER_COMPACTION_TASKS_TIME=$(record_time)
-echo "Triggering compaction tasks finished at $(recorded_time_str "$END_TRIGGER_COMPACTION_TASKS_TIME"), took $(elapsed_time_str "$END_TRIGGER_COMPACTION_JOBS_TIME" "$END_TRIGGER_COMPACTION_TASKS_TIME")"
+END_CREATE_COMPACTION_TASKS_TIME=$(record_time)
+echo "Creating compaction tasks finished at $(recorded_time_str "$END_CREATE_COMPACTION_TASKS_TIME"), took $(elapsed_time_str "$END_CREATE_COMPACTION_JOBS_TIME" "$END_CREATE_COMPACTION_TASKS_TIME")"
 
 echo "-------------------------------------------------------------------------------"
 echo "Waiting for compaction jobs"
@@ -58,7 +58,7 @@ echo "--------------------------------------------------------------------------
 echo "Finished compaction test"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
-echo "Triggering compaction jobs finished at $(recorded_time_str "$END_TRIGGER_COMPACTION_JOBS_TIME"), took $(elapsed_time_str "$START_TIME" "$END_TRIGGER_COMPACTION_JOBS_TIME")"
-echo "Triggering compaction tasks finished at $(recorded_time_str "$END_TRIGGER_COMPACTION_TASKS_TIME"), took $(elapsed_time_str "$END_TRIGGER_COMPACTION_JOBS_TIME" "$END_TRIGGER_COMPACTION_TASKS_TIME")"
-echo "Compaction finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_TRIGGER_COMPACTION_TASKS_TIME" "$FINISH_TIME")"
+echo "Creating compaction jobs finished at $(recorded_time_str "$END_CREATE_COMPACTION_JOBS_TIME"), took $(elapsed_time_str "$START_TIME" "$END_CREATE_COMPACTION_JOBS_TIME")"
+echo "Creating compaction tasks finished at $(recorded_time_str "$END_CREATE_COMPACTION_TASKS_TIME"), took $(elapsed_time_str "$END_CREATE_COMPACTION_JOBS_TIME" "$END_CREATE_COMPACTION_TASKS_TIME")"
+echo "Compaction finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_CREATE_COMPACTION_TASKS_TIME" "$FINISH_TIME")"
 echo "Overall, took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"

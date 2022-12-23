@@ -39,13 +39,13 @@ END_GENERATE_DATA_TIME=$(record_time)
 echo "Waiting for data generation finished at $(recorded_time_str "$END_GENERATE_DATA_TIME"), took $(elapsed_time_str "$START_TIME" "$END_GENERATE_DATA_TIME")"
 
 echo "-------------------------------------------------------------------------------"
-echo "Triggering ingest"
+echo "Invoking ingest task creation"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.ingest.TriggerIngestFromQueue "${INSTANCE_ID}"
+sleeper.systemtest.ingest.InvokeIngestTaskCreation "${INSTANCE_ID}"
 
-END_TRIGGER_INGEST_TIME=$(record_time)
-echo "Triggering ingest finished at $(recorded_time_str "$END_TRIGGER_INGEST_TIME"), took $(elapsed_time_str "$END_GENERATE_DATA_TIME" "$END_TRIGGER_INGEST_TIME")"
+END_CREATE_INGEST_TASKS_TIME=$(record_time)
+echo "Creating ingest tasks finished at $(recorded_time_str "$END_CREATE_INGEST_TASKS_TIME"), took $(elapsed_time_str "$END_GENERATE_DATA_TIME" "$END_CREATE_INGEST_TASKS_TIME")"
 
 echo "-------------------------------------------------------------------------------"
 echo "Waiting for ingest tasks"
@@ -59,6 +59,6 @@ echo "Finished waiting for ingest"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
 echo "Waiting for data generation finished at $(recorded_time_str "$END_GENERATE_DATA_TIME"), took $(elapsed_time_str "$START_TIME" "$END_GENERATE_DATA_TIME")"
-echo "Triggering ingest finished at $(recorded_time_str "$END_TRIGGER_INGEST_TIME"), took $(elapsed_time_str "$END_GENERATE_DATA_TIME" "$END_TRIGGER_INGEST_TIME")"
-echo "Ingest tasks finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_TRIGGER_INGEST_TIME" "$FINISH_TIME")"
+echo "Creating ingest tasks finished at $(recorded_time_str "$END_CREATE_INGEST_TASKS_TIME"), took $(elapsed_time_str "$END_GENERATE_DATA_TIME" "$END_CREATE_INGEST_TASKS_TIME")"
+echo "Ingest tasks finished at $(recorded_time_str "$FINISH_TIME"), took $(elapsed_time_str "$END_CREATE_INGEST_TASKS_TIME" "$FINISH_TIME")"
 echo "Overall, waited for $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"

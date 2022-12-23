@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
 import sleeper.systemtest.SystemTestProperties;
-import sleeper.systemtest.util.TriggerLambda;
+import sleeper.systemtest.util.InvokeLambda;
 
 import java.io.IOException;
 
@@ -57,15 +57,15 @@ public class SplitPartitionsUntilNoMoreSplits {
 
         while (true) {
             LOGGER.info("Splitting partitions");
-            TriggerLambda.forInstance(instanceId, PARTITION_SPLITTING_LAMBDA_FUNCTION);
+            InvokeLambda.forInstance(instanceId, PARTITION_SPLITTING_LAMBDA_FUNCTION);
             LOGGER.info("Creating splitting compaction jobs");
-            TriggerLambda.forInstance(instanceId, COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
+            InvokeLambda.forInstance(instanceId, COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
             if (store.getUnfinishedJobs(tableName).isEmpty()) {
                 LOGGER.info("Created no more jobs, splitting complete");
                 break;
             }
             LOGGER.info("Creating splitting compaction tasks");
-            TriggerLambda.forInstance(instanceId, SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
+            InvokeLambda.forInstance(instanceId, SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
             wait.pollUntilFinished();
         }
     }

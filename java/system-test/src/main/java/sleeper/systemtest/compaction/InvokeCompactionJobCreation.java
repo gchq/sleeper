@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.ingest;
+package sleeper.systemtest.compaction;
 
-import sleeper.systemtest.util.TriggerLambda;
+import sleeper.systemtest.util.InvokeLambda;
 
 import java.io.IOException;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 
-public class TriggerIngestFromQueue {
+public class InvokeCompactionJobCreation {
 
-    private TriggerIngestFromQueue() {
+    private InvokeCompactionJobCreation() {
     }
 
     public static void main(String[] args) throws IOException {
@@ -32,6 +32,6 @@ public class TriggerIngestFromQueue {
             return;
         }
 
-        TriggerLambda.forInstance(args[0], INGEST_LAMBDA_FUNCTION);
+        InvokeLambda.forInstance(args[0], COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
     }
 }

@@ -15,15 +15,15 @@
  */
 package sleeper.systemtest.compaction;
 
-import sleeper.systemtest.util.TriggerLambda;
+import sleeper.systemtest.util.InvokeLambda;
 
 import java.io.IOException;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 
-public class TriggerCompactionTaskCreation {
+public class InvokeCompactionTaskCreation {
 
-    private TriggerCompactionTaskCreation() {
+    private InvokeCompactionTaskCreation() {
     }
 
     public static void main(String[] args) throws IOException {
@@ -32,6 +32,6 @@ public class TriggerCompactionTaskCreation {
             return;
         }
 
-        TriggerLambda.forInstance(args[0], COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
+        InvokeLambda.forInstance(args[0], COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
     }
 }
