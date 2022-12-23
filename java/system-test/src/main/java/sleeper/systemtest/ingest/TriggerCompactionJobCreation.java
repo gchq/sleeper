@@ -17,11 +17,11 @@ package sleeper.systemtest.ingest;
 
 import java.io.IOException;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 
-public class TriggerIngestFromQueue {
+public class TriggerCompactionJobCreation {
 
-    private TriggerIngestFromQueue() {
+    private TriggerCompactionJobCreation() {
     }
 
     public static void main(String[] args) throws IOException {
@@ -30,6 +30,6 @@ public class TriggerIngestFromQueue {
             return;
         }
 
-        TriggerLambda.forInstance(args[0], INGEST_LAMBDA_FUNCTION);
+        TriggerLambda.forInstance(args[0], COMPACTION_JOB_CREATION_LAMBDA_FUNCTION);
     }
 }
