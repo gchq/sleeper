@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -46,8 +47,17 @@ public class InternalDependencyIndex {
                 .map(MavenModuleAndPath::getPath);
     }
 
+    public Stream<String> dependencyPathsForModulesExcludingUnexportedTransitives(String... paths) {
+        return dependenciesForModulesExcludingUnexportedTransitives(Arrays.asList(paths))
+                .map(MavenModuleAndPath::getPath);
+    }
+
     public Stream<MavenModuleAndPath> dependenciesForModules(List<String> paths) {
         return modulesAndAllDependencies(modulesByPathOrThrow(paths));
+    }
+
+    public Stream<MavenModuleAndPath> dependenciesForModulesExcludingUnexportedTransitives(List<String> paths) {
+        return modulesAndAllDirectOrExportedDependencies(modulesByPathOrThrow(paths));
     }
 
     public Stream<String> pomPathsForAncestors(String... paths) {
@@ -71,25 +81,34 @@ public class InternalDependencyIndex {
     }
 
     private Stream<MavenModuleAndPath> modulesAndAllDependencies(Stream<MavenModuleAndPath> modules) {
+        return modulesAndAllDependencies(modules, MavenModuleAndPath::dependencies);
+    }
+
+    private Stream<MavenModuleAndPath> modulesAndAllDirectOrExportedDependencies(Stream<MavenModuleAndPath> modules) {
+        return modulesAndAllDependencies(modules, MavenModuleAndPath::exportedDependencies);
+    }
+
+    private Stream<MavenModuleAndPath> modulesAndAllDependencies(
+            Stream<MavenModuleAndPath> modules,
+            Function<MavenModuleAndPath, Stream<DependencyReference>> getTransitiveDependencies) {
         List<MavenModuleAndPath> list = modules.collect(Collectors.toList());
         return Stream.concat(list.stream(),
                 removeDuplicatesLastFirst(
-                        list.stream().flatMap(MavenModuleAndPath::dependencies)
-                                .flatMap(this::traverseInternalTransitivesByRef),
+                        list.stream()
+                                .flatMap(MavenModuleAndPath::dependencies)
+                                .flatMap(dependencyRef -> streamByArtifactRef(dependencyRef.artifactReference()))
+                                .flatMap(dependency -> traverseInternalTransitives(dependency, getTransitiveDependencies)),
                         list));
     }
 
-    private Stream<MavenModuleAndPath> traverseInternalTransitivesByRef(DependencyReference reference) {
-        return streamByArtifactRef(reference.artifactReference())
-                .flatMap(this::traverseInternalTransitives);
-    }
-
-    private Stream<MavenModuleAndPath> traverseInternalTransitives(MavenModuleAndPath root) {
+    private Stream<MavenModuleAndPath> traverseInternalTransitives(
+            MavenModuleAndPath root,
+            Function<MavenModuleAndPath, Stream<DependencyReference>> getTransitiveDependencies) {
         List<MavenModuleAndPath> breadthFirstOrder = new ArrayList<>();
         Queue<MavenModuleAndPath> queue = new LinkedList<>();
         for (MavenModuleAndPath module = root; module != null; module = queue.poll()) {
             breadthFirstOrder.add(module);
-            module.exportedDependencies()
+            getTransitiveDependencies.apply(module)
                     .map(DependencyReference::artifactReference)
                     .flatMap(this::streamByArtifactRef)
                     .forEach(queue::add);
