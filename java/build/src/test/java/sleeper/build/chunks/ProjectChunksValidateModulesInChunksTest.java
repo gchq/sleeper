@@ -18,6 +18,7 @@ package sleeper.build.chunks;
 import org.junit.Test;
 import sleeper.build.maven.MavenModuleStructure;
 import sleeper.build.maven.TestMavenModuleStructure;
+import sleeper.build.testutil.TestProjectStructure;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;

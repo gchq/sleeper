@@ -26,14 +26,12 @@ import java.util.Objects;
 
 public class ProjectStructure {
 
-    private final Path gitHubPropertiesAbsolute;
     private final Path chunksYamlAbsolute;
     private final Path mavenProjectAbsolute;
     private final Path workflowsPathAbsolute;
     private final Path repositoryPath;
 
     private ProjectStructure(Builder builder) {
-        gitHubPropertiesAbsolute = nonNullAbsolute(builder.gitHubPropertiesPath, "gitHubPropertiesPath");
         chunksYamlAbsolute = nonNullAbsolute(builder.chunksYamlPath, "chunksYamlPath");
         mavenProjectAbsolute = nonNullAbsolute(builder.mavenProjectPath, "mavenProjectPath");
         repositoryPath = PathUtils.commonPath(chunksYamlAbsolute, mavenProjectAbsolute);
@@ -57,16 +55,16 @@ public class ProjectStructure {
         return repositoryPath.relativize(mavenProjectAbsolute).resolve(path);
     }
 
-    public ProjectConfiguration loadProjectConfiguration() throws IOException {
-        return ProjectConfiguration.fromGitHubAndChunks(gitHubPropertiesAbsolute, chunksYamlAbsolute);
-    }
-
     public MavenModuleStructure loadMavenStructure() throws IOException {
         return MavenModuleStructure.fromProjectBase(mavenProjectAbsolute);
     }
 
     public GitHubActionsChunkWorkflow loadWorkflow(ProjectChunk chunk) throws IOException {
         return GitHubActionsChunkWorkflowYaml.readFromPath(workflowPath(chunk));
+    }
+
+    public ProjectChunks loadChunks() throws IOException {
+        return ProjectChunksYaml.readPath(chunksYamlAbsolute);
     }
 
     public Path workflowPath(ProjectChunk chunk) {
@@ -82,17 +80,11 @@ public class ProjectStructure {
     }
 
     public static final class Builder {
-        private Path gitHubPropertiesPath;
         private Path chunksYamlPath;
         private Path mavenProjectPath;
         private Path workflowsPath;
 
         private Builder() {
-        }
-
-        public Builder gitHubPropertiesPath(Path gitHubPropertiesPath) {
-            this.gitHubPropertiesPath = gitHubPropertiesPath;
-            return this;
         }
 
         public Builder chunksYamlPath(Path chunksYamlPath) {

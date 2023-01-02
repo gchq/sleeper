@@ -19,9 +19,9 @@ import org.junit.Test;
 import sleeper.build.chunks.ProjectChunk;
 import sleeper.build.chunks.ProjectStructure;
 import sleeper.build.chunks.TestChunks;
-import sleeper.build.chunks.TestProjectStructure;
 import sleeper.build.maven.InternalDependencyIndex;
 import sleeper.build.maven.TestMavenModuleStructure;
+import sleeper.build.testutil.TestProjectStructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
