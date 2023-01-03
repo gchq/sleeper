@@ -41,7 +41,7 @@ jobs:
         run: mvn --batch-mode clean install -am -pl ${{ steps.config.outputs.moduleList }} -Pquick,skipShade -Dmaven.repo.local=.m2/repository
         working-directory: ./java
       - name: Test
-        run: mvn --batch-mode --fail-at-end verify -pl ${{ steps.config.outputs.moduleList }} -Dmaven.repo.local=.m2/repository
+        run: mvn --batch-mode --fail-at-end verify -pl ${{ steps.config.outputs.moduleList }} -Dmaven.repo.local=.m2/repository -e
         working-directory: ./java
       - name: Check rate limits
         id: rate-limit
