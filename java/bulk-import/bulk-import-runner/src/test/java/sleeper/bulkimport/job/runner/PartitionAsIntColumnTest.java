@@ -21,6 +21,9 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.types.StructType;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import scala.collection.JavaConverters;
 import sleeper.bulkimport.job.runner.dataframelocalsort.PartitionAsIntColumn;
@@ -35,6 +38,7 @@ import sleeper.core.schema.type.StringType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -43,6 +47,17 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class PartitionAsIntColumnTest {
+    private static SparkSession spark;
+
+    @BeforeClass
+    public static void initSpark() {
+        spark = SparkSession.builder().appName("test").master("local").getOrCreate();
+    }
+
+    @AfterClass
+    public static void stopSpark() {
+        spark.stop();
+    }
 
     @Test
     public void shouldComputeColumnIfOneSplitIntKey() {
@@ -203,37 +218,29 @@ public class PartitionAsIntColumnTest {
     }
 
     private void validatePartitions(List<Row> keys, List<Integer> expectedPartitionIds, Schema schema, Column column) {
-        SparkSession spark = SparkSession.builder().appName("test").master("local").getOrCreate();
-        Dataset<Row> df = spark.createDataFrame(keys, new StructTypeFactory().getStructType(schema))
-                .withColumn("partitionAsInt", column);
-        List<Row> keysWithComputedPartitions = df.collectAsList();
-        List<Row> keysWithExpectedPartitions = new ArrayList<>();
+        StructType structType = new StructTypeFactory().getStructType(schema);
         for (int i = 0; i < keys.size(); i++) {
+            Dataset<Row> df = spark
+                .createDataFrame(Collections.singletonList(keys.get(i)), structType)
+                .withColumn("partitionAsInt", column);
+            Row keyWithComputedPartition = df.collectAsList().get(0);
             List<Object> objs = new ArrayList<>(JavaConverters.seqAsJavaList(keys.get(i).toSeq()));
             objs.add(expectedPartitionIds.get(i));
-            Row row = Row.fromSeq(JavaConverters.asScalaIteratorConverter(objs.iterator()).asScala().toSeq());
-            keysWithExpectedPartitions.add(row);
+            Row expectedRow = Row.fromSeq(JavaConverters.asScalaIteratorConverter(objs.iterator()).asScala().toSeq());
+            assertThat(replaceByteArrays(expectedRow)).isEqualTo(replaceByteArrays(keyWithComputedPartition));
         }
-        Set<Row> keysWithExpectedPartitionsSet = new HashSet<>(replaceByteArrays(keysWithExpectedPartitions));
-        Set<Row> keysWithComputedPartitionsSet = new HashSet<>(replaceByteArrays(keysWithComputedPartitions));
-        assertThat(keysWithExpectedPartitionsSet).isEqualTo(new HashSet<>(keysWithComputedPartitionsSet));
-        spark.stop();
     }
 
-    private static List<Row> replaceByteArrays(List<Row> rows) {
-        List<Row> replaced = new ArrayList<>();
-        for (Row row : rows) {
-            List<Object> objs = new ArrayList<>();
-            for (int i = 0; i < row.size(); i++) {
-                Object obj = row.get(i);
-                if (obj instanceof byte[]) {
-                    objs.add(ByteArray.wrap((byte[]) obj));
-                } else {
-                    objs.add(obj);
-                }
+    private static Row replaceByteArrays(Row row) {
+        List<Object> objs = new ArrayList<>();
+        for (int i = 0; i < row.size(); i++) {
+            Object obj = row.get(i);
+            if (obj instanceof byte[]) {
+                objs.add(ByteArray.wrap((byte[]) obj));
+            } else {
+                objs.add(obj);
             }
-            replaced.add(RowFactory.create(objs));
         }
-        return replaced;
+        return RowFactory.create(objs);
     }
 }
