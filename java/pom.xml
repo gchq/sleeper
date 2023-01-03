@@ -105,6 +105,8 @@
             --add-opens java.base/java.util=ALL-UNNAMED
             --add-opens java.base/sun.nio.ch=ALL-UNNAMED
         </surefire.args>
+        <!--  This is required for later correct replacement of argLine -->
+        <argLine/>
     </properties>
 
     <dependencyManagement>
