@@ -99,12 +99,12 @@
         <distribution.format>dir</distribution.format>
         <spotbugs.plugin.version>4.7.2.0</spotbugs.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
-        <argLine>
+        <surefire.args>
             --add-opens java.base/java.lang.invoke=ALL-UNNAMED
             --add-opens java.base/java.nio=ALL-UNNAMED
             --add-opens java.base/java.util=ALL-UNNAMED
             --add-opens java.base/sun.nio.ch=ALL-UNNAMED
-        </argLine>
+        </surefire.args>
     </properties>
 
     <dependencyManagement>
@@ -328,6 +328,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire.plugin.version}</version>
+                <configuration>
+                    <argLine>@{argLine} ${surefire.args}</argLine>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
