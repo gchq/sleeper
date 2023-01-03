@@ -94,7 +94,6 @@ public class PartitionAsIntColumnTest {
         Column column = PartitionAsIntColumn.getColumn(partitionTree, schema);
 
         // Then
-        SparkSession spark = SparkSession.builder().appName("test").master("local").getOrCreate();
         List<Row> keys = new ArrayList<>();
         keys.add(RowFactory.create(""));
         keys.add(RowFactory.create("A"));

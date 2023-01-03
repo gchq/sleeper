@@ -35,6 +35,23 @@ public class PartitionAsIntColumn {
     private PartitionAsIntColumn() {
     }
 
+    /**
+     * Returns a Column which computes an integer identifying the partition that a record is in.
+     * This is done by creating a mapping from the leaf partitions to the integers 0, 1, ..., numLeafPartitions - 1.
+     * This mapping is done in a deterministic manner, namely the leaf partitions are sorted by their id and then
+     * integers 0, 1, ... are assigned by iterating through the leaf partitions in ascending order. The way in
+     * which the mapping from the leaf partitions to integers is computed does not matter, all that matters is that
+     * each leaf partition gets mapped to one and only one int, and that no other partition gets mapped to
+     * the same int.
+     * 
+     * As an example, if we have a table with a key field of name 'key' and type integer, and there are two leaf
+     * partitions where 10 is the boundary between them then the column will be the expression
+     * "CASE WHEN (key < 10) THEN 0 ELSE 1 END".
+     * 
+     * @param partitionTree The PartitionTree of the table
+     * @param schema The Schema of the table
+     * @return
+     */
     public static Column getColumn(PartitionTree partitionTree, Schema schema) {
         Map<String, Integer> partitionIdToInt = getPartitionIdToInt(partitionTree);
         Map<Integer, Column> rowKeyDimensionToColumn = getRowKeyDimensionToColumn(schema);
