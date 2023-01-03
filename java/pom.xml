@@ -99,12 +99,12 @@
         <distribution.format>dir</distribution.format>
         <spotbugs.plugin.version>4.7.2.0</spotbugs.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
-        <surefire.args>
+        <module.access.args>
             --add-opens java.base/java.lang.invoke=ALL-UNNAMED
             --add-opens java.base/java.nio=ALL-UNNAMED
             --add-opens java.base/java.util=ALL-UNNAMED
             --add-opens java.base/sun.nio.ch=ALL-UNNAMED
-        </surefire.args>
+        </module.access.args>
         <!--  This is required for later correct replacement of argLine -->
         <argLine/>
     </properties>
@@ -331,13 +331,16 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire.plugin.version}</version>
                 <configuration>
-                    <argLine>@{argLine} ${surefire.args}</argLine>
+                    <argLine>@{argLine} ${module.access.args}</argLine>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${failsafe.plugin.version}</version>
+                <configuration>
+                    <argLine>@{argLine} ${module.access.args}</argLine>
+                </configuration>
                 <executions>
                     <execution>
                         <phase>integration-test</phase>
