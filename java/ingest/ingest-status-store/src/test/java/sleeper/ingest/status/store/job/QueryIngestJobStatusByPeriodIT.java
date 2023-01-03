@@ -33,8 +33,8 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         // Given
         IngestJob job1 = jobWithFiles("file1");
         IngestJob job2 = jobWithFiles("file2");
-        Instant startedTime1 = Instant.now();
-        Instant startedTime2 = Instant.now();
+        Instant startedTime1 = Instant.parse("2023-01-03T14:50:00.001Z");
+        Instant startedTime2 = Instant.parse("2023-01-03T14:55:00.001Z");
 
         // When
         store.jobStarted(DEFAULT_TASK_ID, job1, startedTime1);
@@ -54,14 +54,14 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
     public void shouldExcludeIngestJobOutsidePeriod() {
         // Given
         IngestJob job = jobWithFiles("file");
-        Instant startedTime = Instant.now();
+        Instant startedTime = Instant.parse("2023-01-03T14:50:00.001Z");
 
         // When
         store.jobStarted(DEFAULT_TASK_ID, job, startedTime);
 
         // Then
-        Instant periodStart = Instant.now().plus(Period.ofDays(1));
-        Instant periodEnd = periodStart.plus(Period.ofDays(1));
+        Instant periodStart = Instant.parse("2023-01-01T14:00:00.001Z");
+        Instant periodEnd = Instant.parse("2023-01-02T14:00:00.001Z");
         assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd)).isEmpty();
     }
 
@@ -70,8 +70,8 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         // Given
         IngestJob job1 = jobWithFiles("file1");
         IngestJob job2 = jobWithTableAndFiles("other-table", "file2");
-        Instant startedTime1 = Instant.now();
-        Instant startedTime2 = Instant.now();
+        Instant startedTime1 = Instant.parse("2023-01-03T14:50:00.001Z");
+        Instant startedTime2 = Instant.parse("2023-01-03T14:55:00.001Z");
 
         // When
         store.jobStarted(DEFAULT_TASK_ID, job1, startedTime1);
@@ -86,18 +86,16 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
     }
 
     @Test
-    public void shouldIncludeFinishedStatusUpdateOutsidePeriod() throws Exception {
+    public void shouldIncludeFinishedStatusUpdateOutsidePeriod() {
         // Given
         IngestJob job = jobWithFiles("file");
-        Instant periodStart = Instant.now().minus(Period.ofDays(1));
-        Instant startedTime = Instant.now();
+        Instant startedTime = Instant.parse("2023-01-03T14:50:00.001Z");
+        Instant periodStart = startedTime.minus(Period.ofDays(1));
 
         // When
         store.jobStarted(DEFAULT_TASK_ID, job, startedTime);
-        Thread.sleep(1);
-        Instant periodEnd = Instant.now();
-        Thread.sleep(1);
-        Instant finishedTime = Instant.now();
+        Instant finishedTime = Instant.parse("2023-01-03T14:56:00.001Z");
+        Instant periodEnd = finishedTime.plus(Period.ofDays(1));
         store.jobFinished(DEFAULT_TASK_ID, job, defaultSummary(startedTime, finishedTime));
 
         // Then
