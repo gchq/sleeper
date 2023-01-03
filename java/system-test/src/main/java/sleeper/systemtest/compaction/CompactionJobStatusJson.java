@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Crown Copyright
+ * Copyright 2023 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package sleeper.systemtest.compaction;
 
 import com.google.gson.Gson;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.util.GsonConfig;
@@ -23,6 +24,7 @@ import sleeper.util.GsonConfig;
 import java.time.Duration;
 import java.time.Instant;
 
+@SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
 public class CompactionJobStatusJson {
 
     private static final Gson GSON = GsonConfig.standardBuilder().create();
@@ -47,20 +49,4 @@ public class CompactionJobStatusJson {
         return GSON.toJson(this);
     }
 
-    // These getters are just to convince Spotbugs these fields are used
-    public String getJobId() {
-        return jobId;
-    }
-
-    public Instant getCreateTime() {
-        return createTime;
-    }
-
-    public Instant getLastStartTime() {
-        return lastStartTime;
-    }
-
-    public Duration getDurationSoFar() {
-        return durationSoFar;
-    }
 }
